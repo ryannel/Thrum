@@ -10,7 +10,7 @@ Fresh reviewers receive the original requirements and Thrum contracts before thi
 **U**: explicit cloud-user requirement. **E**: selected Thrum engine requirement/contract. **I**: necessary implication
 of delivering those requirements. **P**: proposed scoped profile or bound awaiting qualification. **O**: optional
 extension, not base-delivery acceptance. Decisions, implementation and evidence are distinct. All proofs below are
-planned at inventory time. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/REVIEW.md) supports a bounded local lifecycle/cooker/byte profile; Thrum integration and the other proof groups remain unrun. Legacy media/timings do not qualify this target.
+planned at inventory time. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/REVIEW.md) supports a bounded local lifecycle/cooker/byte profile; A later [Q2/Q3 coupled instrument](../../evidence/cloud-coupled-2026-11-01/README.md) supplies bounded shared-light/main/shadow/reflection evidence; optical approximation floors and frame budgets remain open. Thrum integration, histories and target admission remain unrun. Legacy media/timings do not qualify this target.
 
 The user selects production-style clouds, coherent motion, genuine growth and breakup, reduced physical requirements
 where useful, responsive Mac inspection and retention of the renderer where it fits. Approaching storms/weather

@@ -21,7 +21,8 @@ struct P {side:u32,p0:u32,p1:u32,p2:u32}
 export class PreparedSource {
   static async create(device,url) {
     const result=new PreparedSource();result.device=device;
-    const response=await fetch(new URL('cloudclip.json',url));result.metadata=await response.json();
+    const response=await fetch(new URL('cloudclip.json',url));const manifest=await response.text();result.manifestSha=await hash(new TextEncoder().encode(manifest));
+    if(result.manifestSha!=='2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739')throw Error('Uncertified source manifest for the pinned support');result.metadata=JSON.parse(manifest);
     const m=result.metadata;
     if(m.reader_kind!=='direct'||m.density_side!==128||m.density_encoding_version!=='thrum.cloud-source-proof.mixed-bricks.v1')throw Error('Unsupported source');
     result.bytes=new Uint8Array(await(await fetch(new URL('density.bin',url))).arrayBuffer());

@@ -197,7 +197,6 @@ complete mechanism before construction. Paper closure does not certify the full 
 
 E1.clouds now links the [canonical cloud design](modules/CLOUDS.md) and
 [capability inventory](modules/CLOUD-CAPABILITIES.md). RC is an optional detailed **recommendation**, preserving the
-baseline attenuation-only recipe. Its analytical work/count/memory account is modelled; source assets/cooker, Thrum
-runtime implementation, visual acceptance and every platform/performance result remain unrun. Historical reviewed
+baseline attenuation-only recipe. The [Q1 source proof](../evidence/cloud-source-2026-11-01/REVIEW.md) supplies bounded content/codec evidence, and the [Q2/Q3 instrument](../evidence/cloud-coupled-2026-11-01/README.md) supplies actual GPU/CPU-oracle and image/motion evidence for a standalone coupled scene. Its measured local cost and cache accuracy have explicit limitations; it is not production/platform admission. Thrum runtime implementation, user acceptance, histories, full provider composition and complete target qualification remain unrun. Historical reviewed
 hashes for the former ENVIRONMENT family artifact stay historical; the new scoped independent review and its exact
 artifacts are recorded separately. A completed design review does not promote the old cloud lab to Thrum code.

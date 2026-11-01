@@ -4,7 +4,7 @@
 Commission: [capabilities](CLOUD-CAPABILITIES.md), E1.clouds, engine E03/E09–E12/E14/E17/E20 and
 [C01–C09/C12/C13](../CONTRACTS.md). [Research and decisions](../research/CLOUD-SYSTEM-SOURCES.md) distinguish
 published techniques from this synthesis. [Review record](../../evidence/cloud-design-2026-11-01/REVIEW.md)
-records independent discovery, challenges and resolutions. The original commission was design-only. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) is authorized separately; it does not commission a new engine renderer.
+records independent discovery, challenges and resolutions. The original commission was design-only. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) is authorized separately. A subsequent bounded [Q2/Q3 coupled proof](../../evidence/cloud-coupled-2026-11-01/README.md) is also commissioned; neither commissions a new engine renderer.
 
 ## Governing decisions
 
@@ -100,6 +100,43 @@ Source-only WebGPU/CPU tools are evidence instruments, not engine integration. T
 browser, CPU/GPU frame, startup, mobile and thermal budgets remain unqualified. The one-source proof does not establish
 library variety, incoming storms, CPU semantic query cost or whole-system completion. Runtime construction still follows
 I1/I2/I3a and Q2–Q7; retain the source at the typed seams rather than importing this diagnostic renderer.
+
+## Q2/Q3 bounded coupling result
+
+The [coupled proof and receipts](../../evidence/cloud-coupled-2026-11-01/README.md) exercise the pinned Q1
+source with one latched source/light state, a matte receiver/object, perfect planar mirror, constant external sky,
+exponential air and two overlapping bounded fog constituents. Independent float64 reference solves compare actual
+GPU light and main/secondary transport queries; native stills compare spatial reconstruction with a full-resolution
+direct trace. Normal/accelerated recorded witnesses check changing structure, shadow and reflected view together.
+This is a standalone model/interaction instrument, not V3/V4 public bindings, actual water, an HDR environment/probe
+qualification, or platform admission. Masking main appearance while retaining shadow/reflection is tested; full
+provider removal and zero-consumer cost remain Q5/Q6 obligations.
+
+Direct incident light composes the same air/fog/geometry/cloud path for surfaces and every medium. The mirror
+far leg begins at the interface, and the main camera-to-interface affine operator applies exactly once. All32
+rejection-case transport queries are valid; an upper occluder rejects Sun inside cloud, foreground-fog composition
+rejects the large double-attenuation counterexample, and zero illumination gives exactly zero radiance with
+extinction retained. On the selected default rays, GPU versus1m reference with actual caches differs by at most
+0.620% composed radiance; near/far mirror composition by0.0753%. These finite witnesses qualify the bounded closure,
+not every direction or a physically exact light cache. The128³ interpolated prefix still has sampled primary
+T error0.02859 and a45.1% relative incident-light error at one opaque interior point. Delivered puff-ray source error
+against direct fine Sun depth is much smaller, below0.4% in the selected comparisons. Retain this disclosed authored
+approximation floor; a stricter physical profile needs another admitted cache/query variant.
+
+The proof revises the implementation hypothesis after whole-graph evidence: portable RGBA16F storage writes with
+explicit RN-half conversion preserve the checked default Q1 density/mip readbacks exactly and remove repeated packed-buffer texture transfers.
+One compute pass builds source/mips/max/128³ prefix/32³ ambient before independent half-linear main and quarter-linear
+reflection. Finer ambient integration is within1% at sampled required nodes. Source-specific conservative work bounds
+are admitted only with both pinned density and manifest hashes; ambient is valid only over the cloud query domain.
+These are scoped prototype choices, not automatic replacement of the scalar engine profile below. Packed scalar
+storage, qualified backend formats, working-set reuse and histories need their own assembled cost/precision evidence.
+
+The measured fresh-graph cost remains an open gate against the proposed5ms browser cloud allocation and16ms complete
+frame envelope; see the owning performance report for final raw observations, tails and timestamp limitations.
+Logical resource counts are not measured process memory or a512MiB browser certification. Do not add storm/weather
+scope or assume Q4 histories will solve cost. The next bounded risk is Q7 local cost/measurement qualification,
+retaining the source and coupled-image oracles, before promotion or a broader scene. I1/I2/I3a continue to own actual
+Thrum construction dependencies.
 
 ## Content producer and recoverable input
 
@@ -585,7 +622,7 @@ public contracts, not retain the old host or treat the running lab as the Thrum 
 | Cloud-relative horizon/occluder guide; matched ray jitter; explicit source/light invalidation | Retain regression/algorithm knowledge, generalized to orthographic origins, topology and C07 retained time. |
 | Static Disney shape + sine shears + global grow/hold/fade | Replace as lifecycle producer. Preserve static optical reference and historical research, not evolution acceptance. |
 | Globally invertible material mapping and previous-frame assumption | Replace with interval carrier, local birth/death validity and actual retained sample semantics. |
-| RGBA16F scalar field and repeated dense source-ray traces | Replace layout/producer with portable scalar packing and column-prefix depth caches where equivalent. |
+| RGBA16F scalar field and repeated dense source-ray traces | Use column-prefix depth caches; qualify storage/producer choices in the assembled graph. Q2/Q3 direct RGBA16F writes avoid measured packed-copy stalls; scalar engine storage remains a cost/precision hypothesis. |
 | Private screen resolve/composite, sky/ground/water drawing and proof-specific atmospheric binding | Move useful local routines under V3/V4; remove competing final composition and scene ownership. |
 | Bevy module/extraction/scheduler/resource bindings | Reimplement against Thrum F1/F2/V1/V2; do not import Bevy or the old host through a cloud dependency. |
 | Existing reference, preparation and research tools | Keep as historical comparison/recovery candidates, adopting only pinned/legal sources through F4 later. |
@@ -619,7 +656,7 @@ correction resets affected E1/V3/V4 histories and preserves only the semantic so
 
 ## Proof and construction queue
 
-The original design commission ran no queue item. The subsequent [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) is in progress; existing lab acceptance does not close any Thrum row.
+The original design commission ran no queue item. The subsequent [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) supplies bounded accepted source evidence, and the [Q2/Q3 instrument](../../evidence/cloud-coupled-2026-11-01/README.md) supplies scoped transport/consumer evidence with cost still open; existing lab acceptance does not close any Thrum row.
 
 | Order / proof | Requirements and prediction | Reject when |
 | --- | --- | --- |
