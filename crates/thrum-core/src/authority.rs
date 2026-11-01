@@ -573,21 +573,25 @@ impl<G: GameRules> Authority<G> {
         // catches the panic, the partially processed tick cannot be replayed.
         self.faulted = true;
         self.tick = self.tick.checked_add(1).expect("world tick exhausted");
-        let mut due = Vec::new();
-        for (peer_id, peer) in &mut self.peers {
-            let keys: Vec<_> = peer
-                .pending
-                .iter()
-                .filter(|(_, p)| p.due_tick <= self.tick)
-                .map(|(seq, _)| *seq)
-                .collect();
-            for seq in keys {
-                due.push((*peer_id, peer.pending.remove(&seq).expect("pending key")));
-            }
+        let mut due_keys = Vec::new();
+        for (peer_id, peer) in &self.peers {
+            due_keys.extend(
+                peer.pending
+                    .iter()
+                    .filter(|(_, p)| p.due_tick <= self.tick)
+                    .map(|(seq, _)| (*peer_id, *seq)),
+            );
         }
-        let mut results = Vec::with_capacity(due.len());
+        let mut results = Vec::with_capacity(due_keys.len());
         let mut events = Vec::new();
-        for (peer_id, pending) in due {
+        for (peer_id, sequence) in due_keys {
+            let pending = self
+                .peers
+                .get_mut(&peer_id)
+                .expect("admitted peer")
+                .pending
+                .remove(&sequence)
+                .expect("pending key");
             let origin = pending.input.origin;
             let decision = match pending.timing_error {
                 Some(TimingError::StaleObservation) => Err(ActionRejection::StaleObservation),
