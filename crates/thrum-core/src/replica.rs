@@ -243,6 +243,45 @@ struct ValidatedNext {
     progress: Option<BTreeMap<PeerId, PeerProgress>>,
 }
 
+fn validate_event_links<E, R>(
+    previous_event_id: u64,
+    commit_tick: u64,
+    event_cursor: u64,
+    results: &[ActionResult<R>],
+    events: &[CommittedEvent<E>],
+) -> Result<(), ReplicaError> {
+    let mut last = previous_event_id;
+    for event in events {
+        if event.id <= last || event.id > event_cursor || event.tick > commit_tick {
+            return Err(ReplicaError::InvalidEvent);
+        }
+        last = event.id;
+    }
+    let mut matched = 0;
+    for result in results {
+        if result.resolved_tick > commit_tick
+            || matches!(result.disposition, ResultDisposition::Rejected(_))
+                && result.event_id.is_some()
+            || result.event_id.is_some_and(|id| {
+                !events
+                    .binary_search_by_key(&id, |event| event.id)
+                    .ok()
+                    .is_some_and(|index| {
+                        events[index].origin == result.origin
+                            && events[index].tick == result.resolved_tick
+                    })
+            })
+        {
+            return Err(ReplicaError::IncompleteOutcome);
+        }
+        matched += usize::from(result.event_id.is_some());
+    }
+    if matched != events.len() {
+        return Err(ReplicaError::IncompleteOutcome);
+    }
+    Ok(())
+}
+
 fn validate_baseline_outcomes<E, R>(
     commit_tick: u64,
     event_cursor: u64,
@@ -250,20 +289,7 @@ fn validate_baseline_outcomes<E, R>(
     events: &[CommittedEvent<E>],
     resolved_through: &[(PeerId, u64)],
 ) -> Result<BTreeMap<PeerId, PeerProgress>, ReplicaError> {
-    let mut unmatched_events = BTreeMap::new();
-    let mut last_event_id = 0;
-    for event in events {
-        if event.id <= last_event_id
-            || event.id > event_cursor
-            || event.tick > commit_tick
-            || unmatched_events
-                .insert(event.id, (event.origin, event.tick))
-                .is_some()
-        {
-            return Err(ReplicaError::InvalidEvent);
-        }
-        last_event_id = event.id;
-    }
+    validate_event_links(0, commit_tick, event_cursor, results, events)?;
     let mut progress = BTreeMap::new();
     for (peer, prefix) in resolved_through {
         if progress
@@ -282,14 +308,7 @@ fn validate_baseline_outcomes<E, R>(
     }
     let mut baseline_result_ids = BTreeSet::new();
     for result in results {
-        if result.resolved_tick > commit_tick
-            || matches!(result.disposition, ResultDisposition::Rejected(_))
-                && result.event_id.is_some()
-            || result.event_id.is_some_and(|id| {
-                unmatched_events.remove(&id) != Some((result.origin, result.resolved_tick))
-            })
-            || !baseline_result_ids.insert((result.origin.peer, result.origin.sequence))
-        {
+        if !baseline_result_ids.insert((result.origin.peer, result.origin.sequence)) {
             return Err(ReplicaError::IncompleteOutcome);
         }
         let Some(peer) = progress.get_mut(&result.origin.peer) else {
@@ -307,9 +326,6 @@ fn validate_baseline_outcomes<E, R>(
         {
             return Err(ReplicaError::IncompleteOutcome);
         }
-    }
-    if !unmatched_events.is_empty() {
-        return Err(ReplicaError::IncompleteOutcome);
     }
     Ok(progress)
 }
@@ -371,34 +387,13 @@ impl<T> Replica<T> {
                 return Err(ReplicaError::InvalidLifecycle);
             }
         }
-        let mut unmatched_events = BTreeMap::new();
-        let mut last = self.last_event_id;
-        for event in events {
-            if event.id <= last
-                || event.id > event_cursor
-                || event.tick > commit_tick
-                || unmatched_events
-                    .insert(event.id, (event.origin, event.tick))
-                    .is_some()
-            {
-                return Err(ReplicaError::InvalidEvent);
-            }
-            last = event.id;
-        }
-        for result in results {
-            if result.resolved_tick > commit_tick
-                || matches!(result.disposition, ResultDisposition::Rejected(_))
-                    && result.event_id.is_some()
-                || result.event_id.is_some_and(|id| {
-                    unmatched_events.remove(&id) != Some((result.origin, result.resolved_tick))
-                })
-            {
-                return Err(ReplicaError::IncompleteOutcome);
-            }
-        }
-        if !unmatched_events.is_empty() {
-            return Err(ReplicaError::IncompleteOutcome);
-        }
+        validate_event_links(
+            self.last_event_id,
+            commit_tick,
+            event_cursor,
+            results,
+            events,
+        )?;
         let new_progress = if unchanged_progress {
             None
         } else {

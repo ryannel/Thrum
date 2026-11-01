@@ -2599,6 +2599,16 @@ fn admission_timing_gap_and_reconnect_do_not_duplicate_effects() {
         Replica::from_baseline(duplicate_result),
         Err(ReplicaError::IncompleteOutcome)
     ));
+    let mut balanced_duplicate = baseline.clone();
+    balanced_duplicate.results[1] = balanced_duplicate.results[0].clone();
+    assert_eq!(
+        balanced_duplicate.results.len(),
+        balanced_duplicate.events.len()
+    );
+    assert!(matches!(
+        Replica::from_baseline(balanced_duplicate),
+        Err(ReplicaError::IncompleteOutcome)
+    ));
     let (mut resynced, baseline_outcomes) = Replica::from_baseline(baseline).unwrap();
     assert_eq!(resynced.tick(), 2);
     assert_eq!(baseline_outcomes.results.len(), 2);
@@ -2940,6 +2950,12 @@ fn event_identity_and_commit_tick_must_match_its_result() {
         replica.apply(orphan_event).err(),
         Some(ReplicaError::IncompleteOutcome)
     );
+    let mut duplicate_reference = group.clone();
+    duplicate_reference.results.push(group.results[0].clone());
+    assert_eq!(
+        replica.apply(duplicate_reference).err(),
+        Some(ReplicaError::IncompleteOutcome)
+    );
     assert_eq!(replica.tick(), 0);
     replica.apply(group).unwrap();
     let mut baseline = authority.baseline();
@@ -2950,6 +2966,12 @@ fn event_identity_and_commit_tick_must_match_its_result() {
     ));
     let mut baseline = authority.baseline();
     baseline.events[0].tick = 0;
+    assert!(matches!(
+        Replica::from_baseline(baseline),
+        Err(ReplicaError::IncompleteOutcome)
+    ));
+    let mut baseline = authority.baseline();
+    baseline.results[0].event_id = None;
     assert!(matches!(
         Replica::from_baseline(baseline),
         Err(ReplicaError::IncompleteOutcome)
