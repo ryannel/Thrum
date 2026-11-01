@@ -36,8 +36,17 @@ Add a crate only for a demonstrated boundary, reuse or platform/build need. Regi
 [architecture policy](.config/architecture.toml); all workspace crates inherit common package/lint settings.
 The dependency guard checks direct workspace edges of every dependency kind, including renamed and
 target-specific edges. It does not prove semantic authority or validate all optional feature combinations.
+Every `Cargo.toml` under `crates/`, `tools/` or `examples/` must join the workspace and architecture registry. Direct
+third-party dependencies require an exact `=version` registry requirement and a policy entry with declared
+license, purpose and target/build cost; the guard cannot verify the upstream license or transitive closure.
 Record dependency purpose, exact version/license and target costs before adding external libraries. Do
 not vendor Bevy code without source revision, applicable license/notices and a maintenance rationale.
+
+`./dev check` is the hard gate: pinned rustfmt, workspace Clippy, Rust tests and repository checks.
+Clippy's default checks plus `dbg_macro`, `todo` and `unimplemented` catch likely mistakes and unfinished
+code. We deliberately have no file/function line limit, folder file count or literal count gate. A fixed
+argument-count lint is also disabled; review large signatures in context instead of forcing wrapper types.
+Warnings from optional style review are advice, not a reason to split coherent code mechanically.
 
 For capability design and performance-sensitive implementation, use the owning design's
 [cost account](docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design). Consider repeated cheap work,

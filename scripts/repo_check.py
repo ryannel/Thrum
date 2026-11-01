@@ -62,14 +62,20 @@ def check_packages(root, metadata, policy):
     members = set(metadata["workspace_members"])
     packages = {p["name"]: p for p in metadata["packages"] if p["id"] in members}
     configured = policy["packages"]
+    if len(packages) != len(members):
+        errors.append("workspace package names must be unique")
     if packages.keys() != configured.keys():
         errors.append(f"package registry mismatch: actual={sorted(packages)}, policy={sorted(configured)}")
     manifests = {str(Path(p["manifest_path"]).resolve().parent): name for name, p in packages.items()}
+    external = policy.get("external_dependencies", {})
+    used_external = set()
     for name, package in packages.items():
         if name not in configured:
             continue
         entry = configured[name]
         manifest_path = Path(package["manifest_path"]).resolve()
+        if not manifest_path.is_relative_to(root.resolve()):
+            errors.append(f"workspace manifest outside repository: {name}")
         if manifest_path != (root / entry["manifest"]).resolve():
             errors.append(f"unexpected manifest path: {name}")
         manifest = tomllib.loads(manifest_path.read_text())
@@ -81,6 +87,7 @@ def check_packages(root, metadata, policy):
         allowed = set(entry["allowed_workspace_dependencies"])
         if allowed - packages.keys():
             errors.append(f"unknown dependency in policy for {name}: {sorted(allowed - packages.keys())}")
+        actual_edges = set()
         # Cargo metadata preserves every declared dependency, including dev/build/target/rename.
         for dep in package["dependencies"]:
             dep_path = dep.get("path")
@@ -88,9 +95,46 @@ def check_packages(root, metadata, policy):
                 dependency = manifests.get(str(Path(dep_path).resolve()))
                 if dependency is None:
                     errors.append(f"{name}: path dependency outside registered workspace: {dep_path}")
-                elif dependency not in allowed:
-                    errors.append(f"forbidden workspace dependency: {name} -> {dependency}")
+                else:
+                    actual_edges.add(dependency)
+                    if dependency not in allowed:
+                        errors.append(f"forbidden workspace dependency: {name} -> {dependency}")
+            else:
+                dependency = dep["name"]
+                used_external.add(dependency)
+                declared = external.get(dependency)
+                if declared is None:
+                    errors.append(f"unregistered external dependency: {name} -> {dependency}")
+                    continue
+                required = {"requirement", "license", "purpose", "target_cost"}
+                missing = required - declared.keys()
+                if missing or any(not str(declared.get(key, "")).strip() for key in required):
+                    errors.append(f"incomplete external dependency policy: {dependency}: {sorted(missing)}")
+                if dep.get("source") is None or not str(dep["source"]).startswith("registry+"):
+                    errors.append(f"external dependency must use a pinned registry release: {dependency}")
+                if dep.get("req") != declared.get("requirement") or not str(dep.get("req", "")).startswith("="):
+                    errors.append(f"external dependency must use declared exact version: {dependency}")
+        if allowed - actual_edges:
+            errors.append(f"unused workspace dependency policy for {name}: {sorted(allowed - actual_edges)}")
+    if external.keys() - used_external:
+        errors.append(f"unused external dependency policy: {sorted(external.keys() - used_external)}")
     return errors
+
+
+def check_manifest_inventory(root, metadata):
+    """Every package manifest under owned crate/tool roots joins the workspace."""
+    members = set(metadata["workspace_members"])
+    registered = {Path(p["manifest_path"]).resolve() for p in metadata["packages"] if p["id"] in members}
+    discovered = set()
+    for owned in (root / "crates", root / "tools", root / "examples"):
+        if not owned.exists():
+            continue
+        for directory, names, files in os.walk(owned):
+            names[:] = [n for n in names if n not in {"target", "tmp", ".git"}]
+            if "Cargo.toml" in files:
+                discovered.add((Path(directory) / "Cargo.toml").resolve())
+    return [f"unregistered package manifest: {path.relative_to(root.resolve()) if path.is_relative_to(root.resolve()) else path}"
+            for path in sorted(discovered - registered)]
 
 
 def check_skills(root):
@@ -140,7 +184,9 @@ def main():
     # Explicit rustup avoids silently using an unrelated standalone Cargo installation.
     channel = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
     output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, text=True)
-    errors += check_packages(ROOT, json.loads(output), policy)
+    metadata = json.loads(output)
+    errors += check_packages(ROOT, metadata, policy)
+    errors += check_manifest_inventory(ROOT, metadata)
     if errors:
         print("\n".join(sorted(set(errors))), file=sys.stderr)
         return 1

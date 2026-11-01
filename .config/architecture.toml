@@ -7,3 +7,8 @@ allowed_workspace_dependencies = []
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
+
+# Every direct third-party crate must be listed here with an exact Cargo
+# requirement, its declared license, purpose and target/build cost note.
+# The check validates declarations; license/provenance review remains human work.
+[external_dependencies]
