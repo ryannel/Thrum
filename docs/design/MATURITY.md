@@ -191,3 +191,19 @@ rows retain their scoped detailed-design obligations (for example advanced camer
 providers and seamless streaming). No row is promoted to implemented, tested, visually accepted or device-qualified.
 Implement only the admitted subset after its dependency/API/toolchain checks; additional claims require their own
 complete mechanism before construction. Paper closure does not certify the full future engine.
+
+## I1 headless slice — local evidence, 1 November 2026
+
+The [I1 design](I1-HEADLESS.md) governs the bounded executable authority/replica path. A game-owned
+collect/open rule uses the same validation and commitment in standalone and match roles. The
+[running evidence](../evidence/i1-headless/QUALIFICATION.md) includes correctness tests and
+local release-mode cost fixtures at 64, 4,096 and 16,384 objects. Separate records cover the
+[clock](../evidence/i1-headless/CLOCK.md), [native headless callback](../evidence/i1-headless/HOST.md)
+and [two controlled peers](../evidence/i1-headless/TWO-PEER.md). F1, F3, W1, P6 and N1 remain
+`partial` for implementation and functional validation in that exact scope; F1/W1/P6/N1 have
+`modelled` I1 cost accounts. The publication-memory byte gate is designed but still unimplemented:
+the current eight-bundle limit is a count limit, and a small world-growth allocation fix is not
+whole-process memory qualification. Existing review hashes and whole-module design stages are
+unchanged. Named platform performance states remain `not_run`; real WSS, source/save, broader
+scheduling and mobile shells remain separate work. This evidence does not promote the whole engine
+or I1 package to feature-complete.

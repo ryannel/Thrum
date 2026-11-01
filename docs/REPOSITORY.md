@@ -2,7 +2,7 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `crates/` | Engine libraries with explicit ownership; currently only the core scaffold |
+| `crates/` | Engine libraries with explicit ownership; currently the bounded headless core |
 | `tools/xtask/` | Host-only contributor command runner, never an engine runtime dependency |
 | `scripts/` | Small repository/document validation tools |
 | `.config/architecture.toml` | Registered workspace packages and allowed dependency edges |

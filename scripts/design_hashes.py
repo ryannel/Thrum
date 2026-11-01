@@ -14,6 +14,9 @@ def digest(path):
 def current_slots(ledger):
     """Yield (containing object, key, design-relative file) for live hash fields."""
     yield ledger, "contract_sha256", "CONTRACTS.md"
+    if "i1_headless" in ledger:
+        row = ledger["i1_headless"]
+        yield row, "design_sha256", row["design"]
     for row in ledger["modules"]:
         yield row, "current_design_sha256", row["design"]
         for name in row.get("initial_specifications", {}):
