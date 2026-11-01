@@ -1083,9 +1083,9 @@ impl<G: GameRules> HeadlessHost<G> {
 mod tests {
     use super::*;
     use crate::{
-        ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, MatchId, Origin, PreparedCommit,
-        PreparedEdits, PublicationBytes, PublicationRecord, SnapshotWriteBounds, StableId,
-        StateGroup, World, WorldEdit, WorldEpoch,
+        ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, Handle, MatchId, Origin,
+        PreparedCommit, PreparedEdits, PublicationBytes, PublicationRecord, SnapshotWriteBounds,
+        StableId, StateGroup, World, WorldEdit, WorldEpoch,
     };
     use std::num::NonZeroU32;
 
@@ -1151,6 +1151,150 @@ mod tests {
     struct StructuralRule;
 
     struct StructuralChurnRule;
+
+    struct ReplaceRule;
+
+    impl GameRules for ReplaceRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = Handle;
+        type Rejection = ();
+        type Event = ();
+
+        fn spawn_bound(&self, _action: &u8, _configured_max: usize) -> usize {
+            0
+        }
+
+        fn decide(
+            &self,
+            world: &World<u8>,
+            _actor: ActorId,
+            _action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<Handle, ()> {
+            world.handle_for(StableId(1)).ok_or(())
+        }
+
+        fn prepare(
+            &self,
+            _world: &World<u8>,
+            handle: Handle,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(handle, 8)),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "local paired complete-path development cost fixture"]
+    fn compare_fixed_and_structural_protected_callbacks() {
+        fn run(objects: usize, structural: bool) -> (u128, u128, usize) {
+            let pool = PublicationPool::new(64_000_000);
+            let mut world = World::new(WorldEpoch(300));
+            for id in 1..=objects as u128 {
+                world.spawn(StableId(id), 7_u8).unwrap();
+            }
+            let inline = |bytes| ClosedValueLimits {
+                max_inline_bytes: bytes,
+                max_payload_slots: 0,
+                max_payload_bytes: 0,
+            };
+            let mut authority = Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(300)),
+                ReplaceRule,
+                world,
+                pool.clone(),
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 0,
+                },
+                ClosedGameLimits {
+                    action: inline(1),
+                    entity: inline(1),
+                    event: inline(0),
+                    rejection: inline(0),
+                },
+            )
+            .unwrap();
+            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+            let origin = Instant::now();
+            let clock = ClockConfig {
+                max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                ..ClockConfig::default()
+            };
+            let budget = HostBudget {
+                callback_cpu: Duration::from_secs(1),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            };
+            let (mut host, initial) = if structural {
+                HeadlessHost::with_protected_structural_replica(
+                    origin, clock, budget, authority, &pool, objects, 1, objects, objects, 0,
+                )
+            } else {
+                HeadlessHost::with_protected_output_replica(
+                    origin, clock, budget, authority, &pool, objects, 1, 0,
+                )
+            }
+            .unwrap();
+            let retained_at_start = pool.used_bytes();
+            let mut samples = Vec::with_capacity(500);
+            for tick in 1..=600_u64 {
+                let start = Instant::now();
+                host.submit(Input {
+                    origin: Origin {
+                        peer: PeerId(1),
+                        connection_epoch: 1,
+                        sequence: tick,
+                    },
+                    actor: ActorId(1),
+                    schedule: crate::InputSchedule::NextTick {
+                        observed_tick: tick - 1,
+                    },
+                    action: 1,
+                })
+                .unwrap();
+                let report = host
+                    .on_callback_charged(
+                        origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60)),
+                    )
+                    .unwrap();
+                assert_eq!(report.clock.completed, 1);
+                let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+                else {
+                    panic!("expected required replica delivery")
+                };
+                assert_eq!(admitted.results().len(), 1);
+                assert!(matches!(
+                    &admitted.results()[0].disposition,
+                    crate::ResultDisposition::Committed
+                ));
+                assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&8));
+                drop(report);
+                host.acknowledge_results(PeerId(1), tick).unwrap();
+                if tick > 100 {
+                    samples.push(start.elapsed().as_nanos());
+                }
+            }
+            samples.sort_unstable();
+            let result = (samples[250], samples[474], retained_at_start);
+            drop(initial);
+            drop(host);
+            assert_eq!(pool.used_bytes(), 0);
+            result
+        }
+        for objects in [4_096, 16_384] {
+            let fixed = run(objects, false);
+            let structural = run(objects, true);
+            eprintln!(
+                "paired protected one-change {objects}: fixed p50={}ns p95={}ns retained={}B; structural p50={}ns p95={}ns retained={}B",
+                fixed.0, fixed.1, fixed.2, structural.0, structural.1, structural.2
+            );
+        }
+    }
 
     impl GameRules for StructuralChurnRule {
         type Entity = u8;
