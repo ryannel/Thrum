@@ -1,0 +1,137 @@
+{
+  "retained_commit": "a1b5e3093a19013886c8989f9d482aae6e2fb342",
+  "retained_roots": [
+    "docs/evidence/cloud-source-2026-11-01",
+    "scripts/cloud_source_proof"
+  ],
+  "source_and_selected_video_bytes_checked_against_commit": true,
+  "exact_recovery_verified_before_retirement": true,
+  "retired_bytes": 3820558854,
+  "retired_paths": [
+    {
+      "path": "tmp/cloud-source-proof/authored-cooked",
+      "bytes": 552227
+    },
+    {
+      "path": "tmp/cloud-source-proof/authored-cooked-v2",
+      "bytes": 13930795
+    },
+    {
+      "path": "tmp/cloud-source-proof/authored-erosion-screen",
+      "bytes": 984899
+    },
+    {
+      "path": "tmp/cloud-source-proof/authored-partition.py",
+      "bytes": 4784
+    },
+    {
+      "path": "tmp/cloud-source-proof/authored-ranked",
+      "bytes": 7302931
+    },
+    {
+      "path": "tmp/cloud-source-proof/authored-screen",
+      "bytes": 909596
+    },
+    {
+      "path": "tmp/cloud-source-proof/candidate-128",
+      "bytes": 3023534025
+    },
+    {
+      "path": "tmp/cloud-source-proof/candidate-bake.log",
+      "bytes": 1507
+    },
+    {
+      "path": "tmp/cloud-source-proof/candidate-images",
+      "bytes": 523158
+    },
+    {
+      "path": "tmp/cloud-source-proof/candidate-preview.npz",
+      "bytes": 33554976
+    },
+    {
+      "path": "tmp/cloud-source-proof/candidate-render.log",
+      "bytes": 76
+    },
+    {
+      "path": "tmp/cloud-source-proof/captures",
+      "bytes": 25945504
+    },
+    {
+      "path": "tmp/cloud-source-proof/direct-original",
+      "bytes": 3317262
+    },
+    {
+      "path": "tmp/cloud-source-proof/final-cooked",
+      "bytes": 4141076
+    },
+    {
+      "path": "tmp/cloud-source-proof/final-dense",
+      "bytes": 7788309
+    },
+    {
+      "path": "tmp/cloud-source-proof/pilot-cooked",
+      "bytes": 3513193
+    },
+    {
+      "path": "tmp/cloud-source-proof/pilot-dense",
+      "bytes": 3267715
+    },
+    {
+      "path": "tmp/cloud-source-proof/pilot-images",
+      "bytes": 615003
+    },
+    {
+      "path": "tmp/cloud-source-proof/pilot-preview.npz",
+      "bytes": 57424
+    },
+    {
+      "path": "tmp/cloud-source-proof/pilot-render.log",
+      "bytes": 189
+    },
+    {
+      "path": "tmp/cloud-source-proof/recovery",
+      "bytes": 23337491
+    },
+    {
+      "path": "tmp/cloud-source-proof/review",
+      "bytes": 14191827
+    },
+    {
+      "path": "tmp/cloud-source-proof/screening-64",
+      "bytes": 261085424
+    },
+    {
+      "path": "tmp/cloud-source-proof/screening-bake.log",
+      "bytes": 1074
+    },
+    {
+      "path": "tmp/cloud-source-proof/split-preview.npz",
+      "bytes": 5243432
+    },
+    {
+      "path": "tmp/cloud-source-proof/split-screen-64",
+      "bytes": 381251970
+    },
+    {
+      "path": "tmp/cloud-source-proof/split-screen-images",
+      "bytes": 576348
+    },
+    {
+      "path": "tmp/cloud-source-proof/split-screen-render.log",
+      "bytes": 88
+    },
+    {
+      "path": "tmp/cloud-source-proof/split-screen.log",
+      "bytes": 1563
+    },
+    {
+      "path": "tmp/cloud-source-proof/velocity-control-final",
+      "bytes": 4920636
+    },
+    {
+      "path": "tmp/cloud-source-proof/velocity-control-report.md",
+      "bytes": 4352
+    }
+  ],
+  "remaining": "idle loopback preview server and its log/owner note;6.7MiB checked contributor target cache retained; no other worktrees touched"
+}
