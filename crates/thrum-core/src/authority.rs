@@ -1,6 +1,6 @@
 use std::{
     alloc::Layout,
-    collections::{BTreeMap, BTreeSet, VecDeque},
+    collections::BTreeMap,
     sync::{Arc, Weak},
 };
 
@@ -424,9 +424,11 @@ struct Peer<A, R, E> {
     epoch: u64,
     next_sequence: u64,
     pending: PendingQueue<A>,
-    completed: VecDeque<Completed<A, R, E>>,
+    completed: Vec<Completed<A, R, E>>,
+    completed_limit: usize,
+    _completed_charge: Option<PublicationCharge>,
     resolved_through: u64,
-    out_of_order_resolved: BTreeSet<u64>,
+    out_of_order_resolved: [u64; MAX_RESULTS / 64],
 }
 
 impl<A, R, E> Peer<A, R, E> {
@@ -436,26 +438,80 @@ impl<A, R, E> Peer<A, R, E> {
             epoch,
             next_sequence: 1,
             pending,
-            completed: VecDeque::new(),
+            completed: Vec::new(),
+            completed_limit: 0,
+            _completed_charge: None,
             resolved_through: 0,
-            out_of_order_resolved: BTreeSet::new(),
+            out_of_order_resolved: [0; MAX_RESULTS / 64],
         }
+    }
+    fn try_grow_completed(
+        &mut self,
+        needed: usize,
+        pool: Option<&PublicationPool>,
+    ) -> Result<(), PublicationCapacity> {
+        if needed <= self.completed_limit {
+            return Ok(());
+        }
+        let Some(pool) = pool else {
+            self.completed
+                .try_reserve(needed.saturating_sub(self.completed.len()))
+                .map_err(|_| PublicationCapacity)?;
+            self.completed_limit = self.completed.capacity();
+            return Ok(());
+        };
+        let limit = needed
+            .checked_next_power_of_two()
+            .ok_or(PublicationCapacity)?;
+        if limit > MAX_RESULTS {
+            return Err(PublicationCapacity);
+        }
+        let bytes = Layout::array::<Completed<A, R, E>>(limit)
+            .map_err(|_| PublicationCapacity)?
+            .size();
+        let mut reservation = pool.try_reserve(bytes)?;
+        let charge = reservation.charge(bytes)?;
+        let mut values = Vec::with_capacity(limit);
+        values.append(&mut self.completed);
+        let old_values = std::mem::replace(&mut self.completed, values);
+        let old_charge = self._completed_charge.replace(charge);
+        self.completed_limit = limit;
+        drop(old_values);
+        drop(old_charge);
+        Ok(())
     }
     fn reconnect(&mut self, actor: ActorId, epoch: u64) {
         self.actor = actor;
         self.epoch = epoch;
         self.next_sequence = 1;
         self.pending.clear();
-        self.completed = VecDeque::new();
+        self.completed.clear();
         self.resolved_through = 0;
-        self.out_of_order_resolved = BTreeSet::new();
+        self.out_of_order_resolved = [0; MAX_RESULTS / 64];
     }
     fn mark_resolved(&mut self, sequence: u64) {
-        self.out_of_order_resolved.insert(sequence);
-        while self
-            .out_of_order_resolved
-            .remove(&(self.resolved_through + 1))
-        {
+        let offset = usize::try_from(
+            sequence
+                .checked_sub(self.resolved_through + 1)
+                .expect("resolved sequence is above watermark"),
+        )
+        .expect("admitted outcome offset fits usize");
+        assert!(
+            offset < MAX_RESULTS,
+            "admitted outcome exceeds result window"
+        );
+        if offset == 0 && self.out_of_order_resolved == [0; MAX_RESULTS / 64] {
+            self.resolved_through += 1;
+            return;
+        }
+        self.out_of_order_resolved[offset / 64] |= 1_u64 << (offset % 64);
+        while self.out_of_order_resolved[0] & 1 != 0 {
+            for word in 0..self.out_of_order_resolved.len() - 1 {
+                self.out_of_order_resolved[word] = (self.out_of_order_resolved[word] >> 1)
+                    | (self.out_of_order_resolved[word + 1] << 63);
+            }
+            let last = self.out_of_order_resolved.len() - 1;
+            self.out_of_order_resolved[last] >>= 1;
             self.resolved_through += 1;
         }
     }
@@ -989,6 +1045,13 @@ impl<G: GameRules> Authority<G> {
             .peers
             .get_mut(&input.origin.peer)
             .expect("validated peer remains registered");
+        peer.try_grow_completed(
+            peer.completed.len() + peer.pending.len() + 1,
+            self.snapshot_admission
+                .as_ref()
+                .map(|admission| &admission.pool),
+        )
+        .map_err(|_| AdmissionError::PublicationCapacity)?;
         peer.pending.insert(
             seq,
             Pending {
@@ -1430,7 +1493,7 @@ impl<G: GameRules> Authority<G> {
             };
             let peer = self.peers.get_mut(&peer_id).expect("admitted peer");
             peer.mark_resolved(origin.sequence);
-            peer.completed.push_back(Completed {
+            peer.completed.push(Completed {
                 input: pending.input,
                 result: result.clone(),
                 event: retained_event,
@@ -1484,5 +1547,48 @@ impl<G: GameRules> Authority<G> {
             self.faulted = false;
         }
         Ok((tick, snapshot_reservation))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn completed_window_closes_full_out_of_order_gap() {
+        let mut peer = Peer::<u8, (), ()>::new(ActorId(1), 1, PendingQueue::try_new(None).unwrap());
+        for sequence in 2..=MAX_RESULTS as u64 {
+            peer.mark_resolved(sequence);
+            assert_eq!(peer.resolved_through, 0);
+        }
+        peer.mark_resolved(1);
+        assert_eq!(peer.resolved_through, MAX_RESULTS as u64);
+        assert_eq!(peer.out_of_order_resolved, [0; MAX_RESULTS / 64]);
+        peer.mark_resolved(MAX_RESULTS as u64 + 1);
+        assert_eq!(peer.resolved_through, MAX_RESULTS as u64 + 1);
+    }
+
+    #[test]
+    fn completed_buffer_growth_reserves_overlap_and_reconnect_reuses_it() {
+        let pool = PublicationPool::new(10_000);
+        let mut peer =
+            Peer::<u8, (), ()>::new(ActorId(1), 1, PendingQueue::try_new(Some(&pool)).unwrap());
+        peer.try_grow_completed(1, Some(&pool)).unwrap();
+        let first = pool.used_bytes();
+        let occupied = pool.try_reserve(pool.limit_bytes() - first).unwrap();
+        assert_eq!(
+            peer.try_grow_completed(2, Some(&pool)),
+            Err(PublicationCapacity)
+        );
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
+        drop(occupied);
+        peer.try_grow_completed(2, Some(&pool)).unwrap();
+        let grown = pool.used_bytes();
+        assert!(grown > first);
+        peer.reconnect(ActorId(1), 2);
+        peer.try_grow_completed(2, Some(&pool)).unwrap();
+        assert_eq!(pool.used_bytes(), grown);
+        drop(peer);
+        assert_eq!(pool.used_bytes(), 0);
     }
 }

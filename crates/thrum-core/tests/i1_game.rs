@@ -717,7 +717,6 @@ fn charged_pending_storage_reserves_before_peer_join_and_survives_reconnect() {
     assert_eq!(tight_pool.used_bytes(), activated);
     drop(tight_authority);
     assert_eq!(tight_pool.used_bytes(), 0);
-    let occupied = pool.try_reserve(pool.limit_bytes() - with_peer).unwrap();
     authority
         .submit(input(
             1,
@@ -726,6 +725,18 @@ fn charged_pending_storage_reserves_before_peer_join_and_survives_reconnect() {
             Action::Collect(ITEM),
         ))
         .unwrap();
+    let occupied = pool
+        .try_reserve(pool.limit_bytes() - pool.used_bytes())
+        .unwrap();
+    assert_eq!(
+        authority.submit(input(
+            1,
+            2,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Collect(ITEM),
+        )),
+        Err(AdmissionError::PublicationCapacity)
+    );
     authority.register_peer(PEER, 2, ACTOR).unwrap();
     assert_eq!(pool.used_bytes(), pool.limit_bytes());
     assert_eq!(
@@ -2153,6 +2164,8 @@ mod closed_output_fixture {
             action: 0_u8,
         };
         authority.submit(rejection_input.clone()).unwrap();
+        let after_history_admission = pool.used_bytes();
+        assert!(after_history_admission > idle_charge);
         let rejected = authority.step().unwrap();
         let rejected_admitted = replica.apply(rejected.group).unwrap();
         let ResultDisposition::Rejected(ActionRejection::Game(reason)) =
@@ -2174,7 +2187,7 @@ mod closed_output_fixture {
         drop(rejection_baseline);
         drop(rejected_admitted);
         drop(rejected.snapshot);
-        assert_eq!(pool.used_bytes(), idle_charge);
+        assert_eq!(pool.used_bytes(), after_history_admission);
 
         authority
             .submit(Input {
