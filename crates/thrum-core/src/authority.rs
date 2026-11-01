@@ -1,6 +1,9 @@
 use std::{
     alloc::Layout,
-    sync::{Arc, Weak},
+    sync::{
+        Arc, Weak,
+        atomic::{AtomicU64, Ordering},
+    },
 };
 
 use crate::replica::{ChargedStateGroup, Replica, StateGroup};
@@ -14,6 +17,7 @@ use crate::{
 
 const MAX_PENDING: usize = 8;
 pub(crate) const MAX_RESULTS: usize = 256;
+static NEXT_RULE_SCRATCH_OWNER: AtomicU64 = AtomicU64::new(1);
 
 struct SnapshotLeaseDirectory {
     slots: [Option<Weak<SnapshotLease>>; MAX_SNAPSHOT_LEASES],
@@ -277,6 +281,141 @@ pub enum RulePayloadError {
     Limit,
 }
 
+/// A bounded rule-scratch request failed. Any limit or invalid-handle error
+/// permanently faults the protected authority after the callback returns.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuleScratchError {
+    /// This authority has no configured scratch owner.
+    Unqualified,
+    /// This action exhausted its cumulative scratch capacity.
+    Limit,
+    /// The handle belongs to another owner/action or is outside its buffer.
+    InvalidHandle,
+}
+
+/// Scratch activation failed without installing an owner.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuleScratchSetupError {
+    /// This authority has no charged publication pool.
+    Unqualified,
+    /// Scratch was already configured for this authority.
+    AlreadyConfigured,
+    /// The authority has advanced, accepted work or faulted.
+    Active,
+    /// The pool cannot reserve the buffer or the owner ID space is exhausted.
+    Capacity,
+}
+
+/// A checked temporary range. It can cross `decide` into `prepare`, but only
+/// within its originating authority and action.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RuleScratchHandle {
+    owner: u64,
+    generation: u64,
+    offset: usize,
+    len: usize,
+}
+
+/// Copying a scratch range into a charged immutable output can fail at either
+/// the temporary range or the separate output allowance.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuleScratchPayloadError {
+    /// The temporary range is unavailable or invalid.
+    Scratch(RuleScratchError),
+    /// The output profile is unavailable or exhausted.
+    Payload(RulePayloadError),
+}
+
+struct RuleScratch {
+    bytes: Vec<u8>,
+    owner: u64,
+    generation: u64,
+    cursor: usize,
+    exceeded: bool,
+    _charge: PublicationCharge,
+}
+
+impl RuleScratch {
+    fn try_new(pool: &PublicationPool, capacity: usize) -> Result<Self, RuleScratchSetupError> {
+        Layout::array::<u8>(capacity).map_err(|_| RuleScratchSetupError::Capacity)?;
+        let mut reservation = pool
+            .try_reserve(capacity)
+            .map_err(|_| RuleScratchSetupError::Capacity)?;
+        let charge = reservation
+            .charge(capacity)
+            .map_err(|_| RuleScratchSetupError::Capacity)?;
+        let bytes = vec![0; capacity];
+        let owner = NEXT_RULE_SCRATCH_OWNER
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
+                next.checked_add(1)
+            })
+            .map_err(|_| RuleScratchSetupError::Capacity)?;
+        Ok(Self {
+            bytes,
+            owner,
+            generation: 0,
+            cursor: 0,
+            exceeded: false,
+            _charge: charge,
+        })
+    }
+
+    fn begin_action(&mut self) -> Result<(), RuleScratchError> {
+        self.cursor = 0;
+        self.exceeded = false;
+        self.generation = self.generation.checked_add(1).ok_or_else(|| {
+            self.exceeded = true;
+            RuleScratchError::Limit
+        })?;
+        Ok(())
+    }
+
+    fn allocate(&mut self, len: usize) -> Result<RuleScratchHandle, RuleScratchError> {
+        let end = self.cursor.checked_add(len).ok_or_else(|| {
+            self.exceeded = true;
+            RuleScratchError::Limit
+        })?;
+        if end > self.bytes.len() {
+            self.exceeded = true;
+            return Err(RuleScratchError::Limit);
+        }
+        let handle = RuleScratchHandle {
+            owner: self.owner,
+            generation: self.generation,
+            offset: self.cursor,
+            len,
+        };
+        self.bytes[self.cursor..end].fill(0);
+        self.cursor = end;
+        Ok(handle)
+    }
+
+    fn range(
+        &mut self,
+        handle: RuleScratchHandle,
+    ) -> Result<std::ops::Range<usize>, RuleScratchError> {
+        let end = handle.offset.checked_add(handle.len);
+        if handle.owner != self.owner
+            || handle.generation != self.generation
+            || end.is_none_or(|end| end > self.cursor)
+        {
+            self.exceeded = true;
+            return Err(RuleScratchError::InvalidHandle);
+        }
+        Ok(handle.offset..end.expect("validated range"))
+    }
+
+    fn view(&mut self, handle: RuleScratchHandle) -> Result<&[u8], RuleScratchError> {
+        let range = self.range(handle)?;
+        Ok(&self.bytes[range])
+    }
+
+    fn view_mut(&mut self, handle: RuleScratchHandle) -> Result<&mut [u8], RuleScratchError> {
+        let range = self.range(handle)?;
+        Ok(&mut self.bytes[range])
+    }
+}
+
 /// Engine-owned action budget. Callback code only borrows a view of it, so it
 /// cannot replace the sticky fault state or drop the reserved credit.
 struct RuleBudget {
@@ -302,14 +441,35 @@ impl RuleBudget {
             exceeded: false,
         }
     }
+
+    fn try_copy_payload(&mut self, source: &[u8]) -> Result<PublicationBytes, RulePayloadError> {
+        let Some(credit) = self.payload_credit.as_mut() else {
+            return Err(RulePayloadError::Unqualified);
+        };
+        let required = PublicationBytes::required_charge(source.len()).map_err(|_| {
+            self.exceeded = true;
+            RulePayloadError::Limit
+        })?;
+        if required > self.payload_remaining {
+            self.exceeded = true;
+            return Err(RulePayloadError::Limit);
+        }
+        self.payload_remaining -= required;
+        PublicationBytes::try_copy_from_reservation(credit, source).map_err(|_| {
+            self.exceeded = true;
+            RulePayloadError::Limit
+        })
+    }
 }
 
-/// One action's publication-payload allowance, shared by its decision and
-/// preparation callbacks. It does not bound arbitrary game-private work.
+/// One action's publication-payload allowance and optional reusable byte
+/// scratch, shared by its decision and preparation callbacks. Neither API
+/// meters arbitrary allocations that game code makes outside this context.
 /// In a protected output profile, every newly created retained rule payload
 /// must use this context; pre-existing charged owners may be shared directly.
 pub struct RuleContext<'a> {
     budget: &'a mut RuleBudget,
+    scratch: Option<&'a mut RuleScratch>,
 }
 
 impl RuleContext<'_> {
@@ -319,22 +479,57 @@ impl RuleContext<'_> {
         &mut self,
         source: &[u8],
     ) -> Result<PublicationBytes, RulePayloadError> {
-        let Some(credit) = self.budget.payload_credit.as_mut() else {
-            return Err(RulePayloadError::Unqualified);
-        };
-        let required = PublicationBytes::required_charge(source.len()).map_err(|_| {
-            self.budget.exceeded = true;
-            RulePayloadError::Limit
-        })?;
-        if required > self.budget.payload_remaining {
-            self.budget.exceeded = true;
-            return Err(RulePayloadError::Limit);
-        }
-        self.budget.payload_remaining -= required;
-        PublicationBytes::try_copy_from_reservation(credit, source).map_err(|_| {
-            self.budget.exceeded = true;
-            RulePayloadError::Limit
-        })
+        self.budget.try_copy_payload(source)
+    }
+
+    /// Allocate a zeroed temporary range. The cumulative length of all
+    /// ranges requested by one action cannot exceed the configured capacity.
+    pub fn try_scratch_allocate(
+        &mut self,
+        len: usize,
+    ) -> Result<RuleScratchHandle, RuleScratchError> {
+        self.scratch
+            .as_mut()
+            .ok_or(RuleScratchError::Unqualified)?
+            .allocate(len)
+    }
+
+    /// Read a temporary range allocated by this authority and action.
+    pub fn scratch_view(&mut self, handle: RuleScratchHandle) -> Result<&[u8], RuleScratchError> {
+        self.scratch
+            .as_mut()
+            .ok_or(RuleScratchError::Unqualified)?
+            .view(handle)
+    }
+
+    /// Mutate a temporary range allocated by this authority and action.
+    pub fn scratch_view_mut(
+        &mut self,
+        handle: RuleScratchHandle,
+    ) -> Result<&mut [u8], RuleScratchError> {
+        self.scratch
+            .as_mut()
+            .ok_or(RuleScratchError::Unqualified)?
+            .view_mut(handle)
+    }
+
+    /// Copy an existing temporary range directly into the admitted immutable
+    /// output allowance, without a game-owned staging allocation.
+    pub fn try_copy_scratch_payload(
+        &mut self,
+        handle: RuleScratchHandle,
+    ) -> Result<PublicationBytes, RuleScratchPayloadError> {
+        let source = self
+            .scratch
+            .as_mut()
+            .ok_or(RuleScratchPayloadError::Scratch(
+                RuleScratchError::Unqualified,
+            ))?
+            .view(handle)
+            .map_err(RuleScratchPayloadError::Scratch)?;
+        self.budget
+            .try_copy_payload(source)
+            .map_err(RuleScratchPayloadError::Payload)
     }
 }
 
@@ -813,6 +1008,7 @@ pub struct Authority<G: GameRules> {
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
     fixed_credits: Option<FixedCreditProfile>,
     structural_credits: Option<StructuralCreditProfile>,
+    rule_scratch: Option<RuleScratch>,
     faulted: bool,
 }
 
@@ -959,8 +1155,32 @@ impl<G: GameRules> Authority<G> {
             snapshot_admission,
             fixed_credits: None,
             structural_credits: None,
+            rule_scratch: None,
             faulted: false,
         }
+    }
+    /// Install one reusable, charged temporary byte buffer before accepting
+    /// work. The same rule callbacks use it for local and multiplayer play.
+    /// This does not meter allocations game code makes outside `RuleContext`.
+    pub fn try_enable_rule_scratch(
+        &mut self,
+        capacity: usize,
+    ) -> Result<(), RuleScratchSetupError> {
+        if self.rule_scratch.is_some() {
+            return Err(RuleScratchSetupError::AlreadyConfigured);
+        }
+        if self.faulted || self.tick != 0 || self.peers.values().any(|peer| peer.pending.len() != 0)
+        {
+            return Err(RuleScratchSetupError::Active);
+        }
+        let pool = &self
+            .snapshot_admission
+            .as_ref()
+            .ok_or(RuleScratchSetupError::Unqualified)?
+            .pool;
+        let scratch = RuleScratch::try_new(pool, capacity)?;
+        self.rule_scratch = Some(scratch);
+        Ok(())
     }
     /// Last fully published authority tick. A terminal attempted tick is not
     /// reported as committed.
@@ -2269,6 +2489,13 @@ impl<G: GameRules> Authority<G> {
             } else {
                 RuleBudget::unqualified()
             };
+            if self
+                .rule_scratch
+                .as_mut()
+                .is_some_and(|scratch| scratch.begin_action().is_err())
+            {
+                return Err(StepError::TerminalGameContract);
+            }
             let decision = match pending.timing_error {
                 Some(TimingError::StaleObservation) => Err(ActionRejection::StaleObservation),
                 Some(TimingError::Late) => Err(ActionRejection::Late),
@@ -2276,6 +2503,7 @@ impl<G: GameRules> Authority<G> {
                 None => {
                     let mut context = RuleContext {
                         budget: &mut rule_budget,
+                        scratch: self.rule_scratch.as_mut(),
                     };
                     self.rules
                         .decide(
@@ -2287,7 +2515,12 @@ impl<G: GameRules> Authority<G> {
                         .map_err(ActionRejection::Game)
                 }
             };
-            if rule_budget.exceeded {
+            if rule_budget.exceeded
+                || self
+                    .rule_scratch
+                    .as_ref()
+                    .is_some_and(|scratch| scratch.exceeded)
+            {
                 return Err(StepError::TerminalGameContract);
             }
             if let Err(ActionRejection::Game(reason)) = &decision
@@ -2307,9 +2540,15 @@ impl<G: GameRules> Authority<G> {
                         change,
                         &mut RuleContext {
                             budget: &mut rule_budget,
+                            scratch: self.rule_scratch.as_mut(),
                         },
                     );
-                    if rule_budget.exceeded {
+                    if rule_budget.exceeded
+                        || self
+                            .rule_scratch
+                            .as_ref()
+                            .is_some_and(|scratch| scratch.exceeded)
+                    {
                         return Err(StepError::TerminalGameContract);
                     }
                     if (self.fixed_credits.is_some() || self.structural_credits.is_some())
@@ -2447,6 +2686,84 @@ mod tests {
     use super::*;
 
     #[test]
+    fn rule_scratch_zeroes_new_ranges_and_rejects_stale_foreign_and_retired_handles() {
+        let pool = PublicationPool::new(8);
+        let mut first = RuleScratch::try_new(&pool, 4).unwrap();
+        let mut second = RuleScratch::try_new(&pool, 4).unwrap();
+        assert_eq!(pool.used_bytes(), 8);
+        first.begin_action().unwrap();
+        second.begin_action().unwrap();
+        let empty = first.allocate(0).unwrap();
+        assert_eq!(first.view(empty).unwrap(), &[]);
+        let range = first.allocate(4).unwrap();
+        first
+            .view_mut(range)
+            .unwrap()
+            .copy_from_slice(&[1, 2, 3, 4]);
+        assert_eq!(first.view(range).unwrap(), &[1, 2, 3, 4]);
+        assert_eq!(second.view(range), Err(RuleScratchError::InvalidHandle));
+        assert!(second.exceeded);
+        assert_eq!(first.allocate(1), Err(RuleScratchError::Limit));
+        assert_eq!(first.allocate(usize::MAX), Err(RuleScratchError::Limit));
+        assert!(first.exceeded);
+        first.begin_action().unwrap();
+        assert!(!first.exceeded);
+        assert_eq!(first.view(range), Err(RuleScratchError::InvalidHandle));
+        let replacement = first.allocate(4).unwrap();
+        assert_eq!(first.view(replacement).unwrap(), &[0, 0, 0, 0]);
+        drop(first);
+        let mut third = RuleScratch::try_new(&pool, 4).unwrap();
+        third.begin_action().unwrap();
+        assert_eq!(
+            third.view(replacement),
+            Err(RuleScratchError::InvalidHandle)
+        );
+        drop(second);
+        drop(third);
+        assert_eq!(pool.used_bytes(), 0);
+        assert!(matches!(
+            RuleScratch::try_new(&pool, usize::MAX),
+            Err(RuleScratchSetupError::Capacity)
+        ));
+    }
+
+    #[test]
+    fn rule_scratch_copies_directly_to_charged_output_and_keeps_faults_sticky() {
+        let output_charge = PublicationBytes::required_charge(3).unwrap();
+        let pool = PublicationPool::new(3 + output_charge);
+        let mut scratch = RuleScratch::try_new(&pool, 3).unwrap();
+        scratch.begin_action().unwrap();
+        let reservation = pool.try_reserve(output_charge).unwrap();
+        let mut budget = RuleBudget::with_payload_credit(reservation, output_charge);
+        let owner = {
+            let mut context = RuleContext {
+                budget: &mut budget,
+                scratch: Some(&mut scratch),
+            };
+            let handle = context.try_scratch_allocate(3).unwrap();
+            context
+                .scratch_view_mut(handle)
+                .unwrap()
+                .copy_from_slice(&[5, 6, 7]);
+            assert_eq!(context.scratch_view(handle).unwrap(), &[5, 6, 7]);
+            let owner = context.try_copy_scratch_payload(handle).unwrap();
+            assert_eq!(owner.as_slice(), &[5, 6, 7]);
+            assert_eq!(
+                context.try_scratch_allocate(1),
+                Err(RuleScratchError::Limit)
+            );
+            owner
+        };
+        assert!(scratch.exceeded);
+        assert_eq!(pool.used_bytes(), 3 + output_charge);
+        drop(budget);
+        drop(scratch);
+        assert_eq!(pool.used_bytes(), output_charge);
+        drop(owner);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
     fn rule_payload_allowance_counts_zero_length_owners_without_refunding() {
         let owner_bytes = PublicationBytes::required_charge(0).unwrap();
         let pool = PublicationPool::new(owner_bytes * 2);
@@ -2455,6 +2772,7 @@ mod tests {
         let occupied = {
             let mut context = RuleContext {
                 budget: &mut budget,
+                scratch: None,
             };
             let first = context.try_copy_payload(&[]).unwrap();
             drop(first);
@@ -2471,7 +2789,8 @@ mod tests {
         let mut unqualified = RuleBudget::unqualified();
         assert_eq!(
             RuleContext {
-                budget: &mut unqualified
+                budget: &mut unqualified,
+                scratch: None,
             }
             .try_copy_payload(&[]),
             Err(RulePayloadError::Unqualified)
@@ -2486,9 +2805,11 @@ mod tests {
         {
             let mut protected_view = RuleContext {
                 budget: &mut protected,
+                scratch: None,
             };
             let mut ordinary_view = RuleContext {
                 budget: &mut ordinary,
+                scratch: None,
             };
             assert_eq!(
                 protected_view.try_copy_payload(&[]),

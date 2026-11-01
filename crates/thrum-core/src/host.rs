@@ -1084,8 +1084,8 @@ mod tests {
     use super::*;
     use crate::{
         ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, Handle, MatchId, Origin,
-        PreparedCommit, PreparedEdits, PublicationBytes, PublicationRecord, SnapshotWriteBounds,
-        StableId, StateGroup, World, WorldEdit, WorldEpoch,
+        PreparedCommit, PreparedEdits, PublicationBytes, PublicationRecord, RuleScratchHandle,
+        SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch,
     };
     use std::num::NonZeroU32;
 
@@ -1156,6 +1156,424 @@ mod tests {
 
     struct TwoSpawnRule {
         base: u128,
+    }
+
+    struct ScratchRule;
+
+    struct ScratchCostRule {
+        with_scratch: bool,
+    }
+
+    impl GameRules for ScratchCostRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = (u8, Option<RuleScratchHandle>);
+        type Rejection = ();
+        type Event = ();
+
+        fn spawn_bound(&self, _action: &u8, _configured_max: usize) -> usize {
+            0
+        }
+
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            context: &mut crate::RuleContext<'_>,
+        ) -> Result<(u8, Option<RuleScratchHandle>), ()> {
+            let scratch = if self.with_scratch {
+                let handle = context.try_scratch_allocate(4).unwrap();
+                context
+                    .scratch_view_mut(handle)
+                    .unwrap()
+                    .copy_from_slice(&[*action, 2, 3, 4]);
+                Some(handle)
+            } else {
+                None
+            };
+            Ok((*action, scratch))
+        }
+
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            change: (u8, Option<RuleScratchHandle>),
+            context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
+            let value = change.1.map_or(change.0, |handle| {
+                let bytes = context.scratch_view(handle).unwrap();
+                bytes[0] ^ bytes[1] ^ bytes[2] ^ bytes[3] ^ 5
+            });
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    world.handle_for(StableId(1)).unwrap(),
+                    value,
+                )),
+                event: None,
+            }
+        }
+    }
+
+    impl GameRules for ScratchRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = Option<RuleScratchHandle>;
+        type Rejection = ();
+        type Event = ();
+
+        fn spawn_bound(&self, _action: &u8, _configured_max: usize) -> usize {
+            0
+        }
+
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            context: &mut crate::RuleContext<'_>,
+        ) -> Result<Option<RuleScratchHandle>, ()> {
+            let handle = context.try_scratch_allocate(2).unwrap();
+            assert_eq!(context.scratch_view(handle).unwrap(), &[0, 0]);
+            context
+                .scratch_view_mut(handle)
+                .unwrap()
+                .copy_from_slice(&[*action, 42]);
+            if *action == 254 {
+                panic!("intentional scratch callback unwind");
+            }
+            if *action == 255 {
+                assert_eq!(
+                    context.try_scratch_allocate(3),
+                    Err(crate::RuleScratchError::Limit)
+                );
+                return Ok(None);
+            }
+            if *action == 0 {
+                return Err(());
+            }
+            Ok(Some(handle))
+        }
+
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            change: Option<RuleScratchHandle>,
+            context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
+            let handle = change.expect("overrun must fault before preparation");
+            let bytes = context.scratch_view(handle).unwrap();
+            assert_eq!(bytes[1], 42);
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    world.handle_for(StableId(1)).unwrap(),
+                    bytes[0],
+                )),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn charged_rule_scratch_survives_two_peer_delays_contention_and_terminal_overrun() {
+        let pool = PublicationPool::new(1_000_000);
+        let mut world = World::new(WorldEpoch(303));
+        world.spawn(StableId(1), 7_u8).unwrap();
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(303)),
+            ScratchRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        let available = pool.limit_bytes() - pool.used_bytes();
+        let short = pool.try_reserve(available - 3).unwrap();
+        assert_eq!(
+            authority.try_enable_rule_scratch(4),
+            Err(crate::RuleScratchSetupError::Capacity)
+        );
+        drop(short);
+        authority.try_enable_rule_scratch(4).unwrap();
+        assert_eq!(
+            authority.try_enable_rule_scratch(4),
+            Err(crate::RuleScratchSetupError::AlreadyConfigured)
+        );
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_output_replica(
+            origin,
+            ClockConfig {
+                max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                ..ClockConfig::default()
+            },
+            HostBudget {
+                callback_cpu: Duration::from_secs(1),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            1,
+            2,
+            0,
+        )
+        .unwrap();
+        for (peer, sequence, tick, action) in [
+            (1, 1, 1, 1),
+            (1, 2, 2, 0),
+            (1, 3, 4, 4),
+            (2, 1, 1, 2),
+            (2, 2, 2, 3),
+        ] {
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(peer),
+                    connection_epoch: 1,
+                    sequence,
+                },
+                actor: ActorId(peer),
+                schedule: crate::InputSchedule::Timed {
+                    intended_tick: tick,
+                },
+                action,
+            })
+            .unwrap();
+        }
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        for (tick, expected_state, results) in [(1, 2, 2), (2, 3, 2), (3, 3, 0), (4, 4, 1)] {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+            else {
+                panic!("expected required replica delivery")
+            };
+            assert_eq!(admitted.results().len(), results);
+            assert_eq!(
+                host.replica().unwrap().get(StableId(1)),
+                Some(&expected_state)
+            );
+        }
+        drop(occupied);
+        host.acknowledge_results(PeerId(1), 3).unwrap();
+        host.acknowledge_results(PeerId(2), 2).unwrap();
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 4,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 4 },
+            action: 255,
+        })
+        .unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert!(matches!(
+            host.on_callback_charged(origin + Duration::from_millis(85)),
+            Err(HostError::Authority(StepError::TerminalGameContract))
+        ));
+        assert_eq!(host.authority().tick_index(), 4);
+        let handle = host.authority().world().handle_for(StableId(1)).unwrap();
+        assert_eq!(host.authority().world().get(handle).unwrap().state, 4);
+        assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&4));
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_rule_scratch_releases_after_caught_callback_unwind() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(305));
+        world.spawn(StableId(1), 7_u8).unwrap();
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(305)),
+            ScratchRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.try_enable_rule_scratch(4).unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_output_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_secs(1),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            1,
+            1,
+            0,
+        )
+        .unwrap();
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            action: 254,
+        })
+        .unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert!(matches!(
+            host.on_callback_charged(origin + Duration::from_millis(17)),
+            Err(HostError::Authority(StepError::TerminalGameContract))
+        ));
+        assert!(host.authority().is_faulted());
+        assert_eq!(host.authority().tick_index(), 0);
+        assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&7));
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    #[ignore = "local paired complete-path scratch cost fixture"]
+    fn compare_protected_callback_with_and_without_rule_scratch() {
+        fn run(with_scratch: bool) -> (u128, u128, usize) {
+            let pool = PublicationPool::new(1_000_000);
+            let mut world = World::new(WorldEpoch(304));
+            world.spawn(StableId(1), 1_u8).unwrap();
+            let inline = |bytes| ClosedValueLimits {
+                max_inline_bytes: bytes,
+                max_payload_slots: 0,
+                max_payload_bytes: 0,
+            };
+            let mut authority = Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(304)),
+                ScratchCostRule { with_scratch },
+                world,
+                pool.clone(),
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 0,
+                },
+                ClosedGameLimits {
+                    action: inline(1),
+                    entity: inline(1),
+                    event: inline(0),
+                    rejection: inline(0),
+                },
+            )
+            .unwrap();
+            if with_scratch {
+                authority.try_enable_rule_scratch(4).unwrap();
+            }
+            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+            let origin = Instant::now();
+            let (mut host, initial) = HeadlessHost::with_protected_output_replica(
+                origin,
+                ClockConfig {
+                    max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                    ..ClockConfig::default()
+                },
+                HostBudget {
+                    callback_cpu: Duration::from_secs(1),
+                    other_work: Duration::from_millis(1),
+                    tick_cost_bound: Duration::from_millis(1),
+                },
+                authority,
+                &pool,
+                1,
+                1,
+                0,
+            )
+            .unwrap();
+            let retained = pool.used_bytes();
+            let mut samples = Vec::with_capacity(500);
+            for tick in 1..=600_u64 {
+                let start = Instant::now();
+                host.submit(Input {
+                    origin: Origin {
+                        peer: PeerId(1),
+                        connection_epoch: 1,
+                        sequence: tick,
+                    },
+                    actor: ActorId(1),
+                    schedule: crate::InputSchedule::NextTick {
+                        observed_tick: tick - 1,
+                    },
+                    action: 1,
+                })
+                .unwrap();
+                let report = host
+                    .on_callback_charged(
+                        origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60)),
+                    )
+                    .unwrap();
+                let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+                else {
+                    panic!("expected required replica delivery")
+                };
+                assert_eq!(admitted.results().len(), 1);
+                assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&1));
+                drop(report);
+                host.acknowledge_results(PeerId(1), tick).unwrap();
+                if tick > 100 {
+                    samples.push(start.elapsed().as_nanos());
+                }
+            }
+            samples.sort_unstable();
+            let result = (samples[250], samples[474], retained);
+            drop(initial);
+            drop(host);
+            assert_eq!(pool.used_bytes(), 0);
+            result
+        }
+        let plain = run(false);
+        let scratch = run(true);
+        eprintln!(
+            "one-object protected submit/callback/ack: plain p50={}ns p95={}ns retained={}B; 4-byte scratch p50={}ns p95={}ns retained={}B",
+            plain.0, plain.1, plain.2, scratch.0, scratch.1, scratch.2
+        );
     }
 
     impl GameRules for TwoSpawnRule {

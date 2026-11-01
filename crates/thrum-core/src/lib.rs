@@ -17,7 +17,8 @@ pub use authority::{
     ChargedGameStateGroup, ChargedGameTick, ChargedTickPublication, ClosedGameLimits,
     CommittedEvent, ExecutionCreditSetupError, GameRules, GameStateGroup, GameTick, Input,
     InputSchedule, Origin, PeerId, PreparedCommit, ResultDisposition, RuleContext,
-    RulePayloadError, SnapshotWriteBounds, StepError, TickPublication,
+    RulePayloadError, RuleScratchError, RuleScratchHandle, RuleScratchPayloadError,
+    RuleScratchSetupError, SnapshotWriteBounds, StepError, TickPublication,
 };
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{

@@ -88,6 +88,11 @@ input's increased future credit before its own sequence advances. Due preflight 
 clean idle ticks do not dirty pages merely because a future spawn is pending. Stable-ID-keyed lifecycle changes retain
 distinct despawn/spawn records even when one physical slot is reused before publication. A required replica's object
 headroom is part of admission, and local and multiplayer submissions use the same classifier and rule callbacks.
+An optional finite rule-scratch profile installs one authority-owned byte buffer before accepted work. Each action
+receives a fresh owner-checked generation and a cumulative range limit shared by its decision and preparation.
+Invalid or over-limit requests fault that action before edits even if game code catches the returned error. Scratch
+never enters publication or replica state; copying it to a retained output spends the action's separate output
+allowance. Allocations game code makes outside this API are not bounded by the publication pool.
 
 ## C03 Authority and interaction ordering — W1 and P3/P4/P6
 
