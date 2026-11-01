@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "946de07b650275c033b6a5b431a827f959f639d1fbfa7277fb06dac37caebe61",
+    "design_sha256": "7fcb5eb3bed124d88802936b8921231b6d523e6b5ae5ea02422aa84d354ce790",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2860,10 +2860,10 @@
       },
       "bounded_structural_growth": {
         "design": "selected_finite_slot_and_live_caps_per_action_spawn_bound_id_keyed_journal_and_atomic_pending_credit_horizon",
-        "implementation": "partial_bounded_structural_host_with_variable_outputs",
+        "implementation": "feature_complete_for_selected_bounded_structural_host_profile",
         "functional_validation": "passed_local_world_one_byte_activation_two_peer_host_delayed_topup_refusal_retry_idle_future_spawn_baseline_reconnect_cache_zero_spawn_reclaim_false_bound_fault_variable_state_event_rejection_output_and_maximum_sixteen_input_thirty_two_spawn_batch",
-        "performance_measurement": "local_apple_silicon_world_only_pair_one_peer_complete_structural_churn_and_paired_fixed_structural_complete_no_spawn_4096_16384_retained_bytes",
-        "scope": "Finite physical slots and live objects, precharged mutable world owners and stable-ID change journal, per-action spawn classification, atomic pending-credit top-ups, absolute-horizon due preflight, context-created variable state/event/rejection output, required local replica and sealed host are tested. The maximum two-peer 16-input, 32-spawn due batch passes under full competing pool use. Arbitrary game-private allocations, structural batch latency, larger peer counts, remote queues, allocator metadata, OS RSS and named devices are not qualified.",
+        "performance_measurement": "local_apple_silicon_world_only_pair_one_peer_complete_structural_churn_paired_fixed_structural_complete_no_spawn_and_maximum_two_peer_batch_callback_ack_4096_16384_retained_bytes",
+        "scope": "Finite physical slots and live objects, precharged mutable world owners and stable-ID change journal, per-action spawn classification, atomic pending-credit top-ups, absolute-horizon due preflight, context-created variable state/event/rejection output, required local replica and sealed host are tested. The maximum two-peer 16-input, 32-spawn due batch passes under full competing pool use and its callback through acknowledgements has a local release-mode cost distribution. Arbitrary game-private allocations, larger peer counts, remote queues, allocator metadata, OS RSS and named devices are not qualified.",
         "evidence": "../evidence/i1-headless/STRUCTURAL-CREDITS.md"
       },
       "fixed_slot_owner_byte_gate": {
