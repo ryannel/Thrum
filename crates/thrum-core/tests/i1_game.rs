@@ -4,8 +4,8 @@ use thrum_core::{
     ActionRejection, ActorId, Admission, AdmissionError, AdmittedGroup, Authority, AuthorityId,
     ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules, HeadlessHost,
     HostAdmissionError, HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId,
-    Replica, ReplicaError, ResultDisposition, SessionId, StableId, StateGroup, StepError,
-    TickClock, World, WorldEdit, WorldEpoch, WorldError,
+    PublicationBytes, PublicationPool, Replica, ReplicaError, ResultDisposition, SessionId,
+    StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -38,6 +38,7 @@ enum Object {
 enum Action {
     Collect(StableId),
     Open(StableId),
+    ChargedProbe(PublicationBytes),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -903,6 +904,59 @@ fn acknowledgements_release_bounded_result_capacity() {
     assert_eq!(authority.submit(next.clone()), Err(AdmissionError::Busy));
     authority.acknowledge_results(PEER, 256).unwrap();
     assert_eq!(authority.submit(next), Ok(Admission::Queued));
+}
+
+#[test]
+fn charged_action_bytes_follow_pending_and_completed_duplicate_history() {
+    let charge = PublicationBytes::required_charge(1024).unwrap();
+    let pool = PublicationPool::new(charge);
+    let payload = PublicationBytes::try_copy_from_slice(&pool, &[7; 1024]).unwrap();
+    let mut authority = Authority::new(AuthorityId::Match(MatchId(82)), Rule, game_world(83));
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    let action = input(
+        1,
+        1,
+        InputSchedule::NextTick { observed_tick: 0 },
+        Action::ChargedProbe(payload.clone()),
+    );
+    drop(payload);
+    let pending_duplicate = action.clone();
+    let resolved_duplicate = action.clone();
+    assert_eq!(authority.submit(action), Ok(Admission::Queued));
+    assert_eq!(
+        authority.submit(pending_duplicate),
+        Ok(Admission::PendingDuplicate)
+    );
+    assert_eq!(pool.used_bytes(), charge);
+
+    let published = authority.step().unwrap();
+    assert_eq!(published.group.results.len(), 1);
+    assert_eq!(
+        published.group.results[0].disposition,
+        ResultDisposition::Rejected(ActionRejection::Game(Rejection::MissingItem))
+    );
+    drop(published);
+    assert!(matches!(
+        authority.submit(resolved_duplicate),
+        Ok(Admission::ResolvedDuplicate(_))
+    ));
+    assert_eq!(pool.used_bytes(), charge);
+    authority.acknowledge_results(PEER, 1).unwrap();
+    assert_eq!(pool.used_bytes(), 0);
+
+    let second = PublicationBytes::try_copy_from_slice(&pool, &[8; 1024]).unwrap();
+    authority
+        .submit(input(
+            1,
+            2,
+            InputSchedule::NextTick { observed_tick: 1 },
+            Action::ChargedProbe(second.clone()),
+        ))
+        .unwrap();
+    drop(second);
+    assert_eq!(pool.used_bytes(), charge);
+    authority.register_peer(PEER, 2, ACTOR).unwrap();
+    assert_eq!(pool.used_bytes(), 0);
 }
 
 #[test]
