@@ -1,11 +1,11 @@
 //! Game-owned I1 rule and authority/replica conformance fixture.
 
 use thrum_core::{
-    ActionRejection, ActorId, Admission, AdmissionError, AdmittedGroup, Authority, AuthorityId,
-    ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules, HeadlessHost,
-    HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule, MatchId,
-    Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool, Replica,
-    ReplicaError, ResultDisposition, SessionId, SnapshotWriteBounds, StableId, StateGroup,
+    ActionRejection, ActionResult, ActorId, Admission, AdmissionError, AdmittedGroup, Authority,
+    AuthorityId, ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules,
+    HeadlessHost, HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule,
+    MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool,
+    Replica, ReplicaError, ResultDisposition, SessionId, SnapshotWriteBounds, StableId, StateGroup,
     StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
 };
 
@@ -802,6 +802,70 @@ fn charged_authority_preserves_sequential_rules_and_competing_peers() {
             ..
         })
     ));
+}
+
+#[test]
+fn idle_replica_fast_path_keeps_peer_progress_validation() {
+    let mut authority =
+        Authority::new(AuthorityId::Match(MatchId(200)), Rule, two_actor_world(201));
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+    let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+
+    replica.apply(authority.step().unwrap().group).unwrap();
+    assert_eq!(replica.tick(), 1);
+    let mut reordered = authority.step().unwrap().group;
+    reordered.resolved_through.reverse();
+    replica.apply(reordered).unwrap();
+    assert_eq!(replica.tick(), 2);
+
+    let mut duplicate = authority.step().unwrap().group;
+    duplicate.resolved_through[1] = duplicate.resolved_through[0];
+    assert!(matches!(
+        replica.apply(duplicate),
+        Err(ReplicaError::IncompleteOutcome)
+    ));
+    assert_eq!(replica.tick(), 2);
+    let valid: StateGroup<Object, Event, Rejection> = StateGroup {
+        authority: AuthorityId::Match(MatchId(200)),
+        group_id: 3,
+        commit_tick: 3,
+        event_cursor: 0,
+        changes: vec![],
+        results: vec![],
+        events: vec![],
+        resolved_through: vec![(PEER, 0), (PEER_TWO, 0)],
+    };
+    replica.apply(valid).unwrap();
+    assert_eq!(replica.tick(), 3);
+}
+
+#[test]
+fn idle_replica_does_not_skip_gap_normalization() {
+    let mut authority = Authority::new(AuthorityId::Match(MatchId(202)), Rule, game_world(203));
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    let mut baseline = authority.baseline();
+    baseline.results.push(ActionResult {
+        origin: Origin {
+            peer: PEER,
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        resolved_tick: 0,
+        disposition: ResultDisposition::Committed,
+        event_id: None,
+    });
+    let (mut replica, _) = Replica::from_baseline(baseline).unwrap();
+    let stale = authority.step().unwrap().group;
+    let mut corrected = stale.clone();
+    corrected.resolved_through[0].1 = 1;
+    assert!(matches!(
+        replica.apply(stale),
+        Err(ReplicaError::IncompleteOutcome)
+    ));
+    assert_eq!(replica.tick(), 0);
+    replica.apply(corrected).unwrap();
+    assert_eq!(replica.tick(), 1);
 }
 
 fn peer_input(
