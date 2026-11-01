@@ -1,0 +1,6 @@
+normal: callbacks=480 committed_ticks=241 step_budget_overruns=0 final_authority_tick=241 final_replica_tick=241
+real callback interval: count=480 us[p50/p95/p99/max]=8325/9888/10698/12464
+host callback elapsed: count=480 us[p50/p95/p99/max]=4/20/30/39
+two submissions + callback service elapsed: count=480 us[p50/p95/p99/max]=7/23/36/52
+input-to-confirmed-result latency: count=960 us[p50/p95/p99/max]=51/9307/10369/11086
+slow callback: observed_elapsed_us=4527 total_budget_us=10000 reserved_other_us=8000 step_budget_us=2000 committed_ticks=1 state=Overloaded new_input_admitted=false
