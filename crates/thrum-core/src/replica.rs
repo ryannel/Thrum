@@ -319,10 +319,6 @@ impl<T> Replica<T> {
         self.authority == authority && self.tick == tick && self.group_id == group_id
     }
 
-    pub(crate) fn charged_pool(&self) -> Option<&PublicationPool> {
-        self.publication_pool.as_ref()
-    }
-
     fn validate_next<E, R>(
         &self,
         authority: AuthorityId,

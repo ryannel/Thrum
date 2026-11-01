@@ -6,6 +6,7 @@ use std::{
     collections::BTreeSet,
     ops::Deref,
     panic::{AssertUnwindSafe, catch_unwind},
+    sync::{Arc, Weak},
     time::{Duration, Instant},
 };
 
@@ -14,8 +15,81 @@ use crate::{
     ChargedBaselineError, ChargedReplicaSetupError, ClockConfig, ClockError, ClockReport,
     ClockState, ClosedPublicationValue, GameRules, Input, PeerId, PublicationCharge,
     PublicationPool, Replica, ReplicaError, Snapshot, StepError, TickClock, TickPublication,
-    WorldWork,
+    WorldWork, world::MAX_SNAPSHOT_LEASES,
 };
+
+struct CallbackBufferFloor {
+    _charge: PublicationCharge,
+}
+
+impl CallbackBufferFloor {
+    fn required_charge(buffer_bytes: usize) -> Result<usize, crate::PublicationCapacity> {
+        let arc_header = 2 * size_of::<usize>();
+        let token = size_of::<CallbackBufferLease>()
+            .checked_add(arc_header)
+            .ok_or(crate::PublicationCapacity)?;
+        let slot = buffer_bytes
+            .checked_add(token)
+            .ok_or(crate::PublicationCapacity)?;
+        MAX_SNAPSHOT_LEASES
+            .checked_mul(slot)
+            .and_then(|bytes| bytes.checked_add(size_of::<Self>()))
+            .and_then(|bytes| bytes.checked_add(arc_header))
+            .ok_or(crate::PublicationCapacity)
+    }
+
+    fn try_new(
+        pool: &PublicationPool,
+        buffer_bytes: usize,
+    ) -> Result<Arc<Self>, crate::PublicationCapacity> {
+        let bytes = Self::required_charge(buffer_bytes)?;
+        let mut reservation = pool.try_reserve(bytes)?;
+        let charge = reservation.charge(bytes)?;
+        Ok(Arc::new(Self { _charge: charge }))
+    }
+}
+
+struct CallbackBufferLease {
+    _floor: Arc<CallbackBufferFloor>,
+}
+
+struct CallbackLeaseDirectory {
+    slots: [Option<Weak<CallbackBufferLease>>; MAX_SNAPSHOT_LEASES],
+    len: usize,
+}
+
+impl CallbackLeaseDirectory {
+    fn new() -> Self {
+        Self {
+            slots: std::array::from_fn(|_| None),
+            len: 0,
+        }
+    }
+
+    fn acquire(
+        &mut self,
+        floor: &Arc<CallbackBufferFloor>,
+    ) -> Result<Arc<CallbackBufferLease>, crate::PublicationCapacity> {
+        let mut live = 0;
+        for index in 0..self.len {
+            let old = self.slots[index].take().expect("callback lease slot");
+            if old.strong_count() != 0 {
+                self.slots[live] = Some(old);
+                live += 1;
+            }
+        }
+        self.len = live;
+        if live == MAX_SNAPSHOT_LEASES {
+            return Err(crate::PublicationCapacity);
+        }
+        let lease = Arc::new(CallbackBufferLease {
+            _floor: floor.clone(),
+        });
+        self.slots[live] = Some(Arc::downgrade(&lease));
+        self.len += 1;
+        Ok(lease)
+    }
+}
 
 /// CPU admission policy for one host callback. A cost bound is an input from
 /// measurement and reserve planning, not a guarantee about actual execution.
@@ -66,6 +140,8 @@ pub enum HostError {
     ChargedBaseline(ChargedBaselineError),
     /// Charged replica could not admit the initial baseline.
     ChargedReplicaSetup(ChargedReplicaSetupError),
+    /// The shared pool cannot protect the sealed host's finite callback floor.
+    ChargedDeliverySetup(crate::PublicationCapacity),
     /// Host supplied a timestamp before its origin or the clock rejected it.
     Clock(ClockError),
     /// The authority encountered a terminal game-contract fault. The host
@@ -106,12 +182,12 @@ pub enum HostPublication<T, E, R> {
     },
 }
 
-/// Callback publications keep their requested vector storage and one pool
-/// charge together, including when the collection is moved out of a report.
+/// Callback publications keep their requested vector storage and one floor
+/// permit together, including when the collection is moved out of a report.
 pub struct HostPublications<T, E, R> {
     values: Vec<HostPublication<T, E, R>>,
     limit: usize,
-    _charge: Option<PublicationCharge>,
+    _lease: Option<Arc<CallbackBufferLease>>,
 }
 
 impl<T, E, R> HostPublications<T, E, R> {
@@ -119,7 +195,7 @@ impl<T, E, R> HostPublications<T, E, R> {
         Self {
             values: Vec::new(),
             limit: usize::MAX,
-            _charge: None,
+            _lease: None,
         }
     }
 
@@ -129,27 +205,19 @@ impl<T, E, R> HostPublications<T, E, R> {
     }
 
     fn is_charged(&self) -> bool {
-        self._charge.is_some()
+        self._lease.is_some()
     }
 
-    fn try_reserve_charged(
+    fn try_reserve_from_floor(
         &mut self,
-        pool: &PublicationPool,
+        lease: Arc<CallbackBufferLease>,
         capacity: usize,
-        bytes: usize,
     ) -> Result<(), StepError> {
         assert!(!self.is_charged() && self.values.is_empty());
-        let mut reservation = pool
-            .try_reserve(bytes)
-            .map_err(|_| StepError::PublicationBackpressure)?;
         self.values
             .try_reserve_exact(capacity)
             .map_err(|_| StepError::PublicationBackpressure)?;
-        self._charge = Some(
-            reservation
-                .charge(bytes)
-                .expect("callback vector preflight"),
-        );
+        self._lease = Some(lease);
         self.limit = capacity;
         Ok(())
     }
@@ -163,10 +231,10 @@ impl<T, E, R> Deref for HostPublications<T, E, R> {
     }
 }
 
-/// Consuming iterator whose buffer charge retires only after its last owner.
+/// Consuming iterator whose buffer permit retires only after its last owner.
 pub struct HostPublicationsIntoIter<T, E, R> {
     values: std::vec::IntoIter<HostPublication<T, E, R>>,
-    _charge: Option<PublicationCharge>,
+    _lease: Option<Arc<CallbackBufferLease>>,
 }
 
 impl<T, E, R> Iterator for HostPublicationsIntoIter<T, E, R> {
@@ -190,7 +258,7 @@ impl<T, E, R> IntoIterator for HostPublications<T, E, R> {
     fn into_iter(self) -> Self::IntoIter {
         HostPublicationsIntoIter {
             values: self.values.into_iter(),
-            _charge: self._charge,
+            _lease: self._lease,
         }
     }
 }
@@ -412,6 +480,8 @@ pub struct HeadlessHost<G: GameRules> {
     admitted_ticks_per_callback: u32,
     callback_publication_capacity: usize,
     callback_publication_bytes: usize,
+    callback_leases: CallbackLeaseDirectory,
+    callback_floor: Option<Arc<CallbackBufferFloor>>,
     faulted: bool,
 }
 
@@ -439,8 +509,10 @@ impl<G: GameRules> HeadlessHost<G> {
         let (replica, initial_outcomes) =
             Replica::from_baseline(authority.try_baseline().map_err(HostError::Authority)?)
                 .map_err(HostError::Replica)?;
-        let host = Self::build(origin, clock, budget, authority, Some(replica))?;
-        Ok((host, initial_outcomes))
+        Ok((
+            Self::build(origin, clock, budget, authority, Some(replica))?,
+            initial_outcomes,
+        ))
     }
 
     /// Construct a sealed match host with a finite, precharged local replica.
@@ -450,7 +522,7 @@ impl<G: GameRules> HeadlessHost<G> {
         origin: Instant,
         clock: ClockConfig,
         budget: HostBudget,
-        authority: Authority<G>,
+        mut authority: Authority<G>,
         pool: &PublicationPool,
         max_objects: usize,
     ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
@@ -463,6 +535,9 @@ impl<G: GameRules> HeadlessHost<G> {
         if authority.is_faulted() {
             return Err(HostError::Authority(StepError::TerminalGameContract));
         }
+        authority
+            .prime_charged_watermarks()
+            .map_err(HostError::ChargedBaseline)?;
         let baseline = authority
             .try_baseline_charged()
             .map_err(HostError::ChargedBaseline)?;
@@ -474,7 +549,11 @@ impl<G: GameRules> HeadlessHost<G> {
                 ChargedReplicaSetupError::Capacity,
             ));
         }
-        let host = Self::build(origin, clock, budget, authority, Some(replica))?;
+        let mut host = Self::build(origin, clock, budget, authority, Some(replica))?;
+        host.callback_floor = Some(
+            CallbackBufferFloor::try_new(pool, host.callback_publication_bytes)
+                .map_err(HostError::ChargedDeliverySetup)?,
+        );
         Ok((host, initial_outcomes))
     }
 
@@ -495,7 +574,8 @@ impl<G: GameRules> HeadlessHost<G> {
         let callback_publication_capacity = clock
             .max_ticks_per_call
             .get()
-            .min(admitted_ticks_per_callback) as usize;
+            .min(admitted_ticks_per_callback)
+            .min(MAX_SNAPSHOT_LEASES as u32) as usize;
         let callback_publication_bytes = Layout::array::<
             HostPublication<G::Entity, G::Event, G::Rejection>,
         >(callback_publication_capacity)
@@ -512,6 +592,8 @@ impl<G: GameRules> HeadlessHost<G> {
             admitted_ticks_per_callback,
             callback_publication_capacity,
             callback_publication_bytes,
+            callback_leases: CallbackLeaseDirectory::new(),
+            callback_floor: None,
             faulted: false,
         })
     }
@@ -675,8 +757,8 @@ impl<G: GameRules> HeadlessHost<G> {
     }
 
     /// Service the same validated authority → replica stages with sealed,
-    /// shared charged groups. The callback vector reserves its full requested
-    /// capacity before the first step; the authority checks required replica
+    /// shared charged groups. A finite precharged callback buffer permit is
+    /// acquired before the first step; the authority checks required replica
     /// headroom before rule edits. Replica progress scratch remains uncharged.
     pub fn on_callback_charged(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError>
     where
@@ -705,14 +787,11 @@ impl<G: GameRules> HeadlessHost<G> {
         let mut fatal = None;
         let authority = &mut self.authority;
         let replica = self.replica.as_mut().expect("charged replica mode");
-        let pool = replica
-            .charged_pool()
-            .expect("charged replica mode")
-            .clone();
+        let callback_floor = self.callback_floor.as_ref().expect("charged host floor");
+        let callback_leases = &mut self.callback_leases;
         let schedule = &self.schedule;
         let step_cpu_budget = self.budget.available_step_cpu();
         let callback_publication_capacity = self.callback_publication_capacity;
-        let callback_publication_bytes = self.callback_publication_bytes;
         let mut report = self
             .clock
             .advance_controlled(elapsed, self.admitted_ticks_per_callback, || {
@@ -721,11 +800,11 @@ impl<G: GameRules> HeadlessHost<G> {
                     match stage {
                         Stage::AuthorityStep => {
                             if !publications.is_charged() {
-                                publications.try_reserve_charged(
-                                    &pool,
-                                    callback_publication_capacity,
-                                    callback_publication_bytes,
-                                )?;
+                                let lease = callback_leases
+                                    .acquire(callback_floor)
+                                    .map_err(|_| StepError::PublicationBackpressure)?;
+                                publications
+                                    .try_reserve_from_floor(lease, callback_publication_capacity)?;
                             }
                             let committed = catch_unwind(AssertUnwindSafe(|| {
                                 authority.step_charged_for_replica(replica)
@@ -777,6 +856,9 @@ impl<G: GameRules> HeadlessHost<G> {
             self.clock.report_cpu_overload();
             report.state = ClockState::Overloaded;
         }
+        if publications.is_empty() {
+            publications = HostPublications::new();
+        }
         Ok(HostCallback {
             clock: report,
             terminal_fault,
@@ -796,15 +878,22 @@ mod tests {
         ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, MatchId, Origin, PreparedCommit,
         PreparedEdits, SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch,
     };
+    use std::num::NonZeroU32;
 
     #[test]
-    fn moved_callback_vector_and_consuming_iterator_keep_its_charge() {
+    fn moved_callback_vector_and_consuming_iterator_keep_its_floor_charge() {
         let bytes = Layout::array::<HostPublication<u8, (), ()>>(2)
             .unwrap()
             .size();
-        let pool = PublicationPool::new(bytes);
+        let floor_bytes = CallbackBufferFloor::required_charge(bytes).unwrap();
+        let pool = PublicationPool::new(floor_bytes);
+        let floor = CallbackBufferFloor::try_new(&pool, bytes).unwrap();
+        let mut leases = CallbackLeaseDirectory::new();
         let mut publications: HostPublications<u8, (), ()> = HostPublications::new();
-        publications.try_reserve_charged(&pool, 2, bytes).unwrap();
+        publications
+            .try_reserve_from_floor(leases.acquire(&floor).unwrap(), 2)
+            .unwrap();
+        drop(floor);
         let mut world = World::<u8>::new(WorldEpoch(247));
         let published = world.publish(0);
         publications.push(HostPublication::Local(TickPublication {
@@ -840,10 +929,10 @@ mod tests {
             };
             report.publications
         };
-        assert_eq!(pool.used_bytes(), bytes);
+        assert_eq!(pool.used_bytes(), floor_bytes);
         let mut iterator = moved.into_iter();
         assert!(matches!(iterator.next(), Some(HostPublication::Local(_))));
-        assert_eq!(pool.used_bytes(), bytes);
+        assert_eq!(pool.used_bytes(), floor_bytes);
         drop(iterator);
         assert_eq!(pool.used_bytes(), 0);
     }
@@ -870,6 +959,210 @@ mod tests {
                 event: None,
             }
         }
+    }
+
+    fn idle_charged_host(
+        max_ticks_per_call: u32,
+    ) -> (
+        HeadlessHost<FaultRule>,
+        InitialChargedOutcomes<FaultRule>,
+        PublicationPool,
+        Instant,
+    ) {
+        let pool = PublicationPool::new(100_000);
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(248)),
+            FaultRule,
+            World::new(WorldEpoch(248)),
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 0,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                rejection: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let clock = ClockConfig {
+            max_ticks_per_call: NonZeroU32::new(max_ticks_per_call).unwrap(),
+            max_queued_ticks: NonZeroU32::new(max_ticks_per_call.max(8)).unwrap(),
+            ..ClockConfig::default()
+        };
+        let (host, initial) = HeadlessHost::with_charged_replica(
+            origin,
+            clock,
+            HostBudget {
+                callback_cpu: Duration::from_secs(1),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            0,
+        )
+        .unwrap();
+        (host, initial, pool, origin)
+    }
+
+    #[test]
+    fn sealed_host_preserves_unqualified_baseline_error() {
+        let pool = PublicationPool::new(100_000);
+        let authority = Authority::new(
+            AuthorityId::Match(MatchId(249)),
+            FaultRule,
+            World::new(WorldEpoch(249)),
+        );
+        let result = HeadlessHost::with_charged_replica(
+            Instant::now(),
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            0,
+        );
+        assert!(matches!(
+            result,
+            Err(HostError::ChargedBaseline(
+                ChargedBaselineError::Unqualified
+            ))
+        ));
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn sealed_host_idle_floor_survives_full_competing_pool_and_old_reader() {
+        for limit in [1, 16] {
+            let (mut host, initial, pool, origin) = idle_charged_host(limit);
+            assert_eq!(
+                initial.resolved_through(),
+                &[(PeerId(1), 0), (PeerId(2), 0)]
+            );
+            let occupied = pool
+                .try_reserve(pool.limit_bytes() - pool.used_bytes())
+                .unwrap();
+            let old = host
+                .on_callback_charged(origin + Duration::from_millis(17))
+                .unwrap();
+            assert_eq!(old.clock.completed, 1);
+            assert_eq!(old.publications.len(), 1);
+            for tick in 2..=16 {
+                let report = host
+                    .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                    .unwrap();
+                assert_eq!(report.clock.completed, 1);
+                assert_eq!(report.clock.step_error, None);
+                assert_eq!(report.replica_groups, 1);
+                assert_eq!(pool.used_bytes(), pool.limit_bytes());
+            }
+            assert_eq!(host.authority().tick_index(), 16);
+            assert_eq!(host.replica().unwrap().tick(), 16);
+            drop(old);
+            drop(occupied);
+            drop(initial);
+            drop(host);
+            assert_eq!(pool.used_bytes(), 0);
+        }
+    }
+
+    #[test]
+    fn exhausted_callback_iterators_hold_eight_delivery_permits_and_clock_retries() {
+        let (mut host, initial, pool, origin) = idle_charged_host(16);
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let mut held = Vec::new();
+        for tick in 1..=8 {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            let mut iter = report.publications.into_iter();
+            assert!(matches!(
+                iter.next(),
+                Some(HostPublication::ReplicatedCharged { .. })
+            ));
+            assert!(iter.next().is_none());
+            held.push(iter);
+        }
+        let blocked = host
+            .on_callback_charged(origin + Duration::from_millis(153))
+            .unwrap();
+        assert_eq!(blocked.clock.completed, 0);
+        assert_eq!(
+            blocked.clock.step_error,
+            Some(StepError::PublicationBackpressure)
+        );
+        assert!(blocked.publications.is_empty());
+        assert_eq!(host.authority().tick_index(), 8);
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
+        drop(blocked);
+        drop(held.swap_remove(3));
+        let retried = host
+            .on_callback_charged(origin + Duration::from_millis(153))
+            .unwrap();
+        assert_eq!(retried.clock.completed, 1);
+        assert_eq!(retried.clock.step_error, None);
+        assert_eq!(host.authority().tick_index(), 9);
+        drop(initial);
+        drop(occupied);
+        drop(host);
+        assert!(pool.used_bytes() > 0);
+        drop(retried);
+        assert!(pool.used_bytes() > 0);
+        drop(held);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn high_callback_limit_stops_at_eight_live_snapshots_before_buffer_limit() {
+        let (mut host, initial, pool, origin) = idle_charged_host(16);
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(153))
+            .unwrap();
+        assert_eq!(report.clock.completed, 8);
+        assert_eq!(report.publications.len(), 8);
+        assert_eq!(
+            report.clock.step_error,
+            Some(StepError::SnapshotBackpressure)
+        );
+        assert_eq!(host.authority().tick_index(), 8);
+        drop(report);
+        let retried = host
+            .on_callback_charged(origin + Duration::from_millis(153))
+            .unwrap();
+        assert_eq!(retried.clock.completed, 1);
+        assert_eq!(host.authority().tick_index(), 9);
+        drop(retried);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
     }
 
     #[test]
