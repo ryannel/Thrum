@@ -25,6 +25,12 @@ pub struct PublicationPool {
     state: Arc<PoolState>,
 }
 
+impl PublicationPool {
+    pub(crate) fn same_pool(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.state, &other.state)
+    }
+}
+
 /// An admission failure before a publication allocation is made.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PublicationCapacity;
@@ -76,6 +82,12 @@ impl<T> Clone for PublicationColumn<T> {
 }
 
 impl<T> PublicationColumn<T> {
+    pub(crate) fn belongs_to(&self, pool: &PublicationPool) -> bool {
+        self.inner
+            .as_ref()
+            .is_none_or(|owner| Arc::ptr_eq(&owner._charge.state, &pool.state))
+    }
+
     pub(crate) fn required_charge(capacity: usize) -> Result<usize, PublicationCapacity> {
         if capacity == 0 {
             return Ok(0);

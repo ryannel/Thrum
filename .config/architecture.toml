@@ -12,3 +12,9 @@ allowed_workspace_dependencies = []
 # requirement, its declared license, purpose and target/build cost note.
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
+
+[external_dependencies.hashbrown]
+requirement = "=0.17.1"
+license = "MIT OR Apache-2.0"
+purpose = "Precharged, fixed-capacity confirmed replica object index with inspectable table allocation"
+target_cost = "One pinned crate with no transitive dependencies in the selected feature set; measure native, Wasm and phone lookup, churn and rehash tails before qualification"

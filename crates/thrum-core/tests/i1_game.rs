@@ -2,13 +2,13 @@
 
 use thrum_core::{
     ActionRejection, ActionResult, ActorId, Admission, AdmissionError, AdmittedGroup, Authority,
-    AuthorityId, ChargedBaselineError, ClockConfig, ClockState, ClosedGameLimits,
-    ClosedValueLimits, CommittedEvent, EntityChange, EntityRecord, GameRules, Handle, HeadlessHost,
-    HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule, MatchId,
-    Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool,
-    PublicationRecord, Replica, ReplicaError, ResultDisposition, SessionId, SnapshotWriteBounds,
-    StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
-    WorldPublicationError,
+    AuthorityId, ChargedBaselineError, ChargedReplicaSetupError, ClockConfig, ClockState,
+    ClosedGameLimits, ClosedValueLimits, CommittedEvent, EntityChange, EntityRecord, GameRules,
+    Handle, HeadlessHost, HostAdmissionError, HostBudget, HostError, HostPublication, Input,
+    InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes,
+    PublicationPool, PublicationRecord, Replica, ReplicaError, ResultDisposition, SessionId,
+    SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch,
+    WorldError, WorldPublicationError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -1689,6 +1689,110 @@ mod closed_output_fixture {
         assert_eq!(authority.step_charged().err(), Some(StepError::Unqualified));
         assert!(!authority.is_faulted());
         assert_eq!(authority.step().unwrap().group.commit_tick, 1);
+    }
+
+    #[test]
+    fn charged_two_peer_baseline_and_tick_admit_into_one_finite_replica() {
+        let pool = PublicationPool::new(1_000_000);
+        let foreign = PublicationPool::new(1_000_000);
+        let mut world = World::new(WorldEpoch(234));
+        world
+            .spawn(
+                StableId(1),
+                Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap(),
+            )
+            .unwrap();
+        let output_limits = ClosedValueLimits {
+            max_inline_bytes: 0,
+            max_payload_slots: 1,
+            max_payload_bytes: 32,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(234)),
+            OutputRule {
+                entity_pool: pool.clone(),
+                output_pool: pool.clone(),
+            },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 8,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: output_limits,
+                rejection: output_limits,
+            },
+        )
+        .unwrap();
+        authority.register_peer(PEER, 1, ACTOR).unwrap();
+        authority.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+        let baseline = authority.try_baseline_charged().unwrap();
+        let prior = pool.used_bytes();
+        assert!(matches!(
+            Replica::from_charged_baseline(baseline.clone(), &foreign, 2),
+            Err(ChargedReplicaSetupError::WrongPool)
+        ));
+        assert_eq!(pool.used_bytes(), prior);
+        let (mut replica, initial) = Replica::from_charged_baseline(baseline, &pool, 2).unwrap();
+        assert!(replica.charged_object_bytes().unwrap() > 0);
+        assert_eq!(replica.len(), 1);
+        assert_eq!(
+            replica.get(StableId(1)).unwrap().inline(),
+            &1_u64.to_le_bytes()
+        );
+        assert!(initial.results().is_empty());
+        assert_eq!(initial.resolved_through(), &[(PEER, 0), (PEER_TWO, 0)]);
+        assert_eq!(replica.can_admit_charged_spawns(1), Ok(true));
+        assert_eq!(replica.can_admit_charged_spawns(2), Ok(false));
+        for (peer, actor) in [(PEER, ACTOR), (PEER_TWO, ACTOR_TWO)] {
+            authority
+                .submit(Input {
+                    origin: Origin {
+                        peer,
+                        connection_epoch: 1,
+                        sequence: 1,
+                    },
+                    actor,
+                    schedule: InputSchedule::NextTick { observed_tick: 0 },
+                    action: u8::from(peer == PEER),
+                })
+                .unwrap();
+        }
+        let tick = authority.step_charged().unwrap();
+        let slow_reader = tick.group.clone();
+        let admitted = replica.apply_charged(tick.group).unwrap();
+        assert_eq!(replica.tick(), 1);
+        assert_eq!(
+            replica.get(StableId(1)).unwrap().inline(),
+            &2_u64.to_le_bytes()
+        );
+        assert_eq!(admitted.results().len(), 2);
+        assert_eq!(admitted.events().len(), 1);
+        assert_eq!(admitted.resolved_through(), &[(PEER, 1), (PEER_TWO, 1)]);
+        assert_eq!(
+            replica.apply(authority.baseline()).err(),
+            Some(ReplicaError::UnqualifiedGroup)
+        );
+        drop(tick.snapshot);
+        drop(initial);
+        drop(authority);
+        drop(replica);
+        assert!(pool.used_bytes() > 0);
+        drop(admitted);
+        assert!(pool.used_bytes() > 0);
+        drop(slow_reader);
+        assert_eq!(pool.used_bytes(), 0);
     }
     impl GameRules for OutputRule {
         type Entity = Entity;

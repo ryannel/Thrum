@@ -4,7 +4,7 @@
 use std::{hint::black_box, time::Instant};
 use thrum_core::{
     ActorId, Authority, AuthorityId, ClosedGameLimits, ClosedValueLimits, GameRules, MatchId,
-    PeerId, PreparedCommit, PublicationBytes, PublicationPool, PublicationRecord,
+    PeerId, PreparedCommit, PublicationBytes, PublicationPool, PublicationRecord, Replica,
     SnapshotWriteBounds, StableId, World, WorldEpoch,
 };
 
@@ -114,6 +114,25 @@ fn run(count: usize) {
         },
         1,
     );
+    let prototype_replica_build = measure(
+        || {
+            black_box(Replica::from_baseline(authority.baseline()).unwrap());
+        },
+        1,
+    );
+    let charged_replica_build = measure(
+        || {
+            black_box(
+                Replica::from_charged_baseline(
+                    authority.try_baseline_charged().unwrap(),
+                    &pool,
+                    count,
+                )
+                .unwrap(),
+            );
+        },
+        1,
+    );
     assert_eq!(pool.used_bytes(), baseline_charge);
     let prototype = authority.baseline();
     let charged = authority.try_baseline_charged().unwrap();
@@ -145,6 +164,15 @@ fn run(count: usize) {
         charged_clone.1,
         charged_clone.2,
     );
+    println!(
+        "baseline_replica/{count}: build_admit_ns[p50/p95/p99] prototype={}/{}/{} charged={}/{}/{}",
+        prototype_replica_build.0,
+        prototype_replica_build.1,
+        prototype_replica_build.2,
+        charged_replica_build.0,
+        charged_replica_build.1,
+        charged_replica_build.2,
+    );
     let prototype_idle = measure(
         || {
             black_box(authority.step().unwrap());
@@ -165,6 +193,35 @@ fn run(count: usize) {
         charged_idle.0,
         charged_idle.1,
         charged_idle.2,
+    );
+    let (mut prototype_replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+    let prototype_path = measure(
+        || {
+            let tick = authority.step().unwrap();
+            black_box(prototype_replica.apply(tick.group).unwrap());
+        },
+        1_000,
+    );
+    let (mut charged_replica, _) =
+        Replica::from_charged_baseline(authority.try_baseline_charged().unwrap(), &pool, count)
+            .unwrap();
+    let charged_index_bytes = charged_replica.charged_object_bytes().unwrap();
+    let charged_path = measure(
+        || {
+            let tick = authority.step_charged().unwrap();
+            black_box(charged_replica.apply_charged(tick.group).unwrap());
+        },
+        1_000,
+    );
+    println!(
+        "idle_authority_replica/{count}: batch_1000_ns[p50/p95/p99] prototype={}/{}/{} charged={}/{}/{} charged_index_bytes={}",
+        prototype_path.0,
+        prototype_path.1,
+        prototype_path.2,
+        charged_path.0,
+        charged_path.1,
+        charged_path.2,
+        charged_index_bytes,
     );
 }
 
