@@ -5,7 +5,7 @@ use thrum_core::{
     ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules, HeadlessHost,
     HostAdmissionError, HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId,
     Replica, ReplicaError, ResultDisposition, SessionId, StableId, StateGroup, StepError,
-    TickClock, World, WorldEpoch, WorldError,
+    TickClock, World, WorldEdit, WorldEpoch, WorldError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -783,6 +783,96 @@ fn growing_world_publishes_complete_new_pages_without_changing_old_snapshot() {
         first.snapshot.get(world.handle_for(StableId(103)).unwrap()),
         None
     );
+}
+
+#[test]
+fn invalid_prepared_batch_leaves_every_object_and_publication_unchanged() {
+    let mut world = World::new(WorldEpoch(72));
+    let handle = world.spawn(StableId(1), 10_u64).unwrap();
+    let before = world.publish(0).snapshot;
+    assert_eq!(
+        world.apply_prepared(vec![
+            WorldEdit::Replace(handle, 11),
+            WorldEdit::DespawnNew(StableId(2)),
+        ]),
+        Err(WorldError::InvalidHandle)
+    );
+    assert_eq!(world.get(handle).unwrap().state, 10);
+    assert_eq!(
+        world.apply_prepared(vec![
+            WorldEdit::Spawn(StableId(2), 20),
+            WorldEdit::Spawn(StableId(2), 21),
+        ]),
+        Err(WorldError::DuplicateId)
+    );
+    assert_eq!(world.len(), 1);
+    let after = world.publish(1);
+    assert_eq!(after.work.copied_pages, 0);
+    assert_eq!(before.get(handle), after.snapshot.get(handle));
+}
+
+#[test]
+fn prepared_existing_edit_rejects_a_reused_slot_generation() {
+    let mut world = World::new(WorldEpoch(74));
+    let stale = world.spawn(StableId(1), 10_u64).unwrap();
+    world.publish(0);
+    world.despawn(stale).unwrap();
+    let current = world.spawn(StableId(2), 20).unwrap();
+    assert_eq!(stale.slot, current.slot);
+    assert_ne!(stale.generation, current.generation);
+    assert_eq!(
+        world.apply_prepared(vec![WorldEdit::Replace(stale, 99)]),
+        Err(WorldError::InvalidHandle)
+    );
+    assert_eq!(world.get(current).unwrap().state, 20);
+}
+
+#[test]
+fn prepared_batch_cannot_reuse_an_original_handle_after_respawn() {
+    let mut world = World::new(WorldEpoch(75));
+    let original = world.spawn(StableId(1), 10_u64).unwrap();
+    assert_eq!(
+        world.apply_prepared(vec![
+            WorldEdit::Despawn(original),
+            WorldEdit::Spawn(StableId(1), 20),
+            WorldEdit::Replace(original, 30),
+        ]),
+        Err(WorldError::InvalidHandle)
+    );
+    assert_eq!(world.get(original).unwrap().state, 10);
+    assert_eq!(world.publish(0).snapshot.get(original).unwrap().state, 10);
+}
+
+#[test]
+fn single_prepared_edits_preserve_snapshot_and_handle_semantics() {
+    let mut world = World::new(WorldEpoch(76));
+    let first = world.spawn(StableId(1), 10_u64).unwrap();
+    let prior = world.publish(0).snapshot;
+    world.apply_one(WorldEdit::Replace(first, 11)).unwrap();
+    assert_eq!(world.get(first).unwrap().state, 11);
+    assert_eq!(prior.get(first).unwrap().state, 10);
+    world.apply_one(WorldEdit::Despawn(first)).unwrap();
+    world.apply_one(WorldEdit::Spawn(StableId(2), 20)).unwrap();
+    let second = world.handle_for(StableId(2)).unwrap();
+    assert_eq!(first.slot, second.slot);
+    assert_ne!(first.generation, second.generation);
+    assert_eq!(world.get(first), None);
+    assert_eq!(world.get(second).unwrap().state, 20);
+}
+
+#[test]
+fn prepared_structural_peak_survives_net_zero_lifecycle() {
+    let mut world = World::new(WorldEpoch(73));
+    let edits = (1..=65)
+        .map(|id| WorldEdit::Spawn(StableId(id), id))
+        .chain((1..=65).map(|id| WorldEdit::DespawnNew(StableId(id))))
+        .collect();
+    world.apply_prepared(edits).unwrap();
+    assert!(world.is_empty());
+    let published = world.publish(0);
+    assert_eq!(published.work.copied_pages, 3);
+    assert!(published.changes.is_empty());
+    assert_eq!(published.snapshot.records().count(), 0);
 }
 
 #[test]
