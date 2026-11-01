@@ -2,12 +2,13 @@
 
 use thrum_core::{
     ActionRejection, ActionResult, ActorId, Admission, AdmissionError, AdmittedGroup, Authority,
-    AuthorityId, ClockConfig, ClockState, ClosedGameLimits, ClosedValueLimits, CommittedEvent,
-    EntityChange, EntityRecord, GameRules, Handle, HeadlessHost, HostAdmissionError, HostBudget,
-    HostError, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, PreparedCommit,
-    PreparedEdits, PublicationBytes, PublicationPool, PublicationRecord, Replica, ReplicaError,
-    ResultDisposition, SessionId, SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock,
-    World, WorldEdit, WorldEpoch, WorldError, WorldPublicationError,
+    AuthorityId, ChargedBaselineError, ClockConfig, ClockState, ClosedGameLimits,
+    ClosedValueLimits, CommittedEvent, EntityChange, EntityRecord, GameRules, Handle, HeadlessHost,
+    HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule, MatchId,
+    Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool,
+    PublicationRecord, Replica, ReplicaError, ResultDisposition, SessionId, SnapshotWriteBounds,
+    StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
+    WorldPublicationError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -1453,6 +1454,100 @@ mod closed_output_fixture {
     struct OutputRule {
         entity_pool: PublicationPool,
         output_pool: PublicationPool,
+    }
+
+    #[test]
+    fn charged_baseline_reserves_all_columns_and_shares_last_owner() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(231));
+        world
+            .spawn(
+                StableId(1),
+                Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap(),
+            )
+            .unwrap();
+        let output_limits = ClosedValueLimits {
+            max_inline_bytes: 0,
+            max_payload_slots: 1,
+            max_payload_bytes: 32,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(231)),
+            OutputRule {
+                entity_pool: pool.clone(),
+                output_pool: pool.clone(),
+            },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 8,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: output_limits,
+                rejection: output_limits,
+            },
+        )
+        .unwrap();
+        for (peer, actor) in [(PEER, ACTOR), (PEER_TWO, ACTOR_TWO)] {
+            authority.register_peer(peer, 1, actor).unwrap();
+            authority
+                .submit(Input {
+                    origin: Origin {
+                        peer,
+                        connection_epoch: 1,
+                        sequence: 1,
+                    },
+                    actor,
+                    schedule: InputSchedule::NextTick { observed_tick: 0 },
+                    action: u8::from(peer == PEER),
+                })
+                .unwrap();
+        }
+        drop(authority.step().unwrap());
+        let prototype = authority.baseline();
+        let before = pool.used_bytes();
+        let occupied = pool.try_reserve(pool.limit_bytes() - before).unwrap();
+        assert!(matches!(
+            authority.try_baseline_charged(),
+            Err(ChargedBaselineError::Capacity)
+        ));
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
+        drop(occupied);
+
+        let charged = authority.try_baseline_charged().unwrap();
+        assert_eq!(charged.authority(), prototype.authority);
+        assert_eq!(charged.group_id(), prototype.group_id);
+        assert_eq!(charged.commit_tick(), prototype.commit_tick);
+        assert_eq!(charged.event_cursor(), prototype.event_cursor);
+        assert_eq!(charged.changes(), prototype.changes);
+        assert_eq!(charged.results(), prototype.results);
+        assert_eq!(charged.events(), prototype.events);
+        assert_eq!(charged.resolved_through(), prototype.resolved_through);
+        assert_eq!(charged.results().len(), 2);
+        assert_eq!(charged.events().len(), 1);
+        assert_eq!(charged.resolved_through().len(), 2);
+        let with_columns = pool.used_bytes();
+        assert!(with_columns > before);
+        let reader = charged.clone();
+        assert_eq!(pool.used_bytes(), with_columns);
+        drop(prototype);
+        drop(authority);
+        assert!(pool.used_bytes() > 0);
+        drop(charged);
+        assert!(pool.used_bytes() > 0);
+        drop(reader);
+        assert_eq!(pool.used_bytes(), 0);
     }
     impl GameRules for OutputRule {
         type Entity = Entity;

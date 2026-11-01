@@ -4,9 +4,12 @@
 //! before a world step; committed allocations keep their charge until the
 //! final owner releases them. The pool does not infer game-owned heap usage.
 
-use std::sync::{
-    Arc,
-    atomic::{AtomicUsize, Ordering},
+use std::{
+    alloc::Layout,
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    },
 };
 
 use crate::world::StableId;
@@ -51,6 +54,77 @@ struct ChargedBytes {
 /// A clone shares the bytes and charge without allocating or copying them.
 #[derive(Clone)]
 pub struct PublicationBytes(Arc<ChargedBytes>);
+
+struct ColumnStorage<T> {
+    values: Vec<T>,
+    limit: usize,
+    _charge: PublicationCharge,
+}
+
+/// Shared, fixed-fill publication storage. Only its builder can push values;
+/// clones share one charged owner and never duplicate the vector buffer.
+pub(crate) struct PublicationColumn<T> {
+    inner: Option<Arc<ColumnStorage<T>>>,
+}
+
+impl<T> Clone for PublicationColumn<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<T> PublicationColumn<T> {
+    pub(crate) fn required_charge(capacity: usize) -> Result<usize, PublicationCapacity> {
+        if capacity == 0 {
+            return Ok(0);
+        }
+        Layout::array::<T>(capacity)
+            .map_err(|_| PublicationCapacity)?
+            .size()
+            .checked_add(size_of::<ColumnStorage<T>>())
+            .and_then(|bytes| bytes.checked_add(2 * size_of::<usize>()))
+            .ok_or(PublicationCapacity)
+    }
+
+    pub(crate) fn try_with_capacity(
+        reservation: &mut PublicationReservation,
+        capacity: usize,
+    ) -> Result<Self, PublicationCapacity> {
+        if capacity == 0 {
+            return Ok(Self { inner: None });
+        }
+        let charge = reservation.charge(Self::required_charge(capacity)?)?;
+        Ok(Self {
+            inner: Some(Arc::new(ColumnStorage {
+                values: Vec::with_capacity(capacity),
+                limit: capacity,
+                _charge: charge,
+            })),
+        })
+    }
+
+    pub(crate) fn push(&mut self, value: T) {
+        let inner = self.inner.as_mut().expect("nonempty reserved column");
+        let storage = Arc::get_mut(inner).expect("column builder has one owner");
+        assert!(storage.values.len() < storage.limit, "column fill limit");
+        storage.values.push(value);
+    }
+
+    pub(crate) fn as_slice(&self) -> &[T] {
+        self.inner.as_ref().map_or(&[], |inner| &inner.values)
+    }
+
+    pub(crate) fn sort_unstable_by_key<K: Ord>(&mut self, mut key: impl FnMut(&T) -> K) {
+        if let Some(inner) = &mut self.inner {
+            Arc::get_mut(inner)
+                .expect("column builder has one owner")
+                .values
+                .sort_unstable_by_key(|value| key(value));
+        }
+    }
+}
 
 /// A closed, fixed-layout value for a future admitted game profile. Inline
 /// bytes have no hidden Rust owner; each optional immutable payload already

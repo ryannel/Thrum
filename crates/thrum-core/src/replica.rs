@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use crate::{
     ActionResult, EntityChange, EntityRecord, ResultDisposition, StableId,
     authority::{CommittedEvent, PeerId},
+    publication_pool::PublicationColumn,
     world::AuthorityId,
 };
 
@@ -25,6 +26,77 @@ pub struct StateGroup<T, E, R> {
     pub events: Vec<CommittedEvent<E>>,
     /// Per-peer contiguous sequence watermark; individual higher results remain named.
     pub resolved_through: Vec<(PeerId, u64)>,
+}
+
+/// A complete group whose columns share one charged owner per nonempty buffer.
+/// This is currently produced for a read-only qualified baseline; live tick
+/// output and replica admission still require separate precommit admission.
+pub struct ChargedStateGroup<T, E, R> {
+    pub(crate) authority: AuthorityId,
+    pub(crate) group_id: u64,
+    pub(crate) commit_tick: u64,
+    pub(crate) event_cursor: u64,
+    pub(crate) changes: PublicationColumn<EntityChange<T>>,
+    pub(crate) results: PublicationColumn<ActionResult<R>>,
+    pub(crate) events: PublicationColumn<CommittedEvent<E>>,
+    pub(crate) resolved_through: PublicationColumn<(PeerId, u64)>,
+}
+
+impl<T, E, R> Clone for ChargedStateGroup<T, E, R> {
+    fn clone(&self) -> Self {
+        Self {
+            authority: self.authority,
+            group_id: self.group_id,
+            commit_tick: self.commit_tick,
+            event_cursor: self.event_cursor,
+            changes: self.changes.clone(),
+            results: self.results.clone(),
+            events: self.events.clone(),
+            resolved_through: self.resolved_through.clone(),
+        }
+    }
+}
+
+impl<T, E, R> ChargedStateGroup<T, E, R> {
+    /// Authority that produced this baseline or group.
+    pub fn authority(&self) -> AuthorityId {
+        self.authority
+    }
+
+    /// Monotonic publication ID within that authority.
+    pub fn group_id(&self) -> u64 {
+        self.group_id
+    }
+
+    /// Exact committed state tick represented here.
+    pub fn commit_tick(&self) -> u64 {
+        self.commit_tick
+    }
+
+    /// Highest committed event ID represented here.
+    pub fn event_cursor(&self) -> u64 {
+        self.event_cursor
+    }
+
+    /// Full changed state together with lifecycle.
+    pub fn changes(&self) -> &[EntityChange<T>] {
+        self.changes.as_slice()
+    }
+
+    /// Resolved action outcomes in this publication.
+    pub fn results(&self) -> &[ActionResult<R>] {
+        self.results.as_slice()
+    }
+
+    /// Immediate committed events in ID order.
+    pub fn events(&self) -> &[CommittedEvent<E>] {
+        self.events.as_slice()
+    }
+
+    /// Contiguous per-peer resolved sequence watermarks.
+    pub fn resolved_through(&self) -> &[(PeerId, u64)] {
+        self.resolved_through.as_slice()
+    }
 }
 
 /// Replica admission failure; no state from the invalid group is published.

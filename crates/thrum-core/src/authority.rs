@@ -4,11 +4,12 @@ use std::{
     sync::{Arc, Weak},
 };
 
-use crate::replica::StateGroup;
+use crate::replica::{ChargedStateGroup, StateGroup};
 use crate::{
     ClosedPublicationValue, ClosedValueError, ClosedValueLimits, EntityChange, PreparedEdits,
     PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation, Snapshot,
     World, WorldPublicationError, WorldWork,
+    publication_pool::PublicationColumn,
     world::{ActorId, AuthorityId, MAX_SNAPSHOT_LEASES, SnapshotLease, SnapshotLeaseFloor},
 };
 
@@ -125,6 +126,17 @@ pub enum StepError {
     /// Game preparation violated the world-edit contract. This authority
     /// cannot publish or retry its partially processed tick.
     TerminalGameContract,
+}
+
+/// Read-only charged baseline cannot be produced from this authority state.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ChargedBaselineError {
+    /// The authority has no coherent committed state after a terminal fault.
+    Faulted,
+    /// The authority did not select the sealed closed-value entry path.
+    Unqualified,
+    /// The shared pool cannot reserve the complete baseline column owners.
+    Capacity,
 }
 /// Submission status; success here is never gameplay commitment.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -460,6 +472,12 @@ pub type GameTick<G> =
 /// Complete state group for one concrete game rule set.
 pub type GameStateGroup<G> =
     StateGroup<<G as GameRules>::Entity, <G as GameRules>::Event, <G as GameRules>::Rejection>;
+/// Charged, shared-column state group for one concrete game rule set.
+pub type ChargedGameStateGroup<G> = ChargedStateGroup<
+    <G as GameRules>::Entity,
+    <G as GameRules>::Event,
+    <G as GameRules>::Rejection,
+>;
 type GameClosedGates<G> = ClosedGameGates<
     <G as GameRules>::Action,
     <G as GameRules>::Entity,
@@ -888,6 +906,103 @@ impl<G: GameRules> Authority<G> {
                 .iter()
                 .map(|(id, p)| (*id, p.resolved_through))
                 .collect(),
+        })
+    }
+    /// Build a read-only baseline with shared charged column owners. The
+    /// complete column peak is reserved before copying records or outcomes.
+    /// Live tick and replica storage are not admitted by this method.
+    pub fn try_baseline_charged(&self) -> Result<ChargedGameStateGroup<G>, ChargedBaselineError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        if self.faulted {
+            return Err(ChargedBaselineError::Faulted);
+        }
+        let admission = self
+            .snapshot_admission
+            .as_ref()
+            .filter(|admission| admission.closed.is_some())
+            .ok_or(ChargedBaselineError::Unqualified)?;
+        let change_count = self.snapshot.records().count();
+        let mut result_count = 0_usize;
+        let mut event_count = 0_usize;
+        for peer in self.peers.values() {
+            result_count = result_count
+                .checked_add(peer.completed.len())
+                .ok_or(ChargedBaselineError::Capacity)?;
+            for completed in &peer.completed {
+                event_count = event_count
+                    .checked_add(usize::from(completed.event.is_some()))
+                    .ok_or(ChargedBaselineError::Capacity)?;
+            }
+        }
+        let charge = PublicationColumn::<EntityChange<G::Entity>>::required_charge(change_count)
+            .and_then(|changes| {
+                changes
+                    .checked_add(
+                        PublicationColumn::<ActionResult<G::Rejection>>::required_charge(
+                            result_count,
+                        )?,
+                    )
+                    .ok_or(PublicationCapacity)
+            })
+            .and_then(|bytes| {
+                bytes
+                    .checked_add(
+                        PublicationColumn::<CommittedEvent<G::Event>>::required_charge(
+                            event_count,
+                        )?,
+                    )
+                    .ok_or(PublicationCapacity)
+            })
+            .and_then(|bytes| {
+                bytes
+                    .checked_add(PublicationColumn::<(PeerId, u64)>::required_charge(
+                        self.peers.len(),
+                    )?)
+                    .ok_or(PublicationCapacity)
+            })
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut reservation = admission
+            .pool
+            .try_reserve(charge)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut changes = PublicationColumn::try_with_capacity(&mut reservation, change_count)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut results = PublicationColumn::try_with_capacity(&mut reservation, result_count)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut events = PublicationColumn::try_with_capacity(&mut reservation, event_count)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut resolved_through =
+            PublicationColumn::try_with_capacity(&mut reservation, self.peers.len())
+                .map_err(|_| ChargedBaselineError::Capacity)?;
+        for record in self.snapshot.records() {
+            changes.push(EntityChange::Spawn(record.clone()));
+        }
+        for peer in self.peers.values() {
+            for completed in &peer.completed {
+                results.push(completed.result.clone());
+                if let Some(event) = &completed.event {
+                    events.push(event.clone());
+                }
+            }
+        }
+        events.sort_unstable_by_key(|event: &CommittedEvent<G::Event>| event.id);
+        for (id, peer) in &self.peers {
+            resolved_through.push((*id, peer.resolved_through));
+        }
+        Ok(ChargedStateGroup {
+            authority: self.id,
+            group_id: self.group_id,
+            commit_tick: self.tick,
+            event_cursor: self.next_event_id - 1,
+            changes,
+            results,
+            events,
+            resolved_through,
         })
     }
     /// Execute exactly one fixed 1/60-second authority step and publish after all decisions.
