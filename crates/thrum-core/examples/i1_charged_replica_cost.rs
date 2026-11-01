@@ -301,6 +301,94 @@ fn run_host(count: usize) {
     );
 }
 
+fn run_many_host_mode(count: usize, protected: bool) -> Vec<u128> {
+    const WARMUP: usize = 1_000;
+    const SAMPLES: usize = 3_000;
+    let pool = PublicationPool::new(usize::MAX);
+    let origin = Instant::now();
+    let budget = HostBudget {
+        callback_cpu: Duration::from_secs(1),
+        other_work: Duration::ZERO,
+        tick_cost_bound: Duration::from_millis(1),
+    };
+    let source = authority(count, &pool, if protected { 24 } else { 23 });
+    let (mut host, _) = if protected {
+        HeadlessHost::with_protected_inline_replica(
+            origin,
+            ClockConfig::default(),
+            budget,
+            source,
+            &pool,
+            count,
+            2,
+        )
+    } else {
+        HeadlessHost::with_charged_replica(
+            origin,
+            ClockConfig::default(),
+            budget,
+            source,
+            &pool,
+            count,
+        )
+    }
+    .unwrap();
+    let mut times = Vec::with_capacity(SAMPLES);
+    for sample in 0..WARMUP + SAMPLES {
+        let tick = host.authority().tick_index();
+        let now = origin + Duration::from_nanos(16_666_667 * (sample as u64 + 1));
+        let start = Instant::now();
+        for peer in 1_u64..=2 {
+            for offset in 0_u64..8 {
+                let position = ((peer - 1) * 8 + offset) as usize;
+                let id = (tick as usize * 16 + position) % count + 1;
+                black_box(
+                    host.submit(Input {
+                        origin: Origin {
+                            peer: PeerId(peer),
+                            connection_epoch: 1,
+                            sequence: tick * 8 + offset + 1,
+                        },
+                        actor: ActorId(peer),
+                        schedule: InputSchedule::NextTick {
+                            observed_tick: tick,
+                        },
+                        action: StableId(id as u128),
+                    })
+                    .unwrap(),
+                );
+            }
+        }
+        let report = host.on_callback_charged(now).unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("many-change charged publication")
+        };
+        assert_eq!(admitted.results().len(), 16);
+        let through = admitted.resolved_through();
+        let first = through[0].1;
+        let second = through[1].1;
+        drop(report);
+        host.acknowledge_results(PeerId(1), first).unwrap();
+        host.acknowledge_results(PeerId(2), second).unwrap();
+        let elapsed = start.elapsed().as_nanos();
+        if sample >= WARMUP {
+            times.push(elapsed);
+        }
+    }
+    times
+}
+
+fn run_many_host(count: usize) {
+    let mut ordinary = run_many_host_mode(count, false);
+    let mut protected = run_many_host_mode(count, true);
+    println!(
+        "host_many_changes/{count}: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary={:?} protected={:?}",
+        summary(&mut ordinary),
+        summary(&mut protected),
+    );
+}
+
 fn main() {
     println!(
         "I1 changed replica fixture host={}/{} profile=release",
@@ -310,5 +398,6 @@ fn main() {
     for count in [64, 4_096] {
         run(count);
         run_host(count);
+        run_many_host(count);
     }
 }

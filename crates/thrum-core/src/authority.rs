@@ -1063,6 +1063,9 @@ impl<G: GameRules> Authority<G> {
         {
             return Err(ExecutionCreditSetupError::Capacity);
         }
+        self.world
+            .activate_fixed_slot_journal(&admission.pool, max_edits)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
         self.fixed_inline_credits = Some(FixedInlineCreditProfile {
             per_input_bytes,
             max_peers,

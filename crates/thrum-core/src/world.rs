@@ -271,6 +271,37 @@ struct VirtualObject {
     original_handle_alive: bool,
 }
 
+/// The fixed-slot sealed path marks changes by slot without allocating a tree
+/// node in an action callback. Publication sorts only the touched identities.
+struct FixedSlotJournal {
+    marks: Vec<Option<ChangeKind>>,
+    touched: Vec<(StableId, usize)>,
+    limit: usize,
+    _charge: PublicationCharge,
+}
+
+impl FixedSlotJournal {
+    fn mark(&mut self, slot: usize, id: StableId, kind: ChangeKind) {
+        match &mut self.marks[slot] {
+            Some(previous) => {
+                *previous = match (*previous, kind) {
+                    (ChangeKind::Spawn, ChangeKind::Update) => ChangeKind::Spawn,
+                    (_, next) => next,
+                };
+            }
+            mark @ None => {
+                assert!(self.touched.len() < self.limit, "fixed-slot change bound");
+                self.touched.push((id, slot));
+                *mark = Some(kind);
+            }
+        }
+    }
+
+    fn get(&self, slot: usize) -> Option<ChangeKind> {
+        self.marks[slot]
+    }
+}
+
 enum VirtualObjects {
     Inline([Option<(StableId, VirtualObject)>; 2]),
     Many(HashMap<StableId, VirtualObject>),
@@ -316,6 +347,8 @@ pub struct World<T: Clone> {
     dirty: Vec<bool>,
     dirty_count: usize,
     changed: BTreeMap<StableId, ChangeKind>,
+    fixed_journal: Option<FixedSlotJournal>,
+    _free_charge: Option<PublicationCharge>,
     pages: PageRoot<T>,
     publication_mode: PublicationMode,
     published_tick: u64,
@@ -417,6 +450,78 @@ impl<T: Clone> World<T> {
             .filter_map(|slot| slot.entry.as_ref())
             .try_for_each(|record| validate(&record.state))
     }
+
+    /// Select allocation-free change recording for an already published
+    /// fixed-slot world. The caller bounds all first touches before edits.
+    pub(crate) fn activate_fixed_slot_journal(
+        &mut self,
+        pool: &PublicationPool,
+        max_touches: usize,
+    ) -> Result<(), PublicationCapacity> {
+        let PublicationMode::Charged(owner_pool) = &self.publication_mode else {
+            return Err(PublicationCapacity);
+        };
+        if self.fixed_journal.is_some() || !self.changed.is_empty() || self.dirty_count != 0 {
+            return Err(PublicationCapacity);
+        }
+        let touches = max_touches.min(self.slots.len());
+        let marks_bytes = self
+            .slots
+            .len()
+            .checked_mul(size_of::<Option<ChangeKind>>())
+            .ok_or(PublicationCapacity)?;
+        let touched_bytes = touches
+            .checked_mul(size_of::<(StableId, usize)>())
+            .ok_or(PublicationCapacity)?;
+        let replace_free = self.free.capacity() < self.slots.len();
+        let free_capacity = if replace_free {
+            self.slots.len()
+        } else {
+            self.free.capacity()
+        };
+        let free_bytes = free_capacity
+            .checked_mul(size_of::<u32>())
+            .ok_or(PublicationCapacity)?;
+        let old_overlap = if replace_free {
+            self.free
+                .capacity()
+                .checked_mul(size_of::<u32>())
+                .ok_or(PublicationCapacity)?
+        } else {
+            0
+        };
+        let journal_bytes = marks_bytes
+            .checked_add(touched_bytes)
+            .ok_or(PublicationCapacity)?;
+        let peak = journal_bytes
+            .checked_add(free_bytes)
+            .and_then(|bytes| bytes.checked_add(old_overlap))
+            .ok_or(PublicationCapacity)?;
+        let mut reservation = pool.try_reserve(peak)?;
+        if !reservation.belongs_to(owner_pool) {
+            return Err(PublicationCapacity);
+        }
+        let marks = vec![None; self.slots.len()];
+        let touched = Vec::with_capacity(touches);
+        let replacement = replace_free.then(|| {
+            let mut free = Vec::with_capacity(free_capacity);
+            free.extend(self.free.iter().copied());
+            free
+        });
+        let journal_charge = reservation.charge(journal_bytes)?;
+        let free_charge = reservation.charge(free_bytes)?;
+        if let Some(replacement) = replacement {
+            self.free = replacement;
+        }
+        self.fixed_journal = Some(FixedSlotJournal {
+            marks,
+            touched,
+            limit: touches,
+            _charge: journal_charge,
+        });
+        self._free_charge = Some(free_charge);
+        Ok(())
+    }
     /// Construct an empty world with a fresh host-supplied epoch.
     pub fn new(epoch: WorldEpoch) -> Self {
         Self {
@@ -427,6 +532,8 @@ impl<T: Clone> World<T> {
             dirty: Vec::new(),
             dirty_count: 0,
             changed: BTreeMap::new(),
+            fixed_journal: None,
+            _free_charge: None,
             pages: Arc::new(PageRootData {
                 pages: Box::new([]),
                 _charge: None,
@@ -478,7 +585,11 @@ impl<T: Clone> World<T> {
         }
         let id = slot.entry.as_ref()?.id;
         self.mark_dirty(index / PAGE_SIZE);
-        self.changed.entry(id).or_insert(ChangeKind::Update);
+        if let Some(journal) = &mut self.fixed_journal {
+            journal.mark(index, id, ChangeKind::Update);
+        } else {
+            self.changed.entry(id).or_insert(ChangeKind::Update);
+        }
         self.slots[index]
             .entry
             .as_mut()
@@ -548,7 +659,7 @@ impl<T: Clone> World<T> {
                 let alive = self.by_id.contains_key(&id);
                 VirtualObject {
                     alive,
-                    change: self.changed.get(&id).copied(),
+                    change: self.change_for(id),
                     spawned_in_batch: false,
                     original_handle_alive: alive,
                 }
@@ -596,6 +707,19 @@ impl<T: Clone> World<T> {
             }
         }
         self.validate_prepared_slot_capacity(edits)
+    }
+    fn change_for(&self, id: StableId) -> Option<ChangeKind> {
+        let Some(journal) = &self.fixed_journal else {
+            return self.changed.get(&id).copied();
+        };
+        let slot = self.by_id.get(&id).map(|slot| *slot as usize).or_else(|| {
+            journal
+                .touched
+                .iter()
+                .find(|(key, _)| *key == id)
+                .map(|(_, slot)| *slot)
+        })?;
+        journal.get(slot)
     }
 
     fn apply_validated_edit(&mut self, edit: WorldEdit<T>) {
@@ -677,6 +801,10 @@ impl<T: Clone> World<T> {
     }
     /// Insert a complete game-owned object; stable IDs cannot alias.
     pub fn spawn(&mut self, id: StableId, state: T) -> Result<Handle, WorldError> {
+        assert!(
+            self.fixed_journal.is_none(),
+            "fixed-slot world cannot spawn"
+        );
         if self.by_id.contains_key(&id) {
             return Err(WorldError::DuplicateId);
         }
@@ -715,7 +843,9 @@ impl<T: Clone> World<T> {
         let slot = &mut self.slots[index];
         slot.entry = None;
         self.by_id.remove(&record.id);
-        if matches!(self.changed.get(&record.id), Some(ChangeKind::Spawn)) {
+        if let Some(journal) = &mut self.fixed_journal {
+            journal.mark(index, record.id, ChangeKind::Despawn);
+        } else if matches!(self.changed.get(&record.id), Some(ChangeKind::Spawn)) {
             self.changed.remove(&record.id);
         } else {
             self.changed.insert(record.id, ChangeKind::Despawn);
@@ -740,8 +870,9 @@ impl<T: Clone> World<T> {
         &self,
         max_edits: usize,
     ) -> Result<usize, PublicationCapacity> {
-        self.changed
-            .len()
+        self.fixed_journal
+            .as_ref()
+            .map_or(self.changed.len(), |journal| journal.touched.len())
             .checked_add(max_edits)
             .ok_or(PublicationCapacity)
     }
@@ -955,24 +1086,39 @@ impl<T: Clone> World<T> {
             });
             self.dirty_count = 0;
         }
-        let mut changes = Vec::with_capacity(self.changed.len());
-        for (id, kind) in std::mem::take(&mut self.changed) {
-            match kind {
-                ChangeKind::Spawn | ChangeKind::Update => {
-                    let slot = self.by_id[&id] as usize;
-                    let record = self.slots[slot]
-                        .entry
-                        .as_ref()
-                        .expect("live indexed object")
-                        .clone();
-                    work.group_objects += 1;
-                    changes.push(if matches!(kind, ChangeKind::Spawn) {
-                        EntityChange::Spawn(record)
-                    } else {
-                        EntityChange::Update(record)
-                    });
-                }
-                ChangeKind::Despawn => changes.push(EntityChange::Despawn(id)),
+        let change_count = self
+            .conservative_change_count(0)
+            .expect("bounded change count");
+        let mut changes = Vec::with_capacity(change_count);
+        let by_id = &self.by_id;
+        let slots = &self.slots;
+        let mut emit = |id, kind| match kind {
+            ChangeKind::Spawn | ChangeKind::Update => {
+                let slot = by_id[&id] as usize;
+                let record = slots[slot]
+                    .entry
+                    .as_ref()
+                    .expect("live indexed object")
+                    .clone();
+                work.group_objects += 1;
+                changes.push(if matches!(kind, ChangeKind::Spawn) {
+                    EntityChange::Spawn(record)
+                } else {
+                    EntityChange::Update(record)
+                });
+            }
+            ChangeKind::Despawn => changes.push(EntityChange::Despawn(id)),
+        };
+        if let Some(journal) = &mut self.fixed_journal {
+            journal.touched.sort_unstable_by_key(|(id, _)| *id);
+            for &(id, slot) in &journal.touched {
+                let kind = journal.marks[slot].take().expect("touched slot marked");
+                emit(id, kind);
+            }
+            journal.touched.clear();
+        } else {
+            for (id, kind) in std::mem::take(&mut self.changed) {
+                emit(id, kind);
             }
         }
         self.published_tick = tick;
@@ -994,6 +1140,196 @@ impl<T: Clone> World<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fixed_slot_journal_retries_activation_and_publishes_sorted_changes() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(251));
+        for id in [4, 2, 1, 3] {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let initial = world.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+
+        let before_free_capacity = world.free.capacity();
+        let blocker = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert_eq!(
+            world.activate_fixed_slot_journal(&pool, 3),
+            Err(PublicationCapacity)
+        );
+        assert!(world.fixed_journal.is_none());
+        assert_eq!(world.free.capacity(), before_free_capacity);
+        drop(blocker);
+        world.activate_fixed_slot_journal(&pool, 3).unwrap();
+        assert!(world.free.capacity() >= world.slots.len());
+
+        let first = world.handle_for(StableId(1)).unwrap();
+        assert_eq!(
+            world.apply_pair(
+                WorldEdit::Replace(first, 11),
+                WorldEdit::Replace(
+                    Handle {
+                        generation: 9,
+                        ..first
+                    },
+                    12
+                ),
+            ),
+            Err(WorldError::InvalidHandle)
+        );
+        assert!(world.fixed_journal.as_ref().unwrap().touched.is_empty());
+        *world
+            .get_mut(world.handle_for(StableId(3)).unwrap())
+            .unwrap() = 33;
+        *world.get_mut(first).unwrap() = 11;
+        *world.get_mut(first).unwrap() = 12;
+        world
+            .despawn(world.handle_for(StableId(2)).unwrap())
+            .unwrap();
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let publication = world.try_publish_charged(1, &mut reservation).unwrap();
+        let changes = publication
+            .changes
+            .iter()
+            .map(|change| match change {
+                EntityChange::Spawn(record) | EntityChange::Update(record) => record.id,
+                EntityChange::Despawn(id) => *id,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(changes, [StableId(1), StableId(2), StableId(3)]);
+        assert!(matches!(
+            publication.changes[1],
+            EntityChange::Despawn(StableId(2))
+        ));
+        assert_eq!(publication.snapshot.get(first).unwrap().state, 12);
+        assert_eq!(initial.snapshot.get(first).unwrap().state, 1);
+        assert!(world.fixed_journal.as_ref().unwrap().touched.is_empty());
+        drop(occupied);
+        drop(reservation);
+        drop(publication);
+
+        *world
+            .get_mut(world.handle_for(StableId(4)).unwrap())
+            .unwrap() = 44;
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let publication = world.try_publish_charged(2, &mut reservation).unwrap();
+        assert_eq!(publication.changes.len(), 1);
+        assert!(
+            matches!(&publication.changes[0], EntityChange::Update(record) if record.id == StableId(4))
+        );
+        drop(publication);
+        drop(reservation);
+
+        for id in [4, 1, 3] {
+            world
+                .despawn(world.handle_for(StableId(id)).unwrap())
+                .unwrap();
+        }
+        assert_eq!(world.free.len(), world.slots.len());
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let publication = world.try_publish_charged(3, &mut reservation).unwrap();
+        assert_eq!(publication.changes.len(), 3);
+        assert!(
+            publication
+                .changes
+                .iter()
+                .all(|change| matches!(change, EntityChange::Despawn(_)))
+        );
+        drop(publication);
+        drop(reservation);
+        drop(initial);
+        drop(world);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn fixed_slot_journal_does_not_reuse_generation_exhausted_slot() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(252));
+        let handle = world.spawn(StableId(1), 1_u8).unwrap();
+        world.slots[handle.slot as usize].generation = u64::MAX;
+        let handle = Handle {
+            generation: u64::MAX,
+            ..handle
+        };
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let initial = world.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+        world.activate_fixed_slot_journal(&pool, 1).unwrap();
+        world.despawn(handle).unwrap();
+        assert!(world.free.is_empty());
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let publication = world.try_publish_charged(1, &mut reservation).unwrap();
+        assert!(matches!(
+            publication.changes.as_slice(),
+            [EntityChange::Despawn(StableId(1))]
+        ));
+        drop(publication);
+        drop(reservation);
+        drop(initial);
+        drop(world);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn fixed_slot_journal_preserves_existing_free_slots_and_rejects_foreign_pool() {
+        let pool = PublicationPool::new(100_000);
+        let foreign = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(253));
+        for id in 1..=3 {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        world
+            .despawn(world.handle_for(StableId(2)).unwrap())
+            .unwrap();
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let initial = world.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+        assert_eq!(world.free.len(), 1);
+        assert_eq!(
+            world.activate_fixed_slot_journal(&foreign, 2),
+            Err(PublicationCapacity)
+        );
+        assert!(world.fixed_journal.is_none());
+        assert_eq!(foreign.used_bytes(), 0);
+        world.activate_fixed_slot_journal(&pool, 2).unwrap();
+        world
+            .despawn(world.handle_for(StableId(1)).unwrap())
+            .unwrap();
+        world
+            .despawn(world.handle_for(StableId(3)).unwrap())
+            .unwrap();
+        assert_eq!(world.free.len(), 3);
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let publication = world.try_publish_charged(1, &mut reservation).unwrap();
+        assert_eq!(publication.changes.len(), 2);
+        assert!(matches!(
+            publication.changes.as_slice(),
+            [
+                EntityChange::Despawn(StableId(1)),
+                EntityChange::Despawn(StableId(3))
+            ]
+        ));
+        drop(publication);
+        drop(reservation);
+        drop(initial);
+        drop(world);
+        assert_eq!(pool.used_bytes(), 0);
+    }
 
     #[test]
     fn live_publication_changes_follow_stable_id_order() {
