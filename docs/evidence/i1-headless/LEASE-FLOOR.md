@@ -6,4 +6,11 @@ The constructor reserves the floor and the tick-zero page/root peak together. If
 
 The integration fixture fills every remaining pool byte after charged authority activation and advances 16 clean ticks. Each tick publishes once while pool usage remains at its limit. After the competing reservation and authority drop, a held snapshot keeps the floor charge alive; its final drop returns the pool to zero. A world unit test rejects a foreign-pool floor before publication without spending reservation or clearing dirty state. `RUSTC_WRAPPER= ./dev check` passes 19 core, 6 clock and 41 game integration tests.
 
-Two local macOS/aarch64 release runs of `RUSTC_WRAPPER= rustup run 1.99.1 cargo run --release --locked --offline -p thrum-core --example i1_cost` measured charged authority idle-tick p50 of 83 ns in both runs; the uncharged path measured 83 and 42 ns. The fixture's single-tick timer has roughly 42 ns steps and variable tails, so these runs do not establish a reliable floor overhead. Source inspection shows one extra shared-owner refcount on charged publication. Batch-level timing and complete host latency remain open. The floor does not charge group results, host delivery, replica storage or future input execution credit.
+The [release fixture](../../../crates/thrum-core/examples/i1_cost.rs) now times 100 batches of 1,000 clean authority ticks after 10 warmup batches, dividing batch elapsed time by tick count to reduce timer quantization. The same benchmark source was run in a temporary worktree at pre-floor commit `cce1d1c` and on the floor path after `9f67aec`. Three local macOS/aarch64 runs each gave these median ns/tick values:
+
+| Path | Pre-floor | With floor |
+| --- | --- | --- |
+| Charged authority | 46 / 51 / 47 | 71 / 52 / 51 |
+| Uncharged authority | 39 / 42 / 39 | 55 / 43 / 43 |
+
+The first with-floor run was slower on both charged and uncharged paths. The remaining runs are close enough that this fixture does not isolate a reliable floor overhead. Source inspection shows one extra shared-owner refcount on charged publication, and every tick still allocates an `Arc` token; precharging capacity does not remove that CPU or allocator work. The floor does not charge group results, host delivery, replica storage or future input execution credit. Complete host latency and allocator counts remain open.
