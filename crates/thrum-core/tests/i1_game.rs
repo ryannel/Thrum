@@ -1549,6 +1549,147 @@ mod closed_output_fixture {
         drop(reader);
         assert_eq!(pool.used_bytes(), 0);
     }
+
+    #[test]
+    fn charged_tick_reserves_group_before_edit_and_keeps_two_peer_outputs() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(232));
+        world
+            .spawn(
+                StableId(1),
+                Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap(),
+            )
+            .unwrap();
+        let output_limits = ClosedValueLimits {
+            max_inline_bytes: 0,
+            max_payload_slots: 1,
+            max_payload_bytes: 32,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(232)),
+            OutputRule {
+                entity_pool: pool.clone(),
+                output_pool: pool.clone(),
+            },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 8,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: output_limits,
+                rejection: output_limits,
+            },
+        )
+        .unwrap();
+        for (peer, actor) in [(PEER, ACTOR), (PEER_TWO, ACTOR_TWO)] {
+            authority.register_peer(peer, 1, actor).unwrap();
+            authority
+                .submit(Input {
+                    origin: Origin {
+                        peer,
+                        connection_epoch: 1,
+                        sequence: 1,
+                    },
+                    actor,
+                    schedule: InputSchedule::NextTick { observed_tick: 0 },
+                    action: u8::from(peer == PEER),
+                })
+                .unwrap();
+        }
+        let before_tick = authority.tick_index();
+        let snapshot_peak = authority
+            .world()
+            .conservative_charged_publication_peak(2, 0)
+            .unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes() - snapshot_peak)
+            .unwrap();
+        assert_eq!(
+            authority.step_charged().err(),
+            Some(StepError::PublicationBackpressure)
+        );
+        assert_eq!(authority.tick_index(), before_tick);
+        assert!(!authority.is_faulted());
+        assert_eq!(
+            authority
+                .world()
+                .get(authority.world().handle_for(StableId(1)).unwrap())
+                .unwrap()
+                .state
+                .inline(),
+            &1_u64.to_le_bytes()
+        );
+        drop(occupied);
+
+        let tick = authority.step_charged().unwrap();
+        assert_eq!(tick.group.commit_tick(), 1);
+        assert_eq!(tick.group.changes().len(), 1);
+        assert_eq!(tick.group.results().len(), 2);
+        assert_eq!(tick.group.events().len(), 1);
+        assert_eq!(tick.group.resolved_through(), &[(PEER, 1), (PEER_TWO, 1)]);
+        let with_group = pool.used_bytes();
+        let reader = tick.group.clone();
+        assert_eq!(pool.used_bytes(), with_group);
+        drop(tick);
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let idle = authority.step_charged().unwrap();
+        assert!(idle.group.changes().is_empty());
+        assert!(idle.group.results().is_empty());
+        assert_eq!(idle.group.resolved_through(), &[(PEER, 1), (PEER_TWO, 1)]);
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
+        drop(idle);
+        drop(occupied);
+        authority
+            .submit(Input {
+                origin: Origin {
+                    peer: PEER,
+                    connection_epoch: 1,
+                    sequence: 2,
+                },
+                actor: ACTOR,
+                schedule: InputSchedule::NextTick { observed_tick: 2 },
+                action: 0,
+            })
+            .unwrap();
+        let next = authority.step_charged().unwrap();
+        assert_eq!(next.group.results().len(), 1);
+        assert_eq!(next.group.resolved_through(), &[(PEER, 2), (PEER_TWO, 1)]);
+        drop(next);
+        drop(authority);
+        assert!(pool.used_bytes() > 0);
+        drop(reader);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_tick_rejects_unqualified_mode_without_poisoning_prototype() {
+        let pool = PublicationPool::new(100_000);
+        let mut authority = Authority::new(
+            AuthorityId::Match(MatchId(233)),
+            OutputRule {
+                entity_pool: pool.clone(),
+                output_pool: pool,
+            },
+            World::new(WorldEpoch(233)),
+        );
+        assert_eq!(authority.step_charged().err(), Some(StepError::Unqualified));
+        assert!(!authority.is_faulted());
+        assert_eq!(authority.step().unwrap().group.commit_tick, 1);
+    }
     impl GameRules for OutputRule {
         type Entity = Entity;
         type Action = u8;

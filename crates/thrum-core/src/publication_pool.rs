@@ -105,6 +105,28 @@ impl<T> PublicationColumn<T> {
         })
     }
 
+    /// Take a vector whose requested storage was covered by a pre-edit
+    /// reservation. The logical limit is the request bound, not allocator
+    /// surplus in `capacity()`.
+    pub(crate) fn try_from_reserved_vec(
+        reservation: &mut PublicationReservation,
+        values: Vec<T>,
+        requested_limit: usize,
+    ) -> Result<Self, PublicationCapacity> {
+        assert!(values.len() <= requested_limit, "column preflight bound");
+        if values.is_empty() {
+            return Ok(Self { inner: None });
+        }
+        let charge = reservation.charge(Self::required_charge(requested_limit)?)?;
+        Ok(Self {
+            inner: Some(Arc::new(ColumnStorage {
+                values,
+                limit: requested_limit,
+                _charge: charge,
+            })),
+        })
+    }
+
     pub(crate) fn push(&mut self, value: T) {
         let inner = self.inner.as_mut().expect("nonempty reserved column");
         let storage = Arc::get_mut(inner).expect("column builder has one owner");

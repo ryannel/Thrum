@@ -145,6 +145,27 @@ fn run(count: usize) {
         charged_clone.1,
         charged_clone.2,
     );
+    let prototype_idle = measure(
+        || {
+            black_box(authority.step().unwrap());
+        },
+        1_000,
+    );
+    let charged_idle = measure(
+        || {
+            black_box(authority.step_charged().unwrap());
+        },
+        1_000,
+    );
+    println!(
+        "idle_tick/{count}: batch_1000_ns[p50/p95/p99] prototype={}/{}/{} charged={}/{}/{}",
+        prototype_idle.0,
+        prototype_idle.1,
+        prototype_idle.2,
+        charged_idle.0,
+        charged_idle.1,
+        charged_idle.2,
+    );
 }
 
 fn main() {

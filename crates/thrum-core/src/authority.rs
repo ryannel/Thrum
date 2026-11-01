@@ -117,6 +117,8 @@ pub enum AdmissionError {
 /// Authority tick cannot publish while required readers retain the bounded pool.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StepError {
+    /// This entry path requires a sealed, charged authority configuration.
+    Unqualified,
     /// Eight immutable tick bundles remain leased; caller must release readers
     /// or enter its explicit overload policy before advancing.
     SnapshotBackpressure,
@@ -466,9 +468,25 @@ pub struct TickPublication<T, E, R> {
     pub world_work: WorldWork,
 }
 
+/// A tick whose group columns keep their charges through the final reader.
+pub struct ChargedTickPublication<T, E, R> {
+    /// Immutable committed world state.
+    pub snapshot: Snapshot<T>,
+    /// Full-state group with shared charged columns.
+    pub group: ChargedStateGroup<T, E, R>,
+    /// Counted world publication work.
+    pub world_work: WorldWork,
+}
+
 /// The committed tick output of one concrete game rule set.
 pub type GameTick<G> =
     TickPublication<<G as GameRules>::Entity, <G as GameRules>::Event, <G as GameRules>::Rejection>;
+/// Charged tick output for one concrete game rule set.
+pub type ChargedGameTick<G> = ChargedTickPublication<
+    <G as GameRules>::Entity,
+    <G as GameRules>::Event,
+    <G as GameRules>::Rejection,
+>;
 /// Complete state group for one concrete game rule set.
 pub type GameStateGroup<G> =
     StateGroup<<G as GameRules>::Entity, <G as GameRules>::Event, <G as GameRules>::Rejection>;
@@ -502,6 +520,7 @@ pub struct Authority<G: GameRules> {
     next_event_id: u64,
     peers: PeerMap<G>,
     due_scratch: DueScratch,
+    cached_watermarks: Option<PublicationColumn<(PeerId, u64)>>,
     snapshot_leases: SnapshotLeaseDirectory,
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
     faulted: bool,
@@ -647,6 +666,7 @@ impl<G: GameRules> Authority<G> {
             next_event_id: 1,
             peers: BTreeMap::new(),
             due_scratch: DueScratch::new(),
+            cached_watermarks: None,
             snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
             snapshot_admission,
             faulted: false,
@@ -674,6 +694,7 @@ impl<G: GameRules> Authority<G> {
     fn reserve_snapshot_tick(
         &mut self,
         due: usize,
+        charged_group: bool,
     ) -> Result<Option<PublicationReservation>, StepError> {
         let Some(admission) = &self.snapshot_admission else {
             return Ok(None);
@@ -686,7 +707,7 @@ impl<G: GameRules> Authority<G> {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
         };
-        let peak = match self
+        let snapshot_peak = match self
             .world
             .conservative_charged_publication_peak(max_edits, max_spawns)
         {
@@ -695,6 +716,47 @@ impl<G: GameRules> Authority<G> {
                 self.faulted = true;
                 return Err(StepError::TerminalGameContract);
             }
+        };
+        let group_peak = if charged_group {
+            let changes = self
+                .world
+                .conservative_change_count(max_edits)
+                .and_then(PublicationColumn::<EntityChange<G::Entity>>::required_charge);
+            let peak = changes.and_then(|changes| {
+                changes
+                    .checked_add(
+                        PublicationColumn::<ActionResult<G::Rejection>>::required_charge(due)?,
+                    )
+                    .and_then(|bytes| {
+                        bytes.checked_add(
+                            PublicationColumn::<CommittedEvent<G::Event>>::required_charge(due)
+                                .ok()?,
+                        )
+                    })
+                    .and_then(|bytes| {
+                        let watermarks = if due == 0 && self.cached_watermarks.is_some() {
+                            0
+                        } else {
+                            PublicationColumn::<(PeerId, u64)>::required_charge(self.peers.len())
+                                .ok()?
+                        };
+                        bytes.checked_add(watermarks)
+                    })
+                    .ok_or(PublicationCapacity)
+            });
+            match peak {
+                Ok(peak) => peak,
+                Err(_) => {
+                    self.faulted = true;
+                    return Err(StepError::TerminalGameContract);
+                }
+            }
+        } else {
+            0
+        };
+        let Some(peak) = snapshot_peak.checked_add(group_peak) else {
+            self.faulted = true;
+            return Err(StepError::TerminalGameContract);
         };
         admission
             .pool
@@ -718,6 +780,7 @@ impl<G: GameRules> Authority<G> {
         }
         if let Some(peer) = self.peers.get_mut(&id) {
             peer.reconnect(actor, epoch);
+            self.cached_watermarks = None;
             return Ok(());
         }
         let pending = PendingQueue::try_new(
@@ -738,6 +801,7 @@ impl<G: GameRules> Authority<G> {
             )
             .map_err(|_| AdmissionError::PublicationCapacity)?;
         self.peers.insert(id, Peer::new(actor, epoch, pending));
+        self.cached_watermarks = None;
         Ok(())
     }
     /// Admit a typed one-shot input; duplicate detection precedes scheduling.
@@ -1007,6 +1071,84 @@ impl<G: GameRules> Authority<G> {
     }
     /// Execute exactly one fixed 1/60-second authority step and publish after all decisions.
     pub fn step(&mut self) -> Result<GameTick<G>, StepError> {
+        self.cached_watermarks = None;
+        self.step_inner(false).map(|(tick, _)| tick)
+    }
+
+    /// Publish one sealed tick with shared charged group columns. This admits
+    /// the group's requested storage before edits; replica and host storage
+    /// still require their own precommit admission.
+    pub fn step_charged(&mut self) -> Result<ChargedGameTick<G>, StepError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        if self
+            .snapshot_admission
+            .as_ref()
+            .is_none_or(|admission| admission.closed.is_none())
+        {
+            return Err(StepError::Unqualified);
+        }
+        let (tick, mut reservation) = self.step_inner(true)?;
+        let reservation = reservation.as_mut().expect("charged group reservation");
+        let StateGroup {
+            authority,
+            group_id,
+            commit_tick,
+            event_cursor,
+            changes,
+            results,
+            events,
+            resolved_through,
+        } = tick.group;
+        let changes_limit = changes.len();
+        let results_limit = results.len();
+        // Events requested one slot per due input before any rule callback.
+        let events_limit = results.len();
+        let watermarks_limit = resolved_through.len();
+        let watermarks = if results.is_empty() {
+            self.cached_watermarks.clone()
+        } else {
+            None
+        };
+        let watermarks = match watermarks {
+            Some(watermarks) => watermarks,
+            None => PublicationColumn::try_from_reserved_vec(
+                reservation,
+                resolved_through,
+                watermarks_limit,
+            )
+            .expect("preflight group watermarks"),
+        };
+        self.cached_watermarks = Some(watermarks.clone());
+        let group = ChargedStateGroup {
+            authority,
+            group_id,
+            commit_tick,
+            event_cursor,
+            changes: PublicationColumn::try_from_reserved_vec(reservation, changes, changes_limit)
+                .expect("preflight group changes"),
+            results: PublicationColumn::try_from_reserved_vec(reservation, results, results_limit)
+                .expect("preflight group results"),
+            events: PublicationColumn::try_from_reserved_vec(reservation, events, events_limit)
+                .expect("preflight group events"),
+            resolved_through: watermarks,
+        };
+        self.faulted = false;
+        Ok(ChargedTickPublication {
+            snapshot: tick.snapshot,
+            group,
+            world_work: tick.world_work,
+        })
+    }
+
+    fn step_inner(
+        &mut self,
+        charged_group: bool,
+    ) -> Result<(GameTick<G>, Option<PublicationReservation>), StepError> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
         }
@@ -1024,7 +1166,7 @@ impl<G: GameRules> Authority<G> {
             }
         }
         let mut snapshot_reservation =
-            match self.reserve_snapshot_tick(self.due_scratch.values.len()) {
+            match self.reserve_snapshot_tick(self.due_scratch.values.len(), charged_group) {
                 Ok(reservation) => reservation,
                 Err(error) => {
                     self.due_scratch.values.clear();
@@ -1036,7 +1178,11 @@ impl<G: GameRules> Authority<G> {
         self.faulted = true;
         self.tick = self.tick.checked_add(1).expect("world tick exhausted");
         let mut results = Vec::with_capacity(self.due_scratch.values.len());
-        let mut events = Vec::new();
+        let mut events = if charged_group {
+            Vec::with_capacity(self.due_scratch.values.len())
+        } else {
+            Vec::new()
+        };
         for index in 0..self.due_scratch.values.len() {
             let (peer_id, sequence) = self.due_scratch.values[index];
             let pending = self
@@ -1151,6 +1297,18 @@ impl<G: GameRules> Authority<G> {
         self.snapshot = published.snapshot.clone();
         self.snapshot_leases.push(published.snapshot.lease_token());
         self.group_id = self.group_id.checked_add(1).expect("group ID exhausted");
+        let resolved_through =
+            if charged_group && results.is_empty() && self.cached_watermarks.is_some() {
+                Vec::new()
+            } else {
+                let mut values = Vec::with_capacity(self.peers.len());
+                values.extend(
+                    self.peers
+                        .iter()
+                        .map(|(id, peer)| (*id, peer.resolved_through)),
+                );
+                values
+            };
         let group = StateGroup {
             authority: self.id,
             group_id: self.group_id,
@@ -1159,18 +1317,16 @@ impl<G: GameRules> Authority<G> {
             changes: published.changes,
             results,
             events,
-            resolved_through: self
-                .peers
-                .iter()
-                .map(|(id, p)| (*id, p.resolved_through))
-                .collect(),
+            resolved_through,
         };
         let tick = TickPublication {
             snapshot: published.snapshot,
             group,
             world_work: published.work,
         };
-        self.faulted = false;
-        Ok(tick)
+        if !charged_group {
+            self.faulted = false;
+        }
+        Ok((tick, snapshot_reservation))
     }
 }

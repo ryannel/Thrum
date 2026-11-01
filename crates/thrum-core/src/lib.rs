@@ -13,9 +13,9 @@ mod world;
 
 pub use authority::{
     ActionRejection, ActionResult, Admission, AdmissionError, Authority, ChargedBaselineError,
-    ChargedGameStateGroup, ClosedGameLimits, CommittedEvent, GameRules, GameStateGroup, GameTick,
-    Input, InputSchedule, Origin, PeerId, PreparedCommit, ResultDisposition, SnapshotWriteBounds,
-    StepError, TickPublication,
+    ChargedGameStateGroup, ChargedGameTick, ChargedTickPublication, ClosedGameLimits,
+    CommittedEvent, GameRules, GameStateGroup, GameTick, Input, InputSchedule, Origin, PeerId,
+    PreparedCommit, ResultDisposition, SnapshotWriteBounds, StepError, TickPublication,
 };
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{
