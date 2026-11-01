@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "1ee0e1ba56b2a94f8cbb14850c950c798bfffb57a77a9b52568c6657c2461aa4",
+    "design_sha256": "56529e1014b7eddd4e87543a38075c29d0e889f1a0d3c85b41a0e92dd7bc3584",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2819,6 +2819,8 @@
       "charged_authority_evidence": "../evidence/i1-headless/CHARGED-AUTHORITY.md",
       "closed_record_evidence": "../evidence/i1-headless/PUBLICATION-RECORD.md",
       "closed_record_admission_evidence": "../evidence/i1-headless/CLOSED-RECORD-ADMISSION.md",
+      "group_owner_design_evidence": "../evidence/i1-headless/GROUP-OWNER-DESIGN.md",
+      "group_owner_status": "selected_safe_requested_byte_columns_with_standalone_evidence_fixture_and_local_clone_cost; authority_replica_host_not_integrated",
       "whole_tick_profile_design": "reviewed_target_with_open_buffer_lease_and_full_allocation_proofs",
       "whole_tick_design_review_evidence": "../evidence/i1-headless/WHOLE-TICK-DESIGN-REVIEW.md",
       "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
