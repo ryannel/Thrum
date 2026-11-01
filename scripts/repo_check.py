@@ -1,0 +1,152 @@
+"""Dependency-free checks for the repository's documented conventions.
+
+Markdown scope: inline local links and ATX headings/explicit HTML anchors, outside
+fenced code. Remote URLs are not fetched. This is not a general Markdown parser.
+"""
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tomllib
+from urllib.parse import unquote, urlsplit
+
+from design_hashes import check_hashes
+
+ROOT = Path(__file__).resolve().parents[1]
+LINK = re.compile(r"\[[^\]\n]*\]\(([^)\n]+)\)")
+
+
+def prose(text):
+    return re.sub(r"(?ms)^\s*(`{3,}|~{3,}).*?^\s*\1\s*$", "", text)
+
+
+def anchors(text):
+    text = prose(text)
+    result = set(re.findall(r'<a\s+id=[\"\x27]([^\"\x27]+)', text))
+    counts = {}
+    for heading in re.findall(r"(?m)^#{1,6}\s+(.+?)\s*#*\s*$", text):
+        name = re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
+        count = counts.get(name, 0)
+        counts[name] = count + 1
+        result.add(name if count == 0 else f"{name}-{count}")
+    return result
+
+
+def check_links(root, files):
+    errors = []
+    count = 0
+    for path in files:
+        for match in LINK.finditer(prose(path.read_text())):
+            value = match[1].strip()
+            if value.startswith("<"):
+                value = value[1:value.index(">")]
+            else:
+                value = value.split(' "', 1)[0]
+            url = urlsplit(value)
+            if url.scheme or url.netloc:
+                continue
+            dest = (path.parent / unquote(url.path)).resolve() if url.path else path
+            count += 1
+            label = f"{path.relative_to(root)}: {value}"
+            if not dest.is_relative_to(root) or not dest.exists():
+                errors.append(f"missing/outside local link: {label}")
+            elif url.fragment and dest.suffix == ".md" and unquote(url.fragment) not in anchors(dest.read_text()):
+                errors.append(f"missing anchor: {label}")
+    return errors, count
+
+
+def check_packages(root, metadata, policy):
+    errors = []
+    members = set(metadata["workspace_members"])
+    packages = {p["name"]: p for p in metadata["packages"] if p["id"] in members}
+    configured = policy["packages"]
+    if packages.keys() != configured.keys():
+        errors.append(f"package registry mismatch: actual={sorted(packages)}, policy={sorted(configured)}")
+    manifests = {str(Path(p["manifest_path"]).resolve().parent): name for name, p in packages.items()}
+    for name, package in packages.items():
+        if name not in configured:
+            continue
+        entry = configured[name]
+        manifest_path = Path(package["manifest_path"]).resolve()
+        if manifest_path != (root / entry["manifest"]).resolve():
+            errors.append(f"unexpected manifest path: {name}")
+        manifest = tomllib.loads(manifest_path.read_text())
+        if manifest.get("lints") != {"workspace": True}:
+            errors.append(f"{name} must inherit workspace lints")
+        for key in ("version", "edition", "rust-version", "publish"):
+            if manifest["package"].get(key) != {"workspace": True}:
+                errors.append(f"{name} must inherit package.{key}")
+        allowed = set(entry["allowed_workspace_dependencies"])
+        if allowed - packages.keys():
+            errors.append(f"unknown dependency in policy for {name}: {sorted(allowed - packages.keys())}")
+        # Cargo metadata preserves every declared dependency, including dev/build/target/rename.
+        for dep in package["dependencies"]:
+            dep_path = dep.get("path")
+            if dep_path:
+                dependency = manifests.get(str(Path(dep_path).resolve()))
+                if dependency is None:
+                    errors.append(f"{name}: path dependency outside registered workspace: {dep_path}")
+                elif dependency not in allowed:
+                    errors.append(f"forbidden workspace dependency: {name} -> {dependency}")
+    return errors
+
+
+def check_skills(root):
+    errors = []
+    for path in (root / ".agents/skills").glob("*/SKILL.md"):
+        match = re.match(r"---\n(.*?)\n---", path.read_text(), re.S)
+        if not match:
+            errors.append(f"missing skill metadata: {path.name}")
+            continue
+        fields = dict(re.findall(r"^(name|description): (.+)$", match[1], re.M))
+        if fields.get("name") != path.parent.name or not fields.get("description"):
+            errors.append(f"invalid skill name/description: {path.parent.name}")
+    return errors
+
+
+def check_maturity(ledger):
+    errors = []
+    ids = [row["id"] for row in ledger["modules"]]
+    contracts = ledger["contracts"]
+    if len(ids) != len(set(ids)) or len(contracts) != len(set(contracts)):
+        errors.append("duplicate module/contract ID")
+    for row in ledger["modules"]:
+        if set(row["contracts"]) - set(contracts):
+            errors.append(f"unknown contract reference: {row['id']}")
+        for field, values in ledger["state_vocabulary"].items():
+            if field in row and row[field] not in values:
+                errors.append(f"invalid {field} for {row['id']}")
+    return errors
+
+
+def markdown_files(root):
+    result = []
+    for directory, names, files in os.walk(root):
+        names[:] = [n for n in names if n not in {".git", "target", "tmp", "__pycache__"}]
+        result.extend(Path(directory) / f for f in files if f.endswith(".md"))
+    return sorted(result)
+
+
+def main():
+    files = markdown_files(ROOT)
+    errors, links = check_links(ROOT, files)
+    errors += check_skills(ROOT)
+    ledger = json.loads((ROOT / "docs/design/maturity.json").read_text())
+    errors += check_maturity(ledger)
+    errors += check_hashes(ROOT, ledger)
+    policy = tomllib.loads((ROOT / ".config/architecture.toml").read_text())
+    # Explicit rustup avoids silently using an unrelated standalone Cargo installation.
+    channel = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+    output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, text=True)
+    errors += check_packages(ROOT, json.loads(output), policy)
+    if errors:
+        print("\n".join(sorted(set(errors))), file=sys.stderr)
+        return 1
+    print(f"Repository checks passed: {len(files)} Markdown files, {links} local links, {len(ledger['modules'])} module records, crate policy and current design hashes.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

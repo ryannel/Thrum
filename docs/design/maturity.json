@@ -1,0 +1,2705 @@
+{
+  "schema_version": 1,
+  "target": "custom-bevy-independent-3d-engine",
+  "as_of": "2026-11-01",
+  "contract_revision": "C4",
+  "scope_note": "Whole-engine architecture and scoped initial detailed specifications only. This ledger tracks the custom target; historical code is an unassessed candidate. Defaults apply unless explicitly overridden. No runtime/quality/platform promotion from document closure.",
+  "user_selected": [
+    "custom host without Bevy runtime",
+    "3D multiple camera/game styles",
+    "Mac and PC",
+    "browser demos",
+    "mobile app stores",
+    "configurable quality/features",
+    "AI-oriented development",
+    "analytical design before experiments",
+    "active whole-engine coordination",
+    "future multiplayer as first-class architecture"
+  ],
+  "working_platform_interpretation": {
+    "mac": "Apple silicon first; minimum OS/GPU open; Intel coverage open",
+    "pc": "Windows first; Linux optional pending selection",
+    "browser": "WebGPU profile; exact browser/device matrix open",
+    "mobile": "iOS/iPadOS and Android; minimum OS/device open",
+    "reference_specification": "BASELINE-SPEC.md; named candidates are selected, not qualified hardware floors."
+  },
+  "defaults": {
+    "implementation": "not_started_for_target",
+    "functional_validation": "not_run",
+    "experienced_quality": "not_reviewed",
+    "platform_performance": {
+      "mac": "not_run",
+      "windows": "not_run",
+      "browser": "not_run",
+      "ios": "not_run",
+      "android": "not_run"
+    },
+    "evidence": []
+  },
+  "state_vocabulary": {
+    "decision": [
+      "open",
+      "recommended",
+      "selected",
+      "rejected",
+      "superseded"
+    ],
+    "design_stage": [
+      "unscoped",
+      "scoped",
+      "high_level",
+      "detailed"
+    ],
+    "integration_review": [
+      "pending",
+      "reviewed_with_gaps",
+      "reconciled"
+    ],
+    "implementation": [
+      "not_started_for_target",
+      "partial",
+      "feature_complete"
+    ],
+    "functional_validation": [
+      "not_run",
+      "failing",
+      "partial",
+      "passed"
+    ],
+    "experienced_quality": [
+      "not_reviewed",
+      "changes_requested",
+      "accepted",
+      "not_applicable"
+    ],
+    "platform_performance": [
+      "not_run",
+      "failing",
+      "qualified",
+      "out_of_scope"
+    ]
+  },
+  "contracts": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12",
+    "C13"
+  ],
+  "modules": [
+    {
+      "id": "F1",
+      "name": "Runtime and platform",
+      "scope": "foundation",
+      "design": "modules/PLATFORM-RUNTIME.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C04",
+        "C05",
+        "C06",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/host/bw_engine",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "f5dcfc94e7eb2a748885a5de3f2e8d56fcc7546df0ab37a28ccc1e465981d933",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A01"
+      ],
+      "resolved_architecture_findings": [
+        "A01"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Exact task/publication APIs, overload parameters, platform event and storage adapters."
+    },
+    {
+      "id": "F2",
+      "name": "Capability profiles and composition",
+      "scope": "foundation",
+      "design": "modules/TOOLS-DELIVERY.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C04",
+        "C05",
+        "C10",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D0",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "supplemental_designs": [
+        "COMPOSITION.md"
+      ],
+      "open_architecture_findings": [],
+      "current_design_sha256": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "resolved_architecture_findings": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Exact explicit-setup/type registration and requirement validation, finite target/tier shader closure, keyed model bindings, supported presentation transitions and cost model; no general provider search by default."
+    },
+    {
+      "id": "F3",
+      "name": "Identity, schemas and coordinates",
+      "scope": "foundation",
+      "design": "modules/WORLD-CONTENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/core/bw_core",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "open_plan_review_findings": [],
+      "historical_architecture_findings": [
+        "A01",
+        "A02",
+        "A04"
+      ],
+      "resolved_architecture_findings": [
+        "A01",
+        "A02",
+        "A04"
+      ],
+      "historical_plan_review_findings": [
+        "WP01"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Schema field/codecs, migration registry, coordinate tolerances and storage primitive audit."
+    },
+    {
+      "id": "F4",
+      "name": "Content build, loading and residency",
+      "scope": "foundation",
+      "design": "modules/WORLD-CONTENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C04",
+        "C05",
+        "C06",
+        "C10",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/core/bw_asset",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A02",
+        "A03",
+        "A04"
+      ],
+      "resolved_architecture_findings": [
+        "A02",
+        "A03",
+        "A04"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Cook formats, target products, crash-recovery and quota adapter details."
+    },
+    {
+      "id": "W1",
+      "name": "Committed world and entity state",
+      "scope": "foundation",
+      "design": "modules/WORLD-CONTENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_world",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "open_plan_review_findings": [],
+      "historical_architecture_findings": [
+        "A01",
+        "A02"
+      ],
+      "resolved_architecture_findings": [
+        "A01",
+        "A02"
+      ],
+      "historical_plan_review_findings": [
+        "WP01"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Typed entity/component APIs, table/sparse implementation, transform and command details."
+    },
+    {
+      "id": "W2",
+      "name": "World construction and region streaming",
+      "scope": "selectable",
+      "design": "modules/WORLD-CONTENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C05",
+        "C07",
+        "C10",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Initial bounded preload and checkpoint/drain/retire/load recovery specified in FOUNDATION-SPEC. Live scoped streaming, provider transfer and its full residency/commit recipe require separate detailed design before that capability is built.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A02",
+        "A04"
+      ],
+      "resolved_architecture_findings": [
+        "A02",
+        "A04"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
+        "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Region/portal formats, proxy tolerances, active-set transaction and support pins."
+    },
+    {
+      "id": "P1",
+      "name": "Input and actions",
+      "scope": "selectable",
+      "design": "modules/PLAY-SYSTEMS.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C10",
+        "C11",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/host/bw_engine",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "e814dfd6ba4e9c657854cde999f7bfb8b9ab334758bd08a91b7f961ac55965a8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Action/context schemas and exact touch/controller/IME adapters."
+    },
+    {
+      "id": "P2",
+      "name": "Cameras and views",
+      "scope": "selectable",
+      "design": "modules/PLAY-SYSTEMS.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C07",
+        "C11",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Camera obstruction, late-update policy, picking and history descriptors.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/host/bw_engine",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "e814dfd6ba4e9c657854cde999f7bfb8b9ab334758bd08a91b7f961ac55965a8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "P3",
+      "name": "Physics, queries and locomotion",
+      "scope": "selectable",
+      "design": "modules/PLAY-SYSTEMS.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C05",
+        "C09",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_vessels",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "e814dfd6ba4e9c657854cde999f7bfb8b9ab334758bd08a91b7f961ac55965a8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A04"
+      ],
+      "resolved_architecture_findings": [
+        "A04"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Solver/controller library audit, contact/substep/tolerance and moving-platform model."
+    },
+    {
+      "id": "P4",
+      "name": "Animation and characters",
+      "scope": "selectable",
+      "design": "modules/PLAY-SYSTEMS.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C03",
+        "C05",
+        "C06",
+        "C07",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_actors",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "e814dfd6ba4e9c657854cde999f7bfb8b9ab334758bd08a91b7f961ac55965a8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Graph/IK/compression and prior-sample retention, root and ragdoll transitions."
+    },
+    {
+      "id": "P5",
+      "name": "Navigation and agents",
+      "scope": "selectable",
+      "design": "modules/PLAY-SYSTEMS.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C05",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "e814dfd6ba4e9c657854cde999f7bfb8b9ab334758bd08a91b7f961ac55965a8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Nav tile/obstacle update algorithms, agent budgets and replanning policy."
+    },
+    {
+      "id": "P6",
+      "name": "Gameplay behaviours and interactions",
+      "scope": "selectable",
+      "design": "modules/PLAY-SYSTEMS.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C10",
+        "C11",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "e814dfd6ba4e9c657854cde999f7bfb8b9ab334758bd08a91b7f961ac55965a8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Event/action semantics, rule graph/scripting choice, sequence interruption and game policies."
+    },
+    {
+      "id": "P7",
+      "name": "Persistence and replay",
+      "scope": "selectable",
+      "design": "modules/WORLD-CONTENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C05",
+        "C10",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A01",
+        "A02",
+        "A04"
+      ],
+      "resolved_architecture_findings": [
+        "A01",
+        "A02",
+        "A04"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "RecoveryRoot format, adapters, operation epochs, save/replay envelope and migration."
+    },
+    {
+      "id": "V1",
+      "name": "GPU execution and resources",
+      "scope": "selectable",
+      "design": "modules/RENDERING.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "C08",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/gpu/bw_gpu",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "historical_architecture_findings": [
+        "A03",
+        "A05"
+      ],
+      "resolved_architecture_findings": [
+        "A03",
+        "A05"
+      ],
+      "current_design_sha256": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Pass/resource graph allocation, shader build and backend feature mapping."
+    },
+    {
+      "id": "V2",
+      "name": "Render scene, visibility and LOD",
+      "scope": "selectable",
+      "design": "modules/RENDERING.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C05",
+        "C07",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/render/bw_render_visibility",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Draw/instance layouts, projected bounds/LOD error and CPU/GPU culling details."
+    },
+    {
+      "id": "V3",
+      "name": "Materials, light and transport",
+      "scope": "selectable",
+      "design": "modules/RENDERING.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C04",
+        "C05",
+        "C07",
+        "C08",
+        "C09",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_light",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "historical_architecture_findings": [
+        "A03",
+        "A05"
+      ],
+      "resolved_architecture_findings": [
+        "A03",
+        "A05"
+      ],
+      "current_design_sha256": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Material closure/layering, clustered bins, shadow/probe update and transparency transport."
+    },
+    {
+      "id": "V4",
+      "name": "Reconstruction and display",
+      "scope": "selectable",
+      "design": "modules/RENDERING.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C04",
+        "C06",
+        "C07",
+        "C08",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/render/bw_render_post",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Spatial AA/display transform baseline; temporal input/validity and provider-specific filters."
+    },
+    {
+      "id": "V5",
+      "name": "Visual effects",
+      "scope": "selectable",
+      "design": "modules/RENDERING.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C04",
+        "C06",
+        "C07",
+        "C08",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Particles/decal/trail representations, depth/velocity semantics and bounded work.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "E1",
+      "name": "Environment family",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C04",
+        "C05",
+        "C07",
+        "C08",
+        "C09",
+        "C10",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_biome",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "historical_architecture_findings": [
+        "A04",
+        "A05"
+      ],
+      "resolved_architecture_findings": [
+        "A04",
+        "A05"
+      ],
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Provider schemas and shared field/force/transport couplings before dependent implementation."
+    },
+    {
+      "id": "E1.weather",
+      "name": "Weather and wind",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C04",
+        "C09",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Authored/dynamic field representations, advection/forcing closure and valid regimes.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "parent": "E1",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "E1.atmosphere",
+      "name": "Atmosphere and sky",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C04",
+        "C07",
+        "C08",
+        "C09",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "parent": "E1",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/render/bw_render_sky",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Scattering closure/LUT parameterization, source lighting and bounded ray segments."
+    },
+    {
+      "id": "E1.clouds",
+      "name": "Cloud fields and projections",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C04",
+        "C07",
+        "C08",
+        "C09",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "parent": "E1",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/render/bw_render_clouds",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling."
+    },
+    {
+      "id": "E1.surfaces",
+      "name": "Terrain and surface response",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C05",
+        "C08",
+        "C09",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Liquid/solid constitutive transfer, runoff and material/friction mapping.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "parent": "E1",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/render/bw_render_surfaces",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "E1.vegetation",
+      "name": "Vegetation response",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C05",
+        "C07",
+        "C08",
+        "C09",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Bend/contact operator, conservative bounds, material and density/placement products.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "parent": "E1",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_biome",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "E1.water",
+      "name": "Water regions and dynamics",
+      "scope": "selectable",
+      "design": "modules/ENVIRONMENT.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C05",
+        "C07",
+        "C08",
+        "C09",
+        "C10",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "parent": "E1",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/sim/bw_water",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Regime-specific dynamics/discretization, body-force closure, query/optical consistency."
+    },
+    {
+      "id": "A1",
+      "name": "Audio and spatial sound",
+      "scope": "selectable",
+      "design": "modules/AUDIO-UI.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C05",
+        "C09",
+        "C10",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Mix/voice graph, clock/resampling/occlusion policy and platform callback audit.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/host/bw_audio",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "9130e86fdafaedbee2a388afb350e291bab3bdb523cf4292a0bda4ffd36ccd1c",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "U1",
+      "name": "UI, text and accessibility",
+      "scope": "selectable",
+      "design": "modules/AUDIO-UI.md",
+      "decision": "recommended",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C04",
+        "C05",
+        "C07",
+        "C10",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D2",
+      "remaining_detailed_design": "Text shaping/layout/glyph cache, focus/IME and semantic accessibility adapters.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "reviewed_design_sha256": "9130e86fdafaedbee2a388afb350e291bab3bdb523cf4292a0bda4ffd36ccd1c",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "current_design_sha256": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    },
+    {
+      "id": "T1",
+      "name": "Authoring and automation",
+      "scope": "tooling",
+      "design": "modules/TOOLS-DELIVERY.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C04",
+        "C05",
+        "C10",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/host/bw_devtools",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "open_plan_review_findings": [],
+      "historical_architecture_findings": [
+        "A01",
+        "A02",
+        "A03"
+      ],
+      "resolved_architecture_findings": [
+        "A01",
+        "A02",
+        "A03"
+      ],
+      "historical_plan_review_findings": [
+        "WP01"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Operation registry, transaction/undo and durable retry/recovery interfaces."
+    },
+    {
+      "id": "T2",
+      "name": "Diagnostics, evidence and delivery",
+      "scope": "tooling",
+      "design": "modules/TOOLS-DELIVERY.md",
+      "decision": "selected",
+      "design_stage": "high_level",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C02",
+        "C04",
+        "C05",
+        "C06",
+        "C10",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": "D1",
+      "remaining_detailed_design": "Named initial gaps are specified in initial_specifications. Wider family capabilities outside that admitted set retain their scoped module-design obligations; executable bindings/conformance and target qualification are implementation work, not evidence of a missing baseline selection.",
+      "qualification": "Validate the model and coupled contract predictions on the required profile; see owning design and CONSTRUCTION-PLAN.md.",
+      "existing_candidate": {
+        "status": "unassessed",
+        "branch": "engine/rebuild",
+        "inspected_revision": "49a6bc78a2385a18f5d57c8fb15a5b4fa7c30cc5",
+        "path": "crates/host/bw_devtools",
+        "evidence_scope": "manifest/path inventory only; no target capability or correctness inferred"
+      },
+      "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
+      "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
+      "open_architecture_findings": [],
+      "current_design_sha256": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "historical_architecture_findings": [
+        "A02",
+        "A03"
+      ],
+      "resolved_architecture_findings": [
+        "A02",
+        "A03"
+      ],
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "Trace/evidence/package schemas, scoped validators and exact platform packaging steps."
+    },
+    {
+      "id": "N1",
+      "name": "Network sessions and replication",
+      "scope": "networking",
+      "design": "modules/NETWORKING.md",
+      "decision": "selected",
+      "design_stage": "detailed",
+      "integration_review": "reconciled",
+      "contracts": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C07",
+        "C09",
+        "C10",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "next_design_package": null,
+      "next_construction_package": "I2n",
+      "remaining_detailed_design": "Initial SR01-SR03/SR07 mechanisms specified: per-action outcomes and individual/prefix resolution, atomic lifecycle/state, semantic/wire compatibility, full-group R4 budget and reconnect/suspend. New genres, streamed servers, richer prediction and online services require separate recipes.",
+      "qualification": "I2n: native/browser real-transport join/content/baseline/interest/reconnect/overload, optional static-controller prediction and whole-game frame/state-age/resource evidence. No runtime performed.",
+      "existing_candidate": {
+        "status": "not_inventoried"
+      },
+      "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
+      "current_design_sha256": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "architecture_selection_review": {
+        "status": "reconciled_for_selected_scope",
+        "record": "ARCHITECTURE-DECISIONS.md",
+        "baseline": "BASELINE-SPEC.md",
+        "scope": "C4 initial source/run/network/delivery consequences, not detailed readiness or qualification of every family feature.",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      "initial_specifications": {
+        "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
+      },
+      "initial_specification_stage": "specified_for_admitted_scope",
+      "prior_remaining_detailed_design": "None for the initial finite four-player WSS protocol. Datagram/streamed-server/full-physics prediction and online-service extensions require separate specifications before their claims."
+    }
+  ],
+  "design_review_scope": "C4 source/network/delivery simplification reconciled across affected producers/consumers with three Sol High owners and cross-challenge. All E01-E20 requirements traced. Only initial admitted mechanisms are detailed/closed; richer family designs and all runtime evidence retain their obligations.",
+  "design_reviews": [
+    "WHOLE-ENGINE-REVIEW.md",
+    "INTEGRATION-REVIEW.md",
+    "research/CONTENT-LIFECYCLE-REVIEW.md",
+    "SKILL-FORWARD-REVIEW.md",
+    "research/COMPOSITION-REVIEW.md",
+    "ARCHITECTURE-AUDIT.md",
+    "ARCHITECTURE-DECISIONS.md",
+    "BASELINE-SPEC.md"
+  ],
+  "contract_sha256": "06fdc747a6f8c24a30b41e261513cb13034893e1e1cca1b5e87eec587591205c",
+  "composition_supplement": {
+    "design": "COMPOSITION.md",
+    "decision": "selected",
+    "design_stage": "high_level",
+    "integration_review": "reconciled",
+    "owner": "F2",
+    "affected_owners": [
+      "F1",
+      "F3",
+      "F4",
+      "W1",
+      "W2",
+      "P7",
+      "T1",
+      "V1"
+    ],
+    "review_scope": "Scenario-derived recommendation supersedes universal-package candidate: explicit static setup, direct typed game registration, optional reusable packages. Earlier reviewed_design_sha256 is historical; A01-A05 remain open. No runtime evidence.",
+    "review": "research/COMPOSITION-REVIEW.md",
+    "reviewed_design_sha256": "b2f58e968f2fb30e1a7b95c4a77f10e75db30927dfae1a267a08c8ddce050053",
+    "contract_sha256": "7c9503bbc56772a77531ec1e52e686043171bf2d43101e500bc398b4c39a26ea",
+    "current_design_sha256": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
+    "current_design_delta": "First-use teaching order and starter graduation added; direct code, claimed-capability conformance and optional packaging retained. Prior review hashes preserved. Guided/direct/headless creation share one source/runtime; valid draft and chosen runtime readiness distinguished pending A02/D1.",
+    "current_resolution": "C3 and initial specs supersede open selection notes in earlier review_scope/current_design_delta; historical hashes preserved."
+  },
+  "architecture_audit": {
+    "report": "ARCHITECTURE-AUDIT.md",
+    "as_of": "2026-11-01",
+    "audit_status": "complete_for_recorded_scope",
+    "finding_status": "resolved_for_selected_architectural_scope",
+    "method": "Three fresh Sol High agents derived independent checklists before inspecting design, then cross-challenged reports; coordinator reconciled and narrowed findings.",
+    "reports": [
+      "research/AUDIT-CORE.md",
+      "research/AUDIT-MODELS.md",
+      "research/AUDIT-CREATION-DELIVERY.md"
+    ],
+    "report_sha256": {
+      "ARCHITECTURE-AUDIT.md": "c58f925e8eea65691de49209514d7ace3f3ba2946f74a4b731a3cd8d6a63cbd7",
+      "research/AUDIT-CORE.md": "43964ee13c02e569360ee941781b15d1db8e960d2677e06f9bbe5384cae5f395",
+      "research/AUDIT-MODELS.md": "6b119a6edb6e9e274c526c8cf405a6f46d21859f1833884844490dc7a60ced1d",
+      "research/AUDIT-CREATION-DELIVERY.md": "e05dc37a3fe0d9a9f3ed0e223625923290f0a26ec2b8332acda14ce7f038bb48"
+    },
+    "findings": [
+      {
+        "id": "A01",
+        "title": "Edit/play session isolation",
+        "status": "resolved_for_selected_scope",
+        "boundary_owners": [
+          "F1",
+          "F3",
+          "W1",
+          "P7",
+          "T1"
+        ],
+        "closure_gate": "D1 world/session and authoring API freeze",
+        "baseline_status": "open",
+        "resolution": "ARCHITECTURE-DECISIONS.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "A02",
+        "title": "External project-source change admission",
+        "status": "resolved_for_selected_scope",
+        "boundary_owners": [
+          "T1",
+          "F3",
+          "F4",
+          "P7",
+          "W1",
+          "W2",
+          "T2"
+        ],
+        "closure_gate": "D1 source/recovery contract",
+        "baseline_status": "open",
+        "resolution": "ARCHITECTURE-DECISIONS.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "A03",
+        "title": "Shader demand and availability closure",
+        "status": "resolved_for_selected_scope",
+        "boundary_owners": [
+          "F2",
+          "F4",
+          "V1",
+          "V3",
+          "T1",
+          "T2"
+        ],
+        "closure_gate": "Joint D1-D2 before cooked render path",
+        "baseline_status": "open",
+        "resolution": "ARCHITECTURE-DECISIONS.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "A04",
+        "title": "Heterogeneous water-domain exchange",
+        "status": "resolved_for_selected_scope",
+        "boundary_owners": [
+          "E1",
+          "P3",
+          "F2",
+          "F3",
+          "F4",
+          "W2",
+          "P7"
+        ],
+        "closure_gate": "Before water-family API freeze",
+        "baseline_status": "open",
+        "resolution": "ARCHITECTURE-DECISIONS.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "A05",
+        "title": "Overlapping-medium representation compatibility",
+        "status": "resolved_for_selected_scope",
+        "boundary_owners": [
+          "E1",
+          "V3",
+          "F2",
+          "V1"
+        ],
+        "closure_gate": "C08/environment-render interface before provider integration",
+        "baseline_status": "open",
+        "resolution": "ARCHITECTURE-DECISIONS.md",
+        "implementation_proof": "not_run"
+      }
+    ],
+    "decision_followups": [
+      "J01 recommended explicit static game setup and optional packages from scenario walkthroughs",
+      "J02 recommended material/effect/provider hooks and headless boundary; no arbitrary renderer replacement promise",
+      "J03 reuse scope corrected; library comparison remains D1",
+      "J04 recommended isolated play process and code/schema rebuild-restart; detailed lifecycle remains open"
+    ],
+    "scope_note": "This is a decision audit, not runtime qualification. Open boundary findings qualify prior integration conclusions. Detailed reports include challenged claims; coordinator report owns final dispositions.",
+    "independent_input_sha256": {
+      "tmp/handoffs/2026-11-01-engine-audit/core-independent.md": "314504a6fdd1ad5c92b1e4272606f325a998c8e68d364ac4bac3913621e841aa",
+      "tmp/handoffs/2026-11-01-engine-audit/models-independent.md": "ab9ecff954db34e78c6327b17b46eab21ee0176d35dc2327968c5c134dc6add3",
+      "tmp/handoffs/2026-11-01-engine-audit/delivery-independent.md": "dfc8a5548074e15bf8c506866ce201cab19dfcdf85c554135d6dadee74486881"
+    },
+    "synthesis_review": "A separate Sol High reader checked coordinator dispositions against the crossed reports; scope preserved, overlap counterexample sharpened. No runtime qualification.",
+    "historical_finding_status": "open",
+    "current_resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md; no runtime promotion.",
+    "decision_followups_current": {
+      "J01": "selected explicit typed static composition and optional packages",
+      "J02": "selected scoped renderer extension and headless boundary",
+      "J03": "selected private hecs 0.11.2, owned F1/F3 authority",
+      "J04": "selected immutable admitted source and compile/cook/restart"
+    }
+  },
+  "scenario_review": {
+    "as_of": "2026-11-01",
+    "method": "Three Sol High agents wrote nine paper traces; coordinator added S07 strategy-scale case and synthesized ten. Other readers challenged developer-loop and model semantics.",
+    "stage": "analytical_walkthrough",
+    "scenario_count": 10,
+    "game_cases": 7,
+    "developer_circumstances": 3,
+    "decision": "recommended",
+    "report_sha256": {
+      "ENGINE-EXPERIENCE.md": "154980f3dc59d682d84450312c34ac1a0a240c1453d29e686fdf6e97064284e2",
+      "SCENARIO-WALKTHROUGHS.md": "dd2a93c916e5feb1e5a8eb88f639df77a36f3fe213d6d6abf2bed89c1e8d854d",
+      "COMPOSITION.md": "e1d921c835d9342327151cf1bc6aef90468efc3f28c7514120ebe527370a0f89",
+      "modules/TOOLS-DELIVERY.md": "8e36830e5f342f35f1e526d7782eccc57d5498edbabb26ce057df43c3fe952eb"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-dogfood/SMALL-GAMES.md": "b52ca11347d05fd79f2e12d953e8b9e7e54ff9a69e3370d5d024375857ec4cc5",
+      "tmp/handoffs/2026-11-01-engine-dogfood/DEVELOPER-LOOP.md": "f1e48268537fc1fc3ac1a65b2b3f724654d1f999b4da7ca9a5f5aaaff1f6b7b4",
+      "tmp/handoffs/2026-11-01-engine-dogfood/MODEL-GAMES.md": "3603b2770d1f987faf68855a5b4aeac6d4e084c87cc55ccdfe25641f7929657e"
+    },
+    "limitations": [
+      "No sample games or engine tools implemented",
+      "No human usability study",
+      "No measured iteration/performance/visual/platform evidence",
+      "A01-A05 remain open; a narrative is not mechanism closure"
+    ],
+    "next_runtime_examples": [
+      "S01",
+      "S05",
+      "S09",
+      "S06 when media integration exists"
+    ],
+    "review_scope": "Other Sol High readers checked synthesized developer-loop/model scenarios and revised composition/tooling; material wording corrections integrated. Analytical/doc review only; A01-A05 remain open.",
+    "revision_note": "report_sha256 identifies the earlier scenario review revisions. Later first-use edits and current affected hashes are recorded in first_use_review; original review scope is not extended retroactively."
+  },
+  "first_use_review": {
+    "as_of": "2026-11-01",
+    "stage": "analytical_walkthrough",
+    "decision": "recommended",
+    "method": "Three fresh Sol High agents traced three journeys each; coordinator synthesized nine and revised developer experience and owning design obligations. Agents cross-reviewed synthesis; source/play/save wording, I4 export dependency, progressive extension proof and import identity ownership corrected.",
+    "scenario_count": 9,
+    "scenario_ids": [
+      "U01",
+      "U02",
+      "U03",
+      "U04",
+      "U05",
+      "U06",
+      "U07",
+      "U08",
+      "U09"
+    ],
+    "report_sha256": {
+      "FIRST-USE-WALKTHROUGHS.md": "914bfecf62a725806e17b5c919f248bca3ae33dab6b0989e4d807cf44d708c62",
+      "ENGINE-EXPERIENCE.md": "b6cabfa1bd4c636c06497537d846d8e3df33718883153909bb29096da6053d69",
+      "COMPOSITION.md": "74b4c7da44687f941c16829a2c05bb58dd8e14144d4eab02c818daa36f65155f",
+      "CONSTRUCTION-PLAN.md": "982253e764a4a960813f37f55f633578ea7d87e825ff17e859742ed7c9f72e28",
+      "modules/TOOLS-DELIVERY.md": "b47aa58079dcee7c447bfd411dd18ba62cb95f250d40bbe5a61f0cc80d00f819",
+      "modules/WORLD-CONTENT.md": "c64ab6156a891e523e26f9108d32fdf6258e2cef4c44ee863f0e516b69bc1bd0"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-first-use/GAMES.md": "b74abe6b4f7fa04f00acdf64c1aa1e4b61d57bde52876dc1a5ebdea080eb2240",
+      "tmp/handoffs/2026-11-01-engine-first-use/EXTENSIONS.md": "e6db5e4127bd74d6a8b259f6ffcc97f0df41d8aaa4c942e740dc6375870a3d8a",
+      "tmp/handoffs/2026-11-01-engine-first-use/ART.md": "3c7e66362a7b586c5a88d8076e024d7a9fb2a4fddb882c5108b7af529c4594d5"
+    },
+    "design_obligations": [
+      "One-target prerequisites and release-matched editable starter",
+      "Complete action/rule/state/feedback path and sample graduation",
+      "Direct library/game-code path, specialist provider contracts only as needed",
+      "Minimum target-aware visual workbench and reimport mapping/override conflicts",
+      "Actionable source-linked failures with actual active revision and target readiness",
+      "Distinct unsaved play state, private retained test saves, authored source and player saves"
+    ],
+    "limitations": [
+      "Paper walkthroughs only; no SDK commands or sample games implemented",
+      "No observed first-time-user study or measured iteration latency",
+      "No visual acceptance or platform qualification",
+      "A01-A05 remain open; detailed registration/import/session mechanisms remain D1-D2 work"
+    ],
+    "next_qualification": "After relevant D0-D2 design and I1-I3 implementation plus the I4 slice for one exported target, run one complete first-use path; art and extension paths qualify separately as their capabilities ship.",
+    "revision_note": "Hashes identify the first-use review revisions. Later from-scratch refinements and current affected hashes are recorded in from_scratch_review; historical scope is not retroactively extended."
+  },
+  "from_scratch_review": {
+    "as_of": "2026-11-01",
+    "stage": "analytical_walkthrough",
+    "decision": "recommended",
+    "method": "Three fresh Sol High agents traced three empty-project journeys each. Coordinator synthesized nine plus a matched newcomer/veteran comparison and reconciled the developer surface and existing owner obligations. Agents challenged synthesis; universal scene/visible-feedback language and accepted-source versus runnable-revision ambiguity corrected. Follow-up distinguishes pre-cook candidate source pinning from readiness-gated activation/export.",
+    "scenario_count": 9,
+    "scenario_ids": [
+      "Z01",
+      "Z02",
+      "Z03",
+      "Z04",
+      "Z05",
+      "Z06",
+      "Z07",
+      "Z08",
+      "Z09"
+    ],
+    "report_sha256": {
+      "FROM-SCRATCH-WALKTHROUGHS.md": "54820a6520ef781a20dc1c424a644d44a2246a11fe41dce810c170e02d68b7c6",
+      "ENGINE-EXPERIENCE.md": "dea75477d981ae688f24da776e2acf7fc5070b147130b06701c039511ac168a6",
+      "COMPOSITION.md": "b4439134c0fe9a22be2586545307efe9400bf6c683209eec4871ab490dcdb216",
+      "CONSTRUCTION-PLAN.md": "db2b932b51f117146d1d9dbb9d38f60600fe95f36350e08c6ddddde0541013f1",
+      "modules/TOOLS-DELIVERY.md": "a90544e55ac1122cdd36dc89a9371bb0d79b953e8b898521945405fb093098cb"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-from-scratch/NEWCOMERS.md": "23ab83b343a878b71f430f18846a88d861f5a8bb448aee66dff630811d23257f",
+      "tmp/handoffs/2026-11-01-engine-from-scratch/VETERANS.md": "484e502f5c35104af47a27226581a8b6e282e4b4d8e003b7a5572edb8fcf4f29",
+      "tmp/handoffs/2026-11-01-engine-from-scratch/CIRCUMSTANCES.md": "2586a4ab18ae5cb9d89169eae1f530740e0e93abcd2caa00f635309fbb3f76e6"
+    },
+    "design_obligations": [
+      "Empty-project guided/direct/headless paths share ordinary source and public authority",
+      "Draft validity, selected play readiness and target export readiness are distinct",
+      "Workbench helpers never silently supply exported scene content",
+      "Trace declarations through activation; game-specific rejection reasons are authored",
+      "Artist visual workbench does not imply no-code behavior authoring",
+      "Source handoff, development export and qualified release have distinct prerequisites"
+    ],
+    "limitations": [
+      "Paper scenarios only; no SDK/API or game implementation",
+      "No observed newcomer/veteran usability or elapsed-time results",
+      "No visual/device/performance/offline qualification",
+      "A01-A05 remain open; draft admission and exact API/source formats remain detailed work"
+    ],
+    "next_qualification": "I1 headless entry, I2 empty draft/source operations, I3 first rendered interaction from empty source; relevant I4 target packaging slice for development export. Qualify source checkout and recipient handoff separately; release evidence remains additional.",
+    "revision_note": "Hashes identify the from-scratch review revisions. Later AI-development refinements and current affected hashes are in ai_development_review; original scope is not retroactively extended."
+  },
+  "ai_development_review": {
+    "as_of": "2026-11-01",
+    "stage": "design_and_source_inspection",
+    "decision": "recommended",
+    "method": "Three Sol High agents reviewed deterministic enforcement, skills/setup and concrete agent workflows; coordinator read current repository checks and official OpenAI/Rust guidance, synthesized owner-specific requirements and obtained read-only cross-review. A fresh Sol High instruction audit against Astra guidance found no needed skill-entrypoint changes; clarified that the pointer-driven creation fixture is illustrative.",
+    "analytical_workflow_count": 3,
+    "report_sha256": {
+      "AI-DEVELOPMENT.md": "5c3f68a8f354025dc52932a200ab300b572be00833276f9148c8f5e627f7a077",
+      "ENGINE-EXPERIENCE.md": "5ba66d7593c94aeaef52b797a8c2122944ff40691830c7b3249bf744fa1861cc",
+      "SYSTEM-DESIGN.md": "edceb9be8632b32ac476069dc1ce4d226cb9d69de4284cf058981d51d88ccb68",
+      "CONSTRUCTION-PLAN.md": "1ffde3673ecd0d5e7f21ac69197f94897eb2fc1fe1a3d987649cdf2f8f718de2",
+      "modules/TOOLS-DELIVERY.md": "2bb4cf20a7e4d2ab562c33cc4e60eb9856025fddce1ad2dedd618078ecc77f84",
+      "SKILL-WORKFLOW.md": "4ac90f6e3937295f541d788f897564e92746e3f8c676ed800523548daac5a242"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-ai-workflows/ENFORCEMENT.md": "84b3bc6384c2f09c349c1255785fcee7b3e77976ff5e423f71f1e49353497731",
+      "tmp/handoffs/2026-11-01-engine-ai-workflows/SKILLS-SETUP.md": "e0dcdf406b5320fcd7ee74a0e77f1f24e6ccc7eab2a5976f0db825afd2694c75",
+      "tmp/handoffs/2026-11-01-engine-ai-workflows/GAME-WORKFLOWS.md": "aaffbd92c9b5c33070b80da1c4325c41b90ff56d071694c44e5ee792bd3ee33a",
+      "tmp/handoffs/2026-11-01-engine-ai-workflows/ASTRA-ALIGNMENT.md": "bb5d4299a8a806dba5bb557fa9cd37626eb90d8a5e56176f593a0571698a6b64"
+    },
+    "inspected_source_sha256": {
+      "AGENTS.md": "6225b8b552d1c4e584257c643587d4818a5ab5e1b7bda722a98df353c01e5666",
+      "package.json": "8fa003b90d805272fbc5065ac4ff1d7a3099213b40a4af8046d3a2c2ca03abc3",
+      "eslint.config.js": "fc20a29554ab16993bde2f9264560ce52bd28ef2e723304b1e275ddc2f630602",
+      ".agents/lint/adaptersDoNotOwnSim.mjs": "a90125f988ab1dfd35dd5c4c02bfeabfa8beff6fec5fe9a86461341ef6cbd6ae",
+      ".agents/lint/forbiddenImports.mjs": "4e8ed70d8396747b4fd665069e9a65c4c280e51dfe914d4ad2e5f17d92f07e4a",
+      ".agents/scripts/test-changed.mjs": "102d8a71a11fd59a53f11bd9e4c250c60acf0011978e3577fccf0ec19c715d31",
+      ".agents/skills/engine-architecture/SKILL.md": "6959fde9234728fa1d2d3148b6c8dcf817129e5e99f41039eaa4a66d18be4b7e",
+      ".agents/skills/engine-module-design/SKILL.md": "9745aa6899f81a988ba34d45c45583199db0197adb5e4bd54e597cae76fc04f5"
+    },
+    "review_corrections": [
+      "Each authoritative state has its own named owner, not one owner across body/world/GPU",
+      "A03 gates the supported cooked render path; A04/A05 depend on advertised model combinations",
+      "Standalone SDK skill scope is distinct from inherited instructions in a containing repository",
+      "Headless semantic action replay does not validate rendered pointer routing",
+      "Example game loop is explicitly illustrative, not a universal skill itinerary"
+    ],
+    "limitations": [
+      "No active AGENTS policy or existing linter behavior changed",
+      "No proposed SDK skill installed and no new Rust enforcement or agent API implemented",
+      "No behavioral skill eval or runtime/gameplay/platform/visual/performance qualification",
+      "Current check implementations inspected, not rerun as a full suite",
+      "A01-A05 remain open"
+    ],
+    "proposed_skill_routes": [
+      "engine-contribute",
+      "game-authoring",
+      "runtime-diagnosis when inspection/replay exists"
+    ],
+    "next_delivery": "D1/I1 pinned contributor setup and scoped compiler/lint/dependency checks; D1/I2 source/session/tool contracts; I3 actual game input/state/capture loop with A03; relevant I4 recipient/source handoffs. Skills follow implemented commands.",
+    "skill_validation": "Existing engine-architecture and engine-module-design passed skill-creator quick_validate; structural validation only, not a behavioral skill eval.",
+    "revision_note": "Historical evidence for that review revision. Subsequent capability_survey and ai_performance_design refine affected owner documents and construction; current owner hashes are recorded separately."
+  },
+  "capability_survey": {
+    "as_of": "2026-11-01",
+    "stage": "official_source_research_and_design_reconciliation",
+    "decision": "recommended",
+    "engine_count": 12,
+    "engines": [
+      "Unreal",
+      "Unity",
+      "Godot",
+      "O3DE",
+      "Bevy",
+      "Fyrox",
+      "Flax",
+      "Wicked Engine",
+      "Stride",
+      "PlayCanvas",
+      "Babylon.js",
+      "Defold"
+    ],
+    "method": "Three fresh Sol High agents inspected official feature pages and manuals; coordinator inspected Godot/O3DE, reconciled deltas against detailed owners, and obtained read-only integration challenge. No popularity ranking, runtime or device test.",
+    "inventory_dispositions": [
+      "H01",
+      "H02",
+      "H03",
+      "H04",
+      "H05",
+      "H06",
+      "H07",
+      "H08",
+      "H09",
+      "H10",
+      "H11",
+      "H12"
+    ],
+    "report_sha256": {
+      "CAPABILITY-SURVEY.md": "0a77c49a0c028264258d1ac4e0bba913a9b2b79ce716acbbcf1740e54b24e98f",
+      "ARCHITECTURE-BRIEF.md": "47398b2b1e56f106a5a3a16b72fd0062bbcc03cb831acf4fe6fb93ccc5c892a2",
+      "CONSTRUCTION-PLAN.md": "a268e367b498e03840ed2c49310c170d5b9d26c62518303fab9e31f0c4bef82d",
+      "modules/AUDIO-UI.md": "3abe86f8bb5f497182828b28b8088b21a297b3487168b0182b2427b1f277cab3",
+      "modules/PLAY-SYSTEMS.md": "038319a99d133e8ccc47045fbf02262ee79a285cc108e231e920b5b8e9774da8",
+      "modules/TOOLS-DELIVERY.md": "32aad320ce4cf5102308b6b36aa8dd8e8955cd4d841d20da7e4b046a90763239",
+      "modules/WORLD-CONTENT.md": "b8ed7402c6eb7a708d6058826706bc92f669bc6982ac558f955414c2c15d1352"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-capability-survey/MAJOR.md": "9a7294828522aa172954e943d99b79c0c96146d76845330e1b93ac9fef307814",
+      "tmp/handoffs/2026-11-01-engine-capability-survey/MODERN.md": "7ba83b41ae2a49617db924d60336f18424cd4285663ed94db53e683e1156efbf",
+      "tmp/handoffs/2026-11-01-engine-capability-survey/WEB-MOBILE.md": "7a7ef845f66bc64cd037afc343883a138657e896731dafb6d57404cf2486a66e"
+    },
+    "review_corrections": [
+      "Semantic accessibility and runtime localization were already designed; only brief visibility and translation production scope change",
+      "Startup/on-demand/offline/residency already distinct; expose existing contracts",
+      "Export can validate known dynamic-content declarations but cannot statically prove arbitrary code requests",
+      "In-engine blockout tools remain optional; imported geometry is the existing path",
+      "P6 sequences commands; V5 consumes identified events; localized audio variants already exist"
+    ],
+    "limitations": [
+      "Official advertised/documented capabilities, not measured competitor behavior",
+      "No runtime implementation, visual acceptance, usability trial or platform/performance qualification",
+      "A01-A05 remain open; ordinary networking and minimum devices remain D0 choices",
+      "Optional tools and techniques are not baseline requirements",
+      "Earlier review hashes remain historical; no module IDs added"
+    ],
+    "revision_note": "Historical official-page review hashes retained. Later AI-PERFORMANCE.md and ai_performance_design refine AI-DEVELOPMENT, SYSTEM-DESIGN, CONSTRUCTION-PLAN and TOOLS-DELIVERY; per-module current hashes identify current owners."
+  },
+  "ai_performance_design": {
+    "as_of": "2026-11-01",
+    "stage": "research_and_high_level_design",
+    "decision": "recommended",
+    "method": "Two fresh Sol High agents researched measurement and broad search; coordinator integrated sources and owner obligations, then obtained independent read-only challenge. Corrected accelerated-fraction explanation, fixed external requirements versus internal freedom, common workload versus differing artifacts, and evaluator versus runtime timing authority.",
+    "report_sha256": {
+      "AI-PERFORMANCE.md": "af10be597a1c8901ca55f573f9e437e01ae68d4e1e1ac9c867e96c846703e532",
+      "AI-DEVELOPMENT.md": "5659fbec4590b21948010a0f2114606662b1bba0f203a61ba40e3c5e8e562439",
+      "SYSTEM-DESIGN.md": "eea98d004fd37800d1f5a47e2c87e970f7464cdbf9c783965146b02e54c59f3c",
+      "CONSTRUCTION-PLAN.md": "4d5e7b46d93d4a6209e9d827d9241404508d648412d2be38d99a768daa6a36de",
+      "modules/TOOLS-DELIVERY.md": "8b71ccde9d127c3a263d03f85f04b8fd81f5ac17ad4b4b2cc7347ce4888b60fc"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-ai-performance/MEASUREMENT.md": "c2174d35e33dd34e4be034fa3f3373fc046abb93f49121192de1bb11d9ad03b5",
+      "tmp/handoffs/2026-11-01-engine-ai-performance/SEARCH.md": "13e752b0e1ef3224d5c04d29158e0bdc8fd2d246e3763d3bb6d98571f369e5b3"
+    },
+    "skill_reference_sha256": {
+      ".agents/skills/engine-module-design/references/performance.md": "49f5d19d541517f1942cea5a4e820ff112060564004872a63ba2dd5134184532"
+    },
+    "scope": [
+      "Cost reduction at fixed required experience",
+      "Quality/capacity improvement within fixed budgets",
+      "Algorithms, representations, scheduling, content and finite target specialization",
+      "Trusted evaluator ownership, controlled measurement and fresh integrated qualification",
+      "Bounded resource use and coordinated promotion"
+    ],
+    "candidate_campaigns": [
+      "Geometry/visibility/shadows",
+      "Material/light/execution planning",
+      "Streaming/background work"
+    ],
+    "limitations": [
+      "No runtime harness or optimizer implemented",
+      "No campaign scheduled or hardware/cloud spend started",
+      "No measured performance, numerical, visual or platform result",
+      "Illustrative timing target is not a selected budget",
+      "A01-A05 and named workload/device choices remain open",
+      "Broadsides test charter and fast suite unchanged"
+    ],
+    "skill_validation": {
+      "path": ".agents/skills/engine-module-design",
+      "result": "quick_validate passed",
+      "scope": "structural validation only; no new behavioral skill evaluation"
+    },
+    "revision_note": "Historical design hashes retained. performance_walkthrough_review records four later paper campaigns and current refinements to AI-PERFORMANCE, CONSTRUCTION-PLAN and TOOLS-DELIVERY; no measured qualification."
+  },
+  "performance_walkthrough_review": {
+    "as_of": "2026-11-01",
+    "stage": "analytical_scenario_walkthrough",
+    "decision": "recommended",
+    "case_count": 4,
+    "cases": [
+      "O01 Mac forest rendering",
+      "O02 Windows character animation",
+      "O03 browser first play and streaming",
+      "O04 native mobile tactics simulation"
+    ],
+    "method": "Three fresh Sol High agents derived rendering/browser/mobile cases; coordinator derived animation and reconciled roles and whole-product criteria. Browser/mobile agents challenged canonical synthesis. Clarified browser gesture readiness, unbounded connection waits, source/session prerequisite scope, distinct candidate artifact identities and game-selected simulation cadence.",
+    "report_sha256": {
+      "PERFORMANCE-WALKTHROUGHS.md": "fbad3f6f98eebe27fa4179a91aeede715b26c91d254bb21ec3c51e0f2783b48d",
+      "AI-PERFORMANCE.md": "ca10606fd08ae85fc5d38953d71a03515e3f23b141ef562c571e7bc49c9f47f6",
+      "CONSTRUCTION-PLAN.md": "70f79078d2046a30047b691a86b6c01179cd5286f339d7bb6e3c9cefe5817257",
+      "modules/TOOLS-DELIVERY.md": "1fa6e2a93dd68db2c257b6710e7c4b01b27f3e61bcdf4fb60de2da5b3c37b024"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-performance-walkthroughs/BROWSER.md": "6cf64a3f4ad7de2637c22f4aaa6e7b243a3a9e46d47fec693ca5fa46102863e0",
+      "tmp/handoffs/2026-11-01-engine-performance-walkthroughs/MOBILE.md": "b6f7f4e84bf6dff8b27717ec87aaccf4db3757048ec348c58e349ebb215dff8e",
+      "tmp/handoffs/2026-11-01-engine-performance-walkthroughs/RENDER.md": "3d1645ac1d806d9b61982fee4db0006be89313207a2a8d4d9a955b4b89783fc6"
+    },
+    "refinements": [
+      "Meaningful player/task completion events with diagnostic milestones",
+      "Shared consumer/resource/validity delta before parallel work diverges",
+      "Outstanding work, freshness and blocked-loading duration",
+      "Scoped local savings versus integrated target attainment and qualified variants",
+      "Coherent combined-candidate provenance and valid ablation",
+      "Affected-consumer and selected-target qualification"
+    ],
+    "limitations": [
+      "Four paper scenarios only; no executable harness, campaign or benchmark run",
+      "Numbers are illustrative, not measured results or selected device/workload budgets",
+      "No runtime, numerical, visual, usability or platform acceptance",
+      "A01-A05 remain open; provider bounds/cache/lease/readiness/deadline mechanisms remain detailed commissions",
+      "No new runtime module, skill route, automation or hardware/cloud spend"
+    ],
+    "revision_note": "Historical walkthrough hashes retained. storage_lifecycle_design records later storage-budget, construction and owner-document refinements; no new performance qualification."
+  },
+  "storage_lifecycle_design": {
+    "as_of": "2026-11-01",
+    "stage": "design_with_read_only_storage_inventory",
+    "decision": "recommended",
+    "method": "Two fresh Sol High design agents plus coordinator inventory/synthesis; both agents challenged draft; coordinator applied documented fixes.",
+    "report_sha256": {
+      "STORAGE-LIFECYCLE.md": "bb61bbbd9a4cfc403dbbda765add20b999ff4cd5969347b2384df1209c43ac9b",
+      "CONSTRUCTION-PLAN.md": "08b4e84eff9617c7ca69055bb1309c2c0fa9fe64db521530af61b7a6ccf12506",
+      "AI-PERFORMANCE.md": "fae8b0864a8d3abb847b09f2d3bd792ecae46fbd4e4863d109bf2701e99b7d28",
+      "modules/WORLD-CONTENT.md": "0c9efb3a9a572996fbe2c2c2ca7df82938ccc701d59f2c135a984d8d7a7b853a",
+      "modules/TOOLS-DELIVERY.md": "e0a4e635344f4a50440aae92d7042563b6da468b2826657330b86a1008af2778"
+    },
+    "policy_sha256": {
+      "factory/README.md": "64af040ced2f0e13794700da33da37d9ec6d25857e42d46a799da4355fcd5053",
+      "factory/PRODUCTION-INDEX.md": "5e01c2293728d5e3b3722581e6a3896e1b4b0baf55e5af6563c675cb36a47bd1",
+      "factory/ASSET-STORAGE.md": "cf8da74a5e17c6e4ba42d754cfdedf61d373f41df384e59375edbc4d8844c4d7",
+      ".agents/skills/repo-structure/references/storage.md": "65ee37672bc190d882ca4971b6eda486fbd84cf66f72f9d3c92ea026ed0cfe49"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-storage-lifecycle/ASSETS.md": "2d6b42267eb082dcdf0a94a438bdf67509d3e01a55d169a1d82cc46e65d9a767",
+      "tmp/handoffs/2026-11-01-engine-storage-lifecycle/BUILDS.md": "49b49ad1189d5e6d1cffd27e3f6d1b8d0137d9cb60084a9b4c9f7c95e27c67f6",
+      "tmp/handoffs/2026-11-01-engine-storage-lifecycle/INVENTORY.md": "ee7641d0255eccacf98958c9584e0fad89b2069e803c7d1f758d26d772b4fff5",
+      "tmp/handoffs/2026-11-01-engine-storage-lifecycle/REVIEW.md": "d48faa79c33a6e6ac8e25d0143cd280b294c775f9d962f0a9714488b6db23d0b"
+    },
+    "implementation_stages": [
+      "D1 source/product roots, publication/GC, reservations and recovery protocols",
+      "I1 bounded local workers, monitoring/admission and dry-run ownership reports before bulk campaigns",
+      "I2 one package cold restore, staged profile delivery and scoped retirement"
+    ],
+    "limitations": [
+      "Directory footprints are not reclaimable-byte estimates",
+      "No cleanup, asset movement, chat manipulation, remote restore or promotion executed",
+      "No storage collector, run-manifest schema or CLI implemented",
+      "App session sizes only; no conversation contents inspected",
+      "A01-A05 and existing runtime/device/quality maturity unchanged"
+    ],
+    "revision_note": "Historical design and policy hashes retained. lifecycle_walkthrough_review records later offline/selection/closeout refinements and actual skill-reference changes; no storage reclamation or runtime proof."
+  },
+  "lifecycle_walkthrough_review": {
+    "as_of": "2026-11-01",
+    "stage": "analytical_scenario_walkthrough_and_paper_skill_trial",
+    "decision": "recommended",
+    "case_count": 4,
+    "cases": [
+      "L01 generated browser prop with offline selection",
+      "L02 rig revision, interrupted cook and stale exporter",
+      "L03 reusable fitting across independently pinned games",
+      "L04 AI optimization campaign winner handoff and bounded cleanup"
+    ],
+    "method": "Two fresh Sol High agents derived asset/campaign cases; coordinator synthesized. A separate Sol High agent evaluated three raw fictional operator requests using skill references/contracts without synthesis or expected answers. Narrow closeout correction and same-agent follow-up recorded.",
+    "report_sha256": {
+      "LIFECYCLE-WALKTHROUGHS.md": "3e91cfe149a71b1e8b2b0d992b5853f8c0a583dbaca42b923224f119ad73ac6b",
+      "STORAGE-LIFECYCLE.md": "d4c9e938ed333117175f7288f7197ef28ef11a1a55d52d5a0fb9cbf20c7d4356",
+      "CONSTRUCTION-PLAN.md": "5da637c6fdbf7ba28de6a598b496ca379a5805112755bcbfcaae28f40966f765",
+      "AI-PERFORMANCE.md": "0daaec2abe4440fddc675321eb5629f0c36675c7c303157a657656822f4c552b",
+      "AI-DEVELOPMENT.md": "890f02260749cbf0b75250f43cd91620d165f7b1d1ff5f581608f305689298f7",
+      "SKILL-WORKFLOW.md": "656599bbbfdaff3c66082afec99b7d0852fd1c2577d6b7bf6ffc260db6af7043",
+      "modules/WORLD-CONTENT.md": "cbf912d6c01e796a7275d3de36a30c85443e288faa2979950b8c0354a24bc315",
+      "modules/TOOLS-DELIVERY.md": "991545ba1ae86d48954afeb16c97fa17a87b3a16a8ef43fe7925c1cddc3d7007"
+    },
+    "policy_sha256": {
+      "factory/ASSET-STORAGE.md": "b537f9b96ea48a9509c80c7fd49e0e445a4843f6ef67b0b20a7020303aa42231",
+      ".agents/skills/repo-structure/references/storage.md": "6409c71b64c10314c3db120d37fa9f449aff0708016f222ba5a16274303fd9f2",
+      ".agents/skills/engine-module-design/references/performance.md": "9142e9778219d255a10490359135de1a159c72bc53bdc23d9f4a43f86fe940f9"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-lifecycle-walkthroughs/ASSETS.md": "27478b79c5722cf39bef4e456f517faca14281d3a4630f71eaa498e3a6105b90",
+      "tmp/handoffs/2026-11-01-engine-lifecycle-walkthroughs/SKILL-TRIAL.md": "cc3ee7c78f329141ed990c29432e7c7721ee00ad8e5095ee31d77129cf13467e",
+      "tmp/handoffs/2026-11-01-engine-lifecycle-walkthroughs/REVIEW.md": "2d1604c446769af3d26bfb0234b7cb86d86c51b1e14da17f0486e578feab1875",
+      "tmp/handoffs/2026-11-01-engine-lifecycle-walkthroughs/CAMPAIGNS.md": "227dc4d36f5a967bbe3d92933ceb535730a2f31ebb86ecb08c1dbbfe367c2b48",
+      "tmp/tasks/lifecycle-skill-check/CASES.md": "ac5ab4cf042912c1aebddb9e09838d6c3e3edbd1d8fb8dd511f42a4ec62ca5e6"
+    },
+    "skill_validation": {
+      "repo-structure": "quick_validate passed",
+      "engine-module-design": "quick_validate passed",
+      "behavior": "Three paper cases; initial retained-versus-deferred completion ambiguity corrected; follow-up distinguished claims. No Astra or tool-execution test."
+    },
+    "refinements": [
+      "Local iteration with remote recovery unverified and required canonical bytes retained",
+      "Expected selected-source/current-delivery preconditions and actual browser publication limits",
+      "Per-game revision pins and separate rollback deployment storage",
+      "Existing records and concise closeout rather than per-stage skills or manifests",
+      "Selected source/evaluator/evidence retention versus historical rejected summaries",
+      "Dirty/generated winner inputs verified in destination before worker retirement",
+      "Intentional retention is distinct from deferred disposable cleanup"
+    ],
+    "limitations": [
+      "No generated asset, consumer validation, publication, remote restore, benchmark or real asset/worktree cleanup performed",
+      "No generic publisher, admission coordinator, lease protocol or collector implemented",
+      "Paper skill behavior by Sol High does not establish Astra behavior",
+      "A01-A05, C2 and implementation/quality/platform maturity remain unchanged"
+    ]
+  },
+  "whole_plan_review": {
+    "as_of": "2026-11-01",
+    "stage": "whole_plan_document_review",
+    "decision": "recommendations_for_detailed_design",
+    "reviewers": [
+      {
+        "perspective": "systems_architecture_and_integration",
+        "model": "gpt-6-sol",
+        "reasoning": "high"
+      },
+      {
+        "perspective": "game_creator_and_integrator",
+        "model": "gpt-6-sol",
+        "reasoning": "high"
+      },
+      {
+        "perspective": "delivery_platform_and_maintenance",
+        "model": "gpt-6-sol",
+        "reasoning": "high"
+      }
+    ],
+    "coverage": {
+      "top_level_markdown": 26,
+      "module_markdown": 7,
+      "research_markdown": 12,
+      "maturity_ledger": true,
+      "baseline_files": 46,
+      "baseline_unchanged_through_cross_review": true
+    },
+    "method": "Three fresh independent full-plan readings, followed by each reviewer challenging the other two reports; coordinator checked claims, reproduced transform counterexample and consolidated overlaps.",
+    "report_sha256": {
+      "PLAN-REVIEW.md": "6c19aeaf7b1ba25265b5c7deef47900e04d5f1d7d66f1fb65fa2fbeeb851dfc5",
+      "MATURITY.md": "2e64c105aeefd7ec2987438ed60afd51e12f521cf52142f32d9055d9db3049aa"
+    },
+    "handoff_sha256": {
+      "tmp/handoffs/2026-11-01-engine-whole-plan-review/BASELINE.md": "818c066f075b2b50b52805a23a93cfa9016c9325e5c76196e6b692bfe34108cf",
+      "tmp/handoffs/2026-11-01-engine-whole-plan-review/SYSTEMS.md": "4b840a6fa05f817f1e792a9ab15032e84aeb284d493580090258cf9d55231070",
+      "tmp/handoffs/2026-11-01-engine-whole-plan-review/CREATOR.md": "56b5fe288953ac519bfeb4df3f7030543d31e0d3dcaf3e6f26d579e4c2f93c75",
+      "tmp/handoffs/2026-11-01-engine-whole-plan-review/DELIVERY.md": "4077c3886757d8859bd11a8c2519b31f5202b726d6d90b49a39bea42ee244772"
+    },
+    "findings": [
+      {
+        "id": "WP01",
+        "kind": "new_contract_defect",
+        "severity": "medium",
+        "status": "adopted_in_selected_design",
+        "title": "TRS preserve-world reparent representability",
+        "owners": [
+          "W1",
+          "T1",
+          "F3"
+        ],
+        "consumers": [
+          "P3",
+          "V2"
+        ],
+        "gate": "D1 before I2 transform operations",
+        "baseline_status": "open",
+        "resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "WP02",
+        "kind": "sequencing_clarification",
+        "severity": "high_delivery_value",
+        "status": "adopted_in_selected_design",
+        "title": "Named thin rendered and one-target exported milestone",
+        "owners": [
+          "F1",
+          "F2",
+          "T1",
+          "T2"
+        ],
+        "gate": "Early I3 and relevant I4 slice before full integration gate",
+        "baseline_status": "recommended",
+        "resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "WP03",
+        "kind": "sequencing_clarification",
+        "severity": "high_portability_value",
+        "status": "adopted_in_selected_design",
+        "title": "Expose existing early mobile-shell validation in master schedule",
+        "owners": [
+          "F1",
+          "P1",
+          "T2"
+        ],
+        "gate": "I1 after relevant D1 design, before substantial dependent I2/I3",
+        "baseline_status": "recommended",
+        "resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "WP04",
+        "kind": "support_policy",
+        "severity": "medium",
+        "status": "adopted_in_selected_design",
+        "title": "SDK support and cross-release upgrade promise",
+        "owners": [
+          "F2",
+          "F3",
+          "F4",
+          "T2"
+        ],
+        "gate": "Policy before external release; upgrade proof before promised/breaking upgrade",
+        "baseline_status": "recommended",
+        "resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "WP05",
+        "kind": "acceptance_clarification",
+        "severity": "medium",
+        "status": "adopted_in_selected_design",
+        "title": "Spatial composition workbench trace",
+        "owners": [
+          "T1",
+          "W1",
+          "F3",
+          "F4"
+        ],
+        "gate": "Before I3 artist-usability claim",
+        "baseline_status": "recommended",
+        "resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md",
+        "implementation_proof": "not_run"
+      },
+      {
+        "id": "WP06",
+        "kind": "maturity_navigation",
+        "severity": "low",
+        "status": "adopted_in_selected_design",
+        "title": "Relevant ancestor findings govern effective leaf readiness",
+        "owners": [
+          "E1"
+        ],
+        "gate": "Before D2 assignment from leaf-only status",
+        "baseline_status": "reading_guidance_clarified_query_unimplemented",
+        "resolution": "ARCHITECTURE-DECISIONS.md and BASELINE-SPEC.md",
+        "implementation_proof": "not_run"
+      }
+    ],
+    "existing_audit_findings": "A01-A05 remain open; not reclassified as new findings",
+    "limitations": [
+      "Document review only; no build, device, visual, asset or benchmark execution",
+      "No fresh exhaustive verification of external sources",
+      "No new transform representation, SDK policy, platform minimum or runtime implementation selected",
+      "Construction/module contracts unchanged; parent-status reading guidance only",
+      "Implementation/function/appearance/platform maturity not promoted"
+    ],
+    "current_disposition": "WP01-WP06 adopted; original limitations/report hashes describe the reviewed baseline. C3/G01-G10 record the later selections and exact initial specifications."
+  },
+  "contract_history": [
+    {
+      "revision": "C2",
+      "sha256": "7c9503bbc56772a77531ec1e52e686043171bf2d43101e500bc398b4c39a26ea",
+      "scope": "Historical pre-selection C2 baseline; prior report hashes retained."
+    },
+    {
+      "revision": "C3",
+      "sha256": "3b38d33f10466d2d51a1677f1f3d46129962b37c7730082d1ae8e2210e06fca1",
+      "scope": "Before selected simplifications; G08/G09 challenged by fresh review. Retained as historical evidence."
+    }
+  ],
+  "architecture_resolution": {
+    "as_of": "2026-11-01",
+    "decision": "selected",
+    "stage": "architecture_and_initial_specification",
+    "record": "ARCHITECTURE-DECISIONS.md",
+    "record_sha256": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
+    "contract_revision": "C4",
+    "contract_sha256": "06fdc747a6f8c24a30b41e261513cb13034893e1e1cca1b5e87eec587591205c",
+    "specifications": {
+      "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+      "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
+      "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f",
+      "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
+      "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
+    },
+    "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
+    "closed_architectural_findings": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "J01",
+      "J02",
+      "J03",
+      "J04",
+      "WP01",
+      "WP02",
+      "WP03",
+      "WP04",
+      "WP05",
+      "WP06"
+    ],
+    "initial_gap_dispositions": [
+      {
+        "id": "G01",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "selection_note": "C4 simplified mechanism selected and reconciled across owners; runtime remains unqualified.",
+        "current_review": "SIMPLIFICATION-REVIEW.md",
+        "simplification_resolution": "SR04"
+      },
+      {
+        "id": "G02",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "selection_note": "C4 simplified mechanism selected and reconciled across owners; runtime remains unqualified.",
+        "current_review": "SIMPLIFICATION-REVIEW.md",
+        "simplification_resolution": "SR05"
+      },
+      {
+        "id": "G03",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G04",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G05",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G06",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G07",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G08",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "prior_status": "specified_for_initial_admitted_scope",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G09",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "prior_status": "specified_for_initial_admitted_scope",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "G10",
+        "status": "specified_for_initial_admitted_scope",
+        "qualification": "not_run",
+        "current_review": "SIMPLIFICATION-REVIEW.md"
+      }
+    ],
+    "networking": {
+      "requirement": "first_class_future_support",
+      "responsibility": "N1",
+      "construction_milestone": "I2n alongside I3a after I1/I2a, before broad I3b",
+      "initial_profile": "four-player authoritative WSS, finite preloaded gameplay, explicit outcomes and full atomic StateGroups, compatible native/browser peers; optional prediction and water",
+      "implementation": "not_started_for_target"
+    },
+    "remaining_evidence": [
+      "Resolve and lock full dependencies/native SDKs; compile and verify actual APIs/layouts/codecs",
+      "Crash/quota/concurrency/GC and numerical conformance fixtures",
+      "Whole-game network fault, latency, state-age and memory qualification",
+      "Named device startup/frame/thermal/lifecycle qualification",
+      "Rendered-motion/artist-usability/human visual acceptance"
+    ],
+    "limits": [
+      "Only the admitted initial set is specified; advanced model/protocol/provider extensions are explicitly unsupported until designed",
+      "No runtime code/dependency installation/build/benchmark/device test performed",
+      "No asset cleanup, source store migration, release or external message performed"
+    ],
+    "coordinated_handoffs": {
+      "tmp/handoffs/2026-11-01-engine-decisions/FOUNDATION-CLOSURE.md": "eede57ed1a6d7215e5ca530c1d2bc47d0de23b6c1a828b97229354c4ada85dcd",
+      "tmp/handoffs/2026-11-01-engine-decisions/WATER-DOMAINS.md": "17116e3c03cedffcfa7429e292d2dfe98f3f4c27b13d2bba93144bd67677e903",
+      "tmp/handoffs/2026-11-01-engine-decisions/DETAILED-CROSS-REVIEW-RENDER.md": "de6f7c09db5ee7bc22fdb6645fb3bce70cae43e66aa8eb72fa7db2aa7d822177",
+      "tmp/handoffs/2026-11-01-engine-decisions/RENDER-CLOSURE.md": "885557f10135134d304ccbde5e561070501b55bfbf9318d29b34cb2dc28c28d2",
+      "tmp/handoffs/2026-11-01-engine-decisions/SESSIONS-SOURCE.md": "b85ece459c1b3a22cb6ff014281c108576b9c47d8c6a6ce2429223d99699dedb",
+      "tmp/handoffs/2026-11-01-engine-decisions/SHADERS-MEDIA.md": "54f3c58ca29203f0e1a1442f544d1e4428d71a0aaed8148cdfa0249582ee2e22",
+      "tmp/handoffs/2026-11-01-engine-decisions/PLAY-ENVIRONMENT-CLOSURE.md": "7ed83e0e659b227a8641552ba6f26aaf98ee67f9f59f14ad0410f80248e2c6ef",
+      "tmp/handoffs/2026-11-01-engine-decisions/STORAGE-REUSE.md": "a331eed60e80696988cd78a8caef3ee8ed81798eb0cccad7ad2ae298d1830a51"
+    },
+    "analytical_checks": {
+      "wire_envelope_bytes": 64,
+      "water_projection_bytes_per_body": 96,
+      "four_body_water_bytes": 384,
+      "shallow_CFL_min_step_seconds": 0.005881117727267417,
+      "reference_tick_required_substeps": 3,
+      "check_scope": "Independent encoded layout and admission arithmetic, not runtime measurements or physical-link throughput. Browser phase times are planning allowances.",
+      "network_actor_bytes": 56,
+      "network_group_header_bytes": 32,
+      "network_action_result_bytes": 32,
+      "network_event_bytes": 40,
+      "network_largest_group_bytes": 7008,
+      "R4_steady_application_Bps": 156248,
+      "R4_max_resync_baseline_bytes": 23244,
+      "R4_resync_quarter_bytes": 60208,
+      "R4_singleton_input_Bps": 15448,
+      "R4_singleton_input_burst_bytes": 5976,
+      "browser_R0_boot_planning_seconds": 2.96217728,
+      "browser_R2_boot_planning_seconds": 4.60435456
+    },
+    "documentation_validation": {
+      "local_links_checked": 464,
+      "local_anchors_checked": 75,
+      "status": "passed",
+      "module_ids": 30,
+      "contract_ids": 13,
+      "readme_lines": 30,
+      "wire_layouts_and_scalar_bounds": "passed",
+      "runtime_tests": "not_run_documentation_only",
+      "scope": "Historical prior closure check only; current validation lives in reconciliation.documentation_validation."
+    },
+    "current_review": "SIMPLIFICATION-REVIEW.md",
+    "readiness": "reconciled_for_initial_admitted_design_scope",
+    "remaining_design": {},
+    "prior_C3_selection": {
+      "contract_revision": "C3",
+      "contract_sha256": "3b38d33f10466d2d51a1677f1f3d46129962b37c7730082d1ae8e2210e06fca1",
+      "decision_record_sha256": "6ce967351764ea674bb2e4286cfcc5c9f830be9ec21ccdc085b3303f4a45fcb2",
+      "specifications": {
+        "BASELINE-SPEC.md": "5b2d6f9d370313ba127df20a77865ec101e3c5494e35bc98654970fed07a2a79",
+        "FOUNDATION-SPEC.md": "028a6fe77c552595cce7b4c5908fe40da6b1eed39916af64e1574537a091d40d",
+        "RENDER-SPEC.md": "5e27ed0d090a2b49c0ae8f8c6a5679452e213a55996d02833a9f177f5518b99a",
+        "PLAY-ENVIRONMENT-SPEC.md": "8be826b156c596e9be5bcef17ae94b30a193d5054baa76aa3256300fc9e483ca",
+        "NETWORK-SPEC.md": "b04e17bb15ee2ed0ab106c80179a1e298d1e4e8e90656b71c7ba9f7376d9b8a6"
+      },
+      "review_readiness": "selected_architecture_with_reopened_initial_design_gaps",
+      "scope": "C3 prior closure followed by fresh challenge; superseded for selected SR01-SR08 mechanisms by C4. Original review hashes remain evidence only for those revisions."
+    },
+    "remaining_family_design": "Live scoped gameplay streaming, richer prediction/protocol/provider and other family-specific mechanisms remain separate detailed-design commissions before those claims. No universal initial readiness claim."
+  },
+  "simplification_review": {
+    "as_of": "2026-11-01",
+    "record": "SIMPLIFICATION-REVIEW.md",
+    "record_sha256": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
+    "method": "Three fresh gpt-6-sol high agents with independent contexts and perspectives, followed by cross-review and coordinator reconciliation. The 42-file baseline stayed unchanged during independent review.",
+    "reviewed_files": {
+      "notes/engine-rebuild/AI-DEVELOPMENT.md": "39bf85b6aa3d3668c64cf122fa468617747f349073d2cf4722b73dadd565c517",
+      "notes/engine-rebuild/AI-PERFORMANCE.md": "33d23c186e46206acecd318ecc7101642919aed20f437b823701b5829e703d75",
+      "notes/engine-rebuild/ARCHITECTURE-AUDIT.md": "c2281f5f7d539dc7f52c7f1c5a3a5cf5317c6f636a3faefe98caa223fb8a73cc",
+      "notes/engine-rebuild/ARCHITECTURE-BRIEF.md": "7853371f1085d698e2abd4182acbfb850723749010588d8056bf286007b2281c",
+      "notes/engine-rebuild/ARCHITECTURE-DECISIONS.md": "6ce967351764ea674bb2e4286cfcc5c9f830be9ec21ccdc085b3303f4a45fcb2",
+      "notes/engine-rebuild/BASELINE-SPEC.md": "4943f14207b5a6a00ff9f4f3b288b701c5716086b6a512a7cd08130165904e20",
+      "notes/engine-rebuild/CAPABILITY-SURVEY.md": "0a77c49a0c028264258d1ac4e0bba913a9b2b79ce716acbbcf1740e54b24e98f",
+      "notes/engine-rebuild/COMPOSITION.md": "d4df8a46f4d4feabcc6b728c10cabdb28c2c8c8f28ff22d8ff77aef00b07e19c",
+      "notes/engine-rebuild/CONSTRUCTION-PLAN.md": "978d18eec4f6be5ca505922c26f0f1e35fd326f9f07f025a132692bd87677bcc",
+      "notes/engine-rebuild/CONTRACTS.md": "3b38d33f10466d2d51a1677f1f3d46129962b37c7730082d1ae8e2210e06fca1",
+      "notes/engine-rebuild/DESIGN-PROGRAMME.md": "7cadcfb934acb8b74718814b66b9350b713406433d84ab4f1a008c3bb2f62229",
+      "notes/engine-rebuild/ENGINE-EXPERIENCE.md": "869cc268062fd514e943dbe5642ad716205ef0601bfba3b59a3004de8a68ba68",
+      "notes/engine-rebuild/ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
+      "notes/engine-rebuild/FIRST-USE-WALKTHROUGHS.md": "914bfecf62a725806e17b5c919f248bca3ae33dab6b0989e4d807cf44d708c62",
+      "notes/engine-rebuild/FOUNDATION-SPEC.md": "028a6fe77c552595cce7b4c5908fe40da6b1eed39916af64e1574537a091d40d",
+      "notes/engine-rebuild/FROM-SCRATCH-WALKTHROUGHS.md": "54820a6520ef781a20dc1c424a644d44a2246a11fe41dce810c170e02d68b7c6",
+      "notes/engine-rebuild/HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
+      "notes/engine-rebuild/INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
+      "notes/engine-rebuild/LIFECYCLE-WALKTHROUGHS.md": "3e91cfe149a71b1e8b2b0d992b5853f8c0a583dbaca42b923224f119ad73ac6b",
+      "notes/engine-rebuild/MATURITY.md": "102d99348ca58106937a5e401184118a2522b53d40fa884e27ef29e3cd0af443",
+      "notes/engine-rebuild/NETWORK-SPEC.md": "a1b95820abeac439fcf2cb6e0d4542e77a2786fca5b3fc13b7526330f04acd2a",
+      "notes/engine-rebuild/PERFORMANCE-WALKTHROUGHS.md": "fbad3f6f98eebe27fa4179a91aeede715b26c91d254bb21ec3c51e0f2783b48d",
+      "notes/engine-rebuild/PLAN-REVIEW.md": "8dfdde951f2ec611720d50c6ab30c45825900b946183ab5cd79d86f4e1f4d335",
+      "notes/engine-rebuild/PLAY-ENVIRONMENT-SPEC.md": "8be826b156c596e9be5bcef17ae94b30a193d5054baa76aa3256300fc9e483ca",
+      "notes/engine-rebuild/README.md": "de2939b5e9ecb8ff9f045c727a11e4d4dbd313c78a4854ee79838dd6cf5a823a",
+      "notes/engine-rebuild/RENDER-SPEC.md": "5e27ed0d090a2b49c0ae8f8c6a5679452e213a55996d02833a9f177f5518b99a",
+      "notes/engine-rebuild/SCENARIO-WALKTHROUGHS.md": "dd2a93c916e5feb1e5a8eb88f639df77a36f3fe213d6d6abf2bed89c1e8d854d",
+      "notes/engine-rebuild/SKILL-FORWARD-REVIEW.md": "4acd2c7ee690660d5c547fe46b2c7089a40683b2b2694acccb2c68a6b45f5bbb",
+      "notes/engine-rebuild/SKILL-WORKFLOW.md": "656599bbbfdaff3c66082afec99b7d0852fd1c2577d6b7bf6ffc260db6af7043",
+      "notes/engine-rebuild/STORAGE-LIFECYCLE.md": "0fc5f3048b99740dee537c33484c740a7853dc6d063df2383d313c17c2bc8e9d",
+      "notes/engine-rebuild/SYSTEM-DESIGN.md": "c59f69ea305d4a29bee1116289d462daf8d77008fbfbfbb3e1d512293e04e8d3",
+      "notes/engine-rebuild/TRAVELLER-APP.md": "5efbee7d4334eaeac2a9d1ded1e10b117ea5bea1fdf1091215e49c1a45296431",
+      "notes/engine-rebuild/WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
+      "notes/engine-rebuild/modules/AUDIO-UI.md": "f94c46c426278ae9a167b9caf388281053a3fb28e7a817da08f2bedba0d7be8d",
+      "notes/engine-rebuild/modules/ENVIRONMENT.md": "5b08c5d921fb8219bde500d44827039e6ae019add8efd93856fb9762fb6f731c",
+      "notes/engine-rebuild/modules/NETWORKING.md": "659eb80066b0d09fff53ed3a69b7033fc45d8e1d1ea9a8ef631c962ad62cc2c7",
+      "notes/engine-rebuild/modules/PLATFORM-RUNTIME.md": "6e7156857f4f0029a7518033556c4656bd1c9adb7d245240663e0a1707843559",
+      "notes/engine-rebuild/modules/PLAY-SYSTEMS.md": "ef91e918e59df986c8dff89e927a33ee7827529d480a7c57497d8c5642f53135",
+      "notes/engine-rebuild/modules/RENDERING.md": "833915f1b4f4ca88ebc57517489ab0fe9f214ffa535017e6d65e412a7c7a0418",
+      "notes/engine-rebuild/modules/TOOLS-DELIVERY.md": "89a88e39acf79b26cd484e68c6823b7e7c8fe934f32acd29c7d88600cbc4aa05",
+      "notes/engine-rebuild/modules/WORLD-CONTENT.md": "59c36f8899344132fc6a1bcf7fe7ad860b80244b33db53d58084953f29ca29a7",
+      "notes/engine-rebuild/maturity.json": "f0f250efeafad872838d67a7e065efb90c17cd78ada0836062ea605b32f9a5c1"
+    },
+    "reports": {
+      "NETWORK": {
+        "path": "tmp/handoffs/2026-11-01-engine-simplification-review/NETWORK.md",
+        "sha256": "78c8970212e229aa2d55552060c872640de80060d2480c33f843f6c91030093e"
+      },
+      "SIMPLICITY": {
+        "path": "tmp/handoffs/2026-11-01-engine-simplification-review/SIMPLICITY.md",
+        "sha256": "62f60b30b02d4e906d956db84cbc574c0a24dbda6723f7819250bfe8eab2fc8c"
+      },
+      "DELIVERY": {
+        "path": "tmp/handoffs/2026-11-01-engine-simplification-review/DELIVERY.md",
+        "sha256": "50d3c31455b6253a6808ee04b73c104c21c305c0ad6ccfbb9e7ba5393cabb74e"
+      }
+    },
+    "coverage": "Current whole-engine design and cross-system consequences; complementary owner coverage, not three line-by-line re-audits of every historical research paragraph. Reports disclose limits.",
+    "findings": [
+      {
+        "id": "SR01",
+        "status": "resolved_for_initial_admitted_scope",
+        "gap": "G08",
+        "summary": "Committed per-action outcomes and prediction reconciliation watermark/state correspondence",
+        "review_status": "open_design_gap",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR02",
+        "status": "resolved_for_initial_admitted_scope",
+        "gap": "G08",
+        "summary": "Atomic lifecycle plus required state admission; optional water/pose correspondence",
+        "review_status": "open_design_gap",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR03",
+        "status": "resolved_for_initial_admitted_scope",
+        "gap": "G08",
+        "summary": "Gameplay semantic and wire-schema compatibility hash closure",
+        "review_status": "open_design_gap",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR04",
+        "status": "resolved_for_initial_admitted_scope",
+        "gap": "G01",
+        "summary": "File-first snapshot authoring and defer full browser authoring adapter",
+        "review_status": "recommended_alternative_not_selected",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR05",
+        "status": "resolved_for_initial_admitted_scope",
+        "gaps": [
+          "G02",
+          "G09"
+        ],
+        "summary": "Restart-first edits and bounded portable world; prove peak for any live transition claim",
+        "review_status": "recommended_reduction_with_open_admission_proof",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR06",
+        "status": "resolved_for_initial_admitted_scope",
+        "summary": "Small rendered/exported game and early I2n; deltas/prediction/water optional subject to workload",
+        "review_status": "recommended_sequence_not_selected",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR07",
+        "status": "resolved_for_initial_admitted_scope",
+        "gap": "G09",
+        "summary": "Concrete R4 bytes/cadence/latency and boot/transition admission estimates",
+        "review_status": "open_design_proof",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      },
+      {
+        "id": "SR08",
+        "status": "resolved_for_initial_admitted_scope",
+        "summary": "One algorithm owner, links from invariants/modules/tasks; profile caps stay profile-specific",
+        "review_status": "recommended_consolidation_not_selected",
+        "resolution": "C4; see current disposition table in SIMPLIFICATION-REVIEW.md"
+      }
+    ],
+    "preserved": [
+      "C3 authority and composition choices",
+      "I2n alongside I3a before broad I3b",
+      "Immutable build/source and save identities",
+      "Whole-engine budgets and explicit provider compatibility"
+    ],
+    "runtime_evidence": "unchanged; no implementation, device test, benchmark or visual acceptance",
+    "documentation_validation": {
+      "local_links_checked": 473,
+      "local_anchors_checked": 18,
+      "module_ids": 30,
+      "contract_ids": 13,
+      "readme_lines": 30,
+      "status": "passed",
+      "hashes": "current modules/specifications/contracts and three final reports checked; reviewed baseline hashes preserved",
+      "runtime_tests": "not_run_documentation_only",
+      "scope": "Historical fresh-review validation; current C4 links/hashes are checked in reconciliation."
+    },
+    "current_disposition": "selected_and_reconciled_in_C4_for_initial_scope",
+    "current_resolution": "reconciliation",
+    "not_selected_at_review": [
+      "Replacement G01 source transaction protocol",
+      "Replacement G02 streaming algorithm",
+      "Replacement N1 full-state codec without encoded R4 recipe"
+    ]
+  },
+  "reconciliation": {
+    "as_of": "2026-11-01",
+    "contract_revision": "C4",
+    "scope": "Selected simplifications and closed initial multiplayer/source/delivery design mechanisms; no runtime construction",
+    "requirements": "ARCHITECTURE-BRIEF.md#conversation-coverage-and-retained-scope",
+    "requirement_ids": [
+      "E01",
+      "E02",
+      "E03",
+      "E04",
+      "E05",
+      "E06",
+      "E07",
+      "E08",
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E15",
+      "E16",
+      "E17",
+      "E18",
+      "E19",
+      "E20"
+    ],
+    "finding_ids": [
+      "SR01",
+      "SR02",
+      "SR03",
+      "SR04",
+      "SR05",
+      "SR06",
+      "SR07",
+      "SR08"
+    ],
+    "decision": "selected",
+    "integration_review": "reconciled",
+    "record": "SIMPLIFICATION-REVIEW.md",
+    "record_sha256": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
+    "current_files": {
+      "AI-DEVELOPMENT.md": "1172d8ee8b5ac9fead8563d5b5591fb8e89b2d9eaa88268f24713f74313c7763",
+      "AI-PERFORMANCE.md": "0c0a4e438b5dfc975ec54640901332e5c44fbb7e5d628e05fab425f9be143a78",
+      "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
+      "ARCHITECTURE-BRIEF.md": "af55fd5647a09bf8f63b9fb9917c05534f2bc08f67014e75d442e2d5ae18013f",
+      "ARCHITECTURE-DECISIONS.md": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
+      "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+      "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
+      "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
+      "CONSTRUCTION-PLAN.md": "322843a985e6a2ea1f91d1410eed77ddde6a1053f8b15cf33dd4f302f7ff3c56",
+      "CONTRACTS.md": "06fdc747a6f8c24a30b41e261513cb13034893e1e1cca1b5e87eec587591205c",
+      "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
+      "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
+      "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
+      "FIRST-USE-WALKTHROUGHS.md": "38402601329f448342ba86c97878adb62e079846b0ba3345f86430202d9e7eac",
+      "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
+      "FROM-SCRATCH-WALKTHROUGHS.md": "5f64e1fc79ba65819654b42cde2877945d5a8532fc3e11f5d4f70119fa2c988c",
+      "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
+      "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
+      "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
+      "MATURITY.md": "d58469ff9d97d45affc453771e089142ae7f410109d8b84ae8cc2d10116b4134",
+      "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14",
+      "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
+      "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
+      "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
+      "README.md": "a1d43ae57b4301ece058c684c12433369fe4ccc452e021f31255234beff9be5d",
+      "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f",
+      "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
+      "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
+      "SKILL-FORWARD-REVIEW.md": "63b02385a26c07a826cbbd050fc11480f512b18d692b6f395fd82d39219a76ce",
+      "SKILL-WORKFLOW.md": "7e7c5b1c467ff90af8d2fd992050a50baf5af39f199b031d0d5f1e07076714ed",
+      "STORAGE-LIFECYCLE.md": "0395c9cbf5ef66b799aeb9fbd65ca9cb76f3707a11d8079ed0acd85854bc404e",
+      "SYSTEM-DESIGN.md": "eeef34f06518a851809901a49dfc35d8c6aee80b1a44a6a265f64a127c6f82e8",
+      "TRAVELLER-APP.md": "93edf76b93b66f47a2db7b132bbfa56c8d2e2572343694a15dcad51c9060a25d",
+      "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
+      "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
+      "modules/ENVIRONMENT.md": "c618c98b9d6df72d88fb32e5f8685684967cf0c23fec721470b91ff5fe04442e",
+      "modules/NETWORKING.md": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
+      "modules/PLATFORM-RUNTIME.md": "f5dcfc94e7eb2a748885a5de3f2e8d56fcc7546df0ab37a28ccc1e465981d933",
+      "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
+      "modules/RENDERING.md": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
+      "modules/TOOLS-DELIVERY.md": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "modules/WORLD-CONTENT.md": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71"
+    },
+    "coordinated_handoffs": {
+      "SOURCE": {
+        "path": "tmp/handoffs/2026-11-01-engine-reconciliation/SOURCE.md",
+        "sha256": "1824109e940bb977a8a917cb87ac671f3fd230f72f91d00dafee9dbb331d1b64"
+      },
+      "NETWORK": {
+        "path": "tmp/handoffs/2026-11-01-engine-reconciliation/NETWORK.md",
+        "sha256": "d2d70bdb89b74ffde6d0efb25aebd903c9d0ce8032eb3d03b5db2d43fd8f1610"
+      },
+      "DELIVERY": {
+        "path": "tmp/handoffs/2026-11-01-engine-reconciliation/DELIVERY.md",
+        "sha256": "619241ebab9f5de69cf47e88d8c8167be9a438a2e0c2f279cadb1d3010431259"
+      }
+    },
+    "method": "Three scoped Sol High owners, independent cross-challenge, root reconciliation of all affected contract/module/task guides and requirements; source and stop/load adverse traces plus exact protocol layouts/application budgets. No engine experiments used to invent architecture.",
+    "open_initial_design_findings": [],
+    "remaining_qualification": [
+      "Resolve/pin dependencies and platform SDKs, compile actual APIs/codecs",
+      "Crash/quota/concurrency/admission/GC and stop-load failure tests",
+      "Real WSS join/results/coherence/resync/suspend latency and whole-game resource tests",
+      "Browser boot bytes/compile/scratch plus native/mobile lifecycle/thermal/device tests",
+      "Creator/artist cold handoff and human visual acceptance"
+    ],
+    "broader_family_design": "Scoped obligations remain on module rows; full browser authoring, live gameplay streaming and richer providers do not inherit initial readiness.",
+    "runtime_evidence": "unchanged: not_started_for_target / not_run / not_reviewed",
+    "documentation_validation": {
+      "local_links_checked": 579,
+      "local_anchors_checked": 90,
+      "module_ids": 30,
+      "contract_ids": 13,
+      "requirement_ids": 20,
+      "readme_lines": 23,
+      "status": "passed",
+      "hashes": "Current contract/spec/module/reconciliation/report digests verified; earlier reviewed hashes preserved",
+      "layout_arithmetic": "Independent wire field widths, group/baseline/resync/action sums and boot planning totals checked",
+      "runtime_tests": "not_run_documentation_only"
+    }
+  },
+  "effective_status_record": "reconciliation plus applicable module remaining_detailed_design; earlier review statuses are historical unless carried forward",
+  "repository_setup": {
+    "as_of": "2026-11-01",
+    "stage": "repository_scaffold",
+    "engine_implementation": "not_started_for_target",
+    "scope": "Rust workspace and contributor checks only. No engine runtime, renderer, networking, platform or quality qualification.",
+    "provenance": "../provenance/IMPORT.md",
+    "historical_hash_scope": "Prior reviewed/report/handoff/inspected_source hashes identify original Broadsides bytes. See import-manifest.json for relocation; only current fields refreshed by scripts/design_hashes.py are live Thrum digests.",
+    "evidence": "../evidence/REPOSITORY-SETUP.md"
+  }
+}

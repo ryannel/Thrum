@@ -1,0 +1,9 @@
+# Register real packages and direct workspace dependencies here when introducing them.
+# Module design responsibilities are not a prescription for one crate each.
+[packages.thrum-core]
+manifest = "crates/thrum-core/Cargo.toml"
+allowed_workspace_dependencies = []
+
+[packages.xtask]
+manifest = "tools/xtask/Cargo.toml"
+allowed_workspace_dependencies = []
