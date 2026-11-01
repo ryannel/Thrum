@@ -1548,8 +1548,18 @@ mod tests {
         let initial = world.try_publish_charged(0, &mut reservation).unwrap();
         drop(reservation);
 
+        let requested_peak = 4 * size_of::<Slot<u8>>()
+            + 4_usize.div_ceil(PAGE_SIZE) * size_of::<bool>()
+            + 4 * size_of::<u32>()
+            + ChargedReplicaIndex::<u32>::required_peak(3).unwrap()
+            + ChargedReplicaIndex::<Option<ChangeKind>>::required_peak(4).unwrap()
+            + 4 * size_of::<StableId>()
+            + world.slots.capacity() * size_of::<Slot<u8>>()
+            + world.dirty.capacity() * size_of::<bool>()
+            + world.free.capacity() * size_of::<u32>()
+            + world.by_id.allocation_size();
         let blocker = pool
-            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .try_reserve(pool.limit_bytes() - pool.used_bytes() - (requested_peak - 1))
             .unwrap();
         assert_eq!(
             world.activate_structural_journal(&pool, 4, 3, 4),
