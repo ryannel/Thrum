@@ -68,8 +68,38 @@ mod sealed {
 /// This boundary is sealed so a game type cannot claim an unchecked owner is
 /// charged. It does not by itself establish a finite whole-tick profile.
 pub trait ClosedPublicationValue: Clone + sealed::ClosedValue {
-    /// Whether every retained payload owner belongs to this process pool.
-    fn belongs_to_pool(&self, pool: &PublicationPool) -> bool;
+    /// Check fixed type shape once, even when the initial world is empty.
+    fn validate_shape(limits: ClosedValueLimits) -> Result<(), ClosedValueError>;
+    /// Check every retained payload owner against this pool and byte limit.
+    fn validate_for_pool(
+        &self,
+        pool: &PublicationPool,
+        limits: ClosedValueLimits,
+    ) -> Result<(), ClosedValueError>;
+}
+
+/// Per-value limits selected for one closed-state authority profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ClosedValueLimits {
+    /// Maximum fixed inline bytes in one state record.
+    pub max_inline_bytes: usize,
+    /// Maximum optional payload slots in one state record.
+    pub max_payload_slots: usize,
+    /// Maximum bytes in one immutable payload owner.
+    pub max_payload_bytes: usize,
+}
+
+/// A closed state cannot enter the selected authority profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ClosedValueError {
+    /// A payload was charged to another process pool.
+    WrongPool,
+    /// Fixed inline storage exceeds the selected maximum.
+    InlineLimit,
+    /// Payload handle slots exceed the selected maximum.
+    PayloadSlotLimit,
+    /// One immutable payload exceeds the selected maximum.
+    PayloadByteLimit,
 }
 
 /// A record attempted to retain a payload from another publication pool.
@@ -132,8 +162,30 @@ impl<const INLINE: usize, const BLOBS: usize> sealed::ClosedValue
 impl<const INLINE: usize, const BLOBS: usize> ClosedPublicationValue
     for PublicationRecord<INLINE, BLOBS>
 {
-    fn belongs_to_pool(&self, pool: &PublicationPool) -> bool {
-        self.belongs_to(pool)
+    fn validate_shape(limits: ClosedValueLimits) -> Result<(), ClosedValueError> {
+        if INLINE > limits.max_inline_bytes {
+            return Err(ClosedValueError::InlineLimit);
+        }
+        if BLOBS > limits.max_payload_slots {
+            return Err(ClosedValueError::PayloadSlotLimit);
+        }
+        Ok(())
+    }
+
+    fn validate_for_pool(
+        &self,
+        pool: &PublicationPool,
+        limits: ClosedValueLimits,
+    ) -> Result<(), ClosedValueError> {
+        for payload in self.blobs.iter().flatten() {
+            if !payload.belongs_to(pool) {
+                return Err(ClosedValueError::WrongPool);
+            }
+            if payload.as_slice().len() > limits.max_payload_bytes {
+                return Err(ClosedValueError::PayloadByteLimit);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -472,6 +524,45 @@ mod tests {
 
         let fixed = PublicationRecord::<8, 0>::try_new(&foreign, 8_u64.to_le_bytes(), []).unwrap();
         assert!(fixed.belongs_to(&first));
+    }
+
+    #[test]
+    fn closed_record_profile_checks_shape_and_payload_length() {
+        let pool = PublicationPool::new(10_000);
+        let limits = ClosedValueLimits {
+            max_inline_bytes: 8,
+            max_payload_slots: 1,
+            max_payload_bytes: 32,
+        };
+        let large_inline = PublicationRecord::<16, 0>::try_new(&pool, [0; 16], []).unwrap();
+        assert_eq!(
+            PublicationRecord::<16, 0>::validate_shape(limits),
+            Err(ClosedValueError::InlineLimit)
+        );
+        let many_slots = PublicationRecord::<8, 2>::try_new(&pool, [0; 8], [None, None]).unwrap();
+        assert_eq!(
+            PublicationRecord::<8, 2>::validate_shape(limits),
+            Err(ClosedValueError::PayloadSlotLimit)
+        );
+        assert!(large_inline.validate_for_pool(&pool, limits).is_ok());
+        assert!(many_slots.validate_for_pool(&pool, limits).is_ok());
+        let payload = PublicationBytes::try_copy_from_slice(&pool, &[1; 33]).unwrap();
+        let large_payload =
+            PublicationRecord::<8, 1>::try_new(&pool, [0; 8], [Some(payload)]).unwrap();
+        assert_eq!(
+            large_payload.validate_for_pool(&pool, limits),
+            Err(ClosedValueError::PayloadByteLimit)
+        );
+        assert_eq!(
+            large_payload.validate_for_pool(
+                &PublicationPool::new(10_000),
+                ClosedValueLimits {
+                    max_payload_bytes: 33,
+                    ..limits
+                }
+            ),
+            Err(ClosedValueError::WrongPool)
+        );
     }
 
     #[test]

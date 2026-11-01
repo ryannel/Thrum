@@ -87,16 +87,22 @@ pub enum PreparedEdits<T> {
 }
 
 impl<T> PreparedEdits<T> {
-    pub(crate) fn states_satisfy(&self, predicate: impl Fn(&T) -> bool) -> bool {
-        let valid = |edit: &WorldEdit<T>| match edit {
-            WorldEdit::Spawn(_, state) | WorldEdit::Replace(_, state) => predicate(state),
-            WorldEdit::Despawn(_) | WorldEdit::DespawnNew(_) => true,
+    pub(crate) fn validate_states<E>(
+        &self,
+        validate: impl Fn(&T) -> Result<(), E>,
+    ) -> Result<(), E> {
+        let check = |edit: &WorldEdit<T>| match edit {
+            WorldEdit::Spawn(_, state) | WorldEdit::Replace(_, state) => validate(state),
+            WorldEdit::Despawn(_) | WorldEdit::DespawnNew(_) => Ok(()),
         };
         match self {
-            Self::None => true,
-            Self::One(edit) => valid(edit),
-            Self::Two(first, second) => valid(first) && valid(second),
-            Self::Many(edits) => edits.iter().all(valid),
+            Self::None => Ok(()),
+            Self::One(edit) => check(edit),
+            Self::Two(first, second) => {
+                check(first)?;
+                check(second)
+            }
+            Self::Many(edits) => edits.iter().try_for_each(check),
         }
     }
     /// Number of edits the authority must admit and apply.
@@ -290,6 +296,8 @@ pub enum WorldPublicationError {
     UnchargedWorld,
     /// The reservation belongs to a different process-shared pool.
     WrongPool,
+    /// Initial closed state exceeds the selected per-value profile.
+    ValueProfile,
 }
 
 /// Counted work at a world publication boundary.
@@ -366,11 +374,14 @@ pub struct WorldPublication<T> {
 }
 
 impl<T: Clone> World<T> {
-    pub(crate) fn states_satisfy(&self, predicate: impl Fn(&T) -> bool) -> bool {
+    pub(crate) fn validate_states<E>(
+        &self,
+        validate: impl Fn(&T) -> Result<(), E>,
+    ) -> Result<(), E> {
         self.slots
             .iter()
             .filter_map(|slot| slot.entry.as_ref())
-            .all(|record| predicate(&record.state))
+            .try_for_each(|record| validate(&record.state))
     }
     /// Construct an empty world with a fresh host-supplied epoch.
     pub fn new(epoch: WorldEpoch) -> Self {
