@@ -1557,7 +1557,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "0805e2a706d82a6949cb3e2edc25710595b68b264362dc52d5d1f49ee9fe118a",
+  "contract_sha256": "b3786975abae244a6ff2c7c89e67d906cceae33548a60e3a81588cdf4aaebe81",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -2302,7 +2302,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
     "contract_revision": "C4",
-    "contract_sha256": "0805e2a706d82a6949cb3e2edc25710595b68b264362dc52d5d1f49ee9fe118a",
+    "contract_sha256": "b3786975abae244a6ff2c7c89e67d906cceae33548a60e3a81588cdf4aaebe81",
     "specifications": {
       "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
       "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
@@ -2683,7 +2683,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "66c2eebccf81a02b587a6247fe7cf0d565438892ff2b2fd5b399f9d3a9bdff7c",
-      "CONTRACTS.md": "0805e2a706d82a6949cb3e2edc25710595b68b264362dc52d5d1f49ee9fe118a",
+      "CONTRACTS.md": "b3786975abae244a6ff2c7c89e67d906cceae33548a60e3a81588cdf4aaebe81",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "7fcb5eb3bed124d88802936b8921231b6d523e6b5ae5ea02422aa84d354ce790",
+    "design_sha256": "235fdb788b26e49cd2f94722f66b81247f45442c3ec7faf05523d7193be4e3c5",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2865,6 +2865,14 @@
         "performance_measurement": "local_apple_silicon_world_only_pair_one_peer_complete_structural_churn_paired_fixed_structural_complete_no_spawn_and_maximum_two_peer_batch_callback_ack_4096_16384_retained_bytes",
         "scope": "Finite physical slots and live objects, precharged mutable world owners and stable-ID change journal, per-action spawn classification, atomic pending-credit top-ups, absolute-horizon due preflight, context-created variable state/event/rejection output, required local replica and sealed host are tested. The maximum two-peer 16-input, 32-spawn due batch passes under full competing pool use and its callback through acknowledgements has a local release-mode cost distribution. Arbitrary game-private allocations, larger peer counts, remote queues, allocator metadata, OS RSS and named devices are not qualified.",
         "evidence": "../evidence/i1-headless/STRUCTURAL-CREDITS.md"
+      },
+      "reusable_rule_scratch": {
+        "design": "selected_authority_owned_precharged_byte_buffer_with_owner_and_action_checked_range_handles",
+        "implementation": "feature_complete_for_selected_bounded_byte_scratch_profile",
+        "functional_validation": "passed_local_one_byte_activation_retry_two_peer_delayed_rejection_full_pool_contention_sticky_overrun_stale_foreign_retired_handles_direct_charged_output_copy_caught_unwind_and_final_release",
+        "performance_measurement": "paired_local_apple_silicon_one_object_submit_callback_replica_ack_with_four_byte_scratch_and_plain_variant_only",
+        "scope": "One charged reusable byte buffer and cumulative per-action range bound shared by decide and prepare in both local and multiplayer authority paths. Checked handles may cross those callbacks; invalid or oversized requests terminally fault before edits. Game-authored allocations outside RuleContext, typed temporary structures, spawn_bound work, allocator metadata, OS RSS, remote transport and named devices are not qualified.",
+        "evidence": "../evidence/i1-headless/RULE-SCRATCH.md"
       },
       "fixed_slot_owner_byte_gate": {
         "profile": "closed_bounded_variable_outputs_precharged_variable_actions_inline_edits_no_spawns_finite_peers_and_readers",
