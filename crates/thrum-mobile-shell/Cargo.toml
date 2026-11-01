@@ -9,5 +9,5 @@ description = "Mobile lifecycle and input gate for Thrum app shells"
 [lints]
 workspace = true
 
-[dev-dependencies]
+[dependencies]
 thrum-core = { path = "../thrum-core" }
