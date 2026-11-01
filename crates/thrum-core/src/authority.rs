@@ -1020,8 +1020,9 @@ impl<G: GameRules> Authority<G> {
             return Err(ExecutionCreditSetupError::UnsupportedEdits);
         }
         let closed = admission.closed.as_ref().expect("closed profile checked");
+        // Action payloads already own their pool charge before submission;
+        // only payloads created by rules after admission need output credit.
         if [
-            closed.action.limits,
             closed.entity.limits,
             closed.event.limits,
             closed.rejection.limits,

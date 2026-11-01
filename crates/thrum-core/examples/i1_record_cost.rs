@@ -67,6 +67,25 @@ fn measure_check<const BLOBS: usize>(
     );
 }
 
+fn measure_payload_equality(label: &str, first: &PublicationBytes, second: &PublicationBytes) {
+    let mut samples = Vec::with_capacity(SAMPLES);
+    for sample in 0..WARMUP + SAMPLES {
+        let start = Instant::now();
+        for _ in 0..BATCH {
+            black_box(black_box(first) == black_box(second));
+        }
+        if sample >= WARMUP {
+            samples.push(start.elapsed().as_nanos());
+        }
+    }
+    println!(
+        "payload/{label}: equality_checks_per_batch={BATCH} batch_ns[p50/p95/p99]={}/{}/{}",
+        percentile(&mut samples, 50),
+        percentile(&mut samples, 95),
+        percentile(&mut samples, 99),
+    );
+}
+
 fn main() {
     let pool = PublicationPool::new(usize::MAX);
     let inline = 7_u64.to_le_bytes();
@@ -82,4 +101,9 @@ fn main() {
     measure("one_shared_payload", &with_payload);
     measure_check("fixed_check", &fixed, &pool);
     measure_check("one_shared_payload_check", &with_payload, &pool);
+    let first = PublicationBytes::try_copy_from_slice(&pool, &[9; 1_024]).unwrap();
+    let same_owner = first.clone();
+    let equal_value = PublicationBytes::try_copy_from_slice(&pool, &[9; 1_024]).unwrap();
+    measure_payload_equality("shared_1024", &first, &same_owner);
+    measure_payload_equality("distinct_equal_1024", &first, &equal_value);
 }
