@@ -1154,7 +1154,9 @@ mod tests {
 
     struct ReplaceRule;
 
-    struct TwoSpawnRule;
+    struct TwoSpawnRule {
+        base: u128,
+    }
 
     impl GameRules for TwoSpawnRule {
         type Entity = u8;
@@ -1183,7 +1185,7 @@ mod tests {
             action: u8,
             _context: &mut crate::RuleContext<'_>,
         ) -> PreparedCommit<u8, ()> {
-            let first = 33 + u128::from(action) * 2;
+            let first = self.base + u128::from(action) * 2;
             PreparedCommit {
                 edits: PreparedEdits::Two(
                     WorldEdit::Spawn(StableId(first), first as u8),
@@ -1208,7 +1210,7 @@ mod tests {
         };
         let mut authority = Authority::try_new_closed_snapshot_charged(
             AuthorityId::Match(MatchId(301)),
-            TwoSpawnRule,
+            TwoSpawnRule { base: 33 },
             world,
             pool.clone(),
             SnapshotWriteBounds {
@@ -1305,6 +1307,116 @@ mod tests {
         drop(initial);
         drop(host);
         assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    #[ignore = "local maximum-batch callback cost fixture"]
+    fn measure_maximum_structural_batch_callback_cost() {
+        fn run(objects: usize) -> (u128, u128) {
+            let inline = |bytes| ClosedValueLimits {
+                max_inline_bytes: bytes,
+                max_payload_slots: 0,
+                max_payload_bytes: 0,
+            };
+            let mut samples = Vec::with_capacity(100);
+            for repetition in 0..120 {
+                let pool = PublicationPool::new(64_000_000);
+                let mut world = World::new(WorldEpoch(302));
+                for id in 1..=objects as u128 {
+                    world.spawn(StableId(id), 7_u8).unwrap();
+                }
+                let mut authority = Authority::try_new_closed_snapshot_charged(
+                    AuthorityId::Match(MatchId(302)),
+                    TwoSpawnRule {
+                        base: objects as u128 + 1,
+                    },
+                    world,
+                    pool.clone(),
+                    SnapshotWriteBounds {
+                        max_edits_per_action: 2,
+                        max_spawns_per_action: 2,
+                    },
+                    ClosedGameLimits {
+                        action: inline(1),
+                        entity: inline(1),
+                        event: inline(0),
+                        rejection: inline(0),
+                    },
+                )
+                .unwrap();
+                authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+                authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+                let origin = Instant::now();
+                let (mut host, initial) = HeadlessHost::with_protected_structural_replica(
+                    origin,
+                    ClockConfig {
+                        max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                        ..ClockConfig::default()
+                    },
+                    HostBudget {
+                        callback_cpu: Duration::from_secs(1),
+                        other_work: Duration::from_millis(1),
+                        tick_cost_bound: Duration::from_millis(1),
+                    },
+                    authority,
+                    &pool,
+                    objects + 32,
+                    2,
+                    objects + 32,
+                    objects + 32,
+                    0,
+                )
+                .unwrap();
+                for peer in 1..=2_u64 {
+                    for sequence in 1..=8_u64 {
+                        host.submit(Input {
+                            origin: Origin {
+                                peer: PeerId(peer),
+                                connection_epoch: 1,
+                                sequence,
+                            },
+                            actor: ActorId(peer),
+                            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                            action: ((peer - 1) * 8 + sequence - 1) as u8,
+                        })
+                        .unwrap();
+                    }
+                }
+                let occupied = pool
+                    .try_reserve(pool.limit_bytes() - pool.used_bytes())
+                    .unwrap();
+                let start = Instant::now();
+                let report = host
+                    .on_callback_charged(origin + Duration::from_millis(17))
+                    .unwrap();
+                let committed = match &report.publications[0] {
+                    HostPublication::ReplicatedCharged { admitted, .. } => admitted.results().len(),
+                    _ => panic!("expected charged replica delivery"),
+                };
+                drop(report);
+                host.acknowledge_results(PeerId(1), 8).unwrap();
+                host.acknowledge_results(PeerId(2), 8).unwrap();
+                let elapsed = start.elapsed().as_nanos();
+                assert_eq!(committed, 16);
+                assert_eq!(host.replica().unwrap().len(), objects + 32);
+                assert_eq!(host.authority().world().slot_high_water(), objects + 32);
+                if repetition >= 20 {
+                    samples.push(elapsed);
+                }
+                drop(occupied);
+                drop(initial);
+                drop(host);
+                assert_eq!(pool.used_bytes(), 0);
+            }
+            samples.sort_unstable();
+            (samples[50], samples[94])
+        }
+        for objects in [4_096, 16_384] {
+            let (p50, p95) = run(objects);
+            eprintln!(
+                "structural maximum two-peer batch {objects} objects + 32 spawns: callback through acknowledgement p50={p50}ns p95={p95}ns"
+            );
+        }
     }
 
     impl GameRules for ReplaceRule {
