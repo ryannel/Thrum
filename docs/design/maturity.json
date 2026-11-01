@@ -2785,7 +2785,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "4a573259279ddd6a57d90f2461ecbe56612c75770a35d9c8ed5101c49451f2cc",
+    "design_sha256": "faebb319b815912c6ba1c0254912d4691116956d3b129e5c55fbb07a21d7eb7a",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2797,9 +2797,9 @@
     "publication_memory": {
       "design": "selected_for_precommit_byte_admission",
       "implementation": "partial_reservation_prepared_edit_and_charged_byte_substrates_only",
-      "functional_validation": "pool_and_charged_byte_unit_tests_page_conformance_and_atomic_prepared_edit_tests_only",
+      "functional_validation": "pool_and_charged_byte_unit_tests_input_history_fixture_page_conformance_and_atomic_prepared_edit_tests_only",
       "performance_measurement": "local_page_layout_comparison_only; byte_gate_not_run",
-      "scope": "Process-shared atomic reservation/charge transfer and immutable payload byte ownership are unit-tested, the private Arc<Vec> page layout is locally measured, and ordered prepared edits reject ordinary invalid batches before mutation; no authority/replica allocation charges, precommit byte gate or bounded game payload contract.",
+      "scope": "Process-shared atomic reservation/charge transfer and immutable payload byte ownership are unit-tested, a charged action survives authority pending/completed history until acknowledgement, the private Arc<Vec> page layout is locally measured, and ordered prepared edits reject ordinary invalid batches before mutation; no general input or authority/replica allocation charges, precommit byte gate or bounded game payload contract.",
       "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md",
       "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md",
       "prepared_edit_evidence": "../evidence/i1-headless/PREPARED-EDITS.md",
