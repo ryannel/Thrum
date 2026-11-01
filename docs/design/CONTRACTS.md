@@ -81,6 +81,13 @@ future rule-created immutable output bytes separately from snapshot and group st
 their own preadmitted output allowance; pre-existing charged owners may be shared without another byte charge.
 An exhausted declared allowance is a terminal rule-contract fault before that action's edits, while ordinary reader
 backpressure remains retryable before the tick starts.
+An admitted structural-growth profile declares separate finite physical-slot and live-object caps. A pure typed-action
+classifier supplies a maximum spawn count before sequencing; the authority checks prepared spawns against the stored
+bound at execution. A new input that raises the possible page/root high-water must atomically fund every older pending
+input's increased future credit before its own sequence advances. Due preflight uses that admitted absolute horizon;
+clean idle ticks do not dirty pages merely because a future spawn is pending. Stable-ID-keyed lifecycle changes retain
+distinct despawn/spawn records even when one physical slot is reused before publication. A required replica's object
+headroom is part of admission, and local and multiplayer submissions use the same classifier and rule callbacks.
 
 ## C03 Authority and interaction ordering — W1 and P3/P4/P6
 

@@ -1557,7 +1557,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "f01c84ba721dfc0caec980e08c1be8c4feedad7b124a1498a54b9309e8dde5e7",
+  "contract_sha256": "0805e2a706d82a6949cb3e2edc25710595b68b264362dc52d5d1f49ee9fe118a",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -2302,7 +2302,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
     "contract_revision": "C4",
-    "contract_sha256": "f01c84ba721dfc0caec980e08c1be8c4feedad7b124a1498a54b9309e8dde5e7",
+    "contract_sha256": "0805e2a706d82a6949cb3e2edc25710595b68b264362dc52d5d1f49ee9fe118a",
     "specifications": {
       "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
       "FOUNDATION-SPEC.md": "d730cefe07cb0c1bc81eb710826fc64ca295aca7bdc6ae5e6630909ed7dcdd1b",
@@ -2683,7 +2683,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "66c2eebccf81a02b587a6247fe7cf0d565438892ff2b2fd5b399f9d3a9bdff7c",
-      "CONTRACTS.md": "f01c84ba721dfc0caec980e08c1be8c4feedad7b124a1498a54b9309e8dde5e7",
+      "CONTRACTS.md": "0805e2a706d82a6949cb3e2edc25710595b68b264362dc52d5d1f49ee9fe118a",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "4f1a2745f93f6c9e0179fd01706356ceb81a8b991df7e39dec1a331f97c44113",
+    "design_sha256": "a130e73d7389805349c6b02a2ccd23460aafcb2b9b5a57310323420a3868d5b8",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2860,11 +2860,11 @@
       },
       "bounded_structural_growth": {
         "design": "selected_finite_slot_and_live_caps_per_action_spawn_bound_id_keyed_journal_and_atomic_pending_credit_horizon",
-        "implementation": "partial_precharged_world_owners_and_id_keyed_journal_only",
-        "functional_validation": "world_only_local_tests_passed_authority_and_host_not_run",
-        "performance_measurement": "local_apple_silicon_world_only_one_change_fixture",
-        "scope": "A proposed extension of the selected fixed-slot host. Precharged structural world owners, generation retirement, same-barrier identity and cancellation are locally proved. Per-action admission, accepted-input credit upgrades, required replica and complete host path are not qualified.",
-        "evidence": "../evidence/i1-headless/STRUCTURAL-WORLD-STORAGE.md"
+        "implementation": "partial_bounded_inline_value_structural_host_profile",
+        "functional_validation": "passed_local_world_two_peer_host_delayed_topup_refusal_retry_idle_future_spawn_baseline_reconnect_cache_zero_spawn_reclaim_false_bound_fault",
+        "performance_measurement": "local_apple_silicon_world_only_pair_and_one_peer_complete_structural_churn_4096_16384",
+        "scope": "Finite physical slots and live objects, precharged mutable world owners and stable-ID change journal, per-action spawn classification, atomic pending-credit top-ups, absolute-horizon due preflight, required local replica and sealed host are tested. Arbitrary game-private allocations, variable rule outputs during structural churn, remote queues, allocator metadata, OS RSS, paired fixed-profile complete-path comparison and named devices are not qualified.",
+        "evidence": "../evidence/i1-headless/STRUCTURAL-CREDITS.md"
       },
       "fixed_slot_owner_byte_gate": {
         "profile": "closed_bounded_variable_outputs_precharged_variable_actions_inline_edits_no_spawns_finite_peers_and_readers",

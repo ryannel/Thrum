@@ -357,6 +357,15 @@ pub trait GameRules {
     /// Immediate event payload.
     type Event: Clone + Eq;
 
+    /// Pure submission-time upper bound for new objects created by this
+    /// action. Games using structural protection should distinguish zero-
+    /// spawn reclamation actions from spawn-capable actions. The authority
+    /// checks the returned bound against the configured global maximum and
+    /// checks prepared edits against the stored per-input result.
+    fn spawn_bound(&self, _action: &Self::Action, configured_max: usize) -> usize {
+        configured_max
+    }
+
     /// Validate against the current authoritative world without mutating it.
     fn decide(
         &self,
@@ -380,12 +389,25 @@ struct Pending<A> {
     due_tick: u64,
     timing_error: Option<TimingError>,
     credit: Option<PublicationReservation>,
+    spawn_bound: usize,
 }
 
 #[derive(Clone, Copy)]
 struct FixedCreditProfile {
     per_input_bytes: usize,
     max_peers: usize,
+    output_allowance: Option<usize>,
+}
+
+#[derive(Clone, Copy)]
+struct StructuralCreditProfile {
+    max_slots: usize,
+    max_live: usize,
+    max_peers: usize,
+    group_per_input: usize,
+    funded_per_input: usize,
+    pending_spawns: usize,
+    pending_count: usize,
     output_allowance: Option<usize>,
 }
 
@@ -504,6 +526,11 @@ impl<A> PendingQueue<A> {
         self.values
             .iter()
             .map(|(sequence, pending)| (sequence, pending))
+    }
+    fn iter_mut(&mut self) -> impl Iterator<Item = (&u64, &mut Pending<A>)> {
+        self.values
+            .iter_mut()
+            .map(|(sequence, pending)| (&*sequence, pending))
     }
 
     fn len(&self) -> usize {
@@ -669,6 +696,10 @@ impl<A, R, E> PeerRegistry<A, R, E> {
         self.entries.iter().map(|(_, peer)| peer)
     }
 
+    fn values_mut(&mut self) -> impl Iterator<Item = &mut Peer<A, R, E>> {
+        self.entries.iter_mut().map(|(_, peer)| peer)
+    }
+
     fn prepare_growth(
         &self,
         pool: Option<&PublicationPool>,
@@ -781,6 +812,7 @@ pub struct Authority<G: GameRules> {
     snapshot_leases: SnapshotLeaseDirectory,
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
     fixed_credits: Option<FixedCreditProfile>,
+    structural_credits: Option<StructuralCreditProfile>,
     faulted: bool,
 }
 
@@ -926,6 +958,7 @@ impl<G: GameRules> Authority<G> {
             snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
             snapshot_admission,
             fixed_credits: None,
+            structural_credits: None,
             faulted: false,
         }
     }
@@ -943,6 +976,71 @@ impl<G: GameRules> Authority<G> {
     pub fn world(&self) -> &World<G::Entity> {
         &self.world
     }
+    #[cfg(test)]
+    pub(crate) fn pending_credit_bytes(&self, peer_id: PeerId, sequence: u64) -> Option<usize> {
+        self.peers
+            .get(&peer_id)?
+            .pending
+            .get(&sequence)?
+            .credit
+            .as_ref()
+            .map(PublicationReservation::remaining_bytes)
+    }
+    #[cfg(test)]
+    pub(crate) fn structural_credit_quote(&self, spawn_bound: usize) -> Option<(usize, usize)> {
+        let profile = self.structural_credits?;
+        let horizon = self.structural_horizon(profile.pending_spawns.checked_add(spawn_bound)?)?;
+        let snapshot = self
+            .world
+            .conservative_charged_publication_peak_at(
+                self.snapshot_admission
+                    .as_ref()?
+                    .bounds
+                    .max_edits_per_action,
+                horizon,
+            )
+            .ok()?;
+        let per_input = profile
+            .funded_per_input
+            .max(snapshot.checked_add(profile.group_per_input)?);
+        let candidate = per_input.checked_add(profile.output_allowance.unwrap_or(0))?;
+        let total = profile
+            .pending_count
+            .checked_mul(per_input - profile.funded_per_input)?
+            .checked_add(candidate)?;
+        Some((candidate, total))
+    }
+    fn structural_horizon(&self, pending_spawns: usize) -> Option<usize> {
+        let high_water = self.world.slot_high_water();
+        let needed = high_water
+            .checked_sub(self.world.reusable_slots())?
+            .checked_add(pending_spawns)?;
+        Some(high_water.max(needed))
+    }
+    fn reset_structural_credit_when_empty(&mut self) {
+        if self
+            .structural_credits
+            .is_none_or(|profile| profile.pending_count != 0)
+        {
+            return;
+        }
+        let profile = self.structural_credits.as_mut().expect("checked profile");
+        assert_eq!(profile.pending_spawns, 0);
+        let snapshot = self
+            .world
+            .conservative_charged_publication_peak_at(
+                self.snapshot_admission
+                    .as_ref()
+                    .expect("structural admission")
+                    .bounds
+                    .max_edits_per_action,
+                self.world.slot_high_water(),
+            )
+            .expect("admitted structural horizon");
+        profile.funded_per_input = snapshot
+            .checked_add(profile.group_per_input)
+            .expect("bounded per-input credit");
+    }
     /// Last complete immutable world view; clones retain its page owners.
     pub fn snapshot(&self) -> &Snapshot<G::Entity> {
         &self.snapshot
@@ -953,7 +1051,7 @@ impl<G: GameRules> Authority<G> {
         due: usize,
         charged_group: bool,
     ) -> Result<Option<PublicationReservation>, StepError> {
-        if self.fixed_credits.is_some() && !charged_group {
+        if (self.fixed_credits.is_some() || self.structural_credits.is_some()) && !charged_group {
             return Err(StepError::Unqualified);
         }
         let Some(admission) = &self.snapshot_admission else {
@@ -967,10 +1065,19 @@ impl<G: GameRules> Authority<G> {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
         };
-        let snapshot_peak = match self
-            .world
-            .conservative_charged_publication_peak(max_edits, max_spawns)
-        {
+        let snapshot_peak = match self.structural_credits.map_or_else(
+            || {
+                self.world
+                    .conservative_charged_publication_peak(max_edits, max_spawns)
+            },
+            |profile| {
+                let horizon = self
+                    .structural_horizon(profile.pending_spawns)
+                    .ok_or(WorldPublicationError::Capacity)?;
+                self.world
+                    .conservative_charged_publication_peak_at(max_edits, horizon)
+            },
+        ) {
             Ok(peak) => peak,
             Err(_) => {
                 self.faulted = true;
@@ -997,10 +1104,15 @@ impl<G: GameRules> Authority<G> {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
         };
-        if let Some(profile) = self.fixed_credits.filter(|_| due != 0) {
-            let Some(expected_credit) = profile
-                .per_input_bytes
-                .checked_add(profile.output_allowance.unwrap_or(0))
+        let protected_profile = self
+            .fixed_credits
+            .map(|profile| (profile.per_input_bytes, profile.output_allowance))
+            .or_else(|| {
+                self.structural_credits
+                    .map(|profile| (profile.funded_per_input, profile.output_allowance))
+            });
+        if let Some((per_input_bytes, output_allowance)) = protected_profile.filter(|_| due != 0) {
+            let Some(expected_credit) = per_input_bytes.checked_add(output_allowance.unwrap_or(0))
             else {
                 self.faulted = true;
                 return Err(StepError::TerminalGameContract);
@@ -1020,7 +1132,7 @@ impl<G: GameRules> Authority<G> {
                     self.faulted = true;
                     return Err(StepError::TerminalGameContract);
                 }
-                let Some(next) = protected.checked_add(profile.per_input_bytes) else {
+                let Some(next) = protected.checked_add(per_input_bytes) else {
                     self.faulted = true;
                     return Err(StepError::TerminalGameContract);
                 };
@@ -1042,7 +1154,7 @@ impl<G: GameRules> Authority<G> {
                     .and_then(|pending| pending.credit.as_mut())
                     .expect("validated due credit");
                 credit
-                    .transfer_to(&mut due_reservation, profile.per_input_bytes)
+                    .transfer_to(&mut due_reservation, per_input_bytes)
                     .expect("same-pool checked credit transfer");
             }
             return Ok(Some(due_reservation));
@@ -1185,6 +1297,114 @@ impl<G: GameRules> Authority<G> {
         Ok(())
     }
 
+    /// Select bounded structural storage and admission-time future credits.
+    /// The host must supply a required replica with at least `max_live`
+    /// object capacity before accepting inputs through this profile.
+    pub(crate) fn enable_structural_credits(
+        &mut self,
+        max_peers: usize,
+        max_slots: usize,
+        max_live: usize,
+        output_allowance: Option<usize>,
+    ) -> Result<(), ExecutionCreditSetupError> {
+        let admission = self
+            .snapshot_admission
+            .as_ref()
+            .filter(|admission| admission.closed.is_some())
+            .ok_or(ExecutionCreditSetupError::Unqualified)?;
+        if self.fixed_credits.is_some() || self.structural_credits.is_some() {
+            return Err(ExecutionCreditSetupError::Unqualified);
+        }
+        if self.peers.values().any(|peer| peer.pending.len() != 0) {
+            return Err(ExecutionCreditSetupError::PendingInputs);
+        }
+        if self.peers.len() > max_peers {
+            return Err(ExecutionCreditSetupError::PeerCapacity);
+        }
+        if admission.bounds.max_edits_per_action > 2
+            || admission.bounds.max_spawns_per_action > admission.bounds.max_edits_per_action
+        {
+            return Err(ExecutionCreditSetupError::UnsupportedEdits);
+        }
+        let closed = admission.closed.as_ref().expect("closed gate checked");
+        if output_allowance.is_none()
+            && [
+                closed.entity.limits,
+                closed.event.limits,
+                closed.rejection.limits,
+            ]
+            .iter()
+            .any(|limits| limits.max_payload_slots != 0 || limits.max_payload_bytes != 0)
+        {
+            return Err(ExecutionCreditSetupError::VariablePayloads);
+        }
+        let max_due = max_peers
+            .checked_mul(MAX_PENDING)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let max_edits = max_due
+            .checked_mul(admission.bounds.max_edits_per_action)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let group_per_input = self
+            .charged_group_peak(1, admission.bounds.max_edits_per_action, max_peers, false)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let one_at_current = self
+            .world
+            .conservative_charged_publication_peak_at(
+                admission.bounds.max_edits_per_action,
+                self.world.slot_high_water(),
+            )
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let funded_per_input = one_at_current
+            .checked_add(group_per_input)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let one_at_max = self
+            .world
+            .conservative_charged_publication_peak_at(
+                admission.bounds.max_edits_per_action,
+                max_slots,
+            )
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let aggregate_at_max = self
+            .world
+            .conservative_charged_publication_peak_at(max_edits, max_slots)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?
+            .checked_add(
+                self.charged_group_peak(max_due, max_edits, max_peers, false)
+                    .map_err(|_| ExecutionCreditSetupError::Capacity)?,
+            )
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let one_total = one_at_max
+            .checked_add(group_per_input)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        if max_due
+            .checked_mul(one_total)
+            .is_none_or(|total| total < aggregate_at_max)
+            || max_due
+                .checked_mul(
+                    one_total
+                        .checked_add(output_allowance.unwrap_or(0))
+                        .ok_or(ExecutionCreditSetupError::Capacity)?,
+                )
+                .is_none()
+        {
+            return Err(ExecutionCreditSetupError::Capacity);
+        }
+        self.world
+            .activate_structural_journal(&admission.pool, max_slots, max_live, max_edits)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        self.structural_credits = Some(StructuralCreditProfile {
+            max_slots,
+            max_live,
+            max_peers,
+            group_per_input,
+            funded_per_input,
+            pending_spawns: 0,
+            pending_count: 0,
+            output_allowance,
+        });
+        Ok(())
+    }
+
     /// Register or reconnect one controlled actor. Reconnect requires a newer
     /// connection epoch and loses old pending input.
     pub fn register_peer(
@@ -1200,9 +1420,28 @@ impl<G: GameRules> Authority<G> {
             return Err(AdmissionError::StaleEpoch);
         }
         if let Some(peer) = self.peers.get_mut(&id) {
+            if let Some(profile) = &mut self.structural_credits {
+                let canceled = peer
+                    .pending
+                    .iter()
+                    .map(|(_, pending)| pending.spawn_bound)
+                    .sum::<usize>();
+                profile.pending_spawns -= canceled;
+                profile.pending_count -= peer.pending.len();
+            }
             peer.reconnect(actor, epoch);
             self.cached_watermarks = None;
+            self.reset_structural_credit_when_empty();
             return Ok(());
+        }
+        if self
+            .fixed_credits
+            .is_some_and(|profile| self.peers.len() >= profile.max_peers)
+            || self
+                .structural_credits
+                .is_some_and(|profile| self.peers.len() >= profile.max_peers)
+        {
+            return Err(AdmissionError::ReplicaCapacity);
         }
         let pending = PendingQueue::try_new(
             self.snapshot_admission
@@ -1263,6 +1502,9 @@ impl<G: GameRules> Authority<G> {
         if self
             .fixed_credits
             .is_some_and(|profile| count > profile.max_peers)
+            || self
+                .structural_credits
+                .is_some_and(|profile| count > profile.max_peers)
         {
             return Err(AdmissionError::ReplicaCapacity);
         }
@@ -1337,6 +1579,9 @@ impl<G: GameRules> Authority<G> {
     }
 
     pub(crate) fn pending_fits_replica(&self, replica: &Replica<G::Entity>) -> bool {
+        if let Some(profile) = self.structural_credits {
+            return replica.can_admit_charged_spawns(profile.pending_spawns) == Ok(true);
+        }
         let Some(admission) = &self.snapshot_admission else {
             return false;
         };
@@ -1446,28 +1691,78 @@ impl<G: GameRules> Authority<G> {
                 )
             }
         };
+        let structural_bound = if let Some(profile) = self.structural_credits {
+            let bound = if timing_error.is_some() {
+                0
+            } else {
+                self.rules.spawn_bound(
+                    &input.action,
+                    self.snapshot_admission
+                        .as_ref()
+                        .expect("structural admission")
+                        .bounds
+                        .max_spawns_per_action,
+                )
+            };
+            if bound
+                > self
+                    .snapshot_admission
+                    .as_ref()
+                    .expect("structural admission")
+                    .bounds
+                    .max_spawns_per_action
+            {
+                self.faulted = true;
+                return Err(AdmissionError::Faulted);
+            }
+            let pending_spawns = profile
+                .pending_spawns
+                .checked_add(bound)
+                .ok_or(AdmissionError::PublicationCapacity)?;
+            let horizon = self
+                .structural_horizon(pending_spawns)
+                .ok_or(AdmissionError::PublicationCapacity)?;
+            if horizon > profile.max_slots
+                || self
+                    .world
+                    .len()
+                    .checked_add(pending_spawns)
+                    .is_none_or(|live| live > profile.max_live)
+            {
+                return Err(AdmissionError::PublicationCapacity);
+            }
+            Some((bound, pending_spawns, horizon))
+        } else {
+            None
+        };
         if let Some(replica) = required_replica {
-            let bound = self
-                .snapshot_admission
-                .as_ref()
-                .ok_or(AdmissionError::ReplicaCapacity)?
-                .bounds
-                .max_spawns_per_action;
-            if bound != 0 {
-                let pending = self
-                    .peers
-                    .values()
-                    .try_fold(1_usize, |total, peer| total.checked_add(peer.pending.len()))
-                    .ok_or(AdmissionError::ReplicaCapacity)?;
-                let max_spawns = pending
-                    .checked_mul(bound)
-                    .ok_or(AdmissionError::ReplicaCapacity)?;
-                if replica.can_admit_charged_spawns(max_spawns) != Ok(true) {
+            if let Some((_, pending_spawns, _)) = structural_bound {
+                if replica.can_admit_charged_spawns(pending_spawns) != Ok(true) {
                     return Err(AdmissionError::ReplicaCapacity);
+                }
+            } else {
+                let bound = self
+                    .snapshot_admission
+                    .as_ref()
+                    .ok_or(AdmissionError::ReplicaCapacity)?
+                    .bounds
+                    .max_spawns_per_action;
+                if bound != 0 {
+                    let pending = self
+                        .peers
+                        .values()
+                        .try_fold(1_usize, |total, peer| total.checked_add(peer.pending.len()))
+                        .ok_or(AdmissionError::ReplicaCapacity)?;
+                    let max_spawns = pending
+                        .checked_mul(bound)
+                        .ok_or(AdmissionError::ReplicaCapacity)?;
+                    if replica.can_admit_charged_spawns(max_spawns) != Ok(true) {
+                        return Err(AdmissionError::ReplicaCapacity);
+                    }
                 }
             }
         }
-        let credit = self
+        let fixed_credit = self
             .fixed_credits
             .map(|profile| {
                 let output_bytes = profile.output_allowance.unwrap_or(0);
@@ -1483,17 +1778,97 @@ impl<G: GameRules> Authority<G> {
                     .map_err(|_| AdmissionError::PublicationCapacity)
             })
             .transpose()?;
+        let mut structural_reservation = None;
+        let mut structural_delta = 0;
+        let mut structural_per_input = 0;
+        if let (Some(profile), Some((_, _, horizon))) = (self.structural_credits, structural_bound)
+        {
+            let snapshot = self
+                .world
+                .conservative_charged_publication_peak_at(
+                    self.snapshot_admission
+                        .as_ref()
+                        .expect("structural admission")
+                        .bounds
+                        .max_edits_per_action,
+                    horizon,
+                )
+                .map_err(|_| AdmissionError::PublicationCapacity)?;
+            let candidate = snapshot
+                .checked_add(profile.group_per_input)
+                .ok_or(AdmissionError::PublicationCapacity)?;
+            structural_per_input = profile.funded_per_input.max(candidate);
+            structural_delta = structural_per_input - profile.funded_per_input;
+            let total = profile
+                .pending_count
+                .checked_mul(structural_delta)
+                .and_then(|v| v.checked_add(structural_per_input))
+                .and_then(|v| v.checked_add(profile.output_allowance.unwrap_or(0)))
+                .ok_or(AdmissionError::PublicationCapacity)?;
+            structural_reservation = Some(
+                self.snapshot_admission
+                    .as_ref()
+                    .expect("structural admission")
+                    .pool
+                    .try_reserve(total)
+                    .map_err(|_| AdmissionError::PublicationCapacity)?,
+            );
+        }
+        {
+            let peer = self
+                .peers
+                .get_mut(&input.origin.peer)
+                .expect("validated peer remains registered");
+            peer.try_grow_completed(
+                peer.completed.len() + peer.pending.len() + 1,
+                self.snapshot_admission
+                    .as_ref()
+                    .map(|admission| &admission.pool),
+            )
+            .map_err(|_| AdmissionError::PublicationCapacity)?;
+        }
+        let credit = if let Some(mut reserved) = structural_reservation {
+            if structural_delta != 0 {
+                for peer in self.peers.values_mut() {
+                    for (_, pending) in peer.pending.iter_mut() {
+                        reserved
+                            .transfer_to(
+                                pending.credit.as_mut().expect("protected pending credit"),
+                                structural_delta,
+                            )
+                            .expect("pre-reserved same-pool top-up");
+                    }
+                }
+            }
+            let pool = &self
+                .snapshot_admission
+                .as_ref()
+                .expect("structural admission")
+                .pool;
+            let mut candidate = pool.try_reserve(0).expect("zero-byte reservation");
+            let amount = structural_per_input
+                .checked_add(
+                    self.structural_credits
+                        .expect("profile")
+                        .output_allowance
+                        .unwrap_or(0),
+                )
+                .expect("pre-reserved candidate");
+            reserved
+                .transfer_to(&mut candidate, amount)
+                .expect("pre-reserved candidate transfer");
+            let profile = self.structural_credits.as_mut().expect("profile");
+            profile.funded_per_input = structural_per_input;
+            profile.pending_spawns = structural_bound.expect("structural bound").1;
+            profile.pending_count += 1;
+            Some(candidate)
+        } else {
+            fixed_credit
+        };
         let peer = self
             .peers
             .get_mut(&input.origin.peer)
-            .expect("validated peer remains registered");
-        peer.try_grow_completed(
-            peer.completed.len() + peer.pending.len() + 1,
-            self.snapshot_admission
-                .as_ref()
-                .map(|admission| &admission.pool),
-        )
-        .map_err(|_| AdmissionError::PublicationCapacity)?;
+            .expect("validated peer");
         peer.pending.insert(
             seq,
             Pending {
@@ -1501,6 +1876,7 @@ impl<G: GameRules> Authority<G> {
                 due_tick,
                 timing_error,
                 credit,
+                spawn_bound: structural_bound.map_or(0, |(bound, _, _)| bound),
             },
         );
         peer.next_sequence = peer
@@ -1543,7 +1919,7 @@ impl<G: GameRules> Authority<G> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
         }
-        if self.fixed_credits.is_some() {
+        if self.fixed_credits.is_some() || self.structural_credits.is_some() {
             return Err(StepError::Unqualified);
         }
         let mut results = Vec::new();
@@ -1814,12 +2190,21 @@ impl<G: GameRules> Authority<G> {
             }
         }
         if let Some(replica) = required_replica {
-            let max_spawns = self.snapshot_admission.as_ref().and_then(|admission| {
+            let max_spawns = if self.structural_credits.is_some() {
                 self.due_scratch
                     .values
-                    .len()
-                    .checked_mul(admission.bounds.max_spawns_per_action)
-            });
+                    .iter()
+                    .try_fold(0_usize, |sum, (peer_id, sequence)| {
+                        sum.checked_add(self.peers.get(peer_id)?.pending.get(sequence)?.spawn_bound)
+                    })
+            } else {
+                self.snapshot_admission.as_ref().and_then(|admission| {
+                    self.due_scratch
+                        .values
+                        .len()
+                        .checked_mul(admission.bounds.max_spawns_per_action)
+                })
+            };
             let Some(max_spawns) = max_spawns else {
                 self.faulted = true;
                 self.due_scratch.values.clear();
@@ -1861,11 +2246,18 @@ impl<G: GameRules> Authority<G> {
                 .pending
                 .remove(&sequence)
                 .expect("pending key");
+            if let Some(profile) = &mut self.structural_credits {
+                profile.pending_spawns -= pending.spawn_bound;
+                profile.pending_count -= 1;
+            }
             let origin = pending.input.origin;
             let mut rule_budget = if let Some(allowance) = self
                 .fixed_credits
                 .and_then(|profile| profile.output_allowance)
-            {
+                .or_else(|| {
+                    self.structural_credits
+                        .and_then(|profile| profile.output_allowance)
+                }) {
                 let credit = pending
                     .credit
                     .take()
@@ -1920,7 +2312,14 @@ impl<G: GameRules> Authority<G> {
                     if rule_budget.exceeded {
                         return Err(StepError::TerminalGameContract);
                     }
-                    if self.fixed_credits.is_some() && !prepared.edits.is_inline() {
+                    if (self.fixed_credits.is_some() || self.structural_credits.is_some())
+                        && !prepared.edits.is_inline()
+                    {
+                        return Err(StepError::TerminalGameContract);
+                    }
+                    if self.structural_credits.is_some()
+                        && prepared.edits.spawns() > pending.spawn_bound
+                    {
                         return Err(StepError::TerminalGameContract);
                     }
                     if self.snapshot_admission.as_ref().is_some_and(|admission| {
@@ -1989,6 +2388,7 @@ impl<G: GameRules> Authority<G> {
             });
             results.push(result);
         }
+        let had_due = !self.due_scratch.values.is_empty();
         self.due_scratch.values.clear();
         let published = if let Some(reservation) = &mut snapshot_reservation {
             let floor = &self
@@ -2002,6 +2402,9 @@ impl<G: GameRules> Authority<G> {
         } else {
             self.world.publish(self.tick)
         };
+        if had_due {
+            self.reset_structural_credit_when_empty();
+        }
         self.snapshot = published.snapshot.clone();
         self.snapshot_leases.push(published.snapshot.lease_token());
         self.group_id = self.group_id.checked_add(1).expect("group ID exhausted");
