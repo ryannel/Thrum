@@ -1,5 +1,26 @@
-//! Portable foundations for Thrum.
+//! Portable, headless authority foundations for Thrum.
 //!
-//! This crate is intentionally a scaffold. The first implementation milestone is
-//! the headless action → rules → committed-state path shared by local and network play.
-//! No world, scheduler, renderer, or networking API is implemented yet.
+//! The first executable slice owns a fixed-tick world, checked identities,
+//! game-owned typed rules, immutable publication and an in-memory replica.
+//! It has no renderer, transport or persistent source adapter.
+
+mod authority;
+mod clock;
+mod host;
+mod replica;
+mod world;
+
+pub use authority::{
+    ActionRejection, ActionResult, Admission, AdmissionError, Authority, CommittedEvent, GameRules,
+    GameTick, Input, InputSchedule, Origin, PeerId, ResultDisposition, StepError, TickPublication,
+};
+pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
+pub use host::{
+    GameHostCallback, HeadlessHost, HostAdmissionError, HostBudget, HostCallback, HostError,
+    HostPublication, InitialOutcomes,
+};
+pub use replica::{AdmittedGroup, Replica, ReplicaError, StateGroup};
+pub use world::{
+    ActorId, AuthorityId, EntityChange, EntityRecord, Handle, MatchId, SessionId, Snapshot,
+    StableId, World, WorldEpoch, WorldError, WorldPublication, WorldWork,
+};
