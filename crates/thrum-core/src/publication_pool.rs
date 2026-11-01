@@ -526,6 +526,30 @@ impl PublicationReservation {
             bytes,
         })
     }
+
+    /// Move already admitted bytes into another reservation from this pool.
+    /// The global used count never falls between future-input credit and the
+    /// publication that spends it, so a competitor cannot claim that space.
+    pub(crate) fn transfer_to(
+        &mut self,
+        destination: &mut Self,
+        bytes: usize,
+    ) -> Result<(), PublicationCapacity> {
+        if !Arc::ptr_eq(&self.state, &destination.state) {
+            return Err(PublicationCapacity);
+        }
+        let source_remaining = self
+            .remaining
+            .checked_sub(bytes)
+            .ok_or(PublicationCapacity)?;
+        let destination_remaining = destination
+            .remaining
+            .checked_add(bytes)
+            .ok_or(PublicationCapacity)?;
+        self.remaining = source_remaining;
+        destination.remaining = destination_remaining;
+        Ok(())
+    }
 }
 
 impl Drop for PublicationReservation {
@@ -577,6 +601,33 @@ mod tests {
         assert_eq!(pool.used_bytes(), 30);
         drop(held);
         assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn reserved_future_bytes_transfer_without_an_admission_gap() {
+        let pool = PublicationPool::new(10);
+        let foreign = PublicationPool::new(10);
+        let mut future = pool.try_reserve(6).unwrap();
+        let mut due = pool.try_reserve(4).unwrap();
+        let mut other = foreign.try_reserve(1).unwrap();
+        assert_eq!(pool.try_reserve(1).err(), Some(PublicationCapacity));
+        assert_eq!(future.transfer_to(&mut other, 1), Err(PublicationCapacity));
+        assert_eq!(future.transfer_to(&mut due, 7), Err(PublicationCapacity));
+        assert_eq!(future.remaining_bytes(), 6);
+        assert_eq!(due.remaining_bytes(), 4);
+        assert_eq!(pool.used_bytes(), 10);
+        future.transfer_to(&mut due, 6).unwrap();
+        assert_eq!(future.remaining_bytes(), 0);
+        assert_eq!(due.remaining_bytes(), 10);
+        assert_eq!(pool.used_bytes(), 10);
+        let owner = due.charge(7).unwrap();
+        drop(future);
+        drop(due);
+        assert_eq!(pool.used_bytes(), 7);
+        drop(owner);
+        drop(other);
+        assert_eq!(pool.used_bytes(), 0);
+        assert_eq!(foreign.used_bytes(), 0);
     }
 
     #[test]
