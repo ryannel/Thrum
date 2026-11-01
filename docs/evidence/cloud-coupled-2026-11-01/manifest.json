@@ -14,13 +14,18 @@
     },
     {
       "path": "README.md",
-      "bytes": 6662,
-      "sha256": "c969477e679963b5a90df830aa67a72a4d324586672e4b5b1d025ac4b5c910bf"
+      "bytes": 6720,
+      "sha256": "3dc3cded5a57cecd8081d0d98544c929807bd47d89fc916b0e3f8432f20eaed8"
     },
     {
       "path": "REVIEW.md",
       "bytes": 6963,
       "sha256": "bd715c4320c95abb9e331b740e5c8f98ddb7fda6bca1ab91d766da30dbf00e19"
+    },
+    {
+      "path": "STORAGE.md",
+      "bytes": 1178,
+      "sha256": "7cc123c7e1c6346cddcb3baef1b10eff32b9693a7ba4302c744c9121504b34b0"
     },
     {
       "path": "images/body.json",
@@ -61,6 +66,11 @@
       "path": "images/full-resolution.png",
       "bytes": 139306,
       "sha256": "09e9de30d615af2f46a945245ef794fdef94bfc25701eb9bb686bc59f5da9ffb"
+    },
+    {
+      "path": "images/live-proof.png",
+      "bytes": 64350,
+      "sha256": "a3e10b0fcf896156366f4eb1e8ab0422f2832f3affd1b62d3f066ebb373400dc"
     },
     {
       "path": "images/low-sun.json",
@@ -946,5 +956,5 @@
       "sha256": "e3a0ecbe194a3078cd1c51c9260caa0723d0f94730ba5ddc19fe338e7e09245b"
     }
   ],
-  "bytes_excluding_manifest": 41536692
+  "bytes_excluding_manifest": 41602278
 }

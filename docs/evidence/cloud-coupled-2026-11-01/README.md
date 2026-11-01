@@ -80,3 +80,5 @@ reduce it, but the final complete GPU bracket is12.845ms median/18.809ms p95
 on this M3 Max. It does not pass the desired5ms cloud allocation or whole-frame16ms tails.
 Render beginning timestamps are invalid on this Metal path; raw receipts retain them for
 reproduction, and complete brackets use compute-to-compute sentinels. The [final600-sample run](PERFORMANCE.md), [clean motion witnesses](REVIEW.md#motion-actually-inspected) and [rejection matrix](oracle/rejection-case-validation.md) are now retained; no promotion is claimed.
+
+[Storage closeout and exact retained files](STORAGE.md).
