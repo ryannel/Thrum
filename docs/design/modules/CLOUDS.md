@@ -315,8 +315,9 @@ rounding; atlas guards and cross-group Z boundaries are tested independently. Lo
 for each neighbour use group=floor(z/4), channel=z-4group, and sample each group at its physical Z centre with XY filtering. Outside logical
 support contributes zero through explicit guards. Negative indices use mathematical floor, not truncation. Physical
 Z length is ceil(logicalZ/4), plus guards; unused channels/odd-size padding are zero. Each level has its own dimensions,
-XY one-voxel filter halo and group guards. Tiny/odd dimensions use explicit logical parents with zero-support boundary
-rules; never native mipmapping of packed channels. Level0 plus two additional logical levels is the three-level profile.
+XY one-voxel filter halo and group guards. Child dimensions are ceil(parent/2); world voxel pitch doubles at each level. An odd last block is zero-padded,
+so the child sampling extent grows to childDimensions*childPitch instead of compressing those samples back into the
+un-padded parent extent. Tiny/odd dimensions use explicit logical parents with zero-support boundary rules; never native mipmapping of packed channels. Level0 plus two additional logical levels is the three-level profile.
 This uses ideally2logical bytes/voxel and two filtered fetches per integer mip before guard/padding overhead. It is a selected implementation candidate, **not yet a measured improvement**.
 The current one-channel RGBA16F reference remains the golden fallback until exact sampling and image witnesses pass.
 Rounding is IEEE half round-to-nearest/ties-even at every declared store, checked against CPU half across the admitted
@@ -735,6 +736,12 @@ integration, phase sign/normalization, ordinary extinction versus source-only hi
 independent mirror trace/once-only foreground, current-source sharing, source hashing, capture serialization and finite
 reference oracles. Adapt source extent/species/atlas access, light cache coverage, atmosphere/terminal and per-view frames.
 
+The [first new Cu candidate](../../evidence/cloud-sky-r0-2026-11-01/README.md) has now been rendered. Its CPU/WGSL
+coefficient agreement does **not** close appearance: native review rejects the few smooth ellipsoid-like lobes and
+blue-grey lighting. The current coarse graph and lossy light mixture are not accepted content/illumination. Detailed
+source/lighting corrections are under review before further family/composition work. Retain the passing packed-scalar
+arithmetic and existing coupled reference; do not propagate this failed source into a complete sky.
+
 The following are replaced as universal assumptions:512m isotropic source; one current field for every instance;
 short4km atmosphere; source-specific hardcoded bound applied to arbitrary families; a ground shadow texture as partial
 interior depth; main-frustum-only cause culling; global fade/noise warping as lifecycle; independent final sky/fog/cloud
@@ -750,7 +757,7 @@ Thrum runtime integration waits for its real foundation/content/render interface
 | Order | Required proof and rejection condition | Current evidence |
 | --- | --- | --- |
 | D0 | Complete capability/model/contract/cost synthesis; independent original-brief discovery and whole-model challenge. Reject any required mechanism/producer left unnamed or conflicting source ownership. | Independently reviewed synthesis and scoped finding closure; numerical/visual implementation gates remain open. |
-| R0 | Source/packing/optical invariants, analytic slabs/depth curves/air and wrong-composition counterexamples. Reject alias/overflow/double attenuation. This is correctness instrumentation, not a passed cloud family. | Old13oracle tests and bounded coupled checks retained; new layouts/domain unproven. |
+| R0 | Source/packing/optical invariants, analytic slabs/depth curves/air and wrong-composition counterexamples. Reject alias/overflow/double attenuation. This is correctness instrumentation, not a passed cloud family. | Old13oracle tests retained; R0 four-Z logical sampling/half/mip/finite Beer checks passed on M3 WebGPU. New world-domain/deep-light/air queries unproven. |
 | F1–F5 | Each CF family in isolation with four meaningful variants, lifecycle intervals, native/normal/accelerated reference comparison, required lighting, receiver/reflection and distance/angle routes. Correct failures before admission. | CF01partial; CF02–CF05unproven. |
 | M1 | Accepted low/high and bank/tower/anvil combinations with overlaps, common wind/light and independent consumers. Reject unrelated ambient, missing offscreen blockers or duplicated source parts. | Unproven. |
 | W1–W4 | CW01–CW04 named continuous weather paths with tracked survivors, genuine local births/deaths and stub precipitation/lightning seams. | Unproven. |

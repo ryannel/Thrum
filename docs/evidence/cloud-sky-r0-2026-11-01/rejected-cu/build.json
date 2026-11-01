@@ -1,0 +1,30 @@
+{
+  "build_id": "8520826d8adedf6ac3791c5449c1addca5ac78ae0ed2da1353b4102e4be00a6b",
+  "files": {
+    "scripts/cloud_sky_proof/test_convective.mjs": "fc6eec46d98a18830662d234cb0222211dad49b4d7a5b6bcc8813947b3083787",
+    "scripts/cloud_sky_proof/convective.js": "8ebb8b2f44036c61f7be78c2f1440def9902ad508392175bd4eb7d86a7e810d1",
+    "scripts/cloud_sky_proof/cu-preview.wgsl": "a873dec0704829a11f1c5ab704988d2872be3f642d5c49af92a9046e035c13ab",
+    "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+    "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+    "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+    "scripts/cloud_sky_proof/cu.html": "33b2167c946754cc67ba1ccd304cf2c30a7fc888ca9915a9ecae9e9f9cc7cee8",
+    "scripts/cloud_sky_proof/serve.py": "117a98c028f8bcccaef6ff20d9fc7e1afd0d8e09151af3c9df1b45aa6d1a4907",
+    "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+    "scripts/cloud_sky_proof/packing-proof.js": "3516bf8618e8356e5fd562ff6a0e4ddc5c5f0d890f3b4c4285dbf6f9ed686991",
+    "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+    "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+    "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+    "scripts/cloud_sky_proof/cu-preview.js": "667984ba44934795e28c4a5739aef850d1a641c324dfcf883a6ba3e76b617b2a",
+    "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+    "scripts/cloud_sky_proof/scalar-field.js": "8ea5da6077d9c81c252dd860cc4a9ed1818f591257d9f6b8fd7d08e11de95f10",
+    "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+    "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+    "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+    "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865"
+  },
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": ""
+  }
+}

@@ -1,0 +1,591 @@
+{
+  "identity": {
+    "build_id": "8520826d8adedf6ac3791c5449c1addca5ac78ae0ed2da1353b4102e4be00a6b",
+    "files": {
+      "scripts/cloud_sky_proof/test_convective.mjs": "fc6eec46d98a18830662d234cb0222211dad49b4d7a5b6bcc8813947b3083787",
+      "scripts/cloud_sky_proof/convective.js": "8ebb8b2f44036c61f7be78c2f1440def9902ad508392175bd4eb7d86a7e810d1",
+      "scripts/cloud_sky_proof/cu-preview.wgsl": "a873dec0704829a11f1c5ab704988d2872be3f642d5c49af92a9046e035c13ab",
+      "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+      "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+      "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+      "scripts/cloud_sky_proof/cu.html": "33b2167c946754cc67ba1ccd304cf2c30a7fc888ca9915a9ecae9e9f9cc7cee8",
+      "scripts/cloud_sky_proof/serve.py": "117a98c028f8bcccaef6ff20d9fc7e1afd0d8e09151af3c9df1b45aa6d1a4907",
+      "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+      "scripts/cloud_sky_proof/packing-proof.js": "3516bf8618e8356e5fd562ff6a0e4ddc5c5f0d890f3b4c4285dbf6f9ed686991",
+      "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+      "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+      "scripts/cloud_sky_proof/cu-preview.js": "667984ba44934795e28c4a5739aef850d1a641c324dfcf883a6ba3e76b617b2a",
+      "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+      "scripts/cloud_sky_proof/scalar-field.js": "8ea5da6077d9c81c252dd860cc4a9ed1818f591257d9f6b8fd7d08e11de95f10",
+      "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+      "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+      "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+      "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865"
+    },
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": ""
+    }
+  },
+  "recipe": {
+    "schema": "thrum.authored-cu.v1",
+    "variant": 0,
+    "seed": 1729,
+    "name": "broad shallow",
+    "provenance": "Authored CF01 cohort candidate from CLOUDS.md; no fluid/thermodynamic or accepted-appearance claim.",
+    "duration_s": 1800,
+    "stages": {
+      "formation": [
+        0,
+        300
+      ],
+      "growth": [
+        300,
+        650
+      ],
+      "mature": [
+        650,
+        1250
+      ],
+      "breakup": [
+        1250,
+        1800
+      ]
+    },
+    "normal_intervals": [
+      [
+        120,
+        180
+      ],
+      [
+        510,
+        570
+      ],
+      [
+        990,
+        1050
+      ],
+      [
+        1440,
+        1500
+      ]
+    ],
+    "bounds": {
+      "min": [
+        -611.5491902035071,
+        0,
+        -410.80297268706556
+      ],
+      "extent": [
+        1215.8543566017665,
+        544.4477722241855,
+        922.1495344578618
+      ]
+    },
+    "base_feather_m": 12,
+    "sigma_limit_m_inv": 0.1,
+    "cohorts": [
+      {
+        "id": 0,
+        "parent": -1,
+        "category": "condensation body",
+        "birth_s": 0,
+        "grow_s": 360,
+        "stop_s": 1250,
+        "dry_duration_s": 300,
+        "delay_base_s": 0,
+        "delay_span_s": 180,
+        "start_m": [
+          0,
+          0,
+          0
+        ],
+        "end_m": [
+          0,
+          89.60000000000001,
+          0
+        ],
+        "radii_m": [
+          427.8,
+          275.2,
+          378
+        ],
+        "sigma_m_inv": 0.017,
+        "detail_m": 114.42751377820969,
+        "material_offset_m": [
+          2702.6106119155884,
+          5976.971983909607,
+          2825.53231716156
+        ],
+        "erosion": 0.5251759576797486,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          -0.6572949821310816,
+          0.7122520912179627,
+          0.24629304704140526
+        ],
+        "noise_seed": 55343,
+        "retire_s": 1730
+      },
+      {
+        "id": 1,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 107.31221151351929,
+        "grow_s": 224.6675443649292,
+        "stop_s": 517.6203550100327,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          -5.4282701397340665,
+          18.380234835997577,
+          4.119176917868381
+        ],
+        "end_m": [
+          -378.11999999999995,
+          276.1017547607422,
+          173.6164889037609
+        ],
+        "radii_m": [
+          229.42919020350718,
+          197.83510378448238,
+          272.98620566714726
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 115.1190847158432,
+        "material_offset_m": [
+          4049.716830253601,
+          4862.711191177368,
+          4083.058476448059
+        ],
+        "erosion": 0.5841672611236572,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          -0.7688631408554422,
+          0.3125630198797139,
+          -0.5578116431534733
+        ],
+        "noise_seed": 8569,
+        "retire_s": 877.6203550100327
+      },
+      {
+        "id": 2,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 111.84993362426758,
+        "grow_s": 202.19879776239395,
+        "stop_s": 571.6303477287292,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          1.1867276529296413,
+          17.88566144531167,
+          -3.1209134409310804
+        ],
+        "end_m": [
+          -69,
+          302.97998046875,
+          83.8037044107914
+        ],
+        "radii_m": [
+          247.33731518322935,
+          175.43014160381725,
+          254.3410268199848
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 121.62333697080612,
+        "material_offset_m": [
+          52.832722663879395,
+          2785.493016242981,
+          1067.6032304763794
+        ],
+        "erosion": 0.3633558487892151,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          -0.20461166594967525,
+          0.3773643115927684,
+          0.9031778576190929
+        ],
+        "noise_seed": 15608,
+        "retire_s": 931.6303477287292
+      },
+      {
+        "id": 3,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 138.93112468719482,
+        "grow_s": 243.68827491998672,
+        "stop_s": 549.4472949504852,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          5.191536181331235,
+          28.28507090406465,
+          4.557384774044976
+        ],
+        "end_m": [
+          218.04000000000005,
+          288.68580627441406,
+          107.98018670082092
+        ],
+        "radii_m": [
+          262.38500693117794,
+          209.49046506141858,
+          273.75147256770794
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 115.03339439630508,
+        "material_offset_m": [
+          4836.4598751068115,
+          400.8704423904419,
+          1735.6603145599365
+        ],
+        "erosion": 0.4436987257003784,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          0.22915819575638183,
+          0.12298634783071694,
+          0.9655883592737341
+        ],
+        "noise_seed": 26462,
+        "retire_s": 909.4472949504852
+      },
+      {
+        "id": 4,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 438.8661046028137,
+        "grow_s": 239.03957396745682,
+        "stop_s": 869.3602443933487,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          -21.697621391773225,
+          103.43783448791504,
+          -11.892186069488526
+        ],
+        "end_m": [
+          -309.11999999999995,
+          280.21107788085936,
+          -69.01866182684898
+        ],
+        "radii_m": [
+          258.0710568705385,
+          206.83163722592897,
+          226.8049797612679
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 139.05380815267563,
+        "material_offset_m": [
+          4919.582962989807,
+          1142.8223848342896,
+          1708.0045938491821
+        ],
+        "erosion": 0.3247524285316467,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          0.05234725109312364,
+          0.16022034794452655,
+          0.9856922468029907
+        ],
+        "noise_seed": 17485,
+        "retire_s": 1229.3602443933487
+      },
+      {
+        "id": 5,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 446.7525839805603,
+        "grow_s": 200.05090475082397,
+        "stop_s": 844.1626805067062,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          -4.15826955986023,
+          101.55080990600587,
+          1.0449590635299681
+        ],
+        "end_m": [
+          0,
+          337.7651763916016,
+          172.22301721572876
+        ],
+        "radii_m": [
+          296.08870751139534,
+          201.5014497797128,
+          335.12354455506755
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 151.25606507062912,
+        "material_offset_m": [
+          904.833197593689,
+          5624.2547035217285,
+          5830.555558204651
+        ],
+        "erosion": 0.5738557434082031,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          -0.4131846040680441,
+          0.8361376658456217,
+          0.36076624941278695
+        ],
+        "noise_seed": 6393,
+        "retire_s": 1204.1626805067062
+      },
+      {
+        "id": 6,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 472.8058452606201,
+        "grow_s": 163.3325833082199,
+        "stop_s": 923.3559365272522,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          16.62734711408615,
+          85.92757455444337,
+          -3.8839496755599976
+        ],
+        "end_m": [
+          287.04,
+          272.09836425781253,
+          19.460069060325623
+        ],
+        "radii_m": [
+          313.26516639825945,
+          242.9142030841743,
+          324.52893299146245
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 128.02864164113998,
+        "material_offset_m": [
+          2027.819037437439,
+          263.58354091644287,
+          3753.6964416503906
+        ],
+        "erosion": 0.3933955550193787,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          0.5939859413748263,
+          0.40498408349336223,
+          -0.6951032970473545
+        ],
+        "noise_seed": 26403,
+        "retire_s": 1283.3559365272522
+      },
+      {
+        "id": 7,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 862.699432849884,
+        "grow_s": 227.81328409910202,
+        "stop_s": 1240.4207067489624,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          15.065623104572296,
+          83.957799118042,
+          22.473907599449156
+        ],
+        "end_m": [
+          -240.11999999999998,
+          277.8396514892578,
+          -123.4893356859684
+        ],
+        "radii_m": [
+          278.8530742177827,
+          199.8914594391912,
+          271.0754384237679
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 109.79912847280502,
+        "material_offset_m": [
+          2499.279499053955,
+          2825.4833221435547,
+          2075.576663017273
+        ],
+        "erosion": 0.5052020359039306,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          0.14504966040048126,
+          0.9004140315411624,
+          0.4101404245151845
+        ],
+        "noise_seed": 41592,
+        "retire_s": 1600.4207067489624
+      },
+      {
+        "id": 8,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 878.155526638031,
+        "grow_s": 218.51591259241104,
+        "stop_s": 1296.2707294225693,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          6.749579682826996,
+          80.51075361633302,
+          8.91424861907959
+        ],
+        "end_m": [
+          69,
+          324.4750213623047,
+          -132.87927523255348
+        ],
+        "radii_m": [
+          332.2652977937649,
+          215.97275086188085,
+          273.9236974545121
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 138.66054862737656,
+        "material_offset_m": [
+          1670.5362796783447,
+          136.28482818603516,
+          618.6586618423462
+        ],
+        "erosion": 0.34975879192352294,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          0.5229548488870265,
+          0.21582662479635067,
+          0.8245829819093787
+        ],
+        "noise_seed": 42808,
+        "retire_s": 1656.2707294225693
+      },
+      {
+        "id": 9,
+        "parent": 0,
+        "category": "billow",
+        "birth_s": 911.6283202171326,
+        "grow_s": 236.82349234819412,
+        "stop_s": 1348.6802196502686,
+        "dry_duration_s": 230,
+        "delay_base_s": 0,
+        "delay_span_s": 130,
+        "start_m": [
+          9.227800290584565,
+          95.82760412597656,
+          -6.8825215101242065
+        ],
+        "end_m": [
+          356.04,
+          290.15895080566406,
+          214.75895154476166
+        ],
+        "radii_m": [
+          240.1856964689945,
+          162.5366896692129,
+          230.62247795776432
+        ],
+        "sigma_m_inv": 0.019,
+        "detail_m": 134.35708105564117,
+        "material_offset_m": [
+          2497.6783990859985,
+          3742.830991744995,
+          1548.0201244354248
+        ],
+        "erosion": 0.47082239389419556,
+        "exponent": 1.5,
+        "edge_width": 0.24,
+        "secondary_frequency": 2.7,
+        "secondary_weight": 0.3,
+        "drying_direction": [
+          -0.42563869811976496,
+          0.8689572659002335,
+          -0.25247765980795706
+        ],
+        "noise_seed": 10981,
+        "retire_s": 1708.6802196502686
+      }
+    ],
+    "frame_layout": {
+      "header_floats": 4,
+      "node_floats": 32,
+      "binding": 2
+    }
+  },
+  "frame": {
+    "source_time_s": 650,
+    "variant": 0,
+    "seed": 1729,
+    "shift_m": [
+      0,
+      900,
+      0
+    ],
+    "lo_m": [
+      -611.5491902035071,
+      900,
+      -410.80297268706556
+    ],
+    "extent_m": [
+      1215.8543566017665,
+      544.4477722241855,
+      922.1495344578618
+    ],
+    "camera_m": [
+      1168.309943614376,
+      1452.5201793118513,
+      2301.3427597222685
+    ],
+    "target_m": [
+      -3.6220119026238535,
+      1172.2238861120927,
+      50.27179454186535
+    ],
+    "sun_direction": [
+      -0.7794228619673722,
+      0.49999999907712306,
+      0.37749172595630187
+    ],
+    "sun_elevation_deg": 30,
+    "main_cloud": true,
+    "mirror": true,
+    "cpu_encode_ms": 0.2999999523162842,
+    "queue_complete_ms": 12.099999904632568,
+    "gpu_bracket_ms": 7.012352,
+    "invalid_view_paths": 0,
+    "source_field_bytes": 5316544,
+    "scope": "fresh source+mips+64prefix+8cube ambient+native main/mirror/display; local vacuum/constant sky fixture, not full SKY-G or Thrum frame"
+  }
+}

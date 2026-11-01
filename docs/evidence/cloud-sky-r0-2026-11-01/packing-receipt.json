@@ -1,0 +1,1848 @@
+{
+  "schema": "thrum.cloud-sky-packing-proof.v1",
+  "scope": "R0 scalar storage/sampling/operator only; no cloud-family or timing qualification",
+  "failures": [],
+  "fixtures": [
+    {
+      "id": "ramp-7x5x9",
+      "physical_guarded_texture_bytes": 3864,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            7,
+            5,
+            9
+          ],
+          "physical": [
+            9,
+            7,
+            5
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            8.75,
+            3.75,
+            22.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 39,
+          "max_coefficient_error": 2.086162567138672e-7,
+          "coefficient_bound": 0.00005384418029785156,
+          "max_T_error": 0.000018876972218806465,
+          "max_S_error": 0.0000019673174128931326,
+          "max_Lout_error": 0.00003970636068917344,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            4,
+            3,
+            5
+          ],
+          "physical": [
+            6,
+            5,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            10,
+            4.5,
+            25
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 2.086162567138672e-7,
+          "coefficient_bound": 0.00004204246063232422,
+          "max_T_error": 0.00001781966130032231,
+          "max_S_error": 0.0000018340317111398274,
+          "max_Lout_error": 0.000037518057795393744,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            10,
+            6,
+            30
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 4.76837158203125e-7,
+          "coefficient_bound": 0.00003274413604736328,
+          "max_T_error": 0.00004055271715441844,
+          "max_S_error": 0.000004282111251696641,
+          "max_Lout_error": 0.0000853279409156471,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "impulse-7x5x9",
+      "physical_guarded_texture_bytes": 3864,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            7,
+            5,
+            9
+          ],
+          "physical": [
+            9,
+            7,
+            5
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            8.75,
+            3.75,
+            22.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 39,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000732621875,
+          "max_T_error": 3.768303570659409e-10,
+          "max_S_error": 2.980232227667301e-9,
+          "max_Lout_error": 4.7683715642676816e-8,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            4,
+            3,
+            5
+          ],
+          "physical": [
+            6,
+            5,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            10,
+            4.5,
+            25
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000091752734375,
+          "max_T_error": 4.828178301607977e-8,
+          "max_S_error": 2.1501622093911266e-8,
+          "max_Lout_error": 8.996310518760708e-8,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            10,
+            6,
+            30
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 7.275957614183426e-12,
+          "coefficient_bound": 0.000011644091796875,
+          "max_T_error": 2.640242713347618e-8,
+          "max_S_error": 2.5194294456243327e-8,
+          "max_Lout_error": 1.4169195283741942e-7,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "clear_cloud_edge-7x5x9",
+      "physical_guarded_texture_bytes": 3864,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            7,
+            5,
+            9
+          ],
+          "physical": [
+            9,
+            7,
+            5
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            8.75,
+            3.75,
+            22.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 39,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00003588833185098894,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00009106214502734022,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            4,
+            3,
+            5
+          ],
+          "physical": [
+            6,
+            5,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            10,
+            4.5,
+            25
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00003588833185098894,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00009106214502734022,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            10,
+            6,
+            30
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00006448362735889113,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00013635608923112663,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "ramp-1x1x1",
+      "physical_guarded_texture_bytes": 648,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 9.152557373046875e-7,
+          "max_T_error": 3.107307444683016e-8,
+          "max_S_error": 1.4806581766224625e-8,
+          "max_Lout_error": 1.1515753062241174e-7,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            2.5,
+            1.5,
+            5
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 2.8940696716308593e-7,
+          "max_T_error": 5.254572466029117e-8,
+          "max_S_error": 1.3383701175095908e-8,
+          "max_Lout_error": 1.0266711036877041e-7,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 2.1117587089538573e-7,
+          "max_T_error": 6.415197373321746e-8,
+          "max_S_error": 2.980232227667301e-9,
+          "max_Lout_error": 2.001326788736435e-7,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "impulse-1x1x1",
+      "physical_guarded_texture_bytes": 648,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000732621875,
+          "max_T_error": 1.3810778104472732e-8,
+          "max_S_error": 5.260123940586947e-9,
+          "max_Lout_error": 4.7683715642676816e-8,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            2.5,
+            1.5,
+            5
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000091752734375,
+          "max_T_error": 4.828178301607977e-8,
+          "max_S_error": 2.8711715616136502e-8,
+          "max_Lout_error": 8.996310518760708e-8,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000011644091796875,
+          "max_T_error": 3.490935851502286e-8,
+          "max_S_error": 4.0930427408492065e-8,
+          "max_Lout_error": 1.642948892488505e-7,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "clear_cloud_edge-1x1x1",
+      "physical_guarded_texture_bytes": 648,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00003588833185098894,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00009106214502734022,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            2.5,
+            1.5,
+            5
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0.0000019073486328125,
+          "coefficient_bound": 0.00007342430610656739,
+          "max_T_error": 0.00011933282220655261,
+          "max_S_error": 0.000014066899180320558,
+          "max_Lout_error": 0.00025271764243228745,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 2.384185791015625e-7,
+          "coefficient_bound": 0.000009353038263320923,
+          "max_T_error": 0.000022470193970614005,
+          "max_S_error": 0.000002353447011549381,
+          "max_Lout_error": 0.00004735343959749727,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "ramp-4x3x4",
+      "physical_guarded_texture_bytes": 1320,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            3,
+            4
+          ],
+          "physical": [
+            6,
+            5,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            2.25,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 33,
+          "max_coefficient_error": 3.637978807091713e-12,
+          "coefficient_bound": 0.000022372927856445314,
+          "max_T_error": 3.772559609149795e-8,
+          "max_S_error": 5.758813328982093e-8,
+          "max_Lout_error": 1.642948892488505e-7,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            2
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.00001629325408935547,
+          "max_T_error": 6.49299787269797e-8,
+          "max_S_error": 1.8223753536772413e-7,
+          "max_Lout_error": 1.8327175421717357e-7,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.00000878306884765625,
+          "max_T_error": 4.1127377503613616e-8,
+          "max_S_error": 1.3577947927112533e-7,
+          "max_Lout_error": 1.4293169137147288e-7,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "impulse-4x3x4",
+      "physical_guarded_texture_bytes": 1320,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            3,
+            4
+          ],
+          "physical": [
+            6,
+            5,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            2.25,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 33,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000732621875,
+          "max_T_error": 1.3810778104472732e-8,
+          "max_S_error": 2.980232227667301e-9,
+          "max_Lout_error": 4.7683715642676816e-8,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            2
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 5.820766091346741e-11,
+          "coefficient_bound": 0.000091752734375,
+          "max_T_error": 1.1312371372973473e-8,
+          "max_S_error": 2.5194294456243327e-8,
+          "max_Lout_error": 7.193625428669748e-8,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000011644091796875,
+          "max_T_error": 3.490935851502286e-8,
+          "max_S_error": 4.0930427408492065e-8,
+          "max_Lout_error": 1.642948892488505e-7,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "clear_cloud_edge-4x3x4",
+      "physical_guarded_texture_bytes": 1320,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            3,
+            4
+          ],
+          "physical": [
+            6,
+            5,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            2.25,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 33,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00003588833185098894,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00009106214502734022,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            2
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.0001493765881004916,
+          "max_S_error": 0.000020942983312149943,
+          "max_Lout_error": 0.0003196812583519115,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            1
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            10
+          ],
+          "byte_mismatches": 0,
+          "samples": 29,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.00010999175567626954,
+          "max_T_error": 3.075575227828864e-8,
+          "max_S_error": 3.257699224268329e-8,
+          "max_Lout_error": 4.7683715642676816e-8,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "ramp-4x4x5",
+      "physical_guarded_texture_bytes": 1752,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            4,
+            5
+          ],
+          "physical": [
+            6,
+            6,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            3,
+            12.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 2.086162567138672e-7,
+          "coefficient_bound": 0.00002952548522949219,
+          "max_T_error": 0.000018876972218806465,
+          "max_S_error": 0.0000019673174128931326,
+          "max_Lout_error": 0.00003970636068917344,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            15
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000020584788513183595,
+          "max_T_error": 6.268973939960176e-8,
+          "max_S_error": 6.476949582223668e-8,
+          "max_Lout_error": 1.8327175421717357e-7,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            2
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            20
+          ],
+          "byte_mismatches": 0,
+          "samples": 31,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000012716975402832031,
+          "max_T_error": 5.037959038833861e-8,
+          "max_S_error": 1.294180220767771e-7,
+          "max_Lout_error": 6.074812564094145e-8,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "impulse-4x4x5",
+      "physical_guarded_texture_bytes": 1752,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            4,
+            5
+          ],
+          "physical": [
+            6,
+            6,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            3,
+            12.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000732621875,
+          "max_T_error": 1.3810778104472732e-8,
+          "max_S_error": 2.980232227667301e-9,
+          "max_Lout_error": 4.7683715642676816e-8,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            15
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000091752734375,
+          "max_T_error": 2.6292555022067177e-8,
+          "max_S_error": 2.8711715616136502e-8,
+          "max_Lout_error": 6.857687795402967e-8,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            2
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            20
+          ],
+          "byte_mismatches": 0,
+          "samples": 31,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.000011644091796875,
+          "max_T_error": 3.490935851502286e-8,
+          "max_S_error": 4.0930427408492065e-8,
+          "max_Lout_error": 1.642948892488505e-7,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "clear_cloud_edge-4x4x5",
+      "physical_guarded_texture_bytes": 1752,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            4,
+            5
+          ],
+          "physical": [
+            6,
+            6,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            3,
+            12.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00003588833185098894,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00009106214502734022,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            15
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 0.0000152587890625,
+          "coefficient_bound": 0.0005859944488525391,
+          "max_T_error": 0.00003588833185098894,
+          "max_S_error": 0.00001928175603506388,
+          "max_Lout_error": 0.00009106214502734022,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            2
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            20
+          ],
+          "byte_mismatches": 0,
+          "samples": 31,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.00021978351135253907,
+          "max_T_error": 1.2128910792386094e-8,
+          "max_S_error": 1.0641899167440627e-8,
+          "max_Lout_error": 4.7683715642676816e-8,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "id": "rounding_store_edges-4x4x5",
+      "physical_guarded_texture_bytes": 1752,
+      "levels": [
+        {
+          "level": 0,
+          "dimensions": [
+            4,
+            4,
+            5
+          ],
+          "physical": [
+            6,
+            6,
+            4
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            1.25,
+            0.75,
+            2.5
+          ],
+          "world_extent": [
+            5,
+            3,
+            12.5
+          ],
+          "byte_mismatches": 0,
+          "samples": 35,
+          "max_coefficient_error": 0.000002848450094461441,
+          "coefficient_bound": 0.001171788897705078,
+          "max_T_error": 0.00008825178056814931,
+          "max_S_error": 0.000013573027675808924,
+          "max_Lout_error": 0.00019008403939269058,
+          "errors": []
+        },
+        {
+          "level": 1,
+          "dimensions": [
+            2,
+            2,
+            3
+          ],
+          "physical": [
+            4,
+            4,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            2.5,
+            1.5,
+            5
+          ],
+          "world_extent": [
+            5,
+            3,
+            15
+          ],
+          "byte_mismatches": 0,
+          "samples": 34,
+          "max_coefficient_error": 2.9802322387695312e-8,
+          "coefficient_bound": 0.0007340523864746094,
+          "max_T_error": 0.0000030398413244370204,
+          "max_S_error": 2.950432877180109e-7,
+          "max_Lout_error": 0.000006330022452871731,
+          "errors": []
+        },
+        {
+          "level": 2,
+          "dimensions": [
+            1,
+            1,
+            2
+          ],
+          "physical": [
+            3,
+            3,
+            3
+          ],
+          "world_lo": [
+            125.5,
+            -33.25,
+            4
+          ],
+          "world_pitch": [
+            5,
+            3,
+            10
+          ],
+          "world_extent": [
+            5,
+            3,
+            20
+          ],
+          "byte_mismatches": 0,
+          "samples": 31,
+          "max_coefficient_error": 0,
+          "coefficient_bound": 0.0002569768096923828,
+          "max_T_error": 5.962240834378463e-8,
+          "max_S_error": 1.9986068688915282e-8,
+          "max_Lout_error": 1.6093483523604846e-7,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "reference_sha256": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+  "build_id": "ade1e6341a763a26dddf22810d1e54f39cf73bb3fe1367bf5079792923036bae",
+  "loaded_code": {
+    "scripts/cloud_sky_proof/test_convective.mjs": "97c5a2a459b81c5e367bd728fb22e64f1515539a684863c283a1543a8072a9f7",
+    "scripts/cloud_sky_proof/clock.js": "e4189fe1afd035c3647efd49124f03bf186812aade37f4908bef0d99c350e582",
+    "scripts/cloud_sky_proof/convective.js": "6852d010498d444a10a430c5349b5cb3a655a19e7aacf56681ace4bdacbf3a0f",
+    "scripts/cloud_sky_proof/cu-preview.wgsl": "a873dec0704829a11f1c5ab704988d2872be3f642d5c49af92a9046e035c13ab",
+    "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+    "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+    "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+    "scripts/cloud_sky_proof/cu.html": "33b2167c946754cc67ba1ccd304cf2c30a7fc888ca9915a9ecae9e9f9cc7cee8",
+    "scripts/cloud_sky_proof/serve.py": "117a98c028f8bcccaef6ff20d9fc7e1afd0d8e09151af3c9df1b45aa6d1a4907",
+    "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+    "scripts/cloud_sky_proof/packing-proof.js": "b030f8cd951bf9495c2e982a44849b88cb09db660e5b0cc8f856c2d8d64cca35",
+    "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+    "scripts/cloud_sky_proof/test_clock.mjs": "245cfa5e849f49686a8d2621db22419b41c8af41621330c52489fe124cd0e808",
+    "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+    "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+    "scripts/cloud_sky_proof/cu-preview.js": "696aed8ecc8fab36d323767e6f4718bb4f3b82e11652e26a0547dd735cf74d1e",
+    "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+    "scripts/cloud_sky_proof/scalar-field.js": "d731427f441aad597685b44c599b0f05cd70b31548e70079ce0f5e3320554212",
+    "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+    "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+    "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+    "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865"
+  },
+  "query_shader_sha256": "87110c18f380eed895bf61fed45e453658e88e5e66849f351d0111fad7de6d62",
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": ""
+  },
+  "operators": [
+    {
+      "input": {
+        "sigma_per_m": 0,
+        "length_m": 0,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0,
+        "T": 1,
+        "S": 0,
+        "outgoing_radiance": 2
+      },
+      "actual": [
+        0,
+        1,
+        0,
+        2
+      ],
+      "errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0,
+        "length_m": 1,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0,
+        "T": 1,
+        "S": 0.002,
+        "outgoing_radiance": 2.002
+      },
+      "actual": [
+        0,
+        1,
+        0.0020000000949949026,
+        2.002000093460083
+      ],
+      "errors": [
+        0,
+        0,
+        9.499490256914545e-11,
+        9.346008322808075e-8
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0,
+        "length_m": 100,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0,
+        "T": 1,
+        "S": 0.2,
+        "outgoing_radiance": 2.2
+      },
+      "actual": [
+        0,
+        1,
+        0.20000000298023224,
+        2.200000047683716
+      ],
+      "errors": [
+        0,
+        0,
+        2.980232227667301e-9,
+        4.7683715642676816e-8
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0.00006103515625,
+        "length_m": 0,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0,
+        "T": 1,
+        "S": 0,
+        "outgoing_radiance": 2
+      },
+      "actual": [
+        0,
+        1,
+        0,
+        2
+      ],
+      "errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0.00006103515625,
+        "length_m": 1,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0.00006103515625,
+        "T": 0.9999389667063573,
+        "S": 0.0019999389660854947,
+        "outgoing_radiance": 2.0018778723788
+      },
+      "actual": [
+        0.00006103515625,
+        0.99993896484375,
+        0.0019999390933662653,
+        2.001877784729004
+      ],
+      "errors": [
+        0,
+        1.8626072906258173e-9,
+        1.2728077055865206e-10,
+        8.764979630981884e-8
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0.00006103515625,
+        "length_m": 100,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0.006103515625,
+        "T": 0.9939150729886334,
+        "S": 0.1993908883084628,
+        "outgoing_radiance": 2.1872210342857294
+      },
+      "actual": [
+        0.006103515625,
+        0.9939150810241699,
+        0.19939088821411133,
+        2.187221050262451
+      ],
+      "errors": [
+        0,
+        8.035536569472868e-9,
+        9.435147108050046e-11,
+        1.5976721723376386e-8
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0.04998779296875,
+        "length_m": 0,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0,
+        "T": 1,
+        "S": 0,
+        "outgoing_radiance": 2
+      },
+      "actual": [
+        0,
+        1,
+        0,
+        2
+      ],
+      "errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0.04998779296875,
+        "length_m": 1,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 0.04998779296875,
+        "T": 0.9512410362588972,
+        "S": 0.0019508348276782127,
+        "outgoing_radiance": 1.9044329073454727
+      },
+      "actual": [
+        0.04998779296875,
+        0.9512410163879395,
+        0.0019508349942043424,
+        1.9044328927993774
+      ],
+      "errors": [
+        0,
+        1.987095776811998e-8,
+        1.665261296912579e-10,
+        1.4546095217227162e-8
+      ],
+      "pass": true
+    },
+    {
+      "input": {
+        "sigma_per_m": 0.04998779296875,
+        "length_m": 100,
+        "source_radiance_per_m": 0.002,
+        "incoming_radiance": 2,
+        "tau": 4.998779296875,
+        "T": 0.006746177054248385,
+        "S": 0.03973985503087471,
+        "outgoing_radiance": 0.05323220913937148
+      },
+      "actual": [
+        4.998779296875,
+        0.006746178492903709,
+        0.039739854633808136,
+        0.053232211619615555
+      ],
+      "errors": [
+        0,
+        1.4386553242110023e-9,
+        3.970665740649082e-10,
+        2.480244072622373e-9
+      ],
+      "pass": true
+    }
+  ],
+  "rounding": [
+    {
+      "input": 0,
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "input": 0,
+      "expected": 32768,
+      "actual": 32768,
+      "pass": true
+    },
+    {
+      "input": 2.9802322387695312e-8,
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "input": 5.960464477539063e-8,
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "input": 8.940696716308594e-8,
+      "expected": 2,
+      "actual": 2,
+      "pass": true
+    },
+    {
+      "input": 0.00006097555160522461,
+      "expected": 1023,
+      "actual": 1023,
+      "pass": true
+    },
+    {
+      "input": 0.000061005353927612305,
+      "expected": 1024,
+      "actual": 1024,
+      "pass": true
+    },
+    {
+      "input": 0.00006103515625,
+      "expected": 1024,
+      "actual": 1024,
+      "pass": true
+    },
+    {
+      "input": 0.0625,
+      "expected": 11264,
+      "actual": 11264,
+      "pass": true
+    },
+    {
+      "input": 0.062530517578125,
+      "expected": 11264,
+      "actual": 11264,
+      "pass": true
+    },
+    {
+      "input": 0.062591552734375,
+      "expected": 11266,
+      "actual": 11266,
+      "pass": true
+    },
+    {
+      "input": 0.1,
+      "expected": 11878,
+      "actual": 11878,
+      "pass": true
+    },
+    {
+      "input": 0.0625305101275444,
+      "expected": 11264,
+      "actual": 11264,
+      "pass": true
+    },
+    {
+      "input": 0.0625305250287056,
+      "expected": 11265,
+      "actual": 11265,
+      "pass": true
+    },
+    {
+      "input": 2.9802318834981634e-8,
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "input": 2.980232594040899e-8,
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    }
+  ],
+  "pass": true,
+  "sample_count": 1273
+}

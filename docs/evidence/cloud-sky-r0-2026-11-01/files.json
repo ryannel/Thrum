@@ -1,0 +1,89 @@
+{
+  "scope": "selected R0 finite proof and compact rejected Cu witness; not full family/sky qualification",
+  "files": {
+    "packing-receipt.json": {
+      "bytes": 42297,
+      "sha256": "7a22f86526f6891e00cb34b80ebc521b0a68b05301d50bd58bbb24da34b57755"
+    },
+    "tiny-birth-source.json": {
+      "bytes": 54954,
+      "sha256": "4698a3fa6f56fbb07c13adfacade4cb561d89318d6074d5e0ed2667ed01c8bc0"
+    },
+    "current-cu-source.json": {
+      "bytes": 58228,
+      "sha256": "9a4a910087b78a060ac58effe781ceb7c032c12132c0369486f7ea7460b6487d"
+    },
+    "README.md": {
+      "bytes": 7734,
+      "sha256": "4920d278c456a986dadb1a853ab8c2e47880ced5283a46caa46905d2857db82a"
+    },
+    "rejected-cu/first.json": {
+      "bytes": 16497,
+      "sha256": "a5d08b842d1b9c7d9d75d2547b1ec768ecebc600814f41e9b86952e288512adf"
+    },
+    "rejected-cu/source-probe.json": {
+      "bytes": 57664,
+      "sha256": "b8fa4c42b48a70d5d2f581423293b8142502bd9d4af6dc71803b340ffc92fea1"
+    },
+    "rejected-cu/build.json": {
+      "bytes": 2499,
+      "sha256": "5581593757dcae24bc0372f930ef29ecdf451e4e234c11ecc90cffeaa1d7eb35"
+    },
+    "rejected-cu/first.png": {
+      "bytes": 151720,
+      "sha256": "a8e9ae2cc32b6efc192c377b4100d89667c11180c20ab42b0f736042e664c9be"
+    },
+    "review/first-cu-image-review.md": {
+      "bytes": 5929,
+      "sha256": "ecc1ab74d8e225222371b55f884906b8c8f07c92833a7ecfe96be7ed564d460e"
+    },
+    "review/closure-packing-implementation.md": {
+      "bytes": 9914,
+      "sha256": "45129628ca7d2a01cf780bf7f73d0de02ba30326224d9512ab51d09ca0af3bb5"
+    },
+    "review/review-convective-source.md": {
+      "bytes": 6138,
+      "sha256": "d8037adbb79274576dc06e92d9a60c47fa88c7a4cae8a99938f226014a3a40a3"
+    },
+    "review/review-packing-implementation.md": {
+      "bytes": 8211,
+      "sha256": "759a6a7b4f8bf85b802b28f38925866ab5a7898424eb4c4af720cd31921ba805"
+    },
+    "rejected-cu/loaded-code/convective.js.txt": {
+      "bytes": 13501,
+      "sha256": "8ebb8b2f44036c61f7be78c2f1440def9902ad508392175bd4eb7d86a7e810d1"
+    },
+    "rejected-cu/loaded-code/gpu.js.txt": {
+      "bytes": 1663,
+      "sha256": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55"
+    },
+    "rejected-cu/loaded-code/scalar-field.js.txt": {
+      "bytes": 6988,
+      "sha256": "8ea5da6077d9c81c252dd860cc4a9ed1818f591257d9f6b8fd7d08e11de95f10"
+    },
+    "rejected-cu/loaded-code/transport.js.txt": {
+      "bytes": 476,
+      "sha256": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610"
+    },
+    "rejected-cu/loaded-code/cu-preview.wgsl.txt": {
+      "bytes": 5748,
+      "sha256": "a873dec0704829a11f1c5ab704988d2872be3f642d5c49af92a9046e035c13ab"
+    },
+    "rejected-cu/loaded-code/test_convective.mjs.txt": {
+      "bytes": 6413,
+      "sha256": "fc6eec46d98a18830662d234cb0222211dad49b4d7a5b6bcc8813947b3083787"
+    },
+    "rejected-cu/loaded-code/cu-preview.js.txt": {
+      "bytes": 16544,
+      "sha256": "667984ba44934795e28c4a5739aef850d1a641c324dfcf883a6ba3e76b617b2a"
+    },
+    "rejected-cu/loaded-code/cu.html.txt": {
+      "bytes": 2286,
+      "sha256": "33b2167c946754cc67ba1ccd304cf2c30a7fc888ca9915a9ecae9e9f9cc7cee8"
+    },
+    "rejected-cu/loaded-code/cu-caches.wgsl.txt": {
+      "bytes": 1226,
+      "sha256": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037"
+    }
+  }
+}
