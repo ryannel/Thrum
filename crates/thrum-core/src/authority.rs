@@ -5,8 +5,8 @@ use std::{
 
 use crate::replica::StateGroup;
 use crate::{
-    ClosedPublicationValue, EntityChange, PreparedEdits, PublicationPool, PublicationReservation,
-    Snapshot, World, WorldPublicationError, WorldWork,
+    ClosedPublicationValue, ClosedValueError, ClosedValueLimits, EntityChange, PreparedEdits,
+    PublicationPool, PublicationReservation, Snapshot, World, WorldPublicationError, WorldWork,
     world::{ActorId, AuthorityId},
 };
 
@@ -157,10 +157,18 @@ pub struct SnapshotWriteBounds {
     pub max_spawns_per_action: usize,
 }
 
+type ClosedValueCheck<T> =
+    fn(&T, &PublicationPool, ClosedValueLimits) -> Result<(), ClosedValueError>;
+
+struct ClosedValueGate<T> {
+    limits: ClosedValueLimits,
+    check: ClosedValueCheck<T>,
+}
+
 struct SnapshotAdmission<T> {
     pool: PublicationPool,
     bounds: SnapshotWriteBounds,
-    value_check: Option<fn(&T, &PublicationPool) -> bool>,
+    value_check: Option<ClosedValueGate<T>>,
 }
 
 /// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
@@ -309,17 +317,23 @@ impl<G: GameRules> Authority<G> {
         world: World<G::Entity>,
         pool: PublicationPool,
         bounds: SnapshotWriteBounds,
+        value_limits: ClosedValueLimits,
     ) -> Result<Self, WorldPublicationError>
     where
         G::Entity: ClosedPublicationValue,
     {
+        <G::Entity as ClosedPublicationValue>::validate_shape(value_limits)
+            .map_err(|_| WorldPublicationError::ValueProfile)?;
         Self::try_new_snapshot_charged_with_check(
             id,
             rules,
             world,
             pool,
             bounds,
-            Some(<G::Entity as ClosedPublicationValue>::belongs_to_pool),
+            Some(ClosedValueGate {
+                limits: value_limits,
+                check: <G::Entity as ClosedPublicationValue>::validate_for_pool,
+            }),
         )
     }
 
@@ -329,10 +343,15 @@ impl<G: GameRules> Authority<G> {
         mut world: World<G::Entity>,
         pool: PublicationPool,
         bounds: SnapshotWriteBounds,
-        value_check: Option<fn(&G::Entity, &PublicationPool) -> bool>,
+        value_check: Option<ClosedValueGate<G::Entity>>,
     ) -> Result<Self, WorldPublicationError> {
-        if value_check.is_some_and(|check| !world.states_satisfy(|state| check(state, &pool))) {
-            return Err(WorldPublicationError::WrongPool);
+        if let Some(gate) = &value_check {
+            world
+                .validate_states(|state| (gate.check)(state, &pool, gate.limits))
+                .map_err(|error| match error {
+                    ClosedValueError::WrongPool => WorldPublicationError::WrongPool,
+                    _ => WorldPublicationError::ValueProfile,
+                })?;
         }
         let peak = world.conservative_charged_publication_peak(0, 0)?;
         let mut reservation = pool
@@ -650,10 +669,13 @@ impl<G: GameRules> Authority<G> {
                     if self.snapshot_admission.as_ref().is_some_and(|admission| {
                         prepared.edits.len() > admission.bounds.max_edits_per_action
                             || prepared.edits.spawns() > admission.bounds.max_spawns_per_action
-                            || admission.value_check.is_some_and(|check| {
-                                !prepared
+                            || admission.value_check.as_ref().is_some_and(|gate| {
+                                prepared
                                     .edits
-                                    .states_satisfy(|state| check(state, &admission.pool))
+                                    .validate_states(|state| {
+                                        (gate.check)(state, &admission.pool, gate.limits)
+                                    })
+                                    .is_err()
                             })
                     }) {
                         return Err(StepError::TerminalGameContract);

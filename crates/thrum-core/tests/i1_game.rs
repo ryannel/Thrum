@@ -2,12 +2,12 @@
 
 use thrum_core::{
     ActionRejection, ActionResult, ActorId, Admission, AdmissionError, AdmittedGroup, Authority,
-    AuthorityId, ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules,
-    Handle, HeadlessHost, HostAdmissionError, HostBudget, HostError, HostPublication, Input,
-    InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes,
-    PublicationPool, PublicationRecord, Replica, ReplicaError, ResultDisposition, SessionId,
-    SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch,
-    WorldError, WorldPublicationError,
+    AuthorityId, ClockConfig, ClockState, ClosedValueLimits, CommittedEvent, EntityChange,
+    EntityRecord, GameRules, Handle, HeadlessHost, HostAdmissionError, HostBudget, HostError,
+    HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits,
+    PublicationBytes, PublicationPool, PublicationRecord, Replica, ReplicaError, ResultDisposition,
+    SessionId, SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock, World, WorldEdit,
+    WorldEpoch, WorldError, WorldPublicationError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -923,6 +923,11 @@ fn closed_record_payload_survives_snapshot_and_replica_until_final_owner() {
             max_edits_per_action: 1,
             max_spawns_per_action: 0,
         },
+        ClosedValueLimits {
+            max_inline_bytes: 8,
+            max_payload_slots: 1,
+            max_payload_bytes: 512,
+        },
     )
     .unwrap();
     authority.register_peer(PEER, 1, ACTOR).unwrap();
@@ -1028,6 +1033,11 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
         max_edits_per_action: 2,
         max_spawns_per_action: 1,
     };
+    let value_limits = ClosedValueLimits {
+        max_inline_bytes: 8,
+        max_payload_slots: 1,
+        max_payload_bytes: 32,
+    };
     assert!(matches!(
         Authority::try_new_closed_snapshot_charged(
             AuthorityId::Match(MatchId(206)),
@@ -1037,8 +1047,28 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
             wrong_world,
             pool.clone(),
             bounds,
+            value_limits,
         ),
         Err(WorldPublicationError::WrongPool)
+    ));
+    assert_eq!(pool.used_bytes(), 0);
+
+    let oversized_payload = PublicationBytes::try_copy_from_slice(&pool, &[8; 33]).unwrap();
+    let oversized = Record::try_new(&pool, 1_u64.to_le_bytes(), [Some(oversized_payload)]).unwrap();
+    let mut oversized_world = World::new(WorldEpoch(209));
+    oversized_world.spawn(StableId(1), oversized).unwrap();
+    assert!(matches!(
+        Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(209)),
+            ForeignEditRule {
+                foreign: foreign.clone(),
+            },
+            oversized_world,
+            pool.clone(),
+            bounds,
+            value_limits,
+        ),
+        Err(WorldPublicationError::ValueProfile)
     ));
     assert_eq!(pool.used_bytes(), 0);
 
@@ -1051,6 +1081,7 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
         world,
         pool,
         bounds,
+        value_limits,
     )
     .unwrap();
     authority.register_peer(PEER, 1, ACTOR).unwrap();
@@ -1084,6 +1115,107 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
         authority.step(),
         Err(StepError::TerminalGameContract)
     ));
+
+    let profile_pool = PublicationPool::new(100_000);
+    let mut profile_world = World::new(WorldEpoch(210));
+    let initial = Record::try_new(&profile_pool, 1_u64.to_le_bytes(), [None]).unwrap();
+    let handle = profile_world.spawn(StableId(1), initial).unwrap();
+    let mut profile_authority = Authority::try_new_closed_snapshot_charged(
+        AuthorityId::Match(MatchId(210)),
+        ForeignEditRule {
+            foreign: profile_pool.clone(),
+        },
+        profile_world,
+        profile_pool,
+        bounds,
+        ClosedValueLimits {
+            max_payload_bytes: 31,
+            ..value_limits
+        },
+    )
+    .unwrap();
+    profile_authority.register_peer(PEER, 1, ACTOR).unwrap();
+    profile_authority
+        .submit(Input {
+            origin: Origin {
+                peer: PEER,
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: StableId(1),
+        })
+        .unwrap();
+    assert!(matches!(
+        profile_authority.step(),
+        Err(StepError::TerminalGameContract)
+    ));
+    assert_eq!(
+        u64::from_le_bytes(
+            *profile_authority
+                .world()
+                .get(handle)
+                .unwrap()
+                .state
+                .inline()
+        ),
+        1
+    );
+    assert!(profile_authority.world().handle_for(StableId(2)).is_none());
+}
+
+#[test]
+fn closed_authority_rejects_oversized_record_type_in_empty_world() {
+    struct NoopRule;
+    impl GameRules for NoopRule {
+        type Entity = PublicationRecord<16, 2>;
+        type Action = ();
+        type Change = ();
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(
+            &self,
+            _world: &World<Self::Entity>,
+            _actor: ActorId,
+            _action: &(),
+        ) -> Result<(), ()> {
+            Ok(())
+        }
+
+        fn prepare(
+            &self,
+            _world: &World<Self::Entity>,
+            _change: (),
+        ) -> PreparedCommit<Self::Entity, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::None,
+                event: None,
+            }
+        }
+    }
+
+    let pool = PublicationPool::new(100_000);
+    assert!(matches!(
+        Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(211)),
+            NoopRule,
+            World::new(WorldEpoch(211)),
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 0,
+                max_spawns_per_action: 0,
+            },
+            ClosedValueLimits {
+                max_inline_bytes: 8,
+                max_payload_slots: 1,
+                max_payload_bytes: 32,
+            },
+        ),
+        Err(WorldPublicationError::ValueProfile)
+    ));
+    assert_eq!(pool.used_bytes(), 0);
 }
 
 fn peer_input(

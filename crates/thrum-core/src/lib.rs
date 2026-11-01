@@ -22,8 +22,9 @@ pub use host::{
     HostPublication, InitialOutcomes,
 };
 pub use publication_pool::{
-    ClosedPublicationValue, PublicationBytes, PublicationCapacity, PublicationCharge,
-    PublicationPool, PublicationRecord, PublicationRecordError, PublicationReservation,
+    ClosedPublicationValue, ClosedValueError, ClosedValueLimits, PublicationBytes,
+    PublicationCapacity, PublicationCharge, PublicationPool, PublicationRecord,
+    PublicationRecordError, PublicationReservation,
 };
 pub use replica::{AdmittedGroup, Replica, ReplicaError, StateGroup};
 pub use world::{
