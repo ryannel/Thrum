@@ -1414,15 +1414,20 @@ impl<G: GameRules> Authority<G> {
             .retain(|completed| completed.result.origin.sequence > through);
         Ok(())
     }
-    /// Complete baseline for an in-memory replica at the current committed tick.
+    /// Prototype baseline at the current committed tick. Use
+    /// `try_baseline_charged` for a protected sealed authority.
     pub fn baseline(&self) -> GameStateGroup<G> {
         self.try_baseline()
-            .expect("faulted authority has no coherent baseline")
+            .expect("prototype baseline requires a coherent unprotected authority")
     }
-    /// Fallible baseline for callers that may inspect a terminal authority.
+    /// Fallible prototype baseline. Protected sealed authorities return
+    /// `Unqualified` so callers cannot bypass charged baseline admission.
     pub fn try_baseline(&self) -> Result<GameStateGroup<G>, StepError> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
+        }
+        if self.fixed_inline_credits.is_some() {
+            return Err(StepError::Unqualified);
         }
         let mut results = Vec::new();
         let mut events = Vec::new();
@@ -1760,6 +1765,9 @@ impl<G: GameRules> Authority<G> {
             let (disposition, event_id, retained_event) = match decision {
                 Ok(change) => {
                     let prepared = self.rules.prepare(&self.world, change);
+                    if self.fixed_inline_credits.is_some() && !prepared.edits.is_inline() {
+                        return Err(StepError::TerminalGameContract);
+                    }
                     if self.snapshot_admission.as_ref().is_some_and(|admission| {
                         prepared.edits.len() > admission.bounds.max_edits_per_action
                             || prepared.edits.spawns() > admission.bounds.max_spawns_per_action
