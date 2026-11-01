@@ -204,3 +204,24 @@ Primary boundary evidence: [winit Android](https://docs.rs/winit/0.30.13/winit/p
 single matching activity-glue requirement and GameActivity option; [winit iOS](https://docs.rs/winit/0.30.13/winit/platform/ios/index.html)
 documents native application integration and lifecycle. The selected devices, workloads and numerical budgets are
 our engineering targets, not measured results or support claims from those sources.
+
+
+## Optional RC cloud qualification extension
+
+The [cloud module design](modules/CLOUDS.md#cost-and-profile-admission) proposes one separately admitted scene with
+one evolving optical clip, ground/object receivers, main and reflected views, compatible sky/air, up to two fog volumes,
+and Sun plus optional Moon. R0–R4 and their original budgets remain unchanged. RC does not become a prerequisite for
+the first small rendered game. It follows E1/V3/V4/F4 construction at D2/I3b, not a new runtime rewrite now.
+
+RC-one proposes a512 m/128^3 final optical source,33 frames/240 source seconds,32^3 interval carrier and bounded
+whole encoded residency. Its R8 high-cap source is16.75 MiB; the portable **cold** source cap is11 MiB at the same
+spatial/temporal precision. A quality failure cannot be fixed by silently reducing morphology to meet that cap.
+The cloud service's proposed720p gross category reservation is88 MiB; RC-four is a separate112 MiB stress capacity.
+The full browser cap remains512 MiB, full GPU envelope16 ms and full CPU envelope8 ms. Initial incremental cloud
+investment targets are0.5 ms CPU/5 ms GPU browser and3 ms GPU native, all unmeasured.
+
+The standalone cold planning closure totals16.5 MiB and predicts4.69 s under the existing50 Mbit/s,0.12 s dependency
+and1.8 s readiness worksheet. The22.25 MiB high-cap variant predicts5.65 s and is **not** admitted as cold5s without
+smaller qualified content or verified overlap. Neither case is measured startup or guaranteed source availability.
+The design covers native Mac/browser first; Windows/mobile require their own provider/cue and sustained-device proof.
+A distant mobile reduction must not silently replace a game that needs ordinary ground-accessible cloud entry.

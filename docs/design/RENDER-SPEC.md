@@ -223,6 +223,11 @@ boundaries; large HDR values are not silently clamped before V4.
 
 ## 5. Initial atmosphere, fog and transport operator
 
+The optional [visible-cloud extension](modules/CLOUDS.md) defines a separately admitted RC profile, shared source/light
+products, approximate cloud source closure and joint-media reconstruction. It preserves the baseline below and C08;
+its broader camera/source domain, slot layouts and cost reservations are recommendations, not baseline qualification.
+
+
 Select a small **joint single-scattering air path**, not a universal multiple-
 scattering solver: one flat-ground exponential atmosphere
 `σ_{t,a}(y)=σ_{t,0} exp(-max(y,0)/H)` with RGB default sea-level

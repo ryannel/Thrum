@@ -18,6 +18,9 @@ reference, not the host. Existing implementations are candidates for later recon
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).
 - [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; Bevy is not the selected host.
 
+[Cloud D2 extension](modules/CLOUDS.md): [capability inventory](modules/CLOUD-CAPABILITIES.md), complete proposed
+lifecycle/transport/consumer design and [independent review](../evidence/cloud-design-2026-11-01/REVIEW.md); unimplemented.
+
 Module designs live in `modules/`; source/decision investigations in `research/`. The integrated design and maturity
 ledger link each required responsibility to its owner, evidence, gaps and next qualification. Raw trials/captures stay
 in `tmp/`; this directory contains durable decisions and compact evidence. No design status implies runtime proof.

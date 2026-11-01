@@ -197,6 +197,11 @@ histories through the same owner-directed mechanism; resetting V4 alone is insuf
 
 ## C08 Light, materials and transport — V3 with E1 and V4
 
+The detailed [cloud extension](modules/CLOUDS.md) applies this algebra under a separately admitted profile. Main-view,
+attenuation and reflection/environment consumers bind independently under C04; optional source approximations do not
+permit independent overlapping final composites or change gameplay/thermal authority.
+
+
 One scene light registry defines source geometry, spectrum/colour/intensity convention and transform/time. Environment
 providers supply illumination and attenuation; drawing a sky is optional. Materials expose a selected shading closure
 and surface properties; a style policy may alter that closure explicitly rather than hide multipliers in every feature.

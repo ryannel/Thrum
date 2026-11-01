@@ -191,3 +191,13 @@ rows retain their scoped detailed-design obligations (for example advanced camer
 providers and seamless streaming). No row is promoted to implemented, tested, visually accepted or device-qualified.
 Implement only the admitted subset after its dependency/API/toolchain checks; additional claims require their own
 complete mechanism before construction. Paper closure does not certify the full future engine.
+
+
+## Detailed cloud design scope
+
+E1.clouds now links the [canonical cloud design](modules/CLOUDS.md) and
+[capability inventory](modules/CLOUD-CAPABILITIES.md). RC is an optional detailed **recommendation**, preserving the
+baseline attenuation-only recipe. Its analytical work/count/memory account is modelled; source assets/cooker, Thrum
+runtime implementation, visual acceptance and every platform/performance result remain unrun. Historical reviewed
+hashes for the former ENVIRONMENT family artifact stay historical; the new scoped independent review and its exact
+artifacts are recorded separately. A completed design review does not promote the old cloud lab to Thrum code.
