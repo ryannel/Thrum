@@ -53,7 +53,8 @@ pub enum ClockError {
     PendingTicks,
 }
 
-/// Account of one host call. `step_error` retains the failed tick for retry.
+/// Account of one host call. A retryable `step_error` retains the failed tick;
+/// the host must terminate on a game-contract fault.
 #[derive(Debug)]
 pub struct ClockReport<E> {
     /// State after the call.
@@ -135,9 +136,10 @@ impl TickClock {
 
     /// Admit elapsed ticks, then attempt at most the configured and host CPU
     /// budgets. The host must derive `cpu_tick_budget` from its measured or
-    /// bounded per-tick cost and callback reserve. A failed `step` must leave
-    /// its authoritative world unchanged, as `Authority::step` does on
-    /// backpressure. This method does not preempt a slow callback.
+    /// bounded per-tick cost and callback reserve. A retryable failed `step`
+    /// must leave its authoritative world unchanged, as `Authority::step` does
+    /// on backpressure. A terminal error must stop the host. This method does
+    /// not preempt a slow callback.
     pub fn advance<E>(
         &mut self,
         now: Duration,

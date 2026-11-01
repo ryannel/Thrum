@@ -8,8 +8,8 @@ use std::{
 
 use thrum_core::{
     ActorId, Authority, AuthorityId, ClockConfig, ClockState, GameRules, Handle, HeadlessHost,
-    HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, StableId, World,
-    WorldEpoch,
+    HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, PreparedCommit,
+    PreparedEdits, StableId, World, WorldEdit, WorldEpoch,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,9 +33,13 @@ impl GameRules for Rule {
         world.handle_for(*id).ok_or(())
     }
 
-    fn commit(&self, world: &mut World<Counter>, handle: Handle) -> Option<()> {
-        world.get_mut(handle).expect("validated object").0 += 1;
-        None
+    fn prepare(&self, world: &World<Counter>, handle: Handle) -> PreparedCommit<Counter, ()> {
+        let mut state = world.get(handle).expect("validated object").state.clone();
+        state.0 += 1;
+        PreparedCommit {
+            edits: PreparedEdits::One(WorldEdit::Replace(handle, state)),
+            event: None,
+        }
     }
 }
 

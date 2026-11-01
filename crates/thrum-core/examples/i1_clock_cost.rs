@@ -7,8 +7,8 @@ use std::{
 };
 
 use thrum_core::{
-    ActorId, Authority, AuthorityId, ClockConfig, GameRules, SessionId, TickClock, World,
-    WorldEpoch,
+    ActorId, Authority, AuthorityId, ClockConfig, GameRules, PreparedCommit, PreparedEdits,
+    SessionId, TickClock, World, WorldEpoch,
 };
 
 struct EmptyRule;
@@ -22,8 +22,11 @@ impl GameRules for EmptyRule {
     fn decide(&self, _: &World<()>, _: ActorId, _: &()) -> Result<(), ()> {
         Ok(())
     }
-    fn commit(&self, _: &mut World<()>, _: ()) -> Option<()> {
-        None
+    fn prepare(&self, _: &World<()>, _: ()) -> PreparedCommit<(), ()> {
+        PreparedCommit {
+            edits: PreparedEdits::None,
+            event: None,
+        }
     }
 }
 

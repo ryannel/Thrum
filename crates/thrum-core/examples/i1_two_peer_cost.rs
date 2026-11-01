@@ -5,7 +5,8 @@ use std::{hint::black_box, time::Instant};
 
 use thrum_core::{
     ActorId, Authority, AuthorityId, GameRules, Handle, Input, InputSchedule, MatchId, Origin,
-    PeerId, Replica, StableId, World, WorldEpoch, WorldWork,
+    PeerId, PreparedCommit, PreparedEdits, Replica, StableId, World, WorldEdit, WorldEpoch,
+    WorldWork,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -22,9 +23,13 @@ impl GameRules for Rule {
     fn decide(&self, world: &World<Counter>, _: ActorId, id: &StableId) -> Result<Handle, ()> {
         world.handle_for(*id).ok_or(())
     }
-    fn commit(&self, world: &mut World<Counter>, handle: Handle) -> Option<()> {
-        world.get_mut(handle).expect("validated object").0 += 1;
-        None
+    fn prepare(&self, world: &World<Counter>, handle: Handle) -> PreparedCommit<Counter, ()> {
+        let mut state = world.get(handle).expect("validated object").state.clone();
+        state.0 += 1;
+        PreparedCommit {
+            edits: PreparedEdits::One(WorldEdit::Replace(handle, state)),
+            event: None,
+        }
     }
 }
 

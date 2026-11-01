@@ -13,7 +13,8 @@ mod world;
 
 pub use authority::{
     ActionRejection, ActionResult, Admission, AdmissionError, Authority, CommittedEvent, GameRules,
-    GameTick, Input, InputSchedule, Origin, PeerId, ResultDisposition, StepError, TickPublication,
+    GameStateGroup, GameTick, Input, InputSchedule, Origin, PeerId, PreparedCommit,
+    ResultDisposition, StepError, TickPublication,
 };
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{
@@ -26,7 +27,7 @@ pub use publication_pool::{
 };
 pub use replica::{AdmittedGroup, Replica, ReplicaError, StateGroup};
 pub use world::{
-    ActorId, AuthorityId, EntityChange, EntityRecord, Handle, MatchId, SessionId, Snapshot,
-    StableId, World, WorldEdit, WorldEpoch, WorldError, WorldPublication, WorldPublicationError,
-    WorldWork,
+    ActorId, AuthorityId, EntityChange, EntityRecord, Handle, MatchId, PreparedEdits, SessionId,
+    Snapshot, StableId, World, WorldEdit, WorldEpoch, WorldError, WorldPublication,
+    WorldPublicationError, WorldWork,
 };

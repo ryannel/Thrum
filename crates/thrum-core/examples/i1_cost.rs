@@ -4,7 +4,8 @@
 use std::{hint::black_box, time::Instant};
 use thrum_core::{
     ActorId, Authority, AuthorityId, EntityChange, GameRules, Handle, Input, InputSchedule, Origin,
-    PeerId, Replica, SessionId, StableId, StateGroup, World, WorldEpoch, WorldWork,
+    PeerId, PreparedCommit, PreparedEdits, Replica, SessionId, StableId, StateGroup, World,
+    WorldEdit, WorldEpoch, WorldWork,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -20,9 +21,51 @@ impl GameRules for Rule {
     fn decide(&self, world: &World<Counter>, _actor: ActorId, id: &StableId) -> Result<Handle, ()> {
         world.handle_for(*id).ok_or(())
     }
-    fn commit(&self, world: &mut World<Counter>, handle: Handle) -> Option<()> {
-        world.get_mut(handle).expect("validated object").0 += 1;
-        None
+    fn prepare(&self, world: &World<Counter>, handle: Handle) -> PreparedCommit<Counter, ()> {
+        let mut state = world.get(handle).expect("validated object").state.clone();
+        state.0 += 1;
+        PreparedCommit {
+            edits: PreparedEdits::One(WorldEdit::Replace(handle, state)),
+            event: None,
+        }
+    }
+}
+
+struct PairRule;
+impl GameRules for PairRule {
+    type Entity = Counter;
+    type Action = StableId;
+    type Change = (Handle, Handle);
+    type Rejection = ();
+    type Event = ();
+    fn decide(
+        &self,
+        world: &World<Counter>,
+        _actor: ActorId,
+        id: &StableId,
+    ) -> Result<Self::Change, ()> {
+        let next = StableId(id.0 % 64 + 1);
+        Ok((
+            world.handle_for(*id).ok_or(())?,
+            world.handle_for(next).ok_or(())?,
+        ))
+    }
+    fn prepare(
+        &self,
+        world: &World<Counter>,
+        (first, second): Self::Change,
+    ) -> PreparedCommit<Counter, ()> {
+        let mut first_state = world.get(first).expect("validated object").state.clone();
+        let mut second_state = world.get(second).expect("validated object").state.clone();
+        first_state.0 += 1;
+        second_state.0 += 1;
+        PreparedCommit {
+            edits: PreparedEdits::Two(
+                WorldEdit::Replace(first, first_state),
+                WorldEdit::Replace(second, second_state),
+            ),
+            event: None,
+        }
     }
 }
 
@@ -128,6 +171,78 @@ fn benchmark_authority() {
     );
     report(
         "authority/complete",
+        &mut complete_ns,
+        WorldWork::default(),
+        0,
+        TICKS,
+    );
+}
+
+fn benchmark_pair_authority() {
+    const TICKS: usize = 10_000;
+    const WARMUP: usize = 1_000;
+    let mut world = World::new(WorldEpoch(2));
+    for id in 1..=64 {
+        world.spawn(StableId(id), Counter(0)).unwrap();
+    }
+    let mut authority = Authority::new(AuthorityId::Standalone(SessionId(2)), PairRule, world);
+    authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+    let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+    let mut tick_ns = Vec::with_capacity(TICKS);
+    let mut complete_ns = Vec::with_capacity(TICKS);
+    let mut work = WorldWork::default();
+    let mut snapshot_bytes = 0;
+    for i in 0..TICKS + WARMUP {
+        let start = Instant::now();
+        let input = Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: (i + 1) as u64,
+            },
+            actor: ActorId(1),
+            schedule: InputSchedule::NextTick {
+                observed_tick: authority.tick_index(),
+            },
+            action: StableId((i % 64 + 1) as u128),
+        };
+        black_box(authority.submit(input).unwrap());
+        let tick_start = Instant::now();
+        let publication = authority.step().unwrap();
+        let ticked = tick_start.elapsed().as_nanos();
+        snapshot_bytes = publication.snapshot.logical_bytes();
+        let result = replica.apply(publication.group).unwrap();
+        authority
+            .acknowledge_results(PeerId(1), result.resolved_through[0].1)
+            .unwrap();
+        if i >= WARMUP {
+            tick_ns.push(ticked);
+            complete_ns.push(start.elapsed().as_nanos());
+            work.page_references += publication.world_work.page_references;
+            work.copied_pages += publication.world_work.copied_pages;
+            work.copied_objects += publication.world_work.copied_objects;
+            work.group_objects += publication.world_work.group_objects;
+        }
+    }
+    assert_eq!(replica.tick(), (TICKS + WARMUP) as u64);
+    for id in 1..=64 {
+        let id = StableId(id);
+        let authoritative = &authority
+            .world()
+            .get(authority.world().handle_for(id).unwrap())
+            .unwrap()
+            .state;
+        assert_eq!(replica.get(id), Some(authoritative));
+    }
+    report(
+        "authority/two-edit-tick",
+        &mut tick_ns,
+        work,
+        snapshot_bytes,
+        TICKS,
+    );
+    report(
+        "authority/two-edit-complete",
         &mut complete_ns,
         WorldWork::default(),
         0,
@@ -248,6 +363,7 @@ fn main() {
         std::env::consts::ARCH
     );
     benchmark_authority();
+    benchmark_pair_authority();
     for count in [64, 4_096, 16_384] {
         for percent in [0, 1, 25] {
             benchmark_churn(count, percent);
