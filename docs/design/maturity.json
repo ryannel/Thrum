@@ -2887,6 +2887,13 @@
       "whole_tick_design_review_evidence": "../evidence/i1-headless/WHOLE-TICK-DESIGN-REVIEW.md",
       "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
       "design_review_evidence": "../evidence/i1-headless/MEMORY-DESIGN-REVIEW.md"
+    },
+    "mobile_core_portability": {
+      "implementation": "portable_core_only_no_app_shell",
+      "functional_validation": "compile_passed_for_ios_device_ios_simulator_and_android_arm64_only",
+      "platform_performance": "not_run",
+      "scope": "Pinned Rust 1.99.1 library cross-check with locked offline dependencies. No app package, native lifecycle/input, linked platform library, simulator run, physical iPhone/Pixel behavior or performance is qualified.",
+      "evidence": "../evidence/i1-headless/MOBILE-CORE-PORTABILITY.md"
     }
   }
 }
