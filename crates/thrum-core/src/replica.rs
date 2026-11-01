@@ -315,6 +315,10 @@ fn validate_baseline_outcomes<E, R>(
 }
 
 impl<T> Replica<T> {
+    pub(crate) fn ready_for(&self, authority: AuthorityId, tick: u64, group_id: u64) -> bool {
+        self.authority == authority && self.tick == tick && self.group_id == group_id
+    }
+
     fn validate_next<E, R>(
         &self,
         authority: AuthorityId,

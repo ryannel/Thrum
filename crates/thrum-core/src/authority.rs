@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Weak},
 };
 
-use crate::replica::{ChargedStateGroup, StateGroup};
+use crate::replica::{ChargedStateGroup, Replica, StateGroup};
 use crate::{
     ClosedPublicationValue, ClosedValueError, ClosedValueLimits, EntityChange, PreparedEdits,
     PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation, Snapshot,
@@ -109,6 +109,9 @@ pub enum AdmissionError {
     Busy,
     /// A charged peer's bounded pending storage could not be reserved.
     PublicationCapacity,
+    /// The required local replica lacks conservative object headroom for a
+    /// new action; no input sequence was consumed.
+    ReplicaCapacity,
     /// A qualified input carries a payload charged to another pool.
     WrongPool,
     /// A qualified input exceeds its selected per-value shape or byte limit.
@@ -809,6 +812,41 @@ impl<G: GameRules> Authority<G> {
         &mut self,
         input: Input<G::Action>,
     ) -> Result<Admission<G::Rejection>, AdmissionError> {
+        self.submit_inner(input, None)
+    }
+
+    pub(crate) fn submit_for_replica(
+        &mut self,
+        input: Input<G::Action>,
+        replica: &Replica<G::Entity>,
+    ) -> Result<Admission<G::Rejection>, AdmissionError> {
+        self.submit_inner(input, Some(replica))
+    }
+
+    pub(crate) fn pending_fits_replica(&self, replica: &Replica<G::Entity>) -> bool {
+        let Some(admission) = &self.snapshot_admission else {
+            return false;
+        };
+        if admission.bounds.max_spawns_per_action == 0 {
+            return replica.can_admit_charged_spawns(0) == Ok(true);
+        }
+        let Some(pending) = self
+            .peers
+            .values()
+            .try_fold(0_usize, |total, peer| total.checked_add(peer.pending.len()))
+        else {
+            return false;
+        };
+        pending
+            .checked_mul(admission.bounds.max_spawns_per_action)
+            .is_some_and(|spawns| replica.can_admit_charged_spawns(spawns) == Ok(true))
+    }
+
+    fn submit_inner(
+        &mut self,
+        input: Input<G::Action>,
+        required_replica: Option<&Replica<G::Entity>>,
+    ) -> Result<Admission<G::Rejection>, AdmissionError> {
         if self.faulted {
             return Err(AdmissionError::Faulted);
         }
@@ -895,6 +933,31 @@ impl<G: GameRules> Authority<G> {
                 )
             }
         };
+        if let Some(replica) = required_replica {
+            let bound = self
+                .snapshot_admission
+                .as_ref()
+                .ok_or(AdmissionError::ReplicaCapacity)?
+                .bounds
+                .max_spawns_per_action;
+            if bound != 0 {
+                let pending = self
+                    .peers
+                    .values()
+                    .try_fold(1_usize, |total, peer| total.checked_add(peer.pending.len()))
+                    .ok_or(AdmissionError::ReplicaCapacity)?;
+                let max_spawns = pending
+                    .checked_mul(bound)
+                    .ok_or(AdmissionError::ReplicaCapacity)?;
+                if replica.can_admit_charged_spawns(max_spawns) != Ok(true) {
+                    return Err(AdmissionError::ReplicaCapacity);
+                }
+            }
+        }
+        let peer = self
+            .peers
+            .get_mut(&input.origin.peer)
+            .expect("validated peer remains registered");
         peer.pending.insert(
             seq,
             Pending {
@@ -1073,13 +1136,45 @@ impl<G: GameRules> Authority<G> {
     /// Execute exactly one fixed 1/60-second authority step and publish after all decisions.
     pub fn step(&mut self) -> Result<GameTick<G>, StepError> {
         self.cached_watermarks = None;
-        self.step_inner(false).map(|(tick, _)| tick)
+        self.step_inner(false, None).map(|(tick, _)| tick)
     }
 
     /// Publish one sealed tick with shared charged group columns. This admits
     /// the group's requested storage before edits; replica and host storage
     /// still require their own precommit admission.
     pub fn step_charged(&mut self) -> Result<ChargedGameTick<G>, StepError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        self.step_charged_inner(None)
+    }
+
+    /// The required local replica is checked against the declared spawn peak
+    /// after the one due-input scan and before any rule edit. This bounds its
+    /// already charged object table; progress and host delivery remain open.
+    pub(crate) fn step_charged_for_replica(
+        &mut self,
+        replica: &Replica<G::Entity>,
+    ) -> Result<ChargedGameTick<G>, StepError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        if !replica.ready_for(self.id, self.tick, self.group_id) {
+            return Err(StepError::Unqualified);
+        }
+        self.step_charged_inner(Some(replica))
+    }
+
+    fn step_charged_inner(
+        &mut self,
+        required_replica: Option<&Replica<G::Entity>>,
+    ) -> Result<ChargedGameTick<G>, StepError>
     where
         G::Action: ClosedPublicationValue,
         G::Entity: ClosedPublicationValue,
@@ -1093,7 +1188,7 @@ impl<G: GameRules> Authority<G> {
         {
             return Err(StepError::Unqualified);
         }
-        let (tick, mut reservation) = self.step_inner(true)?;
+        let (tick, mut reservation) = self.step_inner(true, required_replica)?;
         let reservation = reservation.as_mut().expect("charged group reservation");
         let StateGroup {
             authority,
@@ -1150,6 +1245,7 @@ impl<G: GameRules> Authority<G> {
     fn step_inner(
         &mut self,
         charged_group: bool,
+        required_replica: Option<&Replica<G::Entity>>,
     ) -> Result<(GameTick<G>, Option<PublicationReservation>), StepError> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
@@ -1165,6 +1261,27 @@ impl<G: GameRules> Authority<G> {
                 if pending.due_tick <= due_tick {
                     self.due_scratch.push((*peer_id, *sequence));
                 }
+            }
+        }
+        if let Some(replica) = required_replica {
+            let max_spawns = self.snapshot_admission.as_ref().and_then(|admission| {
+                self.due_scratch
+                    .values
+                    .len()
+                    .checked_mul(admission.bounds.max_spawns_per_action)
+            });
+            let Some(max_spawns) = max_spawns else {
+                self.faulted = true;
+                self.due_scratch.values.clear();
+                return Err(StepError::TerminalGameContract);
+            };
+            if replica.can_admit_charged_spawns(max_spawns) != Ok(true) {
+                // A hosted charged action receives object headroom before its
+                // sequence is consumed. Failure here violates that host
+                // invariant and must not enter an impossible retry loop.
+                self.faulted = true;
+                self.due_scratch.values.clear();
+                return Err(StepError::TerminalGameContract);
             }
         }
         let mut snapshot_reservation =

@@ -1451,6 +1451,107 @@ mod closed_output_fixture {
         Output::try_new(pool, [], [Some(payload)]).unwrap()
     }
 
+    #[test]
+    fn sealed_host_delivers_two_peer_charged_group_once() {
+        use std::time::{Duration, Instant};
+
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(235));
+        world
+            .spawn(
+                StableId(1),
+                Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap(),
+            )
+            .unwrap();
+        let output_limits = ClosedValueLimits {
+            max_inline_bytes: 0,
+            max_payload_slots: 1,
+            max_payload_bytes: 32,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(235)),
+            OutputRule {
+                entity_pool: pool.clone(),
+                output_pool: pool.clone(),
+            },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 8,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: output_limits,
+                rejection: output_limits,
+            },
+        )
+        .unwrap();
+        authority.register_peer(PEER, 1, ACTOR).unwrap();
+        authority.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_charged_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            2,
+        )
+        .unwrap();
+        assert_eq!(initial.resolved_through(), &[(PEER, 0), (PEER_TWO, 0)]);
+        assert_eq!(
+            host.on_callback(origin + Duration::from_millis(17)).err(),
+            Some(HostError::WrongMode)
+        );
+        for (peer, actor, action) in [(PEER, ACTOR, 1), (PEER_TWO, ACTOR_TWO, 0)] {
+            host.submit(Input {
+                origin: Origin {
+                    peer,
+                    connection_epoch: 1,
+                    sequence: 1,
+                },
+                actor,
+                schedule: InputSchedule::NextTick { observed_tick: 0 },
+                action,
+            })
+            .unwrap();
+        }
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        assert_eq!(report.replica_groups, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected charged replica publication")
+        };
+        assert_eq!(admitted.results().len(), 2);
+        assert_eq!(admitted.events().len(), 1);
+        assert_eq!(admitted.resolved_through(), &[(PEER, 1), (PEER_TWO, 1)]);
+        assert_eq!(
+            host.replica().unwrap().get(StableId(1)).unwrap().inline(),
+            &2_u64.to_le_bytes()
+        );
+        drop(initial);
+        drop(host);
+        assert!(pool.used_bytes() > 0);
+        drop(report);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
     struct OutputRule {
         entity_pool: PublicationPool,
         output_pool: PublicationPool,
