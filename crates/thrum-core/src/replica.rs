@@ -203,12 +203,10 @@ impl<T> Replica<T> {
         if group.event_cursor < self.last_event_id {
             return Err(ReplicaError::InvalidEvent);
         }
-        // The authority emits sorted peer watermarks. An empty group with the
-        // exact existing progress needs no cloned map or validation sets.
-        // Reordered or newly registered peers take the full validation path.
-        if group.changes.is_empty()
-            && group.results.is_empty()
-            && group.events.is_empty()
+        // The authority emits sorted peer watermarks. With no new results and
+        // no buffered gap, exact existing progress needs no cloned map.
+        // Baseline gaps still need normalization through the full path.
+        let unchanged_progress = group.results.is_empty()
             && group.resolved_through.len() == self.progress.len()
             && group.resolved_through.iter().zip(&self.progress).all(
                 |((peer_id, watermark), (known_id, progress))| {
@@ -216,8 +214,8 @@ impl<T> Replica<T> {
                         && *watermark == progress.resolved_through
                         && progress.resolved_above_gap.is_empty()
                 },
-            )
-        {
+            );
+        if group.changes.is_empty() && group.events.is_empty() && unchanged_progress {
             self.group_id = group.group_id;
             self.tick = group.commit_tick;
             self.last_event_id = group.event_cursor;
@@ -276,42 +274,47 @@ impl<T> Replica<T> {
         if !unmatched_events.is_empty() {
             return Err(ReplicaError::IncompleteOutcome);
         }
-        let mut progress = self.progress.clone();
-        let mut advertised = BTreeMap::new();
-        for (peer_id, watermark) in &group.resolved_through {
-            if advertised.insert(*peer_id, *watermark).is_some() {
-                return Err(ReplicaError::IncompleteOutcome);
-            }
-            progress.entry(*peer_id).or_default();
-        }
-        for result in &group.results {
-            let Some(peer) = progress.get_mut(&result.origin.peer) else {
-                return Err(ReplicaError::IncompleteOutcome);
-            };
-            if peer
-                .connection_epoch
-                .is_some_and(|epoch| epoch != result.origin.connection_epoch)
-                || result.origin.sequence <= peer.resolved_through
-                || !peer.resolved_above_gap.insert(result.origin.sequence)
-            {
-                return Err(ReplicaError::IncompleteOutcome);
-            }
-            peer.connection_epoch = Some(result.origin.connection_epoch);
-        }
-        for (peer_id, watermark) in advertised {
-            let peer = progress
-                .get_mut(&peer_id)
-                .expect("advertised peer inserted");
-            while let Some(next) = peer.resolved_through.checked_add(1) {
-                if !peer.resolved_above_gap.remove(&next) {
-                    break;
+        let new_progress = if unchanged_progress {
+            None
+        } else {
+            let mut progress = self.progress.clone();
+            let mut advertised = BTreeMap::new();
+            for (peer_id, watermark) in &group.resolved_through {
+                if advertised.insert(*peer_id, *watermark).is_some() {
+                    return Err(ReplicaError::IncompleteOutcome);
                 }
-                peer.resolved_through = next;
+                progress.entry(*peer_id).or_default();
             }
-            if peer.resolved_through != watermark {
-                return Err(ReplicaError::IncompleteOutcome);
+            for result in &group.results {
+                let Some(peer) = progress.get_mut(&result.origin.peer) else {
+                    return Err(ReplicaError::IncompleteOutcome);
+                };
+                if peer
+                    .connection_epoch
+                    .is_some_and(|epoch| epoch != result.origin.connection_epoch)
+                    || result.origin.sequence <= peer.resolved_through
+                    || !peer.resolved_above_gap.insert(result.origin.sequence)
+                {
+                    return Err(ReplicaError::IncompleteOutcome);
+                }
+                peer.connection_epoch = Some(result.origin.connection_epoch);
             }
-        }
+            for (peer_id, watermark) in advertised {
+                let peer = progress
+                    .get_mut(&peer_id)
+                    .expect("advertised peer inserted");
+                while let Some(next) = peer.resolved_through.checked_add(1) {
+                    if !peer.resolved_above_gap.remove(&next) {
+                        break;
+                    }
+                    peer.resolved_through = next;
+                }
+                if peer.resolved_through != watermark {
+                    return Err(ReplicaError::IncompleteOutcome);
+                }
+            }
+            Some(progress)
+        };
         for change in group.changes {
             match change {
                 EntityChange::Spawn(record) | EntityChange::Update(record) => {
@@ -325,7 +328,9 @@ impl<T> Replica<T> {
         self.group_id = group.group_id;
         self.tick = group.commit_tick;
         self.last_event_id = group.event_cursor;
-        self.progress = progress;
+        if let Some(progress) = new_progress {
+            self.progress = progress;
+        }
         Ok(AdmittedGroup {
             results: group.results,
             events: group.events,

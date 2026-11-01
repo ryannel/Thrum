@@ -2061,6 +2061,42 @@ fn immutable_snapshot_handle_and_atomic_replica_lifecycle() {
 }
 
 #[test]
+fn changed_group_without_results_preserves_multipeer_progress_validation() {
+    let mut authority = Authority::new(AuthorityId::Match(MatchId(29)), Rule, game_world(29));
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+    let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+    let mut group = authority.step().unwrap().group;
+    group.changes.push(EntityChange::Update(EntityRecord {
+        id: DOOR,
+        state: Object::Door {
+            at: [0, 0, 0],
+            open: true,
+        },
+    }));
+    assert_eq!(group.resolved_through, vec![(PEER, 0), (PEER_TWO, 0)]);
+
+    let mut bad = group.clone();
+    bad.resolved_through[1].1 = 1;
+    assert_eq!(
+        replica.apply(bad).err(),
+        Some(ReplicaError::IncompleteOutcome)
+    );
+    assert_eq!(replica.tick(), 0);
+    assert!(matches!(
+        replica.get(DOOR),
+        Some(Object::Door { open: false, .. })
+    ));
+
+    replica.apply(group).unwrap();
+    assert_eq!(replica.tick(), 1);
+    assert!(matches!(
+        replica.get(DOOR),
+        Some(Object::Door { open: true, .. })
+    ));
+}
+
+#[test]
 fn retained_snapshots_backpressure_before_action_commit() {
     let mut authority =
         Authority::new(AuthorityId::Standalone(SessionId(30)), Rule, game_world(31));
