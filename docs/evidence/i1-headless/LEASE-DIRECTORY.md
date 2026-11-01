@@ -1,0 +1,7 @@
+# I1 fixed snapshot lease directory
+
+1 November 2026. The authority's eight-entry snapshot lease directory is now an inline array of weak tokens with a live prefix. Before a tick it compacts live readers, then refuses publication when all eight entries remain live. Publishing a tick appends one token to a previously admitted slot. The directory itself has no heap buffer, growth or per-tick allocation. Snapshot lease tokens still use an `Arc` allocation and are not yet charged to the publication pool.
+
+The integration fixture holds eight snapshots, submits a valid action, observes precommit `SnapshotBackpressure`, drops a middle reader, then sees the pending action commit exactly once. With the replacement snapshot retained, the next step backpressures again. This covers compaction, the eight-reader bound and retry semantics without changing world state on the refused tick. `RUSTC_WRAPPER= ./dev check` passes 18 core, 6 clock and 40 game integration tests.
+
+Two local macOS/aarch64 release runs of `RUSTC_WRAPPER= rustup run 1.99.1 cargo run --release --locked --offline -p thrum-core --example i1_cost` measured charged and uncharged authority idle-tick p50 of 42 ns in both runs, with zero page, object and group copies per tick. The timing resolution is coarse, and this is a selected-path observation, not a before/after speedup or a device guarantee. The remaining whole-tick gate must charge bounded lease token allocations and host delivery owners; an inline directory alone cannot protect idle progress under pool contention.
