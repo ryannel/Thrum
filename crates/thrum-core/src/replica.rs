@@ -92,7 +92,8 @@ impl<T, E, R> ChargedStateGroup<T, E, R> {
         self.event_cursor
     }
 
-    /// Full changed state together with lifecycle.
+    /// Full changed state together with lifecycle. Live charged groups carry
+    /// changes in strictly increasing stable-ID order.
     pub fn changes(&self) -> &[EntityChange<T>] {
         self.changes.as_slice()
     }
@@ -560,13 +561,25 @@ impl<T> Replica<T> {
                 progress: ProgressUpdate::None,
             });
         }
+        let charged_changes = matches!(self.progress, ProgressStore::Charged(_));
         let mut changed = BTreeSet::new();
+        let mut previous_change = None;
         for change in changes {
             let id = match change {
                 EntityChange::Spawn(record) | EntityChange::Update(record) => record.id,
                 EntityChange::Despawn(id) => *id,
             };
-            if !changed.insert(id) {
+            if charged_changes {
+                if let Some(previous) = previous_change {
+                    if id == previous {
+                        return Err(ReplicaError::DuplicateObject);
+                    }
+                    if id < previous {
+                        return Err(ReplicaError::IncompleteOutcome);
+                    }
+                }
+                previous_change = Some(id);
+            } else if !changed.insert(id) {
                 return Err(ReplicaError::DuplicateObject);
             }
             let exists = self.objects.contains_key(&id);
@@ -1231,6 +1244,70 @@ mod charged_tests {
     }
 
     #[test]
+    fn charged_live_group_requires_sorted_change_ids_before_mutation() {
+        let pool = PublicationPool::new(100_000);
+        let baseline = group(
+            &pool,
+            0,
+            0,
+            vec![
+                EntityChange::Spawn(EntityRecord {
+                    id: StableId(2),
+                    state: 2,
+                }),
+                EntityChange::Spawn(EntityRecord {
+                    id: StableId(1),
+                    state: 1,
+                }),
+            ],
+        );
+        let (mut replica, initial) = Replica::from_charged_baseline(baseline, &pool, 2).unwrap();
+        let reversed = group(
+            &pool,
+            1,
+            1,
+            vec![
+                EntityChange::Update(EntityRecord {
+                    id: StableId(2),
+                    state: 3,
+                }),
+                EntityChange::Update(EntityRecord {
+                    id: StableId(1),
+                    state: 4,
+                }),
+            ],
+        );
+        assert!(matches!(
+            replica.apply_charged(reversed),
+            Err(ReplicaError::IncompleteOutcome)
+        ));
+        assert_eq!(replica.tick(), 0);
+        assert_eq!(replica.get(StableId(1)), Some(&1));
+        assert_eq!(replica.get(StableId(2)), Some(&2));
+        let sorted = group(
+            &pool,
+            1,
+            1,
+            vec![
+                EntityChange::Update(EntityRecord {
+                    id: StableId(1),
+                    state: 4,
+                }),
+                EntityChange::Update(EntityRecord {
+                    id: StableId(2),
+                    state: 3,
+                }),
+            ],
+        );
+        replica.apply_charged(sorted).unwrap();
+        assert_eq!(replica.get(StableId(1)), Some(&4));
+        assert_eq!(replica.get(StableId(2)), Some(&3));
+        drop(initial);
+        drop(replica);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
     fn charged_replica_validates_before_change_and_admits_net_zero_capacity() {
         let pool = PublicationPool::new(100_000);
         let foreign = PublicationPool::new(100_000);
@@ -1281,11 +1358,11 @@ mod charged_tests {
             1,
             1,
             vec![
+                EntityChange::Despawn(StableId(1)),
                 EntityChange::Spawn(EntityRecord {
                     id: StableId(2),
                     state: 2,
                 }),
-                EntityChange::Despawn(StableId(1)),
             ],
         );
         let admitted = replica.apply_charged(valid).unwrap();

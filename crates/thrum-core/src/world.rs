@@ -996,6 +996,24 @@ mod tests {
     use super::*;
 
     #[test]
+    fn live_publication_changes_follow_stable_id_order() {
+        let mut world = World::new(WorldEpoch(240));
+        world.spawn(StableId(3), 3_u8).unwrap();
+        world.spawn(StableId(1), 1_u8).unwrap();
+        world.spawn(StableId(2), 2_u8).unwrap();
+        let publication = world.publish(0);
+        let ids = publication
+            .changes
+            .iter()
+            .map(|change| match change {
+                EntityChange::Spawn(record) | EntityChange::Update(record) => record.id,
+                EntityChange::Despawn(id) => *id,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(ids, [StableId(1), StableId(2), StableId(3)]);
+    }
+
+    #[test]
     fn charged_snapshot_rejects_a_foreign_lease_floor_before_publication() {
         let pool = PublicationPool::new(100_000);
         let foreign = PublicationPool::new(100_000);
