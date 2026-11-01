@@ -19,11 +19,22 @@ impl GameRules for Reject {
     type Rejection = ();
     type Event = ();
 
-    fn decide(&self, _world: &World<State>, _actor: ActorId, _action: &()) -> Result<(), ()> {
+    fn decide(
+        &self,
+        _world: &World<State>,
+        _actor: ActorId,
+        _action: &(),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<(), ()> {
         Err(())
     }
 
-    fn prepare(&self, _world: &World<State>, _change: ()) -> PreparedCommit<State, ()> {
+    fn prepare(
+        &self,
+        _world: &World<State>,
+        _change: (),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<State, ()> {
         unreachable!("rejected action has no prepared edit")
     }
 }

@@ -105,6 +105,7 @@ impl GameRules for Rule {
         world: &World<Object>,
         actor: ActorId,
         action: &Action,
+        _context: &mut thrum_core::RuleContext<'_>,
     ) -> Result<Change, Rejection> {
         let actor_object = match actor {
             ACTOR => ACTOR_OBJECT,
@@ -168,7 +169,12 @@ impl GameRules for Rule {
         }
     }
 
-    fn prepare(&self, world: &World<Object>, change: Change) -> PreparedCommit<Object, Event> {
+    fn prepare(
+        &self,
+        world: &World<Object>,
+        change: Change,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<Object, Event> {
         match change {
             Change::Collect(actor_object) => {
                 let item = world.handle_for(ITEM).expect("validated item");
@@ -276,11 +282,17 @@ impl GameRules for InvalidSecondRule {
         _world: &World<Object>,
         _actor: ActorId,
         action: &Action,
+        _context: &mut thrum_core::RuleContext<'_>,
     ) -> Result<Action, Rejection> {
         Ok(action.clone())
     }
 
-    fn prepare(&self, world: &World<Object>, change: Action) -> PreparedCommit<Object, Event> {
+    fn prepare(
+        &self,
+        world: &World<Object>,
+        change: Action,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<Object, Event> {
         use std::sync::atomic::Ordering;
         self.prepares.fetch_add(1, Ordering::Relaxed);
         let door = world.handle_for(DOOR).unwrap();
@@ -948,11 +960,22 @@ fn charged_authority_reserves_transient_structural_peak() {
         type Rejection = ();
         type Event = ();
 
-        fn decide(&self, _world: &World<u64>, _actor: ActorId, _action: &()) -> Result<(), ()> {
+        fn decide(
+            &self,
+            _world: &World<u64>,
+            _actor: ActorId,
+            _action: &(),
+            _context: &mut thrum_core::RuleContext<'_>,
+        ) -> Result<(), ()> {
             Ok(())
         }
 
-        fn prepare(&self, _world: &World<u64>, _change: ()) -> PreparedCommit<u64, ()> {
+        fn prepare(
+            &self,
+            _world: &World<u64>,
+            _change: (),
+            _context: &mut thrum_core::RuleContext<'_>,
+        ) -> PreparedCommit<u64, ()> {
             let edits = (1..=65)
                 .map(|id| WorldEdit::Spawn(StableId(id), id as u64))
                 .chain((1..=65).map(|id| WorldEdit::DespawnNew(StableId(id))))
@@ -1161,11 +1184,17 @@ fn closed_record_payload_survives_snapshot_and_replica_until_final_owner() {
             world: &World<Record>,
             _actor: ActorId,
             action: &StableId,
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> Result<Handle, ()> {
             world.handle_for(*action).ok_or(())
         }
 
-        fn prepare(&self, world: &World<Record>, handle: Handle) -> PreparedCommit<Record, ()> {
+        fn prepare(
+            &self,
+            world: &World<Record>,
+            handle: Handle,
+            _context: &mut thrum_core::RuleContext<'_>,
+        ) -> PreparedCommit<Record, ()> {
             let old = &world.get(handle).unwrap().state;
             let next = u64::from_le_bytes(*old.inline()) + 1;
             let state = Record::try_new(
@@ -1267,11 +1296,17 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
             world: &World<Record>,
             _actor: ActorId,
             action: &StableId,
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> Result<Handle, ()> {
             world.handle_for(*action).ok_or(())
         }
 
-        fn prepare(&self, _world: &World<Record>, handle: Handle) -> PreparedCommit<Record, ()> {
+        fn prepare(
+            &self,
+            _world: &World<Record>,
+            handle: Handle,
+            _context: &mut thrum_core::RuleContext<'_>,
+        ) -> PreparedCommit<Record, ()> {
             let foreign_payload =
                 PublicationBytes::try_copy_from_slice(&self.foreign, &[9; 32]).unwrap();
             PreparedCommit {
@@ -1456,6 +1491,7 @@ fn closed_authority_rejects_oversized_record_type_in_empty_world() {
             _world: &World<Self::Entity>,
             _actor: ActorId,
             _action: &(),
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> Result<(), ()> {
             Ok(())
         }
@@ -1464,6 +1500,7 @@ fn closed_authority_rejects_oversized_record_type_in_empty_world() {
             &self,
             _world: &World<Self::Entity>,
             _change: (),
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> PreparedCommit<Self::Entity, ()> {
             PreparedCommit {
                 edits: PreparedEdits::None,
@@ -1985,6 +2022,7 @@ mod closed_output_fixture {
             world: &World<Entity>,
             _actor: ActorId,
             action: &u8,
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> Result<Handle, Output> {
             if *action == 0 {
                 Err(output(&self.output_pool))
@@ -1997,6 +2035,7 @@ mod closed_output_fixture {
             &self,
             _world: &World<Entity>,
             handle: Handle,
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> PreparedCommit<Entity, Output> {
             PreparedCommit {
                 edits: PreparedEdits::One(WorldEdit::Replace(
@@ -2292,11 +2331,17 @@ mod closed_action_fixture {
             world: &World<Entity>,
             _actor: ActorId,
             _action: &ActionValue,
+            _context: &mut thrum_core::RuleContext<'_>,
         ) -> Result<Handle, ()> {
             world.handle_for(StableId(1)).ok_or(())
         }
 
-        fn prepare(&self, _world: &World<Entity>, handle: Handle) -> PreparedCommit<Entity, ()> {
+        fn prepare(
+            &self,
+            _world: &World<Entity>,
+            handle: Handle,
+            _context: &mut thrum_core::RuleContext<'_>,
+        ) -> PreparedCommit<Entity, ()> {
             PreparedCommit {
                 edits: PreparedEdits::One(WorldEdit::Replace(
                     handle,
@@ -2446,6 +2491,352 @@ mod closed_action_fixture {
         };
         assert_eq!(authority.submit(stale), Err(AdmissionError::StaleEpoch));
         assert_eq!(foreign.used_bytes(), 0);
+    }
+}
+
+mod protected_output_fixture {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    type Entity = PublicationRecord<1, 1>;
+    type Output = PublicationRecord<0, 1>;
+
+    struct Rule {
+        pool: PublicationPool,
+    }
+
+    impl GameRules for Rule {
+        type Entity = Entity;
+        type Action = u8;
+        type Change = (Handle, u8);
+        type Rejection = Output;
+        type Event = Output;
+
+        fn decide(
+            &self,
+            world: &World<Entity>,
+            _actor: ActorId,
+            action: &u8,
+            context: &mut thrum_core::RuleContext<'_>,
+        ) -> Result<(Handle, u8), Output> {
+            if *action == 0 {
+                let payload = context.try_copy_payload(&[3; 16]).unwrap();
+                return Err(Output::try_new(&self.pool, [], [Some(payload)]).unwrap());
+            }
+            if *action == 6 {
+                drop(context.try_copy_payload(&[6; 16]).unwrap());
+            }
+            Ok((world.handle_for(StableId(1)).unwrap(), *action))
+        }
+
+        fn prepare(
+            &self,
+            _world: &World<Entity>,
+            (handle, value): (Handle, u8),
+            context: &mut thrum_core::RuleContext<'_>,
+        ) -> PreparedCommit<Entity, Output> {
+            let payload = context.try_copy_payload(&[value; 32]).unwrap();
+            if value == 9 {
+                let _ = context.try_copy_payload(&[9; 32]);
+            }
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    handle,
+                    Entity::try_new(&self.pool, [value], [Some(payload.clone())]).unwrap(),
+                )),
+                event: Some(Output::try_new(&self.pool, [], [Some(payload)]).unwrap()),
+            }
+        }
+    }
+
+    fn host_with_allowance(
+        output_allowance: usize,
+    ) -> (
+        HeadlessHost<Rule>,
+        thrum_core::InitialChargedOutcomes<Rule>,
+        PublicationPool,
+        Instant,
+    ) {
+        let pool = PublicationPool::new(200_000);
+        let mut world = World::new(WorldEpoch(260));
+        world
+            .spawn(StableId(1), Entity::try_new(&pool, [1], [None]).unwrap())
+            .unwrap();
+        let max_payload = ClosedValueLimits {
+            max_inline_bytes: 0,
+            max_payload_slots: 1,
+            max_payload_bytes: 32,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(260)),
+            Rule { pool: pool.clone() },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    ..max_payload
+                },
+                event: max_payload,
+                rejection: max_payload,
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let (host, initial) = HeadlessHost::with_protected_output_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            1,
+            2,
+            output_allowance,
+        )
+        .unwrap();
+        (host, initial, pool, origin)
+    }
+
+    fn host() -> (
+        HeadlessHost<Rule>,
+        thrum_core::InitialChargedOutcomes<Rule>,
+        PublicationPool,
+        Instant,
+    ) {
+        host_with_allowance(PublicationBytes::required_charge(32).unwrap())
+    }
+
+    fn input(peer: u64, action: u8) -> Input<u8> {
+        Input {
+            origin: Origin {
+                peer: PeerId(peer),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(peer),
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action,
+        }
+    }
+
+    #[test]
+    fn two_peer_state_event_and_rejection_payloads_use_separate_credits() {
+        let (mut host, initial, pool, origin) = host();
+        let old_snapshot = host.authority().snapshot().clone();
+        host.submit(input(1, 4)).unwrap();
+        host.submit(input(2, 0)).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected charged publication")
+        };
+        assert_eq!(admitted.results().len(), 2);
+        assert_eq!(admitted.events().len(), 1);
+        assert_eq!(
+            admitted.events()[0]
+                .payload
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[4; 32]
+        );
+        let rejected = admitted
+            .results()
+            .iter()
+            .find_map(|result| match &result.disposition {
+                ResultDisposition::Rejected(ActionRejection::Game(reason)) => Some(reason),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(rejected.payload_owner(0).unwrap().as_slice(), &[3; 16]);
+        assert_eq!(
+            host.replica()
+                .unwrap()
+                .get(StableId(1))
+                .unwrap()
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[4; 32]
+        );
+        assert_eq!(
+            old_snapshot
+                .records()
+                .find(|record| record.id == StableId(1))
+                .unwrap()
+                .state
+                .inline(),
+            &[1]
+        );
+        drop(report);
+        host.acknowledge_results(PeerId(1), 1).unwrap();
+        host.acknowledge_results(PeerId(2), 1).unwrap();
+        drop(occupied);
+        drop(old_snapshot);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn future_output_credit_survives_a_delayed_sequence_under_competing_use() {
+        let (mut host, initial, pool, origin) = host();
+        let mut future = input(1, 4);
+        future.schedule = InputSchedule::Timed { intended_tick: 3 };
+        host.submit(future).unwrap();
+        let mut early = input(1, 5);
+        early.origin.sequence = 2;
+        host.submit(early).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        for (tick, expected_results, expected_value, expected_watermark) in
+            [(1, 1, 5, 0), (2, 0, 5, 0), (3, 1, 4, 2)]
+        {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+            else {
+                panic!("expected charged publication")
+            };
+            assert_eq!(admitted.results().len(), expected_results);
+            assert_eq!(
+                admitted.resolved_through()[0],
+                (PeerId(1), expected_watermark)
+            );
+            assert_eq!(
+                host.replica().unwrap().get(StableId(1)).unwrap().inline(),
+                &[expected_value]
+            );
+        }
+        host.acknowledge_results(PeerId(1), 2).unwrap();
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn decision_and_preparation_spend_one_cumulative_payload_allowance() {
+        let allowance = PublicationBytes::required_charge(16).unwrap()
+            + PublicationBytes::required_charge(32).unwrap();
+        let (mut host, initial, pool, origin) = host_with_allowance(allowance);
+        host.submit(input(1, 6)).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        assert_eq!(
+            host.replica().unwrap().get(StableId(1)).unwrap().inline(),
+            &[6]
+        );
+        drop(report);
+        host.acknowledge_results(PeerId(1), 1).unwrap();
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn old_snapshot_keeps_variable_payload_after_replacement_and_host_drop() {
+        let (mut host, initial, pool, origin) = host();
+        host.submit(input(1, 4)).unwrap();
+        let first = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        let HostPublication::ReplicatedCharged { snapshot, .. } = &first.publications[0] else {
+            panic!("expected charged publication")
+        };
+        let old = snapshot.clone();
+        drop(first);
+        host.acknowledge_results(PeerId(1), 1).unwrap();
+        let mut next = input(1, 5);
+        next.origin.sequence = 2;
+        next.schedule = InputSchedule::NextTick { observed_tick: 1 };
+        host.submit(next).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let second = host
+            .on_callback_charged(origin + Duration::from_millis(34))
+            .unwrap();
+        assert_eq!(second.clock.completed, 1);
+        assert_eq!(
+            old.records()
+                .next()
+                .unwrap()
+                .state
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[4; 32]
+        );
+        assert_eq!(
+            host.replica()
+                .unwrap()
+                .get(StableId(1))
+                .unwrap()
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[5; 32]
+        );
+        drop(second);
+        host.acknowledge_results(PeerId(1), 2).unwrap();
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert!(pool.used_bytes() >= PublicationBytes::required_charge(32).unwrap());
+        drop(old);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn exceeded_cumulative_payload_allowance_faults_before_world_edit() {
+        let (mut host, initial, pool, origin) = host();
+        host.submit(input(1, 9)).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert!(matches!(
+            host.on_callback_charged(origin + Duration::from_millis(17)),
+            Err(HostError::Authority(StepError::TerminalGameContract))
+        ));
+        assert_eq!(host.authority().tick_index(), 0);
+        assert_eq!(
+            host.replica().unwrap().get(StableId(1)).unwrap().inline(),
+            &[1]
+        );
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
     }
 }
 
@@ -3507,12 +3898,18 @@ fn slow_hosted_callback_reports_overload_and_stops_new_input() {
             world: &World<Object>,
             actor: ActorId,
             action: &Action,
+            context: &mut thrum_core::RuleContext<'_>,
         ) -> Result<Change, Rejection> {
             thread::sleep(Duration::from_millis(3));
-            Rule.decide(world, actor, action)
+            Rule.decide(world, actor, action, context)
         }
-        fn prepare(&self, world: &World<Object>, change: Change) -> PreparedCommit<Object, Event> {
-            Rule.prepare(world, change)
+        fn prepare(
+            &self,
+            world: &World<Object>,
+            change: Change,
+            context: &mut thrum_core::RuleContext<'_>,
+        ) -> PreparedCommit<Object, Event> {
+            Rule.prepare(world, change, context)
         }
     }
 

@@ -19,10 +19,21 @@ impl GameRules for EmptyRule {
     type Rejection = ();
     type Event = ();
 
-    fn decide(&self, _: &World<()>, _: ActorId, _: &()) -> Result<(), ()> {
+    fn decide(
+        &self,
+        _: &World<()>,
+        _: ActorId,
+        _: &(),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<(), ()> {
         Ok(())
     }
-    fn prepare(&self, _: &World<()>, _: ()) -> PreparedCommit<(), ()> {
+    fn prepare(
+        &self,
+        _: &World<()>,
+        _: (),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<(), ()> {
         PreparedCommit {
             edits: PreparedEdits::None,
             event: None,

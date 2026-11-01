@@ -16,8 +16,8 @@ pub use authority::{
     ActionRejection, ActionResult, Admission, AdmissionError, Authority, ChargedBaselineError,
     ChargedGameStateGroup, ChargedGameTick, ChargedTickPublication, ClosedGameLimits,
     CommittedEvent, ExecutionCreditSetupError, GameRules, GameStateGroup, GameTick, Input,
-    InputSchedule, Origin, PeerId, PreparedCommit, ResultDisposition, SnapshotWriteBounds,
-    StepError, TickPublication,
+    InputSchedule, Origin, PeerId, PreparedCommit, ResultDisposition, RuleContext,
+    RulePayloadError, SnapshotWriteBounds, StepError, TickPublication,
 };
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{

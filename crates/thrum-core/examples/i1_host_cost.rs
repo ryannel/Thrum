@@ -26,14 +26,25 @@ impl GameRules for Rule {
     type Rejection = ();
     type Event = ();
 
-    fn decide(&self, world: &World<Counter>, _: ActorId, id: &StableId) -> Result<Handle, ()> {
+    fn decide(
+        &self,
+        world: &World<Counter>,
+        _: ActorId,
+        id: &StableId,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<Handle, ()> {
         if !self.delay.is_zero() {
             thread::sleep(self.delay);
         }
         world.handle_for(*id).ok_or(())
     }
 
-    fn prepare(&self, world: &World<Counter>, handle: Handle) -> PreparedCommit<Counter, ()> {
+    fn prepare(
+        &self,
+        world: &World<Counter>,
+        handle: Handle,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<Counter, ()> {
         let mut state = world.get(handle).expect("validated object").state.clone();
         state.0 += 1;
         PreparedCommit {

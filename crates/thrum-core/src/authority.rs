@@ -6,8 +6,8 @@ use std::{
 use crate::replica::{ChargedStateGroup, Replica, StateGroup};
 use crate::{
     ClosedPublicationValue, ClosedValueError, ClosedValueLimits, EntityChange, PreparedEdits,
-    PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation, Snapshot,
-    World, WorldPublicationError, WorldWork,
+    PublicationBytes, PublicationCapacity, PublicationCharge, PublicationPool,
+    PublicationReservation, Snapshot, World, WorldPublicationError, WorldWork,
     publication_pool::PublicationColumn,
     world::{ActorId, AuthorityId, MAX_SNAPSHOT_LEASES, SnapshotLease, SnapshotLeaseFloor},
 };
@@ -268,9 +268,83 @@ struct SnapshotAdmission<A, T, E, R> {
     closed: Option<ClosedGameGates<A, T, E, R>>,
 }
 
+/// A rule tried to create a payload outside its admitted per-action allowance.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RulePayloadError {
+    /// This authority has no protected output-payload profile.
+    Unqualified,
+    /// The cumulative allowance was exceeded, including owner overhead.
+    Limit,
+}
+
+/// Engine-owned action budget. Callback code only borrows a view of it, so it
+/// cannot replace the sticky fault state or drop the reserved credit.
+struct RuleBudget {
+    payload_credit: Option<PublicationReservation>,
+    payload_remaining: usize,
+    exceeded: bool,
+}
+
+impl RuleBudget {
+    fn unqualified() -> Self {
+        Self {
+            payload_credit: None,
+            payload_remaining: 0,
+            exceeded: false,
+        }
+    }
+
+    fn with_payload_credit(credit: PublicationReservation, allowance: usize) -> Self {
+        debug_assert_eq!(credit.remaining_bytes(), allowance);
+        Self {
+            payload_credit: Some(credit),
+            payload_remaining: allowance,
+            exceeded: false,
+        }
+    }
+}
+
+/// One action's publication-payload allowance, shared by its decision and
+/// preparation callbacks. It does not bound arbitrary game-private work.
+/// In a protected output profile, every newly created retained rule payload
+/// must use this context; pre-existing charged owners may be shared directly.
+pub struct RuleContext<'a> {
+    budget: &'a mut RuleBudget,
+}
+
+impl RuleContext<'_> {
+    /// Copy one immutable output from preadmitted credit. Both callbacks spend
+    /// the same non-refunding allowance, even if an owner is dropped early.
+    pub fn try_copy_payload(
+        &mut self,
+        source: &[u8],
+    ) -> Result<PublicationBytes, RulePayloadError> {
+        let Some(credit) = self.budget.payload_credit.as_mut() else {
+            return Err(RulePayloadError::Unqualified);
+        };
+        let required = PublicationBytes::required_charge(source.len()).map_err(|_| {
+            self.budget.exceeded = true;
+            RulePayloadError::Limit
+        })?;
+        if required > self.budget.payload_remaining {
+            self.budget.exceeded = true;
+            return Err(RulePayloadError::Limit);
+        }
+        self.budget.payload_remaining -= required;
+        PublicationBytes::try_copy_from_reservation(credit, source).map_err(|_| {
+            self.budget.exceeded = true;
+            RulePayloadError::Limit
+        })
+    }
+}
+
 /// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
 /// must be infallible for a valid decision and have no external irreversible
 /// side effects. An invalid prepared batch is a terminal game-contract fault.
+/// Both local and multiplayer authority paths call these same methods. The
+/// protected output profile requires new payloads to use `RuleContext`;
+/// allocating them from a captured pool bypasses the per-action liveness
+/// contract even though the shared pool still enforces its global limit.
 pub trait GameRules {
     /// Complete I1 object state.
     type Entity: Clone;
@@ -289,6 +363,7 @@ pub trait GameRules {
         world: &World<Self::Entity>,
         actor: ActorId,
         action: &Self::Action,
+        context: &mut RuleContext<'_>,
     ) -> Result<Self::Change, Self::Rejection>;
     /// Build complete edits and an optional event from the current state.
     /// The authority applies them after validation, in canonical input order.
@@ -296,6 +371,7 @@ pub trait GameRules {
         &self,
         world: &World<Self::Entity>,
         change: Self::Change,
+        context: &mut RuleContext<'_>,
     ) -> PreparedCommit<Self::Entity, Self::Event>;
 }
 
@@ -307,9 +383,10 @@ struct Pending<A> {
 }
 
 #[derive(Clone, Copy)]
-struct FixedInlineCreditProfile {
+struct FixedCreditProfile {
     per_input_bytes: usize,
     max_peers: usize,
+    output_allowance: Option<usize>,
 }
 
 struct PendingQueue<A> {
@@ -703,7 +780,7 @@ pub struct Authority<G: GameRules> {
     cached_watermarks: Option<PublicationColumn<(PeerId, u64)>>,
     snapshot_leases: SnapshotLeaseDirectory,
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
-    fixed_inline_credits: Option<FixedInlineCreditProfile>,
+    fixed_credits: Option<FixedCreditProfile>,
     faulted: bool,
 }
 
@@ -848,7 +925,7 @@ impl<G: GameRules> Authority<G> {
             cached_watermarks: None,
             snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
             snapshot_admission,
-            fixed_inline_credits: None,
+            fixed_credits: None,
             faulted: false,
         }
     }
@@ -876,7 +953,7 @@ impl<G: GameRules> Authority<G> {
         due: usize,
         charged_group: bool,
     ) -> Result<Option<PublicationReservation>, StepError> {
-        if self.fixed_inline_credits.is_some() && !charged_group {
+        if self.fixed_credits.is_some() && !charged_group {
             return Err(StepError::Unqualified);
         }
         let Some(admission) = &self.snapshot_admission else {
@@ -920,7 +997,14 @@ impl<G: GameRules> Authority<G> {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
         };
-        if self.fixed_inline_credits.is_some() && due != 0 {
+        if let Some(profile) = self.fixed_credits.filter(|_| due != 0) {
+            let Some(expected_credit) = profile
+                .per_input_bytes
+                .checked_add(profile.output_allowance.unwrap_or(0))
+            else {
+                self.faulted = true;
+                return Err(StepError::TerminalGameContract);
+            };
             let mut protected = 0_usize;
             for (peer_id, sequence) in &self.due_scratch.values {
                 let Some(credit) = self
@@ -932,7 +1016,11 @@ impl<G: GameRules> Authority<G> {
                     self.faulted = true;
                     return Err(StepError::TerminalGameContract);
                 };
-                let Some(next) = protected.checked_add(credit.remaining_bytes()) else {
+                if credit.remaining_bytes() != expected_credit {
+                    self.faulted = true;
+                    return Err(StepError::TerminalGameContract);
+                }
+                let Some(next) = protected.checked_add(profile.per_input_bytes) else {
                     self.faulted = true;
                     return Err(StepError::TerminalGameContract);
                 };
@@ -953,9 +1041,8 @@ impl<G: GameRules> Authority<G> {
                     .and_then(|peer| peer.pending.get_mut(sequence))
                     .and_then(|pending| pending.credit.as_mut())
                     .expect("validated due credit");
-                let bytes = credit.remaining_bytes();
                 credit
-                    .transfer_to(&mut due_reservation, bytes)
+                    .transfer_to(&mut due_reservation, profile.per_input_bytes)
                     .expect("same-pool checked credit transfer");
             }
             return Ok(Some(due_reservation));
@@ -1004,6 +1091,22 @@ impl<G: GameRules> Authority<G> {
         &mut self,
         max_peers: usize,
     ) -> Result<(), ExecutionCreditSetupError> {
+        self.enable_fixed_credits(max_peers, None)
+    }
+
+    pub(crate) fn enable_fixed_output_credits(
+        &mut self,
+        max_peers: usize,
+        output_allowance: usize,
+    ) -> Result<(), ExecutionCreditSetupError> {
+        self.enable_fixed_credits(max_peers, Some(output_allowance))
+    }
+
+    fn enable_fixed_credits(
+        &mut self,
+        max_peers: usize,
+        output_allowance: Option<usize>,
+    ) -> Result<(), ExecutionCreditSetupError> {
         let admission = self
             .snapshot_admission
             .as_ref()
@@ -1022,13 +1125,14 @@ impl<G: GameRules> Authority<G> {
         let closed = admission.closed.as_ref().expect("closed profile checked");
         // Action payloads already own their pool charge before submission;
         // only payloads created by rules after admission need output credit.
-        if [
-            closed.entity.limits,
-            closed.event.limits,
-            closed.rejection.limits,
-        ]
-        .iter()
-        .any(|limits| limits.max_payload_slots != 0 || limits.max_payload_bytes != 0)
+        if output_allowance.is_none()
+            && [
+                closed.entity.limits,
+                closed.event.limits,
+                closed.rejection.limits,
+            ]
+            .iter()
+            .any(|limits| limits.max_payload_slots != 0 || limits.max_payload_bytes != 0)
         {
             return Err(ExecutionCreditSetupError::VariablePayloads);
         }
@@ -1047,6 +1151,12 @@ impl<G: GameRules> Authority<G> {
             .map_err(|_| ExecutionCreditSetupError::Capacity)?;
         let per_input_bytes = one_snapshot
             .checked_add(one_group)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let combined_input_bytes = per_input_bytes
+            .checked_add(output_allowance.unwrap_or(0))
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        max_due
+            .checked_mul(combined_input_bytes)
             .ok_or(ExecutionCreditSetupError::Capacity)?;
         let aggregate_snapshot = self
             .world
@@ -1067,9 +1177,10 @@ impl<G: GameRules> Authority<G> {
         self.world
             .activate_fixed_slot_journal(&admission.pool, max_edits)
             .map_err(|_| ExecutionCreditSetupError::Capacity)?;
-        self.fixed_inline_credits = Some(FixedInlineCreditProfile {
+        self.fixed_credits = Some(FixedCreditProfile {
             per_input_bytes,
             max_peers,
+            output_allowance,
         });
         Ok(())
     }
@@ -1150,7 +1261,7 @@ impl<G: GameRules> Authority<G> {
             .checked_add(1)
             .ok_or(AdmissionError::PublicationCapacity)?;
         if self
-            .fixed_inline_credits
+            .fixed_credits
             .is_some_and(|profile| count > profile.max_peers)
         {
             return Err(AdmissionError::ReplicaCapacity);
@@ -1357,13 +1468,18 @@ impl<G: GameRules> Authority<G> {
             }
         }
         let credit = self
-            .fixed_inline_credits
+            .fixed_credits
             .map(|profile| {
+                let output_bytes = profile.output_allowance.unwrap_or(0);
+                let combined = profile
+                    .per_input_bytes
+                    .checked_add(output_bytes)
+                    .ok_or(AdmissionError::PublicationCapacity)?;
                 self.snapshot_admission
                     .as_ref()
                     .expect("protected credits have a pool")
                     .pool
-                    .try_reserve(profile.per_input_bytes)
+                    .try_reserve(combined)
                     .map_err(|_| AdmissionError::PublicationCapacity)
             })
             .transpose()?;
@@ -1427,7 +1543,7 @@ impl<G: GameRules> Authority<G> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
         }
-        if self.fixed_inline_credits.is_some() {
+        if self.fixed_credits.is_some() {
             return Err(StepError::Unqualified);
         }
         let mut results = Vec::new();
@@ -1736,7 +1852,7 @@ impl<G: GameRules> Authority<G> {
         };
         for index in 0..self.due_scratch.values.len() {
             let (peer_id, sequence) = self.due_scratch.values[index];
-            let pending = self
+            let mut pending = self
                 .peers
                 .get_mut(&peer_id)
                 .expect("admitted peer")
@@ -1744,15 +1860,42 @@ impl<G: GameRules> Authority<G> {
                 .remove(&sequence)
                 .expect("pending key");
             let origin = pending.input.origin;
+            let mut rule_budget = if let Some(allowance) = self
+                .fixed_credits
+                .and_then(|profile| profile.output_allowance)
+            {
+                let credit = pending
+                    .credit
+                    .take()
+                    .ok_or(StepError::TerminalGameContract)?;
+                if credit.remaining_bytes() != allowance {
+                    return Err(StepError::TerminalGameContract);
+                }
+                RuleBudget::with_payload_credit(credit, allowance)
+            } else {
+                RuleBudget::unqualified()
+            };
             let decision = match pending.timing_error {
                 Some(TimingError::StaleObservation) => Err(ActionRejection::StaleObservation),
                 Some(TimingError::Late) => Err(ActionRejection::Late),
                 Some(TimingError::TooEarly) => Err(ActionRejection::TooEarly),
-                None => self
-                    .rules
-                    .decide(&self.world, pending.input.actor, &pending.input.action)
-                    .map_err(ActionRejection::Game),
+                None => {
+                    let mut context = RuleContext {
+                        budget: &mut rule_budget,
+                    };
+                    self.rules
+                        .decide(
+                            &self.world,
+                            pending.input.actor,
+                            &pending.input.action,
+                            &mut context,
+                        )
+                        .map_err(ActionRejection::Game)
+                }
             };
+            if rule_budget.exceeded {
+                return Err(StepError::TerminalGameContract);
+            }
             if let Err(ActionRejection::Game(reason)) = &decision
                 && self.snapshot_admission.as_ref().is_some_and(|admission| {
                     admission.closed.as_ref().is_some_and(|gates| {
@@ -1765,8 +1908,17 @@ impl<G: GameRules> Authority<G> {
             }
             let (disposition, event_id, retained_event) = match decision {
                 Ok(change) => {
-                    let prepared = self.rules.prepare(&self.world, change);
-                    if self.fixed_inline_credits.is_some() && !prepared.edits.is_inline() {
+                    let prepared = self.rules.prepare(
+                        &self.world,
+                        change,
+                        &mut RuleContext {
+                            budget: &mut rule_budget,
+                        },
+                    );
+                    if rule_budget.exceeded {
+                        return Err(StepError::TerminalGameContract);
+                    }
+                    if self.fixed_credits.is_some() && !prepared.edits.is_inline() {
                         return Err(StepError::TerminalGameContract);
                     }
                     if self.snapshot_admission.as_ref().is_some_and(|admission| {
@@ -1888,6 +2040,162 @@ impl<G: GameRules> Authority<G> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rule_payload_allowance_counts_zero_length_owners_without_refunding() {
+        let owner_bytes = PublicationBytes::required_charge(0).unwrap();
+        let pool = PublicationPool::new(owner_bytes * 2);
+        let reservation = pool.try_reserve(owner_bytes * 2).unwrap();
+        let mut budget = RuleBudget::with_payload_credit(reservation, owner_bytes * 2);
+        let occupied = {
+            let mut context = RuleContext {
+                budget: &mut budget,
+            };
+            let first = context.try_copy_payload(&[]).unwrap();
+            drop(first);
+            let occupied = pool.try_reserve(owner_bytes).unwrap();
+            let second = context.try_copy_payload(&[]).unwrap();
+            assert_eq!(context.try_copy_payload(&[]), Err(RulePayloadError::Limit));
+            drop(second);
+            occupied
+        };
+        assert!(budget.exceeded);
+        drop(budget);
+        drop(occupied);
+        assert_eq!(pool.used_bytes(), 0);
+        let mut unqualified = RuleBudget::unqualified();
+        assert_eq!(
+            RuleContext {
+                budget: &mut unqualified
+            }
+            .try_copy_payload(&[]),
+            Err(RulePayloadError::Unqualified)
+        );
+    }
+
+    #[test]
+    fn swapping_callback_views_cannot_erase_an_exceeded_budget() {
+        let pool = PublicationPool::new(0);
+        let mut protected = RuleBudget::with_payload_credit(pool.try_reserve(0).unwrap(), 0);
+        let mut ordinary = RuleBudget::unqualified();
+        {
+            let mut protected_view = RuleContext {
+                budget: &mut protected,
+            };
+            let mut ordinary_view = RuleContext {
+                budget: &mut ordinary,
+            };
+            assert_eq!(
+                protected_view.try_copy_payload(&[]),
+                Err(RulePayloadError::Limit)
+            );
+            std::mem::swap(&mut protected_view, &mut ordinary_view);
+        }
+        assert!(protected.exceeded);
+        assert!(!ordinary.exceeded);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn combined_input_credit_refusal_preserves_sequence_for_retry() {
+        use crate::{MatchId, PublicationRecord, WorldEpoch};
+
+        struct RejectWithPayload(PublicationPool);
+        impl GameRules for RejectWithPayload {
+            type Entity = u8;
+            type Action = u8;
+            type Change = ();
+            type Rejection = PublicationRecord<0, 1>;
+            type Event = ();
+
+            fn decide(
+                &self,
+                _world: &World<u8>,
+                _actor: ActorId,
+                _action: &u8,
+                context: &mut RuleContext<'_>,
+            ) -> Result<(), Self::Rejection> {
+                let payload = context.try_copy_payload(&[1; 8]).unwrap();
+                Err(PublicationRecord::try_new(&self.0, [], [Some(payload)]).unwrap())
+            }
+
+            fn prepare(
+                &self,
+                _world: &World<u8>,
+                _change: (),
+                _context: &mut RuleContext<'_>,
+            ) -> PreparedCommit<u8, ()> {
+                unreachable!()
+            }
+        }
+
+        let pool = PublicationPool::new(1_000_000);
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(261)),
+            RejectWithPayload(pool.clone()),
+            World::new(WorldEpoch(261)),
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 0,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 1,
+                    max_payload_bytes: 8,
+                },
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let allowance = PublicationBytes::required_charge(8).unwrap();
+        authority.enable_fixed_output_credits(1, allowance).unwrap();
+        authority
+            .peers
+            .get_mut(&PeerId(1))
+            .unwrap()
+            .try_grow_completed(1, Some(&pool))
+            .unwrap();
+        let snapshot_credit = authority.fixed_credits.unwrap().per_input_bytes;
+        let available = snapshot_credit + allowance - 1;
+        let before = pool.used_bytes();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - before - available)
+            .unwrap();
+        let input = Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: 1,
+        };
+        assert_eq!(
+            authority.submit(input.clone()),
+            Err(AdmissionError::PublicationCapacity)
+        );
+        assert_eq!(pool.used_bytes(), pool.limit_bytes() - available);
+        assert_eq!(authority.peers.get(&PeerId(1)).unwrap().next_sequence, 1);
+        drop(occupied);
+        assert_eq!(authority.submit(input).unwrap(), Admission::Queued);
+        let tick = authority.step_charged().unwrap();
+        assert_eq!(tick.group.results().len(), 1);
+        drop(tick);
+        authority.acknowledge_results(PeerId(1), 1).unwrap();
+        drop(authority);
+        assert_eq!(pool.used_bytes(), 0);
+    }
 
     #[test]
     fn completed_window_closes_full_out_of_order_gap() {

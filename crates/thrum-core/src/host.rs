@@ -655,6 +655,40 @@ impl<G: GameRules> HeadlessHost<G> {
         )
     }
 
+    /// Construct a fixed-slot host with a separate cumulative payload
+    /// allowance for each accepted action's rule callbacks. Rules must create
+    /// new retained payloads through `RuleContext`; direct pool allocation
+    /// during a callback violates the accepted-input progress contract.
+    pub fn with_protected_output_replica(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        mut authority: Authority<G>,
+        pool: &PublicationPool,
+        max_objects: usize,
+        max_peers: usize,
+        output_payload_bytes_per_action: usize,
+    ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        authority
+            .enable_fixed_output_credits(max_peers, output_payload_bytes_per_action)
+            .map_err(HostError::ExecutionCreditSetup)?;
+        Self::with_charged_replica_with_peer_limit(
+            origin,
+            clock,
+            budget,
+            authority,
+            pool,
+            max_objects,
+            max_peers,
+        )
+    }
+
     fn build(
         origin: Instant,
         clock: ClockConfig,
@@ -1078,11 +1112,22 @@ mod tests {
         type Rejection = ();
         type Event = ();
 
-        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<u8, ()> {
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<u8, ()> {
             Ok(*action)
         }
 
-        fn prepare(&self, _world: &World<u8>, action: u8) -> PreparedCommit<u8, ()> {
+        fn prepare(
+            &self,
+            _world: &World<u8>,
+            action: u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
             assert_eq!(action, 1, "injected second-tick game fault");
             PreparedCommit {
                 edits: PreparedEdits::None,
@@ -1428,11 +1473,17 @@ mod tests {
             _world: &World<u8>,
             _actor: ActorId,
             action: &Self::Action,
+            _context: &mut crate::RuleContext<'_>,
         ) -> Result<u8, ()> {
             Ok(action.payload_owner(0).unwrap().as_slice()[0])
         }
 
-        fn prepare(&self, world: &World<u8>, value: u8) -> PreparedCommit<u8, ()> {
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            value: u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
             PreparedCommit {
                 edits: PreparedEdits::One(WorldEdit::Replace(
                     world.handle_for(StableId(1)).unwrap(),
@@ -1608,11 +1659,22 @@ mod tests {
         type Rejection = ();
         type Event = ();
 
-        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<u8, ()> {
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<u8, ()> {
             Ok(*action)
         }
 
-        fn prepare(&self, world: &World<u8>, change: u8) -> PreparedCommit<u8, ()> {
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            change: u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
             let handle = world.handle_for(StableId(1)).unwrap();
             PreparedCommit {
                 edits: PreparedEdits::One(if change == 0 {
@@ -1729,11 +1791,22 @@ mod tests {
         type Rejection = ();
         type Event = ();
 
-        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<u8, ()> {
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<u8, ()> {
             Ok(*action)
         }
 
-        fn prepare(&self, world: &World<u8>, action: u8) -> PreparedCommit<u8, ()> {
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            action: u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
             PreparedCommit {
                 edits: PreparedEdits::Many(vec![WorldEdit::Replace(
                     world.handle_for(StableId(1)).unwrap(),
@@ -1828,11 +1901,17 @@ mod tests {
             _world: &World<u8>,
             _actor: ActorId,
             action: &StableId,
+            _context: &mut crate::RuleContext<'_>,
         ) -> Result<StableId, ()> {
             Ok(*action)
         }
 
-        fn prepare(&self, world: &World<u8>, id: StableId) -> PreparedCommit<u8, ()> {
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            id: StableId,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
             PreparedCommit {
                 edits: PreparedEdits::One(WorldEdit::Replace(world.handle_for(id).unwrap(), 9)),
                 event: None,
@@ -2283,11 +2362,22 @@ mod tests {
         type Rejection = ();
         type Event = ();
 
-        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<(), ()> {
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<(), ()> {
             if *action == 0 { Err(()) } else { Ok(()) }
         }
 
-        fn prepare(&self, _world: &World<u8>, _change: ()) -> PreparedCommit<u8, ()> {
+        fn prepare(
+            &self,
+            _world: &World<u8>,
+            _change: (),
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
             PreparedCommit {
                 edits: PreparedEdits::One(WorldEdit::Spawn(StableId(2), 2)),
                 event: None,
