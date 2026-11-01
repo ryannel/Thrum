@@ -132,7 +132,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "7aaf317fbdb7d001a474922d25598ea7d9f10d2e447c9a6fa249df46c1d29aff",
+      "current_design_sha256": "dc62a4ceb8c4346d733f9d792050b599a8b418755dac9e529f3679e4038f5135",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -2711,7 +2711,7 @@
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "8f33be4e88119ec48eeee6cb23576ccc03f92b5764633be52fce3a0781835c1f",
       "modules/NETWORKING.md": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
-      "modules/PLATFORM-RUNTIME.md": "7aaf317fbdb7d001a474922d25598ea7d9f10d2e447c9a6fa249df46c1d29aff",
+      "modules/PLATFORM-RUNTIME.md": "dc62a4ceb8c4346d733f9d792050b599a8b418755dac9e529f3679e4038f5135",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
       "modules/TOOLS-DELIVERY.md": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
@@ -2901,8 +2901,16 @@
       "functional_validation": "passed_local_atomic_compressed_pause_surface_epoch_touch_and_real_clock_drain_tests_only",
       "platform_performance": "not_run",
       "performance_measurement": "local_apple_silicon_release_mode_atomic_reconcile_touch_pair_kernel_only",
-      "scope": "A separate allocation-free mobile-shell crate provides a finite touch table, surface generation, explicit pause handshake and Android atomic Activity pause generation. Tests drive compressed pause/resume, duplicate/cancelled/stale gestures, capacity and the real portable clock. No GameActivity/JNI bridge, winit event loop, HeadlessHost publication/acknowledgement, app package, device run or process-memory qualification exists yet.",
+      "scope": "A separate allocation-free mobile-shell gate provides a finite touch table, surface generation, explicit pause handshake and Android atomic Activity pause generation. Tests drive compressed pause/resume, duplicate/cancelled/stale gestures, capacity and the real portable clock. The gate itself has no GameActivity/JNI bridge, winit event loop, app package, device run or process-memory qualification; local host receipts are recorded separately.",
       "evidence": "../evidence/i1-headless/MOBILE-LIFECYCLE-GATE.md"
+    },
+    "mobile_local_receipts": {
+      "implementation": "feature_complete_for_one_peer_local_callback_delivery_helper",
+      "functional_validation": "passed_local_258_result_game_timing_rejection_paused_drain_reordered_report_replay_ack_error_and_terminal_report_tests",
+      "platform_performance": "not_run",
+      "performance_measurement": "local_apple_silicon_release_mode_minimal_rejection_submit_callback_delivery_ack_path_only",
+      "scope": "An infallible one-peer local observer handles consecutive host publications before acknowledgement. Borrowing reports retains clock overload data; snapshot epoch/tick order prevents acknowledging unseen results. Observer unwind or acknowledgement error poisons the cursor; terminal callbacks deliver earlier commits once without acknowledgement. A 258-result prototype in-memory replica test spans the 256 retained-result limit, includes five timing rejections and one paused-drain result. The helper is not an online network receipt path, a packaged app, or a whole-process allocation gate.",
+      "evidence": "../evidence/i1-headless/MOBILE-LOCAL-RECEIPTS.md"
     }
   }
 }
