@@ -263,10 +263,41 @@ fn run_host(count: usize) {
             charged_times.push(elapsed);
         }
     }
+    let protected_pool = PublicationPool::new(usize::MAX);
+    let (mut protected, _) = HeadlessHost::with_protected_inline_replica(
+        origin,
+        ClockConfig::default(),
+        budget,
+        authority(count, &protected_pool, 22),
+        &protected_pool,
+        count,
+        2,
+    )
+    .unwrap();
+    let mut protected_times = Vec::with_capacity(SAMPLES);
+    for sample in 0..WARMUP + SAMPLES {
+        let tick = protected.authority().tick_index();
+        let now = origin + Duration::from_nanos(16_666_667 * (sample as u64 + 1));
+        let start = Instant::now();
+        black_box(protected.submit(input(tick, count)).unwrap());
+        let report = protected.on_callback_charged(now).unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("protected host publication")
+        };
+        let through = admitted.resolved_through()[0].1;
+        drop(report);
+        protected.acknowledge_results(PeerId(1), through).unwrap();
+        let elapsed = start.elapsed().as_nanos();
+        if sample >= WARMUP {
+            protected_times.push(elapsed);
+        }
+    }
     println!(
-        "host_changed_tick/{count}: submit_callback_ack_ns[p50/p95/p99/max] prototype={:?} charged={:?}",
+        "host_changed_tick/{count}: submit_callback_ack_ns[p50/p95/p99/max] prototype={:?} charged={:?} protected={:?}",
         summary(&mut prototype_times),
         summary(&mut charged_times),
+        summary(&mut protected_times),
     );
 }
 

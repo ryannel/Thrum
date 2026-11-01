@@ -13,9 +13,9 @@ use std::{
 use crate::{
     Admission, AdmissionError, AdmittedGroup, Authority, ChargedAdmittedGroup,
     ChargedBaselineError, ChargedReplicaSetupError, ClockConfig, ClockError, ClockReport,
-    ClockState, ClosedPublicationValue, GameRules, Input, PeerId, PublicationCharge,
-    PublicationPool, Replica, ReplicaError, Snapshot, StepError, TickClock, TickPublication,
-    WorldWork, world::MAX_SNAPSHOT_LEASES,
+    ClockState, ClosedPublicationValue, ExecutionCreditSetupError, GameRules, Input, PeerId,
+    PublicationCharge, PublicationPool, Replica, ReplicaError, Snapshot, StepError, TickClock,
+    TickPublication, WorldWork, world::MAX_SNAPSHOT_LEASES,
 };
 
 struct CallbackBufferFloor {
@@ -144,6 +144,8 @@ pub enum HostError {
     ChargedReplicaSetup(ChargedReplicaSetupError),
     /// The shared pool cannot protect the sealed host's finite callback floor.
     ChargedDeliverySetup(crate::PublicationCapacity),
+    /// The requested fixed-slot execution-credit profile is not available.
+    ExecutionCreditSetup(ExecutionCreditSetupError),
     /// Host supplied a timestamp before its origin or the clock rejected it.
     Clock(ClockError),
     /// The authority encountered a terminal game-contract fault. The host
@@ -586,6 +588,37 @@ impl<G: GameRules> HeadlessHost<G> {
                 .map_err(HostError::ChargedDeliverySetup)?,
         );
         Ok((host, initial_outcomes))
+    }
+
+    /// Construct a sealed fixed-slot host whose accepted inputs protect their
+    /// eventual inline snapshot and outcome publication before sequencing.
+    pub fn with_protected_inline_replica(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        mut authority: Authority<G>,
+        pool: &PublicationPool,
+        max_objects: usize,
+        max_peers: usize,
+    ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        authority
+            .enable_fixed_inline_credits(max_peers)
+            .map_err(HostError::ExecutionCreditSetup)?;
+        Self::with_charged_replica_with_peer_limit(
+            origin,
+            clock,
+            budget,
+            authority,
+            pool,
+            max_objects,
+            max_peers,
+        )
     }
 
     fn build(
@@ -1043,6 +1076,19 @@ mod tests {
         PublicationPool,
         Instant,
     ) {
+        charged_host_with_peer_limit(max_ticks_per_call, max_peers, false)
+    }
+
+    fn charged_host_with_peer_limit(
+        max_ticks_per_call: u32,
+        max_peers: usize,
+        protected: bool,
+    ) -> (
+        HeadlessHost<FaultRule>,
+        InitialChargedOutcomes<FaultRule>,
+        PublicationPool,
+        Instant,
+    ) {
         let pool = PublicationPool::new(100_000);
         let mut authority = Authority::try_new_closed_snapshot_charged(
             AuthorityId::Match(MatchId(248)),
@@ -1085,7 +1131,12 @@ mod tests {
             max_queued_ticks: NonZeroU32::new(max_ticks_per_call.max(8)).unwrap(),
             ..ClockConfig::default()
         };
-        let (host, initial) = HeadlessHost::with_charged_replica_with_peer_limit(
+        let constructor = if protected {
+            HeadlessHost::with_protected_inline_replica
+        } else {
+            HeadlessHost::with_charged_replica_with_peer_limit
+        };
+        let (host, initial) = constructor(
             origin,
             clock,
             HostBudget {
@@ -1100,6 +1151,330 @@ mod tests {
         )
         .unwrap();
         (host, initial, pool, origin)
+    }
+
+    #[test]
+    fn protected_future_inputs_publish_under_competing_pool_contention() {
+        let (mut host, initial, pool, origin) = charged_host_with_peer_limit(1, 2, true);
+        let input = |peer, sequence, schedule| Input {
+            origin: Origin {
+                peer: PeerId(peer),
+                connection_epoch: 1,
+                sequence,
+            },
+            actor: ActorId(peer),
+            schedule,
+            action: 1,
+        };
+        let future = input(1, 1, crate::InputSchedule::Timed { intended_tick: 3 });
+        let early = input(1, 2, crate::InputSchedule::NextTick { observed_tick: 0 });
+        let other = input(2, 1, crate::InputSchedule::NextTick { observed_tick: 0 });
+        let rejected = input(2, 2, crate::InputSchedule::Timed { intended_tick: 100 });
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert_eq!(
+            host.submit(future.clone()),
+            Err(HostAdmissionError::Authority(
+                AdmissionError::PublicationCapacity
+            ))
+        );
+        drop(occupied);
+        host.submit(future.clone()).unwrap();
+        let credited = pool.used_bytes();
+        assert_eq!(host.submit(future).unwrap(), Admission::PendingDuplicate);
+        assert_eq!(pool.used_bytes(), credited);
+        host.submit(early).unwrap();
+        host.submit(other).unwrap();
+        host.submit(rejected).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        for (tick, expected) in [(1, 3), (2, 0), (3, 1)] {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            assert_eq!(report.clock.step_error, None);
+            let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+            else {
+                panic!("expected charged publication")
+            };
+            assert_eq!(admitted.results().len(), expected);
+            if tick == 1 {
+                assert_eq!(admitted.resolved_through()[0], (PeerId(1), 0));
+                assert!(admitted.results().iter().any(|result| matches!(
+                    result.disposition,
+                    crate::ResultDisposition::Rejected(crate::ActionRejection::TooEarly)
+                )));
+            }
+            if tick == 3 {
+                assert_eq!(admitted.resolved_through()[0], (PeerId(1), 2));
+            }
+        }
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn protected_credit_survives_snapshot_reader_backpressure() {
+        let (mut host, initial, pool, origin) = charged_host_with_peer_limit(1, 2, true);
+        let mut readers = Vec::new();
+        for tick in 1..=8 {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            let HostPublication::ReplicatedCharged { snapshot, .. } = &report.publications[0]
+            else {
+                panic!("expected charged publication")
+            };
+            readers.push(snapshot.clone());
+        }
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 8 },
+            action: 1,
+        })
+        .unwrap();
+        let credited = pool.used_bytes();
+        let occupied = pool.try_reserve(pool.limit_bytes() - credited).unwrap();
+        let blocked = host
+            .on_callback_charged(origin + Duration::from_millis(153))
+            .unwrap();
+        assert_eq!(blocked.clock.completed, 0);
+        assert_eq!(
+            blocked.clock.step_error,
+            Some(StepError::SnapshotBackpressure)
+        );
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
+        drop(readers.swap_remove(0));
+        let retried = host
+            .on_callback_charged(origin + Duration::from_millis(153))
+            .unwrap();
+        assert_eq!(retried.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &retried.publications[0] else {
+            panic!("expected charged publication")
+        };
+        assert_eq!(admitted.results().len(), 1);
+        drop(retried);
+        drop(blocked);
+        drop(readers);
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn protected_pending_credit_survives_a_later_peer_join() {
+        let (mut host, initial, pool, origin) = charged_host_with_peer_limit(1, 3, true);
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::Timed { intended_tick: 2 },
+            action: 1,
+        })
+        .unwrap();
+        host.register_peer(PeerId(3), 1, ActorId(3)).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        for tick in 1..=2 {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+            else {
+                panic!("expected charged publication")
+            };
+            assert_eq!(admitted.resolved_through().len(), 3);
+            assert_eq!(admitted.results().len(), usize::from(tick == 2));
+        }
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn protected_profile_refuses_uncredited_pending_and_unsupported_bounds() {
+        let pool = PublicationPool::new(100_000);
+        let make = |bounds, payload_slots| {
+            let inline = |bytes| ClosedValueLimits {
+                max_inline_bytes: bytes,
+                max_payload_slots: payload_slots,
+                max_payload_bytes: 0,
+            };
+            let mut authority = Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(250)),
+                FaultRule,
+                World::new(WorldEpoch(250)),
+                pool.clone(),
+                bounds,
+                ClosedGameLimits {
+                    action: inline(1),
+                    entity: inline(1),
+                    event: inline(0),
+                    rejection: inline(0),
+                },
+            )
+            .unwrap();
+            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+            authority
+        };
+        let fixed = SnapshotWriteBounds {
+            max_edits_per_action: 0,
+            max_spawns_per_action: 0,
+        };
+        let mut pending = make(fixed, 0);
+        pending
+            .submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 1,
+                    sequence: 1,
+                },
+                actor: ActorId(1),
+                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                action: 1,
+            })
+            .unwrap();
+        assert_eq!(
+            pending.enable_fixed_inline_credits(1),
+            Err(ExecutionCreditSetupError::PendingInputs)
+        );
+        assert_eq!(
+            make(fixed, 0).enable_fixed_inline_credits(0),
+            Err(ExecutionCreditSetupError::PeerCapacity)
+        );
+        assert_eq!(
+            make(
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 1,
+                },
+                0,
+            )
+            .enable_fixed_inline_credits(1),
+            Err(ExecutionCreditSetupError::UnsupportedEdits)
+        );
+        assert_eq!(
+            make(fixed, 1).enable_fixed_inline_credits(1),
+            Err(ExecutionCreditSetupError::VariablePayloads)
+        );
+        drop(pending);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    struct InlineUpdateRule;
+
+    impl GameRules for InlineUpdateRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = u8;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<u8, ()> {
+            Ok(*action)
+        }
+
+        fn prepare(&self, world: &World<u8>, change: u8) -> PreparedCommit<u8, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    world.handle_for(StableId(1)).unwrap(),
+                    change,
+                )),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn protected_credit_covers_dirty_snapshot_page_and_change_column() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(249));
+        world.spawn(StableId(1), 1_u8).unwrap();
+        let handle = world.handle_for(StableId(1)).unwrap();
+        let inline = |max_inline_bytes| ClosedValueLimits {
+            max_inline_bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(249)),
+            InlineUpdateRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_inline_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            1,
+            1,
+        )
+        .unwrap();
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            action: 7,
+        })
+        .unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { snapshot, .. } = &report.publications[0] else {
+            panic!("expected charged publication")
+        };
+        assert_eq!(snapshot.get(handle).unwrap().state, 7);
+        assert_eq!(*host.replica().unwrap().get(StableId(1)).unwrap(), 7);
+        drop(report);
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
     }
 
     #[test]

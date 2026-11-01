@@ -142,6 +142,23 @@ pub enum ChargedBaselineError {
     /// The shared pool cannot reserve the complete baseline column owners.
     Capacity,
 }
+
+/// A sealed authority cannot activate protected fixed-slot execution credits.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExecutionCreditSetupError {
+    /// The authority has no closed, charged output profile.
+    Unqualified,
+    /// Pending inputs already exist without protected credits.
+    PendingInputs,
+    /// This first credit profile excludes structural growth or large batches.
+    UnsupportedEdits,
+    /// Tick-created variable payloads need a credit-aware rule context.
+    VariablePayloads,
+    /// Existing peers exceed the declared maximum.
+    PeerCapacity,
+    /// Checked layout or aggregate credit arithmetic exceeded a finite bound.
+    Capacity,
+}
 /// Submission status; success here is never gameplay commitment.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Admission<R> {
@@ -286,6 +303,13 @@ struct Pending<A> {
     input: Input<A>,
     due_tick: u64,
     timing_error: Option<TimingError>,
+    credit: Option<PublicationReservation>,
+}
+
+#[derive(Clone, Copy)]
+struct FixedInlineCreditProfile {
+    per_input_bytes: usize,
+    max_peers: usize,
 }
 
 struct PendingQueue<A> {
@@ -366,6 +390,13 @@ impl<A> PendingQueue<A> {
             .binary_search_by_key(sequence, |(key, _)| *key)
             .ok()
             .map(|index| &self.values[index].1)
+    }
+
+    fn get_mut(&mut self, sequence: &u64) -> Option<&mut Pending<A>> {
+        self.values
+            .binary_search_by_key(sequence, |(key, _)| *key)
+            .ok()
+            .map(|index| &mut self.values[index].1)
     }
 
     fn insert(&mut self, sequence: u64, pending: Pending<A>) {
@@ -672,6 +703,7 @@ pub struct Authority<G: GameRules> {
     cached_watermarks: Option<PublicationColumn<(PeerId, u64)>>,
     snapshot_leases: SnapshotLeaseDirectory,
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
+    fixed_inline_credits: Option<FixedInlineCreditProfile>,
     faulted: bool,
 }
 
@@ -816,6 +848,7 @@ impl<G: GameRules> Authority<G> {
             cached_watermarks: None,
             snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
             snapshot_admission,
+            fixed_inline_credits: None,
             faulted: false,
         }
     }
@@ -843,6 +876,9 @@ impl<G: GameRules> Authority<G> {
         due: usize,
         charged_group: bool,
     ) -> Result<Option<PublicationReservation>, StepError> {
+        if self.fixed_inline_credits.is_some() && !charged_group {
+            return Err(StepError::Unqualified);
+        }
         let Some(admission) = &self.snapshot_admission else {
             return Ok(None);
         };
@@ -865,33 +901,12 @@ impl<G: GameRules> Authority<G> {
             }
         };
         let group_peak = if charged_group {
-            let changes = self
-                .world
-                .conservative_change_count(max_edits)
-                .and_then(PublicationColumn::<EntityChange<G::Entity>>::required_charge);
-            let peak = changes.and_then(|changes| {
-                changes
-                    .checked_add(
-                        PublicationColumn::<ActionResult<G::Rejection>>::required_charge(due)?,
-                    )
-                    .and_then(|bytes| {
-                        bytes.checked_add(
-                            PublicationColumn::<CommittedEvent<G::Event>>::required_charge(due)
-                                .ok()?,
-                        )
-                    })
-                    .and_then(|bytes| {
-                        let watermarks = if due == 0 && self.cached_watermarks.is_some() {
-                            0
-                        } else {
-                            PublicationColumn::<(PeerId, u64)>::required_charge(self.peers.len())
-                                .ok()?
-                        };
-                        bytes.checked_add(watermarks)
-                    })
-                    .ok_or(PublicationCapacity)
-            });
-            match peak {
+            match self.charged_group_peak(
+                due,
+                max_edits,
+                self.peers.len(),
+                due == 0 && self.cached_watermarks.is_some(),
+            ) {
                 Ok(peak) => peak,
                 Err(_) => {
                     self.faulted = true;
@@ -905,6 +920,46 @@ impl<G: GameRules> Authority<G> {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
         };
+        if self.fixed_inline_credits.is_some() && due != 0 {
+            let mut protected = 0_usize;
+            for (peer_id, sequence) in &self.due_scratch.values {
+                let Some(credit) = self
+                    .peers
+                    .get(peer_id)
+                    .and_then(|peer| peer.pending.get(sequence))
+                    .and_then(|pending| pending.credit.as_ref())
+                else {
+                    self.faulted = true;
+                    return Err(StepError::TerminalGameContract);
+                };
+                let Some(next) = protected.checked_add(credit.remaining_bytes()) else {
+                    self.faulted = true;
+                    return Err(StepError::TerminalGameContract);
+                };
+                protected = next;
+            }
+            if protected < peak {
+                self.faulted = true;
+                return Err(StepError::TerminalGameContract);
+            }
+            let mut due_reservation = admission
+                .pool
+                .try_reserve(0)
+                .expect("zero-byte reservation");
+            for (peer_id, sequence) in &self.due_scratch.values {
+                let credit = self
+                    .peers
+                    .get_mut(peer_id)
+                    .and_then(|peer| peer.pending.get_mut(sequence))
+                    .and_then(|pending| pending.credit.as_mut())
+                    .expect("validated due credit");
+                let bytes = credit.remaining_bytes();
+                credit
+                    .transfer_to(&mut due_reservation, bytes)
+                    .expect("same-pool checked credit transfer");
+            }
+            return Ok(Some(due_reservation));
+        }
         admission
             .pool
             .try_reserve(peak)
@@ -918,6 +973,101 @@ impl<G: GameRules> Authority<G> {
 
     pub(crate) fn has_peer(&self, id: PeerId) -> bool {
         self.peers.get(&id).is_some()
+    }
+
+    fn charged_group_peak(
+        &self,
+        due: usize,
+        max_edits: usize,
+        peer_count: usize,
+        reuse_watermarks: bool,
+    ) -> Result<usize, PublicationCapacity> {
+        let changes = self.world.conservative_change_count(max_edits)?;
+        let change_bytes = PublicationColumn::<EntityChange<G::Entity>>::required_charge(changes)?;
+        let result_bytes = PublicationColumn::<ActionResult<G::Rejection>>::required_charge(due)?;
+        let event_bytes = PublicationColumn::<CommittedEvent<G::Event>>::required_charge(due)?;
+        let watermark_bytes = if reuse_watermarks {
+            0
+        } else {
+            PublicationColumn::<(PeerId, u64)>::required_charge(peer_count)?
+        };
+        change_bytes
+            .checked_add(result_bytes)
+            .and_then(|bytes| bytes.checked_add(event_bytes))
+            .and_then(|bytes| bytes.checked_add(watermark_bytes))
+            .ok_or(PublicationCapacity)
+    }
+
+    /// Activate a narrow fixed-slot, inline-output execution-credit profile.
+    /// The host must keep peer membership within `max_peers` after activation.
+    pub(crate) fn enable_fixed_inline_credits(
+        &mut self,
+        max_peers: usize,
+    ) -> Result<(), ExecutionCreditSetupError> {
+        let admission = self
+            .snapshot_admission
+            .as_ref()
+            .filter(|admission| admission.closed.is_some())
+            .ok_or(ExecutionCreditSetupError::Unqualified)?;
+        if self.peers.values().any(|peer| peer.pending.len() != 0) {
+            return Err(ExecutionCreditSetupError::PendingInputs);
+        }
+        if self.peers.len() > max_peers {
+            return Err(ExecutionCreditSetupError::PeerCapacity);
+        }
+        if admission.bounds.max_spawns_per_action != 0 || admission.bounds.max_edits_per_action > 2
+        {
+            return Err(ExecutionCreditSetupError::UnsupportedEdits);
+        }
+        let closed = admission.closed.as_ref().expect("closed profile checked");
+        if [
+            closed.action.limits,
+            closed.entity.limits,
+            closed.event.limits,
+            closed.rejection.limits,
+        ]
+        .iter()
+        .any(|limits| limits.max_payload_slots != 0 || limits.max_payload_bytes != 0)
+        {
+            return Err(ExecutionCreditSetupError::VariablePayloads);
+        }
+        let max_due = max_peers
+            .checked_mul(MAX_PENDING)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let max_edits = max_due
+            .checked_mul(admission.bounds.max_edits_per_action)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let one_snapshot = self
+            .world
+            .conservative_charged_publication_peak(admission.bounds.max_edits_per_action, 0)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let one_group = self
+            .charged_group_peak(1, admission.bounds.max_edits_per_action, max_peers, false)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let per_input_bytes = one_snapshot
+            .checked_add(one_group)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        let aggregate_snapshot = self
+            .world
+            .conservative_charged_publication_peak(max_edits, 0)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let aggregate_group = self
+            .charged_group_peak(max_due, max_edits, max_peers, false)
+            .map_err(|_| ExecutionCreditSetupError::Capacity)?;
+        let aggregate = aggregate_snapshot
+            .checked_add(aggregate_group)
+            .ok_or(ExecutionCreditSetupError::Capacity)?;
+        if max_due
+            .checked_mul(per_input_bytes)
+            .is_none_or(|credit| credit < aggregate)
+        {
+            return Err(ExecutionCreditSetupError::Capacity);
+        }
+        self.fixed_inline_credits = Some(FixedInlineCreditProfile {
+            per_input_bytes,
+            max_peers,
+        });
+        Ok(())
     }
 
     /// Register or reconnect one controlled actor. Reconnect requires a newer
@@ -995,6 +1145,12 @@ impl<G: GameRules> Authority<G> {
             .len()
             .checked_add(1)
             .ok_or(AdmissionError::PublicationCapacity)?;
+        if self
+            .fixed_inline_credits
+            .is_some_and(|profile| count > profile.max_peers)
+        {
+            return Err(AdmissionError::ReplicaCapacity);
+        }
         let bytes = PublicationColumn::<(PeerId, u64)>::required_charge(count)
             .map_err(|_| AdmissionError::PublicationCapacity)?;
         let mut reservation = admission
@@ -1196,6 +1352,17 @@ impl<G: GameRules> Authority<G> {
                 }
             }
         }
+        let credit = self
+            .fixed_inline_credits
+            .map(|profile| {
+                self.snapshot_admission
+                    .as_ref()
+                    .expect("protected credits have a pool")
+                    .pool
+                    .try_reserve(profile.per_input_bytes)
+                    .map_err(|_| AdmissionError::PublicationCapacity)
+            })
+            .transpose()?;
         let peer = self
             .peers
             .get_mut(&input.origin.peer)
@@ -1213,6 +1380,7 @@ impl<G: GameRules> Authority<G> {
                 input,
                 due_tick,
                 timing_error,
+                credit,
             },
         );
         peer.next_sequence = peer
