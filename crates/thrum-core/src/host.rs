@@ -1393,11 +1393,13 @@ mod tests {
         }
 
         fn prepare(&self, world: &World<u8>, change: u8) -> PreparedCommit<u8, ()> {
+            let handle = world.handle_for(StableId(1)).unwrap();
             PreparedCommit {
-                edits: PreparedEdits::One(WorldEdit::Replace(
-                    world.handle_for(StableId(1)).unwrap(),
-                    change,
-                )),
+                edits: PreparedEdits::One(if change == 0 {
+                    WorldEdit::Despawn(handle)
+                } else {
+                    WorldEdit::Replace(handle, change)
+                }),
                 event: None,
             }
         }
@@ -1470,6 +1472,27 @@ mod tests {
         };
         assert_eq!(snapshot.get(handle).unwrap().state, 7);
         assert_eq!(*host.replica().unwrap().get(StableId(1)).unwrap(), 7);
+        drop(report);
+        drop(occupied);
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 2,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 1 },
+            action: 0,
+        })
+        .unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(34))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        assert!(host.replica().unwrap().get(StableId(1)).is_none());
         drop(report);
         drop(occupied);
         drop(initial);
