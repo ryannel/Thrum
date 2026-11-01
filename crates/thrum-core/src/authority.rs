@@ -1748,7 +1748,9 @@ impl<G: GameRules> Authority<G> {
             events,
             resolved_through,
         } = tick.group;
-        let changes_limit = changes.len();
+        // Neutral structural journal entries can leave spare requested slots
+        // in this vector; its retained allocation follows the column owner.
+        let changes_limit = changes.capacity();
         let results_limit = results.len();
         // Events requested one slot per due input before any rule callback.
         let events_limit = results.len();

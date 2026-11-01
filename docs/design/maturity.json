@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "a1cf7e690d571dcf6b0a2ed05728a55baabda1ba30aa2d83afa0c883c26c980e",
+    "design_sha256": "4f1a2745f93f6c9e0179fd01706356ceb81a8b991df7e39dec1a331f97c44113",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2860,11 +2860,11 @@
       },
       "bounded_structural_growth": {
         "design": "selected_finite_slot_and_live_caps_per_action_spawn_bound_id_keyed_journal_and_atomic_pending_credit_horizon",
-        "implementation": "not_started",
-        "functional_validation": "not_run",
-        "performance_measurement": "not_run",
-        "scope": "A proposed extension of the selected fixed-slot host; no structural runtime path is qualified yet.",
-        "evidence": "../evidence/i1-headless/STRUCTURAL-GROWTH-DESIGN.md"
+        "implementation": "partial_precharged_world_owners_and_id_keyed_journal_only",
+        "functional_validation": "world_only_local_tests_passed_authority_and_host_not_run",
+        "performance_measurement": "local_apple_silicon_world_only_one_change_fixture",
+        "scope": "A proposed extension of the selected fixed-slot host. Precharged structural world owners, generation retirement, same-barrier identity and cancellation are locally proved. Per-action admission, accepted-input credit upgrades, required replica and complete host path are not qualified.",
+        "evidence": "../evidence/i1-headless/STRUCTURAL-WORLD-STORAGE.md"
       },
       "fixed_slot_owner_byte_gate": {
         "profile": "closed_bounded_variable_outputs_precharged_variable_actions_inline_edits_no_spawns_finite_peers_and_readers",
