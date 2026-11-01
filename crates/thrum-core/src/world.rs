@@ -87,6 +87,18 @@ pub enum PreparedEdits<T> {
 }
 
 impl<T> PreparedEdits<T> {
+    pub(crate) fn states_satisfy(&self, predicate: impl Fn(&T) -> bool) -> bool {
+        let valid = |edit: &WorldEdit<T>| match edit {
+            WorldEdit::Spawn(_, state) | WorldEdit::Replace(_, state) => predicate(state),
+            WorldEdit::Despawn(_) | WorldEdit::DespawnNew(_) => true,
+        };
+        match self {
+            Self::None => true,
+            Self::One(edit) => valid(edit),
+            Self::Two(first, second) => valid(first) && valid(second),
+            Self::Many(edits) => edits.iter().all(valid),
+        }
+    }
     /// Number of edits the authority must admit and apply.
     pub fn len(&self) -> usize {
         match self {
@@ -354,6 +366,12 @@ pub struct WorldPublication<T> {
 }
 
 impl<T: Clone> World<T> {
+    pub(crate) fn states_satisfy(&self, predicate: impl Fn(&T) -> bool) -> bool {
+        self.slots
+            .iter()
+            .filter_map(|slot| slot.entry.as_ref())
+            .all(|record| predicate(&record.state))
+    }
     /// Construct an empty world with a fresh host-supplied epoch.
     pub fn new(epoch: WorldEpoch) -> Self {
         Self {

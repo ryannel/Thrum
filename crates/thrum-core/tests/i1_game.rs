@@ -7,7 +7,7 @@ use thrum_core::{
     InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes,
     PublicationPool, PublicationRecord, Replica, ReplicaError, ResultDisposition, SessionId,
     SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch,
-    WorldError,
+    WorldError, WorldPublicationError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -914,7 +914,7 @@ fn closed_record_payload_survives_snapshot_and_replica_until_final_owner() {
     let state = Record::try_new(&pool, 4_u64.to_le_bytes(), [Some(payload.clone())]).unwrap();
     let mut world = World::new(WorldEpoch(205));
     world.spawn(StableId(1), state).unwrap();
-    let mut authority = Authority::try_new_snapshot_charged(
+    let mut authority = Authority::try_new_closed_snapshot_charged(
         AuthorityId::Match(MatchId(204)),
         RecordRule { pool: pool.clone() },
         world,
@@ -968,6 +968,122 @@ fn closed_record_payload_survives_snapshot_and_replica_until_final_owner() {
     assert_eq!(pool.used_bytes(), payload_charge);
     drop(replica);
     assert_eq!(pool.used_bytes(), 0);
+}
+
+#[test]
+fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
+    type Record = PublicationRecord<8, 1>;
+
+    struct ForeignEditRule {
+        foreign: PublicationPool,
+    }
+    impl GameRules for ForeignEditRule {
+        type Entity = Record;
+        type Action = StableId;
+        type Change = Handle;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(
+            &self,
+            world: &World<Record>,
+            _actor: ActorId,
+            action: &StableId,
+        ) -> Result<Handle, ()> {
+            world.handle_for(*action).ok_or(())
+        }
+
+        fn prepare(&self, _world: &World<Record>, handle: Handle) -> PreparedCommit<Record, ()> {
+            let foreign_payload =
+                PublicationBytes::try_copy_from_slice(&self.foreign, &[9; 32]).unwrap();
+            PreparedCommit {
+                edits: PreparedEdits::Two(
+                    WorldEdit::Replace(
+                        handle,
+                        Record::try_new(&self.foreign, 2_u64.to_le_bytes(), [None]).unwrap(),
+                    ),
+                    WorldEdit::Spawn(
+                        StableId(2),
+                        Record::try_new(
+                            &self.foreign,
+                            3_u64.to_le_bytes(),
+                            [Some(foreign_payload)],
+                        )
+                        .unwrap(),
+                    ),
+                ),
+                event: None,
+            }
+        }
+    }
+
+    let pool = PublicationPool::new(100_000);
+    let foreign = PublicationPool::new(100_000);
+    let foreign_payload = PublicationBytes::try_copy_from_slice(&foreign, &[7; 32]).unwrap();
+    let foreign_record =
+        Record::try_new(&foreign, 1_u64.to_le_bytes(), [Some(foreign_payload)]).unwrap();
+    let mut wrong_world = World::new(WorldEpoch(207));
+    wrong_world.spawn(StableId(1), foreign_record).unwrap();
+    let bounds = SnapshotWriteBounds {
+        max_edits_per_action: 2,
+        max_spawns_per_action: 1,
+    };
+    assert!(matches!(
+        Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(206)),
+            ForeignEditRule {
+                foreign: foreign.clone(),
+            },
+            wrong_world,
+            pool.clone(),
+            bounds,
+        ),
+        Err(WorldPublicationError::WrongPool)
+    ));
+    assert_eq!(pool.used_bytes(), 0);
+
+    let mut world = World::new(WorldEpoch(208));
+    let initial = Record::try_new(&pool, 1_u64.to_le_bytes(), [None]).unwrap();
+    let handle = world.spawn(StableId(1), initial).unwrap();
+    let mut authority = Authority::try_new_closed_snapshot_charged(
+        AuthorityId::Match(MatchId(208)),
+        ForeignEditRule { foreign },
+        world,
+        pool,
+        bounds,
+    )
+    .unwrap();
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority
+        .submit(Input {
+            origin: Origin {
+                peer: PEER,
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: StableId(1),
+        })
+        .unwrap();
+    assert!(matches!(
+        authority.step(),
+        Err(StepError::TerminalGameContract)
+    ));
+    assert_eq!(authority.tick_index(), 0);
+    assert_eq!(
+        u64::from_le_bytes(*authority.snapshot().get(handle).unwrap().state.inline()),
+        1
+    );
+    assert_eq!(
+        u64::from_le_bytes(*authority.world().get(handle).unwrap().state.inline()),
+        1
+    );
+    assert!(authority.world().handle_for(StableId(2)).is_none());
+    assert!(matches!(
+        authority.step(),
+        Err(StepError::TerminalGameContract)
+    ));
 }
 
 fn peer_input(

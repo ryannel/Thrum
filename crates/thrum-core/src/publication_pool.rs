@@ -60,6 +60,18 @@ pub struct PublicationRecord<const INLINE: usize, const BLOBS: usize> {
     blobs: [Option<PublicationBytes>; BLOBS],
 }
 
+mod sealed {
+    pub trait ClosedValue {}
+}
+
+/// Engine-owned state that can be checked before charged authority admission.
+/// This boundary is sealed so a game type cannot claim an unchecked owner is
+/// charged. It does not by itself establish a finite whole-tick profile.
+pub trait ClosedPublicationValue: Clone + sealed::ClosedValue {
+    /// Whether every retained payload owner belongs to this process pool.
+    fn belongs_to_pool(&self, pool: &PublicationPool) -> bool;
+}
+
 /// A record attempted to retain a payload from another publication pool.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PublicationRecordError {
@@ -109,6 +121,19 @@ impl<const INLINE: usize, const BLOBS: usize> Clone for PublicationRecord<INLINE
             inline: self.inline,
             blobs: self.blobs.clone(),
         }
+    }
+}
+
+impl<const INLINE: usize, const BLOBS: usize> sealed::ClosedValue
+    for PublicationRecord<INLINE, BLOBS>
+{
+}
+
+impl<const INLINE: usize, const BLOBS: usize> ClosedPublicationValue
+    for PublicationRecord<INLINE, BLOBS>
+{
+    fn belongs_to_pool(&self, pool: &PublicationPool) -> bool {
+        self.belongs_to(pool)
     }
 }
 
