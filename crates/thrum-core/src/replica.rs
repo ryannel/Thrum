@@ -659,17 +659,27 @@ impl<T> Replica<T> {
                     index.remove(*id).expect("validated despawn");
                 }
             }
-            for change in changes.as_slice() {
-                match change {
-                    EntityChange::Spawn(record) => index
-                        .insert_new(record.id, record.state.clone())
-                        .expect("validated precharged spawn"),
-                    EntityChange::Update(record) => {
-                        index
-                            .replace(record.id, record.state.clone())
-                            .expect("validated update");
+            let mut admit = |change: EntityChange<T>| match change {
+                EntityChange::Spawn(record) => index
+                    .insert_new(record.id, record.state)
+                    .expect("validated precharged spawn"),
+                EntityChange::Update(record) => {
+                    index
+                        .replace(record.id, record.state)
+                        .expect("validated update");
+                }
+                EntityChange::Despawn(_) => {}
+            };
+            match changes.try_into_unique_iter() {
+                Ok(values) => {
+                    for change in values {
+                        admit(change);
                     }
-                    EntityChange::Despawn(_) => {}
+                }
+                Err(shared) => {
+                    for change in shared.as_slice().iter().cloned() {
+                        admit(change);
+                    }
                 }
             }
         }

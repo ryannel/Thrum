@@ -73,6 +73,28 @@ pub(crate) struct PublicationColumn<T> {
     inner: Option<Arc<ColumnStorage<T>>>,
 }
 
+/// A uniquely owned column keeps its buffer charge until iteration and any
+/// unconsumed values are dropped. Moved records need a separately admitted
+/// destination, while their immutable payload handles retain their own charge.
+pub(crate) struct ChargedColumnIntoIter<T> {
+    values: std::vec::IntoIter<T>,
+    _charge: Option<PublicationCharge>,
+}
+
+impl<T> Iterator for ChargedColumnIntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.values.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.values.size_hint()
+    }
+}
+
+impl<T> ExactSizeIterator for ChargedColumnIntoIter<T> {}
+
 impl<T> Clone for PublicationColumn<T> {
     fn clone(&self) -> Self {
         Self {
@@ -82,6 +104,24 @@ impl<T> Clone for PublicationColumn<T> {
 }
 
 impl<T> PublicationColumn<T> {
+    pub(crate) fn try_into_unique_iter(self) -> Result<ChargedColumnIntoIter<T>, Self> {
+        let Some(inner) = self.inner else {
+            return Ok(ChargedColumnIntoIter {
+                values: Vec::new().into_iter(),
+                _charge: None,
+            });
+        };
+        match Arc::try_unwrap(inner) {
+            Ok(ColumnStorage {
+                values, _charge, ..
+            }) => Ok(ChargedColumnIntoIter {
+                values: values.into_iter(),
+                _charge: Some(_charge),
+            }),
+            Err(inner) => Err(Self { inner: Some(inner) }),
+        }
+    }
+
     pub(crate) fn belongs_to(&self, pool: &PublicationPool) -> bool {
         self.inner
             .as_ref()
@@ -532,6 +572,29 @@ mod tests {
         drop(second);
         assert_eq!(pool.used_bytes(), 30);
         drop(held);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn unique_column_moves_values_and_holds_charge_through_iterator_drop() {
+        let bytes = PublicationColumn::<u8>::required_charge(2).unwrap();
+        let pool = PublicationPool::new(bytes);
+        let mut reservation = pool.try_reserve(bytes).unwrap();
+        let mut column: PublicationColumn<u8> =
+            PublicationColumn::try_with_capacity(&mut reservation, 2).unwrap();
+        column.push(7);
+        column.push(9);
+        drop(reservation);
+        let shared_reader = column.clone();
+        let column = match column.try_into_unique_iter() {
+            Ok(_) => panic!("shared column must remain shared"),
+            Err(column) => column,
+        };
+        drop(shared_reader);
+        let mut values = column.try_into_unique_iter().ok().unwrap();
+        assert_eq!(values.next(), Some(7));
+        assert_eq!(pool.used_bytes(), bytes);
+        drop(values);
         assert_eq!(pool.used_bytes(), 0);
     }
 
