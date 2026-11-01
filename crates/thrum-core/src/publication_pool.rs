@@ -445,7 +445,18 @@ impl PartialEq for PublicationBytes {
 impl Eq for PublicationBytes {}
 
 impl PublicationPool {
-    /// Construct a logical budget. This is not an OS resident-byte limit.
+    /// Requested bytes for this pool's one shared control allocation,
+    /// including its Arc strong/weak counters. This fixed setup cost is
+    /// outside the usable owner-byte limit reported by `limit_bytes`.
+    pub fn control_allocation_bytes() -> usize {
+        let (layout, _) = Layout::new::<[AtomicUsize; 2]>()
+            .extend(Layout::new::<PoolState>())
+            .expect("fixed pool control layout");
+        layout.pad_to_align().size()
+    }
+
+    /// Construct a logical owner-byte budget. This excludes the pool's one
+    /// fixed control allocation and is not an OS resident-byte limit.
     pub fn new(limit: usize) -> Self {
         Self {
             state: Arc::new(PoolState {
@@ -582,6 +593,21 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn pool_control_cost_is_fixed_outside_usable_owner_bytes() {
+        let pool = PublicationPool::new(0);
+        assert_eq!(
+            PublicationPool::control_allocation_bytes(),
+            size_of::<PoolState>() + 2 * size_of::<AtomicUsize>()
+        );
+        assert!(PublicationPool::control_allocation_bytes() > 0);
+        assert_eq!(pool.limit_bytes(), 0);
+        assert_eq!(pool.used_bytes(), 0);
+        let shared = pool.clone();
+        assert!(shared.same_pool(&pool));
+        assert_eq!(shared.try_reserve(1).err(), Some(PublicationCapacity));
+    }
 
     #[test]
     fn reservations_and_unique_owners_release_exactly_once() {

@@ -123,6 +123,10 @@ pub enum PreparedEdits<T> {
 }
 
 impl<T> PreparedEdits<T> {
+    pub(crate) fn is_inline(&self) -> bool {
+        !matches!(self, Self::Many(_))
+    }
+
     pub(crate) fn validate_states<E>(
         &self,
         validate: impl Fn(&T) -> Result<(), E>,

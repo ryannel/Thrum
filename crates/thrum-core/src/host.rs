@@ -3,7 +3,6 @@
 
 use std::{
     alloc::Layout,
-    collections::BTreeSet,
     ops::Deref,
     panic::{AssertUnwindSafe, catch_unwind},
     sync::{Arc, Weak},
@@ -343,19 +342,51 @@ struct StageSpec {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ScheduleError {
     Duplicate,
+    TooMany,
     MissingDependency,
     BackwardDependency,
     WrongOwner,
     UnorderedConflict,
 }
 
+/// The I1 host has at most two built-in stages. Validation fills this inline
+/// order once; callback traversal never acquires scheduler storage.
+struct StageOrder {
+    values: [Stage; 2],
+    len: usize,
+}
+
+impl StageOrder {
+    fn new() -> Self {
+        Self {
+            values: [Stage::AuthorityStep; 2],
+            len: 0,
+        }
+    }
+
+    fn contains(&self, stage: Stage) -> bool {
+        self.values[..self.len].contains(&stage)
+    }
+
+    fn push(&mut self, stage: Stage) {
+        self.values[self.len] = stage;
+        self.len += 1;
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &Stage> {
+        self.values[..self.len].iter()
+    }
+}
+
 /// Validate access once, then retain only the prepared stage order on the hot
 /// path. The finite I1 registration uses typed resources rather than an
 /// unqualified dynamic schema or a speculative general scheduler.
-fn prepare_schedule(specs: &[StageSpec]) -> Result<Vec<Stage>, ScheduleError> {
-    let mut seen = BTreeSet::new();
-    for spec in specs {
-        if !seen.insert(spec.stage) {
+fn prepare_schedule(specs: &[StageSpec]) -> Result<StageOrder, ScheduleError> {
+    if specs.len() > 2 {
+        return Err(ScheduleError::TooMany);
+    }
+    for (index, spec) in specs.iter().enumerate() {
+        if specs[..index].iter().any(|prior| prior.stage == spec.stage) {
             return Err(ScheduleError::Duplicate);
         }
         if spec.writes.iter().any(|resource| {
@@ -406,20 +437,20 @@ fn prepare_schedule(specs: &[StageSpec]) -> Result<Vec<Stage>, ScheduleError> {
             }
         }
     }
-    let mut order = Vec::with_capacity(specs.len());
-    while order.len() < specs.len() {
+    let mut order = StageOrder::new();
+    while order.len < specs.len() {
         let next = specs
             .iter()
-            .filter(|spec| !order.contains(&spec.stage))
+            .filter(|spec| !order.contains(spec.stage))
             .filter(|spec| {
                 spec.after
                     .iter()
-                    .all(|dependency| order.contains(dependency))
+                    .all(|dependency| order.contains(*dependency))
             })
             .filter(|spec| {
                 !specs
                     .iter()
-                    .any(|other| other.phase < spec.phase && !order.contains(&other.stage))
+                    .any(|other| other.phase < spec.phase && !order.contains(other.stage))
             })
             .min_by_key(|spec| (spec.phase, spec.stage));
         let Some(next) = next else {
@@ -431,45 +462,48 @@ fn prepare_schedule(specs: &[StageSpec]) -> Result<Vec<Stage>, ScheduleError> {
 }
 
 fn ordered_by_dependency(specs: &[StageSpec], first: Stage, later: Stage) -> bool {
-    let mut pending = vec![later];
-    let mut visited = BTreeSet::new();
-    while let Some(stage) = pending.pop() {
-        if !visited.insert(stage) {
-            continue;
-        }
-        let Some(spec) = specs.iter().find(|spec| spec.stage == stage) else {
-            continue;
+    fn reaches(specs: &[StageSpec], first: Stage, later: Stage, visited: &mut u8) -> bool {
+        let Some(index) = specs.iter().position(|spec| spec.stage == later) else {
+            return false;
         };
-        for dependency in spec.after {
-            if *dependency == first {
-                return true;
-            }
-            pending.push(*dependency);
+        let bit = 1_u8 << index;
+        if *visited & bit != 0 {
+            return false;
         }
+        *visited |= bit;
+        specs[index]
+            .after
+            .iter()
+            .any(|dependency| *dependency == first || reaches(specs, first, *dependency, visited))
     }
-    false
+    reaches(specs, first, later, &mut 0)
 }
 
-fn headless_schedule(with_replica: bool) -> Vec<Stage> {
-    let mut specs = vec![StageSpec {
-        stage: Stage::AuthorityStep,
-        phase: Phase::Commit,
-        role: Role::Authority,
-        reads: &[],
-        writes: &[Resource::World, Resource::Group],
-        after: &[],
-    }];
-    if with_replica {
-        specs.push(StageSpec {
+fn headless_schedule(with_replica: bool) -> StageOrder {
+    let specs = [
+        StageSpec {
+            stage: Stage::AuthorityStep,
+            phase: Phase::Commit,
+            role: Role::Authority,
+            reads: &[],
+            writes: &[Resource::World, Resource::Group],
+            after: &[],
+        },
+        StageSpec {
             stage: Stage::ReplicaAdmission,
             phase: Phase::Observe,
             role: Role::Replica,
             reads: &[Resource::Group],
             writes: &[Resource::Replica],
             after: &[Stage::AuthorityStep],
-        });
-    }
-    prepare_schedule(&specs).expect("built-in I1 stage declarations must validate")
+        },
+    ];
+    let selected = if with_replica {
+        &specs[..]
+    } else {
+        &specs[..1]
+    };
+    prepare_schedule(selected).expect("built-in I1 stage declarations must validate")
 }
 
 /// One bounded headless local or in-memory match host. It owns the authority
@@ -479,7 +513,7 @@ pub struct HeadlessHost<G: GameRules> {
     clock: TickClock,
     authority: Authority<G>,
     replica: Option<Replica<G::Entity>>,
-    schedule: Vec<Stage>,
+    schedule: StageOrder,
     budget: HostBudget,
     admitted_ticks_per_callback: u32,
     callback_publication_capacity: usize,
@@ -782,7 +816,7 @@ impl<G: GameRules> HeadlessHost<G> {
             .clock
             .advance_controlled(elapsed, self.admitted_ticks_per_callback, || {
                 let mut publication = None;
-                for stage in schedule {
+                for stage in schedule.iter() {
                     match stage {
                         Stage::AuthorityStep => {
                             let committed = catch_unwind(AssertUnwindSafe(|| authority.step()))
@@ -891,7 +925,7 @@ impl<G: GameRules> HeadlessHost<G> {
             .clock
             .advance_controlled(elapsed, self.admitted_ticks_per_callback, || {
                 let mut publication = None;
-                for stage in schedule {
+                for stage in schedule.iter() {
                     match stage {
                         Stage::AuthorityStep => {
                             if !publications.is_charged() {
@@ -1494,6 +1528,222 @@ mod tests {
         assert_eq!(report.clock.completed, 1);
         assert!(host.replica().unwrap().get(StableId(1)).is_none());
         drop(report);
+        drop(occupied);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    struct VectorEditRule;
+
+    impl GameRules for VectorEditRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = u8;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<u8, ()> {
+            Ok(*action)
+        }
+
+        fn prepare(&self, world: &World<u8>, action: u8) -> PreparedCommit<u8, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::Many(vec![WorldEdit::Replace(
+                    world.handle_for(StableId(1)).unwrap(),
+                    action,
+                )]),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn protected_host_rejects_vector_edits_and_prototype_baseline() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(256));
+        world.spawn(StableId(1), 1_u8).unwrap();
+        let limits = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(256)),
+            VectorEditRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: limits(1),
+                entity: limits(1),
+                event: limits(0),
+                rejection: limits(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_inline_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            1,
+            1,
+        )
+        .unwrap();
+        assert!(matches!(
+            host.authority().try_baseline(),
+            Err(StepError::Unqualified)
+        ));
+        assert!(host.authority().try_baseline_charged().is_ok());
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            action: 9,
+        })
+        .unwrap();
+        assert!(matches!(
+            host.on_callback_charged(origin + Duration::from_millis(17)),
+            Err(HostError::Authority(StepError::TerminalGameContract))
+        ));
+        assert_eq!(*host.replica().unwrap().get(StableId(1)).unwrap(), 1);
+        assert_eq!(host.authority().tick_index(), 0);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    struct PageBatchRule;
+
+    impl GameRules for PageBatchRule {
+        type Entity = u8;
+        type Action = StableId;
+        type Change = StableId;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &StableId,
+        ) -> Result<StableId, ()> {
+            Ok(*action)
+        }
+
+        fn prepare(&self, world: &World<u8>, id: StableId) -> PreparedCommit<u8, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(world.handle_for(id).unwrap(), 9)),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn protected_maximum_due_batch_publishes_sixteen_dirty_pages_under_contention() {
+        let pool = PublicationPool::new(2_000_000);
+        let mut world = World::new(WorldEpoch(257));
+        for id in 1..=512 {
+            world.spawn(StableId(id), 0_u8).unwrap();
+        }
+        let limits = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(257)),
+            PageBatchRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: limits(16),
+                entity: limits(1),
+                event: limits(0),
+                rejection: limits(0),
+            },
+        )
+        .unwrap();
+        for peer in 1..=2 {
+            authority
+                .register_peer(PeerId(peer), 1, ActorId(peer))
+                .unwrap();
+        }
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_inline_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            512,
+            2,
+        )
+        .unwrap();
+        for peer in 1..=2 {
+            for sequence in 1..=8 {
+                let page = (peer - 1) * 8 + sequence - 1;
+                host.submit(Input {
+                    origin: Origin {
+                        peer: PeerId(peer),
+                        connection_epoch: 1,
+                        sequence,
+                    },
+                    actor: ActorId(peer),
+                    schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                    action: StableId(page as u128 * 32 + 1),
+                })
+                .unwrap();
+            }
+        }
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        assert_eq!(report.world_work.copied_pages, 16);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected charged publication")
+        };
+        assert_eq!(admitted.results().len(), 16);
+        assert_eq!(
+            admitted.resolved_through(),
+            &[(PeerId(1), 8), (PeerId(2), 8)]
+        );
+        for page in 0..16 {
+            assert_eq!(
+                host.replica().unwrap().get(StableId(page * 32 + 1)),
+                Some(&9)
+            );
+        }
+        drop(report);
+        host.acknowledge_results(PeerId(1), 8).unwrap();
+        host.acknowledge_results(PeerId(2), 8).unwrap();
         drop(occupied);
         drop(initial);
         drop(host);
@@ -2122,5 +2372,44 @@ mod tests {
             prepare_schedule(&cycle).err(),
             Some(ScheduleError::BackwardDependency)
         );
+    }
+
+    #[test]
+    fn built_in_schedule_is_validated_inline_and_bounded() {
+        assert_eq!(
+            headless_schedule(false).iter().copied().collect::<Vec<_>>(),
+            [Stage::AuthorityStep]
+        );
+        assert_eq!(
+            headless_schedule(true).iter().copied().collect::<Vec<_>>(),
+            [Stage::AuthorityStep, Stage::ReplicaAdmission]
+        );
+        let extra = [
+            StageSpec {
+                stage: Stage::AuthorityStep,
+                phase: Phase::Commit,
+                role: Role::Authority,
+                reads: &[],
+                writes: &[],
+                after: &[],
+            },
+            StageSpec {
+                stage: Stage::ReplicaAdmission,
+                phase: Phase::Observe,
+                role: Role::Replica,
+                reads: &[],
+                writes: &[],
+                after: &[Stage::AuthorityStep],
+            },
+            StageSpec {
+                stage: Stage::AuthorityStep,
+                phase: Phase::Commit,
+                role: Role::Authority,
+                reads: &[],
+                writes: &[],
+                after: &[],
+            },
+        ];
+        assert_eq!(prepare_schedule(&extra).err(), Some(ScheduleError::TooMany));
     }
 }
