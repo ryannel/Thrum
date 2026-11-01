@@ -1,8 +1,10 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap as StdHashMap, hash_map::RandomState},
     ops::Deref,
     sync::{Arc, Weak},
 };
+
+use hashbrown::HashMap;
 
 use crate::{PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation};
 
@@ -280,6 +282,13 @@ struct FixedSlotJournal {
     _charge: PublicationCharge,
 }
 
+struct FixedWorldStorage {
+    _charge: PublicationCharge,
+    slot_capacity: usize,
+    dirty_capacity: usize,
+    index_bytes: usize,
+}
+
 impl FixedSlotJournal {
     fn mark(&mut self, slot: usize, id: StableId, kind: ChangeKind) {
         match &mut self.marks[slot] {
@@ -304,7 +313,7 @@ impl FixedSlotJournal {
 
 enum VirtualObjects {
     Inline([Option<(StableId, VirtualObject)>; 2]),
-    Many(HashMap<StableId, VirtualObject>),
+    Many(StdHashMap<StableId, VirtualObject>),
 }
 
 impl VirtualObjects {
@@ -312,7 +321,7 @@ impl VirtualObjects {
         if count <= 2 {
             Self::Inline([None; 2])
         } else {
-            Self::Many(HashMap::with_capacity(count))
+            Self::Many(StdHashMap::with_capacity(count))
         }
     }
 
@@ -343,12 +352,13 @@ pub struct World<T: Clone> {
     epoch: WorldEpoch,
     slots: Vec<Slot<T>>,
     free: Vec<u32>,
-    by_id: HashMap<StableId, u32>,
+    by_id: HashMap<StableId, u32, RandomState>,
     dirty: Vec<bool>,
     dirty_count: usize,
     changed: BTreeMap<StableId, ChangeKind>,
     fixed_journal: Option<FixedSlotJournal>,
     _free_charge: Option<PublicationCharge>,
+    fixed_storage: Option<FixedWorldStorage>,
     pages: PageRoot<T>,
     publication_mode: PublicationMode,
     published_tick: u64,
@@ -493,9 +503,25 @@ impl<T: Clone> World<T> {
         let journal_bytes = marks_bytes
             .checked_add(touched_bytes)
             .ok_or(PublicationCapacity)?;
+        let slot_bytes = self
+            .slots
+            .capacity()
+            .checked_mul(size_of::<Slot<T>>())
+            .ok_or(PublicationCapacity)?;
+        let dirty_bytes = self
+            .dirty
+            .capacity()
+            .checked_mul(size_of::<bool>())
+            .ok_or(PublicationCapacity)?;
+        let index_bytes = self.by_id.allocation_size();
+        let storage_bytes = slot_bytes
+            .checked_add(dirty_bytes)
+            .and_then(|bytes| bytes.checked_add(index_bytes))
+            .ok_or(PublicationCapacity)?;
         let peak = journal_bytes
             .checked_add(free_bytes)
             .and_then(|bytes| bytes.checked_add(old_overlap))
+            .and_then(|bytes| bytes.checked_add(storage_bytes))
             .ok_or(PublicationCapacity)?;
         let mut reservation = pool.try_reserve(peak)?;
         if !reservation.belongs_to(owner_pool) {
@@ -510,6 +536,7 @@ impl<T: Clone> World<T> {
         });
         let journal_charge = reservation.charge(journal_bytes)?;
         let free_charge = reservation.charge(free_bytes)?;
+        let storage_charge = reservation.charge(storage_bytes)?;
         if let Some(replacement) = replacement {
             self.free = replacement;
         }
@@ -520,6 +547,12 @@ impl<T: Clone> World<T> {
             _charge: journal_charge,
         });
         self._free_charge = Some(free_charge);
+        self.fixed_storage = Some(FixedWorldStorage {
+            _charge: storage_charge,
+            slot_capacity: self.slots.capacity(),
+            dirty_capacity: self.dirty.capacity(),
+            index_bytes,
+        });
         Ok(())
     }
     /// Construct an empty world with a fresh host-supplied epoch.
@@ -528,12 +561,13 @@ impl<T: Clone> World<T> {
             epoch,
             slots: Vec::new(),
             free: Vec::new(),
-            by_id: HashMap::new(),
+            by_id: HashMap::with_hasher(RandomState::new()),
             dirty: Vec::new(),
             dirty_count: 0,
             changed: BTreeMap::new(),
             fixed_journal: None,
             _free_charge: None,
+            fixed_storage: None,
             pages: Arc::new(PageRootData {
                 pages: Box::new([]),
                 _charge: None,
@@ -756,8 +790,8 @@ impl<T: Clone> World<T> {
         // Only a world near u32 slot exhaustion needs to simulate reuse. The
         // ordinary path above is O(1) and never clones the free list.
         let mut free = self.free.clone();
-        let mut generations = HashMap::new();
-        let mut spawned = HashMap::new();
+        let mut generations = StdHashMap::new();
+        let mut spawned = StdHashMap::new();
         let mut appended = 0_usize;
         for edit in edits {
             match edit {
@@ -843,6 +877,13 @@ impl<T: Clone> World<T> {
         let slot = &mut self.slots[index];
         slot.entry = None;
         self.by_id.remove(&record.id);
+        if let Some(storage) = &self.fixed_storage {
+            assert_eq!(
+                self.by_id.allocation_size(),
+                storage.index_bytes,
+                "fixed-slot ID index reallocated"
+            );
+        }
         if let Some(journal) = &mut self.fixed_journal {
             journal.mark(index, record.id, ChangeKind::Despawn);
         } else if matches!(self.changed.get(&record.id), Some(ChangeKind::Spawn)) {
@@ -1036,6 +1077,11 @@ impl<T: Clone> World<T> {
         floor: Option<&Arc<SnapshotLeaseFloor>>,
     ) -> WorldPublication<T> {
         assert!(tick >= self.published_tick, "tick cannot move backwards");
+        if let Some(storage) = &self.fixed_storage {
+            assert_eq!(self.slots.capacity(), storage.slot_capacity);
+            assert_eq!(self.dirty.capacity(), storage.dirty_capacity);
+            assert_eq!(self.by_id.allocation_size(), storage.index_bytes);
+        }
         let count = self.slots.len().div_ceil(PAGE_SIZE);
         let mut work = WorldWork {
             ..WorldWork::default()
@@ -1326,6 +1372,55 @@ mod tests {
         ));
         drop(publication);
         drop(reservation);
+        drop(initial);
+        drop(world);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn fixed_slot_activation_charges_empty_and_spare_retained_world_buffers() {
+        let pool = PublicationPool::new(100_000);
+        let mut empty = World::<u8>::new(WorldEpoch(254));
+        let peak = empty.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let initial = empty.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+        let before = pool.used_bytes();
+        empty.activate_fixed_slot_journal(&pool, 0).unwrap();
+        assert_eq!(pool.used_bytes(), before);
+        drop(initial);
+        drop(empty);
+        assert_eq!(pool.used_bytes(), 0);
+
+        let mut world = World::new(WorldEpoch(255));
+        world.slots.reserve(32);
+        world.dirty.reserve(10);
+        let handle = world.spawn(StableId(1), 1_u8).unwrap();
+        world.despawn(handle).unwrap();
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let initial = world.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+        assert!(world.by_id.is_empty());
+        assert!(world.by_id.allocation_size() > 0);
+        let retained = world.slots.capacity() * size_of::<Slot<u8>>()
+            + world.dirty.capacity() * size_of::<bool>()
+            + world.by_id.allocation_size()
+            + world.slots.len() * size_of::<Option<ChangeKind>>()
+            + size_of::<(StableId, usize)>()
+            + world.free.capacity() * size_of::<u32>();
+        let before = pool.used_bytes();
+        let blocker = pool
+            .try_reserve(pool.limit_bytes() - before - (retained - 1))
+            .unwrap();
+        assert_eq!(
+            world.activate_fixed_slot_journal(&pool, 1),
+            Err(PublicationCapacity)
+        );
+        assert_eq!(pool.used_bytes(), pool.limit_bytes() - (retained - 1));
+        drop(blocker);
+        world.activate_fixed_slot_journal(&pool, 1).unwrap();
+        assert_eq!(pool.used_bytes(), before + retained);
         drop(initial);
         drop(world);
         assert_eq!(pool.used_bytes(), 0);
