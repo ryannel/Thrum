@@ -1,0 +1,101 @@
+"""Finite authored optical lifecycle over a pinned detailed volume.
+
+Artist-directed source, not a fluid/thermodynamic simulation. Local density
+thresholds expand/erode support; two material regions separate after neck erosion.
+The reference is this continuous source function, before temporal cooking.
+"""
+from __future__ import annotations
+import hashlib
+import json
+from pathlib import Path
+import numpy as np
+
+SIDE=128
+EXTENT=512.0
+CODE_MAX=.125
+DURATION=240.0
+DEFAULT_SHAPE=Path(__file__).resolve().parents[2]/'docs/evidence/cloud-source-2026-11-01/authored-input'
+
+
+def smooth(x):
+    x=np.clip(x,0.,1.)
+    return x*x*x*(x*(x*6.-15.)+10.)
+
+
+def sample(field,q):
+    p=q*(SIDE/EXTENT)-.5
+    lower=np.floor(p).astype(np.int32)
+    fraction=p-lower
+    answer=np.zeros(q.shape[:-1],np.float32)
+    for z in range(2):
+        for y in range(2):
+            for x in range(2):
+                index=lower+np.asarray([x,y,z],np.int32)
+                inside=np.all((index>=0)&(index<SIDE),axis=-1)
+                safe=np.clip(index,0,SIDE-1)
+                weight=(fraction[...,0] if x else 1-fraction[...,0])*(fraction[...,1] if y else 1-fraction[...,1])*(fraction[...,2] if z else 1-fraction[...,2])
+                answer+=np.where(inside,field[safe[...,2],safe[...,1],safe[...,0]],0)*weight
+    return answer
+
+
+class Source:
+    def __init__(self,path=DEFAULT_SHAPE):
+        self.path=Path(path)
+        self.metadata=json.loads((self.path/'shape.json').read_text())
+        data=(self.path/'shape.r8').read_bytes()
+        self.shape_sha256=hashlib.sha256(data).hexdigest()
+        if self.shape_sha256 != self.metadata['product']['sha256']:
+            raise ValueError('authored shape hash mismatch')
+        self.base=np.frombuffer(data,np.uint8).reshape(SIDE,SIDE,SIDE).astype(np.float32)*(CODE_MAX/255)
+        active=np.argwhere(self.base>0)
+        lo=active.min(axis=0);hi=active.max(axis=0)+1
+        # 32m left /48m right /12m rise, plus one interpolation-cell guard.
+        lo=np.maximum(lo-np.asarray([1,1,9]),0)
+        hi=np.minimum(hi+np.asarray([1,4,13]),SIDE)
+        self.slices=tuple(slice(int(a),int(b)) for a,b in zip(lo,hi))
+        z,y,x=np.mgrid[tuple(slice(int(a),int(b)) for a,b in zip(lo,hi))].astype(np.float32)
+        self.q=(np.stack((x,y,z),axis=-1)+.5)*4.
+
+    def material(self,q,s,left):
+        original=sample(self.base,q)
+        x,y,z=q[...,0]-256,q[...,1],q[...,2]-256
+        height=smooth((y-50.)/170.)
+        # Local onset varies continuously across the body's height and lobes;
+        # threshold recession reveals high-density cores before their boundaries.
+        birth=5.+18.*height+8.*(.5+.5*np.sin(x/42.+z/59.))
+        birth_erosion=CODE_MAX*(1.-smooth((s-birth)/55.))
+        death=165.+24.*(.5+.5*np.cos(x/53.+z/41.))+12.*height
+        death_erosion=CODE_MAX*smooth((s-death)/39.)
+        seam=x-(12.*np.sin((y-110.)/43.)+10.*np.sin(z/51.))
+        partition=1.-smooth((seam+18.)/36.)
+        if not left:
+            partition=1.-partition
+        neck_erosion=.06*smooth((s-115.)/35.)*np.exp(-(seam/25.)**2)
+        return np.maximum(original-birth_erosion-death_erosion-neck_erosion,0)*partition
+
+    def field(self,s):
+        if not 0<=s<=DURATION:
+            raise ValueError('source age outside finite lifecycle')
+        result=np.zeros((SIDE,SIDE,SIDE),np.float32)
+        if s in (0.,DURATION):
+            # Exact endpoint follows thresholds: at0 birth erosion=.125; at240
+            # every death erosion=.125. No endpoint-only opacity envelope.
+            return result
+        progress=float(smooth((s-120.)/70.))
+        a=np.asarray([-32.*progress,8.*progress,0.],np.float32)
+        b=np.asarray([48.*progress,12.*progress,0.],np.float32)
+        result[self.slices]=self.material(self.q-a,s,True)+self.material(self.q-b,s,False)
+        return result
+
+    def descriptor(self):
+        return {'source_kind':'authored local optical lifecycle, not meteorology',
+                'shape_sha256':self.shape_sha256,
+                'source_recipe_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                'density_side':SIDE,'extent_m':EXTENT,'duration_s':DURATION,
+                'fixed_optical_range_per_m':[0,CODE_MAX],
+                'material_displacement_m':{'left':[-32,8,0],'right':[48,12,0]},
+                'material_separation_age_s':[120,190],
+                'material_peak_speed_m_per_source_s':float(np.linalg.norm([48,12,0])*1.875/70),
+                'history':'unavailable: overlapping material regions have no single certified inverse; spatial only',
+                'rights':'Derived cloud content CC-BY-SA-3.0; see authored-input/LICENSE.md',
+                'reference':'continuous source function sampled directly, not interpolation of cooked frames'}

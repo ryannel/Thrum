@@ -1,0 +1,15 @@
+{
+  "source_age_s": 199.7,
+  "instrument_sha256": "db0cd4ffe8eb081550a4592656dcdc534b87ffe449eec2275e1f3feaf3cb7a01",
+  "density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+  "max_sigma_error_per_m": 3.0450522899627686e-05,
+  "mean_sigma_error_per_m": 3.075523835605054e-08,
+  "gpu_vs_cpu_axial_errors": {
+    "max_axial_tau_error": 0.0005002021789550781,
+    "max_axial_transmittance_abs_error": 0.00010292894985591827,
+    "mean_abs_extinction_error_per_m": 3.075523835605054e-08,
+    "max_abs_extinction_error_per_m": 3.0450522899627686e-05
+  },
+  "gpu_half_model_max_difference": 0.0,
+  "scope": "actual GPU ranked readback vs CPU direct reader; geometry/history/full renderer not qualified"
+}

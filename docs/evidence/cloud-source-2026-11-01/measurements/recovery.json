@@ -1,0 +1,12 @@
+{
+  "source_commit": "c824069",
+  "input": "read from committed authored-input files, no solver cache or Broadsides dependency",
+  "recovery": "fresh source generation and exact repack",
+  "density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+  "same_encoded_density_bytes": true,
+  "same_source_times": true,
+  "same_all_quantized_frames": true,
+  "runtime_header_note": "wall-clock preparation values and fresh input paths/receipt hashes differ; source values/times/encoding bytes are exact",
+  "source_bytes": 6564303,
+  "compile_wall_s": 71.05884933308698
+}

@@ -1,0 +1,80 @@
+{
+  "hardware": "Apple M3 Max,36GB; macOS26.6.2; Chrome156.0.8078.80; apple/metal-3 WebGPU adapter",
+  "capture_commit": "c824069",
+  "capture_source_script_sha256": "a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a",
+  "density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+  "measurement_instrument_sha256": "3afb74f53ec8386b12338aaa381a5de59987880d8b3d70fd5504a8bda1efe5fe",
+  "cold_source_limit_MiB": 11,
+  "actual_source_bytes": 6564544,
+  "actual_source_MiB": 6.26043701171875,
+  "logical_service_reservation_MiB_720p": 88,
+  "whole_browser_limit_MiB": 512,
+  "cold_worksheet_seconds": 3.89307392,
+  "gpu_profiles": [
+    {
+      "name": "normal1x_peak_body",
+      "warmup": 10,
+      "gpu_compute": {
+        "n": 100,
+        "p50_ms": 0.196608,
+        "p95_ms": 0.458752,
+        "p99_ms": 0.98304,
+        "max_ms": 0.98304
+      },
+      "gpu_source_plus_copy": "unmeasured: cross-pass timestamp probes rejected; copy included only in observer queue completion",
+      "cpu_command_encode": {
+        "n": 100,
+        "p50_ms": 0.09999990463256836,
+        "p95_ms": 0.3000001907348633,
+        "p99_ms": 3.200000047683716,
+        "max_ms": 3.200000047683716
+      },
+      "queue_completion": {
+        "n": 100,
+        "p50_ms": 11.799999952316284,
+        "p95_ms": 20.600000143051147,
+        "p99_ms": 23.59999990463257,
+        "max_ms": 23.59999990463257
+      }
+    },
+    {
+      "name": "accelerated64x",
+      "warmup": 10,
+      "gpu_compute": {
+        "n": 100,
+        "p50_ms": 0.196608,
+        "p95_ms": 0.393216,
+        "p99_ms": 0.720896,
+        "max_ms": 0.720896
+      },
+      "gpu_source_plus_copy": "unmeasured: cross-pass timestamp probes rejected; copy included only in observer queue completion",
+      "cpu_command_encode": {
+        "n": 100,
+        "p50_ms": 0.09999990463256836,
+        "p95_ms": 0.20000004768371582,
+        "p99_ms": 0.7000000476837158,
+        "max_ms": 0.7000000476837158
+      },
+      "queue_completion": {
+        "n": 100,
+        "p50_ms": 9.5,
+        "p95_ms": 20.59999990463257,
+        "p99_ms": 23.59999990463257,
+        "max_ms": 23.59999990463257
+      }
+    }
+  ],
+  "budget_verdict": "encoded source passes; isolated M3 GPU source compute measured. Full3/5ms incremental cloud,0.5ms CPU,88MiB service,512MiB process and cold5s are NOT certified.",
+  "limitations": [
+    "GPU copy duration unmeasured: cross-pass timestamp probes invalid and excluded",
+    "CPU command tails exceed desired0.5ms allocation in this diagnostic; no whole-engine CPU claim",
+    "queue-completion observer waits are not GPU execution durations",
+    "source timestamps are not continuous-viewing or complete-frame qualification",
+    "M2,Windows,mobile,thermal and composed scene remain unrun"
+  ],
+  "excluded_probe": {
+    "file": "kernel-1793560162061.json",
+    "reason": "cross-pass timestamp total negative/nonmonotone; excluded, not budget evidence",
+    "retained_as": "excluded-cross-pass-probe.json"
+  }
+}

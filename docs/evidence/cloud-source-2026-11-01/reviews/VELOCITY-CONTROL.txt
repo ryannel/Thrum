@@ -1,0 +1,58 @@
+# Gas UNI signed-velocity advection control — 2026-11-01
+
+**Outcome: signed XYZ motion observed; numerical scale and MAC centering empirically inconclusive.**
+Do not calibrate the cooker from this experiment. The source-code-derived conversion remains a separate authority;
+this test neither independently confirms nor refutes it.
+
+Reproducer: `scripts/cloud_source_proof/velocity_control.py`. Selected artifact:
+`tmp/cloud-source-proof/velocity-control-final/{control.blend,cache,report.json}`.
+Blender **5.2.3 LTS / e13b728c6880**, native startup, two CPU threads, no rendering.
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender --background --gpu-backend metal --threads 2 \
+  --python-exit-code 1 --python scripts/cloud_source_proof/velocity_control.py -- \
+  --out tmp/cloud-source-proof/velocity-control-rebuild
+```
+
+Fixture: fixed32³ cells in32BU cube; fps8, time_scale1, timestep bounds2–8; no gravity,
+alpha/beta buoyancy, vorticity, dissolve, noise, adaptive domain or obstacles; six open boundaries.
+Broad18BU cube at density0.0001/surface band10cells and interior radius7BU sphere at density1/surface band1.5cells;
+both input `velocity_coord=(3,-2,1)`, enabled at frame2 only and disabled at3.
+The first three frames are excluded. Tracer weight is `max(density−0.0001,0)`.
+
+The actual gzip/MNT3 artifacts contain X-fastest fullfloat32 density, scalar grid_type1/element_type1/4bytes per cell,
+and fullfloat32 XYZ MAC velocity, grid_type12/element_type2/12bytes per cell. JSON pins every UNI file hash and
+script identity. Selected output occupies4,920,636bytes; measured bake0.755s. All seven small bake attempts together
+used5.37s of measured bake time and peaked below25MB. Startup time is additional; no timing claim beyond this probe.
+
+| Observation, frame4→12 intervals | Measured |
+| --- | ---: |
+| PositiveX / negativeY / positiveZ displacement | Every interval |
+| Mean centroid displacement divided by density-weighted raw MAC velocity | 0.28159853cells/raw/frame |
+| Candidate factor from pinned Blender source | 0.3125cells/raw/frame |
+| Mean / maximum relative vector displacement error using candidate factor | 11.06% /13.58% |
+| Maximum absolute interval tracer mass change | 0.315% |
+| Maximum tracer mass within four cells of boundary | 0.0107% |
+| Maximum density-weighted relative RMS spatial velocity variation | 48.90% |
+
+For example, frame4→5 moves the centroid `[+0.227427,-0.157108,+0.082338]` cells. Its trapezoidal density-weighted
+forward-centered raw field is `[+0.822514,-0.567713,+0.298230]`; multiplying by0.3125 predicts
+`[+0.257036,-0.177410,+0.093197]` cells. The sign agreement is useful. The magnitude disagreement is not a calibration.
+
+The attempted background initializer did **not** create uniform flow: Blender weights gas source velocity spatially
+and pressure projects it. A48.9% spatial velocity variation and nonconservative scalar transport leave the centroid
+comparison confounded. Forward face average `(i,i+1)`, same-index samples and backward average `(i−1,i)` are all
+reported; their errors are similar enough that this experiment cannot independently establish half-cell centering.
+A clean followup would need a standalone Mantaflow uniform-grid initialization or a carefully qualified UNI restart;
+that is outside this bounded commission. No further job is running.
+
+The **declared**, nonempirical metric mapping is16local metres/BU and1.875source seconds/cache frame;
+0.3125Manta internal time/cache frame implies6source seconds/internal time. If the source-derived raw-grid unit is
+accepted, the conversion is `raw*(32/32)*16/6` at this control resolution, and `raw*(32/128)*16/6 = raw*2/3`
+at production128³. These labels were supplied by the source recipe, not inferred from the observed displacement.
+
+Rejected attempts: zero surface band emitted density but no velocity (both frame1 and frame2 injections); finite
+surface band with radius3 tracer gave0.2701factor; broader low-density initializer gave0.2761; radius7 tracer gave
+0.2816 (selected, exactly reproduced); full-strength background plus density10 tracer gave0.2804.
+Their disposable caches and duplicate masters were removed after retaining these findings. The selected compact
+cache/report/master remain for independent inspection. No main bake/cooker recipe, reference, threshold or commit changed.

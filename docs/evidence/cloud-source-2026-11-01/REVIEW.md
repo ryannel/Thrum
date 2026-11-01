@@ -32,7 +32,7 @@ error0.0199889 (additional gate0.02). No tested reference fails; unsampled real 
 are not certified. The transmittance margin is small: retain the half-aware replay after relevant changes.
 Actual GPU readbacks agree with the half-float CPU model, including the worst transmittance-reference age.
 
-Normal/accelerated captured playback and source-only GPU measurements are recorded separately. Their final
+Normal/accelerated captured playback and source-only GPU measurements are [recorded separately](PERFORMANCE.md). Their final
 receipts identify actual source and loaded instrument/shader hashes. Sampled motion inspection is distinct from
 continuous real-time watching. User acceptance, complete renderer quality and device qualification remain separate.
 
@@ -71,4 +71,5 @@ selected authored source does not borrow that calibration or claim fluid motion.
 Integrate these immutable source facts through the planned V3/V4 contracts: Q2 transport then Q3 source/view/shadow/
 reflection/environment together. Keep feature-off, retained-time history, device recovery, normal/timelapse pacing and
 complete target memory/startup/frame budgets open under their existing owners. No storm or sky-library expansion is
-admitted by this one-source proof.
+admitted by this one-source proof. The numerical fixture uses optical multiplier1 and the stated cube/axial rays;
+other multipliers, view directions and coupled consumer regimes need their own admission.

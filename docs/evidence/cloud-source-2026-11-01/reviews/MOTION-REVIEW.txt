@@ -1,0 +1,52 @@
+# Independent sampled-motion review
+
+1 November 2026. **The sampled recorded sequences support Q1's authored source-growth/breakup cue at normal and accelerated source rates. No new source-rejecting discontinuity or cut artifact was identified in the inspected samples.** This is sampled-frame review, not continuous video watching, final user acceptance or Thrum integration qualification.
+
+## Identity and what was actually inspected
+
+All four capture records identify density SHA-256 **999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd**, instrument SHA-256 **a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a**, compute shader SHA-256 **9ab86adab5badbb0e1b5fd28db828e323b1f6313ff1b3203124b6698baf2822a**. I independently verified the instrument bytes against commit **c824069403c8a2a6ddbff399a0b058475c9d6804**. The current viewer.js has subsequently changed; this review applies to the pinned capture instrument, not an uninspected later revision.
+
+Extracted202 selected native768x576 PNGs from the actual WebM files, using ffmpeg, plus four labeled overview sheets. Owned output is12.91MiB, within the requested30MiB bound. All202 selected frames were inspected as192x144 overview thumbnails;30 keyframes were additionally inspected at native resolution through view_image:
+
+- Normal-speed growth:45–51 source-seconds at approximately1-second spacing.
+- Normal-speed breakup:190–196 and199–205 at approximately1-second spacing.
+- Native accelerated keyframes:front16x around50/195/200/205, side16x around50/195/200/205, silhouette64x around201.
+- Overviews cover normal35–70 and165–220 plus lifecycle anchors; full16x front/side samples about every5 source-seconds and64x silhouette samples about every4 source-seconds.
+
+Exact selected frame indices/PTS, capture hashes, phase records and native inspection filenames are in motion/evaluator-motion-manifest.json. Source-age labels are approximate videoPTS*rate; capture origin and GPU/encoder queuing prevent exact per-image phase certification. No continuous video was watched, and the unsampled intervals can hide short artifacts.
+
+## Observed growth and breakup
+
+Normal45–51 samples show established lower optical material while upper lobes gain support and substance gradually. The body changes locally rather than translating, wobbling or simply multiplying an unchanged whole silhouette by age opacity. Broader35–70 samples establish the transition from a small lower body to the developed complex form. Accelerated front/side samples show the same structural sequence.
+
+During190–205 the retained cores stay optically substantial while the connecting envelope recedes and clear channels develop. The side view makes separation particularly legible; the silhouette sequence also shows gaps through extinction, so this is not only a lighting change. This agrees with the independently measured genuine zero-support separation and substantial component tau at200s.
+
+The one-second normal sequences have gradual adjacent changes without an observed sudden replacement, duplicate contour or vertical cut. The accelerated overviews retain the birth/body/channel/remnant order. They do not collapse to the first rejected puff's mostly uniform thinning, or the second attempt's regular linked-spheres/bar construction. No rigid piece translation/cutout motion is present; the source remains fixed in material coordinates and locally erodes.
+
+Remaining perceptual weaknesses are visible and should be retained with the acceptance record:
+
+- A faint detailed scaffold previews parts of the eventual reference shape during growth; the source still reads as an authored condensation/erosion of a fixed form.
+- The mature local body is nearly static for a substantial middle interval. This source proves optical lifecycle, not turbulent internal motion.
+- Late isolated cores become unusually smooth and rounded while surrounding detail erodes. Terminal remnants then fade away. The convincing cue is the earlier locally cleared gap with substantial bodies; the last few wisps alone would not pass it.
+- Native768x576 images expose the128^3 field's soft/stepped fine structure. An attractive downscaled overview should not hide that limitation.
+
+These weaken naturalism, but I did not identify an additional hard source failure in the commissioned bounded authored-optical profile from these samples. Natural fluid motion, meteorological correctness and production-library variety are not established.
+
+## Phase and recorded cadence facts
+
+The JSON phase records are monotone and reach240s at every rate. Before endpoint clamping, source age divided by rate tracks recorded wall time with a constant sub-millisecond origin offset; no source-clock hold/dropped elapsed-time segment appears in these records. The instrument appends these records after draw submission, before its GPU completion wait, so they are producer/submission phase facts, not hardware presentation timestamps.
+
+| Capture | Encoded frames | Last encoded PTS | Encoded gap p50/p95/p99/max |
+| --- | ---: | ---: | --- |
+|1793558817060,1x front lit |5750 |239.994s |42/58/64/195ms |
+|1793559113169,16x front lit |339 |14.958s |42/79.3/114.78/127ms |
+|1793559176395,64x front silhouette |90 |3.716s |42/56/59.6/64ms |
+|1793559301970,16x side lit |360 |14.971s |41/58/62/73ms |
+
+Recording is variable-cadence. The worst16x-front encoded gap spans approximately2.03 source-seconds; the normal recording has one195ms encoded gap. These can produce a recording hitch and limit what motion smoothness can be certified. They are not themselves evidence that source interpolation pops, nor a runtime frame-budget measurement. Ending the JSON at240 also does not prove that an exact240s terminal frame was encoded; finite zero endpoints are established separately by the source/byte audit.
+
+## Bounded verdict and remaining scope
+
+The recorded samples substantiate local source formation, opening gaps and substantial separated remnants at1x/16x/64x, with the weaknesses above. They add actual admitted-product sequence evidence to the prior code/topology/codec/half-aware optical checks. No substantive new source defect was found that requires another authoring variant before this bounded source proof can be handed off.
+
+Continuous temporal smoothness, every-frame pop/ghost absence and user experienced-quality acceptance remain outside this sampled review. In particular, history is disabled and there is no moving camera or coupled consumer here; absence of a trail in this stationary source instrument cannot qualify Thrum history. No claims are made about receiver shadows, reflection, joint media, engine integration, startup, complete CPU/GPU budgets or another device/profile.

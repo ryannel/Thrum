@@ -17,7 +17,7 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        if not self.path.startswith(('/scripts/cloud_source_proof/','/tmp/cloud-source-proof/')):
+        if not self.path.startswith(('/scripts/cloud_source_proof/','/tmp/cloud-source-proof/','/docs/evidence/cloud-source-2026-11-01/')):
             self.send_error(404)
             return
         super().do_GET()

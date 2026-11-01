@@ -1,0 +1,63 @@
+{
+  "capture_commit": "c824069",
+  "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+  "clips": [
+    {
+      "name": "normal-1x",
+      "video_sha256": "dd5cc9cf3a7020845afab6f3d5ea112671e517edba2a1fad668f61c47e157cfb",
+      "video_bytes": 6305743,
+      "uncompressed_receipt_sha256": "b17a619680dc6e11d5b74bede0c94f531a26558f6070562879de14dc06660137",
+      "instrument_sha256": "a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a",
+      "compute_shader_sha256": "9ab86adab5badbb0e1b5fd28db828e323b1f6313ff1b3203124b6698baf2822a",
+      "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+      "source_start_s": 0,
+      "source_end_s": 240,
+      "rate": 1,
+      "view": 0,
+      "sample_count": 12157
+    },
+    {
+      "name": "front-16x",
+      "video_sha256": "248fef663363e6191475c8118622b941281ab586ee5a17bd5d5248d313a05b4a",
+      "video_bytes": 785766,
+      "uncompressed_receipt_sha256": "2e381fe009c3bc6296642d563416ab8420f4ddfa67e80b05bf323f2b2d01467f",
+      "instrument_sha256": "a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a",
+      "compute_shader_sha256": "9ab86adab5badbb0e1b5fd28db828e323b1f6313ff1b3203124b6698baf2822a",
+      "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+      "source_start_s": 0,
+      "source_end_s": 240,
+      "rate": 16,
+      "view": 0,
+      "sample_count": 656
+    },
+    {
+      "name": "silhouette-64x",
+      "video_sha256": "91bfa1f3d713c3470438c7168fa10acaa59982a5020eded8a745190883a0ae48",
+      "video_bytes": 212106,
+      "uncompressed_receipt_sha256": "9ba5daadbe61a5c56803ce15b94b3d5fa69d9ed221a80756254e4d99cd621b1d",
+      "instrument_sha256": "a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a",
+      "compute_shader_sha256": "9ab86adab5badbb0e1b5fd28db828e323b1f6313ff1b3203124b6698baf2822a",
+      "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+      "source_start_s": 0,
+      "source_end_s": 240,
+      "rate": 64,
+      "view": 1,
+      "sample_count": 195
+    },
+    {
+      "name": "side-16x",
+      "video_sha256": "44c481696396aaa3e980cf90dc4c52243ddee1c61e67ccd00bdb769672193281",
+      "video_bytes": 927429,
+      "uncompressed_receipt_sha256": "14cc41c800e7ad9264991fc86b6d2e7c468b1d6e39b54d2254dbecb00126a533",
+      "instrument_sha256": "a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a",
+      "compute_shader_sha256": "9ab86adab5badbb0e1b5fd28db828e323b1f6313ff1b3203124b6698baf2822a",
+      "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+      "source_start_s": 0,
+      "source_end_s": 240,
+      "rate": 16,
+      "view": 2,
+      "sample_count": 742
+    }
+  ],
+  "scope": "actual GPU canvas capture; sampled review, not uninterrupted viewing or a full-engine performance test"
+}

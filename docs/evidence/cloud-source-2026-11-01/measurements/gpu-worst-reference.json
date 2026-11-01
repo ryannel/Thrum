@@ -1,0 +1,13 @@
+{
+  "source_age_s": 184.21875,
+  "instrument_sha256": "a0b5d583a791c847795f2762fe37b0be4f5c9097aa2009dabd5934056fb2c47a",
+  "density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+  "gpu_half_model_max_difference": 0.0,
+  "gpu_vs_actual_authoring_reference": {
+    "max_axial_tau_error": 0.02075575292110443,
+    "max_axial_transmittance_abs_error": 0.01998889734271092,
+    "mean_abs_extinction_error_per_m": 1.1594481748034013e-06,
+    "max_abs_extinction_error_per_m": 0.0014705657958984375
+  },
+  "scope": "actual GPU at worst CPU transmittance-reference age; no full engine claim"
+}
