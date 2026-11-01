@@ -1,9 +1,12 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::{
+    alloc::Layout,
+    collections::{BTreeMap, BTreeSet, HashMap},
+};
 
 use crate::{
-    ActionResult, ClosedPublicationValue, EntityChange, EntityRecord, PublicationPool,
-    ResultDisposition, StableId,
-    authority::{CommittedEvent, PeerId},
+    ActionResult, ClosedPublicationValue, EntityChange, EntityRecord, PublicationCharge,
+    PublicationPool, ResultDisposition, StableId,
+    authority::{CommittedEvent, MAX_RESULTS, PeerId},
     publication_pool::PublicationColumn,
     replica_index::ChargedReplicaIndex,
     world::AuthorityId,
@@ -196,7 +199,7 @@ pub struct Replica<T> {
     objects: ObjectStore<T>,
     publication_pool: Option<PublicationPool>,
     last_event_id: u64,
-    progress: BTreeMap<PeerId, PeerProgress>,
+    progress: ProgressStore,
 }
 
 enum ObjectStore<T> {
@@ -238,9 +241,191 @@ struct PeerProgress {
     resolved_above_gap: BTreeSet<u64>,
 }
 
+enum ProgressStore {
+    Prototype(BTreeMap<PeerId, PeerProgress>),
+    Charged(ChargedProgress),
+}
+
+#[derive(Clone, Copy)]
+struct ChargedPeerProgress {
+    peer: PeerId,
+    connection_epoch: Option<u64>,
+    resolved_through: u64,
+    above_gap: [u64; MAX_RESULTS / 64],
+}
+
+struct ChargedProgress {
+    confirmed: Vec<ChargedPeerProgress>,
+    candidate: Vec<ChargedPeerProgress>,
+    max_peers: usize,
+    _charge: Option<PublicationCharge>,
+}
+
+impl ChargedProgress {
+    fn try_from_baseline(
+        progress: BTreeMap<PeerId, PeerProgress>,
+        pool: &PublicationPool,
+        max_peers: usize,
+    ) -> Result<Self, ChargedReplicaSetupError> {
+        if progress.len() > max_peers {
+            return Err(ChargedReplicaSetupError::Capacity);
+        }
+        let bytes = Layout::array::<ChargedPeerProgress>(max_peers)
+            .map_err(|_| ChargedReplicaSetupError::Capacity)?
+            .size()
+            .checked_mul(2)
+            .ok_or(ChargedReplicaSetupError::Capacity)?;
+        let charge = if bytes == 0 {
+            None
+        } else {
+            let mut reservation = pool
+                .try_reserve(bytes)
+                .map_err(|_| ChargedReplicaSetupError::Capacity)?;
+            Some(
+                reservation
+                    .charge(bytes)
+                    .map_err(|_| ChargedReplicaSetupError::Capacity)?,
+            )
+        };
+        let mut confirmed = Vec::with_capacity(max_peers);
+        for (peer, old) in progress {
+            let mut row = ChargedPeerProgress {
+                peer,
+                connection_epoch: old.connection_epoch,
+                resolved_through: old.resolved_through,
+                above_gap: [0; MAX_RESULTS / 64],
+            };
+            for sequence in old.resolved_above_gap {
+                let offset = sequence
+                    .checked_sub(old.resolved_through.checked_add(1).ok_or(
+                        ChargedReplicaSetupError::Invalid(ReplicaError::IncompleteOutcome),
+                    )?)
+                    .and_then(|offset| usize::try_from(offset).ok())
+                    .filter(|offset| *offset < MAX_RESULTS)
+                    .ok_or(ChargedReplicaSetupError::Invalid(
+                        ReplicaError::IncompleteOutcome,
+                    ))?;
+                row.above_gap[offset / 64] |= 1_u64 << (offset % 64);
+            }
+            confirmed.push(row);
+        }
+        Ok(Self {
+            confirmed,
+            candidate: Vec::with_capacity(max_peers),
+            max_peers,
+            _charge: charge,
+        })
+    }
+
+    fn unchanged(&self, watermarks: &[(PeerId, u64)]) -> bool {
+        watermarks.len() == self.confirmed.len()
+            && watermarks
+                .iter()
+                .zip(&self.confirmed)
+                .all(|((id, mark), row)| {
+                    *id == row.peer
+                        && *mark == row.resolved_through
+                        && row.above_gap == [0; MAX_RESULTS / 64]
+                })
+    }
+
+    fn prepare<R>(
+        &mut self,
+        results: &[ActionResult<R>],
+        watermarks: &[(PeerId, u64)],
+    ) -> Result<(), ReplicaError> {
+        if watermarks.len() > self.max_peers {
+            return Err(ReplicaError::Capacity);
+        }
+        self.candidate.clear();
+        self.candidate.extend_from_slice(&self.confirmed);
+        let mut previous = None;
+        for (peer, _) in watermarks {
+            if previous.is_some_and(|old| *peer <= old) {
+                return Err(ReplicaError::IncompleteOutcome);
+            }
+            previous = Some(*peer);
+            if let Err(index) = self.candidate.binary_search_by_key(peer, |row| row.peer) {
+                if self.candidate.len() == self.max_peers {
+                    return Err(ReplicaError::Capacity);
+                }
+                self.candidate.insert(
+                    index,
+                    ChargedPeerProgress {
+                        peer: *peer,
+                        connection_epoch: None,
+                        resolved_through: 0,
+                        above_gap: [0; MAX_RESULTS / 64],
+                    },
+                );
+            }
+        }
+        for result in results {
+            let index = self
+                .candidate
+                .binary_search_by_key(&result.origin.peer, |row| row.peer)
+                .map_err(|_| ReplicaError::IncompleteOutcome)?;
+            let row = &mut self.candidate[index];
+            if row
+                .connection_epoch
+                .is_some_and(|epoch| epoch != result.origin.connection_epoch)
+            {
+                return Err(ReplicaError::IncompleteOutcome);
+            }
+            let offset = result
+                .origin
+                .sequence
+                .checked_sub(
+                    row.resolved_through
+                        .checked_add(1)
+                        .ok_or(ReplicaError::IncompleteOutcome)?,
+                )
+                .and_then(|offset| usize::try_from(offset).ok())
+                .filter(|offset| *offset < MAX_RESULTS)
+                .ok_or(ReplicaError::IncompleteOutcome)?;
+            let bit = 1_u64 << (offset % 64);
+            if row.above_gap[offset / 64] & bit != 0 {
+                return Err(ReplicaError::IncompleteOutcome);
+            }
+            row.above_gap[offset / 64] |= bit;
+            row.connection_epoch = Some(result.origin.connection_epoch);
+        }
+        for (peer, watermark) in watermarks {
+            let index = self
+                .candidate
+                .binary_search_by_key(peer, |row| row.peer)
+                .expect("advertised peer inserted");
+            let row = &mut self.candidate[index];
+            while row.above_gap[0] & 1 != 0 {
+                for word in 0..row.above_gap.len() - 1 {
+                    row.above_gap[word] =
+                        (row.above_gap[word] >> 1) | (row.above_gap[word + 1] << 63);
+                }
+                let last = row.above_gap.len() - 1;
+                row.above_gap[last] >>= 1;
+                row.resolved_through += 1;
+            }
+            if row.resolved_through != *watermark {
+                return Err(ReplicaError::IncompleteOutcome);
+            }
+        }
+        Ok(())
+    }
+
+    fn commit(&mut self) {
+        std::mem::swap(&mut self.confirmed, &mut self.candidate);
+    }
+}
+
+enum ProgressUpdate {
+    None,
+    Prototype(BTreeMap<PeerId, PeerProgress>),
+    ChargedCandidate,
+}
+
 struct ValidatedNext {
     idle: bool,
-    progress: Option<BTreeMap<PeerId, PeerProgress>>,
+    progress: ProgressUpdate,
 }
 
 fn validate_event_links<E, R>(
@@ -336,7 +521,7 @@ impl<T> Replica<T> {
     }
 
     fn validate_next<E, R>(
-        &self,
+        &mut self,
         authority: AuthorityId,
         group_id: u64,
         commit_tick: u64,
@@ -356,18 +541,23 @@ impl<T> Replica<T> {
             return Err(ReplicaError::InvalidEvent);
         }
         let unchanged_progress = results.is_empty()
-            && resolved_through.len() == self.progress.len()
-            && resolved_through.iter().zip(&self.progress).all(
-                |((peer_id, watermark), (known_id, progress))| {
-                    peer_id == known_id
-                        && *watermark == progress.resolved_through
-                        && progress.resolved_above_gap.is_empty()
-                },
-            );
+            && match &self.progress {
+                ProgressStore::Prototype(progress) => {
+                    resolved_through.len() == progress.len()
+                        && resolved_through.iter().zip(progress).all(
+                            |((peer_id, watermark), (known_id, progress))| {
+                                peer_id == known_id
+                                    && *watermark == progress.resolved_through
+                                    && progress.resolved_above_gap.is_empty()
+                            },
+                        )
+                }
+                ProgressStore::Charged(progress) => progress.unchanged(resolved_through),
+            };
         if changes.is_empty() && events.is_empty() && unchanged_progress {
             return Ok(ValidatedNext {
                 idle: true,
-                progress: None,
+                progress: ProgressUpdate::None,
             });
         }
         let mut changed = BTreeSet::new();
@@ -395,9 +585,15 @@ impl<T> Replica<T> {
             events,
         )?;
         let new_progress = if unchanged_progress {
-            None
+            ProgressUpdate::None
+        } else if let ProgressStore::Charged(progress) = &mut self.progress {
+            progress.prepare(results, resolved_through)?;
+            ProgressUpdate::ChargedCandidate
         } else {
-            let mut progress = self.progress.clone();
+            let ProgressStore::Prototype(current) = &self.progress else {
+                unreachable!("charged progress handled above")
+            };
+            let mut progress = current.clone();
             let mut advertised = BTreeMap::new();
             for (peer_id, watermark) in resolved_through {
                 if advertised.insert(*peer_id, *watermark).is_some() {
@@ -433,7 +629,7 @@ impl<T> Replica<T> {
                     return Err(ReplicaError::IncompleteOutcome);
                 }
             }
-            Some(progress)
+            ProgressUpdate::Prototype(progress)
         };
         Ok(ValidatedNext {
             idle: false,
@@ -480,7 +676,7 @@ impl<T> Replica<T> {
                 objects: ObjectStore::Prototype(objects),
                 publication_pool: None,
                 last_event_id: event_cursor,
-                progress,
+                progress: ProgressStore::Prototype(progress),
             },
             AdmittedGroup {
                 results,
@@ -489,12 +685,28 @@ impl<T> Replica<T> {
             },
         ))
     }
-    /// Admit a sealed baseline into a precharged finite object table. Peer
-    /// progress and validation scratch are still outside the pool gate.
+    /// Admit a sealed baseline into finite object and peer-progress storage.
+    /// The default peer limit is the baseline's current peer count; use the
+    /// explicit-limit constructor when later charged groups may add peers.
     pub fn from_charged_baseline<E, R>(
         baseline: ChargedStateGroup<T, E, R>,
         pool: &PublicationPool,
         max_objects: usize,
+    ) -> Result<(Self, ChargedAdmittedGroup<E, R>), ChargedReplicaSetupError>
+    where
+        T: ClosedPublicationValue,
+    {
+        let max_peers = baseline.resolved_through().len();
+        Self::from_charged_baseline_with_peer_limit(baseline, pool, max_objects, max_peers)
+    }
+
+    /// Admit a sealed baseline with an explicit maximum peer count. Confirmed
+    /// and candidate progress buffers are both charged before visibility.
+    pub fn from_charged_baseline_with_peer_limit<E, R>(
+        baseline: ChargedStateGroup<T, E, R>,
+        pool: &PublicationPool,
+        max_objects: usize,
+        max_peers: usize,
     ) -> Result<(Self, ChargedAdmittedGroup<E, R>), ChargedReplicaSetupError>
     where
         T: ClosedPublicationValue,
@@ -524,6 +736,7 @@ impl<T> Replica<T> {
             resolved_through.as_slice(),
         )
         .map_err(ChargedReplicaSetupError::Invalid)?;
+        let progress = ChargedProgress::try_from_baseline(progress, pool, max_peers)?;
         let mut index = ChargedReplicaIndex::try_new(pool, max_objects)
             .map_err(|_| ChargedReplicaSetupError::Capacity)?;
         for change in changes.as_slice() {
@@ -548,7 +761,7 @@ impl<T> Replica<T> {
                 objects: ObjectStore::Charged(index),
                 publication_pool: Some(pool.clone()),
                 last_event_id: event_cursor,
-                progress,
+                progress: ProgressStore::Charged(progress),
             },
             ChargedAdmittedGroup {
                 results,
@@ -591,7 +804,7 @@ impl<T> Replica<T> {
     }
 
     /// Atomically validate a shared charged group, then admit it into the
-    /// finite object index. Progress scratch is not yet pool-charged.
+    /// finite object index. Peer-progress candidates are pool-charged.
     pub fn apply_charged<E, R>(
         &mut self,
         group: ChargedStateGroup<T, E, R>,
@@ -685,8 +898,15 @@ impl<T> Replica<T> {
         self.group_id = group_id;
         self.tick = commit_tick;
         self.last_event_id = event_cursor;
-        if let Some(progress) = validated.progress {
-            self.progress = progress;
+        match validated.progress {
+            ProgressUpdate::None => {}
+            ProgressUpdate::ChargedCandidate => {
+                let ProgressStore::Charged(progress) = &mut self.progress else {
+                    unreachable!("charged group checked above")
+                };
+                progress.commit();
+            }
+            ProgressUpdate::Prototype(_) => unreachable!("charged group checked above"),
         }
         Ok(ChargedAdmittedGroup {
             results,
@@ -739,8 +959,12 @@ impl<T> Replica<T> {
         self.group_id = group.group_id;
         self.tick = group.commit_tick;
         self.last_event_id = group.event_cursor;
-        if let Some(progress) = validated.progress {
-            self.progress = progress;
+        match validated.progress {
+            ProgressUpdate::None => {}
+            ProgressUpdate::Prototype(progress) => {
+                self.progress = ProgressStore::Prototype(progress);
+            }
+            ProgressUpdate::ChargedCandidate => unreachable!("prototype group checked above"),
         }
         Ok(AdmittedGroup {
             results: group.results,
@@ -753,8 +977,82 @@ impl<T> Replica<T> {
 #[cfg(test)]
 mod charged_tests {
     use super::*;
-    use crate::MatchId;
     use crate::publication_pool::PublicationColumn;
+    use crate::{MatchId, Origin};
+
+    fn result(sequence: u64) -> ActionResult<()> {
+        ActionResult {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence,
+            },
+            resolved_tick: sequence,
+            disposition: ResultDisposition::Committed,
+            event_id: None,
+        }
+    }
+
+    #[test]
+    fn charged_progress_candidate_rolls_back_malformed_final_peer_and_closes_gap() {
+        let pool = PublicationPool::new(100_000);
+        let mut baseline = BTreeMap::new();
+        baseline.insert(
+            PeerId(1),
+            PeerProgress {
+                connection_epoch: Some(1),
+                resolved_through: 0,
+                resolved_above_gap: BTreeSet::from([2]),
+            },
+        );
+        let mut progress = ChargedProgress::try_from_baseline(baseline, &pool, 2).unwrap();
+        let charged = pool.used_bytes();
+        assert!(charged > 0);
+        assert_eq!(
+            progress.prepare(&[result(1)], &[(PeerId(1), 2), (PeerId(2), 1)]),
+            Err(ReplicaError::IncompleteOutcome)
+        );
+        assert_eq!(progress.confirmed[0].resolved_through, 0);
+        assert_eq!(progress.confirmed.len(), 1);
+        assert_eq!(pool.used_bytes(), charged);
+        progress
+            .prepare(&[result(1)], &[(PeerId(1), 2), (PeerId(2), 0)])
+            .unwrap();
+        progress.commit();
+        assert_eq!(progress.confirmed.len(), 2);
+        assert_eq!(progress.confirmed[0].resolved_through, 2);
+        assert_eq!(progress.confirmed[0].above_gap, [0; MAX_RESULTS / 64]);
+        assert_eq!(pool.used_bytes(), charged);
+        drop(progress);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_progress_tracks_full_window_and_rejects_excess_peer_capacity() {
+        let pool = PublicationPool::new(100_000);
+        let mut baseline = BTreeMap::new();
+        baseline.insert(PeerId(1), PeerProgress::default());
+        assert!(matches!(
+            ChargedProgress::try_from_baseline(baseline.clone(), &pool, 0),
+            Err(ChargedReplicaSetupError::Capacity)
+        ));
+        let mut progress = ChargedProgress::try_from_baseline(baseline, &pool, 1).unwrap();
+        let above_gap = (2..=MAX_RESULTS as u64).map(result).collect::<Vec<_>>();
+        progress.prepare(&above_gap, &[(PeerId(1), 0)]).unwrap();
+        progress.commit();
+        assert_eq!(progress.confirmed[0].resolved_through, 0);
+        assert_eq!(
+            progress.prepare(&[result(1)], &[(PeerId(1), 256), (PeerId(2), 0)]),
+            Err(ReplicaError::Capacity)
+        );
+        assert_eq!(progress.confirmed[0].resolved_through, 0);
+        progress.prepare(&[result(1)], &[(PeerId(1), 256)]).unwrap();
+        progress.commit();
+        assert_eq!(progress.confirmed[0].resolved_through, 256);
+        assert_eq!(progress.confirmed[0].above_gap, [0; MAX_RESULTS / 64]);
+        drop(progress);
+        assert_eq!(pool.used_bytes(), 0);
+    }
 
     fn group(
         pool: &PublicationPool,
@@ -783,6 +1081,153 @@ mod charged_tests {
             events: PublicationColumn::try_with_capacity(&mut reservation, 0).unwrap(),
             resolved_through: PublicationColumn::try_with_capacity(&mut reservation, 0).unwrap(),
         }
+    }
+
+    fn progress_group(
+        pool: &PublicationPool,
+        group_id: u64,
+        changes: Vec<EntityChange<u8>>,
+        results: Vec<ActionResult<()>>,
+        watermarks: &[(PeerId, u64)],
+    ) -> ChargedStateGroup<u8, (), ()> {
+        let bytes = PublicationColumn::<EntityChange<u8>>::required_charge(changes.len()).unwrap()
+            + PublicationColumn::<ActionResult<()>>::required_charge(results.len()).unwrap()
+            + PublicationColumn::<(PeerId, u64)>::required_charge(watermarks.len()).unwrap();
+        let mut reservation = pool.try_reserve(bytes).unwrap();
+        let mut change_column =
+            PublicationColumn::try_with_capacity(&mut reservation, changes.len()).unwrap();
+        for change in changes {
+            change_column.push(change);
+        }
+        let mut result_column =
+            PublicationColumn::try_with_capacity(&mut reservation, results.len()).unwrap();
+        for result in results {
+            result_column.push(result);
+        }
+        let mut watermark_column =
+            PublicationColumn::try_with_capacity(&mut reservation, watermarks.len()).unwrap();
+        for watermark in watermarks {
+            watermark_column.push(*watermark);
+        }
+        ChargedStateGroup {
+            pool: pool.clone(),
+            authority: AuthorityId::Match(MatchId(240)),
+            group_id,
+            commit_tick: group_id,
+            event_cursor: 0,
+            changes: change_column,
+            results: result_column,
+            events: PublicationColumn::empty(),
+            resolved_through: watermark_column,
+        }
+    }
+
+    #[test]
+    fn charged_group_rejects_bad_final_peer_before_confirming_progress_or_tick() {
+        let pool = PublicationPool::new(100_000);
+        let spawn = || {
+            EntityChange::Spawn(EntityRecord {
+                id: StableId(1),
+                state: 1,
+            })
+        };
+        let update = || {
+            EntityChange::Update(EntityRecord {
+                id: StableId(1),
+                state: 2,
+            })
+        };
+        let baseline = progress_group(&pool, 0, vec![spawn()], vec![], &[(PeerId(1), 0)]);
+        let (mut tight, tight_initial) =
+            Replica::from_charged_baseline(baseline, &pool, 1).unwrap();
+        let excess = progress_group(&pool, 1, vec![], vec![], &[(PeerId(1), 0), (PeerId(2), 0)]);
+        assert!(matches!(
+            tight.apply_charged(excess),
+            Err(ReplicaError::Capacity)
+        ));
+        assert_eq!(tight.tick(), 0);
+        drop(tight_initial);
+        drop(tight);
+
+        let baseline = progress_group(&pool, 0, vec![spawn()], vec![], &[(PeerId(1), 0)]);
+        let (mut replica, initial) =
+            Replica::from_charged_baseline_with_peer_limit(baseline, &pool, 1, 2).unwrap();
+        let bad = progress_group(
+            &pool,
+            1,
+            vec![update()],
+            vec![result(1)],
+            &[(PeerId(1), 1), (PeerId(2), 1)],
+        );
+        assert!(matches!(
+            replica.apply_charged(bad),
+            Err(ReplicaError::IncompleteOutcome)
+        ));
+        assert_eq!(replica.tick(), 0);
+        assert_eq!(replica.get(StableId(1)), Some(&1));
+        let valid = progress_group(
+            &pool,
+            1,
+            vec![update()],
+            vec![result(1)],
+            &[(PeerId(1), 1), (PeerId(2), 0)],
+        );
+        let admitted = replica.apply_charged(valid).unwrap();
+        assert_eq!(replica.tick(), 1);
+        assert_eq!(replica.get(StableId(1)), Some(&2));
+        assert_eq!(
+            admitted.resolved_through(),
+            &[(PeerId(1), 1), (PeerId(2), 0)]
+        );
+        drop(admitted);
+        drop(initial);
+        drop(replica);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_progress_baseline_reserves_both_buffers_and_rejects_duplicate_below_prefix() {
+        let baseline_bytes = PublicationColumn::<(PeerId, u64)>::required_charge(1).unwrap();
+        let progress_bytes = Layout::array::<ChargedPeerProgress>(1).unwrap().size() * 2;
+        let tight = PublicationPool::new(baseline_bytes + progress_bytes - 1);
+        let baseline = progress_group(&tight, 0, vec![], vec![], &[(PeerId(1), 0)]);
+        assert!(matches!(
+            Replica::from_charged_baseline(baseline, &tight, 0),
+            Err(ChargedReplicaSetupError::Capacity)
+        ));
+        assert_eq!(tight.used_bytes(), 0);
+
+        let pool = PublicationPool::new(100_000);
+        let duplicate = progress_group(
+            &pool,
+            1,
+            vec![],
+            vec![result(1), result(1)],
+            &[(PeerId(1), 1)],
+        );
+        assert!(matches!(
+            Replica::from_charged_baseline(duplicate, &pool, 0),
+            Err(ChargedReplicaSetupError::Invalid(
+                ReplicaError::IncompleteOutcome
+            ))
+        ));
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_baseline_retains_out_of_order_results_until_gap_closes() {
+        let pool = PublicationPool::new(100_000);
+        let baseline = progress_group(&pool, 2, vec![], vec![result(2)], &[(PeerId(1), 0)]);
+        let (mut replica, initial) = Replica::from_charged_baseline(baseline, &pool, 0).unwrap();
+        assert_eq!(replica.tick(), 2);
+        let closing = progress_group(&pool, 3, vec![], vec![result(1)], &[(PeerId(1), 2)]);
+        let admitted = replica.apply_charged(closing).unwrap();
+        assert_eq!(replica.tick(), 3);
+        assert_eq!(admitted.resolved_through(), &[(PeerId(1), 2)]);
+        drop(admitted);
+        drop(initial);
+        drop(replica);
+        assert_eq!(pool.used_bytes(), 0);
     }
 
     #[test]

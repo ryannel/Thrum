@@ -13,7 +13,7 @@ use crate::{
 };
 
 const MAX_PENDING: usize = 8;
-const MAX_RESULTS: usize = 256;
+pub(crate) const MAX_RESULTS: usize = 256;
 
 struct SnapshotLeaseDirectory {
     slots: [Option<Weak<SnapshotLease>>; MAX_SNAPSHOT_LEASES],
