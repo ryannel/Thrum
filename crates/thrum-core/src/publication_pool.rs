@@ -438,7 +438,7 @@ impl std::fmt::Debug for PublicationBytes {
 
 impl PartialEq for PublicationBytes {
     fn eq(&self, other: &Self) -> bool {
-        self.as_slice() == other.as_slice()
+        Arc::ptr_eq(&self.0, &other.0) || self.as_slice() == other.as_slice()
     }
 }
 
@@ -607,6 +607,20 @@ mod tests {
         let shared = pool.clone();
         assert!(shared.same_pool(&pool));
         assert_eq!(shared.try_reserve(1).err(), Some(PublicationCapacity));
+    }
+
+    #[test]
+    fn payload_equality_keeps_value_semantics_across_shared_and_distinct_owners() {
+        let pool = PublicationPool::new(1_000);
+        let first = PublicationBytes::try_copy_from_slice(&pool, &[1, 2, 3]).unwrap();
+        let same_owner = first.clone();
+        let same_value = PublicationBytes::try_copy_from_slice(&pool, &[1, 2, 3]).unwrap();
+        let different = PublicationBytes::try_copy_from_slice(&pool, &[1, 2, 4]).unwrap();
+        assert_eq!(first, same_owner);
+        assert_eq!(first, same_value);
+        assert_ne!(first, different);
+        drop((first, same_owner, same_value, different));
+        assert_eq!(pool.used_bytes(), 0);
     }
 
     #[test]

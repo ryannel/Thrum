@@ -1005,7 +1005,8 @@ mod tests {
     use super::*;
     use crate::{
         ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, MatchId, Origin, PreparedCommit,
-        PreparedEdits, SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch,
+        PreparedEdits, PublicationBytes, PublicationRecord, SnapshotWriteBounds, StableId,
+        StateGroup, World, WorldEdit, WorldEpoch,
     };
     use std::num::NonZeroU32;
 
@@ -1410,6 +1411,191 @@ mod tests {
             Err(ExecutionCreditSetupError::VariablePayloads)
         );
         drop(pending);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    struct ChargedActionRule;
+
+    impl GameRules for ChargedActionRule {
+        type Entity = u8;
+        type Action = PublicationRecord<0, 1>;
+        type Change = u8;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &Self::Action,
+        ) -> Result<u8, ()> {
+            Ok(action.payload_owner(0).unwrap().as_slice()[0])
+        }
+
+        fn prepare(&self, world: &World<u8>, value: u8) -> PreparedCommit<u8, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    world.handle_for(StableId(1)).unwrap(),
+                    value,
+                )),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn protected_host_accepts_precharged_action_payload_under_pool_contention() {
+        let pool = PublicationPool::new(200_000);
+        let foreign = PublicationPool::new(1_000);
+        let mut world = World::new(WorldEpoch(252));
+        world.spawn(StableId(1), 1_u8).unwrap();
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(252)),
+            ChargedActionRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 1,
+                    max_payload_bytes: 1_024,
+                },
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_inline_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            1,
+            1,
+        )
+        .unwrap();
+        let input = |pool: &PublicationPool, sequence, len, schedule| Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence,
+            },
+            actor: ActorId(1),
+            schedule,
+            action: PublicationRecord::try_new(
+                pool,
+                [],
+                [Some(
+                    PublicationBytes::try_copy_from_slice(pool, &vec![7; len]).unwrap(),
+                )],
+            )
+            .unwrap(),
+        };
+        assert_eq!(
+            host.submit(input(
+                &foreign,
+                1,
+                1,
+                crate::InputSchedule::Timed { intended_tick: 3 },
+            )),
+            Err(HostAdmissionError::Authority(AdmissionError::WrongPool))
+        );
+        assert_eq!(foreign.used_bytes(), 0);
+        assert_eq!(
+            host.submit(input(
+                &pool,
+                1,
+                1_025,
+                crate::InputSchedule::Timed { intended_tick: 3 },
+            )),
+            Err(HostAdmissionError::Authority(AdmissionError::ValueProfile))
+        );
+        let payload_charge = PublicationBytes::required_charge(1_024).unwrap();
+        let before = pool.used_bytes();
+        let accepted = input(
+            &pool,
+            1,
+            1_024,
+            crate::InputSchedule::Timed { intended_tick: 3 },
+        );
+        let duplicate = accepted.clone();
+        let occupied_before_admission = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert_eq!(
+            host.submit(accepted.clone()),
+            Err(HostAdmissionError::Authority(
+                AdmissionError::PublicationCapacity
+            ))
+        );
+        drop(occupied_before_admission);
+        assert_eq!(host.submit(accepted).unwrap(), crate::Admission::Queued);
+        assert_eq!(
+            host.submit(duplicate.clone()).unwrap(),
+            crate::Admission::PendingDuplicate
+        );
+        host.submit(input(
+            &pool,
+            2,
+            1_024,
+            crate::InputSchedule::NextTick { observed_tick: 0 },
+        ))
+        .unwrap();
+        assert!(pool.used_bytes() >= before + 2 * payload_charge);
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        for (tick, expected_results) in [(1, 1), (2, 0), (3, 1)] {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+            else {
+                panic!("expected charged publication")
+            };
+            assert_eq!(admitted.results().len(), expected_results);
+            if tick == 1 {
+                assert_eq!(admitted.resolved_through(), &[(PeerId(1), 0)]);
+                assert_eq!(
+                    host.submit(duplicate.clone()).unwrap(),
+                    crate::Admission::PendingDuplicate
+                );
+            }
+            if tick == 3 {
+                assert_eq!(admitted.resolved_through(), &[(PeerId(1), 2)]);
+            }
+        }
+        assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&7));
+        assert!(matches!(
+            host.submit(duplicate.clone()).unwrap(),
+            crate::Admission::ResolvedDuplicate(_)
+        ));
+        let used_with_action = pool.used_bytes();
+        host.acknowledge_results(PeerId(1), 2).unwrap();
+        assert_eq!(pool.used_bytes(), used_with_action - payload_charge);
+        drop(duplicate);
+        assert_eq!(pool.used_bytes(), used_with_action - 2 * payload_charge);
+        drop(occupied);
+        drop(initial);
+        drop(host);
         assert_eq!(pool.used_bytes(), 0);
     }
 
