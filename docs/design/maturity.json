@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "000ad15788acf1589048a1179c2eb350e4a380666cf3719e4abc167d075d2666",
+    "design_sha256": "a1cf7e690d571dcf6b0a2ed05728a55baabda1ba30aa2d83afa0c883c26c980e",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2857,6 +2857,14 @@
         "performance_measurement": "paired_local_macos_aarch64_complete_callback_only",
         "scope": "One atomic future reservation per accepted input partitions snapshot/group and rule output bytes. Both callbacks spend one cumulative non-refunding allowance from an engine-owned budget. New outputs must use the borrowed context; arbitrary game-private allocation, structural growth and remote queues are excluded.",
         "evidence": "../evidence/i1-headless/OUTPUT-CREDITS.md"
+      },
+      "bounded_structural_growth": {
+        "design": "selected_finite_slot_and_live_caps_per_action_spawn_bound_id_keyed_journal_and_atomic_pending_credit_horizon",
+        "implementation": "not_started",
+        "functional_validation": "not_run",
+        "performance_measurement": "not_run",
+        "scope": "A proposed extension of the selected fixed-slot host; no structural runtime path is qualified yet.",
+        "evidence": "../evidence/i1-headless/STRUCTURAL-GROWTH-DESIGN.md"
       },
       "fixed_slot_owner_byte_gate": {
         "profile": "closed_bounded_variable_outputs_precharged_variable_actions_inline_edits_no_spawns_finite_peers_and_readers",
