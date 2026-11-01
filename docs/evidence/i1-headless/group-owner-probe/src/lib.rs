@@ -354,4 +354,144 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    #[ignore = "run explicitly in release mode to compare complete I1 group columns"]
+    fn local_group_clone_cost_probe() {
+        use std::{hint::black_box, time::Instant};
+        use thrum_core::{
+            ActionRejection, ActionResult, AuthorityId, CommittedEvent, EntityChange, EntityRecord,
+            MatchId, Origin, PeerId, PublicationBytes, PublicationRecord, ResultDisposition,
+            StableId, StateGroup,
+        };
+
+        type State = PublicationRecord<8, 1>;
+        type Output = PublicationRecord<0, 1>;
+
+        #[derive(Clone)]
+        struct SharedColumns {
+            authority: AuthorityId,
+            group_id: u64,
+            commit_tick: u64,
+            event_cursor: u64,
+            changes: PublicationColumn<EntityChange<State>>,
+            results: PublicationColumn<ActionResult<Output>>,
+            events: PublicationColumn<CommittedEvent<Output>>,
+            resolved_through: PublicationColumn<(PeerId, u64)>,
+        }
+
+        fn column<T: Clone>(pool: &PublicationPool, values: &[T]) -> PublicationColumn<T> {
+            let bytes = PublicationColumn::<T>::required_charge(values.len()).unwrap();
+            let mut reservation = pool.try_reserve(bytes).unwrap();
+            let mut column =
+                PublicationColumn::try_with_capacity(&mut reservation, values.len()).unwrap();
+            for value in values {
+                column.try_push(value.clone()).ok().unwrap();
+            }
+            column
+        }
+
+        fn measure(mut operation: impl FnMut()) -> (u128, u128, u128) {
+            const BATCH: usize = 64;
+            const WARMUP: usize = 20;
+            const SAMPLES: usize = 100;
+            let mut times = Vec::with_capacity(SAMPLES);
+            for sample in 0..WARMUP + SAMPLES {
+                let start = Instant::now();
+                for _ in 0..BATCH {
+                    operation();
+                }
+                if sample >= WARMUP {
+                    times.push(start.elapsed().as_nanos());
+                }
+            }
+            times.sort_unstable();
+            (times[49], times[94], times[98])
+        }
+
+        let pool = PublicationPool::new(usize::MAX);
+        let payload = PublicationBytes::try_copy_from_slice(&pool, &[7; 512]).unwrap();
+        let origin = Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: 1,
+        };
+        let output = Output::try_new(&pool, [], [Some(payload.clone())]).unwrap();
+        for count in [0, 1, 4_096] {
+            let changes = (0..count)
+                .map(|index| {
+                    EntityChange::Update(EntityRecord {
+                        id: StableId(index as u128 + 1),
+                        state: State::try_new(
+                            &pool,
+                            (index as u64).to_le_bytes(),
+                            [Some(payload.clone())],
+                        )
+                        .unwrap(),
+                    })
+                })
+                .collect();
+            let plain = StateGroup {
+                authority: AuthorityId::Match(MatchId(1)),
+                group_id: 1,
+                commit_tick: 1,
+                event_cursor: 1,
+                changes,
+                results: vec![
+                    ActionResult {
+                        origin,
+                        resolved_tick: 1,
+                        disposition: ResultDisposition::Committed,
+                        event_id: Some(1),
+                    },
+                    ActionResult {
+                        origin: Origin {
+                            peer: PeerId(2),
+                            ..origin
+                        },
+                        resolved_tick: 1,
+                        disposition: ResultDisposition::Rejected(ActionRejection::Game(
+                            output.clone(),
+                        )),
+                        event_id: None,
+                    },
+                ],
+                events: vec![CommittedEvent {
+                    id: 1,
+                    tick: 1,
+                    origin,
+                    payload: output.clone(),
+                }],
+                resolved_through: vec![(PeerId(1), 1), (PeerId(2), 1)],
+            };
+            let shared = SharedColumns {
+                authority: plain.authority,
+                group_id: plain.group_id,
+                commit_tick: plain.commit_tick,
+                event_cursor: plain.event_cursor,
+                changes: column(&pool, &plain.changes),
+                results: column(&pool, &plain.results),
+                events: column(&pool, &plain.events),
+                resolved_through: column(&pool, &plain.resolved_through),
+            };
+            assert_eq!(shared.authority, plain.authority);
+            assert_eq!(shared.group_id, plain.group_id);
+            assert_eq!(shared.commit_tick, plain.commit_tick);
+            assert_eq!(shared.event_cursor, plain.event_cursor);
+            assert_eq!(shared.changes.as_slice().len(), count);
+            assert_eq!(shared.results.as_slice().len(), 2);
+            assert_eq!(shared.events.as_slice().len(), 1);
+            assert_eq!(shared.resolved_through.as_slice().len(), 2);
+            let deep = measure(|| {
+                black_box(black_box(&plain).clone());
+            });
+            let shared_cost = measure(|| {
+                black_box(black_box(&shared).clone());
+            });
+            println!(
+                "group/{count}: clone_batch_64_ns[p50/p95/p99] deep={}/{}/{} shared={}/{}/{}",
+                deep.0, deep.1, deep.2, shared_cost.0, shared_cost.1, shared_cost.2
+            );
+        }
+    }
 }
