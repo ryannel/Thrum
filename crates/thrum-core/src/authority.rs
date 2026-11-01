@@ -911,6 +911,15 @@ impl<G: GameRules> Authority<G> {
             .map(Some)
             .map_err(|_| StepError::PublicationBackpressure)
     }
+    /// Current controlled-peer count used by sealed host profile admission.
+    pub(crate) fn registered_peer_count(&self) -> usize {
+        self.peers.len()
+    }
+
+    pub(crate) fn has_peer(&self, id: PeerId) -> bool {
+        self.peers.get(&id).is_some()
+    }
+
     /// Register or reconnect one controlled actor. Reconnect requires a newer
     /// connection epoch and loses old pending input.
     pub fn register_peer(
@@ -958,6 +967,55 @@ impl<G: GameRules> Authority<G> {
         self.peers.install_growth(candidate);
         self.peers.insert(id, Peer::new(actor, epoch, pending));
         self.cached_watermarks = None;
+        Ok(())
+    }
+
+    /// A sealed host prepares the replacement watermark owner before adding
+    /// a new peer. Reconnect requires a fresh replica baseline and is not
+    /// admitted by this join path.
+    pub(crate) fn register_peer_for_charged_host(
+        &mut self,
+        id: PeerId,
+        epoch: u64,
+        actor: ActorId,
+    ) -> Result<(), AdmissionError> {
+        if self.faulted {
+            return Err(AdmissionError::Faulted);
+        }
+        if self.has_peer(id) {
+            return Err(AdmissionError::SequenceConflict);
+        }
+        let admission = self
+            .snapshot_admission
+            .as_ref()
+            .filter(|admission| admission.closed.is_some())
+            .ok_or(AdmissionError::PublicationCapacity)?;
+        let count = self
+            .peers
+            .len()
+            .checked_add(1)
+            .ok_or(AdmissionError::PublicationCapacity)?;
+        let bytes = PublicationColumn::<(PeerId, u64)>::required_charge(count)
+            .map_err(|_| AdmissionError::PublicationCapacity)?;
+        let mut reservation = admission
+            .pool
+            .try_reserve(bytes)
+            .map_err(|_| AdmissionError::PublicationCapacity)?;
+        let mut replacement = PublicationColumn::try_with_capacity(&mut reservation, count)
+            .map_err(|_| AdmissionError::PublicationCapacity)?;
+        let mut inserted = false;
+        for (other_id, peer) in self.peers.iter() {
+            if !inserted && id < *other_id {
+                replacement.push((id, 0));
+                inserted = true;
+            }
+            replacement.push((*other_id, peer.resolved_through));
+        }
+        if !inserted {
+            replacement.push((id, 0));
+        }
+        self.register_peer(id, epoch, actor)?;
+        self.cached_watermarks = Some(replacement);
         Ok(())
     }
 
