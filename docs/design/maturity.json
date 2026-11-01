@@ -1125,7 +1125,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "a9d85263ad5dd75ae0f9df5a2efc53d3d047f4386445cce619ead9b6084eaaa9",
+      "current_design_sha256": "f051bc6daf5f912bef6bdda5ae2c92584244128cad5bac2181adff2ced08d529",
       "current_design_delta": "D2 plus Q1 authored direct-source proof: adaptive final-density frames, exact mixed sparse packing and independent half-aware optical/byte review; baseline recipes retained. Engine implementation/runtime dimensions remain unrun.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1156,7 +1156,7 @@
           "scope": "production state/density/material-map/temporal resolve and resource/pass roles; reuse recommendations only, no code imported"
         },
         "current_files": {
-          "modules/CLOUDS.md": "a9d85263ad5dd75ae0f9df5a2efc53d3d047f4386445cce619ead9b6084eaaa9",
+          "modules/CLOUDS.md": "f051bc6daf5f912bef6bdda5ae2c92584244128cad5bac2181adff2ced08d529",
           "modules/CLOUD-CAPABILITIES.md": "15d23c8680bc9afa5fc98a2468b980f3056cddee216ad421f3d20045203e6307",
           "research/CLOUD-SYSTEM-SOURCES.md": "81dc19da00887b55f8c565ea3eacc77e7b01edbfbb00a1622fe8b4897376cf27",
           "CONTRACTS.md": "27096b316a165dd56296274f2ef1d721fcef6031282c4d040e9a7c1a9c006378",
@@ -1203,8 +1203,14 @@
         "sampled_half_aware_max_T_abs_error": 0.019988897343,
         "implementation": "offline source/cooker/reader/GPU instrument only",
         "functional_validation": "bounded source/codec/reference checks passed",
-        "experienced_quality": "bounded source image/topology review; normal/accelerated capture receipts separate; user acceptance pending",
-        "platform_performance": "isolated M3 Max source instrumentation only; complete Thrum profiles unrun"
+        "experienced_quality": "sampled source images/topology and normal1x/16x/64x motion reviewed; known birth scaffold/static middle/round late cores retained; user acceptance pending",
+        "platform_performance": "isolated M3 Max source instrumentation only; complete Thrum profiles unrun",
+        "motion_and_cost_record": "../evidence/cloud-source-2026-11-01/PERFORMANCE.md",
+        "isolated_M3_gpu_compute_p95_ms": {
+          "normal1x": 0.458752,
+          "accelerated64x": 0.393216
+        },
+        "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       }
     },
     {

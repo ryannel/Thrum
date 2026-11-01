@@ -6,3 +6,7 @@
 *.py text eol=lf
 *.yml text eol=lf
 dev text eol=lf
+*.bin binary
+*.r8 binary
+*.webm binary
+*.mp4 binary

@@ -126,7 +126,7 @@ quarter/mid/three-quarter interval samples, must come from the real authoring so
 those samples and then validate interpolation against itself. Existing 15-second LES output cannot establish the
 7.5-second/quarter-time reference requirements without a new bounded export/replay or another source.
 
-Selected first content regime: a billowy cumulus-like **finite 240-source-second** lifecycle, 33 output frames at
+Original carrier-profile worksheet (the Q1 direct recipe above is separately qualified): a billowy cumulus-like **finite 240-source-second** lifecycle, 33 output frames at
 7.5 s intervals, final **128^3 density in a 512 m cube** (4 m cells), **32^3 interval flow** (16 m spacing), 8^3 sparse
 bricks. This 512 m extent deliberately differs from the study's 2 km arithmetic example: we preserve spatial detail
 rather than dilute the same grid across a larger sky. Both density endpoints are zero; an empty validity collar
@@ -515,8 +515,7 @@ One high-cap R8 source uses33 frames with<=820 active8^3 bricks/frame: density13
 No entropy-compression ratio is assumed. Portable cold RC uses the **same128^3/R8 precision/cadence**, but an independently
 admitted source bundle<=11 MiB (approximately<=470 active bricks/frame under these fixed flow/header reservations).
 This restricts asset support/occupancy, not voxel detail or the requirement for a convincing body. A source that fails
-both quality and byte gates is not a conforming portable cold asset; native/warm high-cap remains separate. No such
-source has yet been selected or proven.
+both quality and byte gates is not a conforming portable cold asset; native/warm high-cap remains separate. The later Q1 direct source above passes the encoded-byte and sampled optical gates; this does not qualify the original carrier profile or a library.
 
 | Logical capacity, one full-resolution phase and two directional caches | MiB |
 | --- | ---: |
@@ -634,7 +633,7 @@ The original design commission ran no queue item. The subsequent [Q1 source proo
 | Q7 target/cost admission | CL12/21/22/26/28: native/browser/mobile separately, actual loaded hashes, startup, sustained cadence/tails, memory and transitions. | Any required quality/correctness gate fails, weather/ticks dropped, workload changed, source byte cap exceeded or complete target budget missed. |
 | Q8 optional weather | CO01/CO02 only after base: authored finite birth schedule/front path drives incoming coverage with persistent IDs. | It compromises CL02–CL05 or needs uncommissioned meteorology/precipitation to make the base look coherent. |
 
-Q1's numeric gates are proposed, not passed: persistent correspondence<=1 local metre; source-ray optical-depth error<=0.1 in
+For the original carrier profile, numeric gates remain unqualified: persistent correspondence<=1 local metre; source-ray optical-depth error<=0.1 in
 selected directions, and source timing/structure sufficient for the intended views. Optical/phase/cache error, silhouette
 quality and temporal artifacts require their own comparisons; a bound on one does not qualify another. Full-loop normal
 motion and timelapse are both inspected, plus long enough archetype reuse to expose repetition. Failures revise the
