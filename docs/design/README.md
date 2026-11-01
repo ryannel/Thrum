@@ -18,8 +18,13 @@ reference, not the host. Existing implementations are candidates for later recon
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).
 - [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; Bevy is not the selected host.
 
-[Cloud D2 extension](modules/CLOUDS.md): [capability inventory](modules/CLOUD-CAPABILITIES.md), complete proposed
-lifecycle/transport/consumer design and [independent review](../evidence/cloud-design-2026-11-01/REVIEW.md). A later [Q1 source proof](../evidence/cloud-source-2026-11-01/REVIEW.md) supplies bounded content/codec evidence; A [Q2/Q3 coupled instrument](../evidence/cloud-coupled-2026-11-01/README.md) adds bounded lighting/shadow/reflection evidence and explicit open cost/accuracy gates. Thrum runtime remains unimplemented.
+[Cloud D2 extension](modules/CLOUDS.md): [complete capability inventory](modules/CLOUD-CAPABILITIES.md), proposed
+five-family/world-weather/transport model and [complete-sky research](research/CLOUD-SKY-SOURCES.md). Independent
+[comparison and scoped closure](../evidence/cloud-sky-design-2026-11-01/README.md) selected the proof model; implementation/quality remain unproven. The [historical local design](modules/CLOUD-LOCAL-CLIP.md) and its
+[review](../evidence/cloud-design-2026-11-01/REVIEW.md) remain scoped evidence. The
+[Q1 source proof](../evidence/cloud-source-2026-11-01/REVIEW.md) and
+[Q2/Q3 coupled instrument](../evidence/cloud-coupled-2026-11-01/README.md) qualify bounded interactions, with explicit
+cost/accuracy failures. New families, weather, full skies and Thrum runtime remain unproven.
 
 Module designs live in `modules/`; source/decision investigations in `research/`. The integrated design and maturity
 ledger link each required responsibility to its owner, evidence, gaps and next qualification. Raw trials/captures stay

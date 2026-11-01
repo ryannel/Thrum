@@ -9,6 +9,13 @@ Status: analytical architecture proposal, 31 October 2026, with the A04/A05 sele
 now specify E1.clouds evolution, independent consumers and the optional RC visible-volume recipe. The initial
 attenuation-only baseline remains valid; no runtime, content or target qualification follows from this recommendation.
 
+The [complete cloud commission](CLOUDS.md) selects a proposed SKY-G profile with a common spherical air/cloud/ground
+frame and long view/light paths for all five families and full skies. Its authored event/layer sources retain E1 time,
+wind, identity and weather ownership; source-only higher scattering does not change physical extinction. Clouded surface
+irradiance/probes are derived consumers, never feedback into the pristine external cloud illumination. Required rain/
+lightning seams publish actual authored causes/units/IDs, independently of cloud draw. This profile is unproven and does
+not alter the baseline short-range air's admission or require a meteorological solver for other games.
+
 ## Required outcomes and separation
 
 The engine can construct outdoor and indoor 3D worlds and selectively supply terrain, vegetation, sky/air, cloud shadows, weather/wind, precipitation, water and persistent surface response. Their effects agree at a place and time, even when one visible representation is absent or lower fidelity. A game can use a cloud-shadow field without drawing clouds; a room can use exterior daylight through windows without rendering a full outdoor sky. A desert or dungeon need not allocate a water solver. Feature composition validates retained consumers and substitutes, rather than copying or forking one “environment state” per view. The top-down, third-person and first-person cases are peers.

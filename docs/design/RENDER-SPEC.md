@@ -223,9 +223,13 @@ boundaries; large HDR values are not silently clamped before V4.
 
 ## 5. Initial atmosphere, fog and transport operator
 
-The optional [visible-cloud extension](modules/CLOUDS.md) defines a separately admitted RC profile, shared source/light
-products, approximate cloud source closure and joint-media reconstruction. It preserves the baseline below and C08;
-its broader camera/source domain, slot layouts and cost reservations are recommendations, not baseline qualification.
+The selectable [visible-cloud extension](modules/CLOUDS.md) retains the bounded local RC profile and proposes the
+extended SKY-G ground-sky profile for the commissioned five-family/full-sky proof. SKY-G requires shared spherical
+cloud/air/ground geometry, long light/view paths, an extended atmosphere/terminal producer and all-layer partial light
+depth. These are explicit new qualification obligations, not an increase to a hard ray cutoff or evidence that the
+baseline below already supports high clouds/horizons. C08 joint transport and V4 display ownership remain unchanged.
+Cloud families and storm development are required within that commission, while cloud selection remains optional for
+a Thrum game. Shared products/layouts/costs remain proposed until measured; actual engine bindings follow the build plan.
 
 
 Select a small **joint single-scattering air path**, not a universal multiple-
