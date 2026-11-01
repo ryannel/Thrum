@@ -70,6 +70,10 @@ pub enum AdmissionError {
     Expired,
     /// Bounded pending or retained-result capacity is full.
     Busy,
+    /// A qualified input carries a payload charged to another pool.
+    WrongPool,
+    /// A qualified input exceeds its selected per-value shape or byte limit.
+    ValueProfile,
 }
 /// Authority tick cannot publish while required readers retain the bounded pool.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -157,10 +161,12 @@ pub struct SnapshotWriteBounds {
     pub max_spawns_per_action: usize,
 }
 
-/// Per-value bounds for the three retained game value kinds on a closed
-/// authority path. Action and temporary change work need separate admission.
+/// Per-value bounds for retained game values on a closed authority path.
+/// Temporary change work needs a separate game-work policy.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ClosedGameLimits {
+    /// Submitted action payload limits.
+    pub action: ClosedValueLimits,
     /// Authoritative entity record limits.
     pub entity: ClosedValueLimits,
     /// Immediate event payload limits.
@@ -177,16 +183,17 @@ struct ClosedValueGate<T> {
     check: ClosedValueCheck<T>,
 }
 
-struct ClosedGameGates<T, E, R> {
+struct ClosedGameGates<A, T, E, R> {
+    action: ClosedValueGate<A>,
     entity: ClosedValueGate<T>,
     event: ClosedValueGate<E>,
     rejection: ClosedValueGate<R>,
 }
 
-struct SnapshotAdmission<T, E, R> {
+struct SnapshotAdmission<A, T, E, R> {
     pool: PublicationPool,
     bounds: SnapshotWriteBounds,
-    closed: Option<ClosedGameGates<T, E, R>>,
+    closed: Option<ClosedGameGates<A, T, E, R>>,
 }
 
 /// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
@@ -286,6 +293,18 @@ pub type GameTick<G> =
 /// Complete state group for one concrete game rule set.
 pub type GameStateGroup<G> =
     StateGroup<<G as GameRules>::Entity, <G as GameRules>::Event, <G as GameRules>::Rejection>;
+type GameClosedGates<G> = ClosedGameGates<
+    <G as GameRules>::Action,
+    <G as GameRules>::Entity,
+    <G as GameRules>::Event,
+    <G as GameRules>::Rejection,
+>;
+type GameSnapshotAdmission<G> = SnapshotAdmission<
+    <G as GameRules>::Action,
+    <G as GameRules>::Entity,
+    <G as GameRules>::Event,
+    <G as GameRules>::Rejection,
+>;
 
 /// Fixed-tick standalone or match authority using one game-owned rule path.
 pub struct Authority<G: GameRules> {
@@ -298,7 +317,7 @@ pub struct Authority<G: GameRules> {
     next_event_id: u64,
     peers: PeerMap<G>,
     snapshot_leases: VecDeque<Weak<()>>,
-    snapshot_admission: Option<SnapshotAdmission<G::Entity, G::Event, G::Rejection>>,
+    snapshot_admission: Option<GameSnapshotAdmission<G>>,
     faulted: bool,
 }
 
@@ -339,9 +358,12 @@ impl<G: GameRules> Authority<G> {
     ) -> Result<Self, WorldPublicationError>
     where
         G::Entity: ClosedPublicationValue,
+        G::Action: ClosedPublicationValue,
         G::Event: ClosedPublicationValue,
         G::Rejection: ClosedPublicationValue,
     {
+        <G::Action as ClosedPublicationValue>::validate_shape(value_limits.action)
+            .map_err(|_| WorldPublicationError::ValueProfile)?;
         <G::Entity as ClosedPublicationValue>::validate_shape(value_limits.entity)
             .map_err(|_| WorldPublicationError::ValueProfile)?;
         <G::Event as ClosedPublicationValue>::validate_shape(value_limits.event)
@@ -355,6 +377,10 @@ impl<G: GameRules> Authority<G> {
             pool,
             bounds,
             Some(ClosedGameGates {
+                action: ClosedValueGate {
+                    limits: value_limits.action,
+                    check: <G::Action as ClosedPublicationValue>::validate_for_pool,
+                },
                 entity: ClosedValueGate {
                     limits: value_limits.entity,
                     check: <G::Entity as ClosedPublicationValue>::validate_for_pool,
@@ -377,7 +403,7 @@ impl<G: GameRules> Authority<G> {
         mut world: World<G::Entity>,
         pool: PublicationPool,
         bounds: SnapshotWriteBounds,
-        closed: Option<ClosedGameGates<G::Entity, G::Event, G::Rejection>>,
+        closed: Option<GameClosedGates<G>>,
     ) -> Result<Self, WorldPublicationError> {
         if let Some(gates) = &closed {
             let gate = &gates.entity;
@@ -411,7 +437,7 @@ impl<G: GameRules> Authority<G> {
         rules: G,
         world: World<G::Entity>,
         snapshot: Snapshot<G::Entity>,
-        snapshot_admission: Option<SnapshotAdmission<G::Entity, G::Event, G::Rejection>>,
+        snapshot_admission: Option<GameSnapshotAdmission<G>>,
     ) -> Self {
         let initial_lease = snapshot.lease_token();
         Self {
@@ -549,6 +575,19 @@ impl<G: GameRules> Authority<G> {
             || peer.pending.len() + peer.completed.len() >= MAX_RESULTS
         {
             return Err(AdmissionError::Busy);
+        }
+        if let Some(gates) = self
+            .snapshot_admission
+            .as_ref()
+            .and_then(|admission| admission.closed.as_ref().map(|closed| (admission, closed)))
+        {
+            let (admission, closed) = gates;
+            (closed.action.check)(&input.action, &admission.pool, closed.action.limits).map_err(
+                |error| match error {
+                    ClosedValueError::WrongPool => AdmissionError::WrongPool,
+                    _ => AdmissionError::ValueProfile,
+                },
+            )?;
         }
         let (due_tick, timing_error) = match input.schedule {
             InputSchedule::NextTick { observed_tick } => {
