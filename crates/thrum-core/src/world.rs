@@ -733,6 +733,19 @@ impl<T: Clone> World<T> {
         }
     }
 
+    /// Conservative number of full-state group entries after at most this
+    /// many prepared edits. Existing unpublished changes also occupy entries;
+    /// each new edit can introduce at most one new stable ID.
+    pub(crate) fn conservative_change_count(
+        &self,
+        max_edits: usize,
+    ) -> Result<usize, PublicationCapacity> {
+        self.changed
+            .len()
+            .checked_add(max_edits)
+            .ok_or(PublicationCapacity)
+    }
+
     /// Conservative logical page/root peak for the current dirty set,
     /// including possible Vec-to-Box staging overlap and initial empty root.
     /// A caller preparing a tick must reserve its possible peak earlier.
@@ -1237,5 +1250,28 @@ mod tests {
         drop(reservation);
         drop(world);
         assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn group_change_bound_covers_existing_and_cancelled_structural_edits() {
+        let mut world = World::new(WorldEpoch(9));
+        world.spawn(StableId(1), 1_u64).unwrap();
+        assert_eq!(world.conservative_change_count(130).unwrap(), 131);
+        assert!(world.conservative_change_count(usize::MAX).is_err());
+        let edits = (2..=66)
+            .map(|id| WorldEdit::Spawn(StableId(id), id as u64))
+            .chain((2..=66).map(|id| WorldEdit::DespawnNew(StableId(id))))
+            .collect();
+        world.apply_prepared(edits).unwrap();
+        assert!(world.changed.len() <= 131);
+        assert_eq!(world.publish(0).changes.len(), 1);
+
+        // Distinct new IDs attain the additive bound even when existing
+        // unpublished work was performed before the admitted tick.
+        world.spawn(StableId(67), 67).unwrap();
+        assert_eq!(world.conservative_change_count(2).unwrap(), 3);
+        world.spawn(StableId(68), 68).unwrap();
+        world.spawn(StableId(69), 69).unwrap();
+        assert_eq!(world.publish(1).changes.len(), 3);
     }
 }
