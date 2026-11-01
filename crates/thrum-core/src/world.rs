@@ -591,6 +591,62 @@ impl<T: Clone> World<T> {
         Ok(bytes)
     }
 
+    /// O(1) conservative page/root reservation for a future batch. `max_edits`
+    /// counts every possible touched slot, including structural edits;
+    /// `max_spawns` bounds slot high-water even if objects retire before the
+    /// barrier. Game payloads and all non-snapshot outputs need other bounds.
+    pub fn conservative_charged_publication_peak(
+        &self,
+        max_edits: usize,
+        max_spawns: usize,
+    ) -> Result<usize, WorldPublicationError> {
+        if matches!(self.publication_mode, PublicationMode::Uncharged) {
+            return Err(WorldPublicationError::UnchargedWorld);
+        }
+        let first = matches!(self.publication_mode, PublicationMode::Unselected);
+        let possible_slots = self
+            .slots
+            .len()
+            .checked_add(max_spawns)
+            .ok_or(WorldPublicationError::Capacity)?;
+        let possible_pages = possible_slots.div_ceil(PAGE_SIZE);
+        let touches = self
+            .dirty_count
+            .checked_add(max_edits.max(max_spawns))
+            .ok_or(WorldPublicationError::Capacity)?;
+        let dirty_pages = possible_pages.min(touches);
+        if dirty_pages == 0 && !first {
+            return Ok(0);
+        }
+        let root = PageRootData::<T>::charge_bytes(possible_pages)
+            .and_then(|bytes| {
+                bytes
+                    .checked_add(PageRootData::<T>::storage_bytes(possible_pages)?)
+                    .ok_or(PublicationCapacity)
+            })
+            .map_err(|_| WorldPublicationError::Capacity)?;
+        let page = PageData::<T>::charge_bytes(PAGE_SIZE)
+            .and_then(|bytes| {
+                bytes
+                    .checked_add(PageData::<T>::storage_bytes(PAGE_SIZE)?)
+                    .ok_or(PublicationCapacity)
+            })
+            .map_err(|_| WorldPublicationError::Capacity)?;
+        let mut peak = dirty_pages
+            .checked_mul(page)
+            .and_then(|pages| pages.checked_add(root))
+            .ok_or(WorldPublicationError::Capacity)?;
+        if first {
+            peak = peak
+                .checked_add(
+                    PageRootData::<T>::charge_bytes(0)
+                        .map_err(|_| WorldPublicationError::Capacity)?,
+                )
+                .ok_or(WorldPublicationError::Capacity)?;
+        }
+        Ok(peak)
+    }
+
     /// Publish only page/root owners from a pre-existing reservation. This is
     /// a partial accounting primitive: game payload, groups and replica still
     /// require separate bounds. Do not mix charged and prototype publication.
@@ -832,6 +888,7 @@ mod tests {
                 .err(),
             Some(WorldPublicationError::WrongPool)
         );
+        assert_eq!(charged.conservative_charged_publication_peak(0, 0), Ok(0));
     }
 
     #[test]
@@ -861,6 +918,67 @@ mod tests {
         drop(published);
         drop(reservation);
         drop(second);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn precommit_page_bound_covers_net_zero_structural_high_water() {
+        let mut world = World::new(WorldEpoch(7));
+        let peak = world
+            .conservative_charged_publication_peak(130, 65)
+            .unwrap();
+        let too_small = PublicationPool::new(peak - 1);
+        assert!(too_small.try_reserve(peak).is_err());
+        assert!(world.is_empty());
+        assert_eq!(
+            world.required_charged_publication_bytes().unwrap(),
+            2 * PageRootData::<u64>::charge_bytes(0).unwrap()
+        );
+
+        let pool = PublicationPool::new(peak);
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let edits = (1..=65)
+            .map(|id| WorldEdit::Spawn(StableId(id), id as u64))
+            .chain((1..=65).map(|id| WorldEdit::DespawnNew(StableId(id))))
+            .collect();
+        world.apply_prepared(edits).unwrap();
+        assert!(world.is_empty());
+        assert!(world.required_charged_publication_bytes().unwrap() <= peak);
+        let published = world.try_publish_charged(0, &mut reservation).unwrap();
+        assert_eq!(published.work.copied_pages, 3);
+        assert!(published.snapshot.records().next().is_none());
+        drop(published);
+        drop(reservation);
+        drop(world);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn precommit_page_bound_covers_existing_dirty_and_partial_page_growth() {
+        let pool = PublicationPool::new(usize::MAX);
+        let mut world = World::new(WorldEpoch(8));
+        for id in 1..=31 {
+            world.spawn(StableId(id), id as u64).unwrap();
+        }
+        let mut reservation = pool
+            .try_reserve(world.required_charged_publication_bytes().unwrap())
+            .unwrap();
+        world.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+
+        let handle = world.handle_for(StableId(1)).unwrap();
+        *world.get_mut(handle).unwrap() = 99;
+        let peak = world.conservative_charged_publication_peak(2, 2).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        world.spawn(StableId(32), 32).unwrap();
+        world.spawn(StableId(33), 33).unwrap();
+        assert!(world.required_charged_publication_bytes().unwrap() <= peak);
+        let published = world.try_publish_charged(1, &mut reservation).unwrap();
+        assert_eq!(published.work.copied_pages, 2);
+        assert_eq!(published.snapshot.records().count(), 33);
+        drop(published);
+        drop(reservation);
+        drop(world);
         assert_eq!(pool.used_bytes(), 0);
     }
 }

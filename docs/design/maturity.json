@@ -2785,7 +2785,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "5fe59d2a6990412bfbd8cc7ec2379dbbca1409c6fe8238a1534469ff4850fce2",
+    "design_sha256": "5da935e49afa1a753a2ed9269a672a03e906b863311af6882722f24b1efee0c1",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2797,14 +2797,15 @@
     "publication_memory": {
       "design": "selected_for_precommit_byte_admission",
       "implementation": "partial_reservation_prepared_edits_charged_bytes_and_snapshot_owners_only",
-      "functional_validation": "pool_input_history_prepared_edit_and_charged_page_owner_tests_only",
+      "functional_validation": "pool_input_history_prepared_edit_charged_page_owner_and_precommit_page_bound_tests_only",
       "performance_measurement": "local_page_layout_and_charged_page_path_only; whole_byte_gate_not_run",
-      "scope": "Process-shared reservation, immutable payload byte ownership, and unique page/root lifetime charges are tested; a charged action survives authority input history, and prepared edits reject ordinary invalid batches. Charged pages are measured locally, but authority precommit admission, general payload bounds, mutable world indexes, groups, outcomes, baselines and replica allocation charges are absent.",
+      "scope": "Process-shared reservation, immutable payload byte ownership, and unique page/root lifetime charges are tested; a charged action survives authority input history, prepared edits reject ordinary invalid batches, and an O(1) precommit snapshot bound covers net-zero structural growth. Charged pages are measured locally, but whole-tick authority admission, general payload bounds, mutable world indexes, groups, outcomes, baselines and replica allocation charges are absent.",
       "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md",
       "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md",
       "prepared_edit_evidence": "../evidence/i1-headless/PREPARED-EDITS.md",
       "charged_byte_evidence": "../evidence/i1-headless/PUBLICATION-BYTES.md",
       "charged_page_evidence": "../evidence/i1-headless/CHARGED-PAGES.md",
+      "precommit_page_bound_evidence": "../evidence/i1-headless/PRECOMMIT-PAGE-BOUND.md",
       "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
       "design_review_evidence": "../evidence/i1-headless/MEMORY-DESIGN-REVIEW.md"
     }
