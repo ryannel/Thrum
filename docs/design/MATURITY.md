@@ -201,9 +201,11 @@ local release-mode cost fixtures at 64, 4,096 and 16,384 objects. Separate recor
 [clock](../evidence/i1-headless/CLOCK.md), [native headless callback](../evidence/i1-headless/HOST.md)
 and [two controlled peers](../evidence/i1-headless/TWO-PEER.md). F1, F3, W1, P6 and N1 remain
 `partial` for implementation and functional validation in that exact scope; F1/W1/P6/N1 have
-`modelled` I1 cost accounts. The publication-memory byte gate is designed but still unimplemented:
-the current eight-bundle limit is a count limit, and a small world-growth allocation fix is not
-whole-process memory qualification. Existing review hashes and whole-module design stages are
-unchanged. Named platform performance states remain `not_run`; real WSS, source/save, broader
+`modelled` I1 cost accounts. The publication-memory byte gate remains unimplemented: the current
+eight-bundle limit is a count limit. A tested [shared reservation substrate and private page-layout
+comparison](../evidence/i1-headless/PAGE-LAYOUT.md) improve the path toward byte admission but do
+not charge authority/replica allocations or bound game-owned payloads. Existing review hashes
+and whole-module design stages are unchanged. Named platform performance states remain `not_run`;
+real WSS, source/save, broader
 scheduling and mobile shells remain separate work. This evidence does not promote the whole engine
 or I1 package to feature-complete.

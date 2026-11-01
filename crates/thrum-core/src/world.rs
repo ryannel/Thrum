@@ -78,7 +78,7 @@ struct SnapshotEntry<T> {
     record: EntityRecord<T>,
 }
 
-type Page<T> = Arc<[Option<SnapshotEntry<T>>]>;
+type Page<T> = Arc<Vec<Option<SnapshotEntry<T>>>>;
 type PageRoot<T> = Arc<[Page<T>]>;
 
 #[derive(Clone, Copy)]
@@ -315,17 +315,17 @@ impl<T: Clone> World<T> {
                 }
                 let start = page_index * PAGE_SIZE;
                 let end = (start + PAGE_SIZE).min(self.slots.len());
-                let mut page = Vec::with_capacity(end - start);
+                let mut entries = Vec::with_capacity(end - start);
                 for slot in &self.slots[start..end] {
                     if slot.entry.is_some() {
                         work.copied_objects += 1;
                     }
-                    page.push(slot.entry.as_ref().map(|record| SnapshotEntry {
+                    entries.push(slot.entry.as_ref().map(|record| SnapshotEntry {
                         generation: slot.generation,
                         record: record.clone(),
                     }));
                 }
-                let page = Arc::from(page);
+                let page = Arc::new(entries);
                 if page_index == pages.len() {
                     pages.push(page);
                 } else {

@@ -159,7 +159,7 @@
       "i1_headless": {
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
-        "scope": "Fixed-tick headless coordinator, bounded pending/results and eight-bundle count backpressure, plus locally tested clock and native headless authority/replica callback; process-wide byte admission is designed but unimplemented, and no general F1 system registry, platform adapter or mobile shell exists.",
+        "scope": "Fixed-tick headless coordinator, bounded pending/results and eight-bundle count backpressure, plus locally tested clock and native headless authority/replica callback. A process-shared byte reservation substrate is tested but not connected to authority/replica allocations; no general F1 registry, platform adapter or mobile shell exists.",
         "clock_evidence": "../evidence/i1-headless/CLOCK.md",
         "host_evidence": "../evidence/i1-headless/HOST.md"
       }
@@ -397,7 +397,7 @@
       "i1_headless": {
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
-        "scope": "Finite typed slot world, immutable paged snapshots and complete changed-object publication; direct allocation of newly grown pages removes a redundant allocation, while process-wide byte admission and broader private component store remain unbuilt."
+        "scope": "Finite typed slot world, immutable paged snapshots and complete changed-object publication; direct new-page allocation and a locally measured Arc<Vec> page layout are selected, while process-wide byte admission and the broader private component store remain unbuilt."
       }
     },
     {
@@ -2685,7 +2685,7 @@
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
-      "MATURITY.md": "7ccdea5b26640de8fdd50442635660cc69c93c85f802fa458d454a25d4a78afb",
+      "MATURITY.md": "d28915c62be122613a65afb8531d3af62523d843a55c16f0228bab215f860ee5",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
@@ -2785,7 +2785,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "d71667c89121129572a84bcd2b54c9b23089477a0bf53591eeffcd7bcd1522a6",
+    "design_sha256": "a3dce79d216cd6f9d60797219db5f44c43019eddddec5b36d2e1a339b88657b2",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2796,11 +2796,12 @@
     "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md",
     "publication_memory": {
       "design": "selected_for_precommit_byte_admission",
-      "implementation": "not_started",
-      "functional_validation": "not_run",
-      "performance_measurement": "local_growth_publication_only; byte_gate_not_run",
-      "scope": "Eight-bundle count backpressure and direct new-page allocation exist; no whole-process byte pool or retained-payload cap.",
-      "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md"
+      "implementation": "partial_reservation_substrate_only",
+      "functional_validation": "pool_unit_tests_and_page_conformance_only",
+      "performance_measurement": "local_page_layout_comparison_only; byte_gate_not_run",
+      "scope": "Process-shared atomic reservation/charge transfer is tested and the private Arc<Vec> page layout is locally measured; no authority/replica allocation charges, precommit byte gate or bounded game payload contract.",
+      "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md",
+      "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md"
     }
   }
 }

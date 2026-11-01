@@ -7,6 +7,7 @@
 mod authority;
 mod clock;
 mod host;
+mod publication_pool;
 mod replica;
 mod world;
 
@@ -18,6 +19,9 @@ pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{
     GameHostCallback, HeadlessHost, HostAdmissionError, HostBudget, HostCallback, HostError,
     HostPublication, InitialOutcomes,
+};
+pub use publication_pool::{
+    PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation,
 };
 pub use replica::{AdmittedGroup, Replica, ReplicaError, StateGroup};
 pub use world::{
