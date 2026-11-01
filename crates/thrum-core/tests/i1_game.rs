@@ -5,8 +5,8 @@ use thrum_core::{
     ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules, HeadlessHost,
     HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule, MatchId,
     Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool, Replica,
-    ReplicaError, ResultDisposition, SessionId, StableId, StateGroup, StepError, TickClock, World,
-    WorldEdit, WorldEpoch, WorldError,
+    ReplicaError, ResultDisposition, SessionId, SnapshotWriteBounds, StableId, StateGroup,
+    StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -532,6 +532,276 @@ fn callback_delivers_earlier_committed_tick_before_a_later_terminal_fault() {
 #[test]
 fn callback_delivers_earlier_committed_tick_before_a_caught_game_unwind() {
     assert_catchup_fault_delivers(true);
+}
+
+#[test]
+fn charged_authority_backpressures_before_edit_and_releases_old_reader_bytes() {
+    use std::time::{Duration, Instant};
+
+    let pool = PublicationPool::new(1_000_000);
+    let bounds = SnapshotWriteBounds {
+        max_edits_per_action: 2,
+        max_spawns_per_action: 0,
+    };
+    let other = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(188)),
+        Rule,
+        game_world(189),
+        pool.clone(),
+        bounds,
+    )
+    .unwrap();
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(190)),
+        Rule,
+        game_world(191),
+        pool.clone(),
+        bounds,
+    )
+    .unwrap();
+    assert!(pool.used_bytes() > 0);
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    let old_reader = authority.snapshot().clone();
+    let origin = Instant::now();
+    let (mut host, _) = HeadlessHost::with_replica(
+        origin,
+        ClockConfig::default(),
+        HostBudget {
+            callback_cpu: Duration::from_millis(5),
+            other_work: Duration::from_millis(1),
+            tick_cost_bound: Duration::from_millis(1),
+        },
+        authority,
+    )
+    .unwrap();
+    host.submit(input(
+        1,
+        1,
+        InputSchedule::NextTick { observed_tick: 0 },
+        Action::Collect(ITEM),
+    ))
+    .unwrap();
+    let occupied = pool.limit_bytes() - pool.used_bytes();
+    let held = pool.try_reserve(occupied).unwrap();
+    let blocked = host
+        .on_callback(origin + Duration::from_millis(17))
+        .unwrap();
+    assert_eq!(
+        blocked.clock.step_error,
+        Some(StepError::PublicationBackpressure)
+    );
+    assert_eq!(blocked.clock.completed, 0);
+    assert_eq!(host.authority().tick_index(), 0);
+    assert_eq!(host.replica().unwrap().tick(), 0);
+    assert!(matches!(
+        host.authority()
+            .world()
+            .get(host.authority().world().handle_for(ITEM).unwrap())
+            .unwrap()
+            .state,
+        Object::Collectible {
+            available: true,
+            ..
+        }
+    ));
+    drop(held);
+    let committed = host
+        .on_callback(origin + Duration::from_millis(17))
+        .unwrap();
+    assert_eq!(committed.clock.completed, 1);
+    assert_eq!(committed.replica_groups, 1);
+    assert_eq!(host.authority().tick_index(), 1);
+    assert_eq!(host.replica().unwrap().tick(), 1);
+    let with_old_reader = pool.used_bytes();
+    drop(old_reader);
+    assert!(pool.used_bytes() < with_old_reader);
+    let with_second_world = pool.used_bytes();
+    drop(other);
+    assert!(pool.used_bytes() < with_second_world);
+}
+
+#[test]
+fn charged_authority_faults_if_prepared_edits_exceed_declared_count() {
+    let pool = PublicationPool::new(1_000_000);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(192)),
+        Rule,
+        game_world(193),
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 1,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority
+        .submit(input(
+            1,
+            1,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Collect(ITEM),
+        ))
+        .unwrap();
+    let before = pool.used_bytes();
+    assert_eq!(
+        authority.step().err(),
+        Some(StepError::TerminalGameContract)
+    );
+    assert!(authority.is_faulted());
+    assert_eq!(authority.tick_index(), 0);
+    assert_eq!(pool.used_bytes(), before);
+    assert!(matches!(
+        authority
+            .world()
+            .get(authority.world().handle_for(ITEM).unwrap())
+            .unwrap()
+            .state,
+        Object::Collectible {
+            available: true,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn charged_authority_reserves_transient_structural_peak() {
+    struct StructuralRule;
+    impl GameRules for StructuralRule {
+        type Entity = u64;
+        type Action = ();
+        type Change = ();
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(&self, _world: &World<u64>, _actor: ActorId, _action: &()) -> Result<(), ()> {
+            Ok(())
+        }
+
+        fn prepare(&self, _world: &World<u64>, _change: ()) -> PreparedCommit<u64, ()> {
+            let edits = (1..=65)
+                .map(|id| WorldEdit::Spawn(StableId(id), id as u64))
+                .chain((1..=65).map(|id| WorldEdit::DespawnNew(StableId(id))))
+                .collect();
+            PreparedCommit {
+                edits: PreparedEdits::Many(edits),
+                event: None,
+            }
+        }
+    }
+
+    let pool = PublicationPool::new(1_000_000);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(194)),
+        StructuralRule,
+        World::new(WorldEpoch(195)),
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 130,
+            max_spawns_per_action: 65,
+        },
+    )
+    .unwrap();
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority
+        .submit(Input {
+            origin: Origin {
+                peer: PEER,
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: (),
+        })
+        .unwrap();
+    let published = authority.step().unwrap();
+    assert_eq!(published.world_work.copied_pages, 3);
+    assert!(published.group.changes.is_empty());
+    assert!(authority.world().is_empty());
+    assert!(published.snapshot.records().next().is_none());
+    assert!(pool.used_bytes() > 0);
+}
+
+#[test]
+fn charged_authority_preserves_sequential_rules_and_competing_peers() {
+    let pool = PublicationPool::new(1_000_000);
+    let bounds = SnapshotWriteBounds {
+        max_edits_per_action: 2,
+        max_spawns_per_action: 0,
+    };
+    let mut sequential = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(196)),
+        Rule,
+        game_world(197),
+        pool.clone(),
+        bounds,
+    )
+    .unwrap();
+    sequential.register_peer(PEER, 1, ACTOR).unwrap();
+    let (mut sequential_replica, _) = Replica::from_baseline(sequential.baseline()).unwrap();
+    for (sequence, action) in [(1, Action::Collect(ITEM)), (2, Action::Open(DOOR))] {
+        sequential
+            .submit(input(
+                1,
+                sequence,
+                InputSchedule::NextTick { observed_tick: 0 },
+                action,
+            ))
+            .unwrap();
+    }
+    let group = sequential.step().unwrap().group;
+    assert_eq!(group.results.len(), 2);
+    assert!(
+        group
+            .results
+            .iter()
+            .all(|result| result.disposition == ResultDisposition::Committed)
+    );
+    sequential_replica.apply(group).unwrap();
+    assert!(matches!(
+        sequential_replica.get(DOOR),
+        Some(Object::Door { open: true, .. })
+    ));
+
+    let mut competing = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(198)),
+        Rule,
+        two_actor_world(199),
+        pool.clone(),
+        bounds,
+    )
+    .unwrap();
+    competing.register_peer(PEER, 1, ACTOR).unwrap();
+    competing.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+    let (mut competing_replica, _) = Replica::from_baseline(competing.baseline()).unwrap();
+    for (peer, actor) in [(PEER, ACTOR), (PEER_TWO, ACTOR_TWO)] {
+        competing
+            .submit(peer_input(
+                peer,
+                actor,
+                1,
+                1,
+                InputSchedule::NextTick { observed_tick: 0 },
+                Action::Collect(ITEM),
+            ))
+            .unwrap();
+    }
+    let group = competing.step().unwrap().group;
+    assert_eq!(group.results.len(), 2);
+    assert_eq!(group.results[0].disposition, ResultDisposition::Committed);
+    assert_eq!(
+        group.results[1].disposition,
+        ResultDisposition::Rejected(ActionRejection::Game(Rejection::AlreadyTaken))
+    );
+    competing_replica.apply(group).unwrap();
+    assert!(matches!(
+        competing_replica.get(ITEM),
+        Some(Object::Collectible {
+            available: false,
+            ..
+        })
+    ));
 }
 
 fn peer_input(

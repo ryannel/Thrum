@@ -5,7 +5,8 @@ use std::{
 
 use crate::replica::StateGroup;
 use crate::{
-    EntityChange, PreparedEdits, Snapshot, World, WorldWork,
+    EntityChange, PreparedEdits, PublicationPool, PublicationReservation, Snapshot, World,
+    WorldPublicationError, WorldWork,
     world::{ActorId, AuthorityId},
 };
 
@@ -76,6 +77,9 @@ pub enum StepError {
     /// Eight immutable tick bundles remain leased; caller must release readers
     /// or enter its explicit overload policy before advancing.
     SnapshotBackpressure,
+    /// The shared pool cannot reserve the declared snapshot page/root peak;
+    /// no tick mutation occurred and the caller may retry after readers drain.
+    PublicationBackpressure,
     /// Game preparation violated the world-edit contract. This authority
     /// cannot publish or retry its partially processed tick.
     TerminalGameContract,
@@ -141,6 +145,21 @@ pub struct PreparedCommit<T, E> {
     pub edits: PreparedEdits<T>,
     /// Immediate event payload, emitted only after valid edits are applied.
     pub event: Option<E>,
+}
+
+/// Declared per-action edit counts for the partial charged-snapshot path.
+/// These bounds do not account for game payloads or replica/output memory.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SnapshotWriteBounds {
+    /// Maximum ordered world edits produced by one successful action.
+    pub max_edits_per_action: usize,
+    /// Maximum spawn edits within those ordered edits.
+    pub max_spawns_per_action: usize,
+}
+
+struct SnapshotAdmission {
+    pool: PublicationPool,
+    bounds: SnapshotWriteBounds,
 }
 
 /// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
@@ -252,6 +271,7 @@ pub struct Authority<G: GameRules> {
     next_event_id: u64,
     peers: PeerMap<G>,
     snapshot_leases: VecDeque<Weak<()>>,
+    snapshot_admission: Option<SnapshotAdmission>,
     faulted: bool,
 }
 
@@ -264,6 +284,39 @@ impl<G: GameRules> Authority<G> {
     /// Start from a fully preloaded world; publishes its complete tick-zero state.
     pub fn new(id: AuthorityId, rules: G, mut world: World<G::Entity>) -> Self {
         let snapshot = world.publish(0).snapshot;
+        Self::from_initial_snapshot(id, rules, world, snapshot, None)
+    }
+
+    /// Start with pool-charged immutable snapshot pages and roots. The pool
+    /// guards only snapshot allocations; this is not a whole-process byte cap.
+    pub fn try_new_snapshot_charged(
+        id: AuthorityId,
+        rules: G,
+        mut world: World<G::Entity>,
+        pool: PublicationPool,
+        bounds: SnapshotWriteBounds,
+    ) -> Result<Self, WorldPublicationError> {
+        let peak = world.conservative_charged_publication_peak(0, 0)?;
+        let mut reservation = pool
+            .try_reserve(peak)
+            .map_err(|_| WorldPublicationError::Capacity)?;
+        let snapshot = world.try_publish_charged(0, &mut reservation)?.snapshot;
+        Ok(Self::from_initial_snapshot(
+            id,
+            rules,
+            world,
+            snapshot,
+            Some(SnapshotAdmission { pool, bounds }),
+        ))
+    }
+
+    fn from_initial_snapshot(
+        id: AuthorityId,
+        rules: G,
+        world: World<G::Entity>,
+        snapshot: Snapshot<G::Entity>,
+        snapshot_admission: Option<SnapshotAdmission>,
+    ) -> Self {
         let initial_lease = snapshot.lease_token();
         Self {
             id,
@@ -275,6 +328,7 @@ impl<G: GameRules> Authority<G> {
             next_event_id: 1,
             peers: BTreeMap::new(),
             snapshot_leases: VecDeque::from([initial_lease]),
+            snapshot_admission,
             faulted: false,
         }
     }
@@ -291,6 +345,46 @@ impl<G: GameRules> Authority<G> {
     /// it may contain unpublished effects and is only suitable for diagnosis.
     pub fn world(&self) -> &World<G::Entity> {
         &self.world
+    }
+    /// Last complete immutable world view; clones retain its page owners.
+    pub fn snapshot(&self) -> &Snapshot<G::Entity> {
+        &self.snapshot
+    }
+
+    fn reserve_snapshot_tick(&mut self) -> Result<Option<PublicationReservation>, StepError> {
+        let Some(admission) = &self.snapshot_admission else {
+            return Ok(None);
+        };
+        let due_tick = self.tick.checked_add(1).expect("world tick exhausted");
+        let due = self
+            .peers
+            .values()
+            .flat_map(|peer| peer.pending.values())
+            .filter(|pending| pending.due_tick <= due_tick)
+            .count();
+        let Some(max_edits) = due.checked_mul(admission.bounds.max_edits_per_action) else {
+            self.faulted = true;
+            return Err(StepError::TerminalGameContract);
+        };
+        let Some(max_spawns) = due.checked_mul(admission.bounds.max_spawns_per_action) else {
+            self.faulted = true;
+            return Err(StepError::TerminalGameContract);
+        };
+        let peak = match self
+            .world
+            .conservative_charged_publication_peak(max_edits, max_spawns)
+        {
+            Ok(peak) => peak,
+            Err(_) => {
+                self.faulted = true;
+                return Err(StepError::TerminalGameContract);
+            }
+        };
+        admission
+            .pool
+            .try_reserve(peak)
+            .map(Some)
+            .map_err(|_| StepError::PublicationBackpressure)
     }
     /// Register or reconnect one controlled actor. Reconnect requires a newer
     /// connection epoch and loses old pending input.
@@ -474,6 +568,7 @@ impl<G: GameRules> Authority<G> {
         if self.snapshot_leases.len() >= MAX_SNAPSHOT_LEASES {
             return Err(StepError::SnapshotBackpressure);
         }
+        let mut snapshot_reservation = self.reserve_snapshot_tick()?;
         // Poison before any tick mutation. If game code unwinds and its caller
         // catches the panic, the partially processed tick cannot be replayed.
         self.faulted = true;
@@ -506,6 +601,12 @@ impl<G: GameRules> Authority<G> {
             let (disposition, event_id, retained_event) = match decision {
                 Ok(change) => {
                     let prepared = self.rules.prepare(&self.world, change);
+                    if self.snapshot_admission.as_ref().is_some_and(|admission| {
+                        prepared.edits.len() > admission.bounds.max_edits_per_action
+                            || prepared.edits.spawns() > admission.bounds.max_spawns_per_action
+                    }) {
+                        return Err(StepError::TerminalGameContract);
+                    }
                     self.world
                         .apply_edits(prepared.edits)
                         .map_err(|_| StepError::TerminalGameContract)?;
@@ -546,7 +647,13 @@ impl<G: GameRules> Authority<G> {
             });
             results.push(result);
         }
-        let published = self.world.publish(self.tick);
+        let published = if let Some(reservation) = &mut snapshot_reservation {
+            self.world
+                .try_publish_charged(self.tick, reservation)
+                .map_err(|_| StepError::TerminalGameContract)?
+        } else {
+            self.world.publish(self.tick)
+        };
         self.snapshot = published.snapshot.clone();
         self.snapshot_leases
             .push_back(published.snapshot.lease_token());
