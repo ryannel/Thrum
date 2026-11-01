@@ -2539,7 +2539,13 @@ mod protected_output_fixture {
             (handle, value): (Handle, u8),
             context: &mut thrum_core::RuleContext<'_>,
         ) -> PreparedCommit<Entity, Output> {
-            let payload = context.try_copy_payload(&[value; 32]).unwrap();
+            let payload = if value == 8 {
+                let scratch = context.try_scratch_allocate(32).unwrap();
+                context.scratch_view_mut(scratch).unwrap().fill(value);
+                context.try_copy_scratch_payload(scratch).unwrap()
+            } else {
+                context.try_copy_payload(&[value; 32]).unwrap()
+            };
             if value == 9 {
                 let _ = context.try_copy_payload(&[9; 32]);
             }
@@ -2563,6 +2569,7 @@ mod protected_output_fixture {
     fn host_with_allowance(
         output_allowance: usize,
         structural: bool,
+        scratch_capacity: usize,
     ) -> (
         HeadlessHost<Rule>,
         thrum_core::InitialChargedOutcomes<Rule>,
@@ -2603,6 +2610,9 @@ mod protected_output_fixture {
             },
         )
         .unwrap();
+        if scratch_capacity != 0 {
+            authority.try_enable_rule_scratch(scratch_capacity).unwrap();
+        }
         authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
         authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
         let origin = Instant::now();
@@ -2647,7 +2657,7 @@ mod protected_output_fixture {
         PublicationPool,
         Instant,
     ) {
-        host_with_allowance(PublicationBytes::required_charge(32).unwrap(), false)
+        host_with_allowance(PublicationBytes::required_charge(32).unwrap(), false, 0)
     }
 
     fn input(peer: u64, action: u8) -> Input<u8> {
@@ -2728,9 +2738,60 @@ mod protected_output_fixture {
     }
 
     #[test]
+    fn scratch_payload_flows_through_state_event_and_replica_under_contention() {
+        let allowance = PublicationBytes::required_charge(32).unwrap();
+        let (mut host, initial, pool, origin) = host_with_allowance(allowance, false, 32);
+        let old_snapshot = host.authority().snapshot().clone();
+        host.submit(input(1, 8)).unwrap();
+        host.submit(input(2, 0)).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected charged publication")
+        };
+        assert_eq!(admitted.results().len(), 2);
+        assert_eq!(admitted.events().len(), 1);
+        let event = admitted.events()[0].payload.payload_owner(0).unwrap();
+        let state = host.replica().unwrap().get(StableId(1)).unwrap();
+        assert_eq!(event.as_slice(), &[8; 32]);
+        assert_eq!(state.inline(), &[8]);
+        assert_eq!(state.payload_owner(0).unwrap().as_slice(), &[8; 32]);
+        let rejection = admitted
+            .results()
+            .iter()
+            .find_map(|result| match &result.disposition {
+                ResultDisposition::Rejected(ActionRejection::Game(reason)) => Some(reason),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(rejection.payload_owner(0).unwrap().as_slice(), &[3; 16]);
+        assert_eq!(
+            old_snapshot
+                .records()
+                .find(|record| record.id == StableId(1))
+                .unwrap()
+                .state
+                .inline(),
+            &[1]
+        );
+        drop(report);
+        host.acknowledge_results(PeerId(1), 1).unwrap();
+        host.acknowledge_results(PeerId(2), 1).unwrap();
+        drop(occupied);
+        drop(old_snapshot);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
     fn structural_spawn_state_event_and_peer_rejection_share_protected_pool() {
         let allowance = PublicationBytes::required_charge(32).unwrap();
-        let (mut host, initial, pool, origin) = host_with_allowance(allowance, true);
+        let (mut host, initial, pool, origin) = host_with_allowance(allowance, true, 0);
         let old_snapshot = host.authority().snapshot().clone();
         host.submit(input(1, 7)).unwrap();
         host.submit(input(2, 0)).unwrap();
@@ -2824,7 +2885,7 @@ mod protected_output_fixture {
     fn decision_and_preparation_spend_one_cumulative_payload_allowance() {
         let allowance = PublicationBytes::required_charge(16).unwrap()
             + PublicationBytes::required_charge(32).unwrap();
-        let (mut host, initial, pool, origin) = host_with_allowance(allowance, false);
+        let (mut host, initial, pool, origin) = host_with_allowance(allowance, false, 0);
         host.submit(input(1, 6)).unwrap();
         let occupied = pool
             .try_reserve(pool.limit_bytes() - pool.used_bytes())

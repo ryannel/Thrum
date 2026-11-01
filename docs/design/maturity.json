@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "235fdb788b26e49cd2f94722f66b81247f45442c3ec7faf05523d7193be4e3c5",
+    "design_sha256": "698f54e7590735a7ad5ce9305369363492e278c26af70efc5838596229c9274e",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2869,7 +2869,7 @@
       "reusable_rule_scratch": {
         "design": "selected_authority_owned_precharged_byte_buffer_with_owner_and_action_checked_range_handles",
         "implementation": "feature_complete_for_selected_bounded_byte_scratch_profile",
-        "functional_validation": "passed_local_one_byte_activation_retry_two_peer_delayed_rejection_full_pool_contention_sticky_overrun_stale_foreign_retired_handles_direct_charged_output_copy_caught_unwind_and_final_release",
+        "functional_validation": "passed_local_one_byte_activation_retry_two_peer_delayed_rejection_full_pool_contention_sticky_overrun_stale_foreign_retired_handles_direct_charged_output_copy_into_state_event_and_replica_caught_unwind_and_final_release",
         "performance_measurement": "paired_local_apple_silicon_one_object_submit_callback_replica_ack_with_four_byte_scratch_and_plain_variant_only",
         "scope": "One charged reusable byte buffer and cumulative per-action range bound shared by decide and prepare in both local and multiplayer authority paths. Checked handles may cross those callbacks; invalid or oversized requests terminally fault before edits. Game-authored allocations outside RuleContext, typed temporary structures, spawn_bound work, allocator metadata, OS RSS, remote transport and named devices are not qualified.",
         "evidence": "../evidence/i1-headless/RULE-SCRATCH.md"
