@@ -1,0 +1,6 @@
+{
+  "python": "3.14.10 (main, Oct 25 2026, 17:12:00) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "numpy": "2.4.6",
+  "pillow": "12.2.0",
+  "ffmpeg_first_line": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers"
+}

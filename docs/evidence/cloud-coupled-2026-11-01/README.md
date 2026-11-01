@@ -1,5 +1,7 @@
 # Q2/Q3 coupled cloud proof
 
+**Result:** shared lighting/shadow/reflection coupling is demonstrated in this bounded instrument; production admission is blocked by cost. [Review and motion](REVIEW.md) · [budget disposition](PERFORMANCE.md) · [independent final review](review/final-review.md).
+
 Commissioned1 November2026. The [governing cloud design](../../design/modules/CLOUDS.md) and
 [capabilities](../../design/modules/CLOUD-CAPABILITIES.md) govern this next bounded interaction.
 The [Q1 source](../cloud-source-2026-11-01/REVIEW.md) remains pinned; this is not a new lifecycle bake.
@@ -46,7 +48,7 @@ The standalone instrument now runs at `http://localhost:8142/scripts/cloud_coupl
 `python3 scripts/cloud_coupled_proof/serve.py`. Its source is pinned by the certified density SHA;
 content-specific conservative bounds reject other sources rather than silently clipping them.
 The shared decoder writes portable RGBA16F storage directly, with explicit RN-half conversion;
-base density and both average-density mips are bit-identical to the Q1 half values. The full fresh
+the default readback density and both average-density mips are bit-identical to the Q1 half values. The full fresh
 source/mip/max/prefix/ambient build uses one compute pass before both views. No temporal reuse.
 
 [Native rejection cases](images/still-contact.png) show main/reflected cloud, changed Sun shadows,
@@ -74,8 +76,7 @@ bindings remain unqualified.
 
 The first complete timing sweeps rejected the initial packed-copy path (roughly80ms observed
 queue completion). Direct storage, fused compute and correct missed-path guides substantially
-reduce it, but the latest preliminary complete GPU bracket is still about12ms median/18ms p95
+reduce it, but the final complete GPU bracket is12.845ms median/18.809ms p95
 on this M3 Max. It does not pass the desired5ms cloud allocation or whole-frame16ms tails.
 Render beginning timestamps are invalid on this Metal path; raw receipts retain them for
-reproduction, and complete brackets use compute-to-compute sentinels. Final motion/cadence,
-validation matrix and performance disposition follow in the next checkpoint; no promotion is claimed.
+reproduction, and complete brackets use compute-to-compute sentinels. The [final600-sample run](PERFORMANCE.md), [clean motion witnesses](REVIEW.md#motion-actually-inspected) and [rejection matrix](oracle/rejection-case-validation.md) are now retained; no promotion is claimed.

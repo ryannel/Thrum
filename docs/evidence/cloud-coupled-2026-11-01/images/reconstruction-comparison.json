@@ -1,0 +1,7 @@
+{
+  "scope": "Actual 1280x720 displayed image, encoded8bitRGB; fixed exposure/tone; comparison with full-resolution direct path tracing using same caches, not a fine physical reference.",
+  "mean_channel_difference_255": 0.023552517361111112,
+  "p99_channel_difference_255": 1.0,
+  "max_channel_difference_255": 42.0,
+  "percent_pixels_any_channel_difference_gt8": 0.03200954861111111
+}

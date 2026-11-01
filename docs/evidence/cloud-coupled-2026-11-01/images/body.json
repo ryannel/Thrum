@@ -1,8 +1,8 @@
 {
   "identity": {
     "files": {
-      "viewer.js": "f7f0752c6e7af9ceba9101d3804096aed7907541e29417a2eb26afd834abd946",
-      "source.js": "3a437e06c001e2f5d94e12e2413ac68c1c28ad4aea42696abe77efa8744932b0",
+      "viewer.js": "5fe94df69bf1f8687aa5db3ea1973b9aa0136a7040d201fdf1131d2273dbf3f1",
+      "source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
       "shared-source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
       "common.wgsl": "33c26db66820de91f7d2d922cd962bc76704ebcdcff1c135234d55ee061cfa65",
       "caches.wgsl": "82d56d21e63b504b13bf35c8f092f2d261d2d28bbf1033a75f128e6de9068e95",
@@ -29,6 +29,7 @@
     },
     "timestamp_query": true,
     "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+    "source_manifest_sha256": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
     "source_bytes": 6491440,
     "runtime_header_bytes": 73104,
     "resource_bytes": [
@@ -144,6 +145,8 @@
     ],
     "explicit_gpu_bytes": 60305264,
     "cpu_encoded_recovery_bytes": 6491440,
+    "explicit_gpu_transient_bytes": 16704000,
+    "explicit_gpu_persistent_bytes": 43601264,
     "resource_limits": "Logical allocated resources; excludes browser/driver/process/canvas swapchain and upload implementation overhead"
   },
   "scene": {

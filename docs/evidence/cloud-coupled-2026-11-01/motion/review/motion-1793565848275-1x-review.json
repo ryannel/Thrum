@@ -1,0 +1,37 @@
+{
+  "movie": "docs/evidence/cloud-coupled-2026-11-01/motion/motion-1793565848275-1x.webm",
+  "media": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1280,
+        "height": 720,
+        "r_frame_rate": "1000/1"
+      }
+    ],
+    "format": {},
+    "decoded_packet_duration_s": 19.142,
+    "packet_count": 460
+  },
+  "captured_callbacks": 1038,
+  "source_range": [
+    200.00149999995233,
+    219.14319999995232
+  ],
+  "rate": 1,
+  "callback_interval_ms": {
+    "p50": 24.099999999998545,
+    "p95": 33.332000000002154,
+    "p99": 33.86399999999937,
+    "max": 34.30000000000291
+  },
+  "queue_completion_ms": {
+    "p50": 15.5,
+    "p95": 21.299999952316284,
+    "p99": 24.02599988698957,
+    "max": 33.09999990463257
+  },
+  "source_rate_max_absolute_error": 3.4703351303733143e-12,
+  "scope": "Actual recorded 1280x720 canvas, sampled overview/native frames and source callback timing. Recorder load included; queue waits are not GPU execution. No continuous-viewing claim."
+}

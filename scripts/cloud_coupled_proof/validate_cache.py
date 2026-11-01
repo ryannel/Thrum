@@ -16,17 +16,17 @@ import numpy as np
 from oracle import Field, ambient_reference, default_scene, read_clip, read_density, unit
 
 
-def product(path):
+def product_bytes(path):
     path = Path(path)
     return path.read_bytes() if path.exists() else gzip.decompress(Path(str(path)+'.gz').read_bytes())
 
 
 def digest(path):
-    return hashlib.sha256(product(path)).hexdigest()
+    return hashlib.sha256(product_bytes(path)).hexdigest()
 
 
 def rgba(path, side):
-    values = np.frombuffer(product(path), '<f2')
+    values = np.frombuffer(product_bytes(path), '<f2')
     if values.size != side**3*4:
         raise ValueError('RGBA16F cache byte length disagrees with declared dimensions')
     return values.reshape(side, side, side, 4).astype(np.float64)
@@ -110,7 +110,7 @@ def validate(probe, clip, ambient_active_local=None, baseline=None):
     scene = captured['scene']
     density_path, prefix_path, ambient_path = [Path(str(probe)+suffix) for suffix in
                                              ['-density.f16', '-prefix.f16', '-ambient.f16']]
-    gpu = (rgba(density_path, 128)[..., 0] if len(product(density_path)) == 128**3*8
+    gpu = (rgba(density_path, 128)[..., 0] if len(product_bytes(density_path)) == 128**3*8
            else read_density(density_path))
     decoded = read_clip(clip, scene['age'])
     rounded = decoded.astype(np.float16).astype(np.float64)
