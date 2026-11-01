@@ -104,6 +104,10 @@ impl<T> Clone for PublicationColumn<T> {
 }
 
 impl<T> PublicationColumn<T> {
+    pub(crate) fn empty() -> Self {
+        Self { inner: None }
+    }
+
     pub(crate) fn try_into_unique_iter(self) -> Result<ChargedColumnIntoIter<T>, Self> {
         let Some(inner) = self.inner else {
             return Ok(ChargedColumnIntoIter {

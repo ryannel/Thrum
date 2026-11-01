@@ -807,6 +807,37 @@ impl<G: GameRules> Authority<G> {
         self.cached_watermarks = None;
         Ok(())
     }
+
+    /// A sealed host primes one shared watermark owner before activation, so
+    /// its first clean tick needs no new group buffer under pool contention.
+    pub(crate) fn prime_charged_watermarks(&mut self) -> Result<(), ChargedBaselineError> {
+        if self.cached_watermarks.is_some() {
+            return Ok(());
+        }
+        let admission = self
+            .snapshot_admission
+            .as_ref()
+            .filter(|admission| admission.closed.is_some())
+            .ok_or(ChargedBaselineError::Unqualified)?;
+        let count = self.peers.len();
+        if count == 0 {
+            self.cached_watermarks = Some(PublicationColumn::empty());
+            return Ok(());
+        }
+        let bytes = PublicationColumn::<(PeerId, u64)>::required_charge(count)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut reservation = admission
+            .pool
+            .try_reserve(bytes)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut column = PublicationColumn::try_with_capacity(&mut reservation, count)
+            .map_err(|_| ChargedBaselineError::Capacity)?;
+        for (id, peer) in &self.peers {
+            column.push((*id, peer.resolved_through));
+        }
+        self.cached_watermarks = Some(column);
+        Ok(())
+    }
     /// Admit a typed one-shot input; duplicate detection precedes scheduling.
     pub fn submit(
         &mut self,
@@ -1087,9 +1118,11 @@ impl<G: GameRules> Authority<G> {
             })
             .and_then(|bytes| {
                 bytes
-                    .checked_add(PublicationColumn::<(PeerId, u64)>::required_charge(
-                        self.peers.len(),
-                    )?)
+                    .checked_add(if self.cached_watermarks.is_some() {
+                        0
+                    } else {
+                        PublicationColumn::<(PeerId, u64)>::required_charge(self.peers.len())?
+                    })
                     .ok_or(PublicationCapacity)
             })
             .map_err(|_| ChargedBaselineError::Capacity)?;
@@ -1103,9 +1136,11 @@ impl<G: GameRules> Authority<G> {
             .map_err(|_| ChargedBaselineError::Capacity)?;
         let mut events = PublicationColumn::try_with_capacity(&mut reservation, event_count)
             .map_err(|_| ChargedBaselineError::Capacity)?;
-        let mut resolved_through =
-            PublicationColumn::try_with_capacity(&mut reservation, self.peers.len())
-                .map_err(|_| ChargedBaselineError::Capacity)?;
+        let mut resolved_through = match &self.cached_watermarks {
+            Some(owner) => owner.clone(),
+            None => PublicationColumn::try_with_capacity(&mut reservation, self.peers.len())
+                .map_err(|_| ChargedBaselineError::Capacity)?,
+        };
         for record in self.snapshot.records() {
             changes.push(EntityChange::Spawn(record.clone()));
         }
@@ -1118,8 +1153,10 @@ impl<G: GameRules> Authority<G> {
             }
         }
         events.sort_unstable_by_key(|event: &CommittedEvent<G::Event>| event.id);
-        for (id, peer) in &self.peers {
-            resolved_through.push((*id, peer.resolved_through));
+        if self.cached_watermarks.is_none() {
+            for (id, peer) in &self.peers {
+                resolved_through.push((*id, peer.resolved_through));
+            }
         }
         Ok(ChargedStateGroup {
             pool: admission.pool.clone(),
