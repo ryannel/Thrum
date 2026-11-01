@@ -1,0 +1,253 @@
+{
+  "identity": {
+    "files": {
+      "viewer.js": "f7f0752c6e7af9ceba9101d3804096aed7907541e29417a2eb26afd834abd946",
+      "source.js": "3a437e06c001e2f5d94e12e2413ac68c1c28ad4aea42696abe77efa8744932b0",
+      "shared-source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
+      "common.wgsl": "33c26db66820de91f7d2d922cd962bc76704ebcdcff1c135234d55ee061cfa65",
+      "caches.wgsl": "82d56d21e63b504b13bf35c8f092f2d261d2d28bbf1033a75f128e6de9068e95",
+      "render.wgsl": "c9fcf9f95de2b0c248b0d4d8234a722308a12cf7b779bd58b22f2b7554c010b8",
+      "probes.wgsl": "73b1d7f2313477feef119a6f3ba317629bea2db73c3af5f6411fe5fe1797a6a7"
+    },
+    "field_storage_shader_sha256": "717d776aa3ec3fffd5c8793ae45125bec1dc96b5778c563219c206c786e4c08e",
+    "source_compute_shader_sha256": "9ab86adab5badbb0e1b5fd28db828e323b1f6313ff1b3203124b6698baf2822a",
+    "output": [
+      1280,
+      720
+    ],
+    "primary_media": [
+      640,
+      360
+    ],
+    "reflection": [
+      320,
+      180
+    ],
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": ""
+    },
+    "timestamp_query": true,
+    "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+    "source_bytes": 6491440,
+    "runtime_header_bytes": 73104,
+    "resource_bytes": [
+      {
+        "name": "directional prefix",
+        "size": [
+          130,
+          130,
+          130
+        ],
+        "format": "rgba16float",
+        "bytes": 17576000
+      },
+      {
+        "name": "external ambient",
+        "size": [
+          32,
+          32,
+          32
+        ],
+        "format": "rgba16float",
+        "bytes": 262144
+      },
+      {
+        "name": "conservative maximum",
+        "size": [
+          32,
+          32,
+          32
+        ],
+        "format": "r32float",
+        "bytes": 131072
+      },
+      {
+        "name": "main S",
+        "size": [
+          640,
+          360
+        ],
+        "format": "rgba16float",
+        "bytes": 1843200
+      },
+      {
+        "name": "main T",
+        "size": [
+          640,
+          360
+        ],
+        "format": "rgba16float",
+        "bytes": 1843200
+      },
+      {
+        "name": "main path guide",
+        "size": [
+          640,
+          360
+        ],
+        "format": "rgba32float",
+        "bytes": 3686400
+      },
+      {
+        "name": "reflected radiance",
+        "size": [
+          320,
+          180
+        ],
+        "format": "rgba16float",
+        "bytes": 460800
+      },
+      {
+        "name": "reflection path guide",
+        "size": [
+          320,
+          180
+        ],
+        "format": "rgba32float",
+        "bytes": 921600
+      },
+      {
+        "name": "reflection cloud path",
+        "size": [
+          320,
+          180
+        ],
+        "format": "rgba16float",
+        "bytes": 460800
+      },
+      {
+        "name": "scene linear output",
+        "size": [
+          1280,
+          720
+        ],
+        "format": "rgba16float",
+        "bytes": 7372800
+      },
+      {
+        "name": "source encoded GPU",
+        "bytes": 6491440
+      },
+      {
+        "name": "density three mips",
+        "bytes": 19136512
+      },
+      {
+        "name": "fallback flags",
+        "bytes": 115200
+      },
+      {
+        "name": "uniforms/errors/queries allowance",
+        "bytes": 4096
+      }
+    ],
+    "explicit_gpu_bytes": 60305264,
+    "cpu_encoded_recovery_bytes": 6491440,
+    "resource_limits": "Logical allocated resources; excludes browser/driver/process/canvas swapchain and upload implementation overhead"
+  },
+  "scene": {
+    "age": 90,
+    "wind": [
+      0,
+      0,
+      0
+    ],
+    "cloud_min": [
+      -256,
+      120,
+      -256
+    ],
+    "camera": [
+      450,
+      180,
+      700
+    ],
+    "target": [
+      0,
+      150,
+      0
+    ],
+    "camera_tan": 0.6,
+    "sun": [
+      -0.5507163972777637,
+      0.8210680832141203,
+      0.15019538107575373
+    ],
+    "basis": {
+      "u": [
+        0.2631174057921088,
+        0,
+        0.9647638212377323
+      ],
+      "v": [
+        -0.792136781457995,
+        -0.5708302748865819,
+        0.21603730403399865
+      ],
+      "w": [
+        0.5507163972777637,
+        -0.8210680832141203,
+        -0.15019538107575373
+      ],
+      "half": [
+        330.33759411963933,
+        420.2251162569153,
+        405.62684456131524
+      ]
+    },
+    "fog_spheres": [
+      {
+        "centre": [
+          -20,
+          210,
+          40
+        ],
+        "radius": 105,
+        "sigma": 0.00139999995008111,
+        "albedo": 0.9,
+        "g": 0.6
+      },
+      {
+        "centre": [
+          65,
+          160,
+          110
+        ],
+        "radius": 100,
+        "sigma": 0.0010000000474974513,
+        "albedo": 0.9,
+        "g": 0.6
+      }
+    ],
+    "sun_rgb": [
+      90000,
+      85000,
+      75000
+    ],
+    "sky_rgb": [
+      1800,
+      3000,
+      5000
+    ],
+    "opaque_spheres": [
+      {
+        "centre": [
+          70,
+          45,
+          15
+        ],
+        "radius": 45
+      }
+    ],
+    "main_cloud": false,
+    "reflection": true,
+    "full_resolution_reference": false,
+    "lighting": "sun",
+    "fog": "overlap",
+    "exposure": 0.00008
+  },
+  "encoding": "IEEE754halfLE, Xfastest,Y,Z; density/mips/prefix/ambient RGBA (density in R), guide f32 RGBA",
+  "scope": "actual GPU source/light/ambient products; prefix node and scene transforms recorded"
+}
