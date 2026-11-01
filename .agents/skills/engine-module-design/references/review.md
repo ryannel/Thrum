@@ -64,6 +64,10 @@ nonzero response nor a plausible still proves the commissioned experience. Diagn
 Judge each indispensable cue separately; successful lighting, controls, numerical guards or performance do not
 compensate for failed dynamics or content. Review normal pacing and accelerated development when both are relevant.
 
+For performance-led design, challenge the workload multipliers, data movement, critical path and representation
+choices before requiring measurements of unbuilt code. Check whether human implementation convenience has ruled out
+credible specialization, and whether the proposed complexity has independent checks and an explicit supported domain.
+
 For performance-sensitive work, challenge the [performance evidence](performance.md): benchmark identity and fairness,
 long-run tails, equivalence claims, actual saved work, memory accounting and visual/profile regressions. Require
 claims to match their measurement: isolated kernels, synthetic stress and end-to-end cadence are different evidence.

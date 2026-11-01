@@ -78,6 +78,19 @@ The [decision record](ARCHITECTURE-DECISIONS.md) selects the structural baseline
   as well as rendering. Their inclusion and fidelity follow the supported game range.
 - Experimental techniques can compete behind stable contracts without forcing all games to inherit their risk or cost.
 
+## Performance ambition and development economics
+
+The user selects shocking performance as an engine-wide ambition: invest deeply in expensive operations and small
+costs repeated frequently or at scale, including the development loop. E05/E12/E17/E19 therefore favor efficient
+execution, a clear public model and verifiable internals. AI can absorb substantial internal implementation and
+maintenance complexity when the benefit is justified; genericity or ease of hand-editing is not the default winner.
+Application stability, correctness and required quality remain integral to that ambition.
+
+[The performance investment policy](AI-PERFORMANCE.md#performance-investment-from-the-first-design) owns the capability
+map, module cost accounts and promotion rules. Performance design starts before representations are entrenched and
+continues through the construction sequence. I5 is later capability expansion, not the beginning of serious optimization.
+This selects a development strategy, not a measured advantage, specific algorithm or new runtime safety exception.
+
 ## Current scope and next stage
 
 The broad 3D camera/platform range and future multiplayer requirement are selected. [The baseline register](BASELINE-SPEC.md)

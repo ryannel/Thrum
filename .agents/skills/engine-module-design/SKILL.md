@@ -31,7 +31,7 @@ Then reconcile existing code with that target. Previously encountered code is no
 - **Compare or replace existing code:** [reconciliation](references/reconciliation.md), using the selected target.
 - **Prototype/build:** [implementation](references/implementation.md), carrying the design into a complete interaction.
 - **Representation or integration faults:** [system diagnosis](references/system-diagnosis.md).
-- **Runtime budgets, quality tiers or optimization:** [performance](references/performance.md), during design and implementation.
+- **Cost/scaling decisions, runtime budgets, quality tiers or optimization:** [performance](references/performance.md), during design and implementation.
 
 Read only relevant references. Research alone does not commission implementation. When several stages are commissioned,
 continue through running, inspection and correction without adding approval stops.
@@ -53,6 +53,12 @@ interactions across the full required scope without inventing missing core mecha
 must test a stated prediction or an uncertainty analysis cannot resolve; it must not substitute for a missing design.
 Keep such gaps explicitly unfinished. Numerical/perceptual/hardware qualification may remain unrun after a reasoned
 design is complete; analytical confidence does not turn those measurements into passed evidence.
+
+Include a cost account when selecting the module's representation: workload multipliers, repeated work/data movement,
+working set, critical path, alternatives and verification. Investigate frequent cheap operations as well as expensive
+ones. AI can absorb substantial internal complexity when specialization is worthwhile and checkable; hand-editing
+convenience alone is not a selection rule. Use [performance](references/performance.md) for the relevant design or
+measurement stage; a new module does not need an existing implementation to justify its cost-conscious design.
 
 Derive the proof/build queue from architectural risk and dependency. Each slice names the requirement or decision it
 tests, affected contracts and rejection conditions. Prove the least-established consequential coupling early. Reduce

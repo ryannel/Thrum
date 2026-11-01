@@ -29,6 +29,12 @@ portable GPU substrate. Native mobile shells remain explicit adapters. These lib
 or guarantee device parity. Platform SDKs own signing/package integration; runtime code does not assume filesystem,
 threads, surface or audio access is always available. [Platform reasoning](modules/PLATFORM-RUNTIME.md).
 
+[Performance investment](AI-PERFORMANCE.md#performance-investment-from-the-first-design) applies across these owners:
+derive cost and scaling before committing representations, investigate frequent small work as well as expensive
+operations, and allow deeply specialized internals where their benefits and correctness can be established. Preserve
+clear public semantics while using AI to absorb implementation effort. Runtime/game quality and stability remain
+requirements; the small first slice exercises the architecture without setting its eventual performance ceiling.
+
 The design separates three graphs: a content build DAG, a CPU task/authority schedule, and a GPU resource/pass graph.
 Each has different nodes, lifetime and dependency meaning. Versioned products, committed snapshots and submission
 leases connect them. A universal graph/event bus would conceal those differences and is not selected.

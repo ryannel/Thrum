@@ -1,7 +1,24 @@
 # Performance as a system property
 
 Use during architecture selection, quality design, optimization and final qualification. Preserve the experience;
-measure the actual bottleneck instead of treating a faster calculation as a faster application.
+design for efficient execution and qualify actual gains without equating a faster calculation with a faster application.
+
+## Design broadly; verify consequential complexity
+
+Investigate expensive operations, frequently repeated cheap work, transfers and waits, including build/edit/test loops.
+Derive counts, frequency, scale, bytes, working set and critical path before choosing representations. For a new module,
+select from analytical models and relevant evidence, then qualify a correct executable slice. Do not require a slow
+implementation before considering a faster representation. For an existing path, establish the measured baseline.
+
+When AI development makes deeper specialization practical, compare generated code, compact layouts, precomputation,
+incremental work and target-specific paths on their useful benefit and verification cost. Keep invariants, dispatch,
+validity, regeneration and failure behavior explicit; provide a reference or independent oracle where useful. A simple
+public model can contain sophisticated internals. Neither extra complexity nor genericity is inherently preferable.
+
+Pursue cumulative small gains as well as major bottlenecks within the commissioned scope. Kernel/count/byte evidence
+can support a small change whose frame-time effect is below noise; retain integrated non-regression and label the
+limited claim. Meeting an initial budget need not end a performance commission. Record remaining opportunities and
+stop at its outcome/resource boundary or when evidence no longer justifies further work, not at the first working result.
 
 ## Establish cost and evidence
 
@@ -9,7 +26,8 @@ Identify the irreducible shared/source floor and relevant compute, submission, G
 memory and preparation costs. Attribute work to owners and update frequency. State actual product budgets when known;
 unknown hardware does not prevent selecting viable reductions, but it prevents device-specific certification.
 
-Measure a representative end-to-end workload before optimizing. Retain build/loaded-artifact identity, inputs, quality,
+For an existing executable path, measure a representative end-to-end workload before claiming an improvement. Retain
+build/loaded-artifact identity, inputs, quality,
 viewport/DPR, device/backend, visibility, warmup and timing conditions. Record time-series cadence and tails as well as
 central values; periodic failures can disappear in a short median. Include sustained use and consequential transitions.
 State sampling windows, overwritten records and exclusions; keep observer work bounded and avoid captures/probes that
@@ -22,10 +40,12 @@ restoration and high-tier costs need their own scope of qualification.
 
 ## Remove work before weakening fidelity
 
-Profile, form a concrete hypothesis and compare it against the retained baseline. Useful opportunities include exact
+Use the cost model and, when available, profiling to form a concrete hypothesis; compare executable alternatives
+against the retained baseline. Useful opportunities include exact
 reuse with complete invalidation, invariant preparation, transform/symmetry reuse, compact data access, batching,
-shared pass/resource ownership and removing duplicate draws or uploads. Select them from the measured dependency
-path; an extra full-screen intermediate can reduce submissions while increasing memory or fill cost.
+shared pass/resource ownership and removing duplicate draws or uploads. Select them from the predicted dependency
+path and qualify that attribution when executable; an extra full-screen intermediate can reduce submissions while
+increasing memory or fill cost.
 
 Prefer a clear local data structure or helper to a general framework unless several real consumers justify it.
 Hoisting, specialization and reuse need explicit validity/lifetime conditions, including reset, changing inputs and
@@ -35,8 +55,8 @@ intentional approximation separately from floating-point reordering.
 
 Measure useful isolated kernels to understand attribution, then integrate and rerun the assembled workload. Repeat
 paired comparisons under matched conditions; alternate/reverse order when scheduling or thermal drift matters.
-Preserve adverse measurements used in comparisons and compact records of rejected experiments; this does not require retaining every rejected build or full trace. Multiple simultaneous changes limit attribution. Keep gains only
-when the relevant measured cost improves while the required experience is preserved; a faster microbenchmark can
+Preserve adverse measurements used in comparisons and compact records of rejected experiments; this does not require retaining every rejected build or full trace. Multiple simultaneous changes limit attribution. Keep claimed gains only
+when evidence supports the relevant cost/scale improvement while the required experience is preserved; a faster microbenchmark can
 regress frame pacing or another tier.
 
 ## Rank reductions by saved work and perceptual cost

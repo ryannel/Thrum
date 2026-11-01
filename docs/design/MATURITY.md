@@ -23,6 +23,16 @@ There is no engine-wide completion percentage. A profile is qualified only when 
 qualified together, including transitions and shared resource limits. A fully designed renderer can coexist with an
 unfinished animation contract; the combined profile remains unqualified. An unavailable target stays unmeasured.
 
+## Performance design and qualification
+
+`performance_cost_design` defaults to `not_assessed` for each owner; `modelled` means its scoped workload, scaling,
+representation alternatives and verification account are recorded, while `needs_revision` identifies an invalidated
+account. An owner override links its account/evidence from the existing module row. This is design readiness, separate
+from the existing platform/performance dimension. A selected investment policy does not assess all modules at once.
+Local kernel/count/byte evidence, integrated non-regression and measured whole-engine gains remain distinct claims.
+The `performance_investment_policy` record identifies the selected process, affected scope and pending I1 work.
+Earlier architecture reviews are not independent validation of this later policy or its still-unwritten module accounts.
+
 ## Ledger conventions
 
 Stable module IDs correspond to the architecture brief. Child IDs refine a parent responsibility; they do not add
