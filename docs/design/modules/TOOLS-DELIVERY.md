@@ -243,4 +243,3 @@ not a universal collector or a creator-authored lease schema.
 Preserve-world authoring evaluates old and candidate-parent world matrices from the operation’s expected admitted
 authored SourceRevision, including already admitted edits, never a runtime/play pose or unadmitted checkout.
 Cycle, conditioning, TRS representability and affected consumer checks complete on the candidate before source admission. Rejection advances neither admitted SourceRevision nor active world/manifest; metadata root generation may advance to record the rejected outcome. Pending unadmitted edits are a separate conflict/rebase concern, not an implicit transform input.
-

@@ -175,7 +175,7 @@
         "COMPOSITION.md"
       ],
       "open_architecture_findings": [],
-      "current_design_sha256": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "current_design_sha256": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A03",
@@ -229,7 +229,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_sha256": "795860acd1ec2aa31ba46d4467892bf33e4983d4df0d2e492f40a3f9a309dfc8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
@@ -288,7 +288,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_sha256": "795860acd1ec2aa31ba46d4467892bf33e4983d4df0d2e492f40a3f9a309dfc8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
@@ -342,7 +342,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_sha256": "795860acd1ec2aa31ba46d4467892bf33e4983d4df0d2e492f40a3f9a309dfc8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
@@ -396,7 +396,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_sha256": "795860acd1ec2aa31ba46d4467892bf33e4983d4df0d2e492f40a3f9a309dfc8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
@@ -696,7 +696,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71",
+      "current_design_sha256": "795860acd1ec2aa31ba46d4467892bf33e4983d4df0d2e492f40a3f9a309dfc8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01",
@@ -1356,7 +1356,7 @@
       "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "current_design_sha256": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
@@ -1415,7 +1415,7 @@
       "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
+      "current_design_sha256": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
@@ -2651,8 +2651,8 @@
       "modules/PLATFORM-RUNTIME.md": "f5dcfc94e7eb2a748885a5de3f2e8d56fcc7546df0ab37a28ccc1e465981d933",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
-      "modules/TOOLS-DELIVERY.md": "60bc1e07c9e6807a92b4d3f70a4b2e516ba95aafe3d12389f684994b25e08c81",
-      "modules/WORLD-CONTENT.md": "74db712ecbecdf0c101d746a0a06560655abd69d0047e206c73b0982ab46ba71"
+      "modules/TOOLS-DELIVERY.md": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
+      "modules/WORLD-CONTENT.md": "795860acd1ec2aa31ba46d4467892bf33e4983d4df0d2e492f40a3f9a309dfc8"
     },
     "coordinated_handoffs": {
       "SOURCE": {

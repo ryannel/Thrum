@@ -176,4 +176,3 @@ SourceRevision, never a runtime/play pose or unadmitted working-file edit. Cycle
 and affected-consumer checks validate the candidate before file application and admission. Working-file divergence
 requires explicit sync/rebase; it is not an implicit transform input. Rejection leaves the admitted source and running
 world unchanged. FOUNDATION-SPEC owns the proposal/application/admission outcome and recovery protocol.
-
