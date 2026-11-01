@@ -8,9 +8,10 @@ use std::{
 };
 
 use crate::{
-    Admission, AdmissionError, AdmittedGroup, Authority, ClockConfig, ClockError, ClockReport,
-    ClockState, GameRules, Input, PeerId, Replica, ReplicaError, Snapshot, StepError, TickClock,
-    TickPublication, WorldWork,
+    Admission, AdmissionError, AdmittedGroup, Authority, ChargedAdmittedGroup,
+    ChargedBaselineError, ChargedReplicaSetupError, ClockConfig, ClockError, ClockReport,
+    ClockState, ClosedPublicationValue, GameRules, Input, PeerId, PublicationPool, Replica,
+    ReplicaError, Snapshot, StepError, TickClock, TickPublication, WorldWork,
 };
 
 /// CPU admission policy for one host callback. A cost bound is an input from
@@ -56,6 +57,12 @@ pub enum HostAdmissionError {
 pub enum HostError {
     /// CPU admission parameters cannot service a tick.
     InvalidBudget,
+    /// The selected callback method does not match this host's storage path.
+    WrongMode,
+    /// Charged baseline could not be published during host construction.
+    ChargedBaseline(ChargedBaselineError),
+    /// Charged replica could not admit the initial baseline.
+    ChargedReplicaSetup(ChargedReplicaSetupError),
     /// Host supplied a timestamp before its origin or the clock rejected it.
     Clock(ClockError),
     /// The authority encountered a terminal game-contract fault. The host
@@ -85,6 +92,15 @@ pub enum HostPublication<T, E, R> {
         /// Counted world publication work.
         world_work: WorldWork,
     },
+    /// A sealed charged group was admitted by the finite local replica.
+    ReplicatedCharged {
+        /// Immutable authority state at this tick.
+        snapshot: Snapshot<T>,
+        /// Shared charged outcomes and events.
+        admitted: ChargedAdmittedGroup<E, R>,
+        /// Counted world publication work.
+        world_work: WorldWork,
+    },
 }
 
 /// Observed work and delivered publications for one real host callback.
@@ -108,6 +124,10 @@ pub struct HostCallback<T, E, R> {
 
 /// Initial admitted outcomes when a game host starts its replica.
 pub type InitialOutcomes<G> = AdmittedGroup<<G as GameRules>::Event, <G as GameRules>::Rejection>;
+
+/// Charged initial outcomes when a sealed host starts its finite replica.
+pub type InitialChargedOutcomes<G> =
+    ChargedAdmittedGroup<<G as GameRules>::Event, <G as GameRules>::Rejection>;
 
 /// Callback output for one concrete game rule set.
 pub type GameHostCallback<G> =
@@ -320,6 +340,41 @@ impl<G: GameRules> HeadlessHost<G> {
         Ok((host, initial_outcomes))
     }
 
+    /// Construct a sealed match host with a finite, precharged local replica.
+    /// Its callback uses `on_callback_charged`; progress scratch and delivery
+    /// storage still await the full process byte gate.
+    pub fn with_charged_replica(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        authority: Authority<G>,
+        pool: &PublicationPool,
+        max_objects: usize,
+    ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        if authority.is_faulted() {
+            return Err(HostError::Authority(StepError::TerminalGameContract));
+        }
+        let baseline = authority
+            .try_baseline_charged()
+            .map_err(HostError::ChargedBaseline)?;
+        let (replica, initial_outcomes) =
+            Replica::from_charged_baseline(baseline, pool, max_objects)
+                .map_err(HostError::ChargedReplicaSetup)?;
+        if !authority.pending_fits_replica(&replica) {
+            return Err(HostError::ChargedReplicaSetup(
+                ChargedReplicaSetupError::Capacity,
+            ));
+        }
+        let host = Self::build(origin, clock, budget, authority, Some(replica))?;
+        Ok((host, initial_outcomes))
+    }
+
     fn build(
         origin: Instant,
         clock: ClockConfig,
@@ -370,9 +425,13 @@ impl<G: GameRules> HeadlessHost<G> {
         if self.faulted || self.authority.is_faulted() || self.clock.state() != ClockState::Active {
             return Err(HostAdmissionError::Unavailable);
         }
-        self.authority
-            .submit(input)
-            .map_err(HostAdmissionError::Authority)
+        match &self.replica {
+            Some(replica) if replica.charged_object_bytes().is_some() => {
+                self.authority.submit_for_replica(input, replica)
+            }
+            _ => self.authority.submit(input),
+        }
+        .map_err(HostAdmissionError::Authority)
     }
 
     /// Retire results only after the caller has received and handled their
@@ -406,6 +465,13 @@ impl<G: GameRules> HeadlessHost<G> {
     /// budget visibly overloads this local host after its committed ticks;
     /// it cannot retroactively preempt a slow game rule.
     pub fn on_callback(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError> {
+        if self
+            .replica
+            .as_ref()
+            .is_some_and(|replica| replica.charged_object_bytes().is_some())
+        {
+            return Err(HostError::WrongMode);
+        }
         if self.faulted || self.authority.is_faulted() {
             return Err(HostError::Faulted);
         }
@@ -493,11 +559,398 @@ impl<G: GameRules> HeadlessHost<G> {
             publications,
         })
     }
+
+    /// Service the same validated authority → replica stages with sealed,
+    /// shared charged groups. The authority checks the required replica's
+    /// conservative spawn peak before rule edits. The callback result vector
+    /// and replica progress scratch are not yet pool charged.
+    pub fn on_callback_charged(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        if self
+            .replica
+            .as_ref()
+            .is_none_or(|replica| replica.charged_object_bytes().is_none())
+        {
+            return Err(HostError::WrongMode);
+        }
+        if self.faulted || self.authority.is_faulted() {
+            return Err(HostError::Faulted);
+        }
+        let elapsed = now
+            .checked_duration_since(self.origin)
+            .ok_or(HostError::Clock(ClockError::NonMonotonicTime))?;
+        let started = Instant::now();
+        let mut work = WorldWork::default();
+        let mut replica_groups = 0;
+        let mut publications = Vec::new();
+        let mut fatal = None;
+        let authority = &mut self.authority;
+        let replica = self.replica.as_mut().expect("charged replica mode");
+        let schedule = &self.schedule;
+        let step_cpu_budget = self.budget.available_step_cpu();
+        let mut report = self
+            .clock
+            .advance_controlled(elapsed, self.admitted_ticks_per_callback, || {
+                let mut publication = None;
+                for stage in schedule {
+                    match stage {
+                        Stage::AuthorityStep => {
+                            let committed = catch_unwind(AssertUnwindSafe(|| {
+                                authority.step_charged_for_replica(replica)
+                            }))
+                            .map_err(|_| StepError::TerminalGameContract)??;
+                            work.page_references += committed.world_work.page_references;
+                            work.copied_pages += committed.world_work.copied_pages;
+                            work.copied_objects += committed.world_work.copied_objects;
+                            work.group_objects += committed.world_work.group_objects;
+                            publication = Some(committed);
+                        }
+                        Stage::ReplicaAdmission => {
+                            let committed = publication.take().expect("validated producer order");
+                            match replica.apply_charged(committed.group) {
+                                Ok(admitted) => {
+                                    replica_groups += 1;
+                                    publications.push(HostPublication::ReplicatedCharged {
+                                        snapshot: committed.snapshot,
+                                        admitted,
+                                        world_work: committed.world_work,
+                                    });
+                                }
+                                Err(error) => fatal = Some(HostError::Replica(error)),
+                            }
+                        }
+                    }
+                    if fatal.is_some() {
+                        break;
+                    }
+                }
+                assert!(publication.is_none(), "charged host requires replica stage");
+                Ok(fatal.is_none() && started.elapsed() < step_cpu_budget)
+            })
+            .map_err(HostError::Clock)?;
+        let observed_elapsed = started.elapsed();
+        let terminal_fault = if report.step_error == Some(StepError::TerminalGameContract) {
+            Some(HostError::Authority(StepError::TerminalGameContract))
+        } else {
+            fatal
+        };
+        if let Some(fault) = terminal_fault {
+            self.faulted = true;
+            if publications.is_empty() {
+                return Err(fault);
+            }
+        }
+        let step_budget_overrun = observed_elapsed > step_cpu_budget;
+        if step_budget_overrun && terminal_fault.is_none() {
+            self.clock.report_cpu_overload();
+            report.state = ClockState::Overloaded;
+        }
+        Ok(HostCallback {
+            clock: report,
+            terminal_fault,
+            observed_elapsed,
+            step_budget_overrun,
+            world_work: work,
+            replica_groups,
+            publications,
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{
+        ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, MatchId, Origin, PreparedCommit,
+        PreparedEdits, SnapshotWriteBounds, StableId, World, WorldEdit, WorldEpoch,
+    };
+
+    struct SpawnRule;
+
+    struct FaultRule;
+
+    impl GameRules for FaultRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = u8;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<u8, ()> {
+            Ok(*action)
+        }
+
+        fn prepare(&self, _world: &World<u8>, action: u8) -> PreparedCommit<u8, ()> {
+            assert_eq!(action, 1, "injected second-tick game fault");
+            PreparedCommit {
+                edits: PreparedEdits::None,
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn charged_host_delivers_first_tick_before_later_terminal_fault() {
+        let pool = PublicationPool::new(100_000);
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(246)),
+            FaultRule,
+            World::new(WorldEpoch(246)),
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 0,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                rejection: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_charged_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            0,
+        )
+        .unwrap();
+        for (sequence, action, schedule) in [
+            (1, 1, crate::InputSchedule::NextTick { observed_tick: 0 }),
+            (2, 2, crate::InputSchedule::Timed { intended_tick: 2 }),
+        ] {
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 1,
+                    sequence,
+                },
+                actor: ActorId(1),
+                schedule,
+                action,
+            })
+            .unwrap();
+        }
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(34))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        assert_eq!(
+            report.clock.step_error,
+            Some(StepError::TerminalGameContract)
+        );
+        assert_eq!(
+            report.terminal_fault,
+            Some(HostError::Authority(StepError::TerminalGameContract))
+        );
+        assert_eq!(report.publications.len(), 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected earlier charged group")
+        };
+        assert_eq!(admitted.results().len(), 1);
+        assert_eq!(host.replica().unwrap().tick(), 1);
+        assert!(matches!(
+            host.on_callback_charged(origin + Duration::from_millis(51)),
+            Err(HostError::Faulted)
+        ));
+        drop(initial);
+        drop(host);
+        drop(report);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    impl GameRules for SpawnRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = ();
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(&self, _world: &World<u8>, _actor: ActorId, action: &u8) -> Result<(), ()> {
+            if *action == 0 { Err(()) } else { Ok(()) }
+        }
+
+        fn prepare(&self, _world: &World<u8>, _change: ()) -> PreparedCommit<u8, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Spawn(StableId(2), 2)),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn required_replica_refuses_input_before_sequence_and_keeps_idle_clock_live() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(245));
+        world.spawn(StableId(1), 1_u8).unwrap();
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(245)),
+            SpawnRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 1,
+            },
+            ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                rejection: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_charged_replica(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(5),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            2,
+        )
+        .unwrap();
+        let input = Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            action: 0,
+        };
+        assert_eq!(host.submit(input.clone()), Ok(Admission::Queued));
+        assert_eq!(host.submit(input.clone()), Ok(Admission::PendingDuplicate));
+        let later = Input {
+            origin: Origin {
+                peer: PeerId(2),
+                sequence: 1,
+                ..input.origin
+            },
+            actor: ActorId(2),
+            schedule: crate::InputSchedule::Timed { intended_tick: 3 },
+            action: 1,
+        };
+        assert_eq!(
+            host.submit(later.clone()).err(),
+            Some(HostAdmissionError::Authority(
+                AdmissionError::ReplicaCapacity
+            ))
+        );
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.step_error, None);
+        assert_eq!(report.clock.completed, 1);
+        assert_eq!(host.authority().tick_index(), 1);
+        assert!(host.authority().world().handle_for(StableId(2)).is_none());
+        assert_eq!(host.replica().unwrap().tick(), 1);
+        assert_eq!(host.replica().unwrap().len(), 1);
+        assert!(matches!(
+            host.submit(input),
+            Ok(Admission::ResolvedDuplicate(_))
+        ));
+        assert_eq!(host.submit(later.clone()), Ok(Admission::Queued));
+        let another = Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence: 2,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 1 },
+            action: 1,
+        };
+        assert_eq!(
+            host.submit(another.clone()).err(),
+            Some(HostAdmissionError::Authority(
+                AdmissionError::ReplicaCapacity
+            ))
+        );
+        let idle = host
+            .on_callback_charged(origin + Duration::from_millis(34))
+            .unwrap();
+        assert_eq!(idle.clock.completed, 1);
+        assert_eq!(host.replica().unwrap().tick(), 2);
+        assert_eq!(host.replica().unwrap().len(), 1);
+        let committed = host
+            .on_callback_charged(origin + Duration::from_millis(51))
+            .unwrap();
+        assert_eq!(committed.clock.completed, 1);
+        assert_eq!(host.replica().unwrap().len(), 2);
+        assert!(host.authority().world().handle_for(StableId(2)).is_some());
+        assert_eq!(
+            host.submit(another).err(),
+            Some(HostAdmissionError::Authority(
+                AdmissionError::ReplicaCapacity
+            ))
+        );
+        let later_idle = host
+            .on_callback_charged(origin + Duration::from_millis(68))
+            .unwrap();
+        assert_eq!(later_idle.clock.completed, 1);
+        assert_eq!(host.replica().unwrap().tick(), 4);
+        drop(later_idle);
+        drop(committed);
+        drop(idle);
+        drop(report);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
 
     #[test]
     fn admission_and_observation_share_the_reserved_step_budget() {

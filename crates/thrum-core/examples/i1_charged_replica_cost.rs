@@ -1,11 +1,15 @@
 //! Local changed-tick authority and replica comparison. Run with:
 //! `RUSTC_WRAPPER= cargo run --release --locked --offline -p thrum-core --example i1_charged_replica_cost`
 
-use std::{hint::black_box, time::Instant};
+use std::{
+    hint::black_box,
+    time::{Duration, Instant},
+};
 use thrum_core::{
-    ActorId, Authority, AuthorityId, ClosedGameLimits, ClosedValueLimits, GameRules, Handle, Input,
-    InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationPool,
-    PublicationRecord, Replica, SnapshotWriteBounds, StableId, World, WorldEdit, WorldEpoch,
+    ActorId, Authority, AuthorityId, ClockConfig, ClosedGameLimits, ClosedValueLimits, GameRules,
+    Handle, HeadlessHost, HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin,
+    PeerId, PreparedCommit, PreparedEdits, PublicationPool, PublicationRecord, Replica,
+    SnapshotWriteBounds, StableId, World, WorldEdit, WorldEpoch,
 };
 
 type State = PublicationRecord<8, 0>;
@@ -191,6 +195,81 @@ fn run(count: usize) {
     );
 }
 
+fn run_host(count: usize) {
+    const WARMUP: usize = 1_000;
+    const SAMPLES: usize = 10_000;
+    let origin = Instant::now();
+    let budget = HostBudget {
+        // A deliberately loose budget keeps OS scheduling spikes from
+        // changing the service path during a microbenchmark. The separate
+        // host fixture tests real overload policy.
+        callback_cpu: Duration::from_secs(1),
+        other_work: Duration::ZERO,
+        tick_cost_bound: Duration::from_millis(1),
+    };
+    let prototype_pool = PublicationPool::new(usize::MAX);
+    let (mut prototype, _) = HeadlessHost::with_replica(
+        origin,
+        ClockConfig::default(),
+        budget,
+        authority(count, &prototype_pool, 20),
+    )
+    .unwrap();
+    let mut prototype_times = Vec::with_capacity(SAMPLES);
+    for sample in 0..WARMUP + SAMPLES {
+        let tick = prototype.authority().tick_index();
+        let now = origin + Duration::from_nanos(16_666_667 * (sample as u64 + 1));
+        let start = Instant::now();
+        black_box(prototype.submit(input(tick, count)).unwrap());
+        let report = prototype.on_callback(now).unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::Replicated { admitted, .. } = &report.publications[0] else {
+            panic!("prototype host publication")
+        };
+        let through = admitted.resolved_through[0].1;
+        drop(report);
+        prototype.acknowledge_results(PeerId(1), through).unwrap();
+        let elapsed = start.elapsed().as_nanos();
+        if sample >= WARMUP {
+            prototype_times.push(elapsed);
+        }
+    }
+    let charged_pool = PublicationPool::new(usize::MAX);
+    let (mut charged, _) = HeadlessHost::with_charged_replica(
+        origin,
+        ClockConfig::default(),
+        budget,
+        authority(count, &charged_pool, 21),
+        &charged_pool,
+        count,
+    )
+    .unwrap();
+    let mut charged_times = Vec::with_capacity(SAMPLES);
+    for sample in 0..WARMUP + SAMPLES {
+        let tick = charged.authority().tick_index();
+        let now = origin + Duration::from_nanos(16_666_667 * (sample as u64 + 1));
+        let start = Instant::now();
+        black_box(charged.submit(input(tick, count)).unwrap());
+        let report = charged.on_callback_charged(now).unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("charged host publication")
+        };
+        let through = admitted.resolved_through()[0].1;
+        drop(report);
+        charged.acknowledge_results(PeerId(1), through).unwrap();
+        let elapsed = start.elapsed().as_nanos();
+        if sample >= WARMUP {
+            charged_times.push(elapsed);
+        }
+    }
+    println!(
+        "host_changed_tick/{count}: submit_callback_ack_ns[p50/p95/p99/max] prototype={:?} charged={:?}",
+        summary(&mut prototype_times),
+        summary(&mut charged_times),
+    );
+}
+
 fn main() {
     println!(
         "I1 changed replica fixture host={}/{} profile=release",
@@ -199,5 +278,6 @@ fn main() {
     );
     for count in [64, 4_096] {
         run(count);
+        run_host(count);
     }
 }
