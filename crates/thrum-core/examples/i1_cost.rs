@@ -208,6 +208,45 @@ fn benchmark_authority(charged: bool) {
             pool.used_bytes()
         );
     }
+    const BATCH: usize = 1_000;
+    const BATCH_WARMUP: usize = 10;
+    const BATCH_SAMPLES: usize = 100;
+    let mut batch_ns_per_tick = Vec::with_capacity(BATCH_SAMPLES);
+    for sample in 0..BATCH_WARMUP + BATCH_SAMPLES {
+        let start = Instant::now();
+        for _ in 0..BATCH {
+            let sequence = authority.tick_index() + 1;
+            authority
+                .submit(Input {
+                    origin: Origin {
+                        peer: PeerId(1),
+                        connection_epoch: 1,
+                        sequence,
+                    },
+                    actor: ActorId(1),
+                    schedule: InputSchedule::NextTick {
+                        observed_tick: authority.tick_index(),
+                    },
+                    action: StableId(sequence as u128 % 64 + 1),
+                })
+                .unwrap();
+            let published = authority.step().unwrap();
+            let admitted = replica.apply(published.group).unwrap();
+            authority
+                .acknowledge_results(PeerId(1), admitted.resolved_through[0].1)
+                .unwrap();
+            black_box(replica.tick());
+        }
+        if sample >= BATCH_WARMUP {
+            batch_ns_per_tick.push(start.elapsed().as_nanos() / BATCH as u128);
+        }
+    }
+    println!(
+        "{prefix}/complete-batch: batch={BATCH} samples={BATCH_SAMPLES} ns_per_tick[p50/p95/p99]={}/{}/{}",
+        percentile(&mut batch_ns_per_tick, 50),
+        percentile(&mut batch_ns_per_tick, 95),
+        percentile(&mut batch_ns_per_tick, 99),
+    );
 }
 
 fn benchmark_pair_authority() {

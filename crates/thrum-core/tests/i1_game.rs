@@ -671,6 +671,65 @@ fn charged_lease_floor_preserves_idle_progress_and_last_reader_charge() {
 }
 
 #[test]
+fn charged_pending_storage_reserves_before_peer_join_and_survives_reconnect() {
+    let pool = PublicationPool::new(100_000);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(193)),
+        Rule,
+        World::new(WorldEpoch(193)),
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 1,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    let activated = pool.used_bytes();
+    let occupied = pool.try_reserve(pool.limit_bytes() - activated).unwrap();
+    assert_eq!(
+        authority.register_peer(PEER, 1, ACTOR),
+        Err(AdmissionError::PublicationCapacity)
+    );
+    assert_eq!(pool.used_bytes(), pool.limit_bytes());
+    drop(occupied);
+
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    let with_peer = pool.used_bytes();
+    assert!(with_peer > activated);
+    let occupied = pool.try_reserve(pool.limit_bytes() - with_peer).unwrap();
+    authority
+        .submit(input(
+            1,
+            1,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Collect(ITEM),
+        ))
+        .unwrap();
+    authority.register_peer(PEER, 2, ACTOR).unwrap();
+    assert_eq!(pool.used_bytes(), pool.limit_bytes());
+    assert_eq!(
+        authority.submit(input(
+            1,
+            1,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Collect(ITEM),
+        )),
+        Err(AdmissionError::StaleEpoch)
+    );
+    authority
+        .submit(input(
+            2,
+            1,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Collect(ITEM),
+        ))
+        .unwrap();
+    drop(occupied);
+    drop(authority);
+    assert_eq!(pool.used_bytes(), 0);
+}
+
+#[test]
 fn charged_authority_faults_if_prepared_edits_exceed_declared_count() {
     let pool = PublicationPool::new(1_000_000);
     let mut authority = Authority::try_new_snapshot_charged(
