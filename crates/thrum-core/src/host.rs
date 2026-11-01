@@ -1154,6 +1154,159 @@ mod tests {
 
     struct ReplaceRule;
 
+    struct TwoSpawnRule;
+
+    impl GameRules for TwoSpawnRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = u8;
+        type Rejection = ();
+        type Event = ();
+
+        fn spawn_bound(&self, _action: &u8, _configured_max: usize) -> usize {
+            2
+        }
+
+        fn decide(
+            &self,
+            _world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<u8, ()> {
+            Ok(*action)
+        }
+
+        fn prepare(
+            &self,
+            _world: &World<u8>,
+            action: u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
+            let first = 33 + u128::from(action) * 2;
+            PreparedCommit {
+                edits: PreparedEdits::Two(
+                    WorldEdit::Spawn(StableId(first), first as u8),
+                    WorldEdit::Spawn(StableId(first + 1), (first + 1) as u8),
+                ),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    fn structural_maximum_two_peer_batch_publishes_thirty_two_spawns_under_contention() {
+        let pool = PublicationPool::new(2_000_000);
+        let mut world = World::new(WorldEpoch(301));
+        for id in 1..=32_u128 {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(301)),
+            TwoSpawnRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 2,
+                max_spawns_per_action: 2,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_structural_replica(
+            origin,
+            ClockConfig {
+                max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                ..ClockConfig::default()
+            },
+            HostBudget {
+                callback_cpu: Duration::from_secs(1),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            64,
+            2,
+            64,
+            64,
+            0,
+        )
+        .unwrap();
+        let old_snapshot = host.authority().snapshot().clone();
+        for peer in 1..=2_u64 {
+            for sequence in 1..=8_u64 {
+                host.submit(Input {
+                    origin: Origin {
+                        peer: PeerId(peer),
+                        connection_epoch: 1,
+                        sequence,
+                    },
+                    actor: ActorId(peer),
+                    schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                    action: ((peer - 1) * 8 + sequence - 1) as u8,
+                })
+                .unwrap();
+            }
+        }
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged {
+            snapshot, admitted, ..
+        } = &report.publications[0]
+        else {
+            panic!("expected charged replica delivery")
+        };
+        assert_eq!(admitted.results().len(), 16);
+        assert!(
+            admitted
+                .results()
+                .iter()
+                .all(|result| matches!(&result.disposition, crate::ResultDisposition::Committed))
+        );
+        assert_eq!(
+            admitted.resolved_through(),
+            &[(PeerId(1), 8), (PeerId(2), 8)]
+        );
+        assert_eq!(host.authority().world().slot_high_water(), 64);
+        assert_eq!(host.authority().world().len(), 64);
+        assert_eq!(snapshot.records().count(), 64);
+        assert_eq!(host.replica().unwrap().len(), 64);
+        assert_eq!(old_snapshot.records().count(), 32);
+        for id in 1..=32_u128 {
+            assert_eq!(host.replica().unwrap().get(StableId(id)), Some(&(id as u8)));
+        }
+        for id in 33..=64_u128 {
+            assert_eq!(host.replica().unwrap().get(StableId(id)), Some(&(id as u8)));
+            let handle = host.authority().world().handle_for(StableId(id)).unwrap();
+            assert_eq!(snapshot.get(handle).unwrap().state, id as u8);
+        }
+        drop(report);
+        drop(occupied);
+        drop(old_snapshot);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
     impl GameRules for ReplaceRule {
         type Entity = u8;
         type Action = u8;
