@@ -1,4 +1,5 @@
 use std::{
+    alloc::Layout,
     collections::{BTreeMap, BTreeSet, VecDeque},
     sync::{Arc, Weak},
 };
@@ -6,7 +7,8 @@ use std::{
 use crate::replica::StateGroup;
 use crate::{
     ClosedPublicationValue, ClosedValueError, ClosedValueLimits, EntityChange, PreparedEdits,
-    PublicationPool, PublicationReservation, Snapshot, World, WorldPublicationError, WorldWork,
+    PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation, Snapshot,
+    World, WorldPublicationError, WorldWork,
     world::{ActorId, AuthorityId, MAX_SNAPSHOT_LEASES, SnapshotLease, SnapshotLeaseFloor},
 };
 
@@ -104,6 +106,8 @@ pub enum AdmissionError {
     Expired,
     /// Bounded pending or retained-result capacity is full.
     Busy,
+    /// A charged peer's bounded pending storage could not be reserved.
+    PublicationCapacity,
     /// A qualified input carries a payload charged to another pool.
     WrongPool,
     /// A qualified input exceeds its selected per-value shape or byte limit.
@@ -267,6 +271,80 @@ struct Pending<A> {
     due_tick: u64,
     timing_error: Option<TimingError>,
 }
+
+struct PendingQueue<A> {
+    values: Vec<(u64, Pending<A>)>,
+    _charge: Option<PublicationCharge>,
+}
+
+impl<A> PendingQueue<A> {
+    fn try_new(pool: Option<&PublicationPool>) -> Result<Self, PublicationCapacity> {
+        let Some(pool) = pool else {
+            return Ok(Self {
+                values: Vec::new(),
+                _charge: None,
+            });
+        };
+        let bytes = Layout::array::<(u64, Pending<A>)>(MAX_PENDING)
+            .map_err(|_| PublicationCapacity)?
+            .size();
+        let mut reservation = pool.try_reserve(bytes)?;
+        let charge = reservation.charge(bytes)?;
+        Ok(Self {
+            values: Vec::with_capacity(MAX_PENDING),
+            _charge: Some(charge),
+        })
+    }
+
+    fn get(&self, sequence: &u64) -> Option<&Pending<A>> {
+        self.values
+            .binary_search_by_key(sequence, |(key, _)| *key)
+            .ok()
+            .map(|index| &self.values[index].1)
+    }
+
+    fn insert(&mut self, sequence: u64, pending: Pending<A>) {
+        assert!(self.values.len() < MAX_PENDING, "pending admission cap");
+        if self.values.capacity() == 0 {
+            self.values.reserve_exact(MAX_PENDING);
+        }
+        assert!(
+            self.values.capacity() >= MAX_PENDING,
+            "pending storage was preallocated"
+        );
+        assert!(
+            self.values.last().is_none_or(|(last, _)| *last < sequence),
+            "admitted sequences append in order"
+        );
+        self.values.push((sequence, pending));
+    }
+
+    fn remove(&mut self, sequence: &u64) -> Option<Pending<A>> {
+        let index = self
+            .values
+            .binary_search_by_key(sequence, |(key, _)| *key)
+            .ok()?;
+        Some(self.values.remove(index).1)
+    }
+
+    fn values(&self) -> impl Iterator<Item = &Pending<A>> {
+        self.values.iter().map(|(_, pending)| pending)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = (&u64, &Pending<A>)> {
+        self.values
+            .iter()
+            .map(|(sequence, pending)| (sequence, pending))
+    }
+
+    fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    fn clear(&mut self) {
+        self.values.clear();
+    }
+}
 struct Completed<A, R, E> {
     input: Input<A>,
     result: ActionResult<R>,
@@ -283,23 +361,32 @@ struct Peer<A, R, E> {
     actor: ActorId,
     epoch: u64,
     next_sequence: u64,
-    pending: BTreeMap<u64, Pending<A>>,
+    pending: PendingQueue<A>,
     completed: VecDeque<Completed<A, R, E>>,
     resolved_through: u64,
     out_of_order_resolved: BTreeSet<u64>,
 }
 
 impl<A, R, E> Peer<A, R, E> {
-    fn new(actor: ActorId, epoch: u64) -> Self {
+    fn new(actor: ActorId, epoch: u64, pending: PendingQueue<A>) -> Self {
         Self {
             actor,
             epoch,
             next_sequence: 1,
-            pending: BTreeMap::new(),
+            pending,
             completed: VecDeque::new(),
             resolved_through: 0,
             out_of_order_resolved: BTreeSet::new(),
         }
+    }
+    fn reconnect(&mut self, actor: ActorId, epoch: u64) {
+        self.actor = actor;
+        self.epoch = epoch;
+        self.next_sequence = 1;
+        self.pending.clear();
+        self.completed = VecDeque::new();
+        self.resolved_through = 0;
+        self.out_of_order_resolved = BTreeSet::new();
     }
     fn mark_resolved(&mut self, sequence: u64) {
         self.out_of_order_resolved.insert(sequence);
@@ -568,7 +655,17 @@ impl<G: GameRules> Authority<G> {
         if self.peers.get(&id).is_some_and(|old| epoch <= old.epoch) {
             return Err(AdmissionError::StaleEpoch);
         }
-        self.peers.insert(id, Peer::new(actor, epoch));
+        if let Some(peer) = self.peers.get_mut(&id) {
+            peer.reconnect(actor, epoch);
+            return Ok(());
+        }
+        let pending = PendingQueue::try_new(
+            self.snapshot_admission
+                .as_ref()
+                .map(|admission| &admission.pool),
+        )
+        .map_err(|_| AdmissionError::PublicationCapacity)?;
+        self.peers.insert(id, Peer::new(actor, epoch, pending));
         Ok(())
     }
     /// Admit a typed one-shot input; duplicate detection precedes scheduling.
