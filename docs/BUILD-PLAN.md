@@ -39,6 +39,15 @@ The world update rate is **not a frame-rate ceiling**. Rendering and input prese
 
 Performance is part of every step. We want excellent speed and stable behavior, so each new capability needs a cost estimate and appropriate measurements while it is designed and built. The [performance plan](design/AI-PERFORMANCE.md#performance-investment-from-the-first-design) explains how.
 
+## Water design preparation
+
+This D2 work can proceed alongside the foundation. It does not make water a dependency of the first small game.
+The [water commission](design/modules/WATER.md) distinguishes the selected lightweight baseline from the wider
+interactive-water target; all runtime and visual/device evidence remains separate.
+
+- [x] Align the existing water ambitions and research with Thrum's owners, contracts, baseline limits and cost policy; obtain an independent coverage review. See the [alignment record](evidence/water/ALIGNMENT-2026-11-01.md).
+- [ ] Complete D2-water B/C: select and derive coherent dynamics/contact/transfer/whitewater mechanisms and close their rendering, content, save and headless/replica contracts before dependent implementation.
+
 ## How a box gets checked
 
 Passing `./dev check` shows that repository checks pass. It does not prove that a game works well, looks right, or performs well on a device. The [maturity record](design/MATURITY.md) tracks implementation, correct behavior, visual review, and device measurements separately. We check off a piece here when its stated behavior and relevant evidence are in place.
