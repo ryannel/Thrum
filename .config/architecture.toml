@@ -4,6 +4,10 @@
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-mobile-shell]
+manifest = "crates/thrum-mobile-shell/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core"]
+
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
