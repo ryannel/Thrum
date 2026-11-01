@@ -40,6 +40,71 @@ pub struct PublicationCharge {
     bytes: usize,
 }
 
+struct ChargedBytes {
+    bytes: Box<[u8]>,
+    _charge: PublicationCharge,
+}
+
+/// Immutable payload bytes with one pool charge for every shared owner.
+/// A clone shares the bytes and charge without allocating or copying them.
+#[derive(Clone)]
+pub struct PublicationBytes(Arc<ChargedBytes>);
+
+impl PublicationBytes {
+    /// Reserve the logical payload and owner bytes before copying from a
+    /// caller-owned source. The source and allocator metadata are not charged.
+    pub fn try_copy_from_slice(
+        pool: &PublicationPool,
+        source: &[u8],
+    ) -> Result<Self, PublicationCapacity> {
+        let mut reservation = pool.try_reserve(Self::required_charge(source.len())?)?;
+        Self::try_copy_from_reservation(&mut reservation, source)
+    }
+
+    /// Transfer an existing admission reservation to a retained byte owner.
+    /// Insufficient reserved capacity rejects before copying the source.
+    pub fn try_copy_from_reservation(
+        reservation: &mut PublicationReservation,
+        source: &[u8],
+    ) -> Result<Self, PublicationCapacity> {
+        let charge = reservation.charge(Self::required_charge(source.len())?)?;
+        let payload = Box::<[u8]>::from(source);
+        Ok(Self(Arc::new(ChargedBytes {
+            bytes: payload,
+            _charge: charge,
+        })))
+    }
+
+    /// Logical bytes required to retain a payload of `len` bytes, including
+    /// its shared owner. Callers can sum this before reserving a complete tick.
+    pub fn required_charge(len: usize) -> Result<usize, PublicationCapacity> {
+        len.checked_add(size_of::<ChargedBytes>())
+            .and_then(|total| total.checked_add(2 * size_of::<usize>()))
+            .ok_or(PublicationCapacity)
+    }
+
+    /// Borrow the retained immutable bytes.
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0.bytes
+    }
+}
+
+impl std::fmt::Debug for PublicationBytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PublicationBytes")
+            .field("len", &self.as_slice().len())
+            .finish()
+    }
+}
+
+impl PartialEq for PublicationBytes {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl Eq for PublicationBytes {}
+
 impl PublicationPool {
     /// Construct a logical budget. This is not an OS resident-byte limit.
     pub fn new(limit: usize) -> Self {
@@ -216,6 +281,60 @@ mod tests {
         drop(reservation);
         assert_eq!(pool.used_bytes(), 5);
         drop(charge);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn immutable_payload_rejects_before_copy_and_releases_after_final_clone() {
+        let header = PublicationBytes::required_charge(0).unwrap();
+        assert_eq!(PublicationBytes::required_charge(4), Ok(header + 4));
+        assert_eq!(
+            PublicationBytes::required_charge(usize::MAX),
+            Err(PublicationCapacity)
+        );
+        let pool = PublicationPool::new(header + 4);
+        assert!(matches!(
+            PublicationBytes::try_copy_from_slice(&pool, b"12345"),
+            Err(PublicationCapacity)
+        ));
+        assert_eq!(pool.used_bytes(), 0);
+        let mut source = *b"1234";
+        let first = PublicationBytes::try_copy_from_slice(&pool, &source).unwrap();
+        source[0] = b'X';
+        assert_eq!(&source, b"X234");
+        let held = first.clone();
+        assert_eq!(first.as_slice(), b"1234");
+        assert_eq!(first, held);
+        assert_eq!(pool.used_bytes(), header + 4);
+        drop(first);
+        assert_eq!(pool.used_bytes(), header + 4);
+        assert!(matches!(
+            PublicationBytes::try_copy_from_slice(&pool, b""),
+            Err(PublicationCapacity)
+        ));
+        drop(held);
+        assert_eq!(pool.used_bytes(), 0);
+        let empty = PublicationBytes::try_copy_from_slice(&pool, b"").unwrap();
+        assert_eq!(empty.as_slice(), b"");
+        assert_eq!(pool.used_bytes(), header);
+    }
+
+    #[test]
+    fn immutable_payload_can_take_a_whole_tick_reservation_without_reserving_twice() {
+        let header = PublicationBytes::required_charge(0).unwrap();
+        let pool = PublicationPool::new(header + 8);
+        let mut reservation = pool.try_reserve(header + 8).unwrap();
+        assert!(matches!(
+            PublicationBytes::try_copy_from_reservation(&mut reservation, b"123456789"),
+            Err(PublicationCapacity)
+        ));
+        assert_eq!(reservation.remaining_bytes(), header + 8);
+        let first = PublicationBytes::try_copy_from_reservation(&mut reservation, b"1234").unwrap();
+        assert_eq!(reservation.remaining_bytes(), 4);
+        assert_eq!(pool.used_bytes(), header + 8);
+        drop(reservation);
+        assert_eq!(pool.used_bytes(), header + 4);
+        drop(first);
         assert_eq!(pool.used_bytes(), 0);
     }
 }
