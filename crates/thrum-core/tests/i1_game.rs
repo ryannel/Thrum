@@ -2512,6 +2512,10 @@ mod protected_output_fixture {
         type Rejection = Output;
         type Event = Output;
 
+        fn spawn_bound(&self, action: &u8, _configured_max: usize) -> usize {
+            usize::from(*action == 7)
+        }
+
         fn decide(
             &self,
             world: &World<Entity>,
@@ -2540,10 +2544,17 @@ mod protected_output_fixture {
                 let _ = context.try_copy_payload(&[9; 32]);
             }
             PreparedCommit {
-                edits: PreparedEdits::One(WorldEdit::Replace(
-                    handle,
-                    Entity::try_new(&self.pool, [value], [Some(payload.clone())]).unwrap(),
-                )),
+                edits: PreparedEdits::One(if value == 7 {
+                    WorldEdit::Spawn(
+                        StableId(2),
+                        Entity::try_new(&self.pool, [value], [Some(payload.clone())]).unwrap(),
+                    )
+                } else {
+                    WorldEdit::Replace(
+                        handle,
+                        Entity::try_new(&self.pool, [value], [Some(payload.clone())]).unwrap(),
+                    )
+                }),
                 event: Some(Output::try_new(&self.pool, [], [Some(payload)]).unwrap()),
             }
         }
@@ -2551,6 +2562,7 @@ mod protected_output_fixture {
 
     fn host_with_allowance(
         output_allowance: usize,
+        structural: bool,
     ) -> (
         HeadlessHost<Rule>,
         thrum_core::InitialChargedOutcomes<Rule>,
@@ -2574,7 +2586,7 @@ mod protected_output_fixture {
             pool.clone(),
             SnapshotWriteBounds {
                 max_edits_per_action: 1,
-                max_spawns_per_action: 0,
+                max_spawns_per_action: usize::from(structural),
             },
             ClosedGameLimits {
                 action: ClosedValueLimits {
@@ -2594,20 +2606,37 @@ mod protected_output_fixture {
         authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
         authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
         let origin = Instant::now();
-        let (host, initial) = HeadlessHost::with_protected_output_replica(
-            origin,
-            ClockConfig::default(),
-            HostBudget {
-                callback_cpu: Duration::from_millis(5),
-                other_work: Duration::from_millis(1),
-                tick_cost_bound: Duration::from_millis(1),
-            },
-            authority,
-            &pool,
-            1,
-            2,
-            output_allowance,
-        )
+        let clock = ClockConfig::default();
+        let budget = HostBudget {
+            callback_cpu: Duration::from_millis(5),
+            other_work: Duration::from_millis(1),
+            tick_cost_bound: Duration::from_millis(1),
+        };
+        let (host, initial) = if structural {
+            HeadlessHost::with_protected_structural_replica(
+                origin,
+                clock,
+                budget,
+                authority,
+                &pool,
+                2,
+                2,
+                2,
+                2,
+                output_allowance,
+            )
+        } else {
+            HeadlessHost::with_protected_output_replica(
+                origin,
+                clock,
+                budget,
+                authority,
+                &pool,
+                1,
+                2,
+                output_allowance,
+            )
+        }
         .unwrap();
         (host, initial, pool, origin)
     }
@@ -2618,7 +2647,7 @@ mod protected_output_fixture {
         PublicationPool,
         Instant,
     ) {
-        host_with_allowance(PublicationBytes::required_charge(32).unwrap())
+        host_with_allowance(PublicationBytes::required_charge(32).unwrap(), false)
     }
 
     fn input(peer: u64, action: u8) -> Input<u8> {
@@ -2699,6 +2728,59 @@ mod protected_output_fixture {
     }
 
     #[test]
+    fn structural_spawn_state_event_and_peer_rejection_share_protected_pool() {
+        let allowance = PublicationBytes::required_charge(32).unwrap();
+        let (mut host, initial, pool, origin) = host_with_allowance(allowance, true);
+        let old_snapshot = host.authority().snapshot().clone();
+        host.submit(input(1, 7)).unwrap();
+        host.submit(input(2, 0)).unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected charged replica publication")
+        };
+        assert_eq!(admitted.results().len(), 2);
+        assert_eq!(admitted.events().len(), 1);
+        assert_eq!(
+            admitted.events()[0]
+                .payload
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[7; 32]
+        );
+        assert!(admitted.results().iter().any(|result| matches!(
+            &result.disposition,
+            ResultDisposition::Rejected(ActionRejection::Game(reason))
+                if reason.payload_owner(0).unwrap().as_slice() == [3; 16]
+        )));
+        assert_eq!(
+            host.replica()
+                .unwrap()
+                .get(StableId(2))
+                .unwrap()
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[7; 32]
+        );
+        assert_eq!(old_snapshot.records().count(), 1);
+        drop(report);
+        host.acknowledge_results(PeerId(1), 1).unwrap();
+        host.acknowledge_results(PeerId(2), 1).unwrap();
+        drop(occupied);
+        drop(old_snapshot);
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
     fn future_output_credit_survives_a_delayed_sequence_under_competing_use() {
         let (mut host, initial, pool, origin) = host();
         let mut future = input(1, 4);
@@ -2742,7 +2824,7 @@ mod protected_output_fixture {
     fn decision_and_preparation_spend_one_cumulative_payload_allowance() {
         let allowance = PublicationBytes::required_charge(16).unwrap()
             + PublicationBytes::required_charge(32).unwrap();
-        let (mut host, initial, pool, origin) = host_with_allowance(allowance);
+        let (mut host, initial, pool, origin) = host_with_allowance(allowance, false);
         host.submit(input(1, 6)).unwrap();
         let occupied = pool
             .try_reserve(pool.limit_bytes() - pool.used_bytes())
