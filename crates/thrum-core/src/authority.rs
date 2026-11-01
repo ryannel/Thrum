@@ -5,8 +5,8 @@ use std::{
 
 use crate::replica::StateGroup;
 use crate::{
-    EntityChange, PreparedEdits, PublicationPool, PublicationReservation, Snapshot, World,
-    WorldPublicationError, WorldWork,
+    ClosedPublicationValue, EntityChange, PreparedEdits, PublicationPool, PublicationReservation,
+    Snapshot, World, WorldPublicationError, WorldWork,
     world::{ActorId, AuthorityId},
 };
 
@@ -157,9 +157,10 @@ pub struct SnapshotWriteBounds {
     pub max_spawns_per_action: usize,
 }
 
-struct SnapshotAdmission {
+struct SnapshotAdmission<T> {
     pool: PublicationPool,
     bounds: SnapshotWriteBounds,
+    value_check: Option<fn(&T, &PublicationPool) -> bool>,
 }
 
 /// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
@@ -271,7 +272,7 @@ pub struct Authority<G: GameRules> {
     next_event_id: u64,
     peers: PeerMap<G>,
     snapshot_leases: VecDeque<Weak<()>>,
-    snapshot_admission: Option<SnapshotAdmission>,
+    snapshot_admission: Option<SnapshotAdmission<G::Entity>>,
     faulted: bool,
 }
 
@@ -292,10 +293,47 @@ impl<G: GameRules> Authority<G> {
     pub fn try_new_snapshot_charged(
         id: AuthorityId,
         rules: G,
-        mut world: World<G::Entity>,
+        world: World<G::Entity>,
         pool: PublicationPool,
         bounds: SnapshotWriteBounds,
     ) -> Result<Self, WorldPublicationError> {
+        Self::try_new_snapshot_charged_with_check(id, rules, world, pool, bounds, None)
+    }
+
+    /// Start a charged authority whose closed world states are checked against
+    /// the selected pool before tick-zero publication and before every edit.
+    /// Snapshot pages/roots remain the only pre-edit byte reservation here.
+    pub fn try_new_closed_snapshot_charged(
+        id: AuthorityId,
+        rules: G,
+        world: World<G::Entity>,
+        pool: PublicationPool,
+        bounds: SnapshotWriteBounds,
+    ) -> Result<Self, WorldPublicationError>
+    where
+        G::Entity: ClosedPublicationValue,
+    {
+        Self::try_new_snapshot_charged_with_check(
+            id,
+            rules,
+            world,
+            pool,
+            bounds,
+            Some(<G::Entity as ClosedPublicationValue>::belongs_to_pool),
+        )
+    }
+
+    fn try_new_snapshot_charged_with_check(
+        id: AuthorityId,
+        rules: G,
+        mut world: World<G::Entity>,
+        pool: PublicationPool,
+        bounds: SnapshotWriteBounds,
+        value_check: Option<fn(&G::Entity, &PublicationPool) -> bool>,
+    ) -> Result<Self, WorldPublicationError> {
+        if value_check.is_some_and(|check| !world.states_satisfy(|state| check(state, &pool))) {
+            return Err(WorldPublicationError::WrongPool);
+        }
         let peak = world.conservative_charged_publication_peak(0, 0)?;
         let mut reservation = pool
             .try_reserve(peak)
@@ -306,7 +344,11 @@ impl<G: GameRules> Authority<G> {
             rules,
             world,
             snapshot,
-            Some(SnapshotAdmission { pool, bounds }),
+            Some(SnapshotAdmission {
+                pool,
+                bounds,
+                value_check,
+            }),
         ))
     }
 
@@ -315,7 +357,7 @@ impl<G: GameRules> Authority<G> {
         rules: G,
         world: World<G::Entity>,
         snapshot: Snapshot<G::Entity>,
-        snapshot_admission: Option<SnapshotAdmission>,
+        snapshot_admission: Option<SnapshotAdmission<G::Entity>>,
     ) -> Self {
         let initial_lease = snapshot.lease_token();
         Self {
@@ -608,6 +650,11 @@ impl<G: GameRules> Authority<G> {
                     if self.snapshot_admission.as_ref().is_some_and(|admission| {
                         prepared.edits.len() > admission.bounds.max_edits_per_action
                             || prepared.edits.spawns() > admission.bounds.max_spawns_per_action
+                            || admission.value_check.is_some_and(|check| {
+                                !prepared
+                                    .edits
+                                    .states_satisfy(|state| check(state, &admission.pool))
+                            })
                     }) {
                         return Err(StepError::TerminalGameContract);
                     }
