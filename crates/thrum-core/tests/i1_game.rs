@@ -2131,13 +2131,17 @@ fn retained_snapshots_backpressure_before_action_commit() {
             ..
         })
     ));
-    held.remove(0);
+    held.remove(3);
     let resumed = authority.step().unwrap();
     assert_eq!(
         resumed.group.results[0].disposition,
         ResultDisposition::Committed
     );
     assert_eq!(resumed.group.events.len(), 1);
+    assert_eq!(
+        authority.step().err(),
+        Some(StepError::SnapshotBackpressure)
+    );
 }
 
 #[test]

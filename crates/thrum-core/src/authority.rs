@@ -14,6 +14,41 @@ const MAX_PENDING: usize = 8;
 const MAX_RESULTS: usize = 256;
 const MAX_SNAPSHOT_LEASES: usize = 8;
 
+struct SnapshotLeaseDirectory {
+    slots: [Option<Weak<()>>; MAX_SNAPSHOT_LEASES],
+    len: usize,
+}
+
+impl SnapshotLeaseDirectory {
+    fn new(first: Weak<()>) -> Self {
+        let mut slots = std::array::from_fn(|_| None);
+        slots[0] = Some(first);
+        Self { slots, len: 1 }
+    }
+
+    fn retain_live(&mut self) {
+        let mut live = 0;
+        for index in 0..self.len {
+            let lease = self.slots[index].take().expect("occupied lease slot");
+            if lease.strong_count() != 0 {
+                self.slots[live] = Some(lease);
+                live += 1;
+            }
+        }
+        self.len = live;
+    }
+
+    fn is_full(&self) -> bool {
+        self.len == MAX_SNAPSHOT_LEASES
+    }
+
+    fn push(&mut self, lease: Weak<()>) {
+        assert!(!self.is_full(), "snapshot lease admission precedes commit");
+        self.slots[self.len] = Some(lease);
+        self.len += 1;
+    }
+}
+
 /// One local or remote input origin within an authority.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct PeerId(pub u64);
@@ -316,7 +351,7 @@ pub struct Authority<G: GameRules> {
     group_id: u64,
     next_event_id: u64,
     peers: PeerMap<G>,
-    snapshot_leases: VecDeque<Weak<()>>,
+    snapshot_leases: SnapshotLeaseDirectory,
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
     faulted: bool,
 }
@@ -449,7 +484,7 @@ impl<G: GameRules> Authority<G> {
             group_id: 0,
             next_event_id: 1,
             peers: BTreeMap::new(),
-            snapshot_leases: VecDeque::from([initial_lease]),
+            snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
             snapshot_admission,
             faulted: false,
         }
@@ -698,9 +733,8 @@ impl<G: GameRules> Authority<G> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
         }
-        self.snapshot_leases
-            .retain(|lease| lease.strong_count() != 0);
-        if self.snapshot_leases.len() >= MAX_SNAPSHOT_LEASES {
+        self.snapshot_leases.retain_live();
+        if self.snapshot_leases.is_full() {
             return Err(StepError::SnapshotBackpressure);
         }
         let mut snapshot_reservation = self.reserve_snapshot_tick()?;
@@ -824,8 +858,7 @@ impl<G: GameRules> Authority<G> {
             self.world.publish(self.tick)
         };
         self.snapshot = published.snapshot.clone();
-        self.snapshot_leases
-            .push_back(published.snapshot.lease_token());
+        self.snapshot_leases.push(published.snapshot.lease_token());
         self.group_id = self.group_id.checked_add(1).expect("group ID exhausted");
         let group = StateGroup {
             authority: self.id,
