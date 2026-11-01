@@ -16,5 +16,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-mobile-shell"
+version = "0.1.0"
+dependencies = [
+ "thrum-core",
+]
+
+[[package]]
 name = "xtask"
 version = "0.1.0"

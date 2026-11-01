@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/thrum-core", "tools/xtask"]
+members = ["crates/thrum-core", "crates/thrum-mobile-shell", "tools/xtask"]
 default-members = ["crates/thrum-core"]
 resolver = "3"
 
