@@ -8,8 +8,8 @@ use std::{
 
 use thrum_core::{
     ActorId, Authority, AuthorityId, ClockConfig, ClockState, GameRules, Handle, HeadlessHost,
-    HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, PreparedCommit,
-    PreparedEdits, StableId, World, WorldEdit, WorldEpoch,
+    HostBudget, HostPublication, HostPublications, Input, InputSchedule, MatchId, Origin, PeerId,
+    PreparedCommit, PreparedEdits, StableId, World, WorldEdit, WorldEpoch,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -95,7 +95,7 @@ fn submit(
 
 fn consume(
     host: &mut HeadlessHost<Rule>,
-    publications: Vec<HostPublication<Counter, (), ()>>,
+    publications: HostPublications<Counter, (), ()>,
     submitted_at: &[Vec<Instant>; 2],
     result_latency: &mut Vec<u128>,
 ) {

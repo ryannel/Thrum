@@ -2,7 +2,9 @@
 //! A platform event loop calls `on_callback` with monotonic `Instant` values.
 
 use std::{
+    alloc::Layout,
     collections::BTreeSet,
+    ops::Deref,
     panic::{AssertUnwindSafe, catch_unwind},
     time::{Duration, Instant},
 };
@@ -10,8 +12,9 @@ use std::{
 use crate::{
     Admission, AdmissionError, AdmittedGroup, Authority, ChargedAdmittedGroup,
     ChargedBaselineError, ChargedReplicaSetupError, ClockConfig, ClockError, ClockReport,
-    ClockState, ClosedPublicationValue, GameRules, Input, PeerId, PublicationPool, Replica,
-    ReplicaError, Snapshot, StepError, TickClock, TickPublication, WorldWork,
+    ClockState, ClosedPublicationValue, GameRules, Input, PeerId, PublicationCharge,
+    PublicationPool, Replica, ReplicaError, Snapshot, StepError, TickClock, TickPublication,
+    WorldWork,
 };
 
 /// CPU admission policy for one host callback. A cost bound is an input from
@@ -103,6 +106,104 @@ pub enum HostPublication<T, E, R> {
     },
 }
 
+/// Callback publications keep their requested vector storage and one pool
+/// charge together, including when the collection is moved out of a report.
+pub struct HostPublications<T, E, R> {
+    values: Vec<HostPublication<T, E, R>>,
+    limit: usize,
+    _charge: Option<PublicationCharge>,
+}
+
+impl<T, E, R> HostPublications<T, E, R> {
+    fn new() -> Self {
+        Self {
+            values: Vec::new(),
+            limit: usize::MAX,
+            _charge: None,
+        }
+    }
+
+    fn push(&mut self, publication: HostPublication<T, E, R>) {
+        assert!(self.values.len() < self.limit, "callback publication bound");
+        self.values.push(publication);
+    }
+
+    fn is_charged(&self) -> bool {
+        self._charge.is_some()
+    }
+
+    fn try_reserve_charged(
+        &mut self,
+        pool: &PublicationPool,
+        capacity: usize,
+        bytes: usize,
+    ) -> Result<(), StepError> {
+        assert!(!self.is_charged() && self.values.is_empty());
+        let mut reservation = pool
+            .try_reserve(bytes)
+            .map_err(|_| StepError::PublicationBackpressure)?;
+        self.values
+            .try_reserve_exact(capacity)
+            .map_err(|_| StepError::PublicationBackpressure)?;
+        self._charge = Some(
+            reservation
+                .charge(bytes)
+                .expect("callback vector preflight"),
+        );
+        self.limit = capacity;
+        Ok(())
+    }
+}
+
+impl<T, E, R> Deref for HostPublications<T, E, R> {
+    type Target = [HostPublication<T, E, R>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+
+/// Consuming iterator whose buffer charge retires only after its last owner.
+pub struct HostPublicationsIntoIter<T, E, R> {
+    values: std::vec::IntoIter<HostPublication<T, E, R>>,
+    _charge: Option<PublicationCharge>,
+}
+
+impl<T, E, R> Iterator for HostPublicationsIntoIter<T, E, R> {
+    type Item = HostPublication<T, E, R>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.values.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.values.size_hint()
+    }
+}
+
+impl<T, E, R> ExactSizeIterator for HostPublicationsIntoIter<T, E, R> {}
+
+impl<T, E, R> IntoIterator for HostPublications<T, E, R> {
+    type Item = HostPublication<T, E, R>;
+    type IntoIter = HostPublicationsIntoIter<T, E, R>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        HostPublicationsIntoIter {
+            values: self.values.into_iter(),
+            _charge: self._charge,
+        }
+    }
+}
+
+impl<'a, T, E, R> IntoIterator for &'a HostPublications<T, E, R> {
+    type Item = &'a HostPublication<T, E, R>;
+    type IntoIter = std::slice::Iter<'a, HostPublication<T, E, R>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.values.iter()
+    }
+}
+
 /// Observed work and delivered publications for one real host callback.
 pub struct HostCallback<T, E, R> {
     /// Fixed-step admission, committed work and pending/overload state.
@@ -119,7 +220,7 @@ pub struct HostCallback<T, E, R> {
     /// Full groups admitted by the in-memory replica.
     pub replica_groups: u32,
     /// Committed ticks and their observable outputs, in tick order.
-    pub publications: Vec<HostPublication<T, E, R>>,
+    pub publications: HostPublications<T, E, R>,
 }
 
 /// Initial admitted outcomes when a game host starts its replica.
@@ -309,6 +410,8 @@ pub struct HeadlessHost<G: GameRules> {
     schedule: Vec<Stage>,
     budget: HostBudget,
     admitted_ticks_per_callback: u32,
+    callback_publication_capacity: usize,
+    callback_publication_bytes: usize,
     faulted: bool,
 }
 
@@ -341,8 +444,8 @@ impl<G: GameRules> HeadlessHost<G> {
     }
 
     /// Construct a sealed match host with a finite, precharged local replica.
-    /// Its callback uses `on_callback_charged`; progress scratch and delivery
-    /// storage still await the full process byte gate.
+    /// Its callback uses `on_callback_charged`; progress scratch and other
+    /// delivery owners still await the full process byte gate.
     pub fn with_charged_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -389,6 +492,15 @@ impl<G: GameRules> HeadlessHost<G> {
             return Err(HostError::InvalidBudget);
         }
         let admitted_ticks_per_callback = budget.admitted_ticks();
+        let callback_publication_capacity = clock
+            .max_ticks_per_call
+            .get()
+            .min(admitted_ticks_per_callback) as usize;
+        let callback_publication_bytes = Layout::array::<
+            HostPublication<G::Entity, G::Event, G::Rejection>,
+        >(callback_publication_capacity)
+        .map_err(|_| HostError::InvalidBudget)?
+        .size();
         let schedule = headless_schedule(replica.is_some());
         Ok(Self {
             origin,
@@ -398,6 +510,8 @@ impl<G: GameRules> HeadlessHost<G> {
             schedule,
             budget,
             admitted_ticks_per_callback,
+            callback_publication_capacity,
+            callback_publication_bytes,
             faulted: false,
         })
     }
@@ -481,7 +595,7 @@ impl<G: GameRules> HeadlessHost<G> {
         let started = Instant::now();
         let mut work = WorldWork::default();
         let mut replica_groups = 0;
-        let mut publications = Vec::new();
+        let mut publications = HostPublications::new();
         let mut fatal = None;
         let authority = &mut self.authority;
         let replica = &mut self.replica;
@@ -561,9 +675,9 @@ impl<G: GameRules> HeadlessHost<G> {
     }
 
     /// Service the same validated authority → replica stages with sealed,
-    /// shared charged groups. The authority checks the required replica's
-    /// conservative spawn peak before rule edits. The callback result vector
-    /// and replica progress scratch are not yet pool charged.
+    /// shared charged groups. The callback vector reserves its full requested
+    /// capacity before the first step; the authority checks required replica
+    /// headroom before rule edits. Replica progress scratch remains uncharged.
     pub fn on_callback_charged(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError>
     where
         G::Action: ClosedPublicationValue,
@@ -587,12 +701,18 @@ impl<G: GameRules> HeadlessHost<G> {
         let started = Instant::now();
         let mut work = WorldWork::default();
         let mut replica_groups = 0;
-        let mut publications = Vec::new();
+        let mut publications = HostPublications::new();
         let mut fatal = None;
         let authority = &mut self.authority;
         let replica = self.replica.as_mut().expect("charged replica mode");
+        let pool = replica
+            .charged_pool()
+            .expect("charged replica mode")
+            .clone();
         let schedule = &self.schedule;
         let step_cpu_budget = self.budget.available_step_cpu();
+        let callback_publication_capacity = self.callback_publication_capacity;
+        let callback_publication_bytes = self.callback_publication_bytes;
         let mut report = self
             .clock
             .advance_controlled(elapsed, self.admitted_ticks_per_callback, || {
@@ -600,6 +720,13 @@ impl<G: GameRules> HeadlessHost<G> {
                 for stage in schedule {
                     match stage {
                         Stage::AuthorityStep => {
+                            if !publications.is_charged() {
+                                publications.try_reserve_charged(
+                                    &pool,
+                                    callback_publication_capacity,
+                                    callback_publication_bytes,
+                                )?;
+                            }
                             let committed = catch_unwind(AssertUnwindSafe(|| {
                                 authority.step_charged_for_replica(replica)
                             }))
@@ -667,8 +794,59 @@ mod tests {
     use super::*;
     use crate::{
         ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, MatchId, Origin, PreparedCommit,
-        PreparedEdits, SnapshotWriteBounds, StableId, World, WorldEdit, WorldEpoch,
+        PreparedEdits, SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch,
     };
+
+    #[test]
+    fn moved_callback_vector_and_consuming_iterator_keep_its_charge() {
+        let bytes = Layout::array::<HostPublication<u8, (), ()>>(2)
+            .unwrap()
+            .size();
+        let pool = PublicationPool::new(bytes);
+        let mut publications: HostPublications<u8, (), ()> = HostPublications::new();
+        publications.try_reserve_charged(&pool, 2, bytes).unwrap();
+        let mut world = World::<u8>::new(WorldEpoch(247));
+        let published = world.publish(0);
+        publications.push(HostPublication::Local(TickPublication {
+            snapshot: published.snapshot,
+            group: StateGroup {
+                authority: AuthorityId::Match(MatchId(247)),
+                group_id: 0,
+                commit_tick: 0,
+                event_cursor: 0,
+                changes: vec![],
+                results: vec![],
+                events: vec![],
+                resolved_through: vec![],
+            },
+            world_work: published.work,
+        }));
+        let moved = {
+            let report = HostCallback {
+                clock: ClockReport::<StepError> {
+                    state: ClockState::Active,
+                    completed: 1,
+                    queued: 0,
+                    admitted: 1,
+                    refused_on_overload: 0,
+                    step_error: None,
+                },
+                terminal_fault: None,
+                observed_elapsed: Duration::ZERO,
+                step_budget_overrun: false,
+                world_work: WorldWork::default(),
+                replica_groups: 0,
+                publications,
+            };
+            report.publications
+        };
+        assert_eq!(pool.used_bytes(), bytes);
+        let mut iterator = moved.into_iter();
+        assert!(matches!(iterator.next(), Some(HostPublication::Local(_))));
+        assert_eq!(pool.used_bytes(), bytes);
+        drop(iterator);
+        assert_eq!(pool.used_bytes(), 0);
+    }
 
     struct SpawnRule;
 

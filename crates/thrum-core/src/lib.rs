@@ -21,7 +21,8 @@ pub use authority::{
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{
     GameHostCallback, HeadlessHost, HostAdmissionError, HostBudget, HostCallback, HostError,
-    HostPublication, InitialChargedOutcomes, InitialOutcomes,
+    HostPublication, HostPublications, HostPublicationsIntoIter, InitialChargedOutcomes,
+    InitialOutcomes,
 };
 pub use publication_pool::{
     ClosedPublicationValue, ClosedValueError, ClosedValueLimits, PublicationBytes,
