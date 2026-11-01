@@ -1,0 +1,13 @@
+   Compiling hashbrown v0.17.1
+   Compiling thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/crates/thrum-core)
+    Finished `release` profile [optimized] target(s) in 1.34s
+     Running `tmp/world-index-study/after-target/release/examples/i1_charged_replica_cost`
+I1 changed replica fixture host=macos/aarch64 profile=release
+changed_tick/64: submit_step_replica_ack_ns[p50/p95/p99/max] prototype=(666, 709, 750, 811167) charged=(625, 667, 750, 17375) charged_index_bytes=8456
+changed_stages/64: step_ns[p50/p95/p99/max] prototype=(375, 417, 458, 38125) charged=(458, 500, 542, 16500) replica_ack_ns[p50/p95/p99/max] prototype=(208, 250, 292, 27333) charged=(84, 125, 167, 2167)
+host_changed_tick/64: submit_callback_ack_ns[p50/p95/p99/max] prototype=(750, 1625, 1750, 43208) charged=(750, 875, 1625, 461125) protected=(708, 750, 1041, 50041)
+host_many_changes/64: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary=(2708, 2792, 2875, 36166) protected=(2542, 2667, 2792, 28417)
+changed_tick/4096: submit_step_replica_ack_ns[p50/p95/p99/max] prototype=(959, 1250, 5750, 23958) charged=(958, 1125, 1209, 23417) charged_index_bytes=540680
+changed_stages/4096: step_ns[p50/p95/p99/max] prototype=(667, 833, 3708, 21750) charged=(791, 875, 1000, 5458) replica_ack_ns[p50/p95/p99/max] prototype=(209, 375, 4750, 16042) charged=(125, 208, 250, 12292)
+host_changed_tick/4096: submit_callback_ack_ns[p50/p95/p99/max] prototype=(1125, 1417, 5833, 11416) charged=(1042, 1375, 5958, 33542) protected=(1042, 1250, 1375, 22083)
+host_many_changes/4096: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary=(3083, 4000, 9083, 30667) protected=(2958, 3417, 4167, 50500)
