@@ -50,7 +50,72 @@ struct ChargedBytes {
 #[derive(Clone)]
 pub struct PublicationBytes(Arc<ChargedBytes>);
 
+/// A closed, fixed-layout value for a future admitted game profile. Inline
+/// bytes have no hidden Rust owner; each optional immutable payload already
+/// carries its own pool charge. Profile size limits and authority validation
+/// are separate from this storage primitive.
+#[derive(Debug, Eq, PartialEq)]
+pub struct PublicationRecord<const INLINE: usize, const BLOBS: usize> {
+    inline: [u8; INLINE],
+    blobs: [Option<PublicationBytes>; BLOBS],
+}
+
+/// A record attempted to retain a payload from another publication pool.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PublicationRecordError {
+    /// Every owned payload in one record must belong to the selected pool.
+    WrongPool,
+}
+
+impl<const INLINE: usize, const BLOBS: usize> PublicationRecord<INLINE, BLOBS> {
+    /// Build a closed value, checking the provenance of every payload owner.
+    pub fn try_new(
+        pool: &PublicationPool,
+        inline: [u8; INLINE],
+        blobs: [Option<PublicationBytes>; BLOBS],
+    ) -> Result<Self, PublicationRecordError> {
+        if blobs
+            .iter()
+            .flatten()
+            .any(|payload| !payload.belongs_to(pool))
+        {
+            return Err(PublicationRecordError::WrongPool);
+        }
+        Ok(Self { inline, blobs })
+    }
+
+    /// Fixed inline bytes; game-facing typed decoding does not change storage.
+    pub fn inline(&self) -> &[u8; INLINE] {
+        &self.inline
+    }
+
+    /// Borrow one immutable payload owner for sharing into a new record.
+    pub fn payload_owner(&self, index: usize) -> Option<&PublicationBytes> {
+        self.blobs.get(index)?.as_ref()
+    }
+
+    /// Check provenance before admitting this record to another owner.
+    pub fn belongs_to(&self, pool: &PublicationPool) -> bool {
+        self.blobs
+            .iter()
+            .flatten()
+            .all(|payload| payload.belongs_to(pool))
+    }
+}
+
+impl<const INLINE: usize, const BLOBS: usize> Clone for PublicationRecord<INLINE, BLOBS> {
+    fn clone(&self) -> Self {
+        Self {
+            inline: self.inline,
+            blobs: self.blobs.clone(),
+        }
+    }
+}
+
 impl PublicationBytes {
+    fn belongs_to(&self, pool: &PublicationPool) -> bool {
+        Arc::ptr_eq(&self.0._charge.state, &pool.state)
+    }
     /// Reserve the logical payload and owner bytes before copying from a
     /// caller-owned source. The source and allocator metadata are not charged.
     pub fn try_copy_from_slice(
@@ -346,6 +411,42 @@ mod tests {
         let empty = PublicationBytes::try_copy_from_slice(&pool, b"").unwrap();
         assert_eq!(empty.as_slice(), b"");
         assert_eq!(pool.used_bytes(), header);
+    }
+
+    #[test]
+    fn closed_record_rejects_foreign_payload_and_shares_charge_until_final_clone() {
+        let first = PublicationPool::new(10_000);
+        let foreign = PublicationPool::new(10_000);
+        let payload = PublicationBytes::try_copy_from_slice(&first, &[7; 512]).unwrap();
+        let bytes = first.used_bytes();
+        assert_eq!(
+            PublicationRecord::<8, 1>::try_new(
+                &foreign,
+                5_u64.to_le_bytes(),
+                [Some(payload.clone())]
+            ),
+            Err(PublicationRecordError::WrongPool)
+        );
+        assert_eq!(first.used_bytes(), bytes);
+        let record = PublicationRecord::<8, 1>::try_new(
+            &first,
+            5_u64.to_le_bytes(),
+            [Some(payload.clone())],
+        )
+        .unwrap();
+        assert_eq!(record.inline(), &5_u64.to_le_bytes());
+        assert_eq!(record.payload_owner(0).unwrap().as_slice(), &[7; 512]);
+        assert!(record.belongs_to(&first));
+        assert!(!record.belongs_to(&foreign));
+        let reader = record.clone();
+        drop(payload);
+        drop(record);
+        assert_eq!(first.used_bytes(), bytes);
+        drop(reader);
+        assert_eq!(first.used_bytes(), 0);
+
+        let fixed = PublicationRecord::<8, 0>::try_new(&foreign, 8_u64.to_le_bytes(), []).unwrap();
+        assert!(fixed.belongs_to(&first));
     }
 
     #[test]

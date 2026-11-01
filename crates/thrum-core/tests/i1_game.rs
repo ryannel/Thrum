@@ -3,10 +3,11 @@
 use thrum_core::{
     ActionRejection, ActionResult, ActorId, Admission, AdmissionError, AdmittedGroup, Authority,
     AuthorityId, ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules,
-    HeadlessHost, HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule,
-    MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool,
-    Replica, ReplicaError, ResultDisposition, SessionId, SnapshotWriteBounds, StableId, StateGroup,
-    StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
+    Handle, HeadlessHost, HostAdmissionError, HostBudget, HostError, HostPublication, Input,
+    InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes,
+    PublicationPool, PublicationRecord, Replica, ReplicaError, ResultDisposition, SessionId,
+    SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch,
+    WorldError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -866,6 +867,107 @@ fn idle_replica_does_not_skip_gap_normalization() {
     assert_eq!(replica.tick(), 0);
     replica.apply(corrected).unwrap();
     assert_eq!(replica.tick(), 1);
+}
+
+#[test]
+fn closed_record_payload_survives_snapshot_and_replica_until_final_owner() {
+    type Record = PublicationRecord<8, 1>;
+
+    struct RecordRule {
+        pool: PublicationPool,
+    }
+    impl GameRules for RecordRule {
+        type Entity = Record;
+        type Action = StableId;
+        type Change = Handle;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(
+            &self,
+            world: &World<Record>,
+            _actor: ActorId,
+            action: &StableId,
+        ) -> Result<Handle, ()> {
+            world.handle_for(*action).ok_or(())
+        }
+
+        fn prepare(&self, world: &World<Record>, handle: Handle) -> PreparedCommit<Record, ()> {
+            let old = &world.get(handle).unwrap().state;
+            let next = u64::from_le_bytes(*old.inline()) + 1;
+            let state = Record::try_new(
+                &self.pool,
+                next.to_le_bytes(),
+                [old.payload_owner(0).cloned()],
+            )
+            .unwrap();
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(handle, state)),
+                event: None,
+            }
+        }
+    }
+
+    let pool = PublicationPool::new(100_000);
+    let payload_charge = PublicationBytes::required_charge(512).unwrap();
+    let payload = PublicationBytes::try_copy_from_slice(&pool, &[9; 512]).unwrap();
+    let state = Record::try_new(&pool, 4_u64.to_le_bytes(), [Some(payload.clone())]).unwrap();
+    let mut world = World::new(WorldEpoch(205));
+    world.spawn(StableId(1), state).unwrap();
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(204)),
+        RecordRule { pool: pool.clone() },
+        world,
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 1,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+    let old_reader = authority.snapshot().clone();
+    drop(payload);
+    authority
+        .submit(Input {
+            origin: Origin {
+                peer: PEER,
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: StableId(1),
+        })
+        .unwrap();
+    let published = authority.step().unwrap();
+    let admitted = replica.apply(published.group).unwrap();
+    assert_eq!(admitted.results.len(), 1);
+    assert_eq!(
+        u64::from_le_bytes(*replica.get(StableId(1)).unwrap().inline()),
+        5
+    );
+    assert_eq!(
+        replica
+            .get(StableId(1))
+            .unwrap()
+            .payload_owner(0)
+            .unwrap()
+            .as_slice(),
+        &[9; 512]
+    );
+    assert_eq!(
+        u64::from_le_bytes(*old_reader.records().next().unwrap().state.inline()),
+        4
+    );
+    drop(admitted);
+    drop(published.snapshot);
+    drop(old_reader);
+    drop(authority);
+    assert_eq!(pool.used_bytes(), payload_charge);
+    drop(replica);
+    assert_eq!(pool.used_bytes(), 0);
 }
 
 fn peer_input(
