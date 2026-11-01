@@ -2801,6 +2801,7 @@
     "clock_evidence": "../evidence/i1-headless/CLOCK.md",
     "host_evidence": "../evidence/i1-headless/HOST.md",
     "review_evidence": "../evidence/i1-headless/REVIEW-RESOLUTION.md",
+    "combined_status_evidence": "../evidence/i1-headless/FOUNDATION-STATUS-2026-11-02.md",
     "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md",
     "idle_replica_evidence": "../evidence/i1-headless/IDLE-REPLICA.md",
     "changed_progress_evidence": "../evidence/i1-headless/CHANGED-PROGRESS.md",
