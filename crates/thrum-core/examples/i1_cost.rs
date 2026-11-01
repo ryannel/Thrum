@@ -330,6 +330,37 @@ fn benchmark_idle_authority(charged: bool) {
     );
 }
 
+fn benchmark_idle_replica() {
+    const TICKS: usize = 10_000;
+    const WARMUP: usize = 1_000;
+    let mut world = World::new(WorldEpoch(4));
+    for id in 1..=64 {
+        world.spawn(StableId(id), Counter(0)).unwrap();
+    }
+    let mut authority = Authority::new(AuthorityId::Standalone(SessionId(4)), Rule, world);
+    authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+    let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+    let mut samples = Vec::with_capacity(TICKS);
+    for i in 0..TICKS + WARMUP {
+        let start = Instant::now();
+        let published = authority.step().unwrap();
+        let admitted = replica.apply(published.group).unwrap();
+        let elapsed = start.elapsed().as_nanos();
+        black_box(admitted.resolved_through);
+        if i >= WARMUP {
+            samples.push(elapsed);
+        }
+    }
+    assert_eq!(replica.tick(), (TICKS + WARMUP) as u64);
+    report(
+        "authority/idle-replica",
+        &mut samples,
+        WorldWork::default(),
+        authority.snapshot().logical_bytes(),
+        TICKS,
+    );
+}
+
 fn benchmark_churn(count: usize, percent: usize) {
     const TICKS: usize = 5_000;
     const WARMUP: usize = 500;
@@ -447,6 +478,7 @@ fn main() {
     benchmark_pair_authority();
     benchmark_idle_authority(true);
     benchmark_idle_authority(false);
+    benchmark_idle_replica();
     for count in [64, 4_096, 16_384] {
         for percent in [0, 1, 25] {
             benchmark_churn(count, percent);

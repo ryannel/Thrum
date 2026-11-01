@@ -203,6 +203,30 @@ impl<T> Replica<T> {
         if group.event_cursor < self.last_event_id {
             return Err(ReplicaError::InvalidEvent);
         }
+        // The authority emits sorted peer watermarks. An empty group with the
+        // exact existing progress needs no cloned map or validation sets.
+        // Reordered or newly registered peers take the full validation path.
+        if group.changes.is_empty()
+            && group.results.is_empty()
+            && group.events.is_empty()
+            && group.resolved_through.len() == self.progress.len()
+            && group.resolved_through.iter().zip(&self.progress).all(
+                |((peer_id, watermark), (known_id, progress))| {
+                    peer_id == known_id
+                        && *watermark == progress.resolved_through
+                        && progress.resolved_above_gap.is_empty()
+                },
+            )
+        {
+            self.group_id = group.group_id;
+            self.tick = group.commit_tick;
+            self.last_event_id = group.event_cursor;
+            return Ok(AdmittedGroup {
+                results: group.results,
+                events: group.events,
+                resolved_through: group.resolved_through,
+            });
+        }
         let mut changed = BTreeSet::new();
         for change in &group.changes {
             let id = match change {

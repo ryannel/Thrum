@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "c93e85a7e3ce6a7b0dfcab5258dfcc09c6d6f35644d2420dc55755fa762a644f",
+    "design_sha256": "e118a84b0dd07629d286d0197e1c071728f29150363fe059a029fe0457fa900c",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2802,11 +2802,12 @@
     "host_evidence": "../evidence/i1-headless/HOST.md",
     "review_evidence": "../evidence/i1-headless/REVIEW-RESOLUTION.md",
     "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md",
+    "idle_replica_evidence": "../evidence/i1-headless/IDLE-REPLICA.md",
     "publication_memory": {
       "design": "selected_for_precommit_byte_admission",
       "implementation": "partial_charged_authority_snapshots_prepared_rule_and_immutable_payloads_only",
       "functional_validation": "pool_input_history_prepared_rule_terminal_fault_charged_authority_reader_release_multiplayer_and_structural_peak_tests_only",
-      "performance_measurement": "local_charged_authority_idle_and_one_edit_two_edit_rule_and_page_paths_only; whole_byte_gate_not_run",
+      "performance_measurement": "local_charged_authority_idle_replica_one_edit_two_edit_rule_and_page_paths_only; whole_byte_gate_not_run",
       "scope": "Process-shared reservation, immutable payload byte ownership, unique page/root lifetime charges and pre-edit charged authority snapshot admission are tested. The host retries capacity refusal without mutation; old readers retain their charge; same-tick and competing-peer decisions remain consistent. Local authority cost is measured, but whole-tick output and required replica admission, general payload bounds, mutable world indexes, groups, outcomes, baselines and replica allocation charges are absent.",
       "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md",
       "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md",
@@ -2816,6 +2817,8 @@
       "charged_page_evidence": "../evidence/i1-headless/CHARGED-PAGES.md",
       "precommit_page_bound_evidence": "../evidence/i1-headless/PRECOMMIT-PAGE-BOUND.md",
       "charged_authority_evidence": "../evidence/i1-headless/CHARGED-AUTHORITY.md",
+      "whole_tick_profile_design": "reviewed_target_with_open_buffer_lease_and_full_allocation_proofs",
+      "whole_tick_design_review_evidence": "../evidence/i1-headless/WHOLE-TICK-DESIGN-REVIEW.md",
       "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
       "design_review_evidence": "../evidence/i1-headless/MEMORY-DESIGN-REVIEW.md"
     }
