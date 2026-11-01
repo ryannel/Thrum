@@ -1,11 +1,11 @@
-# Water — Thrum alignment and detailed-design commission
+# Water — commission and wider-provider design
 
-1 November 2026. **D2 planning, not a replacement baseline or a build-ready solver design.**
+1 November 2026. **D2 alignment plus reviewed bounded-provider design; full-family B/C remains open.**
 This refines `E1.water` within [Environment](ENVIRONMENT.md), under [C4](../CONTRACTS.md).
 The [initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river) remain selected for their
 admitted scope. This document carries the broader water brief into Thrum and names the work needed before it can
-be implemented. Numerical algorithms not selected below remain decisions to resolve analytically, not promises
-that a future experiment will supply a missing mechanism.
+be implemented. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
+to resolve analytically, not promises that a future experiment will supply a missing mechanism. No runtime is commissioned here.
 
 ## Product scope and baseline fit
 
@@ -21,8 +21,8 @@ uses published game-engine methods with explicit calibrated closures where full 
 | No water | No water state, queries, preparation, draws or resident products when no consumer requires them | Retain F2 omission; an invisible but required physical provider is a different combination |
 | Prescribed water | Authored stage/flow or analytic sea, bounded buoyancy and optional decorative water effects | Selected initial set; finite storage, physical wakes and falling-water transfer are not implied |
 | Finite shallow water | Stored volume, depth-averaged flow, sources/sinks, wet/dry and prescribed-reservoir exchange | Selected bounded HLL/hydrostatic-reconstruction set; not dispersive short waves or a waterfall solver |
-| Interactive water | Body/impact disturbances propagate in state sampled by subsequent bodies and displayed surfaces | Required next design coverage; operator, reaction approximation and CPU cost are not yet selected |
-| Breaking / detached / thin water extensions | Coherent breaking fronts, finite-volume falls/landings, puddle filling/overflow/runoff | Required wider coverage; admit only individually complete mechanisms and regime connections |
+| Interactive water | Body/impact disturbances propagate in state sampled by subsequent bodies and displayed surfaces | Selected bounded GH-based proposal below; authored hull/source adaptations and CPU cost remain unqualified |
+| Breaking / detached / thin water extensions | Coherent breaking fronts, finite-volume falls/landings, puddle filling/overflow/runoff | Bounded detached transfer, dilute populations, noncontact curls and preconnected thin storage selected below; general dry-slope runoff and contact breaking remain open |
 
 These are capability combinations, not five new plugins or a quality dropdown. A lake may be prescribed, shallow
 or interactive according to its needs. A visual tier never silently substitutes one physical profile for another.
@@ -32,26 +32,46 @@ The current R3 fixture's cosmetic wake, decorative falls and blocked mixed-model
 interactive or connected-transfer requirements. Conversely, those wider requirements do not invalidate R3's stated
 small baseline. Preserve its exact bounds and analytical arguments; richer providers inherit none automatically.
 
+## Current bounded selection
+
+These are reviewed engineering recommendations for a wider profile, with published methods, derived adaptations and
+authored parameters distinguished. They do not replace the selected initial operators or certify CPU/device capacity.
+
+| Owning detailed design | Actual mechanism and limit |
+| --- | --- |
+| [Dynamics](WATER-DYNAMICS.md) | Complete generalized-heightfield bulk/dispersion/transport, geometry-derived pressure with independent reference and explicit nonreciprocal/transient/nonlocal error, same P3 buoyancy/drag, total-flux sources and finite fall/first-hit arrival. Thin storage is restricted to filling/preconnected wet edges |
+| [Appearance](WATER-APPEARANCE.md) | Causal crest/contact/impact/ventilated-wash sources, separate gas/foam-area/liquid populations, defined flow/rise/surface transfer and source-off tails. Prepared breaking charts are noncontact; predictive entrainment is not fabricated |
+| [Optics](WATER-OPTICS.md) | Common surface/attachment, regional complete visibility with screen-space acceleration, one caustic light partition, oriented media/shells, bounded ordered layers and coverage-aware fallback under V3 |
+| [Integration and proof](WATER-INTEGRATION.md) | Common body/fluid candidates and event recomputation, atomic publication/leases, content/save/replica/off-state products, explicit operation/byte account and least-established coupling first |
+
+[Independent cross-review](../../evidence/water/DESIGN-REVIEW-2026-11-01.md) found and corrected material coupling
+errors before any build. It also found a genuine missing dry-slope transport mechanism: exact thin-cell volume/energy
+can still create detached downhill wet patches. WAT-06 remains open beyond the bounded selection. Traversable mixed
+domains, overlapping hull pressure supports, thin-wall exclusion, richer spatial sea spectra/open boundaries, moving
+domains, contact-qualified breaking and physical breaker-loss closure likewise remain unselected wider requirements.
+Numerical phase/stability/shore leakage, surrogate error, ordinary-motion quality and assembled target cost are unrun
+qualification, a different category from those missing mechanisms. The full-family B/C step is not checked off.
+
 ## Coverage and decisions to close
 
 | ID | Required outcome | Existing basis / missing detailed mechanism | Main owners |
 | --- | --- | --- | --- |
 | WAT-01 | Sea state with coherent phase, derivatives and orbital flow | Analytic components specified initially; richer spectra, spatial variation, filtering and prepared content require selection | E1, F4, V2/V3 |
-| WAT-02 | Depth-dependent wave transformation, crest breaking, foam and shoreline response | Shallow storage is not dispersive coastal transformation or overturning geometry; select compatible representations and their actual transfers | E1, W2, V2/V5 |
-| WAT-03 | Rivers/streams flow around bed and obstacles | Initial shallow operator is a bounded candidate; fine geometry, steady-current disturbance, narrow channels and contact closures remain scoped work | E1, W2, P3 |
-| WAT-04 | A fall carries discharge into a finite receiving pool and creates a local response | Derive donor debit, flight/first receiver interception, pool credit, momentum/traction and delayed source-off behavior; decorative seams do not satisfy this | E1, P3, V2/V5, A1 |
-| WAT-05 | Lakes/pools receive sources, waves and floaters | Distinguish prescribed level from finite storage and dispersive disturbance; bed/boundary/flow/query support must match | E1, P3, W2 |
-| WAT-06 | Rain fills depressions, overflows and drains without detached downhill blobs or area popping | Surface-state runoff must feed actual receiving storage; select terrain/storage reconstruction, wet/dry and thin-flow regime | E1 surfaces/water, W2, V3 |
-| WAT-07 | Hulls and floaters receive and generate meaningful disturbances | Retain one P3 body integrator; select E1/P3 source/reaction law and a queryable wave response, including contact pressure support and self-field policy | E1, P3, F4 |
-| WAT-08 | Foam/bubbles form, travel, disperse and survive source-off | Separate crest/break, contact/impact and propulsor causes; define population units, birth, advection, rise/surface transfer, loss and optical reconstruction | E1 appearance, V5, V3, A1 |
-| WAT-09 | Reflection, refraction, water material, underwater light and caustics agree | C08 owns transport; select interface/receiver visibility, optical properties, energy partitions, missing-data fallback and temporal behavior | V3, V1, E1, V2/V4 |
-| WAT-10 | Same physical outcome across views, headless play, saves and optional replicas | C01/C02/C09/C10/C13 already govern; detailed products, codecs, query projections and readiness must implement them | E1, F1/F3/F4, W1/W2, P7, N1 |
+| WAT-02 | Depth-dependent wave transformation, crest breaking, foam and shoreline response | Selected GH depth response plus tracked-front/noncontact presentation; physical breaker-loss/contact and broader coast remain open | E1, W2, V2/V5 |
+| WAT-03 | Rivers/streams flow around bed and obstacles | Initial shallow baseline retained; wider GH current/pressure uses resolved bed/thick obstacles. Thin walls and unresolved/narrow geometry remain open | E1, W2, P3 |
+| WAT-04 | A fall carries discharge into a finite receiving pool and creates a local response | Selected finite release intervals, moving first-hit event recomputation, volume/momentum/mean traction and source-off continuation in WATER-DYNAMICS; unimplemented | E1, P3, V2/V5, A1 |
+| WAT-05 | Lakes/pools receive sources, waves and floaters | Selected bounded shared GH graph with finite inventory, CPU queries and same P3 body path; shore stability and surrogate accuracy unqualified | E1, P3, W2 |
+| WAT-06 | Rain fills depressions, overflows and drains without detached downhill blobs or area popping | Selected projected triangle storage and preconnected wet-edge exchange only. Advancing dry-slope film transport remains structurally open | E1 surfaces/water, W2, V3 |
+| WAT-07 | Hulls and floaters receive and generate meaningful disturbances | Selected reference-immersion pressure surrogate plus same P3 geometry/drag, explicit transient/nonlocal errors and work ledger; no rigid exclusion guarantee | E1, P3, F4 |
+| WAT-08 | Foam/bubbles form, travel, disperse and survive source-off | Selected causal area/gas/liquid populations and defined carriers, rise, transfer and source-off in WATER-APPEARANCE; calibration/dense flow unqualified or open | E1 appearance, V5, V3, A1 |
+| WAT-09 | Reflection, refraction, water material, underwater light and caustics agree | Selected common evaluator, bounded regional visibility/ordered media, single light partition and temporal/error rules in WATER-OPTICS; device and image proof unrun | V3, V1, E1, V2/V4 |
+| WAT-10 | Same physical outcome across views, headless play, saves and optional replicas | Bounded product/time/readiness/save/confirmed-projection semantics specified in WATER-INTEGRATION under existing contracts; executable bindings and qualification absent | E1, F1/F3/F4, W1/W2, P7, N1 |
 
 A stationary obstacle in current and a moving hull share relative-flow/contact facts, not automatically the same
 numerical solver. A heightfield with no current advection or pressure/contact operator cannot generate the missing
 standing disturbance by adding foam. Resolve required producers before selecting a visually attractive technique.
 Layered water, swimming, submerged passages and traversable heterogeneous edges require explicit requested
-capabilities; none follows merely from drawing transparent water. Exact supported combinations remain to be selected.
+capabilities; none follows merely from drawing transparent water. Bounded combinations are specified in WATER-INTEGRATION; wider combinations remain open.
 
 ## Fit the existing engine owners
 
@@ -129,8 +149,8 @@ physical profile and compatibility decision, not a graphics optimization. No spe
 | Step | Deliverable / decision | Gate and rejection condition |
 | --- | --- | --- |
 | D2-water A — this alignment | Preserve baseline, full capability coverage, consumers, research intake and open decisions | Coverage/contract review; no runtime or wider solver selection claimed |
-| D2-water B — coupled dynamics selection | Compare complete production mechanisms for WAT-02–08, derived scales, forcing, support, CPU queries, state/work ledgers and cost | An implementer can trace the cases without inventing a core operator; reject a method lacking the necessary producers or headless/phase support |
-| D2-water C — render/authoring/lifecycle closure | Joint E1/P3/V2/V3/V5/F4/W2/P7/N1 schemas, optics, prior state, products, off-states and admitted combinations | Both sides of each consequential boundary accept the same quantities/time/validity; wider C09 changes return to engine coordination |
+| D2-water B — coupled dynamics selection | Bounded mechanisms in WATER-DYNAMICS/ APPEARANCE selected and cross-reviewed; full-family gaps above remain | Numerical proof is next for that bounded profile; required dry-slope/mixed-domain/contact-breaking mechanisms remain design work, not hidden future tuning |
+| D2-water C — render/authoring/lifecycle closure | Bounded optics and integration products/order selected and cross-reviewed; executable bindings absent | Prove leases, complete common candidates, save/headless/replica products and optical coverage; wider C09 changes return to engine coordination |
 | First implementation, when commissioned | Small complete interaction chosen from B's least-established consequential coupling; unit/reference checks and instrumentation alongside it | Preserve the defining interaction, inspect ordinary motion, reject plausible cosmetic substitutes; no need to build a whole lake first |
 | Integration and target qualification | Relevant I1/I2a/D1/D2 dependencies, I3 presentation where needed, R3 baseline separately, then wider I3b/I4 workloads | Save/headless/two-view/source-off and whole-scene performance on named targets; no inheritance from historical demos |
 
@@ -141,11 +161,12 @@ empty water crate, port the old lab, add Rapier/wgpu dependencies early or promo
 ## Evidence, reconciliation and maturity
 
 [Source intake](../research/WATER-SOURCES.md) records fresh 2025/2026 checks and older lineage with actual inspection
-scope. It is not a new claim of exhaustive literature coverage or a completed selection for every row above.
+scope. Its B/C refresh records decision-level inspections and comparisons; it is not exhaustive literature coverage or a completed selection for every row above.
 Each consequential decision in B/C must refresh relevant successors across dynamics, appearance, optics and cost,
 use substantive conference material, and record why an alternative changes the choice. Newness alone is insufficient.
 
 [Alignment evidence](../../evidence/water/ALIGNMENT-2026-11-01.md) records the independent capability challenge and
 historical lessons. Prior Broadsides code/research is context, not a runtime/build dependency or transferred proof.
 Thrum's current `E1.water` selection and initial specification status remain intact. Wider detailed design,
-implementation, correctness, visual acceptance and platform performance remain separately unqualified.
+implementation, correctness, visual acceptance and platform performance remain separately unqualified. The reviewed
+bounded B/C proposal and its open family gaps are recorded in the newer cross-review linked above.

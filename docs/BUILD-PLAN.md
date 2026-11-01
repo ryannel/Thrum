@@ -51,7 +51,9 @@ The [water commission](design/modules/WATER.md) distinguishes the selected light
 interactive-water target; all runtime and visual/device evidence remains separate.
 
 - [x] Align the existing water ambitions and research with Thrum's owners, contracts, baseline limits and cost policy; obtain an independent coverage review. See the [alignment record](evidence/water/ALIGNMENT-2026-11-01.md).
-- [ ] Complete D2-water B/C: select and derive coherent dynamics/contact/transfer/whitewater mechanisms and close their rendering, content, save and headless/replica contracts before dependent implementation.
+- [x] Select and cross-review a bounded wider-provider proposal for coupled waves/hulls, finite falls, causal whitewater, optics and lifecycle, with an analytical cost account. See the [design review](evidence/water/DESIGN-REVIEW-2026-11-01.md) and [proof order](design/modules/WATER-INTEGRATION.md). No runtime or target qualification is implied.
+- [ ] Complete the remaining full-family D2-water B/C mechanisms: advancing dry-slope runoff, traversable heterogeneous seams, overlapping hull pressure supports, richer sea/open-boundary coverage, thin-wall exclusion and contact-qualified breaking. Preserve these as design gaps rather than cosmetic fixes.
+- [ ] When commissioned and dependencies permit, prove the bounded profile's least-established pressure/body coupling, then its finite fall and shared appearance/optical consumers. Numerical stability, ordinary motion, save/headless/two-view behavior and sustained target cost remain unrun.
 
 ## How a box gets checked
 

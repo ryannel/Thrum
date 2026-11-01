@@ -1291,10 +1291,18 @@
       "prior_remaining_detailed_design": "Regime-specific dynamics/discretization, body-force closure, query/optical consistency.",
       "detailed_design_commission": {
         "plan": "modules/WATER.md",
-        "stage": "alignment_reviewed_only",
-        "evidence": "../evidence/water/ALIGNMENT-2026-11-01.md",
-        "scope": "D2-water A: capability coverage, baseline reconciliation, shared owners, cost model and research intake; no new full-family algorithm selection or runtime qualification.",
-        "next": "D2-water B/C: analytic mechanism selection and producer/consumer closure; preserve the initial C4 operators and separately qualify every wider capability."
+        "stage": "bounded_profile_reviewed_family_open",
+        "evidence": "../evidence/water/DESIGN-REVIEW-2026-11-01.md",
+        "scope": "D2-water B/C bounded engineering proposal: GH-based interaction/pressure/finite transit, causal dilute whitewater, shared optical visibility/transport and lifecycle/cost/proof order. Authored adaptations unqualified; initial baseline unchanged.",
+        "next": "Close remaining family mechanisms including advancing dry-slope runoff and mixed/contact regimes. When commissioned and dependencies permit, prove bounded pressure/body coupling before a showcase. No runtime, visual or device qualification.",
+        "alignment_evidence": "../evidence/water/ALIGNMENT-2026-11-01.md",
+        "selected_profile_documents": {
+          "modules/WATER-APPEARANCE.md": "4eb0f78db5a4ff2af0e4978ae040e8b51279a757b37531edc8e138a889c52fb8",
+          "modules/WATER-DYNAMICS.md": "99dd75dda00b9ec2ee03f83b4bd1a687d140a6bc9dd802e8d264d846c62376ef",
+          "modules/WATER-INTEGRATION.md": "3bc14683ec85ed196f68e28d74b2712191700d8865c081ee9dd0ccbd5d4d36cc",
+          "modules/WATER-OPTICS.md": "3d418b33fb27914d12c5c39bc4ca777947845c508fde9295f0ce80362368682e",
+          "modules/WATER.md": "9de06546e4adbe45f1e157f42493d29cf41f4246f2f3413f4da35c9b17bb1dc9"
+        }
       }
     },
     {
@@ -2690,7 +2698,7 @@
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
-      "README.md": "4e71ea35aebfceec347923995fa2a1e0bd0db2cd101201ca3ddd838a454e5380",
+      "README.md": "751e82d1201063b233022c71ce60de000ae6214905fc762d31027685cef87908",
       "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
