@@ -27,4 +27,4 @@ A second [changed-tick fixture](../../../crates/thrum-core/examples/i1_charged_r
 
 ## Remaining gate
 
-The confirmed-object table and group outcome owners are charged, but peer progress maps and validation scratch still allocate outside the pool. The later [sealed host path](CHARGED-HOST.md) checks conservative object headroom before a new input sequence and runs a charged callback; its callback vector, completed history, mutable world indexes and accepted future **byte** credits remain outside the complete gate. A full required-reader precommit byte-overlap proof is still needed before the parent memory item can close.
+The confirmed-object table and group outcome owners are charged, but peer progress maps and validation scratch still allocate outside the pool. The later [sealed host path](CHARGED-HOST.md) checks conservative object headroom before a new input sequence and charges its requested callback publication buffer before edits. Completed history, mutable world indexes and accepted future **byte** credits remain outside the complete gate. A full required-reader precommit byte-overlap proof is still needed before the parent memory item can close.

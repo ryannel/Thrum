@@ -1530,6 +1530,30 @@ mod closed_output_fixture {
             })
             .unwrap();
         }
+        let held = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let blocked = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(
+            blocked.clock.step_error,
+            Some(StepError::PublicationBackpressure)
+        );
+        assert_eq!(blocked.clock.completed, 0);
+        assert_eq!(host.authority().tick_index(), 0);
+        assert_eq!(host.replica().unwrap().tick(), 0);
+        assert_eq!(
+            host.authority()
+                .world()
+                .get(host.authority().world().handle_for(StableId(1)).unwrap())
+                .unwrap()
+                .state
+                .inline(),
+            &1_u64.to_le_bytes()
+        );
+        drop(blocked);
+        drop(held);
         let report = host
             .on_callback_charged(origin + Duration::from_millis(17))
             .unwrap();
