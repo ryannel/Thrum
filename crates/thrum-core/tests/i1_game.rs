@@ -3,9 +3,10 @@
 use thrum_core::{
     ActionRejection, ActorId, Admission, AdmissionError, AdmittedGroup, Authority, AuthorityId,
     ClockConfig, ClockState, CommittedEvent, EntityChange, EntityRecord, GameRules, HeadlessHost,
-    HostAdmissionError, HostBudget, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId,
-    PublicationBytes, PublicationPool, Replica, ReplicaError, ResultDisposition, SessionId,
-    StableId, StateGroup, StepError, TickClock, World, WorldEdit, WorldEpoch, WorldError,
+    HostAdmissionError, HostBudget, HostError, HostPublication, Input, InputSchedule, MatchId,
+    Origin, PeerId, PreparedCommit, PreparedEdits, PublicationBytes, PublicationPool, Replica,
+    ReplicaError, ResultDisposition, SessionId, StableId, StateGroup, StepError, TickClock, World,
+    WorldEdit, WorldEpoch, WorldError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -147,31 +148,40 @@ impl GameRules for Rule {
         }
     }
 
-    fn commit(&self, world: &mut World<Object>, change: Change) -> Option<Event> {
+    fn prepare(&self, world: &World<Object>, change: Change) -> PreparedCommit<Object, Event> {
         match change {
             Change::Collect(actor_object) => {
                 let item = world.handle_for(ITEM).expect("validated item");
                 let actor = world.handle_for(actor_object).expect("validated actor");
-                let Object::Collectible { available, .. } =
-                    world.get_mut(item).expect("validated item")
-                else {
+                let mut item_state = world.get(item).expect("validated item").state.clone();
+                let Object::Collectible { available, .. } = &mut item_state else {
                     unreachable!()
                 };
                 *available = false;
-                let Object::Actor { key, .. } = world.get_mut(actor).expect("validated actor")
-                else {
+                let mut actor_state = world.get(actor).expect("validated actor").state.clone();
+                let Object::Actor { key, .. } = &mut actor_state else {
                     unreachable!()
                 };
                 *key = true;
-                Some(Event::Collected(ITEM))
+                PreparedCommit {
+                    edits: PreparedEdits::Two(
+                        WorldEdit::Replace(item, item_state),
+                        WorldEdit::Replace(actor, actor_state),
+                    ),
+                    event: Some(Event::Collected(ITEM)),
+                }
             }
             Change::Open => {
                 let door = world.handle_for(DOOR).expect("validated door");
-                let Object::Door { open, .. } = world.get_mut(door).expect("validated door") else {
+                let mut state = world.get(door).expect("validated door").state.clone();
+                let Object::Door { open, .. } = &mut state else {
                     unreachable!()
                 };
                 *open = true;
-                Some(Event::Opened(DOOR))
+                PreparedCommit {
+                    edits: PreparedEdits::One(WorldEdit::Replace(door, state)),
+                    event: Some(Event::Opened(DOOR)),
+                }
             }
         }
     }
@@ -227,6 +237,301 @@ fn two_actor_world(epoch: u128) -> World<Object> {
 
 fn input(epoch: u64, sequence: u64, schedule: InputSchedule, action: Action) -> Input<Action> {
     peer_input(PEER, ACTOR, epoch, sequence, schedule, action)
+}
+
+struct InvalidSecondRule {
+    prepares: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    panic_on_second: bool,
+}
+
+impl GameRules for InvalidSecondRule {
+    type Entity = Object;
+    type Action = Action;
+    type Change = Action;
+    type Rejection = Rejection;
+    type Event = Event;
+
+    fn decide(
+        &self,
+        _world: &World<Object>,
+        _actor: ActorId,
+        action: &Action,
+    ) -> Result<Action, Rejection> {
+        Ok(action.clone())
+    }
+
+    fn prepare(&self, world: &World<Object>, change: Action) -> PreparedCommit<Object, Event> {
+        use std::sync::atomic::Ordering;
+        self.prepares.fetch_add(1, Ordering::Relaxed);
+        let door = world.handle_for(DOOR).unwrap();
+        let mut state = world.get(door).unwrap().state.clone();
+        let Object::Door { open, .. } = &mut state else {
+            unreachable!()
+        };
+        match change {
+            Action::Open(_) => {
+                *open = true;
+                PreparedCommit {
+                    edits: PreparedEdits::One(WorldEdit::Replace(door, state)),
+                    event: None,
+                }
+            }
+            Action::Collect(_) => {
+                if self.panic_on_second {
+                    panic!("game preparation failed after an earlier same-tick edit");
+                }
+                *open = false;
+                PreparedCommit {
+                    edits: PreparedEdits::Two(
+                        WorldEdit::Replace(door, state),
+                        WorldEdit::DespawnNew(StableId(999)),
+                    ),
+                    event: None,
+                }
+            }
+            Action::ChargedProbe(_) => unreachable!(),
+        }
+    }
+}
+
+fn submit_fault_pair<G: GameRules<Action = Action, Rejection = Rejection>>(
+    authority: &mut Authority<G>,
+) {
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    for (sequence, action) in [(1, Action::Open(DOOR)), (2, Action::Collect(ITEM))] {
+        authority
+            .submit(input(
+                1,
+                sequence,
+                InputSchedule::NextTick { observed_tick: 0 },
+                action,
+            ))
+            .unwrap();
+    }
+}
+
+#[test]
+fn invalid_later_action_poisoned_authority_cannot_replay_or_expose_partial_tick() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    let prepares = Arc::new(AtomicUsize::new(0));
+    let mut authority = Authority::new(
+        AuthorityId::Match(MatchId(180)),
+        InvalidSecondRule {
+            prepares: prepares.clone(),
+            panic_on_second: false,
+        },
+        game_world(181),
+    );
+    submit_fault_pair(&mut authority);
+    assert!(authority.try_baseline().is_ok());
+    assert_eq!(
+        authority.step().err(),
+        Some(StepError::TerminalGameContract)
+    );
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+    assert!(authority.is_faulted());
+    assert_eq!(authority.tick_index(), 0);
+    assert!(matches!(
+        authority
+            .world()
+            .get(authority.world().handle_for(DOOR).unwrap())
+            .unwrap()
+            .state,
+        Object::Door { open: true, .. }
+    ));
+    assert!(matches!(
+        authority.try_baseline(),
+        Err(StepError::TerminalGameContract)
+    ));
+    assert_eq!(
+        authority.step().err(),
+        Some(StepError::TerminalGameContract)
+    );
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+    assert_eq!(
+        authority.submit(input(
+            1,
+            3,
+            InputSchedule::NextTick { observed_tick: 1 },
+            Action::Open(DOOR),
+        )),
+        Err(AdmissionError::Faulted)
+    );
+    assert_eq!(
+        authority.acknowledge_results(PEER, 1),
+        Err(AdmissionError::Faulted)
+    );
+}
+
+#[test]
+fn caught_game_unwind_keeps_a_partly_processed_tick_terminal() {
+    use std::{
+        panic::{AssertUnwindSafe, catch_unwind},
+        sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        },
+    };
+
+    let prepares = Arc::new(AtomicUsize::new(0));
+    let mut authority = Authority::new(
+        AuthorityId::Match(MatchId(186)),
+        InvalidSecondRule {
+            prepares: prepares.clone(),
+            panic_on_second: true,
+        },
+        game_world(187),
+    );
+    submit_fault_pair(&mut authority);
+    assert!(catch_unwind(AssertUnwindSafe(|| authority.step())).is_err());
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+    assert!(authority.is_faulted());
+    assert_eq!(
+        authority.step().err(),
+        Some(StepError::TerminalGameContract)
+    );
+    assert!(matches!(
+        authority.try_baseline(),
+        Err(StepError::TerminalGameContract)
+    ));
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+}
+
+#[test]
+fn hosted_terminal_rule_fault_stops_clock_and_keeps_replica_at_prior_tick() {
+    use std::{
+        sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        },
+        time::{Duration, Instant},
+    };
+
+    let prepares = Arc::new(AtomicUsize::new(0));
+    let mut authority = Authority::new(
+        AuthorityId::Match(MatchId(182)),
+        InvalidSecondRule {
+            prepares: prepares.clone(),
+            panic_on_second: false,
+        },
+        game_world(183),
+    );
+    submit_fault_pair(&mut authority);
+    let origin = Instant::now();
+    let (mut host, _) = HeadlessHost::with_replica(
+        origin,
+        ClockConfig::default(),
+        HostBudget {
+            callback_cpu: Duration::from_millis(5),
+            other_work: Duration::from_millis(1),
+            tick_cost_bound: Duration::from_millis(1),
+        },
+        authority,
+    )
+    .unwrap();
+    assert!(matches!(
+        host.on_callback(origin + Duration::from_millis(17)),
+        Err(HostError::Authority(StepError::TerminalGameContract))
+    ));
+    assert_eq!(host.replica().unwrap().tick(), 0);
+    assert!(matches!(
+        host.replica().unwrap().get(DOOR),
+        Some(Object::Door { open: false, .. })
+    ));
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+    assert!(matches!(
+        host.on_callback(origin + Duration::from_millis(34)),
+        Err(HostError::Faulted)
+    ));
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+}
+
+fn assert_catchup_fault_delivers(panic_on_second: bool) {
+    use std::{
+        sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        },
+        time::{Duration, Instant},
+    };
+
+    let prepares = Arc::new(AtomicUsize::new(0));
+    let mut authority = Authority::new(
+        AuthorityId::Match(MatchId(184)),
+        InvalidSecondRule {
+            prepares: prepares.clone(),
+            panic_on_second,
+        },
+        game_world(185),
+    );
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority
+        .submit(input(
+            1,
+            1,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Open(DOOR),
+        ))
+        .unwrap();
+    authority
+        .submit(input(
+            1,
+            2,
+            InputSchedule::Timed { intended_tick: 2 },
+            Action::Collect(ITEM),
+        ))
+        .unwrap();
+    let origin = Instant::now();
+    let (mut host, _) = HeadlessHost::with_replica(
+        origin,
+        ClockConfig::default(),
+        HostBudget {
+            callback_cpu: Duration::from_millis(5),
+            other_work: Duration::from_millis(1),
+            tick_cost_bound: Duration::from_millis(1),
+        },
+        authority,
+    )
+    .unwrap();
+    let report = host
+        .on_callback(origin + Duration::from_millis(34))
+        .unwrap();
+    assert_eq!(report.clock.completed, 1);
+    assert_eq!(
+        report.clock.step_error,
+        Some(StepError::TerminalGameContract)
+    );
+    assert_eq!(
+        report.terminal_fault,
+        Some(HostError::Authority(StepError::TerminalGameContract))
+    );
+    assert_eq!(report.publications.len(), 1);
+    let HostPublication::Replicated { admitted, .. } = &report.publications[0] else {
+        panic!("expected earlier confirmed group")
+    };
+    assert_eq!(admitted.results.len(), 1);
+    assert_eq!(admitted.results[0].origin.sequence, 1);
+    assert_eq!(host.replica().unwrap().tick(), 1);
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+    assert!(matches!(
+        host.on_callback(origin + Duration::from_millis(51)),
+        Err(HostError::Faulted)
+    ));
+    assert_eq!(prepares.load(Ordering::Relaxed), 2);
+}
+
+#[test]
+fn callback_delivers_earlier_committed_tick_before_a_later_terminal_fault() {
+    assert_catchup_fault_delivers(false);
+}
+
+#[test]
+fn callback_delivers_earlier_committed_tick_before_a_caught_game_unwind() {
+    assert_catchup_fault_delivers(true);
 }
 
 fn peer_input(
@@ -1229,8 +1534,8 @@ fn slow_hosted_callback_reports_overload_and_stops_new_input() {
             thread::sleep(Duration::from_millis(3));
             Rule.decide(world, actor, action)
         }
-        fn commit(&self, world: &mut World<Object>, change: Change) -> Option<Event> {
-            Rule.commit(world, change)
+        fn prepare(&self, world: &World<Object>, change: Change) -> PreparedCommit<Object, Event> {
+            Rule.prepare(world, change)
         }
     }
 

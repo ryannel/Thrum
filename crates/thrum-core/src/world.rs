@@ -72,6 +72,52 @@ pub enum WorldEdit<T> {
     /// Retire an object spawned earlier in this same batch.
     DespawnNew(StableId),
 }
+
+/// Complete ordered edits for one game decision. Small actions keep their
+/// edits inline; larger admitted actions own a bounded vector.
+pub enum PreparedEdits<T> {
+    /// A committed decision with no object mutation.
+    None,
+    /// One edit with no batch-validation allocation.
+    One(WorldEdit<T>),
+    /// Two edits with inline batch-validation bookkeeping.
+    Two(WorldEdit<T>, WorldEdit<T>),
+    /// Larger ordered batch; the game profile must bound its length.
+    Many(Vec<WorldEdit<T>>),
+}
+
+impl<T> PreparedEdits<T> {
+    /// Number of edits the authority must admit and apply.
+    pub fn len(&self) -> usize {
+        match self {
+            Self::None => 0,
+            Self::One(_) => 1,
+            Self::Two(..) => 2,
+            Self::Many(edits) => edits.len(),
+        }
+    }
+
+    /// Whether the prepared decision leaves the world unchanged.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Maximum new-slot high-water contribution of this batch.
+    pub fn spawns(&self) -> usize {
+        match self {
+            Self::None => 0,
+            Self::One(edit) => usize::from(matches!(edit, WorldEdit::Spawn(..))),
+            Self::Two(first, second) => {
+                usize::from(matches!(first, WorldEdit::Spawn(..)))
+                    + usize::from(matches!(second, WorldEdit::Spawn(..)))
+            }
+            Self::Many(edits) => edits
+                .iter()
+                .filter(|edit| matches!(edit, WorldEdit::Spawn(..)))
+                .count(),
+        }
+    }
+}
 /// World insertion or lookup failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorldError {
@@ -171,6 +217,39 @@ struct VirtualObject {
     change: Option<ChangeKind>,
     spawned_in_batch: bool,
     original_handle_alive: bool,
+}
+
+enum VirtualObjects {
+    Inline([Option<(StableId, VirtualObject)>; 2]),
+    Many(HashMap<StableId, VirtualObject>),
+}
+
+impl VirtualObjects {
+    fn for_edits(count: usize) -> Self {
+        if count <= 2 {
+            Self::Inline([None; 2])
+        } else {
+            Self::Many(HashMap::with_capacity(count))
+        }
+    }
+
+    fn entry(&mut self, id: StableId, make: impl FnOnce() -> VirtualObject) -> &mut VirtualObject {
+        match self {
+            Self::Inline(entries) => {
+                let index = entries
+                    .iter()
+                    .position(|entry| entry.as_ref().is_some_and(|(key, _)| *key == id))
+                    .unwrap_or_else(|| {
+                        entries
+                            .iter()
+                            .position(Option::is_none)
+                            .expect("at most two distinct IDs in two edits")
+                    });
+                &mut entries[index].get_or_insert_with(|| (id, make())).1
+            }
+            Self::Many(entries) => entries.entry(id).or_insert_with(make),
+        }
+    }
 }
 
 /// Exclusive authoritative object store for the finite I1 slice.
@@ -342,6 +421,16 @@ impl<T: Clone> World<T> {
             .as_mut()
             .map(|record| &mut record.state)
     }
+    /// Apply one complete game-prepared decision through the matching small
+    /// or large atomic edit path.
+    pub fn apply_edits(&mut self, edits: PreparedEdits<T>) -> Result<(), WorldError> {
+        match edits {
+            PreparedEdits::None => Ok(()),
+            PreparedEdits::One(edit) => self.apply_one(edit),
+            PreparedEdits::Two(first, second) => self.apply_pair(first, second),
+            PreparedEdits::Many(edits) => self.apply_prepared(edits),
+        }
+    }
     /// Apply one prepared edit without allocating a validation collection.
     pub fn apply_one(&mut self, edit: WorldEdit<T>) -> Result<(), WorldError> {
         match edit {
@@ -361,15 +450,38 @@ impl<T: Clone> World<T> {
         if edits.len() == 1 {
             return self.apply_one(edits.pop().expect("one prepared edit"));
         }
-        let mut virtual_objects = HashMap::with_capacity(edits.len());
-        for edit in &edits {
+        self.validate_prepared_edits(&edits)?;
+        for edit in edits {
+            self.apply_validated_edit(edit);
+        }
+        Ok(())
+    }
+
+    /// Validate two ordered edits without allocating a batch vector or
+    /// validation map. A later invalid edit leaves both unapplied.
+    pub fn apply_pair(
+        &mut self,
+        first: WorldEdit<T>,
+        second: WorldEdit<T>,
+    ) -> Result<(), WorldError> {
+        let edits = [first, second];
+        self.validate_prepared_edits(&edits)?;
+        for edit in edits {
+            self.apply_validated_edit(edit);
+        }
+        Ok(())
+    }
+
+    fn validate_prepared_edits(&self, edits: &[WorldEdit<T>]) -> Result<(), WorldError> {
+        let mut virtual_objects = VirtualObjects::for_edits(edits.len());
+        for edit in edits {
             let id = match edit {
                 WorldEdit::Spawn(id, _) | WorldEdit::DespawnNew(id) => *id,
                 WorldEdit::Replace(handle, _) | WorldEdit::Despawn(handle) => {
                     self.get(*handle).ok_or(WorldError::InvalidHandle)?.id
                 }
             };
-            let object = virtual_objects.entry(id).or_insert_with(|| {
+            let object = virtual_objects.entry(id, || {
                 let alive = self.by_id.contains_key(&id);
                 VirtualObject {
                     alive,
@@ -420,25 +532,25 @@ impl<T: Clone> World<T> {
                 }
             }
         }
-        self.validate_prepared_slot_capacity(&edits)?;
-        for edit in edits {
-            match edit {
-                WorldEdit::Spawn(id, state) => {
-                    self.spawn(id, state).expect("validated prepared spawn");
-                }
-                WorldEdit::Replace(handle, state) => {
-                    *self.get_mut(handle).expect("validated prepared handle") = state;
-                }
-                WorldEdit::Despawn(handle) => {
-                    self.despawn(handle).expect("validated prepared handle");
-                }
-                WorldEdit::DespawnNew(id) => {
-                    let handle = self.handle_for(id).expect("validated new object");
-                    self.despawn(handle).expect("validated new object handle");
-                }
+        self.validate_prepared_slot_capacity(edits)
+    }
+
+    fn apply_validated_edit(&mut self, edit: WorldEdit<T>) {
+        match edit {
+            WorldEdit::Spawn(id, state) => {
+                self.spawn(id, state).expect("validated prepared spawn");
+            }
+            WorldEdit::Replace(handle, state) => {
+                *self.get_mut(handle).expect("validated prepared handle") = state;
+            }
+            WorldEdit::Despawn(handle) => {
+                self.despawn(handle).expect("validated prepared handle");
+            }
+            WorldEdit::DespawnNew(id) => {
+                let handle = self.handle_for(id).expect("validated new object");
+                self.despawn(handle).expect("validated new object handle");
             }
         }
-        Ok(())
     }
     fn validate_prepared_slot_capacity(&self, edits: &[WorldEdit<T>]) -> Result<(), WorldError> {
         let spawns = edits
@@ -806,6 +918,38 @@ mod tests {
         assert_eq!(world.get(retiring), None);
         assert_eq!(world.get(new_handle).unwrap().state, 20);
         assert!(world.free.is_empty());
+    }
+
+    #[test]
+    fn inline_pair_validates_before_either_edit_and_keeps_old_snapshot() {
+        let mut world = World::new(WorldEpoch(9));
+        let first = world.spawn(StableId(1), 10_u64).unwrap();
+        let second = world.spawn(StableId(2), 20_u64).unwrap();
+        let before = world.publish(0).snapshot;
+        let invalid = Handle {
+            generation: second.generation + 1,
+            ..second
+        };
+        assert_eq!(
+            world.apply_pair(
+                WorldEdit::Replace(first, 11),
+                WorldEdit::Replace(invalid, 21)
+            ),
+            Err(WorldError::InvalidHandle)
+        );
+        assert_eq!(world.get(first).unwrap().state, 10);
+        assert_eq!(world.get(second).unwrap().state, 20);
+        world
+            .apply_pair(
+                WorldEdit::Replace(first, 11),
+                WorldEdit::Replace(second, 21),
+            )
+            .unwrap();
+        assert_eq!(before.get(first).unwrap().state, 10);
+        assert_eq!(before.get(second).unwrap().state, 20);
+        let after = world.publish(1).snapshot;
+        assert_eq!(after.get(first).unwrap().state, 11);
+        assert_eq!(after.get(second).unwrap().state, 21);
     }
 
     #[test]

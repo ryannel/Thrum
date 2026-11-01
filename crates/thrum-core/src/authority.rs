@@ -5,7 +5,7 @@ use std::{
 
 use crate::replica::StateGroup;
 use crate::{
-    EntityChange, Snapshot, World, WorldWork,
+    EntityChange, PreparedEdits, Snapshot, World, WorldWork,
     world::{ActorId, AuthorityId},
 };
 
@@ -55,6 +55,8 @@ pub struct Input<A> {
 /// Input refusal before a valid sequence is consumed.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AdmissionError {
+    /// The authority suffered a terminal game-contract fault.
+    Faulted,
     /// Peer was not registered.
     UnknownPeer,
     /// Reconnected peer sent an old connection epoch.
@@ -74,6 +76,9 @@ pub enum StepError {
     /// Eight immutable tick bundles remain leased; caller must release readers
     /// or enter its explicit overload policy before advancing.
     SnapshotBackpressure,
+    /// Game preparation violated the world-edit contract. This authority
+    /// cannot publish or retry its partially processed tick.
+    TerminalGameContract,
 }
 /// Submission status; success here is never gameplay commitment.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -130,15 +135,23 @@ pub struct CommittedEvent<E> {
     pub payload: E,
 }
 
-/// Game-owned rule boundary. `decide` is read-only; `commit` must be infallible
-/// for a valid decision and must have no external irreversible side effects.
-/// A panic after mutation is a terminal world fault, not a rollback.
+/// One fully prepared game decision before the authority applies its edits.
+pub struct PreparedCommit<T, E> {
+    /// Complete ordered world mutations for this decision.
+    pub edits: PreparedEdits<T>,
+    /// Immediate event payload, emitted only after valid edits are applied.
+    pub event: Option<E>,
+}
+
+/// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
+/// must be infallible for a valid decision and have no external irreversible
+/// side effects. An invalid prepared batch is a terminal game-contract fault.
 pub trait GameRules {
     /// Complete I1 object state.
     type Entity: Clone;
     /// Typed action payload.
     type Action: Clone + Eq;
-    /// Prepared, validated mutation.
+    /// Read-only decision material used to prepare complete edits.
     type Change;
     /// Rejection reason owned by the game.
     type Rejection: Clone + Eq;
@@ -152,8 +165,13 @@ pub trait GameRules {
         actor: ActorId,
         action: &Self::Action,
     ) -> Result<Self::Change, Self::Rejection>;
-    /// Apply one valid decision under exclusive authority access.
-    fn commit(&self, world: &mut World<Self::Entity>, change: Self::Change) -> Option<Self::Event>;
+    /// Build complete edits and an optional event from the current state.
+    /// The authority applies them after validation, in canonical input order.
+    fn prepare(
+        &self,
+        world: &World<Self::Entity>,
+        change: Self::Change,
+    ) -> PreparedCommit<Self::Entity, Self::Event>;
 }
 
 struct Pending<A> {
@@ -219,6 +237,9 @@ pub struct TickPublication<T, E, R> {
 /// The committed tick output of one concrete game rule set.
 pub type GameTick<G> =
     TickPublication<<G as GameRules>::Entity, <G as GameRules>::Event, <G as GameRules>::Rejection>;
+/// Complete state group for one concrete game rule set.
+pub type GameStateGroup<G> =
+    StateGroup<<G as GameRules>::Entity, <G as GameRules>::Event, <G as GameRules>::Rejection>;
 
 /// Fixed-tick standalone or match authority using one game-owned rule path.
 pub struct Authority<G: GameRules> {
@@ -231,6 +252,7 @@ pub struct Authority<G: GameRules> {
     next_event_id: u64,
     peers: PeerMap<G>,
     snapshot_leases: VecDeque<Weak<()>>,
+    faulted: bool,
 }
 
 type PeerMap<G> = BTreeMap<
@@ -253,13 +275,20 @@ impl<G: GameRules> Authority<G> {
             next_event_id: 1,
             peers: BTreeMap::new(),
             snapshot_leases: VecDeque::from([initial_lease]),
+            faulted: false,
         }
     }
-    /// Current authority tick.
+    /// Last fully published authority tick. A terminal attempted tick is not
+    /// reported as committed.
     pub fn tick_index(&self) -> u64 {
-        self.tick
+        self.snapshot.tick()
     }
-    /// Read current authoritative world without a mutable escape hatch.
+    /// Whether a failed or unwound tick permanently disabled this authority.
+    pub fn is_faulted(&self) -> bool {
+        self.faulted
+    }
+    /// Read the world without a mutable escape hatch. After a terminal fault
+    /// it may contain unpublished effects and is only suitable for diagnosis.
     pub fn world(&self) -> &World<G::Entity> {
         &self.world
     }
@@ -271,6 +300,9 @@ impl<G: GameRules> Authority<G> {
         epoch: u64,
         actor: ActorId,
     ) -> Result<(), AdmissionError> {
+        if self.faulted {
+            return Err(AdmissionError::Faulted);
+        }
         if self.peers.get(&id).is_some_and(|old| epoch <= old.epoch) {
             return Err(AdmissionError::StaleEpoch);
         }
@@ -282,6 +314,9 @@ impl<G: GameRules> Authority<G> {
         &mut self,
         input: Input<G::Action>,
     ) -> Result<Admission<G::Rejection>, AdmissionError> {
+        if self.faulted {
+            return Err(AdmissionError::Faulted);
+        }
         let peer = self
             .peers
             .get_mut(&input.origin.peer)
@@ -372,6 +407,9 @@ impl<G: GameRules> Authority<G> {
         peer_id: PeerId,
         through: u64,
     ) -> Result<(), AdmissionError> {
+        if self.faulted {
+            return Err(AdmissionError::Faulted);
+        }
         let peer = self
             .peers
             .get_mut(&peer_id)
@@ -386,7 +424,15 @@ impl<G: GameRules> Authority<G> {
         Ok(())
     }
     /// Complete baseline for an in-memory replica at the current committed tick.
-    pub fn baseline(&self) -> StateGroup<G::Entity, G::Event, G::Rejection> {
+    pub fn baseline(&self) -> GameStateGroup<G> {
+        self.try_baseline()
+            .expect("faulted authority has no coherent baseline")
+    }
+    /// Fallible baseline for callers that may inspect a terminal authority.
+    pub fn try_baseline(&self) -> Result<GameStateGroup<G>, StepError> {
+        if self.faulted {
+            return Err(StepError::TerminalGameContract);
+        }
         let mut results = Vec::new();
         let mut events = Vec::new();
         for peer in self.peers.values() {
@@ -398,7 +444,7 @@ impl<G: GameRules> Authority<G> {
             }
         }
         events.sort_by_key(|event| event.id);
-        StateGroup {
+        Ok(StateGroup {
             authority: self.id,
             group_id: self.group_id,
             commit_tick: self.tick,
@@ -416,15 +462,21 @@ impl<G: GameRules> Authority<G> {
                 .iter()
                 .map(|(id, p)| (*id, p.resolved_through))
                 .collect(),
-        }
+        })
     }
     /// Execute exactly one fixed 1/60-second authority step and publish after all decisions.
     pub fn step(&mut self) -> Result<GameTick<G>, StepError> {
+        if self.faulted {
+            return Err(StepError::TerminalGameContract);
+        }
         self.snapshot_leases
             .retain(|lease| lease.strong_count() != 0);
         if self.snapshot_leases.len() >= MAX_SNAPSHOT_LEASES {
             return Err(StepError::SnapshotBackpressure);
         }
+        // Poison before any tick mutation. If game code unwinds and its caller
+        // catches the panic, the partially processed tick cannot be replayed.
+        self.faulted = true;
         self.tick = self.tick.checked_add(1).expect("world tick exhausted");
         let mut due = Vec::new();
         for (peer_id, peer) in &mut self.peers {
@@ -453,7 +505,11 @@ impl<G: GameRules> Authority<G> {
             };
             let (disposition, event_id, retained_event) = match decision {
                 Ok(change) => {
-                    let event = self.rules.commit(&mut self.world, change);
+                    let prepared = self.rules.prepare(&self.world, change);
+                    self.world
+                        .apply_edits(prepared.edits)
+                        .map_err(|_| StepError::TerminalGameContract)?;
+                    let event = prepared.event;
                     let event = event.map(|payload| {
                         let id = self.next_event_id;
                         self.next_event_id = self
@@ -509,10 +565,12 @@ impl<G: GameRules> Authority<G> {
                 .map(|(id, p)| (*id, p.resolved_through))
                 .collect(),
         };
-        Ok(TickPublication {
+        let tick = TickPublication {
             snapshot: published.snapshot,
             group,
             world_work: published.work,
-        })
+        };
+        self.faulted = false;
+        Ok(tick)
     }
 }

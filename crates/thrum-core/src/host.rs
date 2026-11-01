@@ -3,6 +3,7 @@
 
 use std::{
     collections::BTreeSet,
+    panic::{AssertUnwindSafe, catch_unwind},
     time::{Duration, Instant},
 };
 
@@ -57,6 +58,9 @@ pub enum HostError {
     InvalidBudget,
     /// Host supplied a timestamp before its origin or the clock rejected it.
     Clock(ClockError),
+    /// The authority encountered a terminal game-contract fault. The host
+    /// cannot expose the partial tick or retry it.
+    Authority(StepError),
     /// The local replica rejected a committed authority group; this host is
     /// terminally faulted and may not replay that tick.
     Replica(ReplicaError),
@@ -87,6 +91,9 @@ pub enum HostPublication<T, E, R> {
 pub struct HostCallback<T, E, R> {
     /// Fixed-step admission, committed work and pending/overload state.
     pub clock: ClockReport<StepError>,
+    /// Terminal fault encountered after earlier ticks committed in this
+    /// callback. Those earlier publications remain deliverable exactly once.
+    pub terminal_fault: Option<HostError>,
     /// Measured wall time spent in this callback, including stage work.
     pub observed_elapsed: Duration,
     /// World-step work exceeded `callback_cpu - other_work` and entered overload.
@@ -303,8 +310,12 @@ impl<G: GameRules> HeadlessHost<G> {
         budget: HostBudget,
         authority: Authority<G>,
     ) -> Result<(Self, InitialOutcomes<G>), HostError> {
+        if authority.is_faulted() {
+            return Err(HostError::Authority(StepError::TerminalGameContract));
+        }
         let (replica, initial_outcomes) =
-            Replica::from_baseline(authority.baseline()).map_err(HostError::Replica)?;
+            Replica::from_baseline(authority.try_baseline().map_err(HostError::Authority)?)
+                .map_err(HostError::Replica)?;
         let host = Self::build(origin, clock, budget, authority, Some(replica))?;
         Ok((host, initial_outcomes))
     }
@@ -316,6 +327,9 @@ impl<G: GameRules> HeadlessHost<G> {
         authority: Authority<G>,
         replica: Option<Replica<G::Entity>>,
     ) -> Result<Self, HostError> {
+        if authority.is_faulted() {
+            return Err(HostError::Authority(StepError::TerminalGameContract));
+        }
         if !budget.valid() || budget.admitted_ticks() == 0 {
             return Err(HostError::InvalidBudget);
         }
@@ -353,7 +367,7 @@ impl<G: GameRules> HeadlessHost<G> {
         &mut self,
         input: Input<G::Action>,
     ) -> Result<Admission<G::Rejection>, HostAdmissionError> {
-        if self.faulted || self.clock.state() != ClockState::Active {
+        if self.faulted || self.authority.is_faulted() || self.clock.state() != ClockState::Active {
             return Err(HostAdmissionError::Unavailable);
         }
         self.authority
@@ -364,6 +378,9 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Retire results only after the caller has received and handled their
     /// group. This works for both local and replicated host paths.
     pub fn acknowledge_results(&mut self, peer: PeerId, through: u64) -> Result<(), HostError> {
+        if self.faulted || self.authority.is_faulted() {
+            return Err(HostError::Faulted);
+        }
         self.authority
             .acknowledge_results(peer, through)
             .map_err(HostError::Acknowledgement)
@@ -376,7 +393,7 @@ impl<G: GameRules> HeadlessHost<G> {
 
     /// Resume after a pause or overload from a new monotonic origin.
     pub fn resume(&mut self, now: Instant) -> Result<(), HostError> {
-        if self.faulted {
+        if self.faulted || self.authority.is_faulted() {
             return Err(HostError::Faulted);
         }
         let elapsed = now
@@ -389,7 +406,7 @@ impl<G: GameRules> HeadlessHost<G> {
     /// budget visibly overloads this local host after its committed ticks;
     /// it cannot retroactively preempt a slow game rule.
     pub fn on_callback(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError> {
-        if self.faulted {
+        if self.faulted || self.authority.is_faulted() {
             return Err(HostError::Faulted);
         }
         let elapsed = now
@@ -411,7 +428,8 @@ impl<G: GameRules> HeadlessHost<G> {
                 for stage in schedule {
                     match stage {
                         Stage::AuthorityStep => {
-                            let committed = authority.step()?;
+                            let committed = catch_unwind(AssertUnwindSafe(|| authority.step()))
+                                .map_err(|_| StepError::TerminalGameContract)??;
                             work.page_references += committed.world_work.page_references;
                             work.copied_pages += committed.world_work.copied_pages;
                             work.copied_objects += committed.world_work.copied_objects;
@@ -449,17 +467,25 @@ impl<G: GameRules> HeadlessHost<G> {
             })
             .map_err(HostError::Clock)?;
         let observed_elapsed = started.elapsed();
-        if let Some(fault) = fatal {
+        let terminal_fault = if report.step_error == Some(StepError::TerminalGameContract) {
+            Some(HostError::Authority(StepError::TerminalGameContract))
+        } else {
+            fatal
+        };
+        if let Some(fault) = terminal_fault {
             self.faulted = true;
-            return Err(fault);
+            if publications.is_empty() {
+                return Err(fault);
+            }
         }
         let step_budget_overrun = observed_elapsed > step_cpu_budget;
-        if step_budget_overrun {
+        if step_budget_overrun && terminal_fault.is_none() {
             self.clock.report_cpu_overload();
             report.state = ClockState::Overloaded;
         }
         Ok(HostCallback {
             clock: report,
+            terminal_fault,
             observed_elapsed,
             step_budget_overrun,
             world_work: work,
