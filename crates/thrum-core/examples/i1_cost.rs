@@ -328,6 +328,25 @@ fn benchmark_idle_authority(charged: bool) {
         authority.snapshot().logical_bytes(),
         TICKS,
     );
+    const BATCH: usize = 1_000;
+    const BATCH_WARMUP: usize = 10;
+    const BATCH_SAMPLES: usize = 100;
+    let mut batch_ns_per_tick = Vec::with_capacity(BATCH_SAMPLES);
+    for sample in 0..BATCH_WARMUP + BATCH_SAMPLES {
+        let start = Instant::now();
+        for _ in 0..BATCH {
+            black_box(authority.step().unwrap().snapshot.tick());
+        }
+        if sample >= BATCH_WARMUP {
+            batch_ns_per_tick.push(start.elapsed().as_nanos() / BATCH as u128);
+        }
+    }
+    println!(
+        "{prefix}/idle-batch: batch={BATCH} samples={BATCH_SAMPLES} ns_per_tick[p50/p95/p99]={}/{}/{}",
+        percentile(&mut batch_ns_per_tick, 50),
+        percentile(&mut batch_ns_per_tick, 95),
+        percentile(&mut batch_ns_per_tick, 99),
+    );
 }
 
 fn benchmark_idle_replica() {
