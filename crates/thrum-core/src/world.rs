@@ -1,7 +1,10 @@
 use std::{
     collections::{BTreeMap, HashMap},
+    ops::Deref,
     sync::{Arc, Weak},
 };
+
+use crate::{PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation};
 
 const PAGE_SIZE: usize = 32;
 
@@ -91,8 +94,69 @@ struct SnapshotEntry<T> {
     record: EntityRecord<T>,
 }
 
-type Page<T> = Arc<Vec<Option<SnapshotEntry<T>>>>;
-type PageRoot<T> = Arc<[Page<T>]>;
+struct PageData<T> {
+    entries: Box<[Option<SnapshotEntry<T>>]>,
+    _charge: Option<PublicationCharge>,
+}
+
+impl<T> PageData<T> {
+    fn storage_bytes(len: usize) -> Result<usize, PublicationCapacity> {
+        len.checked_mul(size_of::<Option<SnapshotEntry<T>>>())
+            .ok_or(PublicationCapacity)
+    }
+
+    fn charge_bytes(len: usize) -> Result<usize, PublicationCapacity> {
+        size_of::<Self>()
+            .checked_add(2 * size_of::<usize>())
+            .and_then(|base| Self::storage_bytes(len).ok()?.checked_add(base))
+            .ok_or(PublicationCapacity)
+    }
+}
+
+impl<T> Deref for PageData<T> {
+    type Target = [Option<SnapshotEntry<T>>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.entries
+    }
+}
+
+type Page<T> = Arc<PageData<T>>;
+
+struct PageRootData<T> {
+    pages: Box<[Page<T>]>,
+    _charge: Option<PublicationCharge>,
+}
+
+impl<T> PageRootData<T> {
+    fn storage_bytes(len: usize) -> Result<usize, PublicationCapacity> {
+        len.checked_mul(size_of::<Page<T>>())
+            .ok_or(PublicationCapacity)
+    }
+
+    fn charge_bytes(len: usize) -> Result<usize, PublicationCapacity> {
+        size_of::<Self>()
+            .checked_add(2 * size_of::<usize>())
+            .and_then(|base| Self::storage_bytes(len).ok()?.checked_add(base))
+            .ok_or(PublicationCapacity)
+    }
+}
+
+impl<T> Deref for PageRootData<T> {
+    type Target = [Page<T>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.pages
+    }
+}
+
+type PageRoot<T> = Arc<PageRootData<T>>;
+
+enum PublicationMode {
+    Unselected,
+    Uncharged,
+    Charged(PublicationPool),
+}
 
 #[derive(Clone, Copy)]
 enum ChangeKind {
@@ -122,7 +186,19 @@ pub struct World<T: Clone> {
     dirty_count: usize,
     changed: BTreeMap<StableId, ChangeKind>,
     pages: PageRoot<T>,
+    publication_mode: PublicationMode,
     published_tick: u64,
+}
+
+/// A charged snapshot publication could not use its proposed reservation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorldPublicationError {
+    /// The reservation is too small for the selected page/root allocations.
+    Capacity,
+    /// This world already published through the uncharged prototype path.
+    UnchargedWorld,
+    /// The reservation belongs to a different process-shared pool.
+    WrongPool,
 }
 
 /// Counted work at a world publication boundary.
@@ -209,7 +285,11 @@ impl<T: Clone> World<T> {
             dirty: Vec::new(),
             dirty_count: 0,
             changed: BTreeMap::new(),
-            pages: Arc::from(Vec::new()),
+            pages: Arc::new(PageRootData {
+                pages: Box::new([]),
+                _charge: None,
+            }),
+            publication_mode: PublicationMode::Unselected,
             published_tick: 0,
         }
     }
@@ -478,15 +558,94 @@ impl<T: Clone> World<T> {
         }
     }
 
-    /// Build the next immutable state and complete changes at the tick barrier.
+    /// Conservative logical page/root peak for the current dirty set,
+    /// including possible Vec-to-Box staging overlap and initial empty root.
+    /// A caller preparing a tick must reserve its possible peak earlier.
+    pub fn required_charged_publication_bytes(&self) -> Result<usize, PublicationCapacity> {
+        let first = matches!(self.publication_mode, PublicationMode::Unselected);
+        if self.dirty_count == 0 && !first {
+            return Ok(0);
+        }
+        let count = self.slots.len().div_ceil(PAGE_SIZE);
+        // The Vec used to construct a boxed slice can briefly overlap its
+        // final allocation if conversion must relocate it.
+        let mut bytes = PageRootData::<T>::charge_bytes(count)?
+            .checked_add(PageRootData::<T>::storage_bytes(count)?)
+            .ok_or(PublicationCapacity)?;
+        if first {
+            // The prototype constructor's empty root still overlaps the first
+            // charged root until it is replaced, but has no lifetime charge.
+            bytes = bytes
+                .checked_add(PageRootData::<T>::charge_bytes(0)?)
+                .ok_or(PublicationCapacity)?;
+        }
+        for (page_index, dirty) in self.dirty.iter().enumerate() {
+            if *dirty {
+                let len = (self.slots.len() - page_index * PAGE_SIZE).min(PAGE_SIZE);
+                bytes = bytes
+                    .checked_add(PageData::<T>::charge_bytes(len)?)
+                    .and_then(|bytes| bytes.checked_add(PageData::<T>::storage_bytes(len).ok()?))
+                    .ok_or(PublicationCapacity)?;
+            }
+        }
+        Ok(bytes)
+    }
+
+    /// Publish only page/root owners from a pre-existing reservation. This is
+    /// a partial accounting primitive: game payload, groups and replica still
+    /// require separate bounds. Do not mix charged and prototype publication.
+    pub fn try_publish_charged(
+        &mut self,
+        tick: u64,
+        reservation: &mut PublicationReservation,
+    ) -> Result<WorldPublication<T>, WorldPublicationError> {
+        match &self.publication_mode {
+            PublicationMode::Uncharged => return Err(WorldPublicationError::UnchargedWorld),
+            PublicationMode::Charged(pool) if !reservation.belongs_to(pool) => {
+                return Err(WorldPublicationError::WrongPool);
+            }
+            PublicationMode::Unselected | PublicationMode::Charged(_) => {}
+        }
+        let first = matches!(self.publication_mode, PublicationMode::Unselected);
+        let required = self
+            .required_charged_publication_bytes()
+            .map_err(|_| WorldPublicationError::Capacity)?;
+        if reservation.remaining_bytes() < required {
+            return Err(WorldPublicationError::Capacity);
+        }
+        let pool = first.then(|| reservation.pool());
+        let published = self.publish_inner(tick, Some(reservation), first);
+        if let Some(pool) = pool {
+            self.publication_mode = PublicationMode::Charged(pool);
+        }
+        Ok(published)
+    }
+
+    /// Build an uncharged prototype publication. Charged worlds must use
+    /// `try_publish_charged` so later ticks cannot silently bypass the pool.
     pub fn publish(&mut self, tick: u64) -> WorldPublication<T> {
+        assert!(
+            !matches!(self.publication_mode, PublicationMode::Charged(_)),
+            "charged world requires try_publish_charged"
+        );
+        self.publication_mode = PublicationMode::Uncharged;
+        self.publish_inner(tick, None, false)
+    }
+
+    fn publish_inner(
+        &mut self,
+        tick: u64,
+        mut reservation: Option<&mut PublicationReservation>,
+        force_root: bool,
+    ) -> WorldPublication<T> {
         assert!(tick >= self.published_tick, "tick cannot move backwards");
         let count = self.slots.len().div_ceil(PAGE_SIZE);
         let mut work = WorldWork {
             ..WorldWork::default()
         };
-        if self.dirty_count != 0 {
-            let mut pages: Vec<_> = self.pages.iter().cloned().collect();
+        if self.dirty_count != 0 || force_root {
+            let mut pages = Vec::with_capacity(count);
+            pages.extend(self.pages.iter().cloned());
             work.page_references = count;
             for page_index in 0..count {
                 if !self.dirty[page_index] {
@@ -504,7 +663,14 @@ impl<T: Clone> World<T> {
                         record: record.clone(),
                     }));
                 }
-                let page = Arc::new(entries);
+                let page = Arc::new(PageData {
+                    entries: entries.into_boxed_slice(),
+                    _charge: reservation.as_deref_mut().map(|reservation| {
+                        reservation
+                            .charge(PageData::<T>::charge_bytes(end - start).expect("preflight"))
+                            .expect("preflight")
+                    }),
+                });
                 if page_index == pages.len() {
                     pages.push(page);
                 } else {
@@ -513,7 +679,14 @@ impl<T: Clone> World<T> {
                 self.dirty[page_index] = false;
                 work.copied_pages += 1;
             }
-            self.pages = Arc::from(pages);
+            self.pages = Arc::new(PageRootData {
+                pages: pages.into_boxed_slice(),
+                _charge: reservation.map(|reservation| {
+                    reservation
+                        .charge(PageRootData::<T>::charge_bytes(count).expect("preflight"))
+                        .expect("preflight")
+                }),
+            });
             self.dirty_count = 0;
         }
         let mut changes = Vec::with_capacity(self.changed.len());
@@ -577,5 +750,117 @@ mod tests {
         assert_eq!(world.get(retiring), None);
         assert_eq!(world.get(new_handle).unwrap().state, 20);
         assert!(world.free.is_empty());
+    }
+
+    #[test]
+    fn charged_page_and_root_owners_release_only_after_the_last_reader() {
+        let pool = PublicationPool::new(usize::MAX);
+        let mut world = World::new(WorldEpoch(2));
+        let first = world.spawn(StableId(1), 10_u64).unwrap();
+        for id in 2..=64 {
+            world.spawn(StableId(id), id as u64).unwrap();
+        }
+        let initial_peak = world.required_charged_publication_bytes().unwrap();
+        let mut reservation = pool.try_reserve(initial_peak).unwrap();
+        let old = world
+            .try_publish_charged(0, &mut reservation)
+            .unwrap()
+            .snapshot;
+        drop(reservation);
+        let initial_retained = PageRootData::<u64>::charge_bytes(2).unwrap()
+            + 2 * PageData::<u64>::charge_bytes(PAGE_SIZE).unwrap();
+        assert_eq!(pool.used_bytes(), initial_retained);
+
+        *world.get_mut(first).unwrap() = 11;
+        let next_bytes = world.required_charged_publication_bytes().unwrap();
+        let mut too_small = pool.try_reserve(next_bytes - 1).unwrap();
+        assert_eq!(
+            world.try_publish_charged(1, &mut too_small).err(),
+            Some(WorldPublicationError::Capacity)
+        );
+        assert_eq!(too_small.remaining_bytes(), next_bytes - 1);
+        drop(too_small);
+        assert_eq!(pool.used_bytes(), initial_retained);
+        assert_eq!(old.get(first).unwrap().state, 10);
+
+        let mut reservation = pool.try_reserve(next_bytes).unwrap();
+        let new = world
+            .try_publish_charged(1, &mut reservation)
+            .unwrap()
+            .snapshot;
+        drop(reservation);
+        let next_retained = PageRootData::<u64>::charge_bytes(2).unwrap()
+            + PageData::<u64>::charge_bytes(PAGE_SIZE).unwrap();
+        assert_eq!(pool.used_bytes(), initial_retained + next_retained);
+        assert_eq!(old.get(first).unwrap().state, 10);
+        assert_eq!(new.get(first).unwrap().state, 11);
+
+        let old_root = PageRootData::<u64>::charge_bytes(2).unwrap();
+        let old_dirty_page = PageData::<u64>::charge_bytes(PAGE_SIZE).unwrap();
+        drop(old);
+        assert_eq!(
+            pool.used_bytes(),
+            initial_retained + next_retained - old_root - old_dirty_page
+        );
+        drop(new);
+        drop(world);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_publication_rejects_untracked_world_and_foreign_pool() {
+        let pool = PublicationPool::new(usize::MAX);
+        let foreign = PublicationPool::new(usize::MAX);
+        let mut prototype = World::<u64>::new(WorldEpoch(3));
+        prototype.publish(0);
+        let mut reservation = pool.try_reserve(usize::MAX / 2).unwrap();
+        assert_eq!(
+            prototype.try_publish_charged(1, &mut reservation).err(),
+            Some(WorldPublicationError::UnchargedWorld)
+        );
+        drop(reservation);
+
+        let mut charged = World::<u64>::new(WorldEpoch(4));
+        let bytes = charged.required_charged_publication_bytes().unwrap();
+        let mut reservation = pool.try_reserve(bytes).unwrap();
+        charged.try_publish_charged(0, &mut reservation).unwrap();
+        drop(reservation);
+        let mut foreign_reservation = foreign.try_reserve(100).unwrap();
+        assert_eq!(
+            charged
+                .try_publish_charged(1, &mut foreign_reservation)
+                .err(),
+            Some(WorldPublicationError::WrongPool)
+        );
+    }
+
+    #[test]
+    fn charged_roots_from_two_worlds_compete_for_one_process_pool() {
+        let mut first = World::new(WorldEpoch(5));
+        let mut second = World::new(WorldEpoch(6));
+        first.spawn(StableId(1), 1_u64).unwrap();
+        second.spawn(StableId(2), 2_u64).unwrap();
+        let first_peak = first.required_charged_publication_bytes().unwrap();
+        let second_peak = second.required_charged_publication_bytes().unwrap();
+        let first_retained = PageRootData::<u64>::charge_bytes(1).unwrap()
+            + PageData::<u64>::charge_bytes(1).unwrap();
+        let pool = PublicationPool::new(first_retained + second_peak - 1);
+        let mut reservation = pool.try_reserve(first_peak).unwrap();
+        let held = first
+            .try_publish_charged(0, &mut reservation)
+            .unwrap()
+            .snapshot;
+        drop(reservation);
+        assert!(pool.try_reserve(second_peak).is_err());
+        drop(first);
+        assert!(pool.try_reserve(second_peak).is_err());
+        drop(held);
+        let mut reservation = pool.try_reserve(second_peak).unwrap();
+        let published = second.try_publish_charged(0, &mut reservation).unwrap();
+        assert_eq!(published.snapshot.records().count(), 1);
+        drop(published);
+        drop(reservation);
+        drop(second);
+        assert_eq!(pool.used_bytes(), 0);
     }
 }

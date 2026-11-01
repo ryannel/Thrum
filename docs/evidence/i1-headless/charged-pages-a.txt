@@ -1,0 +1,10 @@
+I1 charged pages fixture host=macos/aarch64 profile=release
+charged/64/0%: ticks=1000 admission_ns[p50/p95/p99]=0/42/42 publication_ns[p50/p95/p99]=41/42/42 final_bytes=4256 peak_bytes=4256
+charged/64/1%: ticks=1000 admission_ns[p50/p95/p99]=0/42/42 publication_ns[p50/p95/p99]=167/208/250 final_bytes=4256 peak_bytes=8480
+charged/64/25%: ticks=1000 admission_ns[p50/p95/p99]=0/42/42 publication_ns[p50/p95/p99]=417/459/500 final_bytes=4256 peak_bytes=12624
+charged/4096/0%: ticks=1000 admission_ns[p50/p95/p99]=0/42/42 publication_ns[p50/p95/p99]=41/42/42 final_bytes=269360 peak_bytes=269360
+charged/4096/1%: ticks=1000 admission_ns[p50/p95/p99]=83/84/125 publication_ns[p50/p95/p99]=4708/4917/6166 final_bytes=269360 peak_bytes=441360
+charged/4096/25%: ticks=1000 admission_ns[p50/p95/p99]=125/125/208 publication_ns[p50/p95/p99]=26584/32542/43542 final_bytes=269360 peak_bytes=801888
+charged/16384/0%: ticks=1000 admission_ns[p50/p95/p99]=0/42/42 publication_ns[p50/p95/p99]=41/42/42 final_bytes=1077296 peak_bytes=1077296
+charged/16384/1%: ticks=1000 admission_ns[p50/p95/p99]=291/333/375 publication_ns[p50/p95/p99]=19333/24750/32417 final_bytes=1077296 peak_bytes=1765152
+charged/16384/25%: ticks=1000 admission_ns[p50/p95/p99]=375/458/500 publication_ns[p50/p95/p99]=103125/122333/136500 final_bytes=1077296 peak_bytes=3207264

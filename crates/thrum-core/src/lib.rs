@@ -27,5 +27,6 @@ pub use publication_pool::{
 pub use replica::{AdmittedGroup, Replica, ReplicaError, StateGroup};
 pub use world::{
     ActorId, AuthorityId, EntityChange, EntityRecord, Handle, MatchId, SessionId, Snapshot,
-    StableId, World, WorldEdit, WorldEpoch, WorldError, WorldPublication, WorldWork,
+    StableId, World, WorldEdit, WorldEpoch, WorldError, WorldPublication, WorldPublicationError,
+    WorldWork,
 };

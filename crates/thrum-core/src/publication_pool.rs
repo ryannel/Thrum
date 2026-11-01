@@ -154,6 +154,16 @@ impl PublicationPool {
 }
 
 impl PublicationReservation {
+    pub(crate) fn pool(&self) -> PublicationPool {
+        PublicationPool {
+            state: self.state.clone(),
+        }
+    }
+
+    pub(crate) fn belongs_to(&self, pool: &PublicationPool) -> bool {
+        Arc::ptr_eq(&self.state, &pool.state)
+    }
+
     /// Capacity still available for unique allocations in this publication.
     pub fn remaining_bytes(&self) -> usize {
         self.remaining

@@ -2785,7 +2785,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "faebb319b815912c6ba1c0254912d4691116956d3b129e5c55fbb07a21d7eb7a",
+    "design_sha256": "5fe59d2a6990412bfbd8cc7ec2379dbbca1409c6fe8238a1534469ff4850fce2",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2796,14 +2796,15 @@
     "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md",
     "publication_memory": {
       "design": "selected_for_precommit_byte_admission",
-      "implementation": "partial_reservation_prepared_edit_and_charged_byte_substrates_only",
-      "functional_validation": "pool_and_charged_byte_unit_tests_input_history_fixture_page_conformance_and_atomic_prepared_edit_tests_only",
-      "performance_measurement": "local_page_layout_comparison_only; byte_gate_not_run",
-      "scope": "Process-shared atomic reservation/charge transfer and immutable payload byte ownership are unit-tested, a charged action survives authority pending/completed history until acknowledgement, the private Arc<Vec> page layout is locally measured, and ordered prepared edits reject ordinary invalid batches before mutation; no general input or authority/replica allocation charges, precommit byte gate or bounded game payload contract.",
+      "implementation": "partial_reservation_prepared_edits_charged_bytes_and_snapshot_owners_only",
+      "functional_validation": "pool_input_history_prepared_edit_and_charged_page_owner_tests_only",
+      "performance_measurement": "local_page_layout_and_charged_page_path_only; whole_byte_gate_not_run",
+      "scope": "Process-shared reservation, immutable payload byte ownership, and unique page/root lifetime charges are tested; a charged action survives authority input history, and prepared edits reject ordinary invalid batches. Charged pages are measured locally, but authority precommit admission, general payload bounds, mutable world indexes, groups, outcomes, baselines and replica allocation charges are absent.",
       "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md",
       "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md",
       "prepared_edit_evidence": "../evidence/i1-headless/PREPARED-EDITS.md",
       "charged_byte_evidence": "../evidence/i1-headless/PUBLICATION-BYTES.md",
+      "charged_page_evidence": "../evidence/i1-headless/CHARGED-PAGES.md",
       "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
       "design_review_evidence": "../evidence/i1-headless/MEMORY-DESIGN-REVIEW.md"
     }
