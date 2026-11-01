@@ -1,0 +1,65 @@
+# Independent whole-system cloud design review
+
+1 November 2026. Reviewed the complete proposed [CLOUDS](../../docs/design/modules/CLOUDS.md), reconciled [capabilities](../../docs/design/modules/CLOUD-CAPABILITIES.md), affected owner pointers in RENDER-SPEC/C08/COMPOSITION/BASELINE-SPEC, and the current evidence review record. Original user requirements and [the preserved independent derivation](INDEPENDENT-CAPABILITIES.md) remain the basis. No maintained edits, build, GPU work, new research or old implementation inspection.
+
+Inspected CLOUDS SHA-256: `f64b73342e34de7016e97b2085ddcb2b87f210aaf96dd7009352f23c08508f8a`; capabilities: `c4fa5efa7f9b3692d62526174e93de263ca53c0efecc7d35c23ea0a4c8a244a7`. Findings apply to that assembly. The author may resolve them in later revisions; this report is not automatic verification of those revisions.
+
+## Result
+
+The assembly has concrete producers for the required source evolution, motion, coefficient evaluation, direct shadows, joint media, reflected appearance and optional semantic query. The earlier five capability findings are closed at design level. I found **two bounded actionable issues**: preview trajectory readiness and the logical source-load accounting. Neither establishes a failed visual result or runtime budget, nor calls for more physical fidelity or a different foundational representation. Resolve their explicit conditions before treating this revision as fully construction-ready.
+
+No missing storm, rainfall, universal cloud family, exact multiple-scattering, flight/planetary or live provider-migration feature is inferred. Source availability/quality, interpolation/cache error, moving-image acceptance and target viability remain unrun qualification, correctly labelled as such. This review does not convert those into passed evidence.
+
+## Earlier capability findings
+
+| Finding | Closure checked |
+| --- | --- |
+| R1 camera envelope | Full-volume base now explicitly admits ordinary first/third-person and orthographic ground/exterior views, including ground-accessible cloud entry and terrain intersections, with proposed 0–1536 m/4 km limits. Optional distant/mobile content cannot silently replace that required game profile. Flight/planetary remains separate. |
+| R2 requirement basis | Cumulus-like morphology, optional Moon and convenience presets are proposed/conditional; structural evolution remains required without thermodynamics. Constant/authored wind is valid. |
+| R3 provider obligations | Public seams permit clear, directional tau or prepared volume; other providers owe no invented clip/group API. Counts/sequence residency belong to this selected provider. Derived copies have validity/cost rather than an absolute ban. |
+| R4 retained reflection | The consumer matrix explicitly retains volume/light/reflection products with the main cloud path omitted. Shared air/fog history is neither destroyed indiscriminately nor double-counted as a cloud saving. |
+| R5 darkness | One source off removes that source's terms. All incident/emission inputs zero is the darkness condition; extinction remains. Sun/Moon/ambient constituents and no feedback from clouded probes are explicit. |
+
+## S1 — Complete preview trajectory has no explicit readiness producer
+
+**Location:** CLOUDS “Evolution and motion equations”, scheduler/startup and diagnostic-timelapse paragraphs; “Normal update, transitions and authority”. **Kind:** bounded missing data/preparation contract.
+
+The ordinary producer advances the centroid through fixed-tick wind integration and stores trajectory samples. The workbench opens at source age 90, can seek to birth, and diagnostic timelapse samples a **complete recorded centroid trajectory** together with source density. Complete encoded density residency supplies arbitrary optical ages, but recording the ordinary world as it runs only supplies the evaluated past; it does not supply a future centroid trajectory or necessarily the pre-start interval. The design has not selected whether this finite trajectory is precomputed from authored wind, analytically evaluable for constant wind, or a separately captured/readied recording. “Recorded” states the input without establishing its startup availability.
+
+**Concrete case/consequence:** start a fresh workbench at age 90 and immediately seek to age 180, then back to 0. Optical density is available from the encoded clip, but matching world centroids cannot be recovered from a trajectory recorded only since this launch. An implementer must invent a preparation/replay policy, silently keep the wrong centroid, or run hidden catch-up. This can break shadow/reflection alignment or the no-hidden-time/no-startup-stall claims while density playback itself works.
+
+**Resolution condition:** choose a finite preview trajectory producer and readiness requirement. For example, a constant/authored-wind preview can prepare the full bounded trajectory before enabling arbitrary seek; or a recording can be an explicit pinned input and seek remain unavailable until its range exists. State the interval, source-age↔trajectory-time mapping, interpolation and daylight mapping/default, ownership/version and bounded bytes/preparation cost. Initialize age 90 through that same path. Ordinary interactive worlds can retain their existing forward-only tick integration; no dynamic-weather forecasting or arbitrary reverse world simulation is requested. Verify the fresh-start 90→180→0 case by a paper trace, then Q4/Q6/Q7 when executable.
+
+## S2 — The quoted source-traffic range mixes operation counts with unstated reuse
+
+**Location:** CLOUDS “Shared current field and portable GPU layout”, read-only packed flow description, and “Cost and profile admission”, work-multiplier paragraph. **Kind:** cost-account correction; not a measured performance failure.
+
+The stated full-field workload is 128^3 = 2,097,152 output voxels, with three trilinear carrier queries/voxel. The same design defines each manual trilinear carrier query as eight neighbouring packed four-byte values. Thus the unsuppressed carrier **logical operand-load bytes alone** are:
+
+`128^3 × 3 × 8 × 4 = 201,326,592 bytes = 192 MiB/update`.
+
+Two endpoint density interpolations add 16 scalar operands/voxel: at least 32 MiB if counted as ideal one-byte values, or up to 128 MiB of four-byte word operands before any sharing, plus indirection/occupancy access. The paragraph instead gives “32–128 MiB source traffic/phase/frame before cache effects”. That can be a plausible estimate only with unstated swept-occupancy omission, load sharing or cache reuse; it is not the logical full-field count implied by the declared work. Sparse endpoint byte caps do not by themselves prove the reconstructed swept-occupancy fraction.
+
+**Consequence:** the design's bandwidth/critical-path comparison can underestimate or mislabel the repeated source work, obscuring what a proposed optimization actually saves. No contradiction with the 3/5 ms desired targets is established because those are explicitly unmeasured.
+
+**Resolution condition:** separately state logical operations/operand bytes, the admitted or estimated evaluated-occupancy factor, and expected physical memory traffic after reuse/cache effects. Label 32–128 MiB as a conditional estimate if retained; include the unsuppressed case and indirection overhead. Keep measured bandwidth/timing as later Q7 evidence. This does not require an implementation or another optimization programme now.
+
+## Assembled operating-case traces
+
+| Case | Mechanism/consumer trace and assessment |
+| --- | --- |
+| Ordinary formation and breakup | External final optical endpoints plus interval carrier produce signed local creation/erosion, not only advected noise or global opacity. Shared current field, physical mips/max/residual and directional/ambient products precede surface/media/reflection consumers. Endpoint exactness and genuine local-change mechanism are specified; whether the selected source/cadence preserves convincing development is Q1/Q3 visual/numerical qualification. No accepted source is claimed. |
+| Ground-accessible entry with fog | General origins and support intersections admit the camera inside cloud. Partial source-direction depth is available; geometry truncates actual view rays. Cloud/air/fog extinction and shared direct lighting are integrated jointly, with named cloud-only higher-order and ambient approximations. Ambiguous all-media history resets to valid spatial integration. Low-resolution path rejection has a full-resolution fallback rather than unchanged background. These are complete causal paths; cache/source/edge accuracy and fallback-pixel cost remain Q2/Q4/Q7 gates. |
+| Main cloud path off, reflection retained | F2 keeps the source, required directional/ambient products and V3 reflected/probe evaluation while omitting main-ray cloud coefficients. Light attenuation is independently selected; main air/fog can continue. Reflection then camera-to-interface transport occur once. Last-consumer removal follows leases/fences, and semantic CPU queries can remain separately. This deliberate presentation mask is honestly distinguished from a physically invisible medium. No ownership contradiction found. |
+| Time, seek and skipped views | Diagnostic evaluation uses one source/trajectory time for all consumers and does not claim accelerated gameplay physics. Encoded source random access supplies density without endpoint paging. History uses actual retained times, limited carrier horizon and resets at interval boundaries/seeks. Source-time chain rule is explicit. **S1 remains the missing readiness link** for the complete trajectory and its preview map. |
+| Startup, targets and recovery | Whole encoded source, packed scalar construction, bounded slot atlases and replacement leases have concrete owners. RC is separately admitted; R0–R4 remain unchanged. Source/atlas/history arithmetic and the 88 MiB gross one-phase reservation are internally plausible and leave room inside the stated reservation, without claiming whole-scene fit. High-cap cold startup explicitly fails the five-second worksheet; the 11 MiB cold source requires both quality and byte qualification. Future Wasm/decode/pipeline times and target sustained cadence remain unknown. **S2 corrects the source-work account**, not the separate residency arithmetic. |
+
+Mac controls remain a P1/P2/T1 workbench consumer, with orbit/pan/pinch and explicit gesture qualification in CL25/Q6. Exact gesture mapping and response targets can be selected in that implementation fixture; they do not require a new cloud-state mechanism. A still, keyboard-only capture or old lab interaction cannot close the trackpad requirement.
+
+## Qualification and remaining limits
+
+The finite source product and cooker/reader are specified but unwritten. Valid external fine-time reference samples, recoverable rights-bearing content, a plausible 240-second lifecycle, 1x/16x/64x pacing, no invented bridges/contours, quantization/cache/source-ray errors and acceptable correspondence all remain to be proved. Loose history bounds can legitimately select spatial-only output; no correspondence claim is rescued merely by lower variance. The camera/fog optical extension is proposed rather than baseline-qualified.
+
+No full-scene target measurement exists; 0.5 ms CPU/3–5 ms GPU and memory/startup figures are targets/planning arithmetic. The declared fallback work, ambient coefficient positions, secondary/probe consumers, sustained thermal state, pipeline readiness and actual loaded hashes must be present in Q7. Windows/mobile await their own evidence; a working Mac/browser slice cannot close those columns. The current evidence REVIEW correctly marks pending review/qualification, so no maturity finding is raised solely because those updates await this commission.
+
+Stop here: resolve S1/S2 in the design and verify those changes sequentially; no new feature or physics programme is needed from this review.

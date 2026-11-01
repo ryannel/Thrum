@@ -1,0 +1,27 @@
+# Focused cloud system closure
+
+1 November 2026. Independently checked the requested S1/S2 resolutions and narrow V1 current-field reuse addition in [CLOUDS](../../docs/design/modules/CLOUDS.md), with the reconciled [capability inventory](../../docs/design/modules/CLOUD-CAPABILITIES.md) and earlier [system review](SYSTEM-REVIEW.md). This is focused analytical closure, not a new whole-system audit or runtime qualification. No maintained edits, build, GPU work, new research or old implementation inspection.
+
+## Exact artifact scope
+
+- CLOUDS SHA-256: `c74bfbcae8a58b19b095c0f7040e541afc42b9647944a9e12365efb788a5c066`.
+- CLOUD-CAPABILITIES SHA-256: `c4fa5efa7f9b3692d62526174e93de263ca53c0efecc7d35c23ea0a4c8a244a7`.
+- Original independent input remains `9b4a21ce571b0523a05538e471338774b971e4aa8485e7eeddbcec75a98e2a45`.
+- Preserved CAPABILITY-REVIEW: `61afa6f6c2021e2d850d48e9ec9f470a668c6f237fc40b92c6b808462782a995`; SYSTEM-REVIEW: `eb0d02b7abc804bc1a7e207e49e0b38e3394f8c16ad93062623414b3897c9bc8`.
+
+## Dispositions
+
+| Finding/addition | Checked resolution | Disposition |
+| --- | --- | --- |
+| S1 complete preview trajectory | Initial diagnostic selects `c_preview(s)=c_ref+(4,0,1)*(s-90)`, in metres/source-second, for the full `0..240` source-age domain. At fresh age 90 the centre is `c_ref`; seek 180 gives `c_ref+(360,0,90)` and seek 0 gives `c_ref+(-360,0,-90)`. No past recording, future weather query or catch-up is needed. All optical/shadow/reflection consumers use the selected evaluation time. | **Closed at design level.** |
+| S1 variable-wind and rephase boundary | Ordinary runtime wind still integrates in world seconds. A variable-wind full preview seek requires an already captured/precomputed curve covering the requested ages; otherwise it is unavailable. Optical-only rephase can keep the current centre but is explicitly not a world/trajectory rewind. Per-view retained transforms and the existing dual 0.25-world-second/7.5-source-second correspondence horizon supply bounded prior centres; older views reset. | **Closed.** No forecasting or reverse arbitrary game simulation is implied. |
+| S2 logical versus physical source traffic | The full-field worksheet now counts `128^3*3*8*4 = 192 MiB` of logical carrier operands. Adding 16 endpoint-density u32 and 16 indirection u32 loads/voxel gives `(96+64+64)*128^3 = 448 MiB` logical source operands. Swept-occupancy fraction `C_s` scales source lookup work; every output still receives a valid write/zero. Hoisting/cache reuse and the roughly 1 MiB active working set are hypotheses rather than pre-cache traffic measurements. Actual DRAM traffic/instruction cost remains unknown. | **Closed.** No runtime speed claim is inferred. |
+| V1 source-slot reuse | RC views in one frame share evaluation time. A physical field slot is reused through queued write-after-last-read across complete graphs, never overwritten under a late unsubmitted packet. Stale optional work cancels/resets or a truly concurrent phase reserves another admitted slot. Old image history reevaluates encoded source instead of leasing an old dense field. Different simultaneous preview times/worlds need distinct slots unless pure source/phase keys match. | **Consistent with C02/C05/C06 and the one-field account.** Submitted work remains protected by V1 ordering/leases; CPU cancellation does not claim to cancel already submitted GPU reads. |
+
+## Earlier capability dispositions remain intact
+
+R1 still includes ordinary perspective/orthographic ground-accessible entry; flight/planetary remains separate. R2 still labels the first cumulus-like regime and selected light set honestly, allowing authored constant wind. R3 still keeps clip/group specifics local to this provider rather than universal APIs. R4 still independently binds retained reflection/attenuation with main appearance omitted. R5 still distinguishes one source disabled from all incident/emission inputs zero. The capability file is unchanged from the reconciled version reviewed previously, and the corresponding design sections preserve those dispositions.
+
+No new contradiction was found in the focused changes. Daylight's preview mapping remains an explicit fixture/configuration choice separate from the concrete centroid trajectory; it must be supplied with the eventual preview rather than interpreted as a second cloud clock. Variable-wind recorded curves remain optional and cannot be used outside admitted coverage.
+
+S1/S2 are resolved for this inspected design revision. Source/content correctness, ordinary and accelerated visual quality, actual trackpad response, numerical/cache errors, GPU scheduling correctness, memory/startup and sustained device performance remain unrun Q1–Q7 evidence. Closure does not promote any of those dimensions or authorize construction.

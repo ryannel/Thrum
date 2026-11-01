@@ -1,0 +1,68 @@
+# Focused cloud transport/layout review
+
+1 November 2026. Analytical challenge of `docs/design/modules/CLOUDS.md` as read during drafting, plus the parent's proposed atlas layout. This preserves `CONTRACT-STUDY.md`. No maintained file was edited; no implementation, shader compilation, GPU, device or image proof was run. This review is independent of the old cloud implementation/API, which I did not inspect.
+
+**Disposition:** the source-residency, scalar reconstruction, five-texture atlas and effective-source/joint-integration approach is coherent. The latest draft has already closed the initially identified one-slot allocation and directional-guard ambiguities. Two consequential semantic conditions remain to state explicitly: all-media history acceptance and the distinction between light scattering participation and cloud attenuation of a light path. The other items below are bounded qualification/precision conditions, not a reason to redesign the engine.
+
+## 1. Atlas format, filtering and bytes
+
+The proposed dimensions are valid analytically and stay below 256 in every 3D dimension. Five cloud sampled textures do not independently establish whole-shader binding admission; the draft now correctly requires the aggregate V3 closure including scene depth, sky, geometry shadows, material inputs and other providers. The source word buffer and samplers also need their respective per-stage limits. Preparation can split passes so a stage need not bind every storage output at once.
+
+Portable `R16Float` sampled density plus packed-u32 compute/copy is coherent. `pack2x16float` does not require WGSL f16 arithmetic. The 4 MiB temporary fits a 128³ scalar field; padded 64³ and 32³ mip-copy buffers are 1 MiB and 0.25 MiB respectively, so they fit that same sequential scratch. RGBA16Float storage-write and filtering do not require assuming optional scalar-half storage. RG32Float maxima/residual access via `textureLoad` does not require float32 filtering. No private heap aliasing should be assumed.
+
+The 8-fine-voxel zero collar is 32 source metres. A 15 m maximum endpoint backtrace leaves at least 17 m. For two dyadic physical-density downsamplings, the combined mip2 box-plus-trilinear support reaches approximately one 16 m mip2 cell from the sample point. Thus 17 m is analytically sufficient under this exact filter and displacement bound. Required closure: use explicit levels 0/1/2, generate each tile's levels under the same voxel-center convention, do not use a wider/custom anisotropic kernel or implicit coarser LOD without revising the collar, and return zero outside the tile's supported local domain. An inverse atlas transform must address voxel centers/interior endpoints, not map local [0,1] onto a neighboring slot boundary. Half quantization and conservative occupancy padding remain separate correctness concerns.
+
+Directional guards must preserve cumulative-depth semantics: upstream extension is zero; downstream extension is the integrated total; transverse guards are zero only beyond an actually padded empty projection. The latest draft's zero transverse guards plus duplicated axial endpoint values is coherent when the stored endpoint nodes represent those correct boundary values. Uniformly zero guards on every face would be incorrect. Ambient duplicated-edge guards are coherent. Guarded 66³/34³ cache slots need no hardware mip chain; if one is later added, per-level guards/coordinates and memory must be redesigned rather than auto-generating across slots.
+
+Exact logical four-slot field arithmetic, excluding source/history/scratch:
+
+| Allocation | MiB |
+| --- | ---: |
+| 256×256×128 R16Float density, levels 0/1/2 | 18.2500 |
+| Each 132×132×66 RGBA16Float directional atlas | 8.7737 |
+| Two directional atlases | 17.5474 |
+| 68×68×34 RGBA16Float ambient atlas | 1.1995 |
+| 64×64×32 RG32Float maxima/residual atlas | 1.0000 |
+| **All four-slot fields** | **37.9968** |
+
+The guards add 1.7468 MiB over four unguarded field groups, or 0.4367 MiB per slot. This matches the parent's approximate 0.5 MiB estimate. One guarded slot group is 9.4992 MiB (4.5625 density + 4.9367 remaining fields), matching the draft's rounded 4.95 row. **Texture capacity is allocated capacity:** a physically four-slot atlas remains 37.9968 MiB with only one live slot. The draft now explicitly uses a 128³ one-slot density allocation and atlas slots only when needed. Apply that one-slot versus four-slot extent rule to all atlas families, and admit extent changes as ordinary prepare/publication/retirement transactions. Do not count the unused physical slots as free.
+
+With the table's source, CPU recovery, view histories, reflection targets, current-media scratch and upload allowances, the four-slot arithmetic can remain below a gross 112 MiB proposal. Its persistent GPU share is approximately 74 MiB rather than the one-phase 50 MiB share. The four-phase recipe therefore needs a separate category breakdown/rebalance; it cannot copy the one-phase categories. New atlas extents require old/new overlap or the already-selected stop/load policy. These remain logical planning accounts, not process/device residency.
+
+The RGBA16Float directional choice is credible: one hardware-filtered RGB fetch versus manual trilinear scalar loads, and it simultaneously supplies the three specified optical depths. The benefit is an instruction/bandwidth hypothesis, not an 8× timing claim; hardware still reads neighboring texels and the RGBA payload is larger. Correctness requires all channels to use the documented grid/depth conventions and not accidentally apply the mip1/2 effective-depth channels to primary attenuation.
+
+## 2. Half cumulative optical-depth precision
+
+`tau < 65504` prevents half overflow; it does not establish the accuracy of a **difference** of two cumulative half depths. Near cumulative tau 1024, representable spacing is about 1, so a physically short segment of tau 0.1 can disappear after endpoint rounding. This matters to a general finite collinear path query even if the direct Sun at that deep endpoint is already negligible.
+
+Required closure: attach an absolute optical-depth error bound and admit endpoint differencing only when that bound fits the queried segment's error policy; otherwise integrate the finite density segment or report unsupported. Direct source-boundary queries may use a transmittance/radiance-error criterion when the entire depth is already opaque. The profile need not add arbitrary local-light support merely to handle this; it must narrow the path capability honestly. Q2 should include a deep column with a short interior segment, not just full source-to-ground shadows.
+
+## 3. Whole encoded residency and joint history
+
+Keeping the bounded complete encoded clip CPU/GPU resident is coherent and removes ordinary seek/accelerated-playback I/O as claimed. It permits reevaluating an earlier source interval without keeping a dense field per view. It does **not** make all prior geometry correspondence valid: actual source age, interval, instance transform/trajectory, source-time mapping and content generation still have to be retained for the bounded C07 horizon. The draft has these keys and reset cases. No semantic objection to this choice remains; source traffic and cache misses remain unmeasured.
+
+**Required closure: cloud-only correspondence cannot certify a joint air/fog/cloud history.** The draft's cloud-extinction weights, cloud motion/depth spread and cloud residual estimate describe cloud correspondence. The stored S/T also contains stationary or independently changing air/fog and their illumination. Warping that entire history by a good cloud vector can move static fog; a good fog vector can trail the cloud. A blended representative depth cannot make either exact.
+
+V3 must validate the *whole contributing media set* under its declared layer/confidence policy. A concrete safe initial policy is to reject/use current spatial data for a joint-media pixel when important media contributions have incompatible or unknown correspondence, including overlap fog changes and distributed air contributions that cannot share the representative point. A richer estimator can consume each provider's motion/source/distribution validity and reject when their spread exceeds a declared tolerance. This is a clarification within V3's existing ownership, not another private cloud resolver. Fog/source/profile changes and main/reflection consumer masks must invalidate the joint estimator even if the cloud clip itself is unchanged. Source-off must reset mixed lit history unless separately represented linear source terms are demonstrably rescaled; a freshness increase alone must not leave a lit afterglow.
+
+The residual maximum stored at the *current* coarse cell is a useful heuristic, but not a proved bound along a characteristic that traveled through neighboring cells. Label it as an estimate, as the draft does, and do not claim it alone proves persistence. Stronger conservative use requires a maximum over the bounded backtrace/filter footprint. The representative prior-coefficient discrepancy and joint optical-depth tests remain separate guards; vanished contributions need the retained prior support/tombstones already specified.
+
+## 4. Source/light and consumer masks
+
+**Required closure: distinguish receiving-medium scattering from source-path attenuation.** Excluding local lights from cloud scattering is a valid first-profile restriction. It does not remove cloud extinction from a local-light path illuminating a surface, air or fog behind/inside that cloud. A Sun-only directional tau cache cannot evaluate that arbitrary finite local-light path.
+
+The first RC fixture can simply contain no such local-light paths. A wider profile must either provide bounded finite cloud-density integration, constrain all participating local-light paths to a proved cloud-free domain, or select a named approximation that omits this attenuation. The latter is a new explicit optical limitation, not exact C08 transport. Write the direct-source sum with per-receiving-medium light participation, while the incident E for every admitted source retains its selected complete attenuation set. Otherwise the current common `sum_media ... sum_l` notation appears to scatter local lights in clouds despite the prose, or to drop cloud attenuation for other receivers.
+
+Keep three independent concepts explicit: (a) which cloud constituents are sampled on this camera/reflection ray; (b) which cloud constituents attenuate each source ray; (c) which sources scatter in each medium. A main-off/reflection-on policy may remove cloud camera coefficients while retaining directional attenuation and reflection density. It must not accidentally remove air/fog or their required cloud shadows. The corresponding mask/profile generation is part of history validity. External ambient illumination of a visible cloud is retained even if the *clouded environment capture output* is disabled; these are different consumers.
+
+The six-axis cloud ambient formula has the correct constant-isotropic limit: six equal unoccluded external radiances L give Lamb=L and j=sigma_s L. It is explicitly an isotropic phase approximation; it is not an exact normalized-HG environment integral. Bounded coarse tracing, geometry/air/fog validity and world-position keys are present. Whole-clip source sharing does not justify sharing world-dependent ambient between instances; the latest draft correctly states that. Source-wide Lref must be finite/positive and revision-coupled to the cache, with a defined all-external-zero case; it must not act as automatic scene brightness normalization.
+
+Finally, the symbol `j_external_environment` should enumerate constituent terms. The cloud six-axis term and baseline air/fog authored ambient cannot silently both claim the same solved common incident field. Either evaluate a shared external incident closure for each contributing medium, or explicitly retain air/fog's authored isotropic ambient approximation and label its cloud/geometry-occlusion omissions. This is compatible with a bounded approximate model, but should be visible in Q2's expectation/reference selection. Keep the cloudless external input separate from the clouded surface probe; the current acyclic arrangement is sound.
+
+## Verification scope and conclusion
+
+Analytically closed: atlas dimensions/counts, core-format strategy, scratch bounds, 17 m collar versus the specified mip2 filter support, guard byte arithmetic, whole-clip residency semantics, six-axis constant limit and independent source/consumer ownership.
+
+Before design closure: state all-media history rejection; separate scatter participation from source-path attenuation and narrow the first local-light envelope; bound half-depth endpoint subtraction or provide a fallback; enumerate external ambient terms and zero/Lref behavior. One-slot/four-slot allocation and guard semantics were corrected in the draft during this review and should be preserved.
+
+Later executable proofs: adapter/whole-stage binding validation; each tile/guard/filter face and unused-slot reuse; deep-column short-segment precision; moving cloud plus stationary/changed fog history; all sources off; main/reflection/attenuation masks; source-age skips/corrections; complete 1-slot/4-slot and old/new allocation peaks. No runtime budget, moving quality, energy accuracy or platform claim was established here.

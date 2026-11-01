@@ -1,0 +1,86 @@
+# Independent comparison of the first cloud capability inventory
+
+1 November 2026. Review scope: requirement coverage, unsupported additions, requirement basis and consequential coupling. **No technique-selection verdict, code inspection, new research or runtime qualification.** The forthcoming CLOUDS.md link is intentionally not reviewed as a missing artifact.
+
+## Artifacts and independence
+
+The independent derivation was saved before the parent inventory was supplied and remains unchanged:
+[INDEPENDENT-CAPABILITIES.md](INDEPENDENT-CAPABILITIES.md), SHA-256 `9b4a21ce571b0523a05538e471338774b971e4aa8485e7eeddbcec75a98e2a45`.
+
+Reviewed [first inventory](../../docs/design/modules/CLOUD-CAPABILITIES.md), identical at inspection to [FIRST-CAPABILITIES.md](FIRST-CAPABILITIES.md), SHA-256 `dde08aa9b9c8e80c35da3e670626b70f622a8ca873304b0e1fa8481f03868162`. Findings apply to this revision. The review's prior exposure consists of the original commission and the Thrum sources listed in the independent derivation, followed by these two supplied inventory copies. No historical cloud implementation or parent system design was inspected.
+
+## Coverage result
+
+The first inventory covers every broad required outcome independently identified: convincing appearance; coherent world-space motion; actual structural development/breakup; normal and accelerated pacing; shared light/shadow/reflection behaviour; Mac inspection; attenuation-only composition; shared state/time/views; transport/depth; history validity; feature-off savings; portable cost/lifecycle; public authoring/composition. It also correctly keeps storms optional and leaves proof unrun. No missing headline capability warrants adding a new subsystem.
+
+Compact crosswalk: independent C01 → CL02; C02 → CL04/CL06; C03 → CL03; C04 → CL05; C05 → CL07–CL12/CL15; C06 → CL25/CL26; C07 → CL01/CL16; C08 → CL06/CL12/CL18; C09 → CL08–CL10/CL14/CL15; C10 → CL13; C11 → CL01/CL16/CL22/CL27; C12 → CL22/CL26/CL28; C13 → CL19/CL25/CL27/CL28; C14 → CL20/CL23/CL24. Coverage is conceptual, not proof of the later design's causal completeness.
+
+The following boundaries need clarification before treating the complete design as settled. They are not judgments against a forthcoming mechanism.
+
+## Material findings
+
+### R1 — CO03 does not yet define the supported ordinary camera envelope
+
+**Location:** CO03, with CL02/CL10/CL12. **Kind:** ambiguous scope with a possible material omission.
+
+CO03 groups cloud-entry with flying/high-altitude/planetary regimes. A flexible first-person or third-person game can encounter low clouds/fog-like cloud support from a hillside, tall terrain, a window or ground-level weather; it need not have flight or planetary sky. Conversely, support for those camera styles does not automatically commission unrestricted flight, all altitudes or arbitrary cloud interiors. CL10's “interior” proof term is itself ambiguous between an interior camera looking out and a camera inside a cloud.
+
+**Consequence:** marking the entire group optional can silently remove required ordinary ground/shore first/third-person cases; treating every camera style as unrestricted cloud entry expands scope without a selected domain. A provider can reject unsupported ranges only after those ranges have been selected honestly.
+
+**Resolution condition:** name the base camera/content envelope explicitly: perspective first/third-person and orthographic/isometric ground/exterior cases, terrain/cloud intersections, altitude/path/support and near-cloud limits. State whether ground-accessible cloud entry is admitted, prevented by the selected content recipe, or still an open requirement. Separate that decision from clearly optional flight/planetary additions. Exercise the base envelope in Q2/Q3, with typed fallback/rejection only outside it. This review does not require arbitrary interior-cloud support.
+
+### R2 — Appearance, motion-driver and light rows mix explicit requirements with proposed regimes
+
+**Location:** CL02–CL04, CL07; CL25's preset wording. **Kind:** ambiguous requirement basis / possible unsupported expansion.
+
+The explicit brief requires convincing clouds, genuine growth/breakup, coherent motion and shared lighting. “Billow hierarchy”, a shaded base, upward local growth and condensation are defensible cues for a selected billowy cloud regime, but the supplied brief does not explicitly select that regime or a physical condensation process. The important required core in CL03 is already correctly stated: structural change and local creation/destruction, with global fade/scale rejected. CL04 can consume a shared constant/authored wind; it must not accidentally commission weather simulation. “Selected Moon” can be conditional, but U/E does not distinguish it from the base Sun-related obligations. Preset creation is an authoring option, not an independently confirmed product feature.
+
+**Consequence:** a particular cloud population and extra source capabilities can acquire false user authority, while other convincing cloud forms are rejected for lacking cumulus-specific cues. “Condense” can also be misread as a thermodynamic-accuracy promise despite the explicit relaxation.
+
+**Resolution condition:** retain broad U outcomes and label the selected morphological cues, source set and authoring convenience as P or conditional E/I. State that growth/breakup is actual represented structural evolution without requiring thermodynamic conservation. Explicitly permit an authored/constant motion driver under the shared field contract; require dynamic wind/weather only if selected. Identify base supported illumination and optional Moon/night/local-light regimes. Do not weaken genuine growth/breakup while making this correction.
+
+### R3 — Several required rows contain provider-specific obligations before their requirement basis is established
+
+**Location:** CL19–CL21; “prepared optical geometry” in CL02; “no duplicate full source allocation” in CL12. **Kind:** unsupported universal obligation, not a technique-quality finding.
+
+A concrete producer for evolution, geometry and correspondence is necessary. The brief/contracts do not establish that every provider needs prepared temporal content, sampled sequence boundaries, bracketing data, prefetch, a loop policy or “many source groups”. Those can be appropriate obligations of a later selected provider/profile. Similarly, one authority/update per source is required, but it does not prohibit a justified derived copy or target/view-specific representation whose cost is accounted for.
+
+**Consequence:** representation-specific requirements can be mistaken for universal capability conformance. A procedural/evaluable source could be forced to invent a sequence API; a bounded source field could be required to expose groups; a valid optimization could be rejected merely for copying data. These errors make the reusable public model larger without adding a requested outcome.
+
+**Resolution condition:** keep universal outcomes phrased as complete versioned source evaluation/publication, bounded residency, declared supported scale/overlap and valid prior correspondence or explicit invalidity. Make prepared sequences, prefetch/loop and group-count obligations conditional on the selected provider/profile; preserve their full design obligations if that provider is selected later. Change the allocation rule to forbid duplicate authority/per-view evolution and require justified/accounted derived duplication. No assessment of whether sequences, groups or prepared geometry are good choices is made here.
+
+### R4 — Visible-off and retained reflected-cloud consumption need an explicit combination rule
+
+**Location:** CL01, CL11, CL12, CL16. **Kind:** missing interaction specificity.
+
+CL16 correctly removes visible-cloud tracing and histories in the attenuation-only top-down profile. CL11 also makes reflections independent consumers. The inventory does not explicitly distinguish “no visible clouds in the main view, but retain cloud radiance for a selected reflection/environment consumer” from “attenuation-only, no reflected cloud appearance”. Both can be valid game profiles. A main-view toggle is not necessarily an all-cloud-radiance toggle.
+
+**Consequence:** the visible-off path could release source products or tracing/history work still required by a reflection, or a retained reflection could be incorrectly reported as failed disabled-cost savings. An attenuation-only game could conversely be forced to retain unnecessary cloud radiance.
+
+**Resolution condition:** add the retained-consumer rule to the composition/profile matrix: main draw off, attenuation retained, reflection/environment cloud contribution independently selected. For each, name required provider products and removable work/resources; reject an unavailable required binding. Include at least a design trace of this combination in Q3/Q5/Q7, without requiring every game to enable it or requiring a new reflection system.
+
+### R5 — “No source-off emission” needs a total-light boundary
+
+**Location:** CL14, read with CL07/CL11/CL15. **Kind:** ambiguous lighting coupling.
+
+A nonemissive cloud must not generate unowned radiance, but turning off one directional light does not imply zero outgoing cloud radiance when a declared environment/ambient or other light remains. The initial rendering specification explicitly permits an authored ambient approximation and an HDRI environment. Conversely, a stale baked Sun contribution must not remain under another label.
+
+**Consequence:** a Q2 source-off test could incorrectly demand black clouds when valid illumination remains, or fail to detect an unowned contribution because “ambient” is undefined.
+
+**Resolution condition:** define the test as zero outgoing scattered radiance with all incident/source terms zero for the nonemissive cloud closure. Test a single source disabled separately, retaining only its explicitly owned remaining contributions. No new night-time or multiple-scattering feature is requested.
+
+## Questions the complete design must close, rather than new inventory rows
+
+- **Retained artifact:** identify the existing renderer and actual integration/migration target. Thrum's current README describes no game runtime; “where it fits” cannot establish compatibility by itself. No old code inspection was necessary for this finding.
+- **Operating/profile domain:** state representative content, light directions, ordinary camera distances/heights, normal/accelerated durations/rates and observation cues. Q1/Q2/Q7 need those workloads; numeric limits can be proposed and empirical qualification remain unrun.
+- **State semantics:** state whether this cloud source is cosmetic or provides selected gameplay facts. CL17/CL24 already correctly make gameplay queries opt-in; do not turn those into mandatory networking/persistence implementation for an unrelated demonstration.
+- **Time/lifecycle:** define acceleration, pause with live camera inspection, supported seeking/edits, stop/load and suspend policy through the F1/E1 clock. CL05/CL18/CL20/CL23 cover the category; the actual policy must not be invented by an implementer later.
+- **Portability evidence:** distinguish a complete provider/profile design for desktop/browser/mobile from which actual implementations and device measurements the next commission will deliver. Q7 must include receiver/reflection/secondary-view workload and the shared engine budget; no cloud entitlement follows from the whole-frame envelope.
+
+These are unresolved input/contract choices, not absent algorithms. They can usually be resolved by existing contracts and explicit proposed bounded assumptions without a new user interruption.
+
+## Non-findings and acceptance boundary
+
+The attenuation-only baseline is preserved and not treated as the visible evolution deliverable. Real growth/breakup remains in base scope; approaching storms are explicitly stretch. Headless authority is conditional on required semantic facts. The dark-cloud/pixel-to-rainfall shortcut is correctly excluded. History at the actual retained sample time, once-only transport, off-camera influence, pipeline/resource lifecycle, public composition and asset provenance are all represented. No extra cloud taxonomy, precipitation system, physical meteorology, global conservation, universal live migration or replacement renderer is justified by this review.
+
+Disposition needed: reconcile R1–R5 in the governing inventory/design, preserving the original first inventory and this independent derivation as provenance. The coverage set is sufficient to proceed to complete design after those boundaries are made explicit. Agreement on this capability comparison does not establish technique selection, implemented correctness, visual acceptance or device viability.

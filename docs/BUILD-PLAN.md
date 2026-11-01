@@ -62,3 +62,12 @@ specified by I1; they do not wait for a desktop renderer to mature. Desktop/brow
 need their actual hosts and devices. Add broader authoring, streaming, animation and environment only
 through the complete I2b/I3b contracts; retain explicit stopped loading until live transitions are designed
 and qualified. The original visual-quality and flexible-provider ambitions remain in the brief.
+
+
+## Cloud design handoff
+
+The [cloud capability inventory](design/modules/CLOUD-CAPABILITIES.md) and [complete system design](design/modules/CLOUDS.md)
+are D2 design work, aligned with E1/V3/V4/F4 and the existing baseline. The proposed RC volume extension follows the
+foundation/content/render dependencies above; it does not reorder the active construction queue. Source/cooker,
+consumer conformance, visual lifecycle and target performance are all unrun. Retain useful legacy renderer algorithms
+through those interfaces; no Bevy/legacy host migration is implied. Storm progression remains optional after the base.
