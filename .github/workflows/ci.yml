@@ -1,0 +1,33 @@
+name: repository
+on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      THRUM_PYTHON: python
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install pinned contributor toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+      - name: Check repository and native scaffold
+        run: ./dev check
+      - name: Compile portable core for Wasm (not a browser runtime test)
+        if: runner.os == 'Linux'
+        run: |
+          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
+          ./dev check-web

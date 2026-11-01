@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd -- "$(dirname -- "$0")"
+# Use rustup explicitly: some machines put a standalone Cargo ahead of its shims.
+thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
+export PATH="$(dirname -- "$thrum_rustc"):$PATH"
+exec rustup run 1.99.1 cargo run --locked --offline --quiet --package xtask -- "$@"
