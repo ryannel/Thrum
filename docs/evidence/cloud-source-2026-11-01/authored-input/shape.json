@@ -1,0 +1,131 @@
+{
+  "schema": "thrum.cloud-source-proof.authored-shape.v1",
+  "id": "thrum.authored-shape.wdas-quarter.scale-0_6.v1",
+  "role": "fixed-precision authored shape master, not runtime promotion or physical Disney-unit preservation",
+  "source": {
+    "title": "Walt Disney Animation Studios Cloud Data Set",
+    "official_page": "https://www.disneyanimation.com/resources/clouds/",
+    "public_archive": "https://assets.disneyanimation.com/wdas_cloud.zip",
+    "archive_member": "wdas_cloud/wdas_cloud_quarter.vdb",
+    "member_sha256": "279efd7566f4f8f3d05a1cb4529b7e903d64a6b4e91c2edce5824b9b5c9f722a",
+    "channel": "density",
+    "rights": "Copyright2017DisneyEnterprisesInc.;CC-BY-SA-3.0",
+    "reference_photo_creator": "Kevin Udy",
+    "reference_photo": "https://coclouds.com/436/cumulus/2012-07-26/",
+    "official_license_notice": "https://media.disneyanimation.com/uploads/production/data_set_asset/6/asset/License_Cloud.pdf",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "index_active_bbox_min_xyz": [
+      -261,
+      -81,
+      -358
+    ],
+    "index_active_bbox_max_xyz": [
+      236,
+      256,
+      254
+    ],
+    "index_to_world_origin_xyz": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "index_to_world_basis_xyz": [
+      [
+        0.8333333134651184,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.8333333134651184,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.8333333134651184
+      ]
+    ],
+    "active_voxel_dimensions_xyz": [
+      498,
+      338,
+      613
+    ],
+    "active_cell_bounds_extent_original_units_xyz": [
+      414.99999010562897,
+      281.66665995121,
+      510.8333211541176
+    ],
+    "active_cell_bounds_center_original_units_xyz": [
+      -10.41666641831398,
+      72.91666492819786,
+      -43.33333230018616
+    ],
+    "recovery": "Obtain official ZIP, extract exact member and verify pinned member hash; cached local path is not a dependency. Fresh bulk archive download not performed in this proof."
+  },
+  "authored_transform": {
+    "source_axes": "Houdini right-handedY-upXYZ; preserved",
+    "uniform_geometry_scale": 0.6,
+    "source_center_maps_to_local_metres_xyz": [
+      256.0,
+      144.0,
+      256.0
+    ],
+    "scaled_active_cell_bounds_extent_metres_xyz": [
+      248.99999406337736,
+      168.99999597072602,
+      306.4999926924705
+    ],
+    "optical_conversion": "sigma_shape_m^-1 =0.125*max(original_density,0), fixed; no peak or per-frame normalization",
+    "sampling": "independent trilinear source-density sampling at target voxel centers; zero background",
+    "physical_limit": "geometry and extinction are explicitly authored; inverse-size optical-depth preservation is not claimed"
+  },
+  "product": {
+    "file": "shape.r8",
+    "sha256": "f3dda7a6d0bc70285525ba218984eeebd2ce641c1da5b13610a8156c799339bf",
+    "bytes": 2097152,
+    "side": 128,
+    "extent_m": 512.0,
+    "bounds_min_xyz_m": [
+      0,
+      0,
+      0
+    ],
+    "axes": "right-handedY-upXYZ",
+    "storage": "R8_UNORM; rawuint8; Xfastest thenYthenZ; array[Z,Y,X]",
+    "runtime_sigma_max_per_m": 0.125,
+    "decode": "sigma_m^-1 =code/255*0.125",
+    "observed_prequantization_max_sigma_per_m": 0.125,
+    "max_nodal_quantization_error_per_m": 0.0002450980392156854,
+    "nonzero_voxels": 45438,
+    "nonzero_index_bbox_min_zyx": [
+      28,
+      15,
+      33
+    ],
+    "nonzero_index_bbox_max_zyx": [
+      101,
+      56,
+      94
+    ]
+  },
+  "license": {
+    "file": "LICENSE.md",
+    "sha256": "fd3b9ab0ca8f75b520b631bee5f5912176de2a0a3623be82e1e6147947fafde8",
+    "derived_asset_license": "CC-BY-SA-3.0",
+    "url": "https://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  "rebuild": {
+    "recipe": "scripts/cloud_source_proof/prepare_shape.py",
+    "recipe_sha256": "d1f80bb7168cd633eb0d444f597cd6560981e7d3465e3fcb1a1804fef1ae9472",
+    "blender_version": "5.2.3 LTS",
+    "blender_build": "e13b728c6880",
+    "numpy_version": "2.3.4",
+    "peak_source_dense_bytes": 412730448,
+    "command": "blender --background --python scripts/cloud_source_proof/prepare_shape.py -- --input <extracted/wdas_cloud/wdas_cloud_quarter.vdb> --out <new-authored-input-directory>"
+  },
+  "validation": "range/hash/transform/layout checks passed; static body appearance remains for visual review"
+}

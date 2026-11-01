@@ -1,0 +1,39 @@
+# Independent ranked-product and optical closure
+
+1 November 2026. **Pass for the inspected lossless repack, existing encoded-byte caps and sampled source-reference optical gates, including the R16F current-field store.** This does not close continuous-motion acceptance or certify a Thrum runtime.
+
+Inspected source recipe SHA-256: **3da3b8f119b9f08963d991ad4975c865c758b893eb2716a3f8c07ddf2f499789**. The earlier current-source review and topology evidence apply to this same recipe. The new decoder/evaluator imports neither ranked.py, cook.py, direct.py nor another candidate reader.
+
+## Executed checks
+
+evaluator-ranked-audit.py independently decoded every complete128^3 R8 grid from both original8^3 dense-brick data and the new mixed ranked/dense data. All **162 grids are bitwise equal**, including their zero space; per-frame decoded hashes match the manifest. Timestamps and source descriptors are exactly equal. Original and repacked diagnostics.json are byte-identical. Structural read checks include frame/chunk hashes and bounds, occupancy/index agreement, pointer alignment/bounds, prefix counts, mask order and nonzero payloads. This is not a comprehensive hostile-input security audit.
+
+Actual density.bin plus cloudclip.json is **6,564,544 bytes =6.2604370117 MiB**, within both unchanged11 MiB and16.75 MiB encoded-source caps. diagnostics.json is738,387 bytes of retained proof evidence, separately identified rather than silently included as runtime payload. No CPU/GPU runtime memory or timing follows from this file-size result.
+
+The independent evaluator then called actual Source.field **645 times**:162 runtime knots and483 actual quarter/mid/three-quarter references across all161 accepted adaptive leaves. It checked receipt coverage against every adjacent runtime knot, with no unresolved leaf. Only the fixed base-support ROI is retained for optical sums after full-grid decoding verifies exact zero outside that support.
+
+| Independent replay | Maximum axial tau error | Maximum absolute transmittance error | Existing0.1/0.02 gates |
+| --- | ---: | ---: | --- |
+| Accepted-leaf references, float32 endpoint dequantization/lerp |0.090750977397 |0.019985962365 |Pass |
+| Same references after actual R16F current-field quantization |0.091780461371 |0.019988897343 |Pass |
+| All162 runtime knots after R16F storage |0.017697222531 |0.005436665194 |Pass |
+
+No sampled reference failed either unchanged optical criterion. The R16F transmittance margin is positive but small (about1.11e-5); retain the half-aware check for changes to source, knots, optical scale, interpolation or storage. The targeted knot supplement is evaluator-ranked-endpoint-half.py/JSON. This audit's elapsed wall time is evaluator preparation evidence, not a CPU-reader or engine frame-time benchmark.
+
+## Exact artifact identity
+
+| Artifact | SHA-256 |
+| --- | --- |
+| authored-ranked/density.bin |999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd |
+| authored-ranked/cloudclip.json |2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739 |
+| Unchanged diagnostics.json |55a5c2bfce448dfc8c18ec4e0bc596f3d1ac46efb0d22aa47a17230b31a2a021 |
+| Original authored-cooked-v2/density.bin |b99fc1f13481fa0a42077bdfe79bb554f96bce3d3c48a42c21b0242df8601f41 |
+| Authored shape.r8 |f3dda7a6d0bc70285525ba218984eeebd2ce641c1da5b13610a8156c799339bf |
+
+Full exact frame hashes, all quarter measurements, byte counts and script scope are in evaluator-ranked-audit.json. All source/implementation files remained read-only; only evaluator-owned review scripts/reports were written.
+
+## Remaining proof limits
+
+The tests cover three axial ray families at declared knots and accepted-leaf quarter times. They are not a supremum error proof at every unsampled real time or arbitrary view direction. They independently establish exact codec preservation and replay the selected optical criteria against actual current authoring samples; an unchanged diagnostics receipt alone was not treated as sufficient.
+
+The source review previously inspected sixteen native still images and measured actual separated substantial material at200s. I have not yet inspected final admitted-byte image sequences or watched continuous1x/16x/64x playback. Half-aware sampled optical success cannot establish the perceived motion cue, runtime renderer quality, GPU query correctness, consumer coupling, startup, complete memory reservation or device timing. Those remain open under their existing owners.

@@ -1,0 +1,69 @@
+# Independent final Q1 source review
+
+1 November 2026. **Reject this source/product for Q1 acceptance.** The prepared optical source has a useful billowy body and visible local contour development, but the inspected raw source images do not establish the required convincing gap opening/detached-remnant breakup. The encoded stationary-carrier product additionally fails its unchanged numerical gates. Byte admission passes; Thrum runtime quality/cost remains unrun.
+
+## Review independence and exact scope
+
+I authored evaluator-controls.py and evaluator-final-checks.py separately, without importing cook.py. The controls import only NumPy; final checks import the independent controls for the full-cell carrier certificate. I read the design, bake.py and render.py. The final review brief disclosed the author's preliminary visual concern before inspection, so this is independent evidence inspection, not a blind opinion study.
+
+I used view_image to inspect all sixteen native 512x384 PNGs: candidate-images/{020,032,045,060}-{front,side}-{lit,mask}.png. These are actual raw float source-frame diagnostic renders according to the owner, using the fixed source gain and fixed optical diagnostic. Their hashes are recorded in evaluator-final-numeric.json. Ages are 35.625, 58.125, 82.5 and 110.625 source-seconds. No contact-sheet downscaling or image edits were used.
+
+**Sampling limitation:** these are four source ages in two axial views, with lit and transmittance images. I did not watch continuous motion or inspect 1x/16x/64x playback. Thus this review does not prove that no brief event occurs at an uninspected age/view. It does establish that the supplied sample evidence is insufficient for the requested breakup cue. Normal/accelerated pacing, temporal seams and full lifecycle visual acceptance remain unrun.
+
+## Visual finding and source-versus-reader diagnosis
+
+At frame 20 the front view has substantial rounded lobes with opaque cores. The side view is a compact overlapping body. Frame 32 changes the upper contour and expands wispy peripheral structure; some actual local development is visible, rather than an exactly fixed shape whose gain merely changes.
+
+By frame 45 the boundary becomes diffuse and the darker core contracts/softens. Frame 60 has much lower projected extinction in both directions and reads as a thinning wisp. The transmittance images retain one broad core while optical substance decreases. I cannot identify a clear interior opening between two persistent optically substantial bodies or a clearly detached substantial remnant in these sampled views. Fine turbulent texture and ragged edges are not the missing macroscopic separation cue.
+
+This is a bounded visual judgment: the source is not literally a mathematically global fade, but its dominant sampled late-life experience is erosion/thinning. Some local change is insufficient to demonstrate the commissioned convincing growth-and-breakup lifecycle.
+
+These renders sample actual raw float frames rather than the carrier reconstruction. Therefore carrier interpolation errors cannot explain the missing cue in these particular images. A better reader cannot add a missing source event. Source content and representation each have an independently identified rejection condition here.
+
+## Independently executed numeric audit
+
+Run with /opt/homebrew/bin/python3.14:
+
+    python3.14 tmp/cloud-source-proof/review/evaluator-final-checks.py --base tmp/cloud-source-proof
+
+The evaluator independently decodes flow.bin from signed int8 bytes and manifest component scales, checks every grid cell including empty optical space, and computes the maximum spectral norm over each trilinear cell's eight corner Jacobians. It separately recomputes endpoint axial optical-depth errors from raw fine exports and R8-dequantized cooked density.
+
+| Measurement | Independent result | Gate/disposition |
+| --- | ---: | --- |
+| Actual density.bin + flow.bin + cloudclip.json | 4,141,076 B / 3.9492378 MiB | Passes 11 MiB and 16.75 MiB encoded-byte caps. This does not establish the selected fidelity. |
+| Maximum post-SNORM vector speed | 3.35417271984 m/source-second | Fails <=2. 22 of 32 interval grids fail. |
+| Maximum full-domain Lipschitz certificate | 0.359468272752 source-second^-1 | Fails <=0.02. Every interval fails. |
+| Maximum endpoint R8 axial tau error | 0.120777676639 | Fails proposed <=0.1 selected-ray optical-depth gate even before temporal interpolation. |
+| Raw endpoint density at s=0 and 240 | Exactly zero | Passes this endpoint check. |
+| Eight-voxel raw collar over 33 cooked endpoint times | Exactly zero | Passes this sampled collar check; not a certificate of every reconstructed intermediate/mip. |
+| Endpoint maximum source sigma | 0.118635505438 m^-1 | Within fixed 0.5 m^-1 optical scale. |
+| Source endpoint timestamps | 33 values, exactly 0..240 by 7.5 s | Passes corrected 129-frame endpoint span. |
+
+Full per-interval numbers, failing indices, scalar statistics and SHA-256 identities are in evaluator-final-numeric.json. The independently binary-decoded carrier and scratch flow agree to float-rounding precision; this ties the bound check to actual flow.bin rather than only trusting candidate scratch.
+
+The cooker reports quarter-source-reference axial tau error 7.26044154, far beyond 0.1. I did not independently rerun that temporal reconstruction in this report; it is corroborating candidate-reported failure rather than independently certified error. The independently confirmed V/L and R8 error failures already reject the product.
+
+The first reported native trajectory comparison was unconverged and must not be cited as a validated physical-motion mismatch. Later source-agent refinements report convergence for selected intervals, but I have not independently verified those trajectories or subexport velocity interpolation. No correspondence-gate pass is issued.
+
+Artifact IDs at inspection:
+
+- cloudclip.json SHA-256 587881aa9b56dc16d754c39a201aa39b708c2cb4bfc5048bad6f21e6de0cf613
+- density.bin SHA-256 0389551fb2123be1263c1ce634b81db8e13ff06a61dc025a859328a271aff9a1
+- flow.bin SHA-256 09f45f6ce86d79edeaf9557e1652b8a8d4f2cbf3a924d4d650b19a0464829f15
+- cooked.npz SHA-256 adc0fb2910ccd34f06e7991f00f3da581cd88958f441cd6a4a0a9e4efee7d4ef
+
+## Challenge to dense unwarped 1.875-second playback
+
+This is a useful independently qualified alternate source-reader representation. It removes this particular coarse stationary-carrier/RK2 dependency and may reduce interpolation error at the cost of more retained source data. It does not improve the already sampled native source frames, produce a gap/remnant, or automatically satisfy continuous temporal fidelity. At 1.875-second output spacing, true quarter references are 0.46875 source-seconds; those must be exported from the authoring source, not synthesized by subdividing current frames.
+
+Keep its claims narrow: source playback, invalid correspondence/history where appropriate, independently admitted byte cost and fresh fine-time ray comparisons. Do not quietly promote it as the prescribed stationary-carrier profile, infer that its native motion is acceptable from denser sampling, or lower the gap/breakup requirement to smoke dissipation. Visual source selection should precede another expensive fidelity/cook campaign.
+
+## Bounded alternative and next rejection-oriented slice
+
+Select a prepared optical master with an explicit three-dimensional event storyboard: a visible local lobe forms while an existing region persists; a neck locally clears while neighboring lobes retain substantial extinction; the separated masses remain visibly distinct for an interval; then each remnant erodes locally. Keep fixed extent, gain, camera and lighting. This can be an authored cloud-volume master and need not claim atmospheric water physics.
+
+For a bounded attempt, revise the external source's emitter layout/forcing/erosion to stage that specific event, or use a recoverable authored optical-volume sequence with continuous material detail and explicitly localized growth/neck erosion. No new runtime noise or global opacity envelope is required or implied. Before another full source cook, export only a few high-precision real source ages bracketing each defining event and inspect two views plus interior tau/sections. Include persistent-body optical amount and actual gap width so a thresholded global fade cannot pass. Reject at this source screen if the event reads as a shrinking diffuse puff.
+
+If a revised source retains a velocity carrier, screen full-domain V/L and actual material correspondence immediately; this bake's velocity fails by a large margin. Reducing or masking its velocity solely to fit the limits would change the model and still require independent correspondence/reference qualification. If selecting unwarped playback instead, admit that different profile explicitly and prove its source-time interpolation and bytes separately.
+
+A successful source screen should then receive full 1x/16x/64x motion review at native display size, true fine-time comparisons and complete encoded-byte admission. It would still not certify Thrum V3/V4 transport, history, reflection, GPU cost or end-to-end browser/native performance.

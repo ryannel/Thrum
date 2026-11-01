@@ -10,12 +10,12 @@ Fresh reviewers receive the original requirements and Thrum contracts before thi
 **U**: explicit cloud-user requirement. **E**: selected Thrum engine requirement/contract. **I**: necessary implication
 of delivering those requirements. **P**: proposed scoped profile or bound awaiting qualification. **O**: optional
 extension, not base-delivery acceptance. Decisions, implementation and evidence are distinct. All proofs below are
-planned and unrun in Thrum; the legacy lab's media and timings do not qualify this target.
+planned at inventory time. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/REVIEW.md) supports a bounded local lifecycle/cooker/byte profile; Thrum integration and the other proof groups remain unrun. Legacy media/timings do not qualify this target.
 
 The user selects production-style clouds, coherent motion, genuine growth and breakup, reduced physical requirements
 where useful, responsive Mac inspection and retention of the renderer where it fits. Approaching storms/weather
 progression remain stretch goals. Thrum E03/E09–E12/E14/E17/E20 and C01–C09/C12/C13 add reusable composition, portable
-profiles, common authority/time, media integration, lifecycle and cost obligations. No runtime build is commissioned.
+profiles, common authority/time, media integration, lifecycle and cost obligations. The original design commission did not authorize a runtime build; subsequent Q1 source work is separately scoped and does not bypass engine foundations.
 The existing attenuation-only R3 recipe remains valid; visible volumes are a separately admitted extension.
 
 Proof groups: **Q1** content/local lifecycle; **Q2** transport/lighting; **Q3** shared projections and views;

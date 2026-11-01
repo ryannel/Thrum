@@ -1,0 +1,53 @@
+# Independent source decision: split screen and authored reference-volume lifecycle
+
+1 November 2026. **Reject the connected-split Mantaflow screen. Proceed with one bounded proof of an authored complex-volume lifecycle, with a source-only acceptance screen before another full cook.** This is a recommendation for the next authoring mechanism, not visual acceptance, implementation validation or an admitted runtime profile. No implementation or bake was changed by this review.
+
+## Actual split-screen inspection
+
+I inspected all twenty native 512x384 images through view_image: split-screen-images/{020,028,040,048,056}-{front,side}-{lit,mask}.png. The author disclosed a preliminary concern about primitive geometry before inspection; this is independent image inspection rather than a blind preference study. I did not watch continuous playback. Image hashes are retained in evaluator-split-image-hashes.json.
+
+The front projection has three very regularly sized rounded masses in a horizontal row, joined by narrow near-horizontal bars. At frame 28 these masses become more individually legible, but the connective bars remain. Frames 40 and 48 expose ragged thinning bars as all three bodies also lose optical substance; frame 56 is mostly faint remnants. The side projection collapses almost the entire construction to one nearly circular compact body, followed by thinning.
+
+This differs from the first puff's failure. The first source had useful irregular cloud form but weak macroscopic breakup. This screen makes the intended three-part structure more explicit, yet its dominant form is a regular dumbbell/linked-spheres construction. It still does not supply a persuasive irregular cloud breaking into substantial natural-looking remnants. Low resolution adds blockiness, but the regular layout and primitive macro-form are visible independently of that detail limitation. A full-resolution bake is not justified by these stills.
+
+## Why the proposed reference-volume generator is a meaningful next source
+
+A complex, already cloud-like optical master can supply the missing hierarchy of lobes, uneven density, cavities and fine edge structure. Giving that master locally varying birth/death fields and actual moving separated pieces changes the optical density itself over time. Those are legitimate authored source operations under the finite prepared-optical-source commission; they do not require meteorological simulation.
+
+This is not automatically the old static-warp/global-fade source. The distinction is the produced sequence, not the software name: a spatially uniform age envelope and smooth invertible warp cannot make a connected material body genuinely disconnect. Local optical destruction must clear the neck, and source creation must build recognizable local bodies. If the proposed generator instead scales the same whole-volume density, wiggles it and separates obvious geometric chunks, it reproduces the rejected mechanisms.
+
+Licensing/provenance is an independent prerequisite. This review has not inspected the proposed reference asset's exact URL, license or bytes. Pin and retain the official single asset and applicable terms; do not infer permission from an old local copy or historical screenshot.
+
+## Governing authoring model and concrete failure modes
+
+Keep one fixed reference optical field, one local metre transform and one fixed density-to-extinction scale. In reference material coordinates a, define nonnegative regional weights W_j(a) summing to one over support. Use smooth invertible authored maps for each region, spatial birth-arrival fields and local erosion/death fields, then bake the resulting sum as final optical frames. Partition weights are attached to the material, not resampled anew by world location each frame.
+
+At a common initial map with full-grown, uneroded material, the weighted pieces must sum to the reference exactly. At separated maps, the product must still be evaluated from original weighted reference material. This avoids simply copying the entire cloud once per piece.
+
+The complete authoring recipe needs these explicit producers and rejection conditions before a full bake:
+
+1. **Region selection follows the reference's irregular lobes and necks.** Equal spatial cells or three spherical masks will produce regular chunks regardless of added fine detail. Keep the core/neck ownership and intended split event inspectable.
+2. **Birth is spatial development.** An advected arrival-time/front field must make new local support and growing billows while established optical material persists. A broad planar wipe exposes a pre-existing sculpture; a spatially almost constant mask becomes a fade. Both can pass a local residual-sign check without looking like cloud formation. Inspect the actual emerging shapes.
+3. **The partition remains visually hidden.** Moving independently weighted pieces can reveal cut surfaces, flat seams, clones, shrinking weight tails or doubled density in overlap. Partition-of-unity only guarantees exact reassembly at the common map; it does not guarantee good intermediate shape or preserve the optical cap after pieces overlap. Test the unsplit identity and inspect the separation frames, with no normalization/clipping repair.
+4. **Neck erosion clears actual optical space.** A continuous invertible deformation of a connected positive-density support preserves its topology. Bounded shear alone cannot supply this event. Local destruction must reach zero across the connecting material while both neighboring cores retain optical substance, then remain separated for a perceptible interval. Check sections and optical rays at several fixed absolute thresholds; a gain-dependent isosurface split is insufficient.
+5. **Remnants evolve rather than rigidly drift as cutouts.** Moving pieces can establish physical separation, but an unchanged detailed shape sliding away still reads as a cut object. Locally advancing erosion must change each remnant's outer support with coherent detail. Avoid a uniform late opacity reduction on all pieces.
+6. **Zero endpoints come from the local lifecycle.** All material is unborn at source zero; local erosion/death fronts finish by the finite endpoint. Do not append an arbitrary discontinuity or substitute a final global age-opacity envelope. Keep the exact zero collar and source-scale constraints.
+7. **Detail follows material.** Sample the selected reference/detail in the same producer material coordinates through the lifecycle. Do not generate independent time noise or per-frame random detail. The bake may be procedural authoring; the admitted optical frames contain its final result.
+
+These are substantial mechanisms to specify and demonstrate, not a guarantee that adding masks to a static volume will look convincing. The author should pin the chosen fields/maps and feature ownership, then run the bounded source screen.
+
+## Source and representation proofs remain separate
+
+Arbitrary source evaluation is useful: the generator can produce actual fine-time optical reference samples, including quarter times, without pretending that interpolated endpoints are reference truth. The evaluator should call the source generator independently at those times or read its separately exported high-precision frames; it must not compare the reader to the same endpoint interpolation.
+
+Known region maps do not automatically define a unique bounded global carrier in overlap/empty space. Independent regional motions may be incompatible with one stationary 32^3 carrier. If correspondence is unavailable, dense/unwarped optical playback with invalid history is an honest separately admitted profile. Do not manufacture one velocity by density masking or infer valid history from the existence of authored region labels.
+
+Prepared dense masters can be temporary authoring/reference products. Keeping them fully resident at runtime has a distinct cost: 129 dense 128^3 R8 frames alone consume 258 MiB; even 33 such dense frames consume 66 MiB, before metadata, GPU padding or any other engine work. Those do not fit the existing 11/16.75 MiB encoded-source caps. Sparse packing/cadence products need their own measured byte and reference-error admission under unchanged caps; this review does not alter budgets. Turning off optional history removes its work but does not erase encoded source bytes or qualify temporal interpolation.
+
+## One bounded decision and stop condition
+
+Use the complex reference-volume authored lifecycle for the next proof, rather than another general Mantaflow parameter search. First make only the high-precision source samples needed to show: local new-lobe formation, an established complex body, neck clearance with both cores substantial, persistent irregular separated remnants and local terminal erosion. Retain the same camera/gain/exposure and at least two directions plus a section across the neck. Screen the source itself before flow fitting, compression or a full 240-second artifact campaign.
+
+The screen passes to the next stage only if those actual images and sampled motion read as a coherent cloud lifecycle rather than a wipe, fading sculpture or cut pieces. Then inspect full 1x/16x/64x motion and qualify actual fine-time optical error, representation bytes, source recovery and any requested correspondence separately. If the bounded source screen fails, reject this generator instance; do not treat more pixels, denser playback or the reference's attractive still shape as closure.
+
+Thrum renderer, consumer integration, history, runtime memory and CPU/GPU budgets remain untouched and unqualified.

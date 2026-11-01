@@ -1,0 +1,45 @@
+# Recoverable source choice — 1 November 2026
+
+Recommendation: a bounded, original Blender Mantaflow gas bake is the practical **authored optical master** for this proof. It produces actual transported density frames, finite injection and per-cell dissipation. It does not simulate water vapour, condensation or meteorology. Its cloud-like appearance and local breakup remain rejection gates; solver provenance alone cannot establish either. Prefer it to reviving failed coarse LES visuals or introducing another physical solver during Q1. No paid service or new bulk download was used.
+
+## Local tools and exact recovery
+
+Installed `/opt/homebrew/bin/blender`: **5.2.3 LTS**, build **e13b728c6880**, built 2026-10-22; `bpy.app.build_options.fluid=True`, `openvdb=True`; bundled NumPy2.3.4. `/opt/homebrew/bin/python3.14` supplies NumPy for UNI cooking. Sandboxed Blender startup crashed before Python; the same read-only command succeeded under the escalated executor. This is a startup limitation, not missing fluid support.
+
+The recipe and generated object are original to this proof, without a downloaded asset. Blender's licensing does not transfer the program's GPL to ordinary generated output; retain the recipe, exact Blender build and command, source descriptor, master blend, selected product hashes and a verified small rebuild. Do not claim durable recovery merely because ignored scratch survives locally. Blender integration sources inspected are GPL2-or-later; Mantaflow file-I/O source headers are Apache2.0. No upstream implementation was copied into the runtime.
+
+A fixed128³ cube,129 real cache frames, full float32 UNI density and MAC velocity provides33 endpoints and actual quarter/mid/three-quarter source references. The129-frame full-domain cache measured roughly2.82GiB before cooking. Cooker holds only endpoints, coarse velocities and one previous native velocity, and stores compressed fine density references; this stays within the5GB incremental disk budget. The64³ screening bake took43.2s. A bounded128³ bake and cook is practical within an hour on this Mac; actual final timings belong in source/product manifests, not this prediction.
+
+## Verified exporter traps and units
+
+The initial64³ VDB pilot cannot qualify the carrier. Actual frame65 has density and velocity active bbox `((36,31,14),(44,38,21))`, only75 active voxels each. The standard smoke VDB writer clips sparse velocity by the density grid; resumable cache does not fix it, and an ordinary clipping-threshold setting cannot remove that structural mask. Default VDB fields were saved as half floats. Use **UNI**, not this VDB export, for the complete independent carrier/master. UNI stores the full grid as float32 without a density mask.
+
+Pinned primary source:
+
+- [fluid.cc](https://raw.githubusercontent.com/blender/blender/e13b728c6880/source/blender/blenkernel/intern/fluid.cc): `DT_DEFAULT=.1`; internal frame duration `.1*(25/fps)*time_scale`; input world-to-grid velocity conversion.
+- [fluid_script.h](https://raw.githubusercontent.com/blender/blender/e13b728c6880/intern/mantaflow/intern/strings/fluid_script.h): MAC velocity allocation, final cache inclusion, raw component copy and VDB export.
+- [smoke_script.h](https://raw.githubusercontent.com/blender/blender/e13b728c6880/intern/mantaflow/intern/strings/smoke_script.h): density/velocity cache export with density clip grid; no microphysical cloud model.
+- [iovdb.cpp](https://raw.githubusercontent.com/blender/blender/e13b728c6880/extern/mantaflow/preprocessed/fileio/iovdb.cpp): raw value export, density-mask clipping, half precision and origin-only linear voxel transform.
+- [iogrids.cpp](https://raw.githubusercontent.com/blender/blender/e13b728c6880/extern/mantaflow/preprocessed/fileio/iogrids.cpp): gzip MNT3,288-byte header then X-fastest float32 scalar/vector grid. The new reader is independently written from that format description.
+
+For source step `ds`, target cell width `dx_m`, raw MAC velocity `u`, exported physical carrier is `u*dx_m*(.1*25/fps*time_scale)/ds`. At128³/512m, fps8, time_scale1, ds1.875 this is **u*(2/3)m/source-second**. It is not raw metres/second. A32Blender-unit domain maps to512m; frame1→0s, frame129→240s. Recenter each MAC component from its lower face using its positive-axis neighbour, then transform `(x,y,z)→(x,z,-y)`. Preserve fixed scalar sampling and remove no bulk drift unless both scalar coordinates and velocity are reframed together. The pilot VDB transform has index origin0, spacing.5 for64³; it omits the object's physical translation, so recover cell centers from the fixed domain bounds and recipe, never a changing active bbox. A controlled passive-advection bake should independently confirm the unit/centering deduction; density landmarks alone cannot because emission/dissipation changes density.
+
+A fixed nonzero optical remap is legitimate authored content, but must remain identical across all frames. No global age fade, per-frame normalization, density-based velocity masking, carrier clipping, inserted empty endpoint or temporal reference synthesized from interpolation is permitted. Source/frame/range/collar/byte/V/L failures are reported unchanged.
+
+## Challenge to the chosen gas recipe
+
+A hot buoyant inflow and strong vorticity naturally produce a rising plume or mushroom. That can fail the cumulus-like target even with convincing fluid motion. A cold/weakly buoyant finite inflow and modest vorticity is a useful alternative pilot; those are authoring assumptions, not researched universal settings. Linear dissolve can sever thin necks as low-density cells vanish; logarithmic dissolve is closer to a uniform multiplicative fade and is a poor sole breakup mechanism. The current pilot has vanished by frame75; stretching the playbar to240s does not create240s of interesting structural evolution. Inspect actual quarter frames and1x/16x/64x clips; retain rejection when morphology/cadence fails. Tight runtime `V<=2m/s,L<=.02/s` may reject this source. Do not independently slow only the carrier or smooth it until the fit is hidden.
+
+## Historical source audit, read-only
+
+`/Users/ryannel/Workspace/Broadsides/tmp/worktrees/clouds-proof` contains genuine temporally varying physical condensate and velocities. These are evidence candidates, not an existing approved asset to import wholesale.
+
+| Candidate | Pin/rights | Recoverability and rejection |
+|---|---|---|
+| MicroHH BOMEX | Model commit`736a2f5ef422b56c7a77a2a9d2b6e719bce16f37`, GPL3+ offline tool; local explicit conda URLs/hashes and preparation recipe | `microhh-bomex-12m-trajectory`:128×128×240,12.5m cells,1200s, ql/thl/qt/u/v/w every15s;301.7s prior run. Full restarts exist, so a bounded finer-time replay is technically possible. Previous genealogy found no strictly isolated complete lifecycle; coarse morphology failed visual selection.15s output cannot establish7.5s endpoints/finequarters. |
+| MicroHH ARM | Same model pin/toolchain | Full52200s case ran616.6s; fine192×192×220 pilot900s ran447.7s,33.3×33.3×20m. Real liquid water, but no accepted isolated lifecycle; large-domain morphology and refinement settling were unresolved. |
+| UCLA-LES archive/local cache | Jakub & Gregor2022, DOI[10.57970/5d0k9-q2n86](https://opendata.physik.lmu.de/dE1Eu0csvrgMT7s/), CC BY4.0 | True liquid mixing ratio plusu/v/w;25m XY, stretched120Z,10s output. Local evaluation retains bounded frame/range cache, not a complete selected lifecycle. Recoverable public data but insufficient fine time/space for this profile. Archive totals are large: no whole download. |
+| PALM local snapshots | Jakub & Volkmer2023, DOI10.57970/r4wfp-kp367, local manifest CC BY-SA4.0 | qc snapshots28800/28860/28920s and subset caches.60s cadence/static extraction does not provide the requested density+velocity clip. |
+| Disney reference |2017 Disney Enterprises; CC BY-SA3.0, retained README and quarter VDB | High-quality static density only. No temporal source or velocity; cannot prove growth/breakup. |
+
+The [UCLA primary archive](https://opendata.physik.lmu.de/dE1Eu0csvrgMT7s/) directly supports the public input cadence/fields/license. Broadsides recipe and progress records support the local measurements and unaccepted status above. Reuse would require explicit source/output provenance and any applicable rights review; existence on disk is not a product pin. No Broadsides source code, model fields or assets were copied to Thrum by this study.

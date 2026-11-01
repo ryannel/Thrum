@@ -17,6 +17,7 @@ def arguments():
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--resolution', type=int, default=64)
     parser.add_argument('--frames', type=int, default=129)
+    parser.add_argument('--storyboard', choices=['initial','connected-split'], default='initial')
     return parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
 
 
@@ -27,6 +28,8 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps = 8
+    bpy.context.preferences.edit.keyframe_new_interpolation_type = 'LINEAR'
+    split = args.storyboard == 'connected-split'
     scene.frame_start = 1
     scene.frame_end = args.frames
     scene.gravity = (0, 0, -9.81)
@@ -50,17 +53,19 @@ def main():
     settings.cache_resumable = False
     settings.openvdb_cache_compress_type = 'ZIP'
     settings.alpha = 0.0
-    settings.beta = 0.35
-    settings.vorticity = 0.55
+    settings.beta = 0.05 if split else 0.35
+    settings.vorticity = 0.15 if split else 0.55
     settings.time_scale = 1.0
     settings.timesteps_min = 2
     settings.timesteps_max = 8
     settings.use_dissolve_smoke = True
     settings.use_dissolve_smoke_log = False
-    settings.dissolve_speed = 55
+    settings.dissolve_speed = 40 if split else 55
     emitters = [(-2.6, -0.7, 6.0, 2.0, 2, 21),
                 (0.2, 0.4, 6.4, 2.4, 10, 30),
                 (2.9, -0.2, 7.0, 1.8, 20, 39)]
+    if split:
+        emitters = [(-2.6,0,8,2.0,2,28),(0,0,8,2.3,2,28),(2.6,0,8,2.0,2,28)]
     for index, (x, y, z, radius, start, stop) in enumerate(emitters):
         bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=16, radius=radius, location=(x, y, z))
         emitter = bpy.context.object
@@ -76,6 +81,13 @@ def main():
         flow.temperature = 0.7
         flow.use_initial_velocity = True
         flow.velocity_coord = (0.12 * (index - 1), 0.08 * index, 0.65)
+        if split:
+            flow.velocity_factor = 0.0  # Explicit coordinate velocity, no duplicate object-motion injection.
+            flow.velocity_coord = (index-1,0,.15)
+            emitter.location = (x,y,z)
+            emitter.keyframe_insert(data_path='location',frame=start)
+            emitter.location.x = x+(index-1)*(stop-start)/scene.render.fps
+            emitter.keyframe_insert(data_path='location',frame=stop)
         for frame, active in [(1, False), (start, True), (stop, False)]:
             flow.use_inflow = active
             flow.keyframe_insert(data_path='use_inflow', frame=frame)
@@ -90,7 +102,7 @@ def main():
     bpy.ops.fluid.bake_data()
     elapsed = time.perf_counter() - begin
     metadata = {
-        'id': 'thrum.authored-optical-puff.v1',
+        'id': 'thrum.authored-optical-puff.' + args.storyboard,
         'producer': 'Blender Mantaflow gas, authored optical effect; not condensed water',
         'blender_version': bpy.app.version_string,
         'blender_build': bpy.app.build_hash.decode(),
@@ -107,7 +119,7 @@ def main():
         'optical_conversion': 'sigma_local_m_inv = 0.15 * max(density,0), fixed for entire source',
         'bake_wall_s': elapsed,
         'rights': 'Original recipe and generated effect for Thrum; no third-party source asset',
-        'parameters': {'alpha': 0.0, 'beta': 0.35, 'vorticity': 0.55, 'linear_dissolve_frames': 55, 'temperature': 0.7, 'density': 0.8, 'emitters': emitters},
+        'parameters': {'storyboard': args.storyboard, 'alpha': 0.0, 'beta': settings.beta, 'vorticity': settings.vorticity, 'linear_dissolve_frames': settings.dissolve_speed, 'temperature': 0.7, 'density': 0.8, 'emitters': emitters},
         'limits': 'Dissipating gas effect; no water/energy conservation or meteorological realism claim',
     }
     (out / 'source.json').write_text(json.dumps(metadata, indent=2) + '\n')

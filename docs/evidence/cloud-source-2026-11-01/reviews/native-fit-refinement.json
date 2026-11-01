@@ -1,0 +1,61 @@
+{
+  "method": "Bounded further integration of actual native MAC-centered exports, piecewise-linear velocity in source time; deterministic<=1024positive native startingcells, common sigma>.001 at all actualquarters across8/16/32/64substep integrations. Subexport source uncertainty and unsampled trajectories remain open. No density landmark unit inference.",
+  "compiler_sha256": "c497d5490f99049a7f083a35c98920c1252eeb116ec989471e728fa012539827",
+  "wall_s": 2.926077750045806,
+  "intervals": [
+    {
+      "interval": 10,
+      "starts": 1021,
+      "common_persistent": 938,
+      "substeps_per_real_frame": [
+        8,
+        16,
+        32,
+        64
+      ],
+      "max_successive_trajectory_difference_m": [
+        0.4009668529033661,
+        0.041910164058208466,
+        0.014824414625763893
+      ],
+      "max_runtime_correspondence_vs_64_m": 19.84754753112793,
+      "max_carrier_fit_vs_64_m": 19.95821762084961
+    },
+    {
+      "interval": 11,
+      "starts": 979,
+      "common_persistent": 831,
+      "substeps_per_real_frame": [
+        8,
+        16,
+        32,
+        64
+      ],
+      "max_successive_trajectory_difference_m": [
+        0.19293592870235443,
+        0.07110898196697235,
+        0.012707541696727276
+      ],
+      "max_runtime_correspondence_vs_64_m": 18.10678482055664,
+      "max_carrier_fit_vs_64_m": 18.10715675354004
+    },
+    {
+      "interval": 15,
+      "starts": 986,
+      "common_persistent": 396,
+      "substeps_per_real_frame": [
+        8,
+        16,
+        32,
+        64
+      ],
+      "max_successive_trajectory_difference_m": [
+        0.09216265380382538,
+        0.0386648066341877,
+        0.009725344367325306
+      ],
+      "max_runtime_correspondence_vs_64_m": 20.2603759765625,
+      "max_carrier_fit_vs_64_m": 20.240440368652344
+    }
+  ]
+}

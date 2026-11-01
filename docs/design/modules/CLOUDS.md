@@ -10,7 +10,7 @@ records independent discovery, challenges and resolutions. The original commissi
 
 | Decision | Recommendation and reason | Boundary |
 | --- | --- | --- |
-| CD01 Source | Finite prepared **final optical-density animation**, including formation and breakup, with a stationary interval-flow carrier. | Actual density frames supply local structural evolution. Wind, a global fade and a static warped volume do not. No mandatory runtime meteorology. |
+| CD01 Source | Finite prepared **final optical-density animation**, including formation and breakup, with an optional stationary interval-flow carrier; the Q1 direct source omits carrier/history work. | Actual density frames supply local structural evolution. Wind, a global fade and a static warped volume do not. No mandatory runtime meteorology. |
 | CD02 Detail | Bake final detail across the whole sequence, with the producer's continuous material coordinates. | No new runtime noise/rest-coordinate system. Optical geometry is independent of the lighting approximation. |
 | CD03 Residency | Admit the complete bounded encoded clip on CPU and GPU; reconstruct a shared current scalar field once per unique source evaluation time. | Avoid source decoding/uploads on ordinary seeks or accelerated playback. Larger libraries need another admitted residency design. |
 | CD04 Transport | V3 jointly integrates cloud, air and fog coefficients/direct lighting; a bounded cloud-only higher-scatter closure adds an effective source. | Preserve C08. Keep the baseline attenuation-only recipe; visible volume is a separately admitted extension. |
@@ -19,7 +19,7 @@ records independent discovery, challenges and resolutions. The original commissi
 | CD07 Quality | Full optical fidelity first; lower-resolution/precision products must independently pass the same declared cue/error floor. | Budgets can reject a recipe; they cannot silently turn growth/breakup back into noise or a fade. |
 
 All are engineering recommendations under the user's production-style/fidelity decision. A selected algorithm is not
-visual acceptance. Source assets, cooker/reader, V3 extension and platform evidence are not implemented in Thrum.
+visual acceptance. The bounded Q1 source/tools evidence below does not implement Thrum public bindings, V3/V4 or device qualification.
 
 ## Responsibility and public composition
 
@@ -62,9 +62,48 @@ medium. Light-ray cloud attenuation may remain while camera-ray cloud coefficien
 differ explicitly. Shared air/fog histories remain if those services still need them: there is no private cloud
 history allocation whose removal can be claimed twice. Decorative appearance never becomes authoritative by drawing it.
 
+## Q1 source decision after running proof
+
+The [source proof and independent closure](../../evidence/cloud-source-2026-11-01/REVIEW.md) qualify a bounded
+**authored optical** source candidate for further integration. They supersede the unrun33-frame worksheet for this
+particular source, not the complete module contracts or the baseline attenuation-only recipe. Generic smoke and
+mechanical partitioned-lobe sources failed image inspection; the stationary carrier also failed actual-source tests.
+
+The selected master is a versioned detailed shape plus a recoverable continuous authoring function, not a local
+Broadsides dependency. The shape is a pinned/adapted WDAS cloud under CC BY-SA3.0 with attribution. In fixed material
+coordinates, local density-threshold recession grows cores/boundaries; spatially varying erosion onset clears channels
+while neighbouring cores remain. Its three smooth oblique macro modes are authoring inputs, not runtime noise or a
+meteorology claim. Local material velocity is zero; E1 still owns world wind/instance trajectories. The source holds
+no independent weather clock. Coherent trajectory/view/receiver/reflection operation remains Q3/Q4.
+
+The compiler samples this real authoring function at candidate knots and quarter/mid/three-quarter reference times.
+Adaptive positive endpoint interpolation selects162 knots over0..240s, intervals0.46875–7.5s, fixed R8 code range
+0..0.125m^-1. This is a per-source scale, never frame-wise normalization. Direct evaluation supplies the same current
+R16F field to every planned consumer. History is unavailable in the first direct recipe: cloud-affected joint-media
+samples use spatial resolution and V4 reactivity until Q4 establishes retained-time reuse. This is the previously
+allowed direct-source alternative, not fabricated fluid correspondence.
+
+Mixed sparse8³ bricks preserve all R8 values exactly: u16 indirection and occupancy, u32 frame-relative aligned
+pointers, then either512 dense bytes or64 mask bytes+16 prefix bytes+packed nonzeros. Tagged lowbit selects rank mode;
+prefixes cover64-voxel groups, requiring at most two popcounts per lookup. No source paging, per-frame decode/upload,
+extra texture binding or runtime procedural density is introduced. Whole encoded residency and shared current-field
+ownership remain CD03. Actual density+header is6.260437MiB, below11/16.75MiB caps; the original equivalent packing was
+12.5813MiB and failed cold admission.
+
+Independent decoding proves all162 original/repacked grids identical. All483 accepted-leaf reference samples pass
+axial tau<=0.1 and the proof's stricter absolute T<=0.02, including current-field half storage: maxima0.0917805 and
+0.0199889.162 half-stored endpoints pass too. The remaining T margin is small, so relevant changes repeat the half-aware
+check. These samples do not certify all real times/directions. Native images and topology establish local development
+and actual separated substantial remnants; captured1x/16x/64x playback and kernel costs have scoped receipts.
+
+Source-only WebGPU/CPU tools are evidence instruments, not engine integration. The complete88MiB service/512MiB
+browser, CPU/GPU frame, startup, mobile and thermal budgets remain unqualified. The one-source proof does not establish
+library variety, incoming storms, CPU semantic query cost or whole-system completion. Runtime construction still follows
+I1/I2/I3a and Q2–Q7; retain the source at the typed seams rather than importing this diagnostic renderer.
+
 ## Content producer and recoverable input
 
-The chosen producer chain is an external, temporally coherent volume master → proposed pinned **cloudclipc** compiler
+The original external-source recommendation is a temporally coherent volume master → proposed pinned **cloudclipc** compiler
 → admitted Thrum optical product. The compiler is specified here but not written. Houdini/EmberGen or a retained LES
 sequence can supply a master; none is a runtime dependency or automatically an accepted source. Retain a standard VDB
 sequence plus manifest, or an actually recoverable generating recipe/toolchain and exact inputs. A proprietary project

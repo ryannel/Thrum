@@ -68,6 +68,5 @@ and qualified. The original visual-quality and flexible-provider ambitions remai
 
 The [cloud capability inventory](design/modules/CLOUD-CAPABILITIES.md) and [complete system design](design/modules/CLOUDS.md)
 are D2 design work, aligned with E1/V3/V4/F4 and the existing baseline. The proposed RC volume extension follows the
-foundation/content/render dependencies above; it does not reorder the active construction queue. Source/cooker,
-consumer conformance, visual lifecycle and target performance are all unrun. Retain useful legacy renderer algorithms
+foundation/content/render dependencies above; it does not reorder the active construction queue. The [Q1 source proof](evidence/cloud-source-2026-11-01/REVIEW.md) supplies bounded local-lifecycle, sampled optical and encoded-byte evidence. Consumer conformance and complete target performance remain unrun. Retain useful legacy renderer algorithms
 through those interfaces; no Bevy/legacy host migration is implied. Storm progression remains optional after the base.

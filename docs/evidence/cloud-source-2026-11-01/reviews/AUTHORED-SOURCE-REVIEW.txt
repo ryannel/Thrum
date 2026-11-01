@@ -1,0 +1,67 @@
+# Independent current authored-source audit
+
+1 November 2026. **The current local-erosion source passes the bounded source screen for complex local growth, genuine empty separation and optically substantial remnants.** This supersedes the rejected partition/moving-piece proposal only for the source mechanism and inspected output. Continuous normal/accelerated motion, admitted-byte decoding and Thrum runtime remain separate unfinished qualifications.
+
+## Exact reviewed identity and scope
+
+Reviewed current scripts/cloud_source_proof/authored.py in full, SHA-256 **3da3b8f119b9f08963d991ad4975c865c758b893eb2716a3f8c07ddf2f499789**. Input shape.r8 SHA-256 **f3dda7a6d0bc70285525ba218984eeebd2ce641c1da5b13610a8156c799339bf**. The current source has no material partitions, piece displacement or flow; earlier partition reviews do not describe this revision.
+
+Ran evaluator-authored-audit.py against the actual Source.field function, saving detailed output in evaluator-authored-audit.json. The independent audit uses NumPy/SciPy components, ray sums, nearest-node distances and trilinear line samples; it does not import the cooker. Calling Source.field checks the actual proposed authoring source, not an independently recreated source or a runtime reader.
+
+I used view_image to inspect all sixteen native 512x384 supplied images in authored-erosion-screen: ages 20,50,90,140,165,185,200,215, both front and side. Hashes are in the JSON. The owner reported these screen images precede the numerically stable quintic fix and are visually equivalent; I have not yet independently tied these PNGs to admitted bytes. Current equations/topology were evaluated using the fixed recipe hash above. Final admitted-byte images still need their own identity/equivalence check.
+
+**Motion limitation:** these are eight sampled ages, not continuous playback. I have not watched a 1x/16x/64x video or interacted with a preview. Source shape, gap and optical-substance findings do not establish pacing, temporal interpolation or absence of motion artifacts. The author's preliminary favorable observation was disclosed before inspection; this is independent inspection, not a blind preference study.
+
+## Source equations and numeric endpoints
+
+Let B(q) be the fixed decoded reference, with 0<=B<=C=0.125 m^-1. The source is
+
+    sigma(q,s)=max(B(q)-C*(1-S((s-b(q))/55))-C*S((s-d(q))/40),0)
+
+where S is the monotone bounded quintic smootherstep. The spatial birth onset b is in [5,31] s. The death onset d is in [130,200] s because its bounded material-space macro field uses coefficients summing to 0.5 around a 0.5 mean. Actual grid samples have b in [5,31], d in [130.0094744,199.9903722].
+
+At s=0 the birth threshold is exactly C and the death threshold zero, so every value is zero because B<=C. At s=240 all birth is complete and the death threshold is exactly C, so every value is again zero. There is no early endpoint return hiding a nonzero formula. Both subtracted thresholds are nonnegative, so the source cannot create values outside the base support or exceed the fixed optical maximum. These are optical authoring operations, not condensate conservation or a fluid solver.
+
+The stable symmetric float64 quintic evaluation avoids near-one cancellation before float32 conversion. Independently sampled 100001 inputs from -0.1 through1.1: exact extrema 0 and1, monotone, exact endpoint plateaus. Evaluated actual fields at 0,20,50,60,67.5,90,140,165,185,200,215,240: all nonnegative, maximum<=0.125, eight-voxel collars exactly zero, both terminal fields exactly zero.
+
+The source has a conservative support invariant: every frame's positive voxels are a subset of the fixed base's positive support. Thus its static base bounds are a valid voxel ROI for every source age. Any cropped trilinear consumer still needs its ordinary zero/filter halo; this source audit does not certify a separate ROI implementation.
+
+## Local growth and optical evolution
+
+The source does not apply a spatially uniform multiplicative age opacity. Birth/death use density-threshold recession with spatially varying onset, which expands/recedes local support and changes relative optical structure. Calling the whole operation a global fade would be mathematically inaccurate. It remains deliberately authored erosion of an existing reference sculpture, rather than physically predicted cloud microphysics.
+
+Actual positive voxel counts grow from 213 at20s to35734 at50s and45438 at90s. The native images show a weak early optical seed, expanding complex billows and then a substantial detailed body. I do not see the planar wipe, regular linked spheres or exposed partition cut surface that rejected the prior attempts.
+
+A best whole-field scalar-gain fit leaves relative L2 residuals0.531 for50→90,0.609 for165→185 and0.704 for185→200. These diagnostics support nonuniform optical change; they are not new acceptance thresholds or substitutes for viewing the source.
+
+There is a deliberate mature interval: all material is born by86s and erosion cannot start before130s. The body is largely stationary locally over that interval. No local fluid motion is claimed. Whether that pause and later erosion feel convincing at ordinary speed still requires actual playback.
+
+## Actual separation and substantial remnants
+
+Components were computed at exact sigma>0 and at the requested absolute thresholds1e-6,0.001,0.01 m^-1, using both6-neighbour and26-neighbour definitions. Small disconnected wisps already exist in the reference; raw component count is therefore not the main evidence. Optical substance below is the maximum of the three axis-aligned component-only optical-depth sums, with4m cell spacing. The requested tau>=2 screen distinguishes substantial bodies from tiny wisps; it is not a universal visual-quality metric.
+
+| Source age | Substantial26-neighbour components among largest eight, exact positive support | Largest component voxel counts | Largest component maximum axial tau |
+| --- | ---: | --- | --- |
+|90s |1 |45413,10,6 |19.837,0.051,0.049 |
+|165s |1 |42076,8,7 |16.950,0.365,0.048 |
+|185s |1 |26271,14,4 |9.878,0.580,0.243 |
+|200s |**2** |**7980,2142**,162 |**5.454,4.105**,1.375 |
+|215s |0 |501,383,278 |1.905,0.995,0.662 |
+
+At200s the two substantial bodies remain distinct at all three requested nonzero thresholds and with both connectivity definitions. At26-neighbour connectivity, their counts at1e-6 are7979 and2141; at0.001,7841 and2101; at0.01,6732 and1728. Their exact-support maxima are0.11746 and0.12444 m^-1. This is not a barely visible threshold-only split.
+
+The exact-positive26-neighbour bodies' nearest positive voxel centres are20.396m apart. A trilinear-positive point lies within one4m cell of some positive vertex, at most4*sqrt(3)m away. Subtracting this support radius for both components yields a conservative **6.54m lower bound on separation of their trilinear positive supports**. Their nearest-centre connecting line also has a sampled exact-zero run of8.46m at<=0.125m sample spacing; that line measurement is sampled evidence, not a claim about every possible gap direction. The less conservative voxel-cube distance also in the JSON is not the trilinear-support bound.
+
+Why26-neighbour matters: if two components shared a trilinear cell's positive vertices, those vertices would be26-neighbours. Distinct26-neighbour positive components therefore cannot reconnect just by trilinear interpolation within a cell. Six-neighbour component count alone would not establish that.
+
+After86s this source is pointwise nonincreasing. Both large200s components must descend from the one large90s body: no earlier minor component has enough positive voxels, and erosion cannot join or create components. This establishes actual local destruction/severing, rather than separate late births or mere projection overlap.
+
+The200s side image clearly presents separated substantial rounded remnants with sky between them; the front image opens major channels as cores recede. By215s remnants become thin and dissipate, consistent with the measured loss of optical substance. That late dissipation does not invalidate the earlier substantial separation. I do not see the primitive three-ball layout or vertical geometric cut of earlier proposals.
+
+## Qualification boundaries and recommendation
+
+Proceed with this source to the unchanged optical/temporal and byte-admission checks. The owner reports the v2 adaptive cook passed its tau/T criteria; I have not independently replayed its entire quarter-reference evaluation in this audit. The dense8^3 encoding was reported12.581MiB and fails the existing11MiB cold source cap. Exact lossless repacking may fix bytes without changing this source; independently decode and compare it before accepting that claim.
+
+This source has fixed material coordinates and zero local carrier. It is honest about authored optics and disabled history. No single moving-piece inverse is claimed because there are no moving pieces. Do not claim the original32^3 stationary-flow profile, valid temporal history, atmospheric dynamics or physical weather from this source. External coherent instance wind and its consumers remain later integration work.
+
+The source-specific failure that blocked the preceding screens is resolved at these inspected ages by actual local separation with substantial optical bodies. Full Q1 remains open until admitted-byte equivalence, watched1x/16x/64x motion and the required reader/provenance checks are complete. No Thrum renderer, coupled consumer, platform timing or runtime budget is certified here.

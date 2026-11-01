@@ -1113,7 +1113,7 @@
         "C13"
       ],
       "next_design_package": "D2",
-      "remaining_detailed_design": "RC prepared-volume mechanisms and neighbouring contracts are specified as a recommendation. Cooker/reader and Thrum public bindings, selected source content and conformance are unimplemented; numerical/visual/platform qualification is unrun. Wider provider/library/local-light/mobile regimes require their declared recipe work, not silent inheritance from RC.",
+      "remaining_detailed_design": "Thrum public bindings, V3/V4 coupling and Q2-Q7 qualification remain. Q1 has bounded authored-source, offline cooker/reader, sampled optical and encoded-byte evidence; it does not qualify engine integration or platform budgets.",
       "qualification": "Q1-Q7 in modules/CLOUDS.md: real source lifecycle, coupled transport/projections, history/feature-off/recovery and complete named-target startup/memory/cadence. Q8 storms optional. No legacy lab qualification transfers.",
       "parent": "E1",
       "existing_candidate": {
@@ -1125,8 +1125,8 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "d298c2ee75eb4af5095f4623021950a799740663d6318c2136ee9bb7bc540969",
-      "current_design_delta": "D2 cloud capability inventory and detailed optional RC evolution/transport/consumer/cost design; baseline attenuation-only recipes retained. Historical reviewed hash refers to modules/ENVIRONMENT.md, not this new design. Runtime dimensions remain not started/unrun.",
+      "current_design_sha256": "a9d85263ad5dd75ae0f9df5a2efc53d3d047f4386445cce619ead9b6084eaaa9",
+      "current_design_delta": "D2 plus Q1 authored direct-source proof: adaptive final-density frames, exact mixed sparse packing and independent half-aware optical/byte review; baseline recipes retained. Engine implementation/runtime dimensions remain unrun.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -1156,8 +1156,8 @@
           "scope": "production state/density/material-map/temporal resolve and resource/pass roles; reuse recommendations only, no code imported"
         },
         "current_files": {
-          "modules/CLOUDS.md": "72d0bb77929a86aa947fcf1464d94ce536172e1426c1fa979814dd1361afef4c",
-          "modules/CLOUD-CAPABILITIES.md": "c4fa5efa7f9b3692d62526174e93de263ca53c0efecc7d35c23ea0a4c8a244a7",
+          "modules/CLOUDS.md": "a9d85263ad5dd75ae0f9df5a2efc53d3d047f4386445cce619ead9b6084eaaa9",
+          "modules/CLOUD-CAPABILITIES.md": "15d23c8680bc9afa5fc98a2468b980f3056cddee216ad421f3d20045203e6307",
           "research/CLOUD-SYSTEM-SOURCES.md": "81dc19da00887b55f8c565ea3eacc77e7b01edbfbb00a1622fe8b4897376cf27",
           "CONTRACTS.md": "27096b316a165dd56296274f2ef1d721fcef6031282c4d040e9a7c1a9c006378",
           "RENDER-SPEC.md": "685ebf27bc592dea7c3cfdaca2ab4bf25341755b7fdd5352151e8f02c7d52732",
@@ -1181,7 +1181,30 @@
           "browser": "not_run",
           "ios": "not_run",
           "android": "not_run"
+        },
+        "historical_design_review_files": {
+          "modules/CLOUDS.md": "72d0bb77929a86aa947fcf1464d94ce536172e1426c1fa979814dd1361afef4c",
+          "modules/CLOUD-CAPABILITIES.md": "c4fa5efa7f9b3692d62526174e93de263ca53c0efecc7d35c23ea0a4c8a244a7",
+          "research/CLOUD-SYSTEM-SOURCES.md": "81dc19da00887b55f8c565ea3eacc77e7b01edbfbb00a1622fe8b4897376cf27",
+          "CONTRACTS.md": "27096b316a165dd56296274f2ef1d721fcef6031282c4d040e9a7c1a9c006378",
+          "RENDER-SPEC.md": "685ebf27bc592dea7c3cfdaca2ab4bf25341755b7fdd5352151e8f02c7d52732",
+          "COMPOSITION.md": "32d8dfa1f3f7b03db0a754ac1a673e0b82d572cb3ebe30da9a987b7b25d0b9c7",
+          "BASELINE-SPEC.md": "a4e5bc4c2b97a89877db71e35b0d2ff8da2b98dbb9d8b557a62334551cd0a894",
+          "modules/ENVIRONMENT.md": "a8b7265b012142e0fea59290c51223e93c09b7b5f00cf4d3ce24f405ccad25d4"
         }
+      },
+      "source_proof": {
+        "record": "../evidence/cloud-source-2026-11-01/REVIEW.md",
+        "profile": "one authored optical source; no meteorology/internal fluid claim; direct spatial-only density reader",
+        "runtime_source_bytes": 6564544,
+        "source_density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+        "runtime_knots": 162,
+        "sampled_half_aware_max_tau_error": 0.091780461371,
+        "sampled_half_aware_max_T_abs_error": 0.019988897343,
+        "implementation": "offline source/cooker/reader/GPU instrument only",
+        "functional_validation": "bounded source/codec/reference checks passed",
+        "experienced_quality": "bounded source image/topology review; normal/accelerated capture receipts separate; user acceptance pending",
+        "platform_performance": "isolated M3 Max source instrumentation only; complete Thrum profiles unrun"
       }
     },
     {
@@ -2693,7 +2716,7 @@
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
-      "README.md": "4eaccf1b0d79bda98cb9d462354bb37a4b219d6e0ff868b8a287bff73c97d715",
+      "README.md": "29a35f8efe8282ce201f504ee865053318bfdccf33726aa1ab7234747e52638b",
       "RENDER-SPEC.md": "685ebf27bc592dea7c3cfdaca2ab4bf25341755b7fdd5352151e8f02c7d52732",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
