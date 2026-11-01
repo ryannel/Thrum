@@ -610,7 +610,6 @@ impl<T: Clone> World<T> {
 
     /// Precharge a bounded mutable world and identity-keyed journal. The
     /// caller supplies the maximum same-barrier distinct identity count.
-    #[allow(dead_code)] // Authority admission is the next structural slice.
     pub(crate) fn activate_structural_journal(
         &mut self,
         pool: &PublicationPool,
@@ -778,6 +777,12 @@ impl<T: Clone> World<T> {
     /// Number of currently live objects.
     pub fn len(&self) -> usize {
         self.by_id.len()
+    }
+    pub(crate) fn slot_high_water(&self) -> usize {
+        self.slots.len()
+    }
+    pub(crate) fn reusable_slots(&self) -> usize {
+        self.free.len()
     }
     /// Whether the world contains no objects.
     pub fn is_empty(&self) -> bool {
@@ -1228,19 +1233,32 @@ impl<T: Clone> World<T> {
         max_edits: usize,
         max_spawns: usize,
     ) -> Result<usize, WorldPublicationError> {
-        if matches!(self.publication_mode, PublicationMode::Uncharged) {
-            return Err(WorldPublicationError::UnchargedWorld);
-        }
-        let first = matches!(self.publication_mode, PublicationMode::Unselected);
         let possible_slots = self
             .slots
             .len()
             .checked_add(max_spawns)
             .ok_or(WorldPublicationError::Capacity)?;
+        self.conservative_charged_publication_peak_at(max_edits.max(max_spawns), possible_slots)
+    }
+
+    /// Price a structural future credit at an already admitted absolute slot
+    /// horizon, including reusable free slots without double-counting spawns.
+    pub(crate) fn conservative_charged_publication_peak_at(
+        &self,
+        max_edits: usize,
+        possible_slots: usize,
+    ) -> Result<usize, WorldPublicationError> {
+        if matches!(self.publication_mode, PublicationMode::Uncharged) {
+            return Err(WorldPublicationError::UnchargedWorld);
+        }
+        if possible_slots < self.slots.len() {
+            return Err(WorldPublicationError::Capacity);
+        }
+        let first = matches!(self.publication_mode, PublicationMode::Unselected);
         let possible_pages = possible_slots.div_ceil(PAGE_SIZE);
         let touches = self
             .dirty_count
-            .checked_add(max_edits.max(max_spawns))
+            .checked_add(max_edits)
             .ok_or(WorldPublicationError::Capacity)?;
         let dirty_pages = possible_pages.min(touches);
         if dirty_pages == 0 && !first {
@@ -1716,6 +1734,37 @@ mod tests {
         drop(initial);
         drop(world);
         assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn absolute_structural_peak_uses_reusable_slot_without_phantom_page() {
+        let pool = PublicationPool::new(200_000);
+        let mut world = World::new(WorldEpoch(294));
+        for id in 0..32 {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let initial = world.try_publish_charged(0, &mut reservation).unwrap();
+        drop(initial);
+        drop(reservation);
+        let handle = world.handle_for(StableId(1)).unwrap();
+        world.despawn(handle).unwrap();
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        let deletion = world.try_publish_charged(1, &mut reservation).unwrap();
+        drop(deletion);
+        drop(reservation);
+        assert_eq!(world.slots.len(), 32);
+        assert_eq!(world.free.len(), 1);
+        let absolute = world
+            .conservative_charged_publication_peak_at(1, 32)
+            .unwrap();
+        let naive = world.conservative_charged_publication_peak(1, 1).unwrap();
+        assert!(absolute < naive);
+        world.spawn(StableId(33), 33).unwrap();
+        assert_eq!(world.slots.len(), 32);
+        assert!(world.required_charged_publication_bytes().unwrap() <= absolute);
     }
 
     #[test]

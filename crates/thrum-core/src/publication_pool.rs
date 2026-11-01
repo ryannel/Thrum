@@ -273,6 +273,7 @@ macro_rules! closed_scalar {
 }
 
 closed_scalar!(u8);
+closed_scalar!(u64);
 closed_scalar!(StableId);
 
 /// Per-value limits selected for one closed-state authority profile.

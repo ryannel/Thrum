@@ -689,6 +689,51 @@ impl<G: GameRules> HeadlessHost<G> {
         )
     }
 
+    /// Construct a sealed structural host with finite physical slots, live
+    /// objects and per-action output credit. The game rule classifies each
+    /// action's maximum spawns before its input sequence is consumed.
+    pub fn with_protected_structural_replica(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        mut authority: Authority<G>,
+        pool: &PublicationPool,
+        max_objects: usize,
+        max_peers: usize,
+        max_slots: usize,
+        max_live: usize,
+        output_payload_bytes_per_action: usize,
+    ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        if max_objects < max_live {
+            return Err(HostError::ExecutionCreditSetup(
+                ExecutionCreditSetupError::Capacity,
+            ));
+        }
+        authority
+            .enable_structural_credits(
+                max_peers,
+                max_slots,
+                max_live,
+                Some(output_payload_bytes_per_action),
+            )
+            .map_err(HostError::ExecutionCreditSetup)?;
+        Self::with_charged_replica_with_peer_limit(
+            origin,
+            clock,
+            budget,
+            authority,
+            pool,
+            max_objects,
+            max_peers,
+        )
+    }
+
     fn build(
         origin: Instant,
         clock: ClockConfig,
@@ -1102,6 +1147,560 @@ mod tests {
     }
 
     struct SpawnRule;
+
+    struct StructuralRule;
+
+    struct StructuralChurnRule;
+
+    impl GameRules for StructuralChurnRule {
+        type Entity = u8;
+        type Action = u64;
+        type Change = u64;
+        type Rejection = ();
+        type Event = ();
+
+        fn spawn_bound(&self, action: &u64, _configured_max: usize) -> usize {
+            (*action & 1) as usize
+        }
+
+        fn decide(
+            &self,
+            world: &World<u8>,
+            _actor: ActorId,
+            action: &u64,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<u64, ()> {
+            let id = StableId((action >> 1) as u128);
+            if (*action & 1 == 0 && world.handle_for(id).is_none())
+                || (*action & 1 == 1 && world.handle_for(id).is_some())
+            {
+                return Err(());
+            }
+            Ok(*action)
+        }
+
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            action: u64,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
+            let id = StableId((action >> 1) as u128);
+            let edit = if action & 1 == 1 {
+                WorldEdit::Spawn(id, 7)
+            } else {
+                WorldEdit::Despawn(world.handle_for(id).expect("decided live identity"))
+            };
+            PreparedCommit {
+                edits: PreparedEdits::One(edit),
+                event: None,
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "local complete-path development cost fixture"]
+    fn measure_structural_churn_complete_callback_cost() {
+        fn run(objects: usize) -> (u128, u128, u128, u128) {
+            let pool = PublicationPool::new(64_000_000);
+            let mut world = World::new(WorldEpoch(297));
+            for id in 1..=objects as u128 {
+                world.spawn(StableId(id), 7_u8).unwrap();
+            }
+            let inline = |bytes| ClosedValueLimits {
+                max_inline_bytes: bytes,
+                max_payload_slots: 0,
+                max_payload_bytes: 0,
+            };
+            let mut authority = Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(297)),
+                StructuralChurnRule,
+                world,
+                pool.clone(),
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 1,
+                },
+                ClosedGameLimits {
+                    action: inline(8),
+                    entity: inline(1),
+                    event: inline(0),
+                    rejection: inline(0),
+                },
+            )
+            .unwrap();
+            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+            let origin = Instant::now();
+            let (mut host, initial) = HeadlessHost::with_protected_structural_replica(
+                origin,
+                ClockConfig {
+                    max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                    ..ClockConfig::default()
+                },
+                HostBudget {
+                    callback_cpu: Duration::from_secs(1),
+                    other_work: Duration::from_millis(1),
+                    tick_cost_bound: Duration::from_millis(1),
+                },
+                authority,
+                &pool,
+                objects,
+                1,
+                objects,
+                objects,
+                0,
+            )
+            .unwrap();
+            let mut despawn_cost = Vec::with_capacity(500);
+            let mut spawn_cost = Vec::with_capacity(500);
+            let mut current = 1_u64;
+            for cycle in 0..600_u64 {
+                let next = objects as u64 + cycle + 1;
+                for (id, spawning) in [(current, false), (next, true)] {
+                    let tick = cycle * 2 + u64::from(spawning) + 1;
+                    let start = Instant::now();
+                    host.submit(Input {
+                        origin: Origin {
+                            peer: PeerId(1),
+                            connection_epoch: 1,
+                            sequence: tick,
+                        },
+                        actor: ActorId(1),
+                        schedule: crate::InputSchedule::NextTick {
+                            observed_tick: tick - 1,
+                        },
+                        action: (id << 1) | u64::from(spawning),
+                    })
+                    .unwrap();
+                    let report = host
+                        .on_callback_charged(
+                            origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60)),
+                        )
+                        .unwrap();
+                    assert_eq!(report.clock.completed, 1);
+                    drop(report);
+                    host.acknowledge_results(PeerId(1), tick).unwrap();
+                    if cycle >= 100 {
+                        if spawning {
+                            &mut spawn_cost
+                        } else {
+                            &mut despawn_cost
+                        }
+                        .push(start.elapsed().as_nanos());
+                    }
+                }
+                current = next;
+            }
+            despawn_cost.sort_unstable();
+            spawn_cost.sort_unstable();
+            let sample = (
+                despawn_cost[250],
+                despawn_cost[474],
+                spawn_cost[250],
+                spawn_cost[474],
+            );
+            drop(initial);
+            drop(host);
+            assert_eq!(pool.used_bytes(), 0);
+            sample
+        }
+        for objects in [4_096, 16_384] {
+            let (despawn_p50, despawn_p95, spawn_p50, spawn_p95) = run(objects);
+            eprintln!(
+                "structural complete path {objects} objects: despawn p50={despawn_p50}ns p95={despawn_p95}ns; spawn p50={spawn_p50}ns p95={spawn_p95}ns"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "local isolated admission cost fixture"]
+    fn measure_structural_credit_upgrade_cost() {
+        let pool = PublicationPool::new(1_000_000);
+        let mut world = World::new(WorldEpoch(298));
+        for id in 1..=32_u128 {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(298)),
+            StructuralRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 1,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        authority
+            .enable_structural_credits(2, 33, 33, Some(0))
+            .unwrap();
+        let mut ordinary = Vec::with_capacity(200);
+        let mut upgraded = Vec::with_capacity(200);
+        for cycle in 0..600_u64 {
+            let epoch = cycle + 1;
+            if cycle != 0 {
+                authority
+                    .register_peer(PeerId(1), epoch, ActorId(1))
+                    .unwrap();
+                authority
+                    .register_peer(PeerId(2), epoch, ActorId(2))
+                    .unwrap();
+            }
+            let input = |peer, sequence, action| Input {
+                origin: Origin {
+                    peer: PeerId(peer),
+                    connection_epoch: epoch,
+                    sequence,
+                },
+                actor: ActorId(peer),
+                schedule: crate::InputSchedule::Timed { intended_tick: 3 },
+                action,
+            };
+            for sequence in 1..=8 {
+                authority.submit(input(1, sequence, 0)).unwrap();
+            }
+            for sequence in 1..=7 {
+                authority.submit(input(2, sequence, 0)).unwrap();
+            }
+            let upgrade = cycle % 2 == 1;
+            let older_before = authority.pending_credit_bytes(PeerId(1), 1).unwrap();
+            let start = Instant::now();
+            let admission = authority
+                .submit(input(2, 8, if upgrade { 2 } else { 0 }))
+                .unwrap();
+            std::hint::black_box(admission);
+            let older_after = authority.pending_credit_bytes(PeerId(1), 1).unwrap();
+            assert_eq!(older_after > older_before, upgrade);
+            std::hint::black_box(older_after);
+            std::hint::black_box(&authority);
+            if cycle >= 200 {
+                if upgrade {
+                    &mut upgraded
+                } else {
+                    &mut ordinary
+                }
+                .push(start.elapsed().as_nanos());
+            }
+        }
+        ordinary.sort_unstable();
+        upgraded.sort_unstable();
+        let ordinary_mean: u128 = ordinary.iter().sum::<u128>() / ordinary.len() as u128;
+        let upgraded_mean: u128 = upgraded.iter().sum::<u128>() / upgraded.len() as u128;
+        eprintln!(
+            "structural admission with 15 older pending inputs: ordinary mean={ordinary_mean}ns p50={}ns p95={}ns; page-horizon upgrade mean={upgraded_mean}ns p50={}ns p95={}ns",
+            ordinary[100], ordinary[189], upgraded[100], upgraded[189]
+        );
+        drop(authority);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    impl GameRules for StructuralRule {
+        type Entity = u8;
+        type Action = u8;
+        type Change = u8;
+        type Rejection = ();
+        type Event = ();
+
+        fn spawn_bound(&self, action: &u8, _configured_max: usize) -> usize {
+            usize::from(matches!(*action, 2 | 3))
+        }
+
+        fn decide(
+            &self,
+            world: &World<u8>,
+            _actor: ActorId,
+            action: &u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> Result<u8, ()> {
+            if *action == 1 && world.handle_for(StableId(1)).is_none() {
+                return Err(());
+            }
+            Ok(*action)
+        }
+
+        fn prepare(
+            &self,
+            world: &World<u8>,
+            action: u8,
+            _context: &mut crate::RuleContext<'_>,
+        ) -> PreparedCommit<u8, ()> {
+            let edits = match action {
+                0 => PreparedEdits::None,
+                1 => PreparedEdits::One(WorldEdit::Despawn(
+                    world.handle_for(StableId(1)).expect("decided live object"),
+                )),
+                2 => PreparedEdits::One(WorldEdit::Spawn(StableId(33), 33)),
+                3 => PreparedEdits::One(WorldEdit::Spawn(StableId(34), 34)),
+                4 => PreparedEdits::One(WorldEdit::Spawn(StableId(35), 35)),
+                _ => unreachable!(),
+            };
+            PreparedCommit { edits, event: None }
+        }
+    }
+
+    #[test]
+    fn structural_host_upgrades_delayed_credit_before_same_tick_reuse() {
+        let pool = PublicationPool::new(1_000_000);
+        let mut world = World::new(WorldEpoch(295));
+        for id in 1..=32_u128 {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(295)),
+            StructuralRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 1,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let (mut host, initial) = HeadlessHost::with_protected_structural_replica(
+            origin,
+            ClockConfig {
+                max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+                ..ClockConfig::default()
+            },
+            HostBudget {
+                callback_cpu: Duration::from_secs(1),
+                other_work: Duration::from_millis(1),
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            &pool,
+            34,
+            2,
+            34,
+            34,
+            0,
+        )
+        .unwrap();
+        let input = |peer, sequence, schedule, action| Input {
+            origin: Origin {
+                peer: PeerId(peer),
+                connection_epoch: 1,
+                sequence,
+            },
+            actor: ActorId(peer),
+            schedule,
+            action,
+        };
+        host.submit(input(
+            1,
+            1,
+            crate::InputSchedule::Timed { intended_tick: 3 },
+            0,
+        ))
+        .unwrap();
+        let before = host.authority.pending_credit_bytes(PeerId(1), 1).unwrap();
+        host.submit(input(
+            1,
+            2,
+            crate::InputSchedule::NextTick { observed_tick: 0 },
+            1,
+        ))
+        .unwrap();
+        let before_despawn = host.authority.pending_credit_bytes(PeerId(1), 2).unwrap();
+        let spawn = input(2, 1, crate::InputSchedule::NextTick { observed_tick: 0 }, 2);
+        let (candidate_bytes, combined_bytes) = host.authority.structural_credit_quote(1).unwrap();
+        assert!(
+            candidate_bytes < combined_bytes,
+            "older inputs require a top-up"
+        );
+        let denied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes() - candidate_bytes)
+            .unwrap();
+        assert_eq!(
+            host.submit(spawn.clone()),
+            Err(HostAdmissionError::Authority(
+                AdmissionError::PublicationCapacity,
+            ))
+        );
+        assert_eq!(
+            host.authority.pending_credit_bytes(PeerId(1), 1),
+            Some(before)
+        );
+        assert_eq!(
+            host.authority.pending_credit_bytes(PeerId(1), 2),
+            Some(before_despawn)
+        );
+        drop(denied);
+        host.submit(spawn).unwrap();
+        let after = host.authority.pending_credit_bytes(PeerId(1), 1).unwrap();
+        assert!(
+            after > before,
+            "older delayed credit must gain a second-page horizon"
+        );
+        host.submit(input(
+            2,
+            2,
+            crate::InputSchedule::Timed { intended_tick: 4 },
+            3,
+        ))
+        .unwrap();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        for (tick, expected) in [(1, 2), (2, 0), (3, 1), (4, 1)] {
+            let report = host
+                .on_callback_charged(origin + Duration::from_millis(17 * tick))
+                .unwrap();
+            assert_eq!(report.clock.completed, 1);
+            let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
+            else {
+                panic!("expected charged replica delivery")
+            };
+            assert_eq!(admitted.results().len(), expected);
+            if tick == 1 {
+                assert_eq!(host.replica().unwrap().get(StableId(1)), None);
+                assert_eq!(host.replica().unwrap().get(StableId(33)), Some(&33));
+                assert_eq!(host.authority.world().slot_high_water(), 32);
+            }
+            if tick == 4 {
+                assert_eq!(host.replica().unwrap().get(StableId(34)), Some(&34));
+                assert_eq!(host.authority.world().slot_high_water(), 33);
+            }
+        }
+        drop(occupied);
+        let baseline = host.authority.try_baseline_charged().unwrap();
+        let (reconnected, outcomes) =
+            Replica::from_charged_baseline_with_peer_limit(baseline, &pool, 34, 2).unwrap();
+        assert_eq!(reconnected.get(StableId(1)), None);
+        assert_eq!(reconnected.get(StableId(33)), Some(&33));
+        assert_eq!(reconnected.get(StableId(34)), Some(&34));
+        drop(outcomes);
+        drop(reconnected);
+        host.authority
+            .submit(input(
+                1,
+                3,
+                crate::InputSchedule::Timed { intended_tick: 12 },
+                3,
+            ))
+            .unwrap();
+        let before_reconnect = pool.used_bytes();
+        host.authority
+            .register_peer(PeerId(1), 2, ActorId(1))
+            .unwrap();
+        assert!(pool.used_bytes() < before_reconnect);
+        assert!(host.authority.pending_credit_bytes(PeerId(1), 3).is_none());
+        assert_eq!(
+            host.authority.submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 2,
+                    sequence: 1
+                },
+                actor: ActorId(1),
+                schedule: crate::InputSchedule::NextTick { observed_tick: 4 },
+                action: 3,
+            }),
+            Ok(Admission::Queued)
+        );
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn structural_zero_spawn_reclamation_is_admitted_at_both_caps() {
+        let pool = PublicationPool::new(300_000);
+        let mut world = World::new(WorldEpoch(296));
+        for id in 1..=32_u128 {
+            world.spawn(StableId(id), id as u8).unwrap();
+        }
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(296)),
+            StructuralRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 1,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority
+            .enable_structural_credits(1, 32, 32, Some(0))
+            .unwrap();
+        let input = |sequence, action| Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence,
+            },
+            actor: ActorId(1),
+            schedule: crate::InputSchedule::NextTick {
+                observed_tick: sequence - 1,
+            },
+            action,
+        };
+        assert_eq!(
+            authority.submit(input(1, 2)),
+            Err(AdmissionError::PublicationCapacity)
+        );
+        assert_eq!(authority.submit(input(1, 1)), Ok(Admission::Queued));
+        let first = authority.step_charged().unwrap();
+        assert_eq!(first.group.results().len(), 1);
+        drop(first);
+        assert_eq!(authority.world().len(), 31);
+        assert_eq!(authority.submit(input(2, 2)), Ok(Admission::Queued));
+        let second = authority.step_charged().unwrap();
+        assert_eq!(second.group.results().len(), 1);
+        drop(second);
+        assert_eq!(authority.world().slot_high_water(), 32);
+        assert!(authority.world().handle_for(StableId(33)).is_some());
+        assert_eq!(authority.submit(input(3, 4)), Ok(Admission::Queued));
+        assert_eq!(
+            authority.step_charged().err(),
+            Some(StepError::TerminalGameContract)
+        );
+        assert_eq!(authority.tick_index(), 2);
+        assert!(authority.world().handle_for(StableId(35)).is_none());
+        assert!(authority.is_faulted());
+        drop(authority);
+        assert_eq!(pool.used_bytes(), 0);
+    }
 
     struct FaultRule;
 
