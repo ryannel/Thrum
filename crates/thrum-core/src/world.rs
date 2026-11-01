@@ -7,6 +7,40 @@ use std::{
 use crate::{PublicationCapacity, PublicationCharge, PublicationPool, PublicationReservation};
 
 const PAGE_SIZE: usize = 32;
+pub(crate) const MAX_SNAPSHOT_LEASES: usize = 8;
+
+pub(crate) struct SnapshotLeaseFloor {
+    _charge: PublicationCharge,
+}
+
+impl SnapshotLeaseFloor {
+    pub(crate) fn required_charge() -> Result<usize, PublicationCapacity> {
+        let arc_header = 2 * std::mem::size_of::<usize>();
+        let token = std::mem::size_of::<SnapshotLease>()
+            .checked_add(arc_header)
+            .ok_or(PublicationCapacity)?;
+        MAX_SNAPSHOT_LEASES
+            .checked_mul(token)
+            .and_then(|bytes| bytes.checked_add(std::mem::size_of::<Self>()))
+            .and_then(|bytes| bytes.checked_add(arc_header))
+            .ok_or(PublicationCapacity)
+    }
+
+    pub(crate) fn try_new(
+        reservation: &mut PublicationReservation,
+    ) -> Result<Arc<Self>, PublicationCapacity> {
+        let charge = reservation.charge(Self::required_charge()?)?;
+        Ok(Arc::new(Self { _charge: charge }))
+    }
+
+    fn belongs_to(&self, reservation: &PublicationReservation) -> bool {
+        self._charge.belongs_to(reservation)
+    }
+}
+
+pub(crate) struct SnapshotLease {
+    _floor: Option<Arc<SnapshotLeaseFloor>>,
+}
 
 /// A stable game/content object identity, distinct from a runtime handle.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -319,11 +353,11 @@ pub struct Snapshot<T> {
     epoch: WorldEpoch,
     tick: u64,
     pages: PageRoot<T>,
-    lease: Arc<()>,
+    lease: Arc<SnapshotLease>,
 }
 
 impl<T> Snapshot<T> {
-    pub(crate) fn lease_token(&self) -> Weak<()> {
+    pub(crate) fn lease_token(&self) -> Weak<SnapshotLease> {
         Arc::downgrade(&self.lease)
     }
     /// Local world epoch represented by this snapshot.
@@ -796,6 +830,27 @@ impl<T: Clone> World<T> {
         tick: u64,
         reservation: &mut PublicationReservation,
     ) -> Result<WorldPublication<T>, WorldPublicationError> {
+        self.try_publish_charged_inner(tick, reservation, None)
+    }
+
+    pub(crate) fn try_publish_charged_with_lease_floor(
+        &mut self,
+        tick: u64,
+        reservation: &mut PublicationReservation,
+        floor: &Arc<SnapshotLeaseFloor>,
+    ) -> Result<WorldPublication<T>, WorldPublicationError> {
+        if !floor.belongs_to(reservation) {
+            return Err(WorldPublicationError::WrongPool);
+        }
+        self.try_publish_charged_inner(tick, reservation, Some(floor))
+    }
+
+    fn try_publish_charged_inner(
+        &mut self,
+        tick: u64,
+        reservation: &mut PublicationReservation,
+        floor: Option<&Arc<SnapshotLeaseFloor>>,
+    ) -> Result<WorldPublication<T>, WorldPublicationError> {
         match &self.publication_mode {
             PublicationMode::Uncharged => return Err(WorldPublicationError::UnchargedWorld),
             PublicationMode::Charged(pool) if !reservation.belongs_to(pool) => {
@@ -811,7 +866,7 @@ impl<T: Clone> World<T> {
             return Err(WorldPublicationError::Capacity);
         }
         let pool = first.then(|| reservation.pool());
-        let published = self.publish_inner(tick, Some(reservation), first);
+        let published = self.publish_inner(tick, Some(reservation), first, floor);
         if let Some(pool) = pool {
             self.publication_mode = PublicationMode::Charged(pool);
         }
@@ -826,7 +881,7 @@ impl<T: Clone> World<T> {
             "charged world requires try_publish_charged"
         );
         self.publication_mode = PublicationMode::Uncharged;
-        self.publish_inner(tick, None, false)
+        self.publish_inner(tick, None, false, None)
     }
 
     fn publish_inner(
@@ -834,6 +889,7 @@ impl<T: Clone> World<T> {
         tick: u64,
         mut reservation: Option<&mut PublicationReservation>,
         force_root: bool,
+        floor: Option<&Arc<SnapshotLeaseFloor>>,
     ) -> WorldPublication<T> {
         assert!(tick >= self.published_tick, "tick cannot move backwards");
         let count = self.slots.len().div_ceil(PAGE_SIZE);
@@ -912,7 +968,9 @@ impl<T: Clone> World<T> {
                 epoch: self.epoch,
                 tick,
                 pages: self.pages.clone(),
-                lease: Arc::new(()),
+                lease: Arc::new(SnapshotLease {
+                    _floor: floor.cloned(),
+                }),
             },
             changes,
             work,
@@ -923,6 +981,32 @@ impl<T: Clone> World<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn charged_snapshot_rejects_a_foreign_lease_floor_before_publication() {
+        let pool = PublicationPool::new(100_000);
+        let foreign = PublicationPool::new(100_000);
+        let mut foreign_reservation = foreign
+            .try_reserve(SnapshotLeaseFloor::required_charge().unwrap())
+            .unwrap();
+        let floor = SnapshotLeaseFloor::try_new(&mut foreign_reservation).unwrap();
+        let mut world = World::new(WorldEpoch(300));
+        world.spawn(StableId(1), 7_u64).unwrap();
+        let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
+        let mut reservation = pool.try_reserve(peak).unwrap();
+        assert_eq!(
+            world
+                .try_publish_charged_with_lease_floor(0, &mut reservation, &floor)
+                .err(),
+            Some(WorldPublicationError::WrongPool)
+        );
+        assert_eq!(world.published_tick, 0);
+        assert_eq!(world.dirty_count, 1);
+        assert_eq!(reservation.remaining_bytes(), peak);
+        drop(floor);
+        drop(foreign_reservation);
+        assert_eq!(foreign.used_bytes(), 0);
+    }
 
     #[test]
     fn prepared_batch_does_not_reuse_a_retired_generation() {

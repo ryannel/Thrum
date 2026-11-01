@@ -392,6 +392,12 @@ impl Drop for PublicationCharge {
     }
 }
 
+impl PublicationCharge {
+    pub(crate) fn belongs_to(&self, reservation: &PublicationReservation) -> bool {
+        Arc::ptr_eq(&self.state, &reservation.state)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{

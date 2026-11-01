@@ -640,6 +640,37 @@ fn charged_authority_backpressures_before_edit_and_releases_old_reader_bytes() {
 }
 
 #[test]
+fn charged_lease_floor_preserves_idle_progress_and_last_reader_charge() {
+    let pool = PublicationPool::new(100_000);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(192)),
+        Rule,
+        World::new(WorldEpoch(192)),
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 1,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    let activated = pool.used_bytes();
+    assert!(activated > 0);
+    let occupied = pool.try_reserve(pool.limit_bytes() - activated).unwrap();
+    for tick in 1..=16 {
+        let publication = authority.step().unwrap();
+        assert_eq!(publication.snapshot.tick(), tick);
+        assert!(publication.group.changes.is_empty());
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
+    }
+    drop(occupied);
+    let reader = authority.snapshot().clone();
+    drop(authority);
+    assert!(pool.used_bytes() > 0);
+    drop(reader);
+    assert_eq!(pool.used_bytes(), 0);
+}
+
+#[test]
 fn charged_authority_faults_if_prepared_edits_exceed_declared_count() {
     let pool = PublicationPool::new(1_000_000);
     let mut authority = Authority::try_new_snapshot_charged(
