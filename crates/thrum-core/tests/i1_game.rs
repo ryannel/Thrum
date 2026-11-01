@@ -26,6 +26,11 @@ fn closed_game_limits(entity: ClosedValueLimits) -> ClosedGameLimits {
         max_payload_bytes: 0,
     };
     ClosedGameLimits {
+        action: ClosedValueLimits {
+            max_inline_bytes: 16,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        },
         entity,
         event: empty_output,
         rejection: empty_output,
@@ -1323,6 +1328,11 @@ mod closed_output_fixture {
                     max_spawns_per_action: 0,
                 },
                 ClosedGameLimits {
+                    action: ClosedValueLimits {
+                        max_inline_bytes: 1,
+                        max_payload_slots: 0,
+                        max_payload_bytes: 0,
+                    },
                     entity: ClosedValueLimits {
                         max_inline_bytes: 8,
                         max_payload_slots: 0,
@@ -1381,6 +1391,11 @@ mod closed_output_fixture {
                     max_spawns_per_action: 0,
                 },
                 ClosedGameLimits {
+                    action: ClosedValueLimits {
+                        max_inline_bytes: 1,
+                        max_payload_slots: 0,
+                        max_payload_bytes: 0,
+                    },
                     entity: ClosedValueLimits {
                         max_inline_bytes: 8,
                         max_payload_slots: 0,
@@ -1436,6 +1451,11 @@ mod closed_output_fixture {
                 max_spawns_per_action: 0,
             },
             ClosedGameLimits {
+                action: ClosedValueLimits {
+                    max_inline_bytes: 1,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
                 entity: ClosedValueLimits {
                     max_inline_bytes: 8,
                     max_payload_slots: 0,
@@ -1527,6 +1547,184 @@ mod closed_output_fixture {
         drop(event_admitted);
         drop(committed.snapshot);
         assert_eq!(pool.used_bytes(), with_event - event_charge);
+    }
+}
+
+mod closed_action_fixture {
+    use super::*;
+
+    type Entity = PublicationRecord<8, 0>;
+    type ActionValue = PublicationRecord<0, 1>;
+
+    struct Rule {
+        pool: PublicationPool,
+    }
+    impl GameRules for Rule {
+        type Entity = Entity;
+        type Action = ActionValue;
+        type Change = Handle;
+        type Rejection = ();
+        type Event = ();
+
+        fn decide(
+            &self,
+            world: &World<Entity>,
+            _actor: ActorId,
+            _action: &ActionValue,
+        ) -> Result<Handle, ()> {
+            world.handle_for(StableId(1)).ok_or(())
+        }
+
+        fn prepare(&self, _world: &World<Entity>, handle: Handle) -> PreparedCommit<Entity, ()> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    handle,
+                    Entity::try_new(&self.pool, 2_u64.to_le_bytes(), []).unwrap(),
+                )),
+                event: None,
+            }
+        }
+    }
+
+    fn limits(max_payload_slots: usize, max_payload_bytes: usize) -> ClosedGameLimits {
+        ClosedGameLimits {
+            action: ClosedValueLimits {
+                max_inline_bytes: 0,
+                max_payload_slots,
+                max_payload_bytes,
+            },
+            ..closed_game_limits(ClosedValueLimits {
+                max_inline_bytes: 8,
+                max_payload_slots: 0,
+                max_payload_bytes: 0,
+            })
+        }
+    }
+
+    fn action(pool: &PublicationPool, len: usize) -> ActionValue {
+        let payload = PublicationBytes::try_copy_from_slice(pool, &vec![5; len]).unwrap();
+        ActionValue::try_new(pool, [], [Some(payload)]).unwrap()
+    }
+
+    #[test]
+    fn rejects_action_type_shape_before_activation() {
+        let pool = PublicationPool::new(100_000);
+        assert!(matches!(
+            Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(240)),
+                Rule { pool: pool.clone() },
+                World::new(WorldEpoch(240)),
+                pool.clone(),
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 0,
+                },
+                limits(0, 32),
+            ),
+            Err(WorldPublicationError::ValueProfile)
+        ));
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn rejects_bad_actions_before_sequence_and_releases_valid_history_after_ack() {
+        let pool = PublicationPool::new(100_000);
+        let foreign = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(241));
+        world
+            .spawn(
+                StableId(1),
+                Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap(),
+            )
+            .unwrap();
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(241)),
+            Rule { pool: pool.clone() },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            limits(1, 32),
+        )
+        .unwrap();
+        authority.register_peer(PEER, 1, ACTOR).unwrap();
+        let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+        let origin = Origin {
+            peer: PEER,
+            connection_epoch: 1,
+            sequence: 1,
+        };
+        let make_input = |value| Input {
+            origin,
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: value,
+        };
+        let before = pool.used_bytes();
+        assert!(matches!(
+            authority.submit(make_input(action(&foreign, 32))),
+            Err(AdmissionError::WrongPool)
+        ));
+        assert_eq!(foreign.used_bytes(), 0);
+        assert!(matches!(
+            authority.submit(make_input(action(&pool, 33))),
+            Err(AdmissionError::ValueProfile)
+        ));
+        assert_eq!(pool.used_bytes(), before);
+
+        let valid = make_input(action(&pool, 32));
+        let action_charge = PublicationBytes::required_charge(32).unwrap();
+        assert_eq!(authority.submit(valid.clone()).unwrap(), Admission::Queued);
+        assert_eq!(
+            authority.submit(valid.clone()).unwrap(),
+            Admission::PendingDuplicate
+        );
+        assert_eq!(
+            authority.submit(make_input(action(&foreign, 32))).unwrap(),
+            Admission::PendingDuplicate
+        );
+        assert_eq!(foreign.used_bytes(), 0);
+        let committed = authority.step().unwrap();
+        let admitted = replica.apply(committed.group).unwrap();
+        assert_eq!(admitted.results.len(), 1);
+        assert_eq!(
+            u64::from_le_bytes(*replica.get(StableId(1)).unwrap().inline()),
+            2
+        );
+        let with_action = pool.used_bytes();
+        authority.acknowledge_results(PEER, 1).unwrap();
+        drop(valid);
+        assert_eq!(pool.used_bytes(), with_action - action_charge);
+
+        let before_pending = pool.used_bytes();
+        let pending = Input {
+            origin: Origin {
+                connection_epoch: 1,
+                sequence: 2,
+                ..origin
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 1 },
+            action: action(&pool, 32),
+        };
+        authority.submit(pending).unwrap();
+        assert_eq!(pool.used_bytes(), before_pending + action_charge);
+        authority.register_peer(PEER, 2, ACTOR).unwrap();
+        assert_eq!(pool.used_bytes(), before_pending);
+        let stale = Input {
+            origin: Origin {
+                connection_epoch: 1,
+                sequence: 1,
+                ..origin
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 1 },
+            action: action(&foreign, 32),
+        };
+        assert_eq!(authority.submit(stale), Err(AdmissionError::StaleEpoch));
+        assert_eq!(foreign.used_bytes(), 0);
     }
 }
 

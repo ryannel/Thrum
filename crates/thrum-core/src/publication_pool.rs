@@ -9,6 +9,8 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
+use crate::world::StableId;
+
 struct PoolState {
     limit: usize,
     used: AtomicUsize,
@@ -93,6 +95,33 @@ impl ClosedPublicationValue for () {
         Ok(())
     }
 }
+
+macro_rules! closed_scalar {
+    ($ty:ty) => {
+        impl sealed::ClosedValue for $ty {}
+
+        impl ClosedPublicationValue for $ty {
+            fn validate_shape(limits: ClosedValueLimits) -> Result<(), ClosedValueError> {
+                if size_of::<Self>() > limits.max_inline_bytes {
+                    Err(ClosedValueError::InlineLimit)
+                } else {
+                    Ok(())
+                }
+            }
+
+            fn validate_for_pool(
+                &self,
+                _pool: &PublicationPool,
+                _limits: ClosedValueLimits,
+            ) -> Result<(), ClosedValueError> {
+                Ok(())
+            }
+        }
+    };
+}
+
+closed_scalar!(u8);
+closed_scalar!(StableId);
 
 /// Per-value limits selected for one closed-state authority profile.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
