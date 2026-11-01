@@ -1,26 +1,25 @@
 use std::{
     collections::{BTreeMap, BTreeSet, VecDeque},
-    sync::Weak,
+    sync::{Arc, Weak},
 };
 
 use crate::replica::StateGroup;
 use crate::{
     ClosedPublicationValue, ClosedValueError, ClosedValueLimits, EntityChange, PreparedEdits,
     PublicationPool, PublicationReservation, Snapshot, World, WorldPublicationError, WorldWork,
-    world::{ActorId, AuthorityId},
+    world::{ActorId, AuthorityId, MAX_SNAPSHOT_LEASES, SnapshotLease, SnapshotLeaseFloor},
 };
 
 const MAX_PENDING: usize = 8;
 const MAX_RESULTS: usize = 256;
-const MAX_SNAPSHOT_LEASES: usize = 8;
 
 struct SnapshotLeaseDirectory {
-    slots: [Option<Weak<()>>; MAX_SNAPSHOT_LEASES],
+    slots: [Option<Weak<SnapshotLease>>; MAX_SNAPSHOT_LEASES],
     len: usize,
 }
 
 impl SnapshotLeaseDirectory {
-    fn new(first: Weak<()>) -> Self {
+    fn new(first: Weak<SnapshotLease>) -> Self {
         let mut slots = std::array::from_fn(|_| None);
         slots[0] = Some(first);
         Self { slots, len: 1 }
@@ -42,7 +41,7 @@ impl SnapshotLeaseDirectory {
         self.len == MAX_SNAPSHOT_LEASES
     }
 
-    fn push(&mut self, lease: Weak<()>) {
+    fn push(&mut self, lease: Weak<SnapshotLease>) {
         assert!(!self.is_full(), "snapshot lease admission precedes commit");
         self.slots[self.len] = Some(lease);
         self.len += 1;
@@ -227,6 +226,7 @@ struct ClosedGameGates<A, T, E, R> {
 
 struct SnapshotAdmission<A, T, E, R> {
     pool: PublicationPool,
+    lease_floor: Arc<SnapshotLeaseFloor>,
     bounds: SnapshotWriteBounds,
     closed: Option<ClosedGameGates<A, T, E, R>>,
 }
@@ -449,11 +449,21 @@ impl<G: GameRules> Authority<G> {
                     _ => WorldPublicationError::ValueProfile,
                 })?;
         }
-        let peak = world.conservative_charged_publication_peak(0, 0)?;
+        let peak = world
+            .conservative_charged_publication_peak(0, 0)?
+            .checked_add(
+                SnapshotLeaseFloor::required_charge()
+                    .map_err(|_| WorldPublicationError::Capacity)?,
+            )
+            .ok_or(WorldPublicationError::Capacity)?;
         let mut reservation = pool
             .try_reserve(peak)
             .map_err(|_| WorldPublicationError::Capacity)?;
-        let snapshot = world.try_publish_charged(0, &mut reservation)?.snapshot;
+        let lease_floor = SnapshotLeaseFloor::try_new(&mut reservation)
+            .map_err(|_| WorldPublicationError::Capacity)?;
+        let snapshot = world
+            .try_publish_charged_with_lease_floor(0, &mut reservation, &lease_floor)?
+            .snapshot;
         Ok(Self::from_initial_snapshot(
             id,
             rules,
@@ -461,6 +471,7 @@ impl<G: GameRules> Authority<G> {
             snapshot,
             Some(SnapshotAdmission {
                 pool,
+                lease_floor,
                 bounds,
                 closed,
             }),
@@ -851,8 +862,13 @@ impl<G: GameRules> Authority<G> {
             results.push(result);
         }
         let published = if let Some(reservation) = &mut snapshot_reservation {
+            let floor = &self
+                .snapshot_admission
+                .as_ref()
+                .expect("charged snapshot admission")
+                .lease_floor;
             self.world
-                .try_publish_charged(self.tick, reservation)
+                .try_publish_charged_with_lease_floor(self.tick, reservation, floor)
                 .map_err(|_| StepError::TerminalGameContract)?
         } else {
             self.world.publish(self.tick)
