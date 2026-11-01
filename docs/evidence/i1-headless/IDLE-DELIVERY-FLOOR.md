@@ -13,4 +13,4 @@ The [unit fixture](../../../crates/thrum-core/src/host.rs) constructs a sealed t
 | 64 | 1,083 / 709 | 1,084 / 833 |
 | 4,096 | 1,042 / 1,083 | 1,125 / 1,167 |
 
-The run-to-run variation is larger than the small differences in some comparisons. This fixture tests one replacement action per callback with immediate acknowledgement, not long-lived callback buffers, real device scheduling or the process-wide byte gate. The later [history proof](COMPLETED-HISTORY.md) accounts for completed-history buffer growth. Replica progress scratch, peer-map nodes, future output byte credits and mutable world indexes remain open.
+The run-to-run variation is larger than the small differences in some comparisons. This fixture tests one replacement action per callback with immediate acknowledgement, not long-lived callback buffers, real device scheduling or the process-wide byte gate. The later [history proof](COMPLETED-HISTORY.md) accounts for completed-history buffer growth, and the [peer registry proof](PEER-REGISTRY.md) charges peer storage. Replica progress scratch, future output byte credits and mutable world indexes remain open.

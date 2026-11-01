@@ -1,6 +1,5 @@
 use std::{
     alloc::Layout,
-    collections::BTreeMap,
     sync::{Arc, Weak},
 };
 
@@ -517,6 +516,97 @@ impl<A, R, E> Peer<A, R, E> {
     }
 }
 
+struct PeerRegistry<A, R, E> {
+    entries: Vec<(PeerId, Peer<A, R, E>)>,
+    limit: usize,
+    _charge: Option<PublicationCharge>,
+}
+
+struct PreparedPeerGrowth<A, R, E> {
+    entries: Vec<(PeerId, Peer<A, R, E>)>,
+    charge: PublicationCharge,
+    limit: usize,
+}
+
+impl<A, R, E> PeerRegistry<A, R, E> {
+    fn new() -> Self {
+        Self {
+            entries: Vec::new(),
+            limit: 0,
+            _charge: None,
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    fn index(&self, id: PeerId) -> Result<usize, usize> {
+        self.entries.binary_search_by_key(&id, |(key, _)| *key)
+    }
+
+    fn get(&self, id: &PeerId) -> Option<&Peer<A, R, E>> {
+        self.index(*id).ok().map(|index| &self.entries[index].1)
+    }
+
+    fn get_mut(&mut self, id: &PeerId) -> Option<&mut Peer<A, R, E>> {
+        self.index(*id).ok().map(|index| &mut self.entries[index].1)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = (&PeerId, &Peer<A, R, E>)> {
+        self.entries.iter().map(|(id, peer)| (id, peer))
+    }
+
+    fn values(&self) -> impl Iterator<Item = &Peer<A, R, E>> {
+        self.entries.iter().map(|(_, peer)| peer)
+    }
+
+    fn prepare_growth(
+        &self,
+        pool: Option<&PublicationPool>,
+    ) -> Result<Option<PreparedPeerGrowth<A, R, E>>, PublicationCapacity> {
+        let Some(pool) = pool else {
+            return Ok(None);
+        };
+        if self.entries.len() < self.limit {
+            return Ok(None);
+        }
+        let limit = self
+            .limit
+            .max(1)
+            .checked_mul(2)
+            .ok_or(PublicationCapacity)?;
+        let bytes = Layout::array::<(PeerId, Peer<A, R, E>)>(limit)
+            .map_err(|_| PublicationCapacity)?
+            .size();
+        let mut reservation = pool.try_reserve(bytes)?;
+        let charge = reservation.charge(bytes)?;
+        Ok(Some(PreparedPeerGrowth {
+            entries: Vec::with_capacity(limit),
+            charge,
+            limit,
+        }))
+    }
+
+    fn install_growth(&mut self, candidate: Option<PreparedPeerGrowth<A, R, E>>) {
+        let Some(mut candidate) = candidate else {
+            return;
+        };
+        candidate.entries.append(&mut self.entries);
+        let old_entries = std::mem::replace(&mut self.entries, candidate.entries);
+        let old_charge = self._charge.replace(candidate.charge);
+        self.limit = candidate.limit;
+        drop(old_entries);
+        drop(old_charge);
+    }
+
+    fn insert(&mut self, id: PeerId, peer: Peer<A, R, E>) {
+        assert!(self._charge.is_none() || self.entries.len() < self.limit);
+        let index = self.index(id).expect_err("new peer is absent");
+        self.entries.insert(index, (id, peer));
+    }
+}
+
 /// One tick's immutable state and in-memory replica group.
 pub struct TickPublication<T, E, R> {
     /// Immutable committed world state.
@@ -585,10 +675,8 @@ pub struct Authority<G: GameRules> {
     faulted: bool,
 }
 
-type PeerMap<G> = BTreeMap<
-    PeerId,
-    Peer<<G as GameRules>::Action, <G as GameRules>::Rejection, <G as GameRules>::Event>,
->;
+type PeerMap<G> =
+    PeerRegistry<<G as GameRules>::Action, <G as GameRules>::Rejection, <G as GameRules>::Event>;
 
 impl<G: GameRules> Authority<G> {
     /// Start from a fully preloaded world; publishes its complete tick-zero state.
@@ -723,7 +811,7 @@ impl<G: GameRules> Authority<G> {
             tick: 0,
             group_id: 0,
             next_event_id: 1,
-            peers: BTreeMap::new(),
+            peers: PeerRegistry::new(),
             due_scratch: DueScratch::new(),
             cached_watermarks: None,
             snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
@@ -848,6 +936,14 @@ impl<G: GameRules> Authority<G> {
                 .map(|admission| &admission.pool),
         )
         .map_err(|_| AdmissionError::PublicationCapacity)?;
+        let candidate = self
+            .peers
+            .prepare_growth(
+                self.snapshot_admission
+                    .as_ref()
+                    .map(|admission| &admission.pool),
+            )
+            .map_err(|_| AdmissionError::PublicationCapacity)?;
         self.due_scratch
             .try_grow(
                 self.peers
@@ -859,6 +955,7 @@ impl<G: GameRules> Authority<G> {
                     .map(|admission| &admission.pool),
             )
             .map_err(|_| AdmissionError::PublicationCapacity)?;
+        self.peers.install_growth(candidate);
         self.peers.insert(id, Peer::new(actor, epoch, pending));
         self.cached_watermarks = None;
         Ok(())
@@ -888,7 +985,7 @@ impl<G: GameRules> Authority<G> {
             .map_err(|_| ChargedBaselineError::Capacity)?;
         let mut column = PublicationColumn::try_with_capacity(&mut reservation, count)
             .map_err(|_| ChargedBaselineError::Capacity)?;
-        for (id, peer) in &self.peers {
+        for (id, peer) in self.peers.iter() {
             column.push((*id, peer.resolved_through));
         }
         self.cached_watermarks = Some(column);
@@ -1217,7 +1314,7 @@ impl<G: GameRules> Authority<G> {
         }
         events.sort_unstable_by_key(|event: &CommittedEvent<G::Event>| event.id);
         if self.cached_watermarks.is_none() {
-            for (id, peer) in &self.peers {
+            for (id, peer) in self.peers.iter() {
                 resolved_through.push((*id, peer.resolved_through));
             }
         }
@@ -1356,7 +1453,7 @@ impl<G: GameRules> Authority<G> {
         }
         let due_tick = self.tick.checked_add(1).expect("world tick exhausted");
         self.due_scratch.values.clear();
-        for (peer_id, peer) in &self.peers {
+        for (peer_id, peer) in self.peers.iter() {
             for (sequence, pending) in peer.pending.iter() {
                 if pending.due_tick <= due_tick {
                     self.due_scratch.push((*peer_id, *sequence));
@@ -1589,6 +1686,46 @@ mod tests {
         peer.try_grow_completed(2, Some(&pool)).unwrap();
         assert_eq!(pool.used_bytes(), grown);
         drop(peer);
+        assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn charged_peer_registry_grows_with_old_buffer_live_and_keeps_canonical_order() {
+        let pool = PublicationPool::new(10_000);
+        let mut peers = PeerRegistry::<u8, (), ()>::new();
+        let first = peers.prepare_growth(Some(&pool)).unwrap();
+        peers.install_growth(first);
+        for id in [PeerId(8), PeerId(3)] {
+            peers.insert(
+                id,
+                Peer::new(ActorId(id.0), 1, PendingQueue::try_new(None).unwrap()),
+            );
+        }
+        assert_eq!(
+            peers.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
+            [PeerId(3), PeerId(8)]
+        );
+        let before = pool.used_bytes();
+        let occupied = pool.try_reserve(pool.limit_bytes() - before).unwrap();
+        assert!(matches!(
+            peers.prepare_growth(Some(&pool)),
+            Err(PublicationCapacity)
+        ));
+        assert_eq!(peers.len(), 2);
+        drop(occupied);
+        let next = peers.prepare_growth(Some(&pool)).unwrap();
+        assert!(pool.used_bytes() > before);
+        peers.install_growth(next);
+        peers.insert(
+            PeerId(5),
+            Peer::new(ActorId(5), 1, PendingQueue::try_new(None).unwrap()),
+        );
+        assert_eq!(
+            peers.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
+            [PeerId(3), PeerId(5), PeerId(8)]
+        );
+        assert_eq!(peers.get(&PeerId(5)).unwrap().actor, ActorId(5));
+        drop(peers);
         assert_eq!(pool.used_bytes(), 0);
     }
 }
