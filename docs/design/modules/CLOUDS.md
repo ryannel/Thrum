@@ -4,7 +4,7 @@
 Commission: [capabilities](CLOUD-CAPABILITIES.md), E1.clouds, engine E03/E09–E12/E14/E17/E20 and
 [C01–C09/C12/C13](../CONTRACTS.md). [Research and decisions](../research/CLOUD-SYSTEM-SOURCES.md) distinguish
 published techniques from this synthesis. [Review record](../../evidence/cloud-design-2026-11-01/REVIEW.md)
-records independent discovery, challenges and resolutions. No runtime construction or asset bake is authorized here.
+records independent discovery, challenges and resolutions. The original commission was design-only. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) is authorized separately; it does not commission a new engine renderer.
 
 ## Governing decisions
 
@@ -581,7 +581,7 @@ correction resets affected E1/V3/V4 histories and preserves only the semantic so
 
 ## Proof and construction queue
 
-No queue item is run in this design commission. Existing lab acceptance does not close any Thrum row.
+The original design commission ran no queue item. The subsequent [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) is in progress; existing lab acceptance does not close any Thrum row.
 
 | Order / proof | Requirements and prediction | Reject when |
 | --- | --- | --- |

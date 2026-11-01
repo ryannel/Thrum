@@ -1125,7 +1125,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "72d0bb77929a86aa947fcf1464d94ce536172e1426c1fa979814dd1361afef4c",
+      "current_design_sha256": "d298c2ee75eb4af5095f4623021950a799740663d6318c2136ee9bb7bc540969",
       "current_design_delta": "D2 cloud capability inventory and detailed optional RC evolution/transport/consumer/cost design; baseline attenuation-only recipes retained. Historical reviewed hash refers to modules/ENVIRONMENT.md, not this new design. Runtime dimensions remain not started/unrun.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
