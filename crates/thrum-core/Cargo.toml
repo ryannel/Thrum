@@ -8,3 +8,6 @@ description = "Thrum's portable headless authority foundations"
 
 [lints]
 workspace = true
+
+[dependencies]
+hashbrown = { version = "=0.17.1", default-features = false, features = ["inline-more"] }

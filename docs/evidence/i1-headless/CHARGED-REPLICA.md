@@ -1,0 +1,28 @@
+# Finite charged replica index and group admission
+
+1 November 2026. This qualifies one bounded I1 handoff, not the whole publication-memory gate. A sealed charged baseline now builds a finite confirmed-object table in the same process pool. A charged live group validates completely before object mutation, applies despawns before spawns, and returns charged shared result, event and peer-watermark owners. The prototype replica remains available for unqualified groups. An all-empty charged group retains a pool identity, so a foreign idle publication is rejected too.
+
+## Representation and admission
+
+The private object index pins `hashbrown = 0.17.1` with default features off and `inline-more` on; the selected lockfile has no transitive dependency for it. This version's fallible-capacity fix is recorded in the [upstream release notes](https://github.com/rust-lang/hashbrown/releases). A sorted array gave good high-churn batch merges but required O(N) sparse edits and lookups; a safe custom fixed table cost more on misses and heavy churn in the local probe. The pinned table keeps expected constant-time stable-ID lookup with an inspectable `allocation_size()`.
+
+For a declared maximum of `M` live objects, construction reserves the checked table-layout bound for `2M` requested entries in the pool **before** requesting table storage, then transfers the actual requested allocation to one lifetime charge. The wrapper permits no reserve, shrink or map clone. It accepts a new ID only while live count is below `M`, replaces existing values in place, and removes despawns before spawns. `2M` leaves room for deletion tombstones while a net-zero churn tick stays at `M`. A runtime assertion detects any unexpected table allocation change. The bound includes entry layout, alignment and control bytes for the pinned version; product tests check capacities 0–64 and table boundaries at 127–129, 4,096 and 16,384 across zero-sized, byte, 32-byte and 32-byte-aligned values. A 100,000-step remove/insert churn test keeps the same charged allocation. This is a version-specific allocation contract and needs requalification on a hashbrown upgrade.
+
+The two-peer game fixture verifies baseline and live-group state parity, both players' action results and watermarks, wrong-pool refusal, shared-reader lifetime and last-owner charge release. A separate replica test rejects malformed duplicate changes before mutation, rejects an all-empty foreign group, admits a despawn/spawn pair at full capacity, and rejects an overfull spawn without advancing the replica. A charged replica rejects a prototype group. `RUSTC_WRAPPER= ./dev check` passes.
+
+## Local cost observations
+
+The [release fixture](../../../crates/thrum-core/examples/i1_baseline_cost.rs) ran on macOS/aarch64. It uses 20 warmups and 100 samples; baseline build/admit samples construct and drop one replica each, and idle samples run 1,000 sequential ticks through authority and replica per sample. The authority has two registered peers and 64 or 4,096 closed records with shared charged payloads. Two runs gave these p50 values; times are nanoseconds and idle figures are **per 1,000-tick batch**:
+
+| Records | Prototype baseline + replica, runs 1 / 2 | Charged baseline + replica, runs 1 / 2 | Prototype idle authority + replica, runs 1 / 2 | Charged idle authority + replica, runs 1 / 2 | Charged index bytes |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 | 3,333 / 5,833 | 1,959 / 3,750 | 94,083 / 106,250 | 99,708 / 95,875 | 8,456 |
+| 4,096 | 211,166 / 189,500 | 139,750 / 136,958 | 90,667 / 90,750 | 86,416 / 89,041 | 540,680 |
+
+At 4,096 records, the charged baseline plus replica admission was about 1.4–1.5× faster at the median in these runs; the charged steady idle path was similar. Tail samples varied, including charged idle p99 of 180,750 ns in one run. The fixture runs the two modes sequentially on one authority, has no changed objects or due actions, and does not include host callback delivery. These are local cost signals, not device or whole-path qualification.
+
+The separate scratch hash-table probe at 64, 4,096 and 16,384 maximum live 32-byte values held its table allocation through 100,000 remove/insert operations. Its requested table allocations were 12,552, 802,824 and 3,211,272 bytes respectively. At 16,384, the pinned table's 10,000-hit lookup batch was 93,791 ns versus 87,500 ns for the standard table in one run, while its miss batch was 68,083 ns versus 76,708 ns. Churn p99 and maximum vary with hash seed and scheduler; no universal speedup is claimed. The scratch experiment remains under `tmp/publication-memory/` and is not a runtime dependency.
+
+## Remaining gate
+
+The confirmed-object table and group outcome owners are charged, but peer progress maps and validation scratch still allocate outside the pool. The authority and host have not reserved required replica capacity before rule edits, and the prototype host callback has not switched to charged groups. Completed history, mutable world indexes, callback storage and accepted future-input credits also remain outside the complete byte gate. A full required-reader precommit overlap proof and changed-tick callback measurement are still needed before the parent memory item can close.

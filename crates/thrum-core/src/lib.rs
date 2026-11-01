@@ -9,6 +9,7 @@ mod clock;
 mod host;
 mod publication_pool;
 mod replica;
+mod replica_index;
 mod world;
 
 pub use authority::{
@@ -27,7 +28,10 @@ pub use publication_pool::{
     PublicationCapacity, PublicationCharge, PublicationPool, PublicationRecord,
     PublicationRecordError, PublicationReservation,
 };
-pub use replica::{AdmittedGroup, ChargedStateGroup, Replica, ReplicaError, StateGroup};
+pub use replica::{
+    AdmittedGroup, ChargedAdmittedGroup, ChargedReplicaSetupError, ChargedStateGroup, Replica,
+    ReplicaError, StateGroup,
+};
 pub use world::{
     ActorId, AuthorityId, EntityChange, EntityRecord, Handle, MatchId, PreparedEdits, SessionId,
     Snapshot, StableId, World, WorldEdit, WorldEpoch, WorldError, WorldPublication,

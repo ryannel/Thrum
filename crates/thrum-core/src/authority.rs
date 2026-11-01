@@ -1059,6 +1059,7 @@ impl<G: GameRules> Authority<G> {
             resolved_through.push((*id, peer.resolved_through));
         }
         Ok(ChargedStateGroup {
+            pool: admission.pool.clone(),
             authority: self.id,
             group_id: self.group_id,
             commit_tick: self.tick,
@@ -1125,6 +1126,7 @@ impl<G: GameRules> Authority<G> {
         };
         self.cached_watermarks = Some(watermarks.clone());
         let group = ChargedStateGroup {
+            pool: reservation.pool(),
             authority,
             group_id,
             commit_tick,
