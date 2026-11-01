@@ -64,6 +64,8 @@ mod sealed {
     pub trait ClosedValue {}
 }
 
+impl sealed::ClosedValue for () {}
+
 /// Engine-owned state that can be checked before charged authority admission.
 /// This boundary is sealed so a game type cannot claim an unchecked owner is
 /// charged. It does not by itself establish a finite whole-tick profile.
@@ -76,6 +78,20 @@ pub trait ClosedPublicationValue: Clone + sealed::ClosedValue {
         pool: &PublicationPool,
         limits: ClosedValueLimits,
     ) -> Result<(), ClosedValueError>;
+}
+
+impl ClosedPublicationValue for () {
+    fn validate_shape(_limits: ClosedValueLimits) -> Result<(), ClosedValueError> {
+        Ok(())
+    }
+
+    fn validate_for_pool(
+        &self,
+        _pool: &PublicationPool,
+        _limits: ClosedValueLimits,
+    ) -> Result<(), ClosedValueError> {
+        Ok(())
+    }
 }
 
 /// Per-value limits selected for one closed-state authority profile.

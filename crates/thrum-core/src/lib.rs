@@ -12,9 +12,9 @@ mod replica;
 mod world;
 
 pub use authority::{
-    ActionRejection, ActionResult, Admission, AdmissionError, Authority, CommittedEvent, GameRules,
-    GameStateGroup, GameTick, Input, InputSchedule, Origin, PeerId, PreparedCommit,
-    ResultDisposition, SnapshotWriteBounds, StepError, TickPublication,
+    ActionRejection, ActionResult, Admission, AdmissionError, Authority, ClosedGameLimits,
+    CommittedEvent, GameRules, GameStateGroup, GameTick, Input, InputSchedule, Origin, PeerId,
+    PreparedCommit, ResultDisposition, SnapshotWriteBounds, StepError, TickPublication,
 };
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
 pub use host::{

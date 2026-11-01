@@ -157,6 +157,18 @@ pub struct SnapshotWriteBounds {
     pub max_spawns_per_action: usize,
 }
 
+/// Per-value bounds for the three retained game value kinds on a closed
+/// authority path. Action and temporary change work need separate admission.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ClosedGameLimits {
+    /// Authoritative entity record limits.
+    pub entity: ClosedValueLimits,
+    /// Immediate event payload limits.
+    pub event: ClosedValueLimits,
+    /// Game rejection payload limits.
+    pub rejection: ClosedValueLimits,
+}
+
 type ClosedValueCheck<T> =
     fn(&T, &PublicationPool, ClosedValueLimits) -> Result<(), ClosedValueError>;
 
@@ -165,10 +177,16 @@ struct ClosedValueGate<T> {
     check: ClosedValueCheck<T>,
 }
 
-struct SnapshotAdmission<T> {
+struct ClosedGameGates<T, E, R> {
+    entity: ClosedValueGate<T>,
+    event: ClosedValueGate<E>,
+    rejection: ClosedValueGate<R>,
+}
+
+struct SnapshotAdmission<T, E, R> {
     pool: PublicationPool,
     bounds: SnapshotWriteBounds,
-    value_check: Option<ClosedValueGate<T>>,
+    closed: Option<ClosedGameGates<T, E, R>>,
 }
 
 /// Game-owned rule boundary. `decide` and `prepare` are read-only; preparation
@@ -280,7 +298,7 @@ pub struct Authority<G: GameRules> {
     next_event_id: u64,
     peers: PeerMap<G>,
     snapshot_leases: VecDeque<Weak<()>>,
-    snapshot_admission: Option<SnapshotAdmission<G::Entity>>,
+    snapshot_admission: Option<SnapshotAdmission<G::Entity, G::Event, G::Rejection>>,
     faulted: bool,
 }
 
@@ -317,12 +335,18 @@ impl<G: GameRules> Authority<G> {
         world: World<G::Entity>,
         pool: PublicationPool,
         bounds: SnapshotWriteBounds,
-        value_limits: ClosedValueLimits,
+        value_limits: ClosedGameLimits,
     ) -> Result<Self, WorldPublicationError>
     where
         G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
     {
-        <G::Entity as ClosedPublicationValue>::validate_shape(value_limits)
+        <G::Entity as ClosedPublicationValue>::validate_shape(value_limits.entity)
+            .map_err(|_| WorldPublicationError::ValueProfile)?;
+        <G::Event as ClosedPublicationValue>::validate_shape(value_limits.event)
+            .map_err(|_| WorldPublicationError::ValueProfile)?;
+        <G::Rejection as ClosedPublicationValue>::validate_shape(value_limits.rejection)
             .map_err(|_| WorldPublicationError::ValueProfile)?;
         Self::try_new_snapshot_charged_with_check(
             id,
@@ -330,9 +354,19 @@ impl<G: GameRules> Authority<G> {
             world,
             pool,
             bounds,
-            Some(ClosedValueGate {
-                limits: value_limits,
-                check: <G::Entity as ClosedPublicationValue>::validate_for_pool,
+            Some(ClosedGameGates {
+                entity: ClosedValueGate {
+                    limits: value_limits.entity,
+                    check: <G::Entity as ClosedPublicationValue>::validate_for_pool,
+                },
+                event: ClosedValueGate {
+                    limits: value_limits.event,
+                    check: <G::Event as ClosedPublicationValue>::validate_for_pool,
+                },
+                rejection: ClosedValueGate {
+                    limits: value_limits.rejection,
+                    check: <G::Rejection as ClosedPublicationValue>::validate_for_pool,
+                },
             }),
         )
     }
@@ -343,9 +377,10 @@ impl<G: GameRules> Authority<G> {
         mut world: World<G::Entity>,
         pool: PublicationPool,
         bounds: SnapshotWriteBounds,
-        value_check: Option<ClosedValueGate<G::Entity>>,
+        closed: Option<ClosedGameGates<G::Entity, G::Event, G::Rejection>>,
     ) -> Result<Self, WorldPublicationError> {
-        if let Some(gate) = &value_check {
+        if let Some(gates) = &closed {
+            let gate = &gates.entity;
             world
                 .validate_states(|state| (gate.check)(state, &pool, gate.limits))
                 .map_err(|error| match error {
@@ -366,7 +401,7 @@ impl<G: GameRules> Authority<G> {
             Some(SnapshotAdmission {
                 pool,
                 bounds,
-                value_check,
+                closed,
             }),
         ))
     }
@@ -376,7 +411,7 @@ impl<G: GameRules> Authority<G> {
         rules: G,
         world: World<G::Entity>,
         snapshot: Snapshot<G::Entity>,
-        snapshot_admission: Option<SnapshotAdmission<G::Entity>>,
+        snapshot_admission: Option<SnapshotAdmission<G::Entity, G::Event, G::Rejection>>,
     ) -> Self {
         let initial_lease = snapshot.lease_token();
         Self {
@@ -663,19 +698,41 @@ impl<G: GameRules> Authority<G> {
                     .decide(&self.world, pending.input.actor, &pending.input.action)
                     .map_err(ActionRejection::Game),
             };
+            if let Err(ActionRejection::Game(reason)) = &decision
+                && self.snapshot_admission.as_ref().is_some_and(|admission| {
+                    admission.closed.as_ref().is_some_and(|gates| {
+                        (gates.rejection.check)(reason, &admission.pool, gates.rejection.limits)
+                            .is_err()
+                    })
+                })
+            {
+                return Err(StepError::TerminalGameContract);
+            }
             let (disposition, event_id, retained_event) = match decision {
                 Ok(change) => {
                     let prepared = self.rules.prepare(&self.world, change);
                     if self.snapshot_admission.as_ref().is_some_and(|admission| {
                         prepared.edits.len() > admission.bounds.max_edits_per_action
                             || prepared.edits.spawns() > admission.bounds.max_spawns_per_action
-                            || admission.value_check.as_ref().is_some_and(|gate| {
+                            || admission.closed.as_ref().is_some_and(|gates| {
                                 prepared
                                     .edits
                                     .validate_states(|state| {
-                                        (gate.check)(state, &admission.pool, gate.limits)
+                                        (gates.entity.check)(
+                                            state,
+                                            &admission.pool,
+                                            gates.entity.limits,
+                                        )
                                     })
                                     .is_err()
+                                    || prepared.event.as_ref().is_some_and(|event| {
+                                        (gates.event.check)(
+                                            event,
+                                            &admission.pool,
+                                            gates.event.limits,
+                                        )
+                                        .is_err()
+                                    })
                             })
                     }) {
                         return Err(StepError::TerminalGameContract);

@@ -2,12 +2,12 @@
 
 use thrum_core::{
     ActionRejection, ActionResult, ActorId, Admission, AdmissionError, AdmittedGroup, Authority,
-    AuthorityId, ClockConfig, ClockState, ClosedValueLimits, CommittedEvent, EntityChange,
-    EntityRecord, GameRules, Handle, HeadlessHost, HostAdmissionError, HostBudget, HostError,
-    HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, PreparedCommit, PreparedEdits,
-    PublicationBytes, PublicationPool, PublicationRecord, Replica, ReplicaError, ResultDisposition,
-    SessionId, SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock, World, WorldEdit,
-    WorldEpoch, WorldError, WorldPublicationError,
+    AuthorityId, ClockConfig, ClockState, ClosedGameLimits, ClosedValueLimits, CommittedEvent,
+    EntityChange, EntityRecord, GameRules, Handle, HeadlessHost, HostAdmissionError, HostBudget,
+    HostError, HostPublication, Input, InputSchedule, MatchId, Origin, PeerId, PreparedCommit,
+    PreparedEdits, PublicationBytes, PublicationPool, PublicationRecord, Replica, ReplicaError,
+    ResultDisposition, SessionId, SnapshotWriteBounds, StableId, StateGroup, StepError, TickClock,
+    World, WorldEdit, WorldEpoch, WorldError, WorldPublicationError,
 };
 
 const ACTOR: ActorId = ActorId(7);
@@ -18,6 +18,19 @@ const ITEM: StableId = StableId(2);
 const DOOR: StableId = StableId(3);
 const PEER: PeerId = PeerId(4);
 const PEER_TWO: PeerId = PeerId(5);
+
+fn closed_game_limits(entity: ClosedValueLimits) -> ClosedGameLimits {
+    let empty_output = ClosedValueLimits {
+        max_inline_bytes: 0,
+        max_payload_slots: 0,
+        max_payload_bytes: 0,
+    };
+    ClosedGameLimits {
+        entity,
+        event: empty_output,
+        rejection: empty_output,
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Object {
@@ -923,11 +936,11 @@ fn closed_record_payload_survives_snapshot_and_replica_until_final_owner() {
             max_edits_per_action: 1,
             max_spawns_per_action: 0,
         },
-        ClosedValueLimits {
+        closed_game_limits(ClosedValueLimits {
             max_inline_bytes: 8,
             max_payload_slots: 1,
             max_payload_bytes: 512,
-        },
+        }),
     )
     .unwrap();
     authority.register_peer(PEER, 1, ACTOR).unwrap();
@@ -1033,11 +1046,11 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
         max_edits_per_action: 2,
         max_spawns_per_action: 1,
     };
-    let value_limits = ClosedValueLimits {
+    let value_limits = closed_game_limits(ClosedValueLimits {
         max_inline_bytes: 8,
         max_payload_slots: 1,
         max_payload_bytes: 32,
-    };
+    });
     assert!(matches!(
         Authority::try_new_closed_snapshot_charged(
             AuthorityId::Match(MatchId(206)),
@@ -1128,8 +1141,11 @@ fn closed_authority_rejects_foreign_initial_and_prepared_record_owners() {
         profile_world,
         profile_pool,
         bounds,
-        ClosedValueLimits {
-            max_payload_bytes: 31,
+        ClosedGameLimits {
+            entity: ClosedValueLimits {
+                max_payload_bytes: 31,
+                ..value_limits.entity
+            },
             ..value_limits
         },
     )
@@ -1207,15 +1223,311 @@ fn closed_authority_rejects_oversized_record_type_in_empty_world() {
                 max_edits_per_action: 0,
                 max_spawns_per_action: 0,
             },
-            ClosedValueLimits {
+            closed_game_limits(ClosedValueLimits {
                 max_inline_bytes: 8,
                 max_payload_slots: 1,
                 max_payload_bytes: 32,
-            },
+            }),
         ),
         Err(WorldPublicationError::ValueProfile)
     ));
     assert_eq!(pool.used_bytes(), 0);
+}
+
+mod closed_output_fixture {
+    use super::*;
+
+    type Entity = PublicationRecord<8, 0>;
+    type Output = PublicationRecord<0, 1>;
+
+    fn output(pool: &PublicationPool) -> Output {
+        let payload = PublicationBytes::try_copy_from_slice(pool, &[8; 32]).unwrap();
+        Output::try_new(pool, [], [Some(payload)]).unwrap()
+    }
+
+    struct OutputRule {
+        entity_pool: PublicationPool,
+        output_pool: PublicationPool,
+    }
+    impl GameRules for OutputRule {
+        type Entity = Entity;
+        type Action = u8;
+        type Change = Handle;
+        type Rejection = Output;
+        type Event = Output;
+
+        fn decide(
+            &self,
+            world: &World<Entity>,
+            _actor: ActorId,
+            action: &u8,
+        ) -> Result<Handle, Output> {
+            if *action == 0 {
+                Err(output(&self.output_pool))
+            } else {
+                Ok(world.handle_for(StableId(1)).unwrap())
+            }
+        }
+
+        fn prepare(
+            &self,
+            _world: &World<Entity>,
+            handle: Handle,
+        ) -> PreparedCommit<Entity, Output> {
+            PreparedCommit {
+                edits: PreparedEdits::One(WorldEdit::Replace(
+                    handle,
+                    Entity::try_new(&self.entity_pool, 2_u64.to_le_bytes(), []).unwrap(),
+                )),
+                event: Some(output(&self.output_pool)),
+            }
+        }
+    }
+
+    #[test]
+    fn rejects_output_shape_without_input() {
+        let shape_pool = PublicationPool::new(100_000);
+        assert!(matches!(
+            Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(219)),
+                OutputRule {
+                    entity_pool: shape_pool.clone(),
+                    output_pool: shape_pool.clone(),
+                },
+                World::new(WorldEpoch(219)),
+                shape_pool.clone(),
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 0,
+                },
+                closed_game_limits(ClosedValueLimits {
+                    max_inline_bytes: 8,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                }),
+            ),
+            Err(WorldPublicationError::ValueProfile)
+        ));
+        assert_eq!(shape_pool.used_bytes(), 0);
+        assert!(matches!(
+            Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(218)),
+                OutputRule {
+                    entity_pool: shape_pool.clone(),
+                    output_pool: shape_pool.clone(),
+                },
+                World::new(WorldEpoch(218)),
+                shape_pool.clone(),
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 0,
+                },
+                ClosedGameLimits {
+                    entity: ClosedValueLimits {
+                        max_inline_bytes: 8,
+                        max_payload_slots: 0,
+                        max_payload_bytes: 0,
+                    },
+                    event: ClosedValueLimits {
+                        max_inline_bytes: 0,
+                        max_payload_slots: 1,
+                        max_payload_bytes: 32,
+                    },
+                    rejection: ClosedValueLimits {
+                        max_inline_bytes: 0,
+                        max_payload_slots: 0,
+                        max_payload_bytes: 32,
+                    },
+                },
+            ),
+            Err(WorldPublicationError::ValueProfile)
+        ));
+        assert_eq!(shape_pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn rejects_foreign_and_oversized_output_values_before_edit() {
+        for (case, action, foreign_output, max_output_bytes) in [
+            (0_u128, 0_u8, true, 32_usize),
+            (1, 1, true, 32),
+            (2, 0, false, 31),
+            (3, 1, false, 31),
+        ] {
+            let pool = PublicationPool::new(100_000);
+            let foreign = PublicationPool::new(100_000);
+            let output_pool = if foreign_output {
+                foreign.clone()
+            } else {
+                pool.clone()
+            };
+            let mut world = World::new(WorldEpoch(220 + case));
+            let initial = Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap();
+            let handle = world.spawn(StableId(1), initial).unwrap();
+            let output_limits = ClosedValueLimits {
+                max_inline_bytes: 0,
+                max_payload_slots: 1,
+                max_payload_bytes: max_output_bytes,
+            };
+            let mut authority = Authority::try_new_closed_snapshot_charged(
+                AuthorityId::Match(MatchId(220 + case)),
+                OutputRule {
+                    entity_pool: pool.clone(),
+                    output_pool,
+                },
+                world,
+                pool,
+                SnapshotWriteBounds {
+                    max_edits_per_action: 1,
+                    max_spawns_per_action: 0,
+                },
+                ClosedGameLimits {
+                    entity: ClosedValueLimits {
+                        max_inline_bytes: 8,
+                        max_payload_slots: 0,
+                        max_payload_bytes: 0,
+                    },
+                    event: output_limits,
+                    rejection: output_limits,
+                },
+            )
+            .unwrap();
+            authority.register_peer(PEER, 1, ACTOR).unwrap();
+            authority
+                .submit(Input {
+                    origin: Origin {
+                        peer: PEER,
+                        connection_epoch: 1,
+                        sequence: 1,
+                    },
+                    actor: ACTOR,
+                    schedule: InputSchedule::NextTick { observed_tick: 0 },
+                    action,
+                })
+                .unwrap();
+            assert!(matches!(
+                authority.step(),
+                Err(StepError::TerminalGameContract)
+            ));
+            assert_eq!(authority.tick_index(), 0);
+            assert_eq!(
+                u64::from_le_bytes(*authority.world().get(handle).unwrap().state.inline()),
+                1
+            );
+            assert_eq!(foreign.used_bytes(), 0);
+        }
+    }
+
+    #[test]
+    fn retains_valid_outputs_until_acknowledgement_and_final_reader() {
+        let pool = PublicationPool::new(100_000);
+        let mut world = World::new(WorldEpoch(230));
+        let initial = Entity::try_new(&pool, 1_u64.to_le_bytes(), []).unwrap();
+        world.spawn(StableId(1), initial).unwrap();
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(230)),
+            OutputRule {
+                entity_pool: pool.clone(),
+                output_pool: pool.clone(),
+            },
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+            ClosedGameLimits {
+                entity: ClosedValueLimits {
+                    max_inline_bytes: 8,
+                    max_payload_slots: 0,
+                    max_payload_bytes: 0,
+                },
+                event: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 1,
+                    max_payload_bytes: 32,
+                },
+                rejection: ClosedValueLimits {
+                    max_inline_bytes: 0,
+                    max_payload_slots: 1,
+                    max_payload_bytes: 32,
+                },
+            },
+        )
+        .unwrap();
+        authority.register_peer(PEER, 1, ACTOR).unwrap();
+        let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
+        let idle_charge = pool.used_bytes();
+        let rejection_input = Input {
+            origin: Origin {
+                peer: PEER,
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ACTOR,
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
+            action: 0_u8,
+        };
+        authority.submit(rejection_input.clone()).unwrap();
+        let rejected = authority.step().unwrap();
+        let rejected_admitted = replica.apply(rejected.group).unwrap();
+        let ResultDisposition::Rejected(ActionRejection::Game(reason)) =
+            &rejected_admitted.results[0].disposition
+        else {
+            panic!("closed rejection missing from replica result");
+        };
+        assert_eq!(reason.payload_owner(0).unwrap().as_slice(), &[8; 32]);
+        let duplicate = authority.submit(rejection_input.clone()).unwrap();
+        assert!(matches!(duplicate, Admission::ResolvedDuplicate(_)));
+        let rejection_baseline = authority.baseline();
+        assert_eq!(rejection_baseline.results.len(), 1);
+        authority.acknowledge_results(PEER, 1).unwrap();
+        assert!(matches!(
+            authority.submit(rejection_input),
+            Err(AdmissionError::Expired)
+        ));
+        drop(duplicate);
+        drop(rejection_baseline);
+        drop(rejected_admitted);
+        drop(rejected.snapshot);
+        assert_eq!(pool.used_bytes(), idle_charge);
+
+        authority
+            .submit(Input {
+                origin: Origin {
+                    peer: PEER,
+                    connection_epoch: 1,
+                    sequence: 2,
+                },
+                actor: ACTOR,
+                schedule: InputSchedule::NextTick { observed_tick: 1 },
+                action: 1,
+            })
+            .unwrap();
+        let committed = authority.step().unwrap();
+        let event_admitted = replica.apply(committed.group).unwrap();
+        assert_eq!(event_admitted.events.len(), 1);
+        assert_eq!(
+            event_admitted.events[0]
+                .payload
+                .payload_owner(0)
+                .unwrap()
+                .as_slice(),
+            &[8; 32]
+        );
+        assert_eq!(
+            u64::from_le_bytes(*replica.get(StableId(1)).unwrap().inline()),
+            2
+        );
+        let event_charge = PublicationBytes::required_charge(32).unwrap();
+        let with_event = pool.used_bytes();
+        let event_baseline = authority.baseline();
+        assert_eq!(event_baseline.events.len(), 1);
+        authority.acknowledge_results(PEER, 2).unwrap();
+        drop(event_baseline);
+        drop(event_admitted);
+        drop(committed.snapshot);
+        assert_eq!(pool.used_bytes(), with_event - event_charge);
+    }
 }
 
 fn peer_input(
