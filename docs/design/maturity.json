@@ -2785,7 +2785,7 @@
   "i1_headless": {
     "as_of": "2026-11-01",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "a3dce79d216cd6f9d60797219db5f44c43019eddddec5b36d2e1a339b88657b2",
+    "design_sha256": "8e677a00199ab4f19713b361f32cf749d5dd49ede71ac241299d226edf6ec2fc",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2801,7 +2801,9 @@
       "performance_measurement": "local_page_layout_comparison_only; byte_gate_not_run",
       "scope": "Process-shared atomic reservation/charge transfer is tested and the private Arc<Vec> page layout is locally measured; no authority/replica allocation charges, precommit byte gate or bounded game payload contract.",
       "evidence": "../evidence/i1-headless/PUBLICATION-MEMORY.md",
-      "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md"
+      "page_layout_evidence": "../evidence/i1-headless/PAGE-LAYOUT.md",
+      "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
+      "design_review_evidence": "../evidence/i1-headless/MEMORY-DESIGN-REVIEW.md"
     }
   }
 }
