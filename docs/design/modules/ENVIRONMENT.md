@@ -5,6 +5,10 @@ limits and failure rules. This family document retains the wider responsibility;
 
 Status: analytical architecture proposal, 31 October 2026, with the A04/A05 selections reconciled on 1 November in [architecture decisions](../ARCHITECTURE-DECISIONS.md). No environment provider has been implemented, profiled or visually accepted for this engine. This document commissions detailed modules against the [architecture brief](../ARCHITECTURE-BRIEF.md) and [rendering contract](RENDERING.md); sources and their limits are in [the evidence ledger](../research/RENDERING-SOURCES.md). It is deliberately independent of the existing water implementation. A custom Bevy-independent engine, modern native desktop/Mac, browser and mobile app profiles, AI-assisted creation, and flexible 3D cameras are the governing requirements. Structural choices below follow from conservation, transport, scene geometry and ownership; experiments validate predicted error and hardware cost rather than discover a foundation.
 
+Detailed water planning is in the [water commission](WATER.md). It preserves the selected initial operators
+while carrying the wider interaction, connected-transfer, whitewater and optics obligations into D2. No new runtime
+or family-wide qualification follows from that alignment.
+
 ## Required outcomes and separation
 
 The engine can construct outdoor and indoor 3D worlds and selectively supply terrain, vegetation, sky/air, cloud shadows, weather/wind, precipitation, water and persistent surface response. Their effects agree at a place and time, even when one visible representation is absent or lower fidelity. A game can use a cloud-shadow field without drawing clouds; a room can use exterior daylight through windows without rendering a full outdoor sky. A desert or dungeon need not allocate a water solver. Feature composition validates retained consumers and substitutes, rather than copying or forking one “environment state” per view. The top-down, third-person and first-person cases are peers.

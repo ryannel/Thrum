@@ -10,6 +10,7 @@ reference, not the host. Existing implementations are candidates for later recon
 - [Baseline](BASELINE-SPEC.md): initial scope, devices and workload admission; [construction order](CONSTRUCTION-PLAN.md).
 - Owning mechanisms: [foundation](FOUNDATION-SPEC.md), [render](RENDER-SPEC.md), [play/environment](PLAY-ENVIRONMENT-SPEC.md), [network](NETWORK-SPEC.md).
 - [I1 headless slice](I1-HEADLESS.md): selected action/world/replica mechanism, cost account and [local evidence](../evidence/i1-headless/QUALIFICATION.md).
+- [Water alignment and D2 commission](modules/WATER.md): retained ambitions, baseline limits, owners, cost and ordered design work.
 - [Maturity](MATURITY.md) and [ledger](maturity.json): current design versus implementation, quality and platform evidence.
 - [Simplification findings and resolutions](SIMPLIFICATION-REVIEW.md): coordinated closure; [earlier review](PLAN-REVIEW.md).
 - Creator acceptance: [scenarios](SCENARIO-WALKTHROUGHS.md), [first use](FIRST-USE-WALKTHROUGHS.md), [from scratch](FROM-SCRATCH-WALKTHROUGHS.md).
