@@ -54,6 +54,12 @@ and scheduling, persistence and acceptable consistency. Walk representative play
 important transitions. Find missing owners, duplicate authorities and circular assumptions before detailed APIs.
 Choose contract detail proportional to its downstream consequences; avoid empty frameworks and speculative APIs.
 
+For performance-led engines, map investment to expensive operations, frequent small work, data movement and waits
+across runtime and creator workflows. Derive scaling and critical-path consequences before committing representations.
+AI-maintained specialization may justify harder internals when semantics, invariants and gains are verifiable; public
+simplicity does not require uniform internal layouts. Sequence capability investments through construction rather
+than postponing them to a final optimization phase. Keep prospective advantage separate from measured evidence.
+
 Allocate whole-scene time, memory, loading and content budgets where targets are known. Distinguish estimates from
 measurements. Include simultaneous systems, background work and quality transitions; individually affordable
 modules do not establish a viable engine. Unknown hardware remains an open constraint, not invented certification.

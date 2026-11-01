@@ -13,7 +13,7 @@ reference, not the host. Existing implementations are candidates for later recon
 - [Simplification findings and resolutions](SIMPLIFICATION-REVIEW.md): coordinated closure; [earlier review](PLAN-REVIEW.md).
 - Creator acceptance: [scenarios](SCENARIO-WALKTHROUGHS.md), [first use](FIRST-USE-WALKTHROUGHS.md), [from scratch](FROM-SCRATCH-WALKTHROUGHS.md).
 - [AI development](AI-DEVELOPMENT.md), [skill rationale](SKILL-WORKFLOW.md) and [programme](DESIGN-PROGRAMME.md): focused skills, checks and coordination.
-- [AI performance](AI-PERFORMANCE.md) and [campaign walkthroughs](PERFORMANCE-WALKTHROUGHS.md): trusted whole-engine evaluation.
+- [Performance investment map](AI-PERFORMANCE.md#capability-investment-map), [design/process policy](AI-PERFORMANCE.md#performance-investment-from-the-first-design) and [campaign walkthroughs](PERFORMANCE-WALKTHROUGHS.md): deep optimization throughout construction, with trusted whole-engine evaluation.
 - [Storage lifecycle](STORAGE-LIFECYCLE.md) and [journeys](LIFECYCLE-WALKTHROUGHS.md): assets, promotion, recovery and cleanup.
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).
 - [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; Bevy is not the selected host.

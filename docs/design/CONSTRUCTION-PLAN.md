@@ -29,6 +29,19 @@ These are specifications and bounded proof obligations, not completed runtime fe
 fail clearly. Future capabilities retain the same small ownership/contracts and receive their own complete design
 before construction; they do not require a universal extension or solver framework now.
 
+## Performance is part of every work package
+
+Apply [the investment map and cost account](AI-PERFORMANCE.md#performance-investment-from-the-first-design) during D1/D2
+and each implementation slice. Resolve consequential scaling/layout/ownership choices before their APIs become dependencies;
+bring relevant checks and instrumentation with the implementation. I1 starts with frequent world/runtime paths and
+local/replica consumers; content, rendering, play, audio/UI and real networking extend this as they arrive. The first
+interaction is an integration fixture, not the only scale workload or an upper bound on ambition.
+
+I5 adds advanced capabilities; it does not defer performance-conscious representations, target specialization or
+optimization campaigns until the engine is otherwise complete. Internal complexity is acceptable when its useful
+advantage, invariant checks and maintenance/target costs are accounted for. Existing runtime contracts and initial
+scope remain selected; no baseline becomes qualified simply by meeting this design obligation.
+
 ## Ordered work packages
 
 Developer composition is foundational, not an I4 retrofit. The [scenario pass](SCENARIO-WALKTHROUGHS.md) recommends
@@ -84,8 +97,10 @@ runtime scripting and arbitrary binary reload do not gate the first complete gam
 
 The [performance design](AI-PERFORMANCE.md) makes optimization a deliberate contributor capability. D0 selects the
 first real workload/device, outcome and budgets; D1 specifies objective/evaluator/result identities, isolation and
-resource limits. I1 can establish a local CPU/headless baseline/reference path, with A/A noise calibration and A/B
-comparison. D2/I2a/I2b/I3 add selected content/GPU/coupled evaluations and A03 product identity. I4 supplies independent
+resource limits. I1 includes a scoped CPU/headless measurement and correctness path with repeatable scale/churn workloads,
+operation/allocation/byte attribution and A/A noise calibration before timing-based claims; A/B comparisons begin
+as meaningful alternatives exist. A full autonomous search service is not an I1 prerequisite. D2/I2a/I2b/I3 add selected
+content/GPU/coupled evaluations and A03 product identity. I4 supplies independent
 target and sustained qualification. Start campaigns as correct executable slices become available; do not wait for
 every engine module or promise gains from an unbuilt target. The selected A04/A05 compatibility rules govern dependent environmental claims; the selected detailed operators now appear in PLAY-ENVIRONMENT-SPEC; qualification remains required.
 

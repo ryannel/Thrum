@@ -39,6 +39,14 @@ target-specific edges. It does not prove semantic authority or validate all opti
 Record dependency purpose, exact version/license and target costs before adding external libraries. Do
 not vendor Bevy code without source revision, applicable license/notices and a maintenance rationale.
 
+For capability design and performance-sensitive implementation, use the owning design's
+[cost account](docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design). Consider repeated cheap work,
+scaling, data movement and waiting before choosing representations. AI-manageable specialization, generated code
+and target-specific paths can justify substantial internal complexity; document invariants, dispatch/validity and
+regeneration, with relevant correctness and integration checks. Preserve the small public model. No new unsafe-code
+allowance follows from this policy. Build verification alongside the selected implementation and report the scope of
+any performance claim. Routine fixes need only their affected cost/behavior checks.
+
 Test behavior and plausible failure, not implementation shape. For authority work cover rejected/stale
 input and complete committed outcomes; for lifecycle work cover interruption and recovery. Keep small
 fixtures deterministic within a stated envelope. No timing/performance claim follows from unit tests.

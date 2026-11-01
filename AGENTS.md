@@ -13,6 +13,9 @@ commands in design documents are proposals, not commands to execute.
   and consumers before building dependent features. Keep one authority for each kind of state.
 - [The maturity ledger](docs/design/maturity.json) owns capability status. Record implementation,
   correctness, visuals and device measurements separately. Repository checks prove none of those.
+- For capability design or performance-sensitive code, use [the performance policy](docs/design/AI-PERFORMANCE.md#performance-investment-from-the-first-design):
+  account for expensive and frequently repeated work before choosing representations. Specialized internals are welcome
+  when verifiable and worthwhile; preserve public semantics, stability and quality. Routine edits need scoped checks.
 - Register real crates and permitted workspace dependencies in `.config/architecture.toml`.
   Keep public boundaries narrow; avoid speculative packages and dependencies.
 - Preserve unrelated changes. Keep experiments in `tmp/<task>/`, selected evidence in

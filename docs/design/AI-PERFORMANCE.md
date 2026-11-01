@@ -1,6 +1,6 @@
 # AI-driven performance engineering
 
-1 November 2026. Recommended extension of [AI development](AI-DEVELOPMENT.md), the
+1 November 2026. Selected performance-development direction, extending [AI development](AI-DEVELOPMENT.md), the
 [construction plan](CONSTRUCTION-PLAN.md) and C12. This is a design for future optimization campaigns, not an
 implemented harness, running campaign or measured speedup. No hardware/cloud spend or overnight automation is started.
 The target remains the complete custom 3D engine, with no required runtime AI service. A01–A05 now have selected architectural resolutions in [the decision record](ARCHITECTURE-DECISIONS.md); their detailed implementations remain unqualified.
@@ -9,6 +9,99 @@ The opportunity is to make the engine **cheap to understand, change and evaluate
 many reasoned algorithms, representations and target-specific implementations that would be expensive to maintain
 by hand. The scarce resource becomes trustworthy evaluation and integration, as well as model/hardware time.
 We should invest in those mechanisms early, while retaining a small understandable public engine.
+
+## Performance investment from the first design
+
+**User-selected ambition, 1 November 2026:** shocking performance, pursued deeply with mature engineering.
+The user cites Zed as an experience reference for exceptional speed and responsiveness; this does not select its
+architecture or establish a benchmark comparison. Meeting a frame budget is admission, not the ceiling of ambition.
+Pursue fast startup, immediate input/edit feedback, stable frame pacing, efficient memory and sustained throughput,
+including browser/mobile constraints. Quality, correctness and application stability remain requirements throughout.
+
+AI development changes the investment economics: investigate expensive work, frequently repeated cheap work and
+repeated developer work more broadly than a conventional human-maintained implementation might justify. A path
+need not already dominate a profiler before its representation and avoidable costs deserve design attention.
+Cost-aware design begins before code; measured qualification begins when a correct executable slice exists.
+Neither a minimal first game nor a portable baseline defines the engine's eventual performance ceiling.
+
+Lower the threshold for investigation and controlled specialization. Agent effort can absorb difficult layouts,
+generated code, compile/cook specialization, SIMD, GPU kernels, incremental updates and distinct hardware paths.
+Internal authoring convenience alone does not veto a credible performance advantage. Keep the public engine model
+small and useful; document internal invariants and make changes verifiable. Specialization can also improve game
+creator workflows, but every creator-facing restriction must expose its benefit and supported domain explicitly.
+
+Retain a specialized implementation when its useful advantage and maintenance/qualification costs are justified.
+Count binary size, build time, variant coverage, debugging and regeneration burden as real costs, even with AI.
+Use a test-only reference or independent oracle where useful; shared tests alone do not establish correctness.
+Generated sources need owned inputs, a pinned generator and reproducible regeneration, not manual edits to outputs.
+Unsafe code or native API paths require narrow justified boundaries and relevant safety/conformance checks; this policy
+does not relax workspace lints or preselect a backend replacement. Revisit selected libraries/backends when evidence
+shows a consequential ceiling, with the shared-contract owners. Reuse and custom code compete on the same outcomes.
+
+### Capability investment map
+
+These are coordinated investment fronts within existing owners, not new modules or a second implementation queue.
+All capabilities receive cost review as their design is commissioned, including audio/UI and networking. Sequence
+follows architectural commitment and shared impact; deeper campaigns follow predicted opportunity and available proof,
+not a permanent ranking of fashionable features. Candidate techniques below require scoped selection and qualification.
+
+| Capability / owners | What deserves deep attention | First delivery and evidence |
+| --- | --- | --- |
+| Runtime and world access — F1/F3/W1 | Repeated lookup, traversal, scheduling, allocation, publication/copying and synchronization; compact layouts and batched/incremental work | I1: local and replica action/state path; operation counts, bytes and allocation/latency behavior across scale and churn |
+| Content and memory — F4/W2 | Import/cook/decode, cache invalidation, I/O, dependency traversal, residency, uploads and replacement peaks | I2a: bounded preload and cold/warm source-to-ready path; I2b: separately designed streaming; time to useful content, bytes, stalls and peak memory |
+| Geometry and GPU execution — V1/V2/V4 | Visibility, instance/draw preparation, submission, overdraw, geometry/deformation/LOD and reconstruction; GPU-driven candidates where supported | I3a: small render path with scale workloads and preparation evidence; I3b/I4: scene complexity, image stability and end-to-end frame tails |
+| Lighting/materials — V3 with E1 | Shadow/indirect/reflection work, light assignment, material specialization, shared transport and valid reuse | D2 fixes required representations before consumers; I3a baseline and later providers prove quality at cost and cost at fixed quality |
+| Simulation, animation and world life — P3–P5/E1 | Body/contact queries, pose evaluation, navigation, field updates, vegetation and water/atmosphere consumers; locality, cadence and bounded approximation | D2 designs complete coupled models; I3b integrates selected providers; scale, query age, physical error, sustained cost and visual motion |
+| Networking — N1 with W1/F4 | Validation, serialization, repeated group construction, copies, fan-out, queues and resync; preserve atomic outcomes and authority | I1 in-memory fixture then real I2n; application/wire bytes, committed-state age, latency tails and total client/server resource cost |
+| Audio/UI/input — A1/U1/P1 | Mixing/spatial updates, text shaping/layout, retained invalidation, dispatch and input-to-feedback path | Relevant I3 slices; deadline misses, visible/audible response, allocation and correctness across focus/lifecycle changes |
+| Creator/AI iteration — T1/T2/F4 | Compilation, incremental builds/cook, shader preparation, inspection, restart, tests and retained disk; trustworthy cheap evaluation | I1 establishes scoped fixtures/evidence, I2a/I3a measure real edit-to-useful-result; campaign tooling grows with consumers |
+
+Cross-platform scaling applies to every row. Compare Mac/Windows CPU and GPU paths, browser startup and memory,
+and sustained mobile energy/thermal behavior where supported; no desktop score certifies another profile. Preserve
+feature-off savings and game semantics. Don't add every candidate backend or technique simply because AI can write it.
+
+### The cost account in each owning design
+
+Keep a compact account beside the capability's mechanism and existing proof plan; no separate mandatory report per
+function. Cover the relevant workload range and uncertainty before committing layouts or public boundaries:
+
+- Required outcome, owner/consumers, selected workload/target and quality/correctness envelope; link existing baseline
+  targets or label a proposed target explicitly. Capture normal use, scale/churn and meaningful cold/transition cases.
+- Work multipliers: per frame/tick/entity/view/light/peer/change, including supposedly cheap lookups and bookkeeping.
+  Approximate total work by count × frequency × unit cost; track bytes, allocation and working set separately.
+  Elapsed latency follows the dependency critical path and contention, not a sum of overlapping CPU/GPU timings.
+- Repeated work and data movement that can be removed, shared, specialized, incrementally maintained or prepared ahead;
+  state validity, invalidation, lifetime, fallback and numerical limits. Include worst-case peaks and disabled cost.
+- Credible alternatives and expected savings/quality capacity, supported by math, retained research and bounds. Explain
+  commitments that would be expensive to change later; distinguish selected mechanisms from candidate optimizations.
+- Verification and instrumentation needed for that representation: useful reference/oracle, adversarial consumer cases,
+  actual timing/byte/queue boundaries, noise and observer overhead, and target-specific validation where consequential.
+- First implementation scope, further opportunity and reasoned stop/revisit conditions. Track modelled, measured and
+  integrated claims separately in the existing maturity/evidence system; unknown constants remain unknown.
+
+An existing runnable path supplies a measured baseline. For new code, choose the representation analytically and
+build a correct bounded slice with its checks, then qualify predictions. Do not first entrench a knowingly unsuitable
+layout merely to create something to optimize. A readable reference may remain test-only.
+
+### Process and completion
+
+During module design, compare performance-conscious representations before committing the API. During implementation,
+build the selected representation and its relevant verification together. Small routine changes need only their
+actual impact, not a whole-engine campaign. Agent commissions carry the objective, affected owners, cost model,
+allowed scope, immutable evaluation basis and resource bounds; the coordinator owns the integrated result.
+
+Screen opportunities widely. Apply deep work where frequency, scale, latency, memory or capacity make it worthwhile,
+including cumulative small savings across hot paths. A small gain below full-frame timing noise can retain scoped
+kernel/count/byte evidence and integrated non-regression; do not claim an unmeasured whole-engine speedup or reject
+it solely because it is individually small. Assess the combined candidate with consumers and realistic contention.
+
+A working implementation or an already-passed budget does not automatically end a commissioned performance effort.
+Continue through the meaningful opportunities within its scope and resources. Stop at the agreed outcome/resource
+boundary, when remaining gain is unsupported or below uncertainty, or when further variants cost more than their
+useful benefit. Record why and what would reopen the decision. No endless search or spending is implied.
+
+Promotion requires preserved semantics, stability and required quality, plus evidence for the claimed benefit and
+its supported targets. The existing campaign/evaluation/retention mechanisms below provide the deeper workflow.
 
 ## What changes in the architecture
 

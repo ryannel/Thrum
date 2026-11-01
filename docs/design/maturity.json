@@ -34,7 +34,8 @@
       "ios": "not_run",
       "android": "not_run"
     },
-    "evidence": []
+    "evidence": [],
+    "performance_cost_design": "not_assessed"
   },
   "state_vocabulary": {
     "decision": [
@@ -77,6 +78,11 @@
       "failing",
       "qualified",
       "out_of_scope"
+    ],
+    "performance_cost_design": [
+      "not_assessed",
+      "modelled",
+      "needs_revision"
     ]
   },
   "contracts": [
@@ -2611,15 +2617,15 @@
     "record": "SIMPLIFICATION-REVIEW.md",
     "record_sha256": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
     "current_files": {
-      "AI-DEVELOPMENT.md": "1172d8ee8b5ac9fead8563d5b5591fb8e89b2d9eaa88268f24713f74313c7763",
-      "AI-PERFORMANCE.md": "0c0a4e438b5dfc975ec54640901332e5c44fbb7e5d628e05fab425f9be143a78",
+      "AI-DEVELOPMENT.md": "a02820242bf98853ae35a5a6ff9798ea9756d343bcc323943e43deb11482d1cf",
+      "AI-PERFORMANCE.md": "c72703d56cabf5445d8ea7b38bb8069cfa13f850cd6f2550340fe7942408230a",
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
-      "ARCHITECTURE-BRIEF.md": "af55fd5647a09bf8f63b9fb9917c05534f2bc08f67014e75d442e2d5ae18013f",
+      "ARCHITECTURE-BRIEF.md": "0fc5254679ce0cf88182adf315ec653f57af241e823fb3a38fda687980632a60",
       "ARCHITECTURE-DECISIONS.md": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
       "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
-      "CONSTRUCTION-PLAN.md": "322843a985e6a2ea1f91d1410eed77ddde6a1053f8b15cf33dd4f302f7ff3c56",
+      "CONSTRUCTION-PLAN.md": "66c2eebccf81a02b587a6247fe7cf0d565438892ff2b2fd5b399f9d3a9bdff7c",
       "CONTRACTS.md": "06fdc747a6f8c24a30b41e261513cb13034893e1e1cca1b5e87eec587591205c",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
@@ -2630,19 +2636,19 @@
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
-      "MATURITY.md": "d58469ff9d97d45affc453771e089142ae7f410109d8b84ae8cc2d10116b4134",
+      "MATURITY.md": "6967954e62da9edebc04573ced48ee30bd315d4b7c1ff16fd54d1dd03017508d",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
-      "README.md": "a1d43ae57b4301ece058c684c12433369fe4ccc452e021f31255234beff9be5d",
+      "README.md": "bb171a27ac180a53dd6e79cc63cdc37ec10dac7a100c7f69d91c6a3bae0bfc1a",
       "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
       "SKILL-FORWARD-REVIEW.md": "63b02385a26c07a826cbbd050fc11480f512b18d692b6f395fd82d39219a76ce",
       "SKILL-WORKFLOW.md": "7e7c5b1c467ff90af8d2fd992050a50baf5af39f199b031d0d5f1e07076714ed",
       "STORAGE-LIFECYCLE.md": "0395c9cbf5ef66b799aeb9fbd65ca9cb76f3707a11d8079ed0acd85854bc404e",
-      "SYSTEM-DESIGN.md": "eeef34f06518a851809901a49dfc35d8c6aee80b1a44a6a265f64a127c6f82e8",
+      "SYSTEM-DESIGN.md": "de89e9cc19dc3058e099ae921bdfe891c47cf8369d46fbfe87bfda9c8bd883ec",
       "TRAVELLER-APP.md": "93edf76b93b66f47a2db7b132bbfa56c8d2e2572343694a15dcad51c9060a25d",
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
@@ -2701,5 +2707,24 @@
     "provenance": "../provenance/IMPORT.md",
     "historical_hash_scope": "Prior reviewed/report/handoff/inspected_source hashes identify original Broadsides bytes. See import-manifest.json for relocation; only current fields refreshed by scripts/design_hashes.py are live Thrum digests.",
     "evidence": "../evidence/REPOSITORY-SETUP.md"
+  },
+  "performance_investment_policy": {
+    "as_of": "2026-11-01",
+    "decision": "selected",
+    "requirement_basis": [
+      "E05",
+      "E12",
+      "E17",
+      "E19"
+    ],
+    "record": "AI-PERFORMANCE.md#performance-investment-from-the-first-design",
+    "capability_map": "AI-PERFORMANCE.md#capability-investment-map",
+    "ambition": "Shocking performance with correctness, stability and required quality; user-selected Zed experience reference, not a benchmark claim.",
+    "scope": "Engine-wide cost-conscious design and deep AI-assisted specialization across construction, including frequent cheap work and developer iteration.",
+    "next": "I1 scoped cost/representation account and correctness/measurement fixture before API commitment; implement and qualify the selected path in the same commission.",
+    "module_account_status": "Defaults apply: not_assessed until the owning scoped account is recorded.",
+    "review_scope": "Coordinator reconciliation of policy, architecture, construction, contributor instructions and skills; no independent module or behavioral skill review claimed.",
+    "implementation": "not_started_for_target",
+    "performance_evidence": []
   }
 }

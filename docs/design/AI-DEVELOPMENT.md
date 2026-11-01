@@ -149,6 +149,12 @@ image quality, and an LLM critique does not substitute for recorded human visual
 
 ## Ambitious performance improvement
 
+[The selected performance policy](AI-PERFORMANCE.md#performance-investment-from-the-first-design) also governs ordinary
+capability design: consider expensive and frequent small work before fixing representations, and accept worthwhile
+AI-maintained specialization with explicit invariants and relevant verification. Keep game-facing semantics clear;
+agent implementation effort is a resource we can spend on deeply efficient internals. A functioning slice or a met
+budget need not end its scoped performance commission.
+
 The [AI performance design](AI-PERFORMANCE.md) extends these tools into bounded optimization campaigns. Agents can
 change algorithms, representations, scheduling, content preparation and target specialization against an executable
 commission. T2 owns trusted evaluator identity, isolated candidate runs, hardware scheduling and structured evidence;
