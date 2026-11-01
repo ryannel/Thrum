@@ -696,6 +696,26 @@ fn charged_pending_storage_reserves_before_peer_join_and_survives_reconnect() {
     authority.register_peer(PEER, 1, ACTOR).unwrap();
     let with_peer = pool.used_bytes();
     assert!(with_peer > activated);
+    let tight_pool = PublicationPool::new(with_peer - 1);
+    let mut tight_authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(194)),
+        Rule,
+        World::new(WorldEpoch(194)),
+        tight_pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 1,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    assert_eq!(tight_pool.used_bytes(), activated);
+    assert_eq!(
+        tight_authority.register_peer(PEER, 1, ACTOR),
+        Err(AdmissionError::PublicationCapacity)
+    );
+    assert_eq!(tight_pool.used_bytes(), activated);
+    drop(tight_authority);
+    assert_eq!(tight_pool.used_bytes(), 0);
     let occupied = pool.try_reserve(pool.limit_bytes() - with_peer).unwrap();
     authority
         .submit(input(
@@ -727,6 +747,96 @@ fn charged_pending_storage_reserves_before_peer_join_and_survives_reconnect() {
     drop(occupied);
     drop(authority);
     assert_eq!(pool.used_bytes(), 0);
+}
+
+#[test]
+fn charged_retry_allows_a_new_peer_before_replaying_due_inputs() {
+    let pool = PublicationPool::new(1_000_000);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(195)),
+        Rule,
+        game_world(195),
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 2,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    authority
+        .submit(input(
+            1,
+            1,
+            InputSchedule::NextTick { observed_tick: 0 },
+            Action::Collect(ITEM),
+        ))
+        .unwrap();
+    let snapshot_peak = authority
+        .world()
+        .conservative_charged_publication_peak(2, 0)
+        .unwrap();
+    let available = snapshot_peak - 1;
+    let occupied = pool
+        .try_reserve(pool.limit_bytes() - pool.used_bytes() - available)
+        .unwrap();
+    assert_eq!(
+        authority.step().err(),
+        Some(StepError::PublicationBackpressure)
+    );
+    assert_eq!(authority.tick_index(), 0);
+    authority.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+    drop(occupied);
+    let committed = authority.step().unwrap();
+    assert_eq!(committed.group.results.len(), 1);
+    assert_eq!(committed.group.results[0].origin.peer, PEER);
+    assert_eq!(
+        committed.group.resolved_through,
+        vec![(PEER, 1), (PEER_TWO, 0)]
+    );
+    assert_eq!(authority.tick_index(), 1);
+}
+
+#[test]
+fn charged_due_scratch_growth_reserves_old_and_new_buffers_together() {
+    let bounds = SnapshotWriteBounds {
+        max_edits_per_action: 1,
+        max_spawns_per_action: 0,
+    };
+    let probe_pool = PublicationPool::new(100_000);
+    let mut probe = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(196)),
+        Rule,
+        World::new(WorldEpoch(196)),
+        probe_pool.clone(),
+        bounds,
+    )
+    .unwrap();
+    probe.register_peer(PEER, 1, ACTOR).unwrap();
+    let first_peer_bytes = probe_pool.used_bytes();
+    probe.register_peer(PEER_TWO, 1, ACTOR_TWO).unwrap();
+    let final_two_peer_bytes = probe_pool.used_bytes();
+    drop(probe);
+    assert_eq!(probe_pool.used_bytes(), 0);
+
+    let tight_pool = PublicationPool::new(final_two_peer_bytes);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(197)),
+        Rule,
+        World::new(WorldEpoch(197)),
+        tight_pool.clone(),
+        bounds,
+    )
+    .unwrap();
+    authority.register_peer(PEER, 1, ACTOR).unwrap();
+    assert_eq!(tight_pool.used_bytes(), first_peer_bytes);
+    assert_eq!(
+        authority.register_peer(PEER_TWO, 1, ACTOR_TWO),
+        Err(AdmissionError::PublicationCapacity)
+    );
+    assert_eq!(tight_pool.used_bytes(), first_peer_bytes);
+    drop(authority);
+    assert_eq!(tight_pool.used_bytes(), 0);
 }
 
 #[test]
