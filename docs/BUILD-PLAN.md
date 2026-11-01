@@ -67,6 +67,8 @@ The small game above proves an important path, but the full foundation is still 
   - [ ] Reserve the complete authority, required replica, host-delivery and remote-queue peak before edits and input sequencing; prove rejection, baseline/reconnect and final-owner release for that combined profile.
 - [x] Run two independently controlled players in one in-memory match. Check simultaneous actions, permissions, late and repeated messages, and what each player sees when joining or falling behind. See the [test and cost record](evidence/i1-headless/TWO-PEER.md).
 - [ ] Add basic iPhone and Android app shells. They should start with bundled game content, accept input, pause and resume, and recover when the display surface is recreated. Test on the chosen phones; this work can proceed alongside the other foundation tasks.
+  - [x] Cross-compile the portable headless core for ARM64 iOS device, iOS simulator and Android with the pinned toolchain; see the [compile record](evidence/i1-headless/MOBILE-CORE-PORTABILITY.md). This does not build or run an app shell.
+  - [ ] Build the selected winit iOS app and Android GameActivity packages, then test bundled content, input, pause/resume and surface recreation on the iPhone 13 and Pixel 7 targets.
 - [x] Review the combined headless game path and its performance evidence. The [I1 status record](evidence/i1-headless/FOUNDATION-STATUS-2026-11-02.md) separates working, measured and still-unrun paths; the [maturity ledger](design/maturity.json) keeps I1 partial until the remaining memory and phone work is qualified.
 
 ## After the foundation

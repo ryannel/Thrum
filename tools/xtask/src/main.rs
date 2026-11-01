@@ -39,7 +39,7 @@ fn main() -> TaskResult {
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests\n  check-docs             Links, metadata, design hashes and crate policy\n  check-web              Compile the portable core for wasm32-unknown-unknown\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests\n  check-docs             Links, metadata, design hashes and crate policy\n  check-web              Compile the portable core for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
@@ -53,6 +53,23 @@ fn main() -> TaskResult {
             "--target",
             "wasm32-unknown-unknown",
         ])?,
+        "check-mobile-core" => {
+            for target in [
+                "aarch64-apple-ios",
+                "aarch64-apple-ios-sim",
+                "aarch64-linux-android",
+            ] {
+                cargo(&[
+                    "check",
+                    "--locked",
+                    "--offline",
+                    "--package",
+                    "thrum-core",
+                    "--target",
+                    target,
+                ])?;
+            }
+        }
         "check" => {
             python(&["scripts/repo_check.py"])?;
             python(&[

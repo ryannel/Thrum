@@ -10,12 +10,16 @@ crate dependencies; checks use locked offline Cargo commands.
 | `./dev check` | Repository checks and their tests, rustfmt, Clippy and workspace tests |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
 | `./dev check-web` | Compile the portable core for `wasm32-unknown-unknown` |
+| `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
 | `./dev fmt` | Apply rustfmt |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
 This is a portable library compile check, not a browser runtime/rendering test. CI describes Linux,
 macOS and Windows checks, plus Wasm compilation; a configured job is not evidence it has run.
+On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets
+`aarch64-apple-ios`, `aarch64-apple-ios-sim` and `aarch64-linux-android` installed with `rustup target add --toolchain 1.99.1`.
+It compiles only `thrum-core`; app packages, native activity/UI, devices and lifecycle remain separate checks.
 `THRUM_PYTHON` can select the Python executable. Build products use `target/`, or an explicitly
 owned `CARGO_TARGET_DIR`. `cargo clean` affects that build directory; inspect ownership before cleanup.
 
