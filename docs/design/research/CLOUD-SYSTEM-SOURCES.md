@@ -1,6 +1,6 @@
 # Cloud system evidence and analytical choices
 
-1 November 2026. Supports [the governing cloud design](../modules/CLOUDS.md), not a running provider.
+1 November 2026. Historical prepared-local-source study. Supports [the bounded local profile](../modules/CLOUD-LOCAL-CLIP.md), not a running provider or the complete five-family target. The [complete-sky addendum](CLOUD-SKY-SOURCES.md) records the revised selection.
 Three bounded Sol High workers independently covered requirements, evolution and transport. Parent synthesis owns
 the resulting combination; it is not an assertion about private studio internals. Slides/notes and source documents
 were inspected; no conference recording was watched in this commission. No bake, renderer or target benchmark ran.

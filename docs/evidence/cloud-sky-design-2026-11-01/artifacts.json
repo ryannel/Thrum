@@ -1,0 +1,11 @@
+{
+  "scope": "selected complete proof design; no implementation quality or runtime promotion",
+  "files": {
+    "docs/design/modules/CLOUDS.md": "da250678198ad973b3acc9b1d4bb881f438f774df1bd3024078e5892a0e689ef",
+    "docs/design/modules/CLOUD-CAPABILITIES.md": "4ef919ceb068e1514fb86dd10b1e59544b0dd88c86a00d9e9dcce8e2ccae99be",
+    "docs/design/research/CLOUD-SKY-SOURCES.md": "d13774df623841844c61f438a66daa4f4e30c9d3e05fc18733c6fc1a3530f7f5",
+    "docs/BUILD-PLAN.md": "b590621f430e3ee3db535d889637bfc99997c144d2aaa7b2b5d65732c723b1c6",
+    "docs/design/RENDER-SPEC.md": "63fed32c0f6ba686d323a8d62799c367b17b0da048eaf02ee12869aa2610189c",
+    "docs/design/modules/ENVIRONMENT.md": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61"
+  }
+}

@@ -67,6 +67,14 @@ and qualified. The original visual-quality and flexible-provider ambitions remai
 ## Cloud design handoff
 
 The [cloud capability inventory](design/modules/CLOUD-CAPABILITIES.md) and [complete system design](design/modules/CLOUDS.md)
-are D2 design work, aligned with E1/V3/V4/F4 and the existing baseline. The proposed RC volume extension follows the
-foundation/content/render dependencies above; it does not reorder the active construction queue. The [Q1 source proof](evidence/cloud-source-2026-11-01/REVIEW.md) supplies bounded local-lifecycle, sampled optical and encoded-byte evidence. The [Q2/Q3 instrument](evidence/cloud-coupled-2026-11-01/README.md) now supplies bounded common-light, receiver, mirror and overlapping-media evidence. Actual engine consumer bindings, histories and complete target qualification remain unrun; fresh-graph cost misses the proposed cloud allocation, so local cost qualification precedes broader cloud/weather scope. Retain useful legacy renderer algorithms
-through those interfaces; no Bevy/legacy host migration is implied. Storm progression remains optional after the base.
+are revised D2 design work under the [five-family commission](evidence/cloud-sky-design-2026-11-01/COMMISSION.md).
+The earlier [Q1 source proof](evidence/cloud-source-2026-11-01/REVIEW.md) and
+[Q2/Q3 coupled instrument](evidence/cloud-coupled-2026-11-01/README.md) retain bounded lifecycle/optical/lighting/shadow/
+mirror evidence and an explicit cost failure. They do not establish the complete profile.
+
+The commissioned proof order is complete independently reviewed design, accepted isolated families, combinations/
+weather, then fair/broken/overcast/storm full skies and complete-workload disposition. Storm development and the five
+families are required here. Track actual costs throughout; budget failure does not make those behaviours optional.
+SKY-G extends the optical/camera domain explicitly; it does not silently qualify the baseline short-range atmosphere.
+Actual engine bindings still follow I1/I2/I3a/I3b above; standalone proofs do not reorder the construction queue or
+promote engine maturity. Retain useful renderer algorithms through the shared contracts; no legacy host migration.

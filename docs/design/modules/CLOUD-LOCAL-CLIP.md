@@ -1,0 +1,688 @@
+# Local prepared-cloud reference profile (historical bounded design)
+
+This is the retained Q1/RC finite-source design and its bounded Q2/Q3 evidence, not the current complete-sky target.
+The [canonical design](CLOUDS.md) governs the expanded five-family commission. Parameters, optional-family labels,
+capacity limits and proof order below record the earlier bounded selection only; they do not reduce current scope.
+Its source decoder, optical derivations and exact evidence remain useful reference/provider material.
+
+
+1 November 2026. **Recommended detailed design, not an implemented or qualified Thrum capability.**
+Commission: [capabilities](CLOUD-CAPABILITIES.md), E1.clouds, engine E03/E09–E12/E14/E17/E20 and
+[C01–C09/C12/C13](../CONTRACTS.md). [Research and decisions](../research/CLOUD-SYSTEM-SOURCES.md) distinguish
+published techniques from this synthesis. [Review record](../../evidence/cloud-design-2026-11-01/REVIEW.md)
+records independent discovery, challenges and resolutions. The original commission was design-only. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) is authorized separately. A subsequent bounded [Q2/Q3 coupled proof](../../evidence/cloud-coupled-2026-11-01/README.md) is also commissioned; neither commissions a new engine renderer.
+
+## Governing decisions
+
+| Decision | Recommendation and reason | Boundary |
+| --- | --- | --- |
+| CD01 Source | Finite prepared **final optical-density animation**, including formation and breakup, with an optional stationary interval-flow carrier; the Q1 direct source omits carrier/history work. | Actual density frames supply local structural evolution. Wind, a global fade and a static warped volume do not. No mandatory runtime meteorology. |
+| CD02 Detail | Bake final detail across the whole sequence, with the producer's continuous material coordinates. | No new runtime noise/rest-coordinate system. Optical geometry is independent of the lighting approximation. |
+| CD03 Residency | Admit the complete bounded encoded clip on CPU and GPU; reconstruct a shared current scalar field once per unique source evaluation time. | Avoid source decoding/uploads on ordinary seeks or accelerated playback. Larger libraries need another admitted residency design. |
+| CD04 Transport | V3 jointly integrates cloud, air and fog coefficients/direct lighting; a bounded cloud-only higher-scatter closure adds an effective source. | Preserve C08. Keep the baseline attenuation-only recipe; visible volume is a separately admitted extension. |
+| CD05 Consumers | Source, direct attenuation, main-view cloud appearance, reflected appearance and environment contribution are independently bound. | Consumer removal retires only unused work; no duplicate weather authority. |
+| CD06 Reuse | Retain/adapt legacy density sampling, bounded optical lighting, ray integration and useful reconstruction guards. | Replace lifecycle, Bevy bindings and lab-owned final scene composition. No wholesale code/asset import. |
+| CD07 Quality | Full optical fidelity first; lower-resolution/precision products must independently pass the same declared cue/error floor. | Budgets can reject a recipe; they cannot silently turn growth/breakup back into noise or a fade. |
+
+All are engineering recommendations under the user's production-style/fidelity decision. A selected algorithm is not
+visual acceptance. The bounded Q1 source/tools evidence below does not implement Thrum public bindings, V3/V4 or device qualification.
+
+## Responsibility and public composition
+
+W1/F1 own identity, committed time and publication. E1 owns the selected cloud source descriptor and any game-relevant
+queries. Weather/wind and celestial drivers remain neighbouring E1 providers. F4 owns source admission/cook and
+immutable products; V1 owns GPU allocation/submission/retirement. V3 owns transport, reflection and environmental
+radiance. V2 owns views/extraction; V4 owns final reconstruction/exposure/display. T1/T2 own inspectable authoring and
+evidence. P7/N1 consume only explicitly required authority facts. These are responsibilities, not new mandatory crates.
+
+Use Thrum's existing F2 declarations and typed access/schedule registration. A cloud package contributes its source
+schema, optional CPU queries, optical producers and V3 pass inputs; a game selects bindings explicitly. It must not
+install its own service locator, renderer, clock, exposure or final upscaler. The following are contract meanings,
+not implemented Rust API signatures:
+
+| Interface | Required meaning |
+| --- | --- |
+| Cloud source descriptor | Stable source/instance ID; source/build/clip revision; committed tick and environment age; local-to-world transform and trajectory; optical material/style; finite support; interpretation as cosmetic or authority; product/lease references. |
+| Optical coefficient sample | Nonnegative grey cloud extinction and scattering, m^-1; normalized phase parameters; zero emission in this profile; source time/revision/support. Valid zero and unavailable are different results. |
+| Cloud path query | Endpoints or endpoint plus directional boundary, time, included cloud IDs, optical depth and validity/error. It excludes geometry, air and fog; V3 composes those once. |
+| Correspondence query | Current point/time and actual retained image time → candidate prior point, mapping error/confidence, local creation/erosion and invalidity. Optional history may be rejected. |
+| Render products | Immutable sampled density/mips, conservative occupancy, light-aligned cumulative optical depth and bounded external-environment visibility; exact producing revisions and graph dependencies. |
+| Optional semantic query | CPU extinction/transmittance at committed time with domain/error and cost admission. Not a thermal irradiance, rainfall or visibility/privacy decision. |
+
+Three conforming source choices: **clear** (`sigma=0,tau=0,T=1`); baseline **authored directional tau** with its existing
+angle/height range; and the proposed **prepared volume**. A procedural source need not implement clips/groups/prefetch.
+All must state the capabilities they actually supply. The baseline authored field cannot satisfy arbitrary volumetric
+views or inside-cloud source paths. Missing data never silently returns clear sky.
+
+| Recipe | Main cloud view | Cloud attenuation | Reflected/environment cloud radiance | Retained work |
+| --- | --- | --- | --- | --- |
+| No cloud consumers | Off | Explicit clear | Off | No clip buffers, fields, cloud caches or cloud draws. |
+| Top-down attenuation only | Off | Authored tau, or volume-derived when selected | Off | Only selected source and attenuation products; no cloud view integration. |
+| Main omitted, reflection retained | Off | Selected independently | On | Required volume/source/light data and reflection/probe work; no main-view cloud sample work. |
+| Main volume, reflection omitted | On | Same volume | Off | Volume/light data and main joint-media work; no cloud reflection/probe contribution. |
+| Coupled proof | On | Same volume | On | One source evaluation shared by all consumers at declared sample times. |
+| Headless semantic consumer | No renderer | CPU query if required | None | CPU encoded source/clock/query only; no GPU dependency. |
+
+Main-view omission is a deliberate presentation policy, not a physically exact view of an invisible participating
+medium. Light-ray cloud attenuation may remain while camera-ray cloud coefficients are omitted. Reflection masks can
+differ explicitly. Shared air/fog histories remain if those services still need them: there is no private cloud
+history allocation whose removal can be claimed twice. Decorative appearance never becomes authoritative by drawing it.
+
+## Q1 source decision after running proof
+
+The [source proof and independent closure](../../evidence/cloud-source-2026-11-01/REVIEW.md) qualify a bounded
+**authored optical** source candidate for further integration. They supersede the unrun33-frame worksheet for this
+particular source, not the complete module contracts or the baseline attenuation-only recipe. Generic smoke and
+mechanical partitioned-lobe sources failed image inspection; the stationary carrier also failed actual-source tests.
+
+The selected master is a versioned detailed shape plus a recoverable continuous authoring function, not a local
+Broadsides dependency. The shape is a pinned/adapted WDAS cloud under CC BY-SA3.0 with attribution. In fixed material
+coordinates, local density-threshold recession grows cores/boundaries; spatially varying erosion onset clears channels
+while neighbouring cores remain. Its three smooth oblique macro modes are authoring inputs, not runtime noise or a
+meteorology claim. Local material velocity is zero; E1 still owns world wind/instance trajectories. The source holds
+no independent weather clock. Coherent trajectory/view/receiver/reflection operation remains Q3/Q4.
+
+The compiler samples this real authoring function at candidate knots and quarter/mid/three-quarter reference times.
+Adaptive positive endpoint interpolation selects162 knots over0..240s, intervals0.46875–7.5s, fixed R8 code range
+0..0.125m^-1. This is a per-source scale, never frame-wise normalization. Direct evaluation supplies the same current
+R16F field to every planned consumer. History is unavailable in the first direct recipe: cloud-affected joint-media
+samples use spatial resolution and V4 reactivity until Q4 establishes retained-time reuse. This is the previously
+allowed direct-source alternative, not fabricated fluid correspondence.
+
+Mixed sparse8³ bricks preserve all R8 values exactly: u16 indirection and occupancy, u32 frame-relative aligned
+pointers, then either512 dense bytes or64 mask bytes+16 prefix bytes+packed nonzeros. Tagged lowbit selects rank mode;
+prefixes cover64-voxel groups, requiring at most two popcounts per lookup. No source paging, per-frame decode/upload,
+extra texture binding or runtime procedural density is introduced. Whole encoded residency and shared current-field
+ownership remain CD03. Actual density+header is6.260437MiB, below11/16.75MiB caps; the original equivalent packing was
+12.5813MiB and failed cold admission.
+
+Independent decoding proves all162 original/repacked grids identical. All483 accepted-leaf reference samples pass
+axial tau<=0.1 and the proof's stricter absolute T<=0.02, including current-field half storage: maxima0.0917805 and
+0.0199889.162 half-stored endpoints pass too. The remaining T margin is small, so relevant changes repeat the half-aware
+check. These samples do not certify all real times/directions. Native images and topology establish local development
+and actual separated substantial remnants; captured1x/16x/64x playback and kernel costs have scoped receipts.
+
+Source-only WebGPU/CPU tools are evidence instruments, not engine integration. The complete88MiB service/512MiB
+browser, CPU/GPU frame, startup, mobile and thermal budgets remain unqualified. The one-source proof does not establish
+library variety, incoming storms, CPU semantic query cost or whole-system completion. Runtime construction still follows
+I1/I2/I3a and Q2–Q7; retain the source at the typed seams rather than importing this diagnostic renderer.
+
+## Q2/Q3 bounded coupling result
+
+The [coupled proof and receipts](../../evidence/cloud-coupled-2026-11-01/README.md) exercise the pinned Q1
+source with one latched source/light state, a matte receiver/object, perfect planar mirror, constant external sky,
+exponential air and two overlapping bounded fog constituents. Independent float64 reference solves compare actual
+GPU light and main/secondary transport queries; native stills compare spatial reconstruction with a full-resolution
+direct trace. Normal/accelerated recorded witnesses check changing structure, shadow and reflected view together.
+This is a standalone model/interaction instrument, not V3/V4 public bindings, actual water, an HDR environment/probe
+qualification, or platform admission. Masking main appearance while retaining shadow/reflection is tested; full
+provider removal and zero-consumer cost remain Q5/Q6 obligations.
+
+Direct incident light composes the same air/fog/geometry/cloud path for surfaces and every medium. The mirror
+far leg begins at the interface, and the main camera-to-interface affine operator applies exactly once. All32
+rejection-case transport queries are valid; an upper occluder rejects Sun inside cloud, foreground-fog composition
+rejects the large double-attenuation counterexample, and zero illumination gives exactly zero radiance with
+extinction retained. On the selected default rays, GPU versus1m reference with actual caches differs by at most
+0.620% composed radiance; near/far mirror composition by0.0753%. These finite witnesses qualify the bounded closure,
+not every direction or a physically exact light cache. The128³ interpolated prefix still has sampled primary
+T error0.02859 and a45.1% relative incident-light error at one opaque interior point. Delivered puff-ray source error
+against direct fine Sun depth is much smaller, below0.4% in the selected comparisons. Retain this disclosed authored
+approximation floor; a stricter physical profile needs another admitted cache/query variant.
+
+The proof revises the implementation hypothesis after whole-graph evidence: portable RGBA16F storage writes with
+explicit RN-half conversion preserve the checked default Q1 density/mip readbacks exactly and remove repeated packed-buffer texture transfers.
+One compute pass builds source/mips/max/128³ prefix/32³ ambient before independent half-linear main and quarter-linear
+reflection. Finer ambient integration is within1% at sampled required nodes. Source-specific conservative work bounds
+are admitted only with both pinned density and manifest hashes; ambient is valid only over the cloud query domain.
+These are scoped prototype choices, not automatic replacement of the scalar engine profile below. Packed scalar
+storage, qualified backend formats, working-set reuse and histories need their own assembled cost/precision evidence.
+
+The measured fresh-graph cost remains an open gate against the proposed5ms browser cloud allocation and16ms complete
+frame envelope; see the owning performance report for final raw observations, tails and timestamp limitations.
+Logical resource counts are not measured process memory or a512MiB browser certification. Do not add storm/weather
+scope or assume Q4 histories will solve cost. The next bounded risk is Q7 local cost/measurement qualification,
+retaining the source and coupled-image oracles, before promotion or a broader scene. I1/I2/I3a continue to own actual
+Thrum construction dependencies.
+
+## Content producer and recoverable input
+
+The original external-source recommendation is a temporally coherent volume master → proposed pinned **cloudclipc** compiler
+→ admitted Thrum optical product. The compiler is specified here but not written. Houdini/EmberGen or a retained LES
+sequence can supply a master; none is a runtime dependency or automatically an accepted source. Retain a standard VDB
+sequence plus manifest, or an actually recoverable generating recipe/toolchain and exact inputs. A proprietary project
+alone without an available recovery path is insufficient. No software purchase, new bake or bulk import occurs here.
+
+The manifest declares producer/version/rights, hashes, Y-up right-handed metres, fixed voxel-center transforms,
+density meaning and optical conversion, velocity frame/bulk drift, timestamps, start/end policy, optical style,
+compiler/version/target and reference data. Physical condensate may use a fixed authored optical remap
+`sigma_t=kappa*max(rho,0)`; this is not a claimed meteorological calibration. Never renormalize each frame's density
+total or peak to create/maintain an attractive body. Reframe **both** fields: for a declared bake trajectory c_b(s),
+`rho_local(q,s)=rho_export(c_b(s)+R_b*q,s)` and
+`v_local(q,s)=R_b^-1*(v_export(c_b(s)+R_b*q,s)-dc_b/ds)` after unit conversion. Removing velocity drift without moving
+the scalar sampling frame would double-advect the source. If export time is retimed, its derivative multiplies exported
+velocity as well; a playbar frame rate never silently supplies that factor.
+
+Compiler order: validate → convert axes/units once → remove declared bulk drift once → resample final optical fields
+and residual velocity → bake any detail coherently at all source times → compute interval carrier/diagnostics and
+swept support → pack → compare against high-precision spatial/temporal references. Fine reference times, including
+quarter/mid/three-quarter interval samples, must come from the real authoring source. The compiler does not invent
+those samples and then validate interpolation against itself. Existing 15-second LES output cannot establish the
+7.5-second/quarter-time reference requirements without a new bounded export/replay or another source.
+
+Original carrier-profile worksheet (the Q1 direct recipe above is separately qualified): a billowy cumulus-like **finite 240-source-second** lifecycle, 33 output frames at
+7.5 s intervals, final **128^3 density in a 512 m cube** (4 m cells), **32^3 interval flow** (16 m spacing), 8^3 sparse
+bricks. This 512 m extent deliberately differs from the study's 2 km arithmetic example: we preserve spatial detail
+rather than dilute the same grid across a larger sky. Both density endpoints are zero; an empty validity collar
+covers sampling/flow support. Each endpoint has at least eight fine zero-density boundary voxels (32 m). Under the15 m carrier shift, the first
+four reconstructed voxel centres remain zero, preserving a zero boundary sample at every selected density mip; the
+cooker verifies this guard including filtering and quantization. The volume contains local formation, a developing body, opening gaps/detached remnants
+and local erosion. It does not loop. Reuse creates a new instance ID, not a wrap discontinuity.
+
+`cloudclip.json` pins schema/source/compiler/product hashes, units, bounds, timestamps, optical scales, encoding,
+chunk offsets/checksums, swept occupancy, velocity/gradient/error bounds and endpoint policy. `density.bin` stores
+u16 brick indirection (`0xffff` exact empty), occupancy bits and R8_UNORM density under the declared extinction scale.
+`flow.bin` stores interval XYZ SNORM8 with per-component scales in local m/source-second. Multibyte values are little
+endian, X fastest then Y then Z. Do not redefine the voxel transform using each frame's tighter bounds. No runtime
+noise, SDF erosion or global age-opacity envelope is applied to the cooked optical frames.
+
+The selected source optical range is0<=sigma_local<=0.5 m^-1 under a fixed manifest scale; outside-range source
+content is rejected or deliberately remapped once for the entire source, never clipped silently per frame.
+R8 is the reference runtime precision, not a blanket optical-quality guarantee. A brick-local FP4 or mixed-precision
+cook is a distinct error-qualified candidate; shipping games do not switch precision simply because an asset exceeds
+its byte cap. Fine detail, flow fit, quantization and source cadence have separate error reports. Content without
+reliable velocity can support a separately qualified dense unwarped playback with invalid history, not this carrier.
+
+## Evolution and motion equations
+
+Let `sigma_i(q)` be final extinction in local metres at `s_i`, and `v_i(q)` the bounded stationary residual carrier for
+`[s_i,s_(i+1)]`. The compiler uses the composite trapezoidal temporal average of exported residual velocity over that interval,
+then resamples its complete32^3 carrier, including empty optical space. Outside the grid it uses closest-point clamped
+trilinear extension (continuous and nonexpansive), never a density mask. The source must supply that valid carrier
+domain; missing/background velocity is not invented by interpreting zero density. Zero density does not imply zero flow. Extend through swept support and smoothly to the declared exterior carrier, rather than masking
+velocity at the density edge. Let `d=s_(i+1)-s_i`, `theta=(s-s_i)/d`, and `Phi_i(h,q)` solve `dq/dh=v_i(q)`.
+
+```
+a = sigma_i(Phi_i(-theta*d,q))
+b = sigma_(i+1)(Phi_i((1-theta)*d,q))
+sigma(q,s) = (1-theta)*a + theta*b
+```
+
+Along a material characteristic `q=Phi_i(theta*d,y)`, the ideal carrier gives
+
+```
+D_s sigma = r_i(y)
+r_i(y) = [sigma_(i+1)(Phi_i(d,y)) - sigma_i(y)] / d
+```
+
+`r_i` has units m^-1/source-second. It is signed local optical creation/erosion, including births where prior density
+is zero and destruction that severs a neck. The actual density frames supply this change; the carrier only supplies
+transport. This is positive, endpoint-exact and C0 across intervals, not mass-conserving or generally C1. Visible
+double contours, invented bridges or derivative ticks are rejection conditions, not reasons to add undocumented noise.
+
+Runtime `Phi` uses one midpoint/RK2 step per endpoint, sharing `v_i(q)`: three trilinear flow evaluations and two
+trilinear endpoint-density evaluations per current-grid voxel. Empty intervals use conservative swept occupancy.
+The selected profile bounds `|v|<=2 m/s` and `L<=0.02 s^-1` on the actual post-SNORM, trilinearly interpolated/extended
+carrier (and the unquantized counterpart when quoting the quantization comparison).
+Transport over 7.5 s can be 15 m (3.75 density cells, less than one flow cell); it is not assumed smaller than one
+density voxel. For bounded V/L, a conservative one-step midpoint displacement error relative to the exact carrier is
+`L V h^2/4 + L^2 V |h|^3/6`, at most 0.619 m for the full interval. The derivation bounds
+`|x(t)-x-t*v(x)|<=L V t^2/2` and integrates the Lipschitz difference from the midpoint predictor; it does not require
+a globally smooth Jacobian across trilinear cell boundaries. SNORM8 carrier quantization contributes at most
+`delta_v*(exp(L|h|)-1)/L`, with `delta_v<=sqrt(3)*2/254`, approximately 0.111 m here. Coarse/stationary-carrier mismatch
+against the external source is separate. The cooker must report that mismatch and reject an interval exceeding the
+proposed 1 m persistent-structure correspondence gate or the optical-reference gates. More input samples are an
+explicit new cook/admission, not a runtime iteration surprise.
+
+Instances have fixed yaw R, uniform scale lambda in [0.5,2], optical multiplier k in [0,1.5], and a committed source
+age s. Define `q=R^-1*(x-c(t))/lambda` and `sigma_world=(k/lambda)*sigma(q,s)`. The inverse scale preserves optical
+depth under uniform size changes; an arbitrary anisotropic stretch is not this profile. Global size is fixed during
+the clip: local growth comes from its fields. The centroid obeys the selected shared wind at its height. Initial wind
+may be constant/authored; fixed-tick integration stores trajectory samples. Internal residual flow is not a second
+world wind. For fixed yaw/scale, candidate material velocity is
+`dc/dt + R*lambda*(ds/dt)*v_i(q)`. Bulk drift removed in preparation is never applied twice.
+
+The initial scheduler is an explicit finite authored instance list (clip hash, stable ID, birth/age, position,
+yaw/scale/material), admitted for at most four active instances and at most two nonzero contributions at one point.
+The first proof uses one instance. The workbench opens at a proposed90 s reference age with the body already
+framed; explicit lifecycle-from-birth preview seeks to0 and resets history. A follow-camera tracks the cloud without
+moving the fixed receivers or changing source coordinates. Different instances can share one current field for an identical source/phase;
+world transforms alone do not force duplicate density. Procedural populations and weather fronts are optional policies,
+not a mandatory particle framework. One clip is enough to qualify a representation, not a production sky library's variety.
+
+F1 world time remains authoritative. Ordinary runtime centroid advection integrates shared wind in **world seconds**;
+source-age rate may separately author faster/slower optical development and must not relabel internal carrier flow
+as measured weather wind. Its material velocity uses the chain rule above. The initial ordinary profile uses1x.
+
+T1's initial diagnostic uses an **analytic constant-wind trajectory**:
+`c_preview(s)=c_ref+u0*(s-90)`, u0=(4,0,1) metres/source-second, valid for all0<=s<=240. Thus a fresh session can open
+at90, seek180 and seek0 without recorded past data or an unknown future weather sample. A variable-wind recorded
+preview is optional and requires a complete captured/precomputed curve covering every requested age; otherwise a full
+trajectory seek is unavailable. An optical-only rephase can retain the current runtime centre but is explicitly not a
+world/trajectory rewind. T1 samples this cloud source **and its selected trajectory** at1x,16x or64x;
+all its shadow/reflection/view consumers receive that same evaluation time, while daylight has a separately declared
+preview mapping. This is an authoring preview with static receivers, not a claim that the whole physics/weather/game
+world ran64x or that wind4 m/world-second magically advected a cloud256 m/world-second. Any retained force/gameplay
+consumer would need a different admitted time-scaled-world profile; it cannot borrow this diagnostic. Preview rate/
+seek changes are explicit commands/revisions, never view-local clocks. At64x/30 Hz, a45 s structural event has about21
+presented samples before frame losses. Faster events/rates need new admission. Record every sample's source age and
+actual presentation cadence; never hold or drop source time to hide cost. An overload fails qualification.
+
+## Shared current field and portable GPU layout
+
+Admit the complete finite encoded source on CPU for recovery/optional queries and GPU for evaluation. This deliberately
+selects bounded whole-clip residency, not an unimplemented streaming promise. Decode/evaluate only the **current field**
+once per unique source age before consumer work. Seeks select their interval directly. No ordinary endpoint upload,
+network paging, view-dependent source cache or replay of all skipped steps is needed.
+
+The GPU source is a bounded read-only byte/word buffer. Flow expands once to four bytes/voxel inside that buffer;
+manual trilinear flow interpolation uses eight neighbouring packed values. Do not pack 32 interval volumes into a
+1024-deep 3D texture or assume portable RGB8 textures. Source lookup/flow warping occurs in current-field compute,
+not at every camera/light ray step. Sparse density lookup treats absent neighbours as exact zero and interpolates
+across brick boundaries; the dense current field eliminates runtime halo seams.
+
+Store current density in filterable **R16Float**, with three physical-density mips. Portable WebGPU does not guarantee
+R16Float storage writes. Build pairs via core WGSL `pack2x16float` into a u32 storage buffer, then copy into the sampled
+3D texture. Base128 width has a256-byte row; mip64/32 rows are padded to256 bytes. Reuse one4 MiB scratch buffer in
+sequential graph passes for base/mips and instances; do not presume buffer/texture heap aliasing. Direct half-storage
+is an optional separately qualified specialization. R32Float storage/manual filtering and RGBA16Float direct storage
+are compared alternatives, not accidental required features.
+
+Select **RC-one** or **RC-four** slot capacity at load time. RC-four reserves every atlas slot even when fewer
+instances are active; sharing phases saves compute, not automatically allocated atlas bytes. Moving between capacities
+requires stop/load or an admitted old+new peak. For up to four slots, keep the layout inside portable limits. Pack density
+slots2x2 into one256x256x128 R16F atlas (one slot uses an ordinary128^3 allocation). Its inherited zero collar prevents
+filter/mip leakage between slots; address every level using the same voxel-center convention, and return zero beyond
+a slot's valid support. Pack64^3 directional-depth interiors into66^3 guarded slots in a132x132x66 RGBA16F atlas;
+use zero source-facing guards, downstream total-column depth guards, and zero transverse guards only outside the
+padded physical cloud projection; duplicate nearest valid boundary values where support remains nonzero.
+Each direction gets one such atlas. Pack32^3 ambient interiors into34^3 duplicated-edge slots (68x68x34 atlas), and
+32^3 max/residual blocks into a64x64x32 RG32F atlas addressed by textureLoad. Thus up to four fields use **five cloud
+textures** (density,two light directions,ambient,max/residual), not twenty independent bindings. All dimensions<=256.
+V3 still validates the total shader bindings including sky/depth/geometry resources; no capacity is inferred from the
+cloud count alone. Clear unused slots and retain slot-generation checks. Source/phase sharing can reduce field slots,
+but world-dependent ambient products need their own instance validity even when optical density is shared.
+
+For empty-space skipping/history use a32^3 RG32Float field: conservative maximum extinction and maximum absolute
+material residual per source second. Reduce the fine evaluations over each coarse cell plus filter halo; pad extinction
+outward for half quantization. The residual is already available as abs(b-a)/d during reconstruction. Average-density
+mips are never a conservative empty bound. Only a proven zero cell can skip cloud coefficient
+work; air/fog transport still continues. Fields, source buffers and cache products carry immutable content/phase/device
+keys; V1 publishes the complete current generation before any view or shadow consumes it. RC views in one frame
+share that source evaluation time. One physical current-field slot can be reused only with V1's queued write-after-
+last-read ordering across complete source/view graphs; it is not overwritten for a late unsubmitted packet. Cancel/
+reset stale optional work before reuse, or reserve another slot for an actually retained concurrent phase. GPU in-flight
+uniform/descriptor leases remain V1-owned and bounded. Old image history reevaluates the resident encoded source and
+does not lease an old dense field. Different simultaneous preview times/worlds require distinct admitted slots unless
+the pure source/phase keys really match; immutable asset bytes can still be shared without sharing world authority.
+
+The initial V1 graph has explicit stages: current-field/summary build -> mip pack/copy -> directional and ambient
+products -> low-resolution joint integration -> history/spatial resolution -> sparse full-resolution fallback -> V4.
+The resolve and fallback are **separate pipelines**, so four current/history input sets are never bound alongside all
+cloud/light/sky resources in a single over-limit shader. Resolve marks unsuitable full-resolution pixels in a cleared
+u32 atomic bitset (one bit/pixel, about0.11 MiB at720p; reflection adds0.028 MiB), and writes suitable pixels to the
+next scene-colour target. The following pass reads the bitset, original pre-media scene/depth and optical/light inputs,
+traces marked pixels, and writes only those destination pixels. No full-resolution S/T intermediates are required.
+V1 orders those writes before V4; the destination is never sampled while being written. Final scene-colour/velocity/
+reactivity products are V3/V4 frame services counted in the whole-scene budget, not an unreported cloud copy.
+
+Cook finite **cloud-off**, **attenuation-only** and **volume** integration families (one/two directional-source variants
+where their bindings differ). Slot capacity uses dimensions/metadata, not one variant per instance or clip frame.
+Cloud-off removes cloud bindings and producer passes rather than retaining five neutral full volumes. Headless query
+inclusion has no GPU pipeline. Source interval, age and material values are data, not shader compilation events.
+
+## Light projection and joint transport
+
+For every light, `tau_c(a,b,s)=integral sigma_world(x,s) dx` contains cloud only and `T_c=exp(-tau_c)`. Overlapping
+cloud constituents add once. The initial directional profile selects Sun and an optional Moon; both-active cost is
+counted. V3 geometry visibility must cover the cloud-light sample domain as well as ordinary camera surfaces;
+outside-map visibility is unavailable unless a conservative scene bound proves an unobstructed path. A selected Moon
+also requires its own admitted geometry-visibility path, not the Sun shadow map. Local lights do not scatter in clouds in the first recipe, but that alone does **not** remove cloud extinction from
+their paths to surfaces/air/fog. The general optical reader can integrate finite paths through current density with
+the same bounded cell traversal. RC excludes local media lights and requires any surface-only local light's affected
+paths to be disjoint from cloud support (or binds that finite-path evaluator under a separately budgeted variant).
+A source-radius/affected-region bound proves the exclusion; requesting an intersecting unsupported path fails admission,
+never returns clear. No surface-light list is silently truncated into a cloud list.
+
+Build a light-aligned **64^3 RGBA16Float** cumulative optical-depth grid per participating direction. RGB stores depth
+for current-density mips0/1/2; only mip0 is the primary physical-shadow approximation. An invocation walks each source-
+facing column, accumulating in f32 and writing half depth. Subdivide each cell so its integration step is no larger
+than one current-density cell. This is O(Q*substeps), not a new full shadow ray from each of Q voxels. Queries use
+cumulative endpoints: above the support zero, inside partial depth, below total depth; a finite collinear segment uses
+a difference. Arbitrary local-light directions cannot use this cache. Sum all intersected constituent depths. Half storage also
+has precision error: for positive depth A, the half-rounding part is bounded approximately by
+`eps(A)=u*abs(A)/(1-u)+2^-24`, u=2^-11, in addition to arithmetic/filter/quadrature error. Subtracting two deep
+prefixes has a half-storage uncertainty radius bounded above by eps(A)+eps(B); a small finite path cannot inherit good relative precision.
+The finite-path query uses direct current-density integration when that storage uncertainty exceeds its allocated
+optical-depth tolerance (initially0.05). Cache interpolation/quadrature error has its separate Q2 gate; the half bound
+is not a bound on the entire cache approximation. For source-facing paths with no subtraction, opaque saturation may
+make a depth error harmless; evaluate the transmittance interval, including b^n scaling for virtual higher orders.
+
+RGBA16F was selected over scalar R32F because repeated hardware-filtered RGB depth lookups amortize its extra1 MiB
+per direction compared with eight manual scalar loads. This is a reasoned bandwidth/instruction tradeoff, not measured
+speedup. With sigma_local<=0.5 and k<=1.5, a512 m cube contributes at most about665 optical depth along its diagonal;
+four source supports remain below2661, well inside65504. These are range bounds, not accuracy bounds; reject nonfinite/overflow rather than
+silently corrupting it. Changes to relative source direction, current phase, support or light geometry invalidate
+caches. Pure translation can reuse a cloud-local cache when all its keys remain valid. Source-off reads are gated;
+reactivation builds current data before consumers, never revives stale cache contents.
+
+V3 splits rays at opaque/interface/support/fog boundaries. Where media overlap, it sums extinction before integrating.
+With incoming photon direction and sample-to-view outgoing direction defining phase cosine mu:
+
+```
+sigma_t = sigma_air + sigma_fog + sum sigma_cloud
+E_l = E_l_raw * V_geometry * exp(-tau_air - tau_fog - tau_cloud)
+j_direct = sum_media sigma_s,media * sum_l p_media(mu_l)*E_l
+j = j_direct + j_external_environment + j_cloud_MS
+T_step = exp(-sigma_t*h)
+S_step = j*(1-T_step)/sigma_t              # limit j*h at zero extinction
+(T,S) = (T*T_step, S + T*S_step)
+L_camera = S + T*L_terminal
+```
+
+Units/colour/pre-exposure remain RENDER-SPEC's Rec.709/D65 photometric convention; extinction m^-1, phase sr^-1,
+illuminance lux, radiance cd/m^2. Source values are not already media-attenuated. Each path names included media.
+There is no later cloud alpha overlay or second camera-air attenuation. V4 owns final display.
+
+For cloud MS, add three higher-order effective-source terms, excluding the primary term already in j_direct:
+
+```
+j_cloud_MS = sigma_s,c * sum_l [ E_l_raw * V_geometry * T_noncloud,l
+                  * sum_(n=1..3) a^n * exp(-b^n*tau_c,mip(n)) * HG(mu_l,g*c^n) ]
+```
+
+Use normalized HG; initial authored material recommendation is g=0.866617162492502, a=0.8,b=0.2,c=0.5, albedo1.
+This retains the previous proof's useful global appearance preset as a calibration starting point, not validation
+for new content. `mip(n)=min(n,2)`. Camera extinction and surface shadows use ordinary sigma/tau, never b-scaled depth.
+The closure is bounded, source-linear and deliberately approximate: it omits cross-medium higher-order exchange and
+some lateral diffusion/geometry effects. It is not conserved all-orders transport. No energy-convergence or raw-Mie
+programme is a delivery prerequisite. Gross nonfinite/source-off failures and required moving lighting cues still reject it.
+
+Cloud ambient uses one declared six-axis quadrature on a32^3 grid. At a cell x, evaluate
+`Lamb(x)=(1/6)*sum_d L_external(d)*V_ambient(d)*exp[-tau_cloud(d)-tau_air(d)-tau_fog(d)]` along six bounded
+incident paths; `j_ext,c=sigma_s,c*Lamb` is an isotropic ambient approximation. Initial cloud quadrature uses16 coarse
+steps/path, independent of fine primary shadows; this is3.15M cloud coefficient positions/instance/update before overlap.
+Paths terminate at the declared4 km external-sky boundary. Initial V_ambient is an explicit authored horizon mask
+(+Y and four horizontal axes1,-Y0), not a claimed arbitrary mesh-occlusion solver or ground bounce. Scenes requiring
+that extra ambient geometry coupling need another admitted V3 ambient provider. Direct-source geometry shadows remain
+unchanged. External air/fog support follows V3's admitted boundary. Store normalized RGB Lamb/Lref inRGBA16F,
+with Lref bounding external sky radiance; this avoids half overflow and private exposure. If Lref=0, publish an exact
+zero ambient field, skip division and invalidate any old nonzero source result; reactivation rebuilds it.
+The key includes all contributing cloud/air/fog/geometry/sky revisions and world position. No cross-medium higher-order
+feedback is claimed. It never feeds the same clouded probe back into its own illumination. Dynamic clouded environment
+capture is a separate V3 product for surface consumers.
+In RC, air/fog authored ambient is explicitly zero (direct Sun/Moon terms remain); j_external_environment contains
+only the cloud ambient above. The terminal sky is background radiance, not an extra volume source. Directional higher
+orders are solely j_cloud_MS; no environment multiple-scatter term, emission or ground bounce is added elsewhere.
+Other ambient recipes must list their constituents and avoid overlap. No scene-varying brightness normalization or
+per-shot tuning. Zeroing Sun removes Sun terms only; Moon, HDRI ambient
+or another admitted source can still illuminate clouds. All incoming radiance and emission zero must yield no cloud
+radiance, while view extinction remains.
+
+## Camera, reflection and numerical envelope
+
+The full-volume extension admits ordinary ground/exterior perspective first/third-person and orthographic views,
+including ground-accessible cloud entry and terrain/cloud intersections. Proposed initial envelope: camera altitude
+0–1536 m, path<=4 km, at most four512 m source instances (scaled as above). This extends the baseline's0–500 m/2 km
+view envelope; it is not already admitted there. Ray origins differ for orthographic pixels. No orbital curvature,
+unrestricted flight or below-ground camera claim. A distant mobile recipe can constrain camera/content support, but
+cannot replace a required entry-capable game profile with cards silently.
+
+Intersect all cloud AABBs and homogeneous fog intervals, clip at the actual opaque/interface depth, and traverse
+occupied cloud support with a step<=one world density cell; jitter is spatial/temporal sampling, not source motion.
+A512 m128^3 field needs at most about222 cell-length steps along its diagonal before empty skipping; allocate256
+per source-support interval. Multiple sequential supports and overlaps multiply work explicitly. Pure air intervals
+use the baseline analytic extinction with its selected source quadrature; cloud intervals evaluate all active media
+jointly. Refinement/source-cache/quantization errors are distinct from the closed-form constant-step formula.
+
+A bounded early exit must bound omitted radiance: for this nonemitting closure, j/sigma_t has a finite bound from
+albedo, maximum participating source illuminance, normalized phase peaks, higher-order coefficients and ambient.
+The remaining solution is bounded by the larger of that source-function bound and the terminal-radiance bound.
+Exit only when accumulated T times that bound falls below the profile's scene-linear error threshold. An arbitrary
+alpha threshold is not an error proof. A content/profile exceeding the declared iteration/error envelope fails
+admission/qualification, rather than silently dropping the ray tail.
+
+Cloud-relative depth reconstruction distinguishes geometry that clips cloud support from sky or geometry beyond its
+exit. Preserve the legacy horizon fix's principle, generalized to arbitrary ray origins and joint media. Keep foreground
+and interior occlusion. V3 uses half-linear media resolution initially, depth/interval-aware spatial reconstruction
+and its own optional joint-media history; V4 receives completed scene-linear colour plus volume confidence/reactivity. Initially a pixel modified by cloud
+radiance/extinction is fully reactive to final-image temporal reuse unless V4 has a validated combined background/
+volume motion policy; a valid cloud moment alone is not a valid motion vector for an opaque moving object behind it. Do not
+claim exact multi-layer motion from one weighted depth. Thin geometry and multiple disjoint depths are explicit
+rejection/reactivity cases, not reasons to resurrect the old raw sky/ground tag band. Cloud-relative suitability does
+not make different **air/fog** terminal path lengths equal. When no low-resolution joint sample satisfies the complete
+current ray/opaque path, use normalized bilinear weights over suitable2x2 coarse taps, and perform a full-resolution joint trace if none
+satisfies the source/support/opaque-path error policy; never output an unchanged background
+because every neighbour was rejected. Record fallback-pixel work in Q7. This preserves the cloud horizon principle
+without treating the old cloud-only depth guide as a sufficient whole-air reconstruction law.
+
+Reflected rays are a separate V3 path from the interface, followed by the main camera-to-interface path once. Water
+owns Fresnel/refraction and its underwater medium. Environment/probe rays evaluate the same source independently of
+the main camera; the initial optional clouded probe is128x64 with32 cloud samples per ray, refreshed whenever its
+source/light state changes. Probe parallax/roughness filtering is a labelled approximation. Off-main-camera sources
+remain when these consumers need them. A probe supplies its integrated capture radiance; it is not another copy of
+receiver-to-cloud extinction.
+
+## History and local change
+
+Record each view/provider's actual retained image time, cloud source age, transform/trajectory, source/material/light/
+profile/device generations and pre-exposure. Back-map through interval carriers, then apply the old instance transform;
+V2 projects the candidate prior point with unjittered history/current matrices. Vector convention is C07's history
+pixel minus current pixel, in current-target pixels. Bound correspondence by both0.25 world seconds and7.5 source seconds; the conservative initial implementation resets on any source-interval boundary instead of
+composing intervals. A later bounded two-interval mapper is optional. Older/skipped views, seeks, missing generations
+and unsupported corrections reset rather than
+pinning unlimited old dense grids or W1 snapshots.
+
+Correspondence is invalid where density is created/destroyed or mapping/opacity/depth is unreliable. During marching,
+accumulate extinction weights for **all active media**, `w_i=T_before*(1-exp(-sigma_total*h))*sigma_i/sigma_total`
+(zero when total extinction is zero), plus separate luminance-weighted source-contribution moments for S. Air/static
+fog use their optical-field correspondence; moving fog must provide one or be invalid. Cloud carrier motion cannot
+stand in for those classes. Compute both depth/motion means and second moments; incompatible classes reject the
+whole joint-history sample. The conservative initial policy uses **no joint temporal reuse in ambiguous overlap**;
+spatial-only integration remains valid. Apply that reactivity to V4 so final image history cannot reintroduce a trail. The coarse residual maximum gives a
+local change estimate `R=|r_world|max*|delta_source_time|/(sigma_floor_world+sigma_world_now)` at contributing current samples.
+Reevaluate the representative prior coefficient from the resident source for an additional normalized discrepancy test;
+this does not require evaluating an old source at every marching sample. Initial policy rejects history when R>0.2 or representative coefficient discrepancy>0.2,
+reprojected optical-depth discrepancy>0.1, motion spread>0.5 media pixel, or depth spread>10% of representative depth;
+also reject incompatible occluder guides, projected mapping uncertainty>0.5 media pixel, and any source/interval invalidity. Sigma_floor is the product's quantization
+error floor, not a new physical density. These thresholds are explicit proposed calibration values, not proven visual
+tolerances. Reactivity is accumulated across contributing samples, not only the weighted representative point. Compute that ratio entirely in world units: sigma, residual per source second and quantization floor all scale
+by k/lambda (or compute every term locally). The ideal |b-a|/d carrier residual is a diagnostic, **not** the exact
+material derivative of the RK2/grid-resampled implementation. The compiler records gradient bounds of the actual
+quantized endpoint fields. With G*=max(Gi,Gj)*exp(L*d), both the ideal warp and midpoint map have conservative
+spatial bounds (the latter's Lipschitz factor is <=1+L|h|+(L|h|)^2/2). Propagate map/composition/inverse error,
+base-grid resampling error (a sufficient bound is G* times its half-cell diagonal), and half-storage error into
+coefficient uncertainty. Reject history independently if this exceeds the coefficient gate (initially0.1 of the
+coefficient/floor scale) or projects beyond0.5 media pixel. An unhelpfully loose bound means spatial-only output,
+not permission to trust residual or low variance. Locality-specialized tighter bounds are a later verifiable saving.
+Prior coefficients use the same runtime interpolation at the retained time; the current sampled field's separate
+reconstruction error is included. New lobes do not inherit an old lobe's colour just because wind is smooth. Retain prior swept bounds/tombstones
+so vanished density also clears history. Full encoded residency permits prior coefficient evaluation without retaining
+one old dense grid per view. Optional history can be rejected if this work costs more than its useful saving.
+
+Initial qualification can use spatial-only joint media; it does not allocate optional history targets. When the
+full validity policy is enabled, use one **joint-media** history per view: ping-pong S(RGBA16F), RGB T(RGBA16F), depth moments(RG32F) and metadata(RGBA8),
+28 bytes/set/pixel. Store S.rgb and T.rgb; their spare alpha channels hold representative motion X/Y, not opacity.
+RG32 stores the accepted common depth mean/second moment; RGBA8 stores confidence/reactivity/coverage/flags. Reject
+when opacity and source-luminance moment classes cannot share that representative. Only S.rgb is pre-exposed;
+T, motion, depth and confidence are not. This is an explicit semantic layout, not an extra undeclared motion target. Clamp/reject history against current neighbourhood and
+source/occluder validity, rescale old S by the pre-exposure ratio, and raise freshness for material illumination changes.
+When rejected, use deterministic current spatial sampling rather than temporal noise that requires old samples.
+No private final-image temporal resolver competes with V4. Reset-on-change is the safe initial response to invalidity;
+threshold calibration cannot replace a missing correspondence mechanism.
+
+## Normal update, transitions and authority
+
+1. F1/W1 commit admitted content and commands. E1 updates the descriptor/trajectory once at the fixed tick; publish
+   immutable phase/source/instance facts. Gameplay queries use committed state, never GPU readback.
+2. V2 extracts one timestamped packet per required presentation time. Build each unique current optical field/mips and
+   conservative occupancy once; build valid source-direction and external-ambient products through V1.
+3. V3 lights surfaces/air/fog and integrates selected main/reflection/probe rays with those products and matching phase.
+   Apply joint history; V4 reconstructs/displays the completed scene. The next view does not advance E1.
+4. Publish/retire through existing CPU/GPU leases/fences. Source evaluation cannot mutate a packet already being used. Current-time/cache keys change continuously with phase;
+   history revision keys change on discontinuities/content changes, not automatically on every evaluated frame.
+   Continuous light changes adjust history freshness; a discontinuity invalidates the affected source history.
+
+Supported visual quality changes pre-admit replacement bytes and swap at a safe presentation boundary. Substantive
+source/provider changes use Thrum's initial stop/load/restart policy; no universal live state migration. Device loss
+rebuilds the admitted encoded source and derived products, resets histories and rejects obsolete async publications.
+Suspend/resume follows F1 pause/catch-up policy; it does not inject unbounded wall time into weather. Source removal
+invalidates all affected consumers; natural death reaches the zero clip endpoint. A light toggle does not remove
+geometry or change cloud age. Recovery/failed preparation keeps the prior admitted generation or a visible loading/
+error state, not a half-new source with old shadows.
+
+Cosmetic volume providers create no N1 gameplay traffic merely by existing. If a game opts into cloud transmittance
+facts, the CPU reader evaluates the same optical source at committed time with admitted query count/path/error; a
+server can omit every GPU product. P6 decides gameplay visibility from those facts, N1 owns authorization/projection,
+and P7 saves the required descriptor/trajectory/phase/product references. Optional client graphics never grant privacy.
+The optional CPU reader uses the same encoded-source/flow evaluator directly, without building a dense CPU image
+per tick. Its initial admission is at most16 finite transmittance queries/tick and256 coefficient steps per source
+support; requested larger workloads need a rebudget. It returns time/domain/error and capacity/unavailable status,
+never a guessed clear result. GPU current-field resampling is a separately qualified visual projection, not bitwise
+identity to CPU queries. Query requirements become pinned F4/N1 gameplay dependencies before join/baseline admission;
+networking sends required descriptor/phase facts, not17 MiB of volume per publication. No exact cross-platform
+floating-point identity is inferred. The optical reader does not supply thermal watts, precipitation or exact
+atmospheric state. A game requiring those
+must bind a real E1 producer; lux cannot silently become physical heating.
+
+## Cost and profile admission
+
+These are arithmetic bounds/planning targets, not hardware results. R0–R4 baseline recipes remain unchanged.
+The optional **RC** qualification scene contains one active clip/phase, a ground receiver, matte moving object,
+independent mirror/reflection view, compatible sky/air, at most two fog volumes and Sun plus optional Moon; no intersecting local-light paths unless their finite query
+variant is separately admitted. First test
+native Mac and Chrome; Windows and mobile require their own later qualifications. The four-instance capacity is a
+separate stress case, not an inferred fourfold performance claim.
+
+One high-cap R8 source uses33 frames with<=820 active8^3 bricks/frame: density13.213 MiB, indirection/occupancy0.274,
+32 RGB8 flow intervals3.000, headers<=0.125; encoded cap16.75 MiB. GPU flow padding raises the source cap to17.75 MiB.
+No entropy-compression ratio is assumed. Portable cold RC uses the **same128^3/R8 precision/cadence**, but an independently
+admitted source bundle<=11 MiB (approximately<=470 active bricks/frame under these fixed flow/header reservations).
+This restricts asset support/occupancy, not voxel detail or the requirement for a convincing body. A source that fails
+both quality and byte gates is not a conforming portable cold asset; native/warm high-cap remains separate. The later Q1 direct source above passes the encoded-byte and sampled optical gates; this does not qualify the original carrier profile or a library.
+
+| Logical capacity, one full-resolution phase and two directional caches | MiB |
+| --- | ---: |
+| CPU encoded recovery copy + small descriptor/scratch allowance | <=20 |
+| GPU complete encoded source (high-cap bound) | 17.75 |
+| Current R16F density, three mips (atlas slots only when needed) | 4.5625 |
+| Two guarded66^3 RGBA16F depth grids;32^3 max/residual;guarded34^3 ambient | 4.95 |
+| Main720p half-linear joint history,56 bytes/media pixel | 12.30 |
+| Raw main joint-media targets plus shared build buffer | 6.15 +4 |
+| Reflection history at320x180;640x360 reflection colour/depth | 3.08 +2.64 |
+| Raw reflected media targets | 1.54 |
+| Clouded128x64 probe/mips/metadata allowance | <=0.25 |
+| Initial upload scratch, chunked and retired under V1 | <=2 |
+
+One-phase720p main+reflection gross service is bounded by a proposed **88 MiB** category reservation
+(CPU20, GPU persistent50, transient16, staging2). Shared existing air/fog history is counted once, not all charged
+again as an incremental cloud allocation. This excludes the rest of the scene, V4 final history, driver residency and
+process overhead; those remain inside C12's512 MiB browser cap and measured peak. An equivalent1080p native reservation
+is128 MiB. Four distinct active phases with the same clip require extra current/light/max/ambient fields and work,
+not four source-clip copies; propose a112 MiB browser service cap only if the full recipe can reserve it. New clips,
+views, pending replacements and GPU-in-flight leases need their real peak counted before admission.
+
+The small cold RC planning closure is code4 +shaders/descriptors1 +fixture0.5 +clouds11 =16.5 MiB. At50 Mbit/s,
+transfer is2.77s; adding0.12s dependency turns and1.8s nonoverlapped readiness predicts4.69s under the baseline5s goal.
+This is a proposed rebudget, not measured startup or a promise of the future Wasm size. High-cap R8 makes22.25 MiB and
+predicts5.65s under the same worksheet: it **does not pass cold5s admission** without smaller content or proven overlap.
+Do not claim a4-bit cook or faster pipeline because it would make the worksheet convenient. Warm/offline/native cases
+are separate. The actual full engine and selected source bytes must replace every estimate before export qualification.
+
+Work multipliers: 2.10M current voxels/phase/update; roughly16 endpoint scalar fetches plus3 trilinear carrier queries
+per voxel (more packed loads for trilinear flow); for a full2.10M-voxel phase, three trilinear carrier queries x eight packed4-byte values already mean192 MiB of
+logical carrier operands. Adding worst-case16 endpoint-density u32 loads and16 indirection u32 loads/voxel gives an
+upper worksheet of448 MiB logical source operands. Multiply source lookup work by the actual conservative swept-
+occupancy fraction C_s; every output still gets a valid write/zero. Hoisting shared indices/words can reduce that
+instruction count. The active encoded two-frame+carrier working set is around1 MiB under these caps, so coherent cache
+reuse is plausible, but actual DRAM traffic and instruction cost are unknown. Do not relabel a cache-conditioned
+32–128 MiB hypothesis as pre-cache bytes or infer frame time from the operand bound.
+Packed scalar build/copy writes/reads at least12 MiB plus mip traffic. Six-direction coarse ambient adds about3.15M
+coefficient locations per instance; it cannot be hidden inside the optical-depth-prefix count. Directional prefix work is Q times admitted
+substeps, not Q independent long rays. Joint camera work scales with media pixels, occupied steps, participating lights
+and overlap; a720p half-linear main has230,400 rays, at most256 cloud samples per support before empty skipping. A
+half-linear secondary view starts at one-quarter media pixels; probe8192x32 adds262,144 coefficient positions. These
+are worst/count estimates, not timings or evidence that worst full-support rays meet budget.
+
+Investment targets for RC: incremental cloud/source work<=0.5ms CPU, <=5ms GPU on the browser profile, <=3ms GPU on the
+native reference, while the **complete** frame still obeys baseline8/16ms browser CPU/GPU and5/10ms desktop envelopes.
+These are desired allocations, not certified limits. Count decoding/cooking/startup, graph setup, repeated tiny queries,
+bandwidth, all views, peak staging and sustained thermal effects. Measure normal and accelerated source updates
+separately; graphics quality does not reduce required world ticks. If source reconstruction dominates, investigate
+swept-occupancy specialization, unique-phase sharing, incrementally updated regions and qualified GPU scalar storage.
+If ray work dominates, investigate empty traversal, layout/cache locality and view resolution before weakening cues.
+Retain a measurable gain only with matching source/consumer quality and integrated cadence; no milliseconds are inferred
+from traffic arithmetic or old lab results.
+
+## Renderer reconciliation
+
+Target saved before this inspection. Prior exposure is disclosed in the capability document. Inspected legacy source:
+Broadsides `codex/clouds-proof` at `d81f29611d90b42cf6e2d7a618dde7216ebaa16a`, specifically the production module's resource/
+pass roles, state rows, density/material-map shaders and temporal resolve; older evidence stays scoped to its artifacts.
+Thrum has no renderer to preserve yet. “Keep the renderer” therefore means adapt useful algorithms through Thrum's
+public contracts, not retain the old host or treat the running lab as the Thrum implementation.
+
+| Legacy part | Disposition and reason |
+| --- | --- |
+| Beer integration, normalized forward phase, finite higher-scatter closure, density/light mip separation | Retain as algorithm candidates/global material starting point; subject to new joint-media and content tests. |
+| Independent reflected rays and source-light projections | Retain principle; expose V3 consumers and range/time validity instead of hard-coded lab planes/maps. |
+| Cloud-relative horizon/occluder guide; matched ray jitter; explicit source/light invalidation | Retain regression/algorithm knowledge, generalized to orthographic origins, topology and C07 retained time. |
+| Static Disney shape + sine shears + global grow/hold/fade | Replace as lifecycle producer. Preserve static optical reference and historical research, not evolution acceptance. |
+| Globally invertible material mapping and previous-frame assumption | Replace with interval carrier, local birth/death validity and actual retained sample semantics. |
+| RGBA16F scalar field and repeated dense source-ray traces | Use column-prefix depth caches; qualify storage/producer choices in the assembled graph. Q2/Q3 direct RGBA16F writes avoid measured packed-copy stalls; scalar engine storage remains a cost/precision hypothesis. |
+| Private screen resolve/composite, sky/ground/water drawing and proof-specific atmospheric binding | Move useful local routines under V3/V4; remove competing final composition and scene ownership. |
+| Bevy module/extraction/scheduler/resource bindings | Reimplement against Thrum F1/F2/V1/V2; do not import Bevy or the old host through a cloud dependency. |
+| Existing reference, preparation and research tools | Keep as historical comparison/recovery candidates, adopting only pinned/legal sources through F4 later. |
+
+## Worked complete interactions
+
+**Ordinary growth and breakup.** F1 commits one source age; the clip's new lobe/gap changes local sigma through its
+material residual. One shared current field and matching light products publish. The main view, matte receiver,
+mirror and clouded environment all consume those source facts. Shadow area changes with real support; newly formed
+and vanished regions reject history. The camera can orbit or be orthographic without reseeding or stepping the source.
+
+**Cloud crossing a hillside/camera.** Terrain terminates view rays at actual depth. The camera can enter valid support;
+source-depth queries now return partial cloud tau, not a ground map. Fog overlapping that support changes joint source
+and extinction before integration. A reflected path is evaluated from its interface and then attenuated along the
+camera-to-interface path once. The sky/far-ground depth tags cannot cut a clear strip through the cloud.
+
+**Accelerate, change sunlight, skip a second view.** The authoring preview samples source/trajectory at64x while day time follows
+its declared mapping. Current field and Sun/Moon cache use that source state; no weather-time holding. Each view retains
+its real prior time. A skipped view outside the correspondence horizon resets. Sun off removes its source; Moon/ambient
+remain as selected. An all-illumination-zero fixture produces no scattered radiance, with extinction still active.
+
+**Omit main clouds but retain a mirror.** F2 keeps source and reflected-radiance dependencies, removes main cloud
+coefficient work, and retains direct attenuation where bound. Air/fog main history can remain. Turning off the last
+reflection/environment/attenuation/semantic consumer retires the cloud product closure after leases; a headless reader
+can independently retain CPU facts. No missing source is replaced by unadvertised clear sky.
+
+**Seek, replace source, lose device or reconnect.** A seek evaluates the chosen encoded interval directly, marks history
+invalid and publishes a complete matched generation. Source replacement follows admitted stop/load or a fully budgeted
+presentation transaction. Device recovery restores the pinned source then fields/caches, never stale async data. N1
+correction resets affected E1/V3/V4 histories and preserves only the semantic source facts the game actually selected.
+
+## Proof and construction queue
+
+The original design commission ran no queue item. The subsequent [Q1 source proof](../../evidence/cloud-source-2026-11-01/README.md) supplies bounded accepted source evidence, and the [Q2/Q3 instrument](../../evidence/cloud-coupled-2026-11-01/README.md) supplies scoped transport/consumer evidence with cost still open; existing lab acceptance does not close any Thrum row.
+
+| Order / proof | Requirements and prediction | Reject when |
+| --- | --- | --- |
+| D2 documentation/review | CL01–CL28 and all affected E1/V1–V4/F2/F4 contracts have producers, domains and dispositions. | Core mechanism/interface invented during walkthrough, missing capability, conflicting authority or unowned budget. |
+| Q1 source/cooker/CPU reader | CL02–CL06/19/20/28: high-precision source → R8 runtime field preserves local events at1x/16x/64x. | Wobble/fade-only evolution, missing support, phase seams, phantom bridges, failed source/flow/optical gates, irrecoverable master. |
+| Q2 coefficient/transport slice | CL07–CL10/14/15: slab/absorber-before-inside-behind fixtures and curved cloud scenes obey one joint closure. | Double attenuation, incorrect phase signs, stale lighting, horizon strip, required lighting cues fail. Physics-reference error is reported separately from authored-style acceptance. |
+| Q3 smallest coupled scene | CL08/11/12/21: one lifecycle, receiver, mirror, sky/air/fog and two views agree in world time and support. | Camera-only success with broken shadow/reflection/environment; ground map used inside cloud; off-camera source lost. |
+| Q4 history/interaction | CL05/06/10/13/18: ordinary/accelerated motion, birth/death, skipped view, camera cut/resize and source changes. | Persistent ghosts, fabricated velocity, lost newborn density, stale vanished fragments or incorrect actual history time. |
+| Q5 profile/headless composition | CL01/16/17/22/24/27 and recipe matrix: retained consumers function without unneeded modules. | Hidden GPU requirement, unnecessary retained source/view work, changed gameplay facts or silently unsupported provider. |
+| Q6 author/lifecycle/source delivery | CL19/20/23–25/27/28: source edit/admit/restart, input gestures, recovery and exact artifact provenance. | Partial epoch, unsafe retirement, unrecoverable master, ignored source errors or blocked Mac gestures. |
+| Q7 target/cost admission | CL12/21/22/26/28: native/browser/mobile separately, actual loaded hashes, startup, sustained cadence/tails, memory and transitions. | Any required quality/correctness gate fails, weather/ticks dropped, workload changed, source byte cap exceeded or complete target budget missed. |
+| Q8 optional weather | CO01/CO02 only after base: authored finite birth schedule/front path drives incoming coverage with persistent IDs. | It compromises CL02–CL05 or needs uncommissioned meteorology/precipitation to make the base look coherent. |
+
+For the original carrier profile, numeric gates remain unqualified: persistent correspondence<=1 local metre; source-ray optical-depth error<=0.1 in
+selected directions, and source timing/structure sufficient for the intended views. Optical/phase/cache error, silhouette
+quality and temporal artifacts require their own comparisons; a bound on one does not qualify another. Full-loop normal
+motion and timelapse are both inspected, plus long enough archetype reuse to expose repetition. Failures revise the
+responsible source/representation/contract, not merely captions or a higher sample count.
+
+Runtime work waits for the Thrum foundation, admitted asset lifecycle and V3/V4 interfaces it depends on. This is a D2
+module design, not permission to bypass I1/I2/I3a or rewrite the engine now. When construction is commissioned, begin with source/content and
+contract qualification against this design; storms remain optional. The maturity ledger must retain implementation,
+functional, experienced-quality and per-platform dimensions as unrun until their actual artifacts exist.

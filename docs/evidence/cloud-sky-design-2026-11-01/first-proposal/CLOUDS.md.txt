@@ -1,0 +1,565 @@
+# Clouds — complete system design
+
+1 November2026. **Current proposed complete model; independent comparison review pending; implementation incomplete.**
+The [current commission](../../evidence/cloud-sky-design-2026-11-01/COMMISSION.md) and
+[capability/acceptance ledger](CLOUD-CAPABILITIES.md) require five families, their isolated lifecycles, changing weather
+and four complete skies. This supersedes the former one-source/optional-storm target. The
+[local prepared-source profile](CLOUD-LOCAL-CLIP.md), [Q1](../../evidence/cloud-source-2026-11-01/REVIEW.md) and
+[bounded coupling proof](../../evidence/cloud-coupled-2026-11-01/REVIEW.md) remain references and regression witnesses.
+No whole-sky or new-family pass, runtime engine binding or device admission is implied.
+
+E1 owns causes; F4 owns admitted products; V3 owns common transport; V4 owns reconstruction/display.
+C01/C02/C04/C05/C07/C08/C12 and Thrum's I1/I2/I3a construction dependencies remain authoritative. This commission
+builds standalone proofs now, not a competing game engine or a new crate/plugin framework.
+
+## Governing decisions
+
+| ID | Current selection and reason | Qualification boundary |
+| --- | --- | --- |
+| CD01 source | Persistent world events/low-layer state with **family-specific authored optical masters**. Convective cohort graphs, column layers and filament cohorts have different producers. A certified prepared final-density clip is another admitted source. | A universal512m cube, static noise warp or whole-sky opacity curve cannot supply the required families/dynamics. |
+| CD02 detail | Persistent source/material coordinates and fixed shared detail assets; geometry/source/loss operators create lifecycle. | Detail advection alone is not formation. Every family must pass native/motion reference review. |
+| CD03 residency | Share immutable recipes/detail; cache evaluated source fields only when phase/variant/pose/representation keys match. Use bounded atlas fields and on-demand far source evaluation, not one full dense world or one128³ allocation for every cloud. | Independent ages still cost distinct evaluated work. No phase holding to save cost. |
+| CD04 optics | One canonical coefficient query and joint air/fog/cloud integral; all-layer partial Sun depth, source-only higher scattering and clouded surface environment. | Keep tested Beer/phase/reflection principles; disclose lighting/cache approximations. |
+| CD05 consumers | Main appearance, directional attenuation, reflected/environment radiance and optional CPU semantics bind independently. | Camera invisibility cannot destroy retained causes. Actual no-consumer retirement is a separate gate. |
+| CD06 reuse | Retain shared source decoding, normalized phases, stable Beer segment integration, path/geometry-aware reconstruction, finite mirror composition and provenance tools where their regimes fit. | Replace hardcoded single cube, short atmosphere, fixed object bounds and one-source residency as the universal design. |
+| CD07 distant sky | World-seeded virtual events/layers and family-specific filtered evaluation continue to a curved horizon in the SKY-G profile. LOD changes a representation of the same cause. | No unrelated painted horizon, camera reseeding or unqualified density averaging over clear gaps. |
+| CD08 progression | Authored spatial forcing/fronts control future births, local source persistence/drying and continuous compatible branches. Existing event IDs/material survive. | Required clear/scattered/cover/overcast/storm paths are not preset crossfades. |
+| CD09 first implementation | Spatial-only family proofs, including source evolution and consumers; no temporal history required to hide missing content or sampling. | Histories remain optional acceleration with C07 validity, never a completion substitute. |
+| CD10 scope | Complete required behaviour first, measurements throughout, representative full-sky optimization/admission afterward. | Existing cost failure remains explicit; it does not make families/weather optional. |
+
+The author is already exposed to earlier implementations. Independent discovery/model/contract workers derived their
+requirements/candidates before comparing with the old target. Research support, the synthesis below and actual passes
+are distinct. This model is an authored production approximation, not a claim to recover a studio's private engine.
+
+## Complete capability and proof mapping
+
+CF01–CF05 own Cu, towering Cu/Cb, Sc, St/overcast and Ci. CW01–CW04 own the four weather transitions.
+FS01–FS04 own fair, broken, overcast and storm skies. CL01–CL30 own shared operators/authoring/consumers/lifecycle.
+The capability ledger records pass/fail/unproven by actual evidence. Earlier local Cu evidence is partial, not a pass
+for the entire Cu family, and does not support any other family or complete sky.
+
+The mandatory dependency is **reviewed complete design → accepted isolated families → combinations/weather → full
+skies → complete-workload disposition**. Progressive measurements can reject an implementation early, but optimization
+cannot silently narrow this order's required outcomes. Failure of one producer does not discard verified transport.
+
+## World source, identity and authored controls
+
+### State owners and units
+
+`EnvironmentFrame` supplies world/epoch/time, light directions/irradiance and wind in m/s. The selected authored weather
+source additionally supplies fronts/potential tracks and optional rain/lightning causes. One authority owns each
+quantity; a cloud renderer neither advances weather nor invents thermodynamic state.
+
+E1's cloud snapshot contains:
+
+- immutable recipe/product revision, world seed, weather-storyboard revision and current source time;
+- persistent formation IDs, family/master variant, birth/branch/death times, base/cap/size/optical controls and trajectory;
+- low-layer region/cell identities, column amount/thickness/base and local creation/drying tracks;
+- storm core/outflow lineage and ice-filament emission/cohort IDs;
+- conservative support, source group/partition rules, source/material correspondence or explicit invalidity.
+
+All geometry is in metres and source time in seconds. The canonical product is nonnegative extinction `sigma_t` in
+m^-1 plus liquid/ice scattering weights, albedo and optional valid material identity/velocity. It is **not** image
+alpha, water mass, electrical charge or rain flux. Authored sources are labelled optical proxies. A physical provider
+may supply conserved fields through the same contract, but does not follow from naming an optical concentration.
+
+For independent constituents add extinction/scattering once. For several products representing **one condensate**,
+compose their source geometry/partition before publishing coefficients: adjacent same-layer cells use one continuous
+field; a storm's core/outflow overlap has nonnegative weights summing to one. Two quality levels are never added as
+two clouds. Independently authored overlapping air/cloud constituents may genuinely add, according to their declared
+group semantics. Source IDs persist through visual merging without requiring a new topological object ID every frame.
+
+### Weather and population producer
+
+The initial proof profile uses an immutable, editable **authored storyboard** with spatial fronts and family controls;
+play, pause, seek and1x/16x/64x sample that same source timeline. Parameter edits validate/cook/restart, following
+Thrum's initial stop/load policy. General seamless live model changes are not silently promised.
+
+A front is a moving world corridor, with position `p_f(t)`, direction, width and local potential contribution
+`P_f(x,t)=A_f smoothstep(-w/2,w/2,n_f dot(x-p_f(t)))`. Wetting and drying tracks are separate signed influences.
+`P(x,t)` controls local formation conditions. It never multiplies the final sky image or every existing density.
+
+Stable world cells have jittered candidate sites from `(world_seed, layer, integer_cell)`. Candidate birth episodes
+use `(cell, episode, slot)` identities and hashed times/variants; no camera participates. A candidate is admitted when
+its local forcing at its birth time allows it. Lifetimes/renewal/drying are event-local, not one synchronized sky clock.
+For authored linear fronts and constant/height-linear layer winds, arrival/departure times can be solved from relative
+front/source motion. More general stories cook bounded event/forcing tracks before play. Seeking evaluates these tracks
+or deterministically replays the source cursor; it does not infer old births from the current image.
+
+Coverage is an outcome of support. For isolated populations, `c≈1-exp(-lambda A_mean L_mean)` is a planning estimate
+for Poisson births, not an image-opacity law. Actual source/sky union coverage is measured. As cover approaches one,
+spawning isolated Cu is structurally unsuitable: the connected low-layer state closes gaps instead. Candidate capacity
+is an explicit admission limit; overflow rejects/defer new requested work, never silently kills an existing retained
+formation. Virtual far candidates remain computable from the same storyboard/cell IDs without allocating every source.
+
+Existing material/event state is preserved when forcing changes. A convective source can take a deepening branch from
+its current head/body; a low layer changes its local amount/topology continuously. Incompatible source replacement
+restarts a validated epoch. Replacing arbitrary endpoint skies with a blend is not a supported weather transition.
+
+### Wind and motion, exactly once
+
+Shared wind is evaluated at the material's height. Internal plume rise/outflow and ice fall speed are residual source
+motion; they are not a second application of reference wind. In a local source map `x=a(t)+A(t)xi`,
+`v_world=a_dot+A_dot xi+A v_source phi_dot`. A baked reference-wind contribution is subtracted before the runtime anchor
+adds the actual shared wind. A tall storm cannot use one rigid base-height drift as its entire shear model.
+
+Proof winds are bounded constant or piecewise-smooth height-linear tracks. Source trajectories use analytic integrals
+where possible, otherwise cooked Hermite/RK trajectories with explicit position/error bounds and C1 joins. No view
+integrates its own position/age. Changing wind in an authored story bends trajectories from their existing state;
+reseed/teleport is rejected. Exact global inverse motion is not claimed: surviving cohorts provide local correspondence;
+new/eroding/overlapping-dominance regions declare invalidity rather than zero or fabricated rigid velocity.
+
+## Content producer and recoverable input
+
+The editable authoring unit is a formation/layer/filament **with a lifecycle and causes**, not a volume plus fade curve.
+A recipe records schema/seed, family/variant, dimensions/base/cap, source/loss tracks, material-detail scale, optical
+calibration, allowed controls/branches, source group/partition, reference wind, bounds and permitted representation levels.
+Cooked products preserve recipe/detail dependencies and hashes. The current Q1 source/master remains recoverable and
+unchanged; it is a certified small-Cu comparator/provider, not the new whole-sky source format.
+
+The chosen first producer is an evaluable **authored control graph**. It can be sampled/cooked into final density
+fields or retained as a compact recipe. Difficult content can instead adopt an actual offline fluid/artist master
+through the same coefficient interface, after its defining lifecycle passes. The first graph is not declared proven
+because its equations are compact. Its characteristic risk—smooth blobs/shells/artificial cuts—has explicit rejection
+witnesses before large sky assembly. Bakes cannot supply a missing family mechanism by themselves.
+
+The initial procedural branch has a finite grammar and concrete tracks: a small filled parent, overlapping staggered
+daughters, compact growth/hold/terminal curves and a spatial drying front. Seed ranges, maximal node count and smallest
+accepted feature are cook-time constraints. This choice does not erase the earlier warning that lobe kernels can look
+like smooth blobs: they are a **candidate producer** whose visual rejection precedes adoption. Prepared final-density
+masters remain a replacement at this seam if the complete connected graph fails, not an excuse to leave lifecycle
+unspecified. The defined first graph is what the isolated proof tests.
+
+One fixed shared detail volume provides filtered erosion/roughness in persistent physical material coordinates.
+A source seed selects offsets/orientations and graph structure, not a new random texture each frame. Growth exposes new
+material through a spatial front; detail is not uniformly stretched with the whole formation. Geometry-support and
+local source/loss operators provide creation, merging and breakup. A minimum core/body fill prevents a noise-only hollow
+birth scaffold. Fine detail is reduced only under an admitted footprint/error regime, never to replace gross family form.
+
+## Evolution and motion equations
+
+### Convective Cu and towering/Cb master
+
+A connected graph has a persistent lower condensation body and staggered daughter billow cohorts. A cohort records
+birth time, parent/material attachment, reference shape/orientation, trajectory, radius-growth track, hold interval,
+exposed-edge/drying-front track and detail coordinates. Different seeds vary graph branching, lobe count/offsets,
+width/height, asymmetry and timing; four instances must visibly differ in gross morphology, not only yaw/scale.
+
+In physical local coordinates let
+`m_i=clamp(1-|diag(R_i(t))^-1(q-c_i(t))|,0,1)` and
+`rho_i=sigma_0 smoothstep(0,e_width,m_i-eta_i(q,t)(1-m_i)^p)`.
+`eta` samples fixed material detail plus a bounded local drying front. The deep core is protected during birth;
+erosion is strongest at the boundary. `R_i` grows from a small filled core, with a fixed reference detail metric rather
+than normalized-radius texture stretching. Parents overlap daughters before daughters emerge from the existing body;
+a child starts inside its parent's support. This rejects disconnected sphere popping. A max/union of same-condensate
+cohorts creates no phantom positive bridge between disjoint supports. A smooth base mask clips the condensation level.
+
+Radius alone is not the lifecycle: new cohorts are born at distinct positions/times, head trajectories rise, older
+cohorts renew/erode and exposed spatial fronts cut support into fragments. Mature sources emit staggered new lobes
+while older edge material disappears. When feeding stops, a spatial drying/entrainment front and local detail remove
+older/exposed regions first; detached remnants have their own terminal tracks. Density reaches exact zero at finite
+retirement. Global opacity decay is not the breakup mechanism. This is authored condensation/entrainment, not buoyancy
+or water conservation. The implied local residual `D rho/Dt` has creation/loss; it is not hidden in shading.
+
+Fair Cu has a shallow cap and comparatively broad lower body. A deepening event retains the same lower body and ID;
+the prescribed rising head and future child births continue above the former shallow cap. The head approaches the
+new cap with a continuous velocity track. No transform stretches all old density upward. Tower clusters have different
+ages/widths and height-dependent wind tilt. Typical source lifetimes are minutes/tens of minutes; normal witnesses
+inspect meaningful subintervals, while complete accelerated histories expose topology and repetition.
+
+At cap arrival, the **same event** begins upper outflow. One concrete outflow producer emits material cohorts near
+`h_cap`; radial spread `r(a)=r_0+v_out a` plus upper-level drift/shear carries the material away. At a point in a radial
+outflow sheet, emission time is recovered from `t_emit=t-(r-r_0)/v_out` within the admitted monotone branch. A compact
+vertical profile supplies thickness; emission history determines extent, not a separately faded anvil disk. Ring/strip
+optical amount includes the spreading Jacobian, with a finite inlet radius. Seeded lobes/fibres roughen the advancing
+edge in persistent cohort coordinates. Height/cap tracks tilt/asymmetrically feed the anvil; no universal circular plate.
+
+Core/outflow partition weights sum to one in their shared junction. An authored ice fraction increases through the
+upper transition; it splits scattering weights without adding duplicate extinction. Feeding shutdown erodes the core
+before the longer-lived outflow, and outflow can leave provenance-preserving high-cloud filaments after the lower tower
+is gone. Cb must show core→vertical tower→cap-driven spreading anvil→differential decay in its isolated proof. If the
+cohort master cannot do that convincingly, replace this content producer with an accepted connected transition master;
+keep the optical/consumer contracts and reject the failed source.
+
+### Broken Sc and layered St/overcast master
+
+A co-moving horizontal layer coordinate `chi` follows the shared wind at its base. A persistent cell/roll pattern and
+localized wetting/drying fronts produce a **column optical amount** `M(chi,t)>=0` (dimensionless vertical depth), base
+`b(chi,t)` and thickness `H(chi,t)`. The cells/region IDs and detail coordinates do not change when coverage changes.
+A concrete authored producer is `M=max(0,P(chi,t)-theta+A_cell C(chi)+sum_j source_j-sum_k dry_k)` with compact local
+source/drying kernels and continuous tracks. Cell-size/reseed edits require a new validated recipe; they are not
+continuous weather controls that silently move every old cell.
+
+Choose `H=H_max sqrt(clamp(M/M_star,0,1))` and a nonnegative compact vertical profile `P_z` of unit integral. For `M>0`,
+`sigma=M/H P_z((h-b)/H) d(chi,h-b)/Z`, with `Z=int_0^1 P_z(s)d(chi,Hs)ds`; at `M=0`, define zero without division.
+The fixed physical-height detail `d` has a positive core floor. This normalization makes the author's M the intended
+vertical optical amount, rather than changing it arbitrarily as thickness varies. It is a specified column closure,
+not per-frame normalization of an unrelated animation. Nodes can be cooked into anisotropic maps/slabs; the definition
+is the source, not whatever samples happen to fit a texture.
+
+Sc uses stronger cellular/roll relief and irregular connectivity: wetting fills flattened domes and joins neighbouring
+regions; drying opens/widens holes and leaves shallow banks. St uses weak relief and a more uniform base/connected
+sheet. Sc→St keeps M/material IDs, changes local source/drying/relief continuously and fills existing gaps; it does not
+spawn a second opaque sky over the first. St breakup lowers local amount/thickness and opens true finite holes/fractus.
+Exponential decay alone is insufficient for exact termination; compact terminal fronts set cleared regions to zero.
+Where a column cannot represent an undercut/overturned local feature, use a resolved 3D local source under the same
+layer owner. Do not force deep convection into this single-valued sheet model.
+
+### High Ci master
+
+An emitting head/tuft trajectory continuously releases ice cohorts, with birth time, source lineage and a smooth
+reference curve. For cohort age a, `dX_h/dt=U_h(X,h,t)`, `dh/dt=U_h,vertical-v_f(a)` and
+`w(a)^2=w_0^2+2Da`. Shared wind shear plus prescribed settling produces trailing hooks/fall streaks. A swept compact
+transverse kernel supplies optical thickness. In line form `sigma=A_sigma/(2pi w^2) exp(-r^2/(2w^2))`, where
+`A_sigma=int sigma dA` has units metres; local sublimation and a compact terminal track reduce it. In continuous-emitter
+form integrate a normalized 3D kernel over emission time, with source strength in m²/s. These definitions avoid beads
+and ambiguous density units.
+
+Polyline/cohort spacing must be below half the narrowest accepted transverse width, with a smooth longitudinal join.
+Bundles have different head paths, widths, ages, rates and settling/shear, not just rotations of one streak texture.
+Seeded material perturbations are attached to surviving strands. Stopping a head does not delete its old tail; local
+sublimation/drying separates and retires sections at different times. A source-wide alpha fade is rejected. This is
+an authored optical ice model, not nucleation, ice microphysics or halo/phase-function validation. A Cb anvil can feed
+these cohorts with the same parent lineage; detachment never recreates a random unrelated high sky.
+
+## Shared current field and portable GPU layout
+
+`SourceOptics(world_position, source_time, footprint)` returns sigma, liquid/ice scattering weights, support, identity,
+representation/error/validity and optional correspondence. The canonical cause is independent of camera. Footprint
+chooses a qualified approximation, not new events or phases. Source groups union/partition once; independent groups
+sum once. A shared spatial index includes all main/reflection/light/environment/semantic requirements.
+
+Resolved convective content uses an atlas of current scalar fields/mips, with source-specific anisotropic extents.
+Low layers retain column maps/profile parameters; Ci retains a segment/curve hierarchy and optional sampled resolved
+patches. The initial source graph is evaluated at the requested source time; it does not require a huge dense4D clip
+library. Existing prepared clips decode through their own admitted evaluator. Source field rebuilds and shader/texture
+sampling must use the same product generation before any view consumes them.
+
+**Portable scalar candidate:** RGBA16F storage packs four consecutive logical Z cells per texel, rather than storing
+one useful channel and copying a packed buffer to an R16 texture. XY filtering is hardware-linear; Z interpolation
+loads the appropriate channels at the two centred Z-group slices. Do not hardware-interpolate packed groups as if each
+were one voxel. Each logical mip is built by averaging the actual eight parent coefficients with explicit half
+rounding; atlas guards and cross-group Z boundaries are tested independently. This uses2logical bytes/voxel and two
+filtered fetches per integer mip. It is a selected implementation candidate, **not yet a measured improvement**.
+The current one-channel RGBA16F reference remains the golden fallback until exact sampling and image witnesses pass.
+
+Field resolution is selected against the smallest defining feature and the admitted view/light footprint;128³ is
+not a universal limit. A large close formation may require256³ or direct canonical evaluation. A source-brick candidate
+list permits a fine query to evaluate the actual local graph/detail when a coarse field cannot meet its error envelope.
+A coarse field cannot recover missing grain by trilinear upsampling. The shared source recipe remains the cause and
+all approximations report their admitted domain; semantic queries never depend on the camera-selected cache.
+
+Pool handles contain logical dimensions, physical atlas offsets/guards, mip offsets, source bounds/transform and
+source/time/revision. They are not event identity. Field/cache sharing keys include every quantity affecting values;
+referencing one recipe at two ages does not mean one current field. Dirty support includes newly born/vanished density
+and filter halos. Admission/lifetime follow V1/F4 leases; no overwrite of in-flight pages.
+
+The inner128km workload is not the entire horizon population. Far candidates use a deterministic world-cell/episode
+namespace and cooked forcing tracks; only cells intersecting a ray/support request are materialized. Source shell
+intervals bound low/high layers before cell traversal; a conservative hierarchical cover bound skips clear regions.
+At high opacity, a derived radiance/transmittance bound can stop further integration, but a truncated tau is returned
+as a bound/status, never mislabeled exact. Virtual-source evaluation and candidate/capacity counters are measured.
+
+For distant source queries, stable virtual cells/episodes are evaluated on demand and coarse source modes omit only
+sub-footprint detail. Analytic shell/layer bounds skip empty atmosphere before traversing candidate source cells.
+Convective far evaluation keeps gross cohort structure; low layers keep their actual column profile; Ci keeps its
+swept filaments at an admitted footprint. No density average may replace clear/cloud mixture without checking
+transmittance/coverage (`E[exp(-tau)] != exp(-E[tau])`). Use deterministic cone samples or a separately qualified
+coverage/transfer summary when unresolved gaps matter. Near/far transitions refer to the same event/material and count
+one representation contribution. Camera movement cannot reseed a field, move weather fronts or reveal a hard cache edge.
+
+## Camera, reflection and numerical envelope
+
+### SKY-G extended ground-sky profile
+
+The baseline short-range air and local4km RC proof stay valid in their own domains. The required full-sky profile
+selects a shared terrestrial **sky frame**: planet centre/radius, local tangent transform and radial altitude, with
+cloud sources, atmosphere, far ground and Sun/planet visibility using that same frame. This is a visual/environment
+profile, not a new planetary gameplay engine. Main full-sky cameras support0–1536m altitude and perspective/orthographic
+views; isolated diagnostic orbits may examine a finite family above it without qualifying unrestricted full-sky flight.
+
+The proof's initial optical parameters are explicit assets: Earth-like radius6371km, Rayleigh sea-level RGB
+coefficients and8000m scale height, a named aerosol extinction/albedo/phase/1200m height profile and optional ozone
+profile. They are authored/reference-fit RGB approximations with units, not hidden per-family sky tints.
+The initial proof uses Earth-like radius6371km, cloud source tops<=18km and atmosphere top100km. At100km, planar-layer
+height error is about785m, so a flat sheet cannot establish thin/high-cloud horizons. A finite768km source support
+radius around the sky frame covers ground-camera visible cloud shells with margins; actual ray/sphere intersections
+and maximum admitted camera offsets are checked. World-cell placement continues through the distant region from the
+same storyboard, not an unrelated horizon image. The source region's boundary must remain behind the admitted horizon;
+if a view/light path can reach it with significant contribution, expand/reject admission rather than fog-fading the edge.
+
+High-cloud and near-horizon view paths can be hundreds of kilometres. Sun paths escape the spherical atmosphere or hit
+the opaque planet; local fog and all cloud layers along them still apply. A hard4km cutoff cannot serve SKY-G.
+The local implementation computes radial height stably, for planet centre(0,-R,0), as
+`h=(x²+z²+y(2R+y))/(sqrt(x²+z²+(R+y)²)+R)`, rather than subtracting two large radii. Ray/shell roots use a stable quadratic
+form and conservative near-tangent handling. Those are numerical/domain tests, not a planetary gameplay claim.
+C01 uses a fixed sky/world frame and split origins for GPU precision; a camera rebase is not a sky reseed. A fixed
+local chart maps source patches to the spherical altitude surfaces; material/wind tangents transform through its
+Jacobian so metres/seconds and shared wind are not silently replaced by angular texture scroll.
+
+### Extended air/terminal producer
+
+E1 publishes the spherical atmosphere parameters/revision and clear external illumination. V3's proof adapter evaluates
+Rayleigh and aerosol scattering/absorption profiles plus optional ozone absorption in radial altitude. Rayleigh uses
+its normalized phase; the aerosol uses its declared forward phase. A transmittance LUT parameterized by altitude and
+cosine-to-local-up integrates the **same** air to the top/ground boundary, avoiding a second full air march per Sun query.
+It depends on atmosphere parameters, not each cloud age. CPU fine quadrature is its oracle.
+
+The first explicit optical closure is spherical single-scatter air with the named cloud higher-order approximation
+below; a Hillaire-style clear-air multiple-scatter LUT is a compatible later qualified source term, not assumed exact.
+The sky is obtained by integrating air/cloud source to the declared top/space or opaque-ground terminal. A finite Sun
+disk is inserted once with radiance consistent with its irradiance/solid angle. A preintegrated sky/aerial LUT may
+replace only a **disjoint** segment with matching boundaries/lighting; it cannot be applied on top of already integrated
+air. In shadowed air, shared cloud/geometry attenuation must affect the source, not only a ground image.
+
+Ground/terrain terminates rays at real depth. The standalone full-sky fixture uses near matte/planar-mirror geometry
+and a compatible far-ground sphere; it is not production terrain/water. Reflection rays begin at the actual interface,
+trace the same source/air independently, then receive the camera-to-interface affine operator once. A mirror is not
+screen-reflected main cloud pixels and does not qualify rough ocean reflection.
+
+## Light projection and joint transport
+
+At a sample, sum all constituent extinction and source terms before the Beer affine update. Separate liquid/ice
+scattering weights permit their declared phase closures; do not assign the nearest cloud family's phase to all overlap.
+For each light `E_direct=E_light V_geometry exp(-tau_air-tau_fog-tau_all_cloud)`. Surface receivers, air/fog and cloud
+primary source use the same incident light. Light disabling does not remove density/source age. All illumination and
+emission zero produces zero radiance while extinction persists.
+
+Cloud source-only higher orders retain the tested structure
+`j_cloud=sigma_s [E_noncloud sum(n=0..3,a^n B_local^n p(g c^n) exp(-b^n tau_cloud)) + L_external]`.
+Primary n0 appears once and ordinary extinction/shadows are unchanged. All orders use the same ordinary cumulative
+cloud tau in the new profile. This avoids tying an intrinsic lighting blur radius to a camera-dependent atlas mip;
+a physically filtered density/light extension would require explicit world-space length scales and new qualification. The new broad optical profile
+starts from a=.8,b=.5,c=.5 (liquid g≈.86, ice g≈.75); these are named authored approximations to qualify on thick/ice
+witnesses, not fitted physical transport. `B_local=1-exp(-sigma_cloud*ell_opt)` uses a declared source/world-space optical length (cohort scale, layer thickness
+or filament width), independent of camera/atlas LOD. This makes extra scatter vanish in the optically thin limit;
+otherwise an unconditional order sum would brighten thin Ci as if it were a thick Cu. Mixtures retain source scattering
+weights/optical-length semantics. This is an explicit local closure approximation, not true diffusion. The historical
+Cu profile's b=.2/unconditional orders remain reproducible in its golden recipe.
+Larger deep-cloud optical depths expose closure limitations; adding more orders is not automatic proof of realistic
+storm bases. Compare both front/backlit thick structures and the surface light beneath overcast.
+
+**Shared light product candidate:** light-aligned deep cumulative-depth curves, built over all intersecting source
+supports, not one receiver plane or independent per-family shadow maps. Each curve stores depth and ordinary cumulative cloud tau; it can answer a sample inside a cloud, below an anvil or between layers. All layers along the same Sun
+ray contribute. Cascades each estimate the entire source-facing path; overlap selects/blends estimates, never adds
+identical upstream extinction twice. Outside a projection is clear only if conservative source projection bounds prove it.
+
+A compute column producer traverses ordered source/layer intervals, integrates nonnegative density and compresses
+samples into sorted depth knots. The fit metric bounds primary `exp(-tau)` **and** `exp(-b^n tau)` for each higher
+order, not only primary T that is already black. The bounded streaming builder appends integration endpoints, then removes the interior knot with the smallest
+maximum deviation in those transformed terms when capacity is exceeded. Evaluate deviation at interval endpoints
+and any interior extrema of the difference of exponentials of the old/new linear-tau segments. Accumulate removed
+error with the triangle bound, plus separate quadrature/storage error; do not claim the area heuristic alone bounds
+maximum T error. Retained knot taus remain original cumulative samples and monotone. Private state is bounded K+2
+knots rather than an unbounded per-column sample array; compiler spill/private-workspace cost is still measured. Proposed primary T tolerance is0.02 in required footprints, separately
+from lateral/half/source quadrature error. Capacity overflow marks the column invalid and requests direct source
+integration/refined storage; it may not drop a thin layer. Tests cover two separated thin layers, a dense tower,
+low Sun, translated sources and partial interior depth. Lateral filtering evaluates/averages transmittances/closure
+terms per curve before weighting, rather than exponentiating mean tau across clear gaps.
+
+One candidate reservation is512²×8near knots,256²×12mid and128²×16far, with depth32 plus tau32
+(8bytes/node):24MiB before per-column count/error/validity metadata. One indexed storage buffer can contain the
+arrays/metadata, avoiding excessive storage bindings; the public query does not expose its packing. The dimensions/extents are provisional workload parameters, not evidence
+that fixed8knots or coarse far columns suffice. Per-column error flags, conservative lateral footprint checks and
+finite direct fallback keep the defined result instead of hiding overflow. Lateral/source-feature and low-Sun error
+can invalidate an otherwise good depth fit; those queries use a finer patch/direct source path. Direct fallback uses
+source bounds, field cell scales and declared radiance/transmittance error, with visible out-of-capacity failure rather
+than silent truncation. Its rate/cost is measured. If errors/fallback explode, choose sparse full prefixes or a larger
+admitted map; retaining an invalid map solely for its byte count is rejected.
+
+This is our compute/depth-vector adaptation of deep-shadow/AVSM ideas, not the paper's exact streaming renderer.
+Finite local-light paths (lightning) require direct source integration or another qualified finite-path cache; a Sun
+map is not a general answer. Moon uses the same typed light path when selected; two active directions count two cache
+closures. Source/light keys and their actual age/error control refresh; no unproved stale-light reuse.
+
+External cloud ambient samples the pristine sky through the **combined** cloud/air/fog field. It does not feed a
+clouded probe back into itself. Surfaces may use a derived clouded irradiance/environment product from the same joint
+transport, so overcast reduces/colours broad daylight and contributes cloud radiance. That product has explicit anchor,
+angular resolution/time/filter validity; it is not weather authority. Main, reflection and environment consumers are
+independent and all charged to the graph. The first proof may use deterministic multi-direction quadrature, with a
+fine angular reference for overcast/thin/high-layer witnesses.
+
+## History and local change
+
+Spatial reconstruction uses opaque/interface depth, cloud support, air/fog optical path, source identity/coverage and
+full footprint compatibility, with a separate full-resolution fallback. The current reflected edge-streak regression
+remains a required image test. No history is allocated merely because it can conceal undersampling.
+
+When history is selected later, each view retains its actual prior source time and validity. Cohort/material maps
+provide surviving correspondence; birth/drying, changed dominance, layer holes, LOD disagreement and source/light edits
+reject or reduce confidence. Partial validity is not rigid motion for the whole cloud. Sky/source rebases, skipped
+views, resize/device loss and substantive source changes reset affected state. V4 owns final exposure/display and
+history; S is scene-linear/pre-exposed, RGB T is physical and never exposed. No private cloud final-image resolver.
+
+The Sun disk adds a much larger terminal radiance than the old constant-sky fixture. Early termination derives its
+remaining-radiance bound from the actual terminal/Sun-disk and medium-source maxima for that ray; the old800000bound
+cannot be reused. A thick cloud may not discard still-visible attenuated Sun by a generic T cutoff. V4's proof adapter
+selects one global pre-exposure small enough that the brightest admitted terminal fits half storage; camera/display
+exposure is a separate rescale in the final float stage. All views use that same pre-exposure, and T/identity/depth
+are never exposed. Tests include very bright terminals behind thin/opaque cloud, half overflow and all-light-off.
+
+## Normal update, transitions and authority
+
+1. F1/W1/E1 evaluate one committed weather/source snapshot and all due source events. A skipped preview frame cannot
+   lose storm/seam events. Immutable story/recipe revisions and poses/branches are extracted once through V2.
+2. V1 admits all source/detail/atlas/light/air/environment products needed by the union of retained consumers.
+   Source field groups with equal complete keys share; independent ages don't. Build source/maximum/mips and matching
+   deep-light/ambient products before any relevant view. Product revision/time is visible in diagnostics.
+3. V3 queries the same coefficients for main, geometry shadows/air/fog, reflected legs and environment capture.
+   Sum overlaps once, terminate at actual geometry/planet/top, and compose only disjoint affine intervals.
+4. V4 reconstructs/displays using its exposure and actual retained-time policy. CPU/GPU leases/fences govern retirement;
+   not one page is reused while an in-flight view still reads it. Failed preparation preserves the prior generation
+   or a visible stopped/error state, never half-new shadows with old visible geometry.
+
+Authoring operations: add a family/region, choose variant/seed, set base/cap/dimensions and optical calibration, draw
+wetting/drying/front tracks, set height-wind/shear, edit emitter/cohort/branch tracks, preview a named interval/view,
+seek/accelerate, inspect support/coefficient/light products and capture the loaded identity. Invalid dimensions,
+negative coefficients, unsupported controls/domains and capacity overflow are explicit errors. Edits requiring a new
+recipe use Apply/restart, not a partial live mutation. Undo/save stores recipes and exact dependencies, not GPU fields.
+
+The proof inspector supplies ground, oblique/side, upper diagnostic and orthographic receiver routes plus independent
+reflection. Mac controls use coalesced pointer/wheel orbit/pan/pinch with one render in flight; source preparation is
+bounded/yielding and never a long CPU loop in an input callback. Capture/measure freezes its fixture atomically, as the
+current clean recorder does. Every canvas/view reads the same latched source time; its RAF cannot step weather.
+
+## Weather sequence mechanisms and external seams
+
+| Required transition | Changed cause and surviving state | Observed coupled result |
+| --- | --- | --- |
+| CW01 clear→scattered | Moving wetting potential admits staggered convective episodes; each starts with a filled local core and grows child lobes. Existing episodes retain IDs. | Local support/ground shade/reflected shapes appear and grow, not a sky-wide alpha ramp. |
+| CW02 increasing cover | More local births/persistence plus low-layer amount growth; common wind keeps existing cells moving. | Gaps narrow, banks connect, all views preserve survivors and differently aged material. |
+| CW03 overcast development | The same low-layer M/thickness and local drying/wetting state fills holes; cellular relief becomes weak without replacing the layer. | A coherent deck emerges with continuous underside/shadow/irradiance changes; reverse drying opens true holes. |
+| CW04 storm | An existing compatible Cu branch continues vertically into a cap/outflow, or a tracked developed storm approaches under shared wind while retaining its phase. Neighbouring sources continue. | Growing anvil and changed layer/ground/reflected light have one source; no horizon respawn or static-storm substitute for CF02. |
+
+The combined storyboard has tracked survivors, staggered births and at least one full development/approach path.
+The initial complete weather programme is60source minutes: clear→scattered0–900s, increasing/broken900–1500s,
+overcast1500–2400s, developing/approaching storm2400–3600s. This is an authored optical story, not a forecast.
+Normal witnesses inspect actual meaningful intervals at each transition;16x/64x complete sequences expose repetition,
+discontinuities and synchronized life. Temporal acceleration samples the same source functions; it is not skipping
+engine simulation/precipitation ticks while claiming physical catch-up.
+
+Required **precipitation seam**: one weather owner publishes storm/cell ID, support/base, world trajectory, time/revision,
+precipitation type/flux in kg/(m²s) **if authored/supplied**, and validity. Unsupported flux is absent, not inferred from
+dark pixels. A typed stub records the sampled cause and moving footprint; real precipitation/deposition/wetness/water
+integration remains its separately commissioned owner. All consumers sample the same wind at their appropriate height.
+
+Required **lightning seam**: stable event ID, source cell/revision, committed interval, source/channel region and light/
+emission descriptor. A stub proves replay/seek/skip delivery without duplicates. V3/V5/audio own later flash/channel/
+thunder implementations and finite light-path admission. Culling a visible cloud cannot erase these events. Lux is not
+thermal watts, optical density is not charge/CAPE, and authored rain/activity tracks are not conserved meteorology.
+
+## Whole-sky scenarios and cost account
+
+The following are deliberately substantial representative recipes, adapted from the independent workload challenge.
+They are **planned inputs**, not established performance limits or appearance passes. Source count N, unique evaluated
+groups U, occupied cells, angular coverage, overlap and visible versus retained-light-only support are measured separately.
+
+| Scenario | Required population/extent and distinguishing views | Planning occupancy (not measured) |
+| --- | --- | --- |
+| FAIR |512Cu IDs in128×128km inner region, diameters1–5km (RMS2.8), bases0.8–1.8km, tops1.5–3.5km;24Ci bundles at8–12km. World-derived far continuation. | Nominal Cu footprints≈3153km²/16384=19.2% before overlap; wide sky pixel target20–40%. |
+| BROKEN |512connected low-bank/cell identities, diameters2–8km (RMS4.8), bases0.5–1.2km/tops1–2.5km;64Cu fragments in openings and24Ci bundles. | Nominal low footprint≈56.5% before connectivity/overlap; wide sky target50–80%. |
+| OVERCAST | One128×128km lower deck at0.7–1.5km with64stable16km authoring regions; second3–4km deck covers70% of plan; high wisps for cross-layer light tests. | Lower footprint100%, central wide captures>=95% cloud sky pixels; empty-space savings cannot be assumed. |
+| STORM |12systems: four growing/four mature/four decaying, cores6–14km/bases0.6–1.5km/tops10–16km; eight developed20–40km anvils;384low banks and24ice bundles. | Deliberate anvil/core overlap and50–70% low plan cover;70–100% sky captures plus clear-side route revealing>=3systems. |
+
+All use the same seeded world/sky frame and provenance-aware virtual far cells/layers to the admitted horizon. Far
+populations are not allocated as one dense current field per virtual cell. Shell bounds plus hierarchical cell/region
+support skip clear air; resident near/mid fields and on-demand filtered source queries refer to the same latent events.
+A far-mode shortcut must preserve canonical coverage/transmittance within its admitted footprint; otherwise resolve it.
+
+Required views:1280×720main,640×360joint media, independent mirror320×180media; an orthographic receiver/diagnostic view
+and an independent paused/skipped camera witness;1920×1080native target separately. Ground camera2m, low hillside and
+0–1536m admitted routes; pitches15/60/90degrees and yaw sweep. Close/oblique routes reveal low-layer thickness and tower/
+anvil structure. Sun elevations75/30/15/5degrees, front/back relative wind, source-off and all-light-off; optional admitted
+Moon path uses the same contract. A Sun2degree stress case remains separate until its full source/air domain is admitted.
+Two bounded fog volumes test overlap. Derived environment capture/filtering is counted, not a free omitted consumer.
+
+### Work and bytes, before measurement
+
+For recipes s, evaluated groups g, views v and source intervals traversed,
+`M_source=sum(recipe/detail/optional clip bytes)`, `M_current=sum_g V_g*b_current*(mip/guard factor)`,
+`W_build=sum_g V_g*C_source(g)`, `W_views=sum_v P_v*K_v*(C_coeff+C_light)`,
+`W_light=sum_columns(sampled source intervals + fit work)` and `W_environment=probe rays*steps*cadence`.
+Ninstances does not equal Ug or source byte copies. Overcast fills columns; shared clips with different ages do not
+share current fields. Source/frame/light cache overlap and upload/decode/in-flight replacement peaks all count.
+
+Packed scalar fields cost approximately2.28125bytes/logical voxel including three regular mips before atlas guards:
+128³≈4.5625MiB,64³≈0.57MiB,32³≈0.071MiB.512independent32³Cu phases alone are≈36.5MiB; several resolved128³phases,
+Cb anisotropic fields,24MiB proposed Sun curves plus metadata, layer maps/detail and~16MiB raw view/guide/HDR targets can exceed the
+former88MiB one-source service reservation before a second light/history. Family-specific layers/filaments and virtual
+far evaluation remove inappropriate cubic allocations, but no assumed compression/sharing ratio closes that budget.
+Record actual U/occupancy and allocation peaks. These arithmetic examples reject the old four-source capacity as a
+whole-sky design; they do not predict milliseconds or authorize spending the complete browser reserve twice.
+
+Reference desired allocations remain cloudCPU0.5ms, browserGPU5ms/nativeGPU3ms; complete frame browserCPU/GPU8/16ms,
+desktop5/10ms, with complete browser512MiB. The earlier one-source M3Max GPU elapsed bracket12.845/18.809ms median/p95
+already fails its cloud allocation and has full-frame failed tails. Full-sky performance/memory are unproven, not scaled
+from that result. Measure each isolated family/interaction and representative entire graph with loaded code/source,
+real resolution, warmup/cadence/tails, fallback rate, all views/light/environment and actual residency where available.
+
+Reduction priority preserves the commissioned result: shared immutable content/full-key evaluated reuse; source/support
+and dirty work; appropriate anisotropic/virtual/packed source formats; shared all-layer illumination; remove transfers/
+duplicate graph work; then admitted sample/resolution/history reductions with unchanged visual/behavioural witnesses.
+A failed cost gate stays visible while required behaviour is proved; deleting a family, stopping weather time or
+hiding reflected/far consumers is not optimization. The final full-sky workload, not an isolated kernel, owns admission.
+
+## Worked complete interactions
+
+**Tower grows into an anvil under high cloud.** One convective event keeps its lower body/head identity. Updraft/head
+tracks emit new upper cohorts; cap arrival emits outflow with inherited lineage and phase weights. A pre-existing Ci
+layer keeps its own wind/age. Current coefficients and shared cumulative light include both; the anvil changes lower
+cloud/receiver light and independent reflected rays. Anvil/core overlap partitions once. No per-view life step occurs.
+
+**Sc becomes overcast while old Cu survives.** The same low-layer cells retain M/material coordinates; the wetting front
+fills gap regions and locally thickens the deck. Surviving Cu cohorts continue their own phases. Group semantics avoid
+duplicate same-condensate density, while genuinely separate levels add in C08. Sky gaps, surface irradiance, Sun paths
+and mirror view change from the same source, not parallel image crossfades.
+
+**Ci source stops while tails remain.** Head emission ends, prior cohorts continue shared high wind/settling and local
+sublimation. Some tail segments disappear before others. Receiver attenuation and reflected streaks thin correspondingly;
+newly exposed background invalidates old history if history exists. No reseeding or immediate whole-ribbon deletion.
+
+**Pan across a horizon or omit a view.** World/cell IDs and curved altitude shells remain fixed. Culling unions main,
+reflection, light and environment needs. Source LOD changes fidelity at the same time/identity; a skipped view resets
+its invalid prior sample when resumed. A main-hidden cloud can still shadow/reflect. A far cache boundary never defines
+where weather exists. Query outside admission returns unavailable/error, never fabricated clear sky.
+
+**Rain/lightning consumer with cloud draw off.** E1 still owns wind, storm support and authored events/flux. Stub consumers
+receive the same cell/time/trajectory even when main appearance is absent. Last optical consumer removal retires GPU
+source/light products after leases; weather facts remain only if required. Restoration recreates products from the
+pinned recipe/snapshot, not readback or stale texture state.
+
+## Renderer reconciliation
+
+Keep the prior renderer/tools as independently qualified components, not a target constraint. Retained: Beer affine
+integration, phase sign/normalization, ordinary extinction versus source-only higher terms, geometry/path guides,
+independent mirror trace/once-only foreground, current-source sharing, source hashing, capture serialization and finite
+reference oracles. Adapt source extent/species/atlas access, light cache coverage, atmosphere/terminal and per-view frames.
+
+The following are replaced as universal assumptions:512m isotropic source; one current field for every instance;
+short4km atmosphere; source-specific hardcoded bound applied to arbitrary families; a ground shadow texture as partial
+interior depth; main-frustum-only cause culling; global fade/noise warping as lifecycle; independent final sky/fog/cloud
+layers; and frozen/slowed source time for performance. Keep the exact original source/reference and historical evidence
+so changes can be compared without silently relabelling earlier outputs.
+
+The current proof at8142 remains paused/best verified while new candidates are built separately. An unaccepted new
+family does not displace it or enter a supposedly accepted full sky. New tools remain under scripts/tmp/evidence;
+Thrum runtime integration waits for its real foundation/content/render interfaces.
+
+## Proof and construction queue
+
+| Order | Required proof and rejection condition | Current evidence |
+| --- | --- | --- |
+| D0 | Complete capability/model/contract/cost synthesis; independent original-brief discovery and whole-model challenge. Reject any required mechanism/producer left unnamed or conflicting source ownership. | Draft revised here; comparison review pending. |
+| R0 | Source/packing/optical invariants, analytic slabs/depth curves/air and wrong-composition counterexamples. Reject alias/overflow/double attenuation. This is correctness instrumentation, not a passed cloud family. | Old13oracle tests and bounded coupled checks retained; new layouts/domain unproven. |
+| F1–F5 | Each CF family in isolation with four meaningful variants, lifecycle intervals, native/normal/accelerated reference comparison, required lighting, receiver/reflection and distance/angle routes. Correct failures before admission. | CF01partial; CF02–CF05unproven. |
+| M1 | Accepted low/high and bank/tower/anvil combinations with overlaps, common wind/light and independent consumers. Reject unrelated ambient, missing offscreen blockers or duplicated source parts. | Unproven. |
+| W1–W4 | CW01–CW04 named continuous weather paths with tracked survivors, genuine local births/deaths and stub precipitation/lightning seams. | Unproven. |
+| S1–S4 | FAIR/BROKEN/OVERCAST/STORM complete skies, wide/close/horizon and repetition/LOD/view-transition routes, repeatable full weather stories. | Unproven. |
+| Q7 | Complete work/memory/startup/cadence/device assessment preserving accepted witnesses. Budget failures stay explicit; no isolated-cloud extrapolation. | Prior one-sourcecostfail; complete workload unproven. |
+| Q5/Q6/Q4 bindings | Profile/headless/provider/lifecycle/history and actual engine interfaces through I1/I2/I3a/I3b. Commissioned proof stubs do not promote engine maturity. | Unbuilt/unproven. |
+
+Each accepted checkpoint retains exact recipes/assets/build/view/source clock, references and native/motion witnesses,
+independent findings/dispositions, cost/memory and pass/fail/unproven scope. Reviewed design, accepted isolated families,
+combined-weather and full-sky proof are logical commit/push points. Failed sources retain their specific assumption,
+evidence and proposed correction; working parts remain available. The goal is incomplete until its required outcomes
+and delivery records withstand that audit; a bibliography, pretty still, hash or test suite cannot establish them.

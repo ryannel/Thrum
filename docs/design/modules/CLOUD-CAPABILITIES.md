@@ -1,71 +1,113 @@
-# Cloud capabilities and coverage
+# Cloud capabilities, acceptance and current evidence
 
-1 November 2026. E1.clouds commission for Thrum; the complete system design will be [CLOUDS.md](CLOUDS.md).
-This first inventory precedes reconciliation with the old cloud code. The author has prior exposure to both
-Broadsides cloud implementations and their failures; this is an independent target, not a claimed blind study.
-Fresh reviewers receive the original requirements and Thrum contracts before this inventory.
+1 November2026. The current [commission](../../evidence/cloud-sky-design-2026-11-01/COMMISSION.md)
+requires the complete five-family system, isolated proofs, changing weather and full skies. The
+[canonical design](CLOUDS.md) governs the implementation. Earlier optional-storm/family labels are superseded.
+The author has seen both earlier Broadsides systems and the Q1/Q2/Q3 Thrum instruments; this is not a blind study.
+Independent requirements discovery preceded comparison with those designs and code.
 
-## Scope and requirement basis
+## Requirement basis and status
 
-**U**: explicit cloud-user requirement. **E**: selected Thrum engine requirement/contract. **I**: necessary implication
-of delivering those requirements. **P**: proposed scoped profile or bound awaiting qualification. **O**: optional
-extension, not base-delivery acceptance. Decisions, implementation and evidence are distinct. All proofs below are
-planned at inventory time. The later [Q1 source proof](../../evidence/cloud-source-2026-11-01/REVIEW.md) supports a bounded local lifecycle/cooker/byte profile; A later [Q2/Q3 coupled instrument](../../evidence/cloud-coupled-2026-11-01/README.md) supplies bounded shared-light/main/shadow/reflection evidence; optical approximation floors and frame budgets remain open. Thrum integration, histories and target admission remain unrun. Legacy media/timings do not qualify this target.
+**U** explicit current commission; **E** Thrum engine obligation; **I** necessary implication; **O** optional.
+**Pass** means actual evidence covers the named outcome/domain. **Partial** means a narrower witness exists.
+**Fail** names contradicted acceptance. **Unproven** means no adequate evidence. Design/review, implementation,
+experienced quality, user acceptance and per-platform admission remain separate. Nothing below is passed by prose.
 
-The user selects production-style clouds, coherent motion, genuine growth and breakup, reduced physical requirements
-where useful, responsive Mac inspection and retention of the renderer where it fits. Approaching storms/weather
-progression remain stretch goals. Thrum E03/E09–E12/E14/E17/E20 and C01–C09/C12/C13 add reusable composition, portable
-profiles, common authority/time, media integration, lifecycle and cost obligations. The original design commission did not authorize a runtime build; subsequent Q1 source work is separately scoped and does not bypass engine foundations.
-The existing attenuation-only R3 recipe remains valid; visible volumes are a separately admitted extension.
+The source-of-truth clock, coordinate/epoch, content leases, provider selection and C08 joint-medium contracts remain
+Thrum's. All five requested families and storm progression are required for this commissioned profile, not mandatory
+for every Thrum game. Rain/lightning implementations, full meteorology, all WMO genera, halo optics, tornadoes and
+unrestricted planetary/aircraft travel remain optional. Required precipitation/lightning **seams** are not optional.
 
-Proof groups: **Q1** content/local lifecycle; **Q2** transport/lighting; **Q3** shared projections and views;
-**Q4** motion/history; **Q5** composition/headless; **Q6** authoring/loading/lifecycle; **Q7** combined target costs;
-**Q8** optional approaching-weather prototype. These labels denote coverage, not a new test suite.
+## Five isolated-family gates
 
-## Required capability inventory
+Every F gate requires native imagery, sampled normal/accelerated motion, at least four genuinely different formations,
+formation/growth/mature/breakup intervals, accepted Sun/sky conditions, receiver shadows, independent reflected rays,
+relevant distance/angle routes, source identity and measured work/memory. Four rotations/scales of one master are not
+four morphology variants. Four is the proposed inspection sample, not a universal user-imposed library size. Correct a failed isolated family before admitting it into mixed or complete-sky scenes.
 
-| ID / basis | Observable outcome | Responsible owner and important consumers | Design obligation; planned proof |
+| ID / basis | Required observable outcome and concrete rejection witness | Mechanism/owner | Current actual status |
 | --- | --- | --- | --- |
-| CL01 U/E | A game selects clear, attenuation-only or visible-cloud capability combinations explicitly. | F2 composition; E1 cloud source; V3/V4 rendering | Dependencies, supported substitutes and rejection domains; Q5. |
-| CL02 U/P | Clouds have convincing body and coherent silhouette from useful viewpoints; the proposed first regime is billowy cumulus-like content with a shaded base. | E1 optical geometry; V3 light; V4 display | Representation must retain required spatial scales and optical contrast, not just encode water mass; Q1/Q2. |
-| CL03 U | Clouds visibly develop: local structures form, change connectivity, detach and erode. Rising billows are the proposed first regime; condensation is not a thermodynamic claim. | E1 evolution/content producer; all projections | Actual structural change and local creation/destruction. Global scale/fade or invertible warp alone cannot qualify it; Q1. |
-| CL04 U/E | Cloud bodies and fine detail drift coherently with the selected wind at cloud height. | E1 weather/wind and cloud trajectory | A constant/authored wind is valid; shared frame/time convention, integrated transport, no double moving-frame offset or independent noise scrolling; Q1/Q4. |
-| CL05 U/E | Normal-speed motion and accelerated development both have plausible pacing and stable identity. | F1 time; E1 source; authoring preview | Weather/illumination clocks are explicit mappings from committed time; quality never dilates simulation to hide cost; Q1/Q4/Q7. |
-| CL06 I/E | Camera changes, culling and origin rebases do not reseed or move a cloud in world space. | W1 identity; E1 source; V2 extraction | Stable source identity/seed, world support, phase and source revision; Q3/Q4. |
-| CL07 E/I/P | Supported illumination changes the same cloud and its transmitted light correctly; the first extension selects Sun plus a conditional Moon. | E1 celestial facts; V3 lighting | Directional source paths, daylight/source-off and angular validity; an authored Sun-only field cannot claim arbitrary directions; Q2/Q3. |
-| CL08 U/E | Ground, vegetation, water and volumetric receivers see cloud attenuation from the same place/time/source. | E1 optical field; V3 direct lighting/media | Defined source-ray optical-depth query or typed unavailable result; no duplicate cloud attenuation; Q2/Q3. |
-| CL09 E/I | A visible cloud, air and overlapping fog have correct depth order and one declared transport composition. | V3 integrator; E1 cloud/air/fog coefficient producers | Joint extinction/incident lighting; independent overlapping whole-ray composites are invalid; Q2. |
-| CL10 U/I | Opaque geometry clips the actual cloud path without a horizon band or a transparent leak. | V3 path integrator; V2 depth; V4 reconstruction | Conservative volume support and cloud-relative occluder metadata; foreground, interior, far-ground and sky cases; Q2/Q4. |
-| CL11 U/E | Reflections and environment illumination describe the current cloud geometry, not the main-camera image. | V3 reflection/environment consumers; E1 source | Independent query viewpoints, supported update age and source/path validity; water surface remains its owning module's responsibility; Q3. |
-| CL12 E/I | Main, secondary, shadow and reflection views can coexist, including off-camera occluders. | V1 resources; V2 views; E1 shared source; V3 | Shared world products and bounded view-local history; no per-view source authority/evolution; derived copies must have justified validity and accounted cost; Q3/Q7. |
-| CL13 E/I | History follows retained material where correspondence exists and rejects births, deaths and missing prior support. | E1 flow/correspondence; V3 effect history; V4 reconstruction | Evaluate the actual previous image's time, not automatically previous tick/frame. Topology change is not a rigid vector; Q4. |
-| CL14 E/I | Lighting uses explicit optical units and a declared approximation with no source-off emission. | V3 closure; E1 extinction/phase inputs; V4 display | Nonnegative extinction, Beer view transport, normalized phase, labelled higher-scatter source approximation. One source off removes its term; darkness requires all direct/ambient/emission inputs zero; Q2. |
-| CL15 E/I | Sky/background and cloud-derived illumination do not count baked cloud imagery or the Sun twice. | F4 sky assets; V3 light/environment | Compatible terminal background, source metadata and cache invalidation; Q2/Q3/Q6. |
-| CL16 E | A game can omit main-view clouds while independently retaining attenuation or reflected/environment cloud appearance; only unused consumers retire. | F2 selection; E1 source; V1/V3 resources | Name retained-consumer combinations and shared-media history ownership. Explicit clear returns one; source absence is not silent clear; Q5/Q7. |
-| CL17 E | A headless world supplies any required cloud/gameplay facts without reading GPU textures. | E1 CPU semantic provider; P6/N1 consumers | Gameplay queries are opt-in typed capabilities with declared projection/error; decorative cloud content does not imply rain, heat or concealment authority; Q5. |
-| CL18 E/I | Source and camera data share committed identity/time while presentation can run at another cadence. | F1/W1 publication; E1 state; V2 packet | Immutable source revisions and bounded provider leases; no per-view stepping or unbounded old snapshots; Q4/Q6. |
-| CL19 I/E | A concrete producer supplies versioned evolution, optical geometry and valid correspondence or explicit invalidity in declared frames/time/support. | F4 importer/cook; E1 authoring/source | Provider-specific data/authoring contract and reproducibility. Prepared clips, when selected, owe explicit channels/timestamps; no per-frame normalization masquerading as evolution; Q1/Q6. |
-| CL20 E/I | Data activation and time discontinuities publish complete compatible source samples with bounded residency and explicit readiness. | F4/W2 products; E1 sampler; V1 uploads | Prepared sequences additionally specify bracketing, boundaries and any paging; evaluable providers need no invented sequence API. Stale-result rejection and bounded staging; Q4/Q6/Q7. |
-| CL21 E/I | The selected finite source scale has explicit overlap, support and culling rules. | E1 spatial source set; V3 integral; V2 bounds | Sum constituents once and bound cost. Instance/group counts belong to selected profiles, not universal provider APIs. A bounded proof cannot certify regional scale; Q2/Q3/Q7. |
-| CL22 E/U | Quality profiles preserve identity, source time and meaningful cues while removing real work/memory. | F2 profiles; E1 semantic source; V1/V3/V4 | Target-cooked representations and resource ledger, no silent loss of required shadows/gameplay meaning; Q5/Q7. |
-| CL23 E/I | A supported content/profile replacement, source retirement, device loss or suspend/resume leaves no stale cloud/shadow/reflection/history. | F1/F2/F4/V1; E1 and effect owners | Default restart/stop-load for substantive changes; explicit retirement and reconstruction for admitted presentation changes; Q6. |
-| CL24 E/I | Save/replay/network restoration retains the source facts the game actually needs. | P7/N1; E1 source; F4 pinned content | Persist authority/phase/source references, not GPU caches; cosmetic state can be derived or reset only under a declared cue policy; Q5/Q6. |
-| CL25 U/E | Authoring and diagnosis make causes inspectable; Mac orbit/pan/pinch remain usable. | T1/T2 tooling; P1 input; E1 source | Proposed preset authoring, required inspectable causes, preview ordinary and accelerated motion, expose support/provenance/history validity without creating another weather authority; Q1/Q6. |
-| CL26 E/U | Startup, memory, sustained cadence and input latency fit the assembled target recipe. | C12/T2 all owners | Cost account for source preparation, bandwidth, per-view/light/sample work, repeated updates and transition peaks; actual artifacts/devices required; Q7. |
-| CL27 E/I | A game can register, replace or omit cloud providers through Thrum's ordinary composition model. | F2 public capability/schema/system declarations | Define required outputs, units/regimes, product types and removal dependencies; no Bevy host or local plugin framework; Q5/Q6. |
-| CL28 E/I | Selected source content and preparation can be recovered and legally delivered. | F4 asset pipeline; T1 authoring; project source | Stable package IDs, hashes, licenses, recoverable masters/recipes, runtime payload distinction and bounded retained storage; Q6/Q7. |
+| CF01 U | Fair-weather Cu: a believable condensation base, heterogeneous upper billows and separated formations. New lobes emerge from a persistent body; mature renewal and ragged breakup. Reject uniform inflating balls, static silhouette with scrolling noise, faint hollow birth scaffolds and synchronized fade. | E1 convective event/cohort master; V3 optics; F1 isolation | **Partial**: Q1 one small finite source has actual growth/breakup and Q2/Q3 coupling. Four variants, new altitude/scale/views, mature renewal and full lighting envelope are unproven. |
+| CF02 U | Towering Cu/Cb: tracked lower body develops upward into clustered towers, reaches a cap and feeds a spreading/sheared fibrous anvil; core and anvil have different decay times. Reject a tall stretched Cu, a separately faded disk or an approaching static storm standing in for vertical development. | Same convective event with continuous deepening branch and cap/outflow/ice cohorts; F2 isolation | **Unproven**. |
+| CF03 U | Broken low cloud/Sc: shallow connected banks/cells/rolls, an approximately common base and real irregular gaps. Cells merge, renew and erode while holes move/change coherently. Reject unrelated Cu balls, conspicuous tiling, frozen holes or global alpha coverage. | Persistent low-layer column-amount/cell master, optional resolved local relief; F3 isolation | **Unproven**. |
+| CF04 U | St/overcast: broad coherent low-relief sheet with thickness and layered depth. Local formation closes gaps; breakup thins and opens holes/fractus. Reject a grey overlay, puff ceiling, exposed finite sheet edge or whole-sky reset. Overcast is a coverage condition, not a new genus. | Same low-layer state with weak cellular relief and local source/drying fronts; F4 isolation | **Unproven**. |
+| CF05 U | High wispy Ci: directional fibres, tapering/sheared fall streaks and high-layer scale/parallax. Heads feed persistent tails, local sublimation separates wisps, tails can outlive heads. Reject flattened Cu, opaque bars, screen-glued paint or random whole-field reseeding. | Continuously emitted ice-filament cohorts, shared height-dependent wind/sedimentation; F5 isolation | **Unproven**. |
 
-## Optional capabilities and exclusions
+The initial shape envelopes are authoring/admission choices, not universal meteorological heights: Cu0.5–5km across,
+base0.6–2km; Cb3–14km cores, tops8–16km and wider anvils; Sc0.3–1.2km thick in kilometre banks;
+St0.2–0.8km thick in connected regional decks; Ci8–14km altitude with kilometre-to-tens-of-kilometres strand organization.
+Actual scenario values are pinned. Scale alone cannot establish family recognition.
 
-| ID / basis | Outcome and boundary |
-| --- | --- |
-| CO01 O/U | A distant authored weather system can approach, increase coverage and change type coherently. Design source/time/control seams now; implement only after CL02–CL05 and coupled base proof pass; Q8. |
-| CO02 O/E | Precipitation, storm gameplay, thunder or physical irradiance/thermal effects consume explicit E1 weather facts; they are not inferred from a dark cloud pixel. Their physical producers are separate commissions. |
-| CO03 O/P | Flight, planetary/orbital sky, precipitation-bearing volumes and additional cloud families are separate regimes. The proposed full-volume base admits ordinary perspective first/third-person and orthographic ground/exterior views, including ground-accessible cloud entry, camera altitude0–1536m and path≤4km. A distinct distant/mobile recipe may exclude entry only through explicit game/camera/content admission, never a silent fallback. |
-| CO04 O/P | Native high-tier lighting, ray tracing, sparse compressed brick acceleration or original research providers compete at typed seams after conformance and whole-target benefit. |
+## Weather and complete-sky gates
 
-No live moist-fluid/LES solver, meteorological conservation, raw-Mie calibration or exact all-orders scattering is
-required. No universal cloud genera programme, planetary simulation, automatic cross-provider state migration, paid
-compute, asset import or runtime rewrite is authorized by this design commission. The baseline attenuation-only
-recipe does not become dependent on the proposed volume extension. Exact numeric content capacities and extra
-feature combinations must be selected with a cost account, not fabricated as measured support.
+| ID / basis | Required result / plausible wrong substitute to reject | Source/control mechanism | Current status |
+| --- | --- | --- | --- |
+| CW01 U | Clear→scattered: staggered local births, real support growth, persistent survivors. Reject fading a fully formed sky in. | Spatial front/potential changes deterministic event births and local source strength, not sky alpha | **Unproven** |
+| CW02 U | Increasing cover: new cells, spread/renewal and closing gaps without resetting existing formations. | Shared low-layer potential and convective episode scheduler | **Unproven** |
+| CW03 U | Developing overcast: connected low-layer growth fills gaps; existing low-layer IDs/material persist. Reject preset crossfade, infinite puff count and a suddenly inserted sheet. | Continuous Sc/St column state and forcing tracks | **Unproven** |
+| CW04 U | Developing or approaching thunderstorm amid other clouds: one tracked cell deepens or an already developing/mature cell approaches, with coherent anvil/illumination. CF02 still independently requires vertical/anvil development. | Convective branch/outflow plus shared wind/front trajectories | **Unproven** |
+| FS01 U | Fair full sky: recognizable varied Cu, clear gaps, the required high-layer witness, distant depth and no obvious clone pattern | FAIR scenario, persistent world events and family-appropriate far evaluation | **Unproven** |
+| FS02 U | Broken full sky: broad Sc organization with sustained openings, small/large scale variation and independent high-layer drift | BROKEN scenario, low-layer state + Ci/retained Cu | **Unproven** |
+| FS03 U | Overcast full sky: extensive varied underside, a revealing edge/oblique route and more than one level | OVERCAST scenario and common light/ambient paths | **Unproven** |
+| FS04 U | Storm full sky: a clear-side route reveals towers/anvils and different lifecycle stages; overcast darkness cannot hide every defining feature | STORM scenario with staggered systems/background banks/ice | **Unproven** |
+
+The four FS scenes need wide/close/horizon routes, normal and accelerated weather witnesses, camera motion/LOD
+transitions, long-enough reuse to expose repetition and a complete assembled workload measurement. A single source or
+four neighbouring puffs cannot close a full-sky row. The adopted workload recipes and coverage measurements are in CLOUDS.
+
+## Shared capabilities and couplings
+
+Existing CL IDs remain stable for earlier evidence. Their domains now follow the complete commission.
+
+| ID / basis | Outcome and required mechanism | Important owners/consumers | Current actual status |
+| --- | --- | --- | --- |
+| CL01 E/U | Clear, attenuation-only, reflected/environment-only and visible combinations select explicitly; unused closures really retire. | F2/F4/E1/V1–V4 | **Partial**: diagnostic main omission retains mirror/shadows; complete off-cost/provider composition unproven. |
+| CL02 U | Every required family has body, appropriate scale/altitude, meaningful variants and useful viewpoints. | CF01–CF05, content producer | **Partial** Cu only; other families unproven. |
+| CL03 U | Local creation, persistence, renewal, connectivity change and loss; no whole-body wobble/fade substitute. | Family masters and weather event/layer state | **Partial** finite Cu growth/breakup. |
+| CL04 U/I | Wind moves persistent material; height/shear differences and internal development are distinct causes. | E1 shared wind, event/cohort poses, all optical consumers | **Partial** one constant-wind rigid anchor; layered shear/internal motion unproven. |
+| CL05 U/E | Growth/erosion/edits/LOD identify surviving material or explicitly invalidate correspondence. | E1 source, V2/C07/V4 histories | **Unproven** new masters/history. Spatial-only proof is allowed. |
+| CL06 U | Normal and accelerated preview use one continuous source/weather clock; no per-view stepping. | W1/E1/T1 | **Partial pass** Q1/Q2/Q3 isolated1x/16x/64x; weather/full-sky unproven. |
+| CL07 E/U | Sun/sky and admitted Moon configurations feed shared coefficients/lighting in consistent units. | E1 lights/air, V3 closures | **Partial** constant Sun/sky and two Sun directions; extended-air/Moon/full-sky unproven. |
+| CL08 U/E | Receiver/within-cloud/air/fog direct attenuation uses all intersected source/layers once. | V3 C08 all-layer optical query | **Partial pass** one Cu/two fogs/geometry; many families/layers unproven. |
+| CL09 U | Convincing cloud illumination including thick undersides, backlit edges, thin ice and cloudy diffuse surface light. | V3 effective-scatter closure, clear external sky and clouded surface irradiance | **Partial** one Cu light envelope; thick/ice/overcast unproven. |
+| CL10 E | One joint coefficient/source integral; no independently lit overlapping final-image layers. | V3/C08 air/fog/cloud source | **Partial pass** bounded Q2/Q3, full domain unproven. |
+| CL11 U/E | Reflections sample the same world/time independently, including sources absent from main view. Near-interface media applies once. | V3/V4/reflection provider | **Partial pass** perfect mirror and mask/foreground tests; full sky/probe/rough water unproven. |
+| CL12 E/U | Culling/resolution/representation transitions preserve all retained consumers and meaningful optical coverage. | V2/V3/F2/C07 | **Unproven** full-sky LOD/culling; diagnostic masks are not the full provider lifecycle. |
+| CL13 E | Actual retained prior sample, not guessed previous frame; births/edits/skip/reset do not ghost. | C07/V4 | **Unproven**, history disabled in current proof. |
+| CL14 E/U | Extended air/sky/horizon share source altitude/planet frame, terminal and lighting closure; no double aerial integration. | E1/V3; new explicit SKY-G profile | **Unproven**; old2/4km domains do not cover high/far clouds. |
+| CL15 E/U | Geometry clips main/reflected paths and can shadow cloud/air; all-light-off gives zero radiance with extinction retained. | V3/C08 | **Partial pass** current analytic geometry/source-off cases; full domain/dynamic geometry unproven. |
+| CL16 E | Orthographic, perspective, multiple/paused views agree without camera-dependent source facts. | V2/V3/T1 | **Partial** one perspective+mirror; full routes/ortho unproven. |
+| CL17 E | Scene-linear RGB S and physical RGB T share V4 exposure/display; no material-specific final resolver. | V3/V4 | **Partial pass** standalone instrument, actual engine bindings unbuilt. |
+| CL18 E/I | One committed source/weather identity/time feeds every projection and emitted consumer event. | W1/E1/V2 | **Partial** finite source; extended event/layer controller unproven. |
+| CL19 E/I | A concrete editable producer supplies optical geometry, dynamics and validity for every family. | E1/F4/T1 | **Partial** Q1 recoverable source; new family masters unbuilt. |
+| CL20 E | Source/epoch changes publish complete compatible products; no partial swap or stale async result. | F4/V1/V2 | **Unproven** complete provider lifecycle. |
+| CL21 U/E | Isolated formations, overlapping layers and complete sky share resources without losing identity or double-counting condensate. | E1 source groups, spatial index, V3 | **Unproven** beyond one source. |
+| CL22 E/U | Quality substitutions remove real work while retaining admitted family/coverage/semantic cues. | F2/F4/V3 | **Unproven** target tier/LOD qualification. |
+| CL23 E | Device loss, suspend, restart and source removal rebuild/retire without stale cloud/shadow/reflection. | F1/F4/V1/V4 | **Unproven** engine lifecycle. |
+| CL24 E | Save/replay/network retains required weather/event/source facts, not GPU caches. | W1/P7/N1/E1 | **Unproven** binding; deterministic proof restart will exercise source seams. |
+| CL25 U/E | Inspectable family/weather controls, repeatable seeds/views, responsive Mac orbit/pan/pinch and captures. | T1/T2/E1 | **Partial** presets/seek/clean capture; new camera gestures/scenarios unbuilt. |
+| CL26 U/E | Progressive actual work/memory and representative complete-frame budgets are assessed without shrinking behavior. | C12/T2/all consumers | **Fail** current one-source5ms cloud allocation; full-sky budget/memory unproven. |
+| CL27 E | A game binds/replaces/omits providers through Thrum composition, including headless semantics. | F2 public declarations, E1/V3 | **Unproven** actual engine binding; no new plugin framework. |
+| CL28 U/E | Exact recipes, sources, variants, tools, hashes/licenses and selected evidence can be recovered. | F4/T1/storage | **Partial pass** Q1/coupled package; new families/scenarios unbuilt. |
+| CL29 U/I | Precipitation and lightning consume stable storm/weather causes, support/time/units and event IDs independently of visible cloud culling. | E1 weather → V3/V5/audio/water/surface consumers | **Unproven** typed proof stubs; separate effect implementations remain outside this commission. |
+| CL30 U/I | Independent family source parts do not duplicate one condensate; genuine overlapping components add once. | E1 source group/partition contract, V3 | **Unproven** new source assembly. |
+
+## Optional scope retained separately
+
+CO01 previously meant optional approaching weather; that optional disposition is **superseded by required CW04**.
+CO02 separate precipitation/lightning effect implementations remain optional here, while their seams are required CL29.
+CO03 additional families beyond the five, unrestricted flight/orbit and optional optical phenomena remain separate;
+the five named families themselves are now required. CO04 scientific meteorology, conservation, seamless live model
+migration and network weather prediction remain optional. None substitutes for a required family/transition.
+
+## Completion audit
+
+The commissioned standalone proof requires CF01–CF05, CW01–CW04 and FS01–FS04 with their shared source/optical/
+consumer-stub/control/evidence/cost obligations. CL20/23/24/27 also describe actual engine provider/device/save/network
+bindings; those remain explicit future construction gates, exercised here only through deterministic source facts,
+restart and typed proof stubs. CL11 requires independent reflected rays now; a mirror does not qualify rough water.
+Report standalone proof, actual engine integration and per-device admission separately. A green repository check,
+source hash, still image, oracle or single-cloud cost cannot close a broader row. The current result is **incomplete**.
+Each accepted family gets a source/build/scenario/reference identity, actual native and normal/accelerated witnesses,
+independent findings/dispositions and work/memory account before combinations. Final cost failures may remain open
+with their specific failed assumption/evidence/correction, but may not make the required behavior optional.
