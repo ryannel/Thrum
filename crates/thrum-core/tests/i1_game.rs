@@ -672,6 +672,49 @@ fn charged_lease_floor_preserves_idle_progress_and_last_reader_charge() {
 }
 
 #[test]
+fn charged_peer_registry_keeps_order_and_failed_join_invisible() {
+    let pool = PublicationPool::new(100_000);
+    let mut authority = Authority::try_new_snapshot_charged(
+        AuthorityId::Match(MatchId(251)),
+        Rule,
+        World::new(WorldEpoch(251)),
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 0,
+            max_spawns_per_action: 0,
+        },
+    )
+    .unwrap();
+    authority.register_peer(PeerId(9), 1, ACTOR).unwrap();
+    authority.register_peer(PeerId(3), 1, ACTOR_TWO).unwrap();
+    assert_eq!(
+        authority.baseline().resolved_through,
+        [(PeerId(3), 0), (PeerId(9), 0)]
+    );
+    let occupied = pool
+        .try_reserve(pool.limit_bytes() - pool.used_bytes())
+        .unwrap();
+    assert_eq!(
+        authority.register_peer(PeerId(5), 1, ACTOR),
+        Err(AdmissionError::PublicationCapacity)
+    );
+    assert_eq!(pool.used_bytes(), pool.limit_bytes());
+    assert_eq!(
+        authority.baseline().resolved_through,
+        [(PeerId(3), 0), (PeerId(9), 0)]
+    );
+    authority.register_peer(PeerId(9), 2, ACTOR).unwrap();
+    drop(occupied);
+    authority.register_peer(PeerId(5), 1, ACTOR).unwrap();
+    assert_eq!(
+        authority.baseline().resolved_through,
+        [(PeerId(3), 0), (PeerId(5), 0), (PeerId(9), 0)]
+    );
+    drop(authority);
+    assert_eq!(pool.used_bytes(), 0);
+}
+
+#[test]
 fn charged_pending_storage_reserves_before_peer_join_and_survives_reconnect() {
     let pool = PublicationPool::new(100_000);
     let mut authority = Authority::try_new_snapshot_charged(
