@@ -129,6 +129,12 @@ impl PublicationPool {
     /// Atomically reserve peak space before a world mutation. On failure, no
     /// capacity changes hands. A zero-byte reservation is valid.
     pub fn try_reserve(&self, bytes: usize) -> Result<PublicationReservation, PublicationCapacity> {
+        if bytes == 0 {
+            return Ok(PublicationReservation {
+                state: self.state.clone(),
+                remaining: 0,
+            });
+        }
         let mut used = self.state.used.load(Ordering::Acquire);
         loop {
             let next = used.checked_add(bytes).ok_or(PublicationCapacity)?;
@@ -185,13 +191,17 @@ impl PublicationReservation {
 
 impl Drop for PublicationReservation {
     fn drop(&mut self) {
-        self.state.used.fetch_sub(self.remaining, Ordering::Release);
+        if self.remaining != 0 {
+            self.state.used.fetch_sub(self.remaining, Ordering::Release);
+        }
     }
 }
 
 impl Drop for PublicationCharge {
     fn drop(&mut self) {
-        self.state.used.fetch_sub(self.bytes, Ordering::Release);
+        if self.bytes != 0 {
+            self.state.used.fetch_sub(self.bytes, Ordering::Release);
+        }
     }
 }
 
@@ -292,6 +302,15 @@ mod tests {
         assert_eq!(pool.used_bytes(), 5);
         drop(charge);
         assert_eq!(pool.used_bytes(), 0);
+
+        let full = PublicationPool::new(5);
+        let occupied = full.try_reserve(5).unwrap();
+        let empty = full.try_reserve(0).unwrap();
+        assert_eq!(full.used_bytes(), 5);
+        drop(empty);
+        assert_eq!(full.used_bytes(), 5);
+        drop(occupied);
+        assert_eq!(full.used_bytes(), 0);
     }
 
     #[test]

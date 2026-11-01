@@ -4,8 +4,8 @@
 use std::{hint::black_box, time::Instant};
 use thrum_core::{
     ActorId, Authority, AuthorityId, EntityChange, GameRules, Handle, Input, InputSchedule, Origin,
-    PeerId, PreparedCommit, PreparedEdits, Replica, SessionId, StableId, StateGroup, World,
-    WorldEdit, WorldEpoch, WorldWork,
+    PeerId, PreparedCommit, PreparedEdits, PublicationPool, Replica, SessionId,
+    SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch, WorldWork,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -88,14 +88,29 @@ fn report(name: &str, samples: &mut [u128], work: WorldWork, snapshot_bytes: usi
     );
 }
 
-fn benchmark_authority() {
+fn benchmark_authority(charged: bool) {
     const TICKS: usize = 10_000;
     const WARMUP: usize = 1_000;
     let mut world = World::new(WorldEpoch(1));
     for id in 1..=64 {
         world.spawn(StableId(id), Counter(0)).unwrap();
     }
-    let mut authority = Authority::new(AuthorityId::Standalone(SessionId(1)), Rule, world);
+    let pool = PublicationPool::new(1_000_000);
+    let mut authority = if charged {
+        Authority::try_new_snapshot_charged(
+            AuthorityId::Standalone(SessionId(1)),
+            Rule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+        )
+        .unwrap()
+    } else {
+        Authority::new(AuthorityId::Standalone(SessionId(1)), Rule, world)
+    };
     authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
     let (mut replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
     let mut admit_ns = Vec::with_capacity(TICKS);
@@ -154,28 +169,45 @@ fn benchmark_authority() {
             .state;
         assert_eq!(replica.get(id), Some(authority_value));
     }
+    let prefix = if charged {
+        "charged-authority"
+    } else {
+        "authority"
+    };
     report(
-        "authority/admit",
+        &format!("{prefix}/admit"),
         &mut admit_ns,
         WorldWork::default(),
         0,
         TICKS,
     );
-    report("authority/tick", &mut tick_ns, work, snapshot_bytes, TICKS);
     report(
-        "authority/replica+ack",
+        &format!("{prefix}/tick"),
+        &mut tick_ns,
+        work,
+        snapshot_bytes,
+        TICKS,
+    );
+    report(
+        &format!("{prefix}/replica+ack"),
         &mut replica_ns,
         WorldWork::default(),
         0,
         TICKS,
     );
     report(
-        "authority/complete",
+        &format!("{prefix}/complete"),
         &mut complete_ns,
         WorldWork::default(),
         0,
         TICKS,
     );
+    if charged {
+        println!(
+            "{prefix}/retained_charged_snapshot_bytes={}",
+            pool.used_bytes()
+        );
+    }
 }
 
 fn benchmark_pair_authority() {
@@ -246,6 +278,54 @@ fn benchmark_pair_authority() {
         &mut complete_ns,
         WorldWork::default(),
         0,
+        TICKS,
+    );
+}
+
+fn benchmark_idle_authority(charged: bool) {
+    const TICKS: usize = 10_000;
+    const WARMUP: usize = 1_000;
+    let mut world = World::new(WorldEpoch(3));
+    for id in 1..=64 {
+        world.spawn(StableId(id), Counter(0)).unwrap();
+    }
+    let pool = PublicationPool::new(1_000_000);
+    let mut authority = if charged {
+        Authority::try_new_snapshot_charged(
+            AuthorityId::Standalone(SessionId(3)),
+            Rule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 0,
+            },
+        )
+        .unwrap()
+    } else {
+        Authority::new(AuthorityId::Standalone(SessionId(3)), Rule, world)
+    };
+    let mut samples = Vec::with_capacity(TICKS);
+    for i in 0..TICKS + WARMUP {
+        let start = Instant::now();
+        let published = authority.step().unwrap();
+        let elapsed = start.elapsed().as_nanos();
+        black_box(published.snapshot.tick());
+        if i >= WARMUP {
+            samples.push(elapsed);
+        }
+    }
+    assert_eq!(authority.tick_index(), (TICKS + WARMUP) as u64);
+    let prefix = if charged {
+        "charged-authority"
+    } else {
+        "authority"
+    };
+    report(
+        &format!("{prefix}/idle-tick"),
+        &mut samples,
+        WorldWork::default(),
+        authority.snapshot().logical_bytes(),
         TICKS,
     );
 }
@@ -362,8 +442,11 @@ fn main() {
         std::env::consts::OS,
         std::env::consts::ARCH
     );
-    benchmark_authority();
+    benchmark_authority(true);
+    benchmark_authority(false);
     benchmark_pair_authority();
+    benchmark_idle_authority(true);
+    benchmark_idle_authority(false);
     for count in [64, 4_096, 16_384] {
         for percent in [0, 1, 25] {
             benchmark_churn(count, percent);
