@@ -16,11 +16,22 @@ impl<const N: usize> GameRules for Reject<N> {
     type Rejection = ();
     type Event = ();
 
-    fn decide(&self, _world: &World<()>, _actor: ActorId, _action: &[u8; N]) -> Result<(), ()> {
+    fn decide(
+        &self,
+        _world: &World<()>,
+        _actor: ActorId,
+        _action: &[u8; N],
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<(), ()> {
         Err(())
     }
 
-    fn prepare(&self, _world: &World<()>, _change: ()) -> PreparedCommit<(), ()> {
+    fn prepare(
+        &self,
+        _world: &World<()>,
+        _change: (),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<(), ()> {
         unreachable!("rejected action has no prepared edit")
     }
 }

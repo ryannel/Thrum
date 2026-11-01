@@ -22,11 +22,22 @@ impl GameRules for ChangeAll {
     type Rejection = ();
     type Event = ();
 
-    fn decide(&self, _world: &World<State>, _actor: ActorId, _action: &()) -> Result<(), ()> {
+    fn decide(
+        &self,
+        _world: &World<State>,
+        _actor: ActorId,
+        _action: &(),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<(), ()> {
         Ok(())
     }
 
-    fn prepare(&self, world: &World<State>, _change: ()) -> PreparedCommit<State, ()> {
+    fn prepare(
+        &self,
+        world: &World<State>,
+        _change: (),
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<State, ()> {
         let mut edits = Vec::with_capacity(self.count);
         for id in 1..=self.count {
             let handle = world.handle_for(StableId(id as u128)).unwrap();

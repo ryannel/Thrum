@@ -76,6 +76,11 @@ invalidate its histories, then await actual lease release. Never reuse in-use pa
 finish causes backpressure or the explicit overload state, not unbounded retention or silent tick loss. A skipped
 view outside its retained sample horizon resets history and resumes from a valid snapshot. Exact page layout and
 caps are detailed parameters; these lifetime rules are mandatory for the design.
+For an authority that promises admitted-input progress under competing pool use, each accepted input protects its
+future rule-created immutable output bytes separately from snapshot and group storage. Rule callbacks spend only
+their own preadmitted output allowance; pre-existing charged owners may be shared without another byte charge.
+An exhausted declared allowance is a terminal rule-contract fault before that action's edits, while ordinary reader
+backpressure remains retryable before the tick starts.
 
 ## C03 Authority and interaction ordering — W1 and P3/P4/P6
 

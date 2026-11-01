@@ -18,10 +18,21 @@ impl GameRules for Rule {
     type Change = Handle;
     type Rejection = ();
     type Event = ();
-    fn decide(&self, world: &World<Counter>, _actor: ActorId, id: &StableId) -> Result<Handle, ()> {
+    fn decide(
+        &self,
+        world: &World<Counter>,
+        _actor: ActorId,
+        id: &StableId,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<Handle, ()> {
         world.handle_for(*id).ok_or(())
     }
-    fn prepare(&self, world: &World<Counter>, handle: Handle) -> PreparedCommit<Counter, ()> {
+    fn prepare(
+        &self,
+        world: &World<Counter>,
+        handle: Handle,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<Counter, ()> {
         let mut state = world.get(handle).expect("validated object").state.clone();
         state.0 += 1;
         PreparedCommit {
@@ -43,6 +54,7 @@ impl GameRules for PairRule {
         world: &World<Counter>,
         _actor: ActorId,
         id: &StableId,
+        _context: &mut thrum_core::RuleContext<'_>,
     ) -> Result<Self::Change, ()> {
         let next = StableId(id.0 % 64 + 1);
         Ok((
@@ -54,6 +66,7 @@ impl GameRules for PairRule {
         &self,
         world: &World<Counter>,
         (first, second): Self::Change,
+        _context: &mut thrum_core::RuleContext<'_>,
     ) -> PreparedCommit<Counter, ()> {
         let mut first_state = world.get(first).expect("validated object").state.clone();
         let mut second_state = world.get(second).expect("validated object").state.clone();

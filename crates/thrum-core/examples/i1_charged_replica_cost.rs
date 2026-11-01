@@ -25,11 +25,22 @@ impl GameRules for Increment {
     type Rejection = ();
     type Event = ();
 
-    fn decide(&self, world: &World<State>, _actor: ActorId, id: &StableId) -> Result<Handle, ()> {
+    fn decide(
+        &self,
+        world: &World<State>,
+        _actor: ActorId,
+        id: &StableId,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> Result<Handle, ()> {
         world.handle_for(*id).ok_or(())
     }
 
-    fn prepare(&self, world: &World<State>, handle: Handle) -> PreparedCommit<State, ()> {
+    fn prepare(
+        &self,
+        world: &World<State>,
+        handle: Handle,
+        _context: &mut thrum_core::RuleContext<'_>,
+    ) -> PreparedCommit<State, ()> {
         let old = world.get(handle).expect("validated handle");
         let next = u64::from_le_bytes(*old.state.inline()) + 1;
         PreparedCommit {
