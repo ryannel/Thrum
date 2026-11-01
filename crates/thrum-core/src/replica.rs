@@ -872,6 +872,13 @@ impl<T> Replica<T> {
         Ok(index.can_add(max_spawns))
     }
 
+    pub(crate) fn can_admit_charged_peer_count(&self, count: usize) -> bool {
+        let ProgressStore::Charged(progress) = &self.progress else {
+            return false;
+        };
+        count <= progress.max_peers
+    }
+
     /// Atomically validate a shared charged group, then admit it into the
     /// finite object index. Peer-progress candidates are pool-charged.
     pub fn apply_charged<E, R>(

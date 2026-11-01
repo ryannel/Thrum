@@ -120,11 +120,13 @@ impl HostBudget {
     }
 }
 
-/// Input cannot enter an inactive or faulted host.
+/// Host input or peer-registration admission failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HostAdmissionError {
     /// The host is paused, overloaded or terminally faulted.
     Unavailable,
+    /// An existing peer needs a new replica baseline before reconnecting.
+    RequiresBaseline,
     /// Authority rejected the input envelope.
     Authority(AdmissionError),
 }
@@ -516,15 +518,44 @@ impl<G: GameRules> HeadlessHost<G> {
     }
 
     /// Construct a sealed match host with a finite, precharged local replica.
-    /// Its callback uses `on_callback_charged`; progress scratch and other
-    /// delivery owners still await the full process byte gate.
+    /// Its peer limit is the baseline peer count. Use the explicit-limit
+    /// constructor when this host will register more peers after activation.
     pub fn with_charged_replica(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        authority: Authority<G>,
+        pool: &PublicationPool,
+        max_objects: usize,
+    ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
+    where
+        G::Action: ClosedPublicationValue,
+        G::Entity: ClosedPublicationValue,
+        G::Event: ClosedPublicationValue,
+        G::Rejection: ClosedPublicationValue,
+    {
+        let max_peers = authority.registered_peer_count();
+        Self::with_charged_replica_with_peer_limit(
+            origin,
+            clock,
+            budget,
+            authority,
+            pool,
+            max_objects,
+            max_peers,
+        )
+    }
+
+    /// Construct a sealed host with precharged room for `max_peers` confirmed
+    /// and candidate progress rows. Later joins use `register_peer`.
+    pub fn with_charged_replica_with_peer_limit(
         origin: Instant,
         clock: ClockConfig,
         budget: HostBudget,
         mut authority: Authority<G>,
         pool: &PublicationPool,
         max_objects: usize,
+        max_peers: usize,
     ) -> Result<(Self, InitialChargedOutcomes<G>), HostError>
     where
         G::Action: ClosedPublicationValue,
@@ -542,7 +573,7 @@ impl<G: GameRules> HeadlessHost<G> {
             .try_baseline_charged()
             .map_err(HostError::ChargedBaseline)?;
         let (replica, initial_outcomes) =
-            Replica::from_charged_baseline(baseline, pool, max_objects)
+            Replica::from_charged_baseline_with_peer_limit(baseline, pool, max_objects, max_peers)
                 .map_err(HostError::ChargedReplicaSetup)?;
         if !authority.pending_fits_replica(&replica) {
             return Err(HostError::ChargedReplicaSetup(
@@ -606,6 +637,37 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Read confirmed state when this host has an in-memory replica.
     pub fn replica(&self) -> Option<&Replica<G::Entity>> {
         self.replica.as_ref()
+    }
+
+    /// Register a new controlled peer. A reconnect needs a fresh replica
+    /// baseline, so an existing peer is refused on replicated hosts. Sealed
+    /// hosts preflight replica headroom and the next idle watermark owner.
+    pub fn register_peer(
+        &mut self,
+        id: PeerId,
+        epoch: u64,
+        actor: crate::ActorId,
+    ) -> Result<(), HostAdmissionError> {
+        if self.faulted || self.authority.is_faulted() {
+            return Err(HostAdmissionError::Unavailable);
+        }
+        if self.replica.is_some() && self.authority.has_peer(id) {
+            return Err(HostAdmissionError::RequiresBaseline);
+        }
+        if self.callback_floor.is_some() {
+            let replica = self.replica.as_ref().expect("sealed host has replica");
+            let next_count = self.authority.registered_peer_count().checked_add(1);
+            if !next_count.is_some_and(|count| replica.can_admit_charged_peer_count(count)) {
+                return Err(HostAdmissionError::Authority(
+                    AdmissionError::ReplicaCapacity,
+                ));
+            }
+            self.authority
+                .register_peer_for_charged_host(id, epoch, actor)
+        } else {
+            self.authority.register_peer(id, epoch, actor)
+        }
+        .map_err(HostAdmissionError::Authority)
     }
 
     /// Current local clock state.
@@ -969,6 +1031,18 @@ mod tests {
         PublicationPool,
         Instant,
     ) {
+        idle_charged_host_with_peer_limit(max_ticks_per_call, 2)
+    }
+
+    fn idle_charged_host_with_peer_limit(
+        max_ticks_per_call: u32,
+        max_peers: usize,
+    ) -> (
+        HeadlessHost<FaultRule>,
+        InitialChargedOutcomes<FaultRule>,
+        PublicationPool,
+        Instant,
+    ) {
         let pool = PublicationPool::new(100_000);
         let mut authority = Authority::try_new_closed_snapshot_charged(
             AuthorityId::Match(MatchId(248)),
@@ -1011,7 +1085,7 @@ mod tests {
             max_queued_ticks: NonZeroU32::new(max_ticks_per_call.max(8)).unwrap(),
             ..ClockConfig::default()
         };
-        let (host, initial) = HeadlessHost::with_charged_replica(
+        let (host, initial) = HeadlessHost::with_charged_replica_with_peer_limit(
             origin,
             clock,
             HostBudget {
@@ -1022,9 +1096,117 @@ mod tests {
             authority,
             &pool,
             0,
+            max_peers,
         )
         .unwrap();
         (host, initial, pool, origin)
+    }
+
+    #[test]
+    fn sealed_host_peer_join_preflights_replica_and_keeps_idle_floor() {
+        let (mut tight, initial, pool, _) = idle_charged_host(1);
+        let before = pool.used_bytes();
+        assert_eq!(
+            tight.register_peer(PeerId(3), 1, ActorId(3)),
+            Err(HostAdmissionError::Authority(
+                AdmissionError::ReplicaCapacity
+            ))
+        );
+        assert_eq!(
+            tight.register_peer(PeerId(1), 2, ActorId(1)),
+            Err(HostAdmissionError::RequiresBaseline)
+        );
+        assert_eq!(pool.used_bytes(), before);
+        assert_eq!(
+            tight
+                .authority()
+                .try_baseline_charged()
+                .unwrap()
+                .resolved_through()
+                .len(),
+            2
+        );
+        drop(initial);
+        drop(tight);
+        assert_eq!(pool.used_bytes(), 0);
+
+        let (mut host, initial, pool, origin) = idle_charged_host_with_peer_limit(1, 3);
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert_eq!(
+            host.register_peer(PeerId(3), 1, ActorId(3)),
+            Err(HostAdmissionError::Authority(
+                AdmissionError::PublicationCapacity
+            ))
+        );
+        drop(occupied);
+        assert_eq!(
+            host.authority()
+                .try_baseline_charged()
+                .unwrap()
+                .resolved_through()
+                .len(),
+            2
+        );
+        host.register_peer(PeerId(3), 1, ActorId(3)).unwrap();
+        let joined_bytes = pool.used_bytes();
+        assert_eq!(
+            host.register_peer(PeerId(4), 1, ActorId(4)),
+            Err(HostAdmissionError::Authority(
+                AdmissionError::ReplicaCapacity
+            ))
+        );
+        assert_eq!(pool.used_bytes(), joined_bytes);
+        assert_eq!(
+            host.authority()
+                .try_baseline_charged()
+                .unwrap()
+                .resolved_through()
+                .len(),
+            3
+        );
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected charged replica admission")
+        };
+        assert_eq!(
+            admitted.resolved_through(),
+            &[(PeerId(1), 0), (PeerId(2), 0), (PeerId(3), 0)]
+        );
+        drop(report);
+        drop(occupied);
+        host.submit(Input {
+            origin: Origin {
+                peer: PeerId(3),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            actor: ActorId(3),
+            schedule: crate::InputSchedule::NextTick { observed_tick: 1 },
+            action: 1,
+        })
+        .unwrap();
+        let report = host
+            .on_callback_charged(origin + Duration::from_millis(34))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected new-peer result")
+        };
+        assert_eq!(admitted.results()[0].origin.peer, PeerId(3));
+        assert_eq!(admitted.resolved_through()[2], (PeerId(3), 1));
+        drop(report);
+        host.acknowledge_results(PeerId(3), 1).unwrap();
+        drop(initial);
+        drop(host);
+        assert_eq!(pool.used_bytes(), 0);
     }
 
     #[test]
