@@ -277,6 +277,55 @@ struct PendingQueue<A> {
     _charge: Option<PublicationCharge>,
 }
 
+struct DueScratch {
+    values: Vec<(PeerId, u64)>,
+    limit: usize,
+    _charge: Option<PublicationCharge>,
+}
+
+impl DueScratch {
+    fn new() -> Self {
+        Self {
+            values: Vec::new(),
+            limit: 0,
+            _charge: None,
+        }
+    }
+
+    fn try_grow(
+        &mut self,
+        peer_count: usize,
+        pool: Option<&PublicationPool>,
+    ) -> Result<(), PublicationCapacity> {
+        let limit = peer_count
+            .checked_mul(MAX_PENDING)
+            .ok_or(PublicationCapacity)?;
+        if limit <= self.limit {
+            return Ok(());
+        }
+        assert!(self.values.is_empty(), "peer joins outside a step");
+        let bytes = Layout::array::<(PeerId, u64)>(limit)
+            .map_err(|_| PublicationCapacity)?
+            .size();
+        let charge = if let Some(pool) = pool {
+            let mut reservation = pool.try_reserve(bytes)?;
+            Some(reservation.charge(bytes)?)
+        } else {
+            None
+        };
+        let values = Vec::with_capacity(limit);
+        self.values = values;
+        self._charge = charge;
+        self.limit = limit;
+        Ok(())
+    }
+
+    fn push(&mut self, key: (PeerId, u64)) {
+        assert!(self.values.len() < self.limit, "due-key admission cap");
+        self.values.push(key);
+    }
+}
+
 impl<A> PendingQueue<A> {
     fn try_new(pool: Option<&PublicationPool>) -> Result<Self, PublicationCapacity> {
         let Some(pool) = pool else {
@@ -325,10 +374,6 @@ impl<A> PendingQueue<A> {
             .binary_search_by_key(sequence, |(key, _)| *key)
             .ok()?;
         Some(self.values.remove(index).1)
-    }
-
-    fn values(&self) -> impl Iterator<Item = &Pending<A>> {
-        self.values.iter().map(|(_, pending)| pending)
     }
 
     fn iter(&self) -> impl Iterator<Item = (&u64, &Pending<A>)> {
@@ -438,6 +483,7 @@ pub struct Authority<G: GameRules> {
     group_id: u64,
     next_event_id: u64,
     peers: PeerMap<G>,
+    due_scratch: DueScratch,
     snapshot_leases: SnapshotLeaseDirectory,
     snapshot_admission: Option<GameSnapshotAdmission<G>>,
     faulted: bool,
@@ -582,6 +628,7 @@ impl<G: GameRules> Authority<G> {
             group_id: 0,
             next_event_id: 1,
             peers: BTreeMap::new(),
+            due_scratch: DueScratch::new(),
             snapshot_leases: SnapshotLeaseDirectory::new(initial_lease),
             snapshot_admission,
             faulted: false,
@@ -606,17 +653,13 @@ impl<G: GameRules> Authority<G> {
         &self.snapshot
     }
 
-    fn reserve_snapshot_tick(&mut self) -> Result<Option<PublicationReservation>, StepError> {
+    fn reserve_snapshot_tick(
+        &mut self,
+        due: usize,
+    ) -> Result<Option<PublicationReservation>, StepError> {
         let Some(admission) = &self.snapshot_admission else {
             return Ok(None);
         };
-        let due_tick = self.tick.checked_add(1).expect("world tick exhausted");
-        let due = self
-            .peers
-            .values()
-            .flat_map(|peer| peer.pending.values())
-            .filter(|pending| pending.due_tick <= due_tick)
-            .count();
         let Some(max_edits) = due.checked_mul(admission.bounds.max_edits_per_action) else {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
@@ -665,6 +708,17 @@ impl<G: GameRules> Authority<G> {
                 .map(|admission| &admission.pool),
         )
         .map_err(|_| AdmissionError::PublicationCapacity)?;
+        self.due_scratch
+            .try_grow(
+                self.peers
+                    .len()
+                    .checked_add(1)
+                    .ok_or(AdmissionError::PublicationCapacity)?,
+                self.snapshot_admission
+                    .as_ref()
+                    .map(|admission| &admission.pool),
+            )
+            .map_err(|_| AdmissionError::PublicationCapacity)?;
         self.peers.insert(id, Peer::new(actor, epoch, pending));
         Ok(())
     }
@@ -845,23 +899,31 @@ impl<G: GameRules> Authority<G> {
         if self.snapshot_leases.is_full() {
             return Err(StepError::SnapshotBackpressure);
         }
-        let mut snapshot_reservation = self.reserve_snapshot_tick()?;
+        let due_tick = self.tick.checked_add(1).expect("world tick exhausted");
+        self.due_scratch.values.clear();
+        for (peer_id, peer) in &self.peers {
+            for (sequence, pending) in peer.pending.iter() {
+                if pending.due_tick <= due_tick {
+                    self.due_scratch.push((*peer_id, *sequence));
+                }
+            }
+        }
+        let mut snapshot_reservation =
+            match self.reserve_snapshot_tick(self.due_scratch.values.len()) {
+                Ok(reservation) => reservation,
+                Err(error) => {
+                    self.due_scratch.values.clear();
+                    return Err(error);
+                }
+            };
         // Poison before any tick mutation. If game code unwinds and its caller
         // catches the panic, the partially processed tick cannot be replayed.
         self.faulted = true;
         self.tick = self.tick.checked_add(1).expect("world tick exhausted");
-        let mut due_keys = Vec::new();
-        for (peer_id, peer) in &self.peers {
-            due_keys.extend(
-                peer.pending
-                    .iter()
-                    .filter(|(_, p)| p.due_tick <= self.tick)
-                    .map(|(seq, _)| (*peer_id, *seq)),
-            );
-        }
-        let mut results = Vec::with_capacity(due_keys.len());
+        let mut results = Vec::with_capacity(self.due_scratch.values.len());
         let mut events = Vec::new();
-        for (peer_id, sequence) in due_keys {
+        for index in 0..self.due_scratch.values.len() {
+            let (peer_id, sequence) = self.due_scratch.values[index];
             let pending = self
                 .peers
                 .get_mut(&peer_id)
@@ -958,6 +1020,7 @@ impl<G: GameRules> Authority<G> {
             });
             results.push(result);
         }
+        self.due_scratch.values.clear();
         let published = if let Some(reservation) = &mut snapshot_reservation {
             let floor = &self
                 .snapshot_admission
