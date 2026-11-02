@@ -44,7 +44,7 @@ purpose = "Minimal native Metal/Vulkan clear surface to prove mobile presentatio
 target_cost = "Large target-specific native graphics closure and device/surface memory; only Metal or Vulkan enabled per mobile target, startup, surface recovery and sustained device costs remain to measure"
 
 [external_dependencies.pollster]
-requirement = "=0.4.0"
+requirement = "=1.0.1"
 license = "Apache-2.0/MIT"
 purpose = "Block first mobile adapter/device creation in the initial synchronous shell"
 target_cost = "Small single-purpose native dependency; startup blocking must be measured and replaced if it harms responsiveness"
@@ -74,13 +74,13 @@ purpose = "Independent RFC 8785 JCS oracle for native source-manifest conformanc
 target_cost = "Native tooling dev-dependency only; production manifest emission streams fixed-order fields without serializer allocation"
 
 [external_dependencies.sha2]
-requirement = "=0.10.9"
+requirement = "=0.11.1"
 license = "MIT OR Apache-2.0"
 purpose = "SHA-256 of exact source file bytes and canonical tree manifests"
 target_cost = "Native tooling only; source-byte hashing scales with declared content and remains outside simulation callbacks"
 
 [external_dependencies.unicase]
-requirement = "=2.9.0"
+requirement = "=2.10.0"
 license = "MIT OR Apache-2.0"
 purpose = "Full Unicode case-fold collision detection for cross-target source paths"
 target_cost = "Native tooling only; allocate folded metadata once per candidate path, not during simulation"
