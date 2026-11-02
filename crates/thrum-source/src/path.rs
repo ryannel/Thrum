@@ -83,13 +83,19 @@ fn is_windows_device_name(component: &str) -> bool {
 /// The caller retains the original paths; a temporary folded index and borrowed
 /// directory-prefix map are allocated once, outside a game callback.
 pub fn validate_paths(paths: &[SourcePath]) -> Result<(), PathError> {
+    validate_path_refs(paths.iter())
+}
+
+pub(crate) fn validate_path_refs<'a>(
+    paths: impl Iterator<Item = &'a SourcePath> + Clone,
+) -> Result<(), PathError> {
     let mut folded: Vec<String> = paths
-        .iter()
+        .clone()
         .map(|path| UniCase::new(path.as_str()).to_folded_case())
         .collect();
     {
         let mut original_directories = HashMap::<&str, &str>::new();
-        for (path, folded_path) in paths.iter().zip(&folded) {
+        for (path, folded_path) in paths.zip(&folded) {
             for ((original_end, _), (folded_end, _)) in path
                 .as_str()
                 .match_indices('/')

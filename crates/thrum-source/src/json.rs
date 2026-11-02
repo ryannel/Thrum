@@ -139,5 +139,7 @@ mod tests {
         ));
         let valid = parse_record_json(br#"{"fields":{"x":1},"id":"a"}"#).unwrap();
         assert_eq!(valid["fields"]["x"], 1);
+        let precise = parse_record_json(br#"{"value":51.248178375505404}"#).unwrap();
+        assert_eq!(precise["value"].as_f64(), Some(51.248178375505404));
     }
 }
