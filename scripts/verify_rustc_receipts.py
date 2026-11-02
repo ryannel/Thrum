@@ -213,6 +213,23 @@ def strict_pairs(pairs):
     return result
 
 
+def validate_macos_dynamic_path(environment, rustc, cache, output):
+    home = environment.get(b"HOME")
+    if home != os.fsencode(cache.parent):
+        raise ValueError("rustc HOME differs from selected private cache parent")
+    search = environment.get(b"DYLD_FALLBACK_LIBRARY_PATH")
+    if not search:
+        raise ValueError("Cargo macOS dynamic library path is missing")
+    entries = search.split(b":")
+    allowed = {
+        os.fsencode(output / "debug/deps"), os.fsencode(output / "debug"),
+        os.fsencode(rustc.parent.parent / "lib"),
+        home + b"/lib", b"/usr/local/lib", b"/usr/lib",
+    }
+    if len(entries) != len(set(entries)) or any(entry not in allowed for entry in entries):
+        raise ValueError("Cargo macOS dynamic library path escapes selected locations")
+
+
 def inspect(receipt_dir, rustc, source, cache, output, transcript):
     roots = {"source": source.resolve(strict=True), "cache": cache.resolve(strict=True),
              "output": output.resolve(strict=True)}
@@ -258,6 +275,8 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
             ):
                 raise ValueError("rustc child environment contains an unsupported override: "
                                  + name.decode("ascii"))
+        if receipt["kind"] == 1 or b"DYLD_FALLBACK_LIBRARY_PATH" in environment:
+            validate_macos_dynamic_path(environment, rustc, roots["cache"], output)
         if receipt["outcome"] != 0 or receipt["status"] != 0:
             raise ValueError("successful build includes failed or incomplete rustc invocation")
         receipt_hashes.append(receipt["sha256"])
