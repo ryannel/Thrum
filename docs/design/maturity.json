@@ -1213,7 +1213,7 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "reviewed_native_runtime_atmosphere_provider_plan_implementation_not_started",
+        "status": "native_runtime_pilot_active_visual_gate_open",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
@@ -1242,7 +1242,15 @@
         "production_baseline_review": "../evidence/cloud-production-baseline-2026-11-02/REVIEW.md",
         "runtime_revision_review": "../evidence/cloud-dynamic-revision-2026-11-02/REVIEW.md",
         "provider_contract": "modules/CLOUD-PROVIDERS.md",
-        "atmosphere_coverage": "modules/ATMOSPHERE-SYSTEM.md"
+        "atmosphere_coverage": "modules/ATMOSPHERE-SYSTEM.md",
+        "runtime_pilot": {
+          "record": "../evidence/cloud-runtime-pilot-2026-11-02/README.md",
+          "build": "0ab4062170f6d491",
+          "implementation": "standalone_dense_native_3D_Cu_source_same_query_main_receiver_mirror_no_engine_binding",
+          "correctness": "finite_CPU_causal_replay_and_GPU_interior_advection_reaction_depth_air_phase_checks_pass",
+          "experienced_quality": "sampled_local_growth_renewal_and_front_loss_visible_soft_morphology_below_reference_continuous_motion_unqualified",
+          "performance": "logical_resources_25_1MiB_short_1x16x_cadence_observed_64x_history_capacity_failed_cross_pass_totals_rejected_M2_native_full_system_unrun"
+        }
       }
     },
     {
