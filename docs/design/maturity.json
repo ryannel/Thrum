@@ -375,6 +375,10 @@
       "i2a_direct_file_closure": {
         "evidence": "../evidence/i2a/SOURCE-DIRECT-FILE-CLOSURE.md",
         "scope": "A test-only manifest root transaction checks every direct file entry against a completed SQLite blob hash and exact length. Missing or mismatched files refuse before root/outcome advancement, while matching retries recover the persisted outcome. No authenticated prior history, dependency closure, disk/WAL reservation, pins, process-kill recovery or production admission API exists."
+      },
+      "i2a_small_blob_batch": {
+        "evidence": "../evidence/i2a/SOURCE-SMALL-BLOB-BATCH.md",
+        "scope": "Test-only small immutable blobs stage in groups of at most 128 files and 1 MiB input bytes; input and stored hashes are checked before one SQLite transaction commits. Rollback, reuse, reopen and manifest-root closure pass. Local 1,000-file release helper timings are recorded, including a one-file storage tail; physical WAL peak, process-kill recovery and full source admission remain open."
       }
     },
     {
