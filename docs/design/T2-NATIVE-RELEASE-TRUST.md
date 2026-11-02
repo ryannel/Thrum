@@ -101,6 +101,21 @@ cache's 67.8 MB local rehash remains in the per-edit path until a sealed-root
 mechanism proves equivalent retention. Do not charge the cold tool scan to
 every world update or silently omit it from first selection latency.
 
+The first [Rust component archive verifier](../../scripts/verify_rust_component_archive.py)
+accepts caller-supplied channel manifest, SHA-256 sidecar, component archive
+and installed toolchain. It checks the selected official HTTPS URL/hash pair,
+then streams the checksum-verified archive once and compares every file in its
+installer manifest with the installed component. It accepts the selected
+ustar file/directory subset and refuses archive extensions before their
+metadata can be buffered; XZ dictionary memory, decompressed bytes, member
+count and file sizes are bounded. Installed paths are read through held
+directory descriptors without following aliases. It reports `buildReady:false`.
+It does not fetch the inputs or attest their HTTPS transport, make the
+installed tree immutable, verify other components, or replace human review of
+the release preparation job and complete tool/SDK/dependency closure. The
+[local Cargo/Rustc component proof](../evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
+is one host's partial origin candidate.
+
 ## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for

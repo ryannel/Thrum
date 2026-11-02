@@ -40,9 +40,26 @@ The Rustc archive hash was
 `23948a0a9c162fd2952defb3fb0462c44e8fcfd1a4ab8a274a1e1bdb2cf810a3`;
 its `rustc/bin/rustc` and the installed `bin/rustc` both hashed to
 `1ba7bb8e273bd64125f4048d2ecce530e0a6470e565ab1b3aecf0b82b532f7b1`.
-This proves exact archive-to-installed identity for those two executable
-files on this host. It does not cover Rustc's loaded libraries, standard
-libraries, other installed components or future local modifications.
+That initial comparison proves exact archive-to-installed identity for those
+two executable files on this host. The following component pass covers their
+packaged support files; other installed components and system libraries remain
+separate.
+
+The repeatable [component archive verifier](../../../scripts/verify_rust_component_archive.py)
+extends that comparison to all regular payload files listed by each archive's
+`manifest.in`, checks the installed component manifest matches, refuses extra
+payload members and paths escaping the toolchain, and reports no build
+readiness. On this Mac it matched 44 Cargo files (32,688,641 unpacked bytes)
+and 43 Rustc files (279,894,598 unpacked bytes). Its local runs took about
+0.54 and 2.60 seconds respectively, including archive rehash, one-pass
+decompression and installed-file hashing. Eight synthetic fixtures check a
+valid component, altered installed bytes, archive/sidecar changes, unexpected
+payload membership or second component manifest, an installed parent alias and
+parent swap outside the toolchain, a PAX metadata header rejected before
+buffering, and a concatenated XZ stream. These are cold release-preparation
+costs, not per-edit or runtime costs. Other
+installed Rust components, system libraries, Xcode and the private Cargo
+cache still lack the same origin-to-byte closure.
 
 ## Selected Xcode
 
