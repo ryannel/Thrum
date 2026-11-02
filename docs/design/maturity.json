@@ -467,6 +467,10 @@
       "i2a_native_source_store": {
         "evidence": "../evidence/i2a/SOURCE-NATIVE-STORE.md",
         "scope": "A public native append-only SQLite store admits only validated staged candidates after full staged-byte rehash, authenticated current-root lineage, unique complete file/manifest closure, selected space-plan checks and one root/outcome generation transaction. Reopen checks root/outcome identity; current and historical-outcome pins authenticate the canonical manifest and stream file chunks with bounded scratch and final hash verification. Local tests cover retry, stale/conflicting token, final-outcome rollback, incompatible store refusal, corrupt/output read refusal, multi-chunk old-root pin retention and a drained WAL overrun. Three local release runs measure ten small store admissions and pinned scene copies. This does not qualify arbitrary external dependency roots, editor application, host-volume/power-loss durability, cross-platform physical high-water, collector deletion, cook/run/save or edit-to-ready latency."
+      },
+      "i2a_native_disk_followup": {
+        "evidence": "../evidence/i2a/SOURCE-NATIVE-DISK-FOLLOWUP.md",
+        "scope": "The public append-only store is exercised under genuine test-injected SQLiteFull during a candidate blob write and final root/outcome transaction. Both reopen with the old root and no new outcome, then retry successfully after removing the injection. A 12 MiB candidate defers while a reader blocks WAL checkpointing and succeeds after drain. An optional usage query reports apparent SQLite main/WAL lengths, logical/freelist pages and observed volume available bytes; three local release small-edit runs sample post-admission lengths and timing. This does not prove host-volume I/O fault recovery, allocated-block or transient physical high-water, prolonged reader-blocked operation, platform VFS durability or a hard storage cap."
       }
     },
     {
