@@ -126,6 +126,16 @@ is still an origin candidate: cached sparse-index records, extracted source,
 selected build-unit closure and the release preparation environment are not
 authenticated by archive matching. It also reports `buildReady:false`.
 
+The separate [sparse-index comparator](../../scripts/verify_crates_io_index_origin.py)
+parses only the pinned Cargo 1.99.1 cache layout and compares every cached
+version JSON line with the corresponding official `index.crates.io` HTTPS
+record. The [212-name local comparison](../evidence/i2a/T2-CRATES-INDEX-ORIGIN-CANDIDATE.md)
+matched 9,203 cached versions and the exact registry configuration. It proves
+origin for those recorded bytes; it does not prove the cache includes every
+upstream version, extracted source is archive-identical, or a particular
+selected build and environment are fully closed. It reports
+`buildReady:false`.
+
 ## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for
