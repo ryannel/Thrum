@@ -5,6 +5,7 @@ plugins {
 android {
     namespace = "org.thrum.i1"
     compileSdk = 35
+    ndkVersion = "28.2.13676358"
 
     defaultConfig {
         applicationId = "org.thrum.i1"
