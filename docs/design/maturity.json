@@ -335,6 +335,10 @@
       "i2a_staged_records": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-RECORDS.md",
         "scope": "Provisional staged core.scene and one-descriptor game records are rehashed and parsed with a reusable byte buffer; project and registry IDs are unique with scene/game IDs, and entry scenes and required typed references resolve locally. A small-tree repeated closure cost is recorded; multi-schema dispatch, maximum combined parser/graph memory, source-editor opaque round-trip, authenticated prior lineage, manifest and durable admission remain open."
+      },
+      "i2a_provisional_candidate": {
+        "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-CANDIDATE.md",
+        "scope": "One provisional staged registry and scene/game closure derive a JCS/SHA-256 manifest with checked record identity labels and captured exact-byte metadata. An independent small-tree oracle, A/B revision test and local release cost probe pass. Ordinary bytes need durable rehash; maximum parser/graph memory, editor opaque round-trip, authenticated prior lineage, multi-schema dispatch, durable admission and cook/run remain open."
       }
     },
     {
