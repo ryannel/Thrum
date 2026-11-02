@@ -407,6 +407,10 @@
       "i2a_chunk_kill_recovery": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-CHUNK-KILL.md",
         "scope": "A local two-process test kills a child after the first 4 MiB SQLite blob chunk commit and before complete-state publication. Reopen preserves the prior selected root, exposes one incomplete chunk, refuses its root publication, and permits full verified restage plus a new root across reopen. This does not test final-transaction kill, assembled source candidate recovery, power loss, GC pins or production acceptance."
+      },
+      "i2a_root_transaction_kill": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-ROOT-KILL.md",
+        "scope": "A local child process is killed after root-generation and retry-outcome SQL writes but before SQLite commit. An independent reader and post-kill reopen see the old generation and no new outcome; the same request then commits both and survives reopen. This is one test-only open-transaction interruption, not a power-loss flush proof, full candidate recovery, physical reserve or production API."
       }
     },
     {

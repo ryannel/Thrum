@@ -1325,7 +1325,28 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         revision: [u8; 32],
+        check_closure: impl FnMut(&Transaction<'_>) -> Result<(), ProofError>,
+    ) -> Result<i64, ProofError> {
+        self.commit_with_closure_after_sql(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            revision,
+            check_closure,
+            || {},
+        )
+    }
+
+    fn commit_with_closure_after_sql(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        revision: [u8; 32],
         mut check_closure: impl FnMut(&Transaction<'_>) -> Result<(), ProofError>,
+        after_sql: impl FnOnce(),
     ) -> Result<i64, ProofError> {
         if let Some(outcome) = stored_outcome(&self.conn, epoch, key)? {
             return if outcome.request_hash == request_hash && outcome.revision == revision {
@@ -1373,6 +1394,7 @@ impl RootTransactionProof {
             "INSERT INTO outcome (epoch, key, request_hash, generation, revision) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![epoch, key, request_hash.as_slice(), next, revision.as_slice()],
         )?;
+        after_sql();
         tx.commit()?;
         Ok(next)
     }
@@ -2399,6 +2421,26 @@ impl Drop for KillChildOnDrop {
     }
 }
 
+fn signal_and_wait_for_kill(marker: &Path) -> ! {
+    fs::write(marker, b"SQLite writes reached kill point").unwrap();
+    loop {
+        std::thread::sleep(Duration::from_secs(1));
+    }
+}
+
+fn kill_after_marker(child: Child, marker: &Path, before_kill: impl FnOnce()) {
+    let mut child = KillChildOnDrop(child);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !marker.exists() {
+        assert!(Instant::now() < deadline, "child did not reach kill point");
+        assert!(child.0.try_wait().unwrap().is_none(), "child exited early");
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    before_kill();
+    child.0.kill().unwrap();
+    assert!(!child.0.wait().unwrap().success());
+}
+
 #[test]
 fn process_kill_partial_blob_child() {
     let Some(database) = std::env::var_os("THRUM_TEST_PARTIAL_BLOB_DB") else {
@@ -2412,10 +2454,7 @@ fn process_kill_partial_blob_child() {
     store
         .stage_blob_with(&mut bytes.as_slice(), bytes.len() as u64, hash, |index| {
             if index == 0 {
-                fs::write(&marker, b"first chunk committed").unwrap();
-                loop {
-                    std::thread::sleep(Duration::from_secs(1));
-                }
+                signal_and_wait_for_kill(&marker);
             }
         })
         .unwrap();
@@ -2442,15 +2481,7 @@ fn process_kill_after_chunk_recovers_old_root_and_restages() {
         .stderr(Stdio::null())
         .spawn()
         .unwrap();
-    let mut child = KillChildOnDrop(child);
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while !marker.exists() {
-        assert!(Instant::now() < deadline, "child did not commit a chunk");
-        assert!(child.0.try_wait().unwrap().is_none(), "child exited early");
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    child.0.kill().unwrap();
-    assert!(!child.0.wait().unwrap().success());
+    kill_after_marker(child, &marker, || {});
 
     let bytes = vec![0x42_u8; CHUNK_BYTES * 2 + 1];
     let hash: [u8; 32] = Sha256::digest(&bytes).into();
@@ -2476,6 +2507,100 @@ fn process_kill_after_chunk_recovers_old_root_and_restages() {
     drop(store);
     let store = RootTransactionProof::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (2, Some(hash.to_vec())));
+}
+
+#[test]
+fn process_kill_before_root_commit_child() {
+    let Some(database) = std::env::var_os("THRUM_TEST_ROOT_TXN_DB") else {
+        return;
+    };
+    let database = PathBuf::from(database);
+    let marker = PathBuf::from(std::env::var_os("THRUM_TEST_ROOT_TXN_MARKER").unwrap());
+    let mut store = RootTransactionProof::open(&database).unwrap();
+    let revision: [u8; 32] = Sha256::digest(b"complete new root blob").into();
+    store
+        .commit_with_closure_after_sql(
+            1,
+            1,
+            2,
+            [2; 32],
+            revision,
+            |_| Ok(()),
+            || {
+                signal_and_wait_for_kill(&marker);
+            },
+        )
+        .unwrap();
+}
+
+#[test]
+fn process_kill_inside_root_transaction_rolls_back_root_and_outcome() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let old = b"complete old root blob";
+    let old_hash: [u8; 32] = Sha256::digest(old).into();
+    store
+        .stage_blob(&mut old.as_slice(), old.len() as u64, old_hash)
+        .unwrap();
+    store.commit_probe(0, 1, 1, [1; 32], old_hash).unwrap();
+    let new = b"complete new root blob";
+    let new_hash: [u8; 32] = Sha256::digest(new).into();
+    store
+        .stage_blob(&mut new.as_slice(), new.len() as u64, new_hash)
+        .unwrap();
+    drop(store);
+
+    let marker = fixture.0.join("before-root-commit.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::process_kill_before_root_commit_child")
+        .arg("--nocapture")
+        .env("THRUM_TEST_ROOT_TXN_DB", fixture.database())
+        .env("THRUM_TEST_ROOT_TXN_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    kill_after_marker(child, &marker, || {
+        let reader = Connection::open(fixture.database()).unwrap();
+        let generation: i64 = reader
+            .query_row("SELECT generation FROM root WHERE id=1", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(generation, 1);
+        let outcome: bool = reader
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM outcome WHERE epoch=1 AND key=2)",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(!outcome);
+    });
+
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (1, Some(old_hash.to_vec())));
+    let outcome: bool = store
+        .conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM outcome WHERE epoch=1 AND key=2)",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(!outcome);
+    assert_eq!(store.commit_probe(1, 1, 2, [2; 32], new_hash).unwrap(), 2);
+    drop(store);
+    let store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (2, Some(new_hash.to_vec())));
+    assert_eq!(
+        stored_outcome(&store.conn, 1, 2)
+            .unwrap()
+            .unwrap()
+            .generation,
+        2
+    );
 }
 
 #[test]
