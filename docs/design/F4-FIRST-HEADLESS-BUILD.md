@@ -125,6 +125,14 @@ Xcode linker toolchain and SDK took about 5.95 and 5.66 seconds respectively
 for 2.88 GB and 0.95 GB of logical bytes. These are cold release-preparation
 candidates, not per-edit verification costs or authenticated roots; the
 system libraries still need a closed provenance policy.
+The [cold inventory helper](../../scripts/inventory_headless_tool_roots.py)
+now defines a candidate digest over three named roots: installed Rust,
+selected native linker toolchain and selected SDK. It streams each regular
+file, records directory membership and symlink target bytes, and refuses
+symlinks escaping a selected root. It is separate from cache preparation so
+its 4.86 GB logical read is not repeated for each candidate source or cache.
+The first [local inventory proof](../evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
+does not authenticate a release or close the remaining system-library reads.
 
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,
