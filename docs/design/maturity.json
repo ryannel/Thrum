@@ -447,6 +447,10 @@
       "i2a_all_type_max_edges_candidate": {
         "evidence": "../evidence/i2a/SOURCE-ALL-TYPE-EDGE-COST.md",
         "scope": "An ignored release fixture validates one provisional candidate with 256 source-carried game types, two records per type, 3,584 scenes and 65,536 distributed required references under dense carried history, then derives its revision. A 65,664-edge candidate refuses. Three isolated local elapsed/RSS observations include fixture generation and staging in whole-process RSS but time only validation. Authenticated prior root, external roots, two-candidate/editor/store peak, target performance and production admission remain open."
+      },
+      "i2a_first_profile_consumer_handoff": {
+        "evidence": "../evidence/i2a/SOURCE-FIRST-PROFILE-CONSUMERS.md",
+        "scope": "Design reconciliation of the bounded local source profile with F4, T1, W1/F1, P7 and N1: distinct accepted source, ready build, active world/match and private save roots; explicit refusal and retention behavior; and a small edit-to-restore proof queue. No consumer implementation, general external dependency resolver, physical storage admission or runtime qualification is claimed."
       }
     },
     {
