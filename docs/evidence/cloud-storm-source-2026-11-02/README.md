@@ -6,7 +6,7 @@ Cb family art, complete motion and production performance remain unaccepted.** T
 
 ## Recover the exact instrument
 
-[Selected instrument](instrument/) has optical identity `cb526d8eeb4b3ae8`, pinned in [the manifest](identity.json).
+[Selected instrument](instrument/) has optical identity `baa0bb379adeb7f1`, pinned in [the manifest](identity.json).
 Copy to a new destination, run its tests, then serve:
 
 ```sh
@@ -17,9 +17,9 @@ python3 tmp/cloud-storm-replay/serve.py --port 8147
 
 Open `http://localhost:8147/`. The live development server remains8146. Source identity covers served HTML/CSS/JS/WGSL;
 server and tests are retained too. Node24.16.0/Python3.15.2; shell host Apple M3 Max, browser Apple/metal-3.
-The new two diagnostic patches reconstruct prior unfiltered fixtures from this instrument; apply one to a separate
-fresh copy using `git apply --directory=tmp/NEW_PATH PATH_TO_PATCH`. Both reconstructions were verified byte-for-byte
-and reproduce identities69ef9e9ceef15f61/e80016c3aad5bd37. They are counterfactuals, not selected implementations.
+The three diagnostic patches reconstruct prior unfiltered fixtures from this instrument; apply one to a separate
+fresh copy using `git apply --directory=tmp/NEW_PATH PATH_TO_PATCH`. All reconstructions were verified byte-for-byte
+and reproduce identities69ef9e9ceef15f61/e80016c3aad5bd37/cb526d8eeb4b3ae8. They are counterfactuals, not selected implementations.
 
 ## Selected complete interaction
 
@@ -84,12 +84,44 @@ required by P1b/P7. The later anvil also approaches/exceeds the fixed camera fra
   These are scoped reviews, not art/device acceptance; later parent images and receipts own actual observations.
 - [x] `./dev check`; exact selected source retained, diagnostic reconstructions verified.
 - [x] Final GPU family recreation, clear-start/empty probe,480s growth and zero-face-clearance observed in the UI.
-- [ ] Finish matched bounded source-off/unequal core-versus-ice decay observations.
+- [x] Matched bounded source-off/unequal core-versus-ice observations; corrected zero-birth/age regressions and actual shutdown counters pass. This does not close breakup art.
 - [ ] Accepted organised tower/billow source and watched normal/accelerated motion, independently coupled shadows/reflection.
+
+## Corrected bounded shutdown result
+
+On buildbaa0bb379adeb7f1, develop from clear to480s, then set moistening/lift to0 and drying to.7. CPU targets relax
+at their ordinary12s rate; advance120s without resetting source survivors. At600s there are0 emitters,0 measured
+last-step new source, and0 occupied cells on every domain face. Liquid proxy sum falls4617.066→1837.239; ice remains
+present and grows886.277→1542.167 as existing upper liquid continues freezing. Those phase amounts do not isolate
+loss constants: conversion and advection also contribute. The visible lower core weakens while the upper cap persists.
+Age/source attribution is corrected; this still looks too soft and columnar, and it is not accepted irregular breakup.
+
+![Growing tower at180s](observations/cloud-1-18000-e3-v1280x720-f98-baa0bb379adeb7f1-2e2bfd98.png)
+
+![Connected anvil at480s](observations/cloud-1-48000-e3-v1280x720-f251-baa0bb379adeb7f1-2e2bfd98.png)
+
+![Weaker core and retained upper ice after120s shutdown](observations/cloud-1-60000-e4-v1280x720-f3403-baa0bb379adeb7f1-2e2bfd98.png)
+
+These are actual native snapshots after fixed-tick advances and live1x/16x screens, not a claimed continuous-motion
+art pass. Selecting another family still starts a new fixture/world; same-ID live Cu→Cb transfer/regridding remains
+unimplemented. This separate Cb producer proof does not close that governing requirement.
+
+## Phase-age/source observation erratum
+
+After the first implementation commit, the600s source-off run revealed a diagnostic error: Cb reaction uses separate
+phase losses, but the old new-source/age calculation still subtracted survival under one generic scalar loss. It
+therefore reported9.15792 units of apparent new source with0 emitters. This invalidates Cb birth/age attribution in
+buildcb526d8eeb4b3ae8; its liquid/ice geometry and actual images remain observations. The density operator is unchanged.
+The corrected buildbaa0bb379adeb7f1 subtracts `sum(max(qAdv,0)*exp(-phaseDecay*dt))` before estimating added source.
+A GPU mixed-phase fixture with zero source now requires zero birth and age100→100.25; paired phase transfer has its
+own proxy-conservation fixture. Age remains a first-order diagnostic with a low-density reset, not exact mass age.
+[Independent review](storm-age-review.md) confirms the equation and scope. The
+[prior instrument patch](diagnostic-cb526d8eeb4b3ae8.patch) and [prior manifest](identity-cb526d8eeb4b3ae8.json)
+recover that historical build. Do not reinterpret its old birth/age counters as corrected data.
 
 ## Available-host cost screen
 
-Three separate quiet10s windows,96 view steps, shared main/receiver/mirror enabled, advected filtered material:
+Buildcb526d8eeb4b3ae8: three separate quiet10s windows,96 view steps, shared main/receiver/mirror enabled, advected filtered material:
 
 | View / rate | Queued source progress | Submitted images/sec | CPU encode p95 |
 | --- | --- | --- | --- |
@@ -109,6 +141,11 @@ Cb deformation preparation adds6 velocity and rest evaluations per half-resoluti
 at this grid. It adds no per-view gradient evaluations. Actual shader/prefilter bandwidth still needs profiling.
 The optional Cb float32 velocity cache would add20MiB and remains off; both paths are retained for the mandatory
 matched full-sky P7 comparison. Device retirement releases the Cu oracle's logical scratch before the new Cb provider.
+
+The corrected shader was rescreened in two further quiet10s windows at640×360/96steps:
+1x queues10source seconds and submits71.13images/sec (CPU encode p95.120ms);16x queues160.25seconds and submits
+17.90images/sec (p95.100ms). Source age at each window end is.0319/.0117s with3/1pending graphs. These are new
+scoped receipts, not a paired speed comparison or displayed-FPS/whole-GPU admission. Whole timestamp totals remain rejected.
 
 ## Research and limits
 

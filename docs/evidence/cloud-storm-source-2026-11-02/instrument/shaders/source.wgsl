@@ -267,7 +267,8 @@ fn backtracedRest(x:vec3f,dt:f32)->vec3f {
   }
   let previousAge=fwd.z;
   let total=q.x+q.y;
-  let amountAdded=max(total-(max(adv.x,0.)+max(adv.y,0.))*exp(-decay*dt),0.);
+  let survived=max(adv,vec2f(0))*exp(-phaseDecay*dt);
+  let amountAdded=max(total-(survived.x+survived.y),0.);
   let age=select(0.,(previousAge*max(total-amountAdded,0.)+dt*total)/max(total,1e-6),total>.002);
   textureStore(outputQ,id,vec4f(clamp(q,vec2f(0),vec2f(1)),min(age,6000.),amountAdded));
 }

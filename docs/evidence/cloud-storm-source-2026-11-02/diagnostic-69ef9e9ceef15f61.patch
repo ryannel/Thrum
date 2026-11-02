@@ -132,6 +132,16 @@
      let above=smoothstep(layer.y,layer.y+600.,x.y)*.008;
      phaseDecay+=vec2f(below+above);
    }
+@@ -267,8 +253,7 @@
+   }
+   let previousAge=fwd.z;
+   let total=q.x+q.y;
+-  let survived=max(adv,vec2f(0))*exp(-phaseDecay*dt);
+-  let amountAdded=max(total-(survived.x+survived.y),0.);
++  let amountAdded=max(total-(max(adv.x,0.)+max(adv.y,0.))*exp(-decay*dt),0.);
+   let age=select(0.,(previousAge*max(total-amountAdded,0.)+dt*total)/max(total,1e-6),total>.002);
+   textureStore(outputQ,id,vec4f(clamp(q,vec2f(0),vec2f(1)),min(age,6000.),amountAdded));
+ }
 --- a/shaders/view.wgsl
 +++ b/shaders/view.wgsl
 @@ -86,10 +86,9 @@
@@ -229,7 +239,23 @@
      info("Source observation saved · separate from quiet timing");
 --- a/src/gpu-reference.js
 +++ b/src/gpu-reference.js
-@@ -151,82 +151,6 @@
+@@ -36,11 +36,10 @@
+     const data = new Uint16Array(8 * 8 * 8 * 4);
+     for (let z = 0; z < 8; z++)
+       for (let y = 0; y < 8; y++)
+-        for (let x = 0; x < 8; x++) {
+-          const sample = typeof value === "function" ? value(x, y, z) : value;
+-          const channels = Array.isArray(sample) ? sample : [sample, 0, 0, 0];
+-          data.set(channels.map(floatToHalf), ((z * 8 + y) * 8 + x) * 4);
+-        }
++        for (let x = 0; x < 8; x++)
++          data[((z * 8 + y) * 8 + x) * 4] = floatToHalf(
++            typeof value === "function" ? value(x, y, z) : value,
++          );
+     g.device.queue.writeTexture(
+       { texture: tex },
+       data,
+@@ -152,104 +151,6 @@
            seededStormHighPeak = Math.max(seededStormHighPeak, v);
          else seededStormLowPeak = Math.max(seededStormLowPeak, v);
        }
@@ -266,6 +292,28 @@
 -          Math.abs(liquid + ice - decayedLiquid),
 -        );
 -        freezeIcePeak = Math.max(freezeIcePeak, ice);
+-      }
+-  params.set([-100, 5000, -100, 0.0045], 12);
+-  params.set([100, 5400, 100, 0.0018], 16);
+-  params.set([0, 0.7, 0, 1], 24);
+-  upload(old, [0.2, 0.2, 100, 0]);
+-  upload(forward, [0.2, 0.2, 100, 0]);
+-  upload(reverse, [0.2, 0.2, 100, 0]);
+-  await execute();
+-  let noSourceMixedPeak = 0,
+-    mixedAgeError = 0;
+-  for (let z = 2; z < 6; z++)
+-    for (let y = 2; y < 6; y++)
+-      for (let x = 2; x < 6; x++) {
+-        const offset = (z * 8 + y) * 128 + x * 4;
+-        noSourceMixedPeak = Math.max(
+-          noSourceMixedPeak,
+-          Math.abs(halfToFloat(lastSourceRaw[offset + 3])),
+-        );
+-        mixedAgeError = Math.max(
+-          mixedAgeError,
+-          Math.abs(halfToFloat(lastSourceRaw[offset + 2]) - 100.25),
+-        );
 -      }
 -  const mipFixture = g.texture(
 -    "mip mean fixture",
@@ -312,7 +360,7 @@
    params[27] = 0;
    const ones = g.texture("oracle constant material", [1, 1, 1], "rgba8unorm");
    g.device.queue.writeTexture(
-@@ -278,17 +202,6 @@
+@@ -301,17 +202,6 @@
      new Float32Array(mapped.getMappedRange().slice(0)),
    );
    mapped.unmap();
@@ -330,7 +378,7 @@
    const referenceAir = airTransmittance(1000, 0.5);
    const error = (values, expected) =>
      Math.max(...values.map((v) => Math.abs(v - expected)));
-@@ -316,33 +229,10 @@
+@@ -339,35 +229,10 @@
          (b) => b.edgePeak === 0 && b.interiorPeak > 0.05,
        ),
      },
@@ -338,6 +386,8 @@
 -      maxError: Math.max(...belowBaseBirth.map(Math.abs)),
 -      tolerance: 1e-7,
 -    },
+-    mixedPhaseNoPhantomBirth: { maxError: noSourceMixedPeak, tolerance: 1e-7 },
+-    mixedPhaseAgeWithoutBirth: { maxError: mixedAgeError, tolerance: 0.063 },
 -    phaseTransferConservesProxy: {
 -      maxError: freezeSumError,
 -      tolerance: 5e-4,

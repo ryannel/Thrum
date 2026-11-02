@@ -1,0 +1,392 @@
+{
+  "name": "source-mask-comparison-baa0bb379adeb7f1-2e2bfd98-2",
+  "build": "baa0bb379adeb7f1",
+  "identity": {
+    "files": {
+      "index.html": "dd4a9af46fe435505d12bb4ae0633529ba9b99005a6a750d0e5c977a733cd8ff",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "97f36dce04c4940d074d44ae6b09f87e2afdace33e4b4c38bcb02692a000bb57",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "83f153513762dcad545818181a4b263aa84820edaa5cf483bdf500bc294592a8",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "94516ab74f2ad702c5b4eeafbfc151692577863b3e2d988fbbd9ebbe0ec91432",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench.js": "82bb60c46a018c010fdb83e5b77e742d199939ccfdd0a84de07b581c3542ef65",
+      "src/gpu-reference.js": "1da8d2dae8152a3d7b6d7b4f6b922247d23aaf77bf219276ef6bfabb2ef4da00",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "5d6c3deaf11e9ec688f738f9b7d0a88a876ed63aa13cfa0cff96463c7a716daf",
+      "src/source-mask-reference.js": "1053878ea53457001c4d55971c12819e7e622248efc556bc61ab2720c9530968",
+      "src/source.js": "e7e72d6e01361d55326b814cde07942a9ad0e1e85b84fc5ddef09aacdd707b54",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "baa0bb379adeb7f1"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 19.29259999999993,
+    "epoch": 1,
+    "weather": {
+      "time": 19.29259999999993,
+      "weatherTick": 19,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 57.87779999999979,
+      "rainFlux": 0,
+      "latestLightning": null,
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 0,
+      "inputTick": 19
+    }
+  },
+  "queuedGraphsHighWater": 3,
+  "epoch": 1,
+  "sourceTime": 19.098165,
+  "scope": "36 serial plus24 batched full-resolution source ticks across clear birth, existing source, edge birth and changed wind/lift/front; three queued eight-tick graphs; mask plus shared float32 velocity equal direct dense decoded RGBA16F all four channels; carrier unchanged",
+  "pass": true,
+  "records": [
+    {
+      "fixture": "empty-birth",
+      "step": 0,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 1,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 2,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 3,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 4,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 5,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 6,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 89
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 7,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 80
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 8,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 96
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 9,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 96
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 10,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 105
+    },
+    {
+      "fixture": "empty-birth",
+      "step": 11,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 105
+    },
+    {
+      "fixture": "existing-source",
+      "step": 0,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1056
+    },
+    {
+      "fixture": "existing-source",
+      "step": 1,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1057
+    },
+    {
+      "fixture": "existing-source",
+      "step": 2,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1057
+    },
+    {
+      "fixture": "existing-source",
+      "step": 3,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1057
+    },
+    {
+      "fixture": "existing-source",
+      "step": 4,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1057
+    },
+    {
+      "fixture": "existing-source",
+      "step": 5,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1060
+    },
+    {
+      "fixture": "existing-source",
+      "step": 6,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1060
+    },
+    {
+      "fixture": "existing-source",
+      "step": 7,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1063
+    },
+    {
+      "fixture": "existing-source",
+      "step": 8,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1063
+    },
+    {
+      "fixture": "existing-source",
+      "step": 9,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1063
+    },
+    {
+      "fixture": "existing-source",
+      "step": 10,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1063
+    },
+    {
+      "fixture": "existing-source",
+      "step": 11,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 1063
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 0,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 60
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 1,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 60
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 2,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 60
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 3,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 60
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 4,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 60
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 5,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 6,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 7,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 8,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 9,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 10,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "edge-birth",
+      "step": 11,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBricks": 66
+    },
+    {
+      "fixture": "queued-empty",
+      "queuedGraph": 0,
+      "steps": 8,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBrickVisits": 672
+    },
+    {
+      "fixture": "queued-existing",
+      "queuedGraph": 1,
+      "steps": 8,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBrickVisits": 8473
+    },
+    {
+      "fixture": "queued-edge",
+      "queuedGraph": 2,
+      "steps": 8,
+      "differentVoxels": 0,
+      "invalidVoxels": 0,
+      "maxAbsDifference": 0,
+      "activeBrickVisits": 492
+    }
+  ],
+  "errors": [],
+  "oracleLogicalBytes": 24624880,
+  "sharedVelocityBytes": 9830400
+}

@@ -36,10 +36,11 @@ export async function runGpuReferenceChecks(scene) {
     const data = new Uint16Array(8 * 8 * 8 * 4);
     for (let z = 0; z < 8; z++)
       for (let y = 0; y < 8; y++)
-        for (let x = 0; x < 8; x++)
-          data[((z * 8 + y) * 8 + x) * 4] = floatToHalf(
-            typeof value === "function" ? value(x, y, z) : value,
-          );
+        for (let x = 0; x < 8; x++) {
+          const sample = typeof value === "function" ? value(x, y, z) : value;
+          const channels = Array.isArray(sample) ? sample : [sample, 0, 0, 0];
+          data.set(channels.map(floatToHalf), ((z * 8 + y) * 8 + x) * 4);
+        }
     g.device.queue.writeTexture(
       { texture: tex },
       data,
@@ -185,6 +186,28 @@ export async function runGpuReferenceChecks(scene) {
         );
         freezeIcePeak = Math.max(freezeIcePeak, ice);
       }
+  params.set([-100, 5000, -100, 0.0045], 12);
+  params.set([100, 5400, 100, 0.0018], 16);
+  params.set([0, 0.7, 0, 1], 24);
+  upload(old, [0.2, 0.2, 100, 0]);
+  upload(forward, [0.2, 0.2, 100, 0]);
+  upload(reverse, [0.2, 0.2, 100, 0]);
+  await execute();
+  let noSourceMixedPeak = 0,
+    mixedAgeError = 0;
+  for (let z = 2; z < 6; z++)
+    for (let y = 2; y < 6; y++)
+      for (let x = 2; x < 6; x++) {
+        const offset = (z * 8 + y) * 128 + x * 4;
+        noSourceMixedPeak = Math.max(
+          noSourceMixedPeak,
+          Math.abs(halfToFloat(lastSourceRaw[offset + 3])),
+        );
+        mixedAgeError = Math.max(
+          mixedAgeError,
+          Math.abs(halfToFloat(lastSourceRaw[offset + 2]) - 100.25),
+        );
+      }
   const mipFixture = g.texture(
     "mip mean fixture",
     [2, 2, 2],
@@ -320,6 +343,8 @@ export async function runGpuReferenceChecks(scene) {
       maxError: Math.max(...belowBaseBirth.map(Math.abs)),
       tolerance: 1e-7,
     },
+    mixedPhaseNoPhantomBirth: { maxError: noSourceMixedPeak, tolerance: 1e-7 },
+    mixedPhaseAgeWithoutBirth: { maxError: mixedAgeError, tolerance: 0.063 },
     phaseTransferConservesProxy: {
       maxError: freezeSumError,
       tolerance: 5e-4,

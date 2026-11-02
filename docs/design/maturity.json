@@ -1261,11 +1261,11 @@
         },
         "runtime_storm_pilot": {
           "record": "../evidence/cloud-storm-source-2026-11-02/README.md",
-          "build": "cb526d8eeb4b3ae8",
+          "build": "baa0bb379adeb7f1",
           "implementation": "standalone_Cb_low_body_and_clear_start_feed_cap_outflow_ice_shared_phase_coherent_material_mips_larger_private_grid_no_engine_binding",
-          "correctness": "CPU_reset_intent_and_GPU_phase_sum_material_phase_mip_below_base_seed_transport_cases_pass_Cu_mask_cache_oracle_pass",
-          "experienced_quality": "connected_cap_visible_from_clear_at480s_all_boundary_faces_clear_tower_columnar_soft_art_rejected_long1060s_chart_boundary_failure_motion_acceptance_open",
-          "performance": "M3_Max_10s_queued_1x16x_progress_observed_53_1MiB_logical_Cb_whole_GPU_timestamp_totals_rejected_process_M2_fullsky_unqualified"
+          "correctness": "CPU_reset_intent_GPU_phase_sum_material_phase_mip_below_base_seed_transport_and_mixed_phase_no_phantom_birth_age_cases_pass_Cu_mask_cache_oracle_pass",
+          "experienced_quality": "connected_cap_visible_from_clear_at480s_bounded600s_shutdown_core_weakens_upper_ice_persists_zero_birth_and_faces_tower_columnar_soft_and_breakup_art_rejected_sameID_Cu_Cb_transfer_unbuilt_long1060s_chart_edge_failure",
+          "performance": "M3_Max_corrected_shader_10s_1x16x_queued_progress_observed_53_1MiB_logical_Cb_whole_GPU_totals_rejected_process_M2_fullsky_unqualified"
         }
       }
     },

@@ -1,5 +1,5 @@
 {
-  "build": "cb526d8eeb4b3ae8",
+  "build": "baa0bb379adeb7f1",
   "files": {
     "index.html": "dd4a9af46fe435505d12bb4ae0633529ba9b99005a6a750d0e5c977a733cd8ff",
     "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
@@ -11,12 +11,12 @@
     "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
     "shaders/optics.wgsl": "97f36dce04c4940d074d44ae6b09f87e2afdace33e4b4c38bcb02692a000bb57",
     "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
-    "shaders/source.wgsl": "889cd814e7040d92d0d9f6accc53ce6af7deec2f9663221c43f22b3d47e1b9e0",
+    "shaders/source.wgsl": "83f153513762dcad545818181a4b263aa84820edaa5cf483bdf500bc294592a8",
     "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
     "shaders/velocity.wgsl": "94516ab74f2ad702c5b4eeafbfc151692577863b3e2d988fbbd9ebbe0ec91432",
     "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
     "src/bench.js": "82bb60c46a018c010fdb83e5b77e742d199939ccfdd0a84de07b581c3542ef65",
-    "src/gpu-reference.js": "dc86be713a795bc2493620e46741b54b0de7503ccbaf041944ebf008574a3cea",
+    "src/gpu-reference.js": "1da8d2dae8152a3d7b6d7b4f6b922247d23aaf77bf219276ef6bfabb2ef4da00",
     "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
     "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
     "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
