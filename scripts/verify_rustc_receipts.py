@@ -160,6 +160,7 @@ def flag_values(arguments, name):
 
 def compile_identity(receipt, roots):
     arguments = receipt["arguments"]
+    validate_first_profile_codegen(arguments, receipt["environment"])
     emit = flag_value(arguments, b"--emit")
     if b"dep-info" not in emit.split(b","):
         raise ValueError("compile receipt lacks dep-info emission")
@@ -210,6 +211,60 @@ def compile_identity(receipt, roots):
             raise ValueError("first profile refuses other rustc library search paths")
         selected_directory(Path(os.fsdecode(path)), roots["output"], "rustc library path")
     return crate, sources[0], sorted(externs)
+
+
+def selected_xcode_linker(environment):
+    sdk_bytes = environment.get(b"SDKROOT")
+    linker_bytes = environment.get(b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER")
+    if not sdk_bytes or not linker_bytes:
+        raise ValueError("first profile lacks selected macOS SDK or linker")
+    sdk = Path(os.fsdecode(sdk_bytes))
+    linker = Path(os.fsdecode(linker_bytes))
+    if (not sdk.is_absolute() or sdk.is_symlink() or not sdk.is_dir()
+            or not linker.is_absolute() or linker.is_symlink() or not linker.is_file()):
+        raise ValueError("selected macOS SDK or linker is not ordinary and absolute")
+    developers = [parent for parent in sdk.parents
+                  if parent.name == "Developer" and parent.parent.name == "Contents"]
+    if len(developers) != 1:
+        raise ValueError("selected SDK lacks one Xcode developer root")
+    expected = developers[0] / "Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
+    if linker.resolve(strict=True) != expected.resolve(strict=True):
+        raise ValueError("selected linker differs from Xcode default Clang")
+    return linker_bytes
+
+
+def validate_first_profile_codegen(arguments, environment):
+    values = []
+    for index, argument in enumerate(arguments):
+        if (argument in (b"-O", b"-g", b"--codegen", b"--sysroot", b"--target")
+                or argument.startswith((b"--codegen=", b"--sysroot=", b"--target=", b"-Z"))
+                or argument == b"--print" or argument.startswith(b"--print=")):
+            raise ValueError("first profile refuses alternate compiler control flags")
+        if argument == b"-C":
+            if index + 1 == len(arguments):
+                raise ValueError("rustc codegen flag lacks value")
+            values.append(arguments[index + 1])
+        elif argument.startswith(b"-C") and len(argument) > 2:
+            raise ValueError("first profile refuses joined rustc codegen flags")
+    if len(values) != len(set(values)):
+        raise ValueError("first profile refuses duplicate rustc codegen flags")
+    linker = selected_xcode_linker(environment)
+    required = {b"embed-bitcode=no", b"debuginfo=2", b"split-debuginfo=unpacked",
+                b"linker=" + linker}
+    if not required.issubset(values):
+        raise ValueError("first profile lacks selected rustc codegen flags")
+    for value in values:
+        if value in required:
+            continue
+        if re.fullmatch(rb"metadata=[0-9a-f]{16}", value):
+            continue
+        if re.fullmatch(rb"extra-filename=-[0-9a-f]{16}", value):
+            continue
+        raise ValueError("first profile refuses unsupported rustc codegen flag")
+    if sum(value.startswith(b"metadata=") for value in values) != 1:
+        raise ValueError("first profile requires one rustc metadata codegen flag")
+    if sum(value.startswith(b"extra-filename=") for value in values) > 1:
+        raise ValueError("first profile refuses multiple rustc output suffixes")
 
 
 def strict_pairs(pairs):
