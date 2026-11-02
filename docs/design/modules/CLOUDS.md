@@ -1,6 +1,12 @@
 # Clouds — complete system design
 
-1 November2026. **Selected proof model after independent comparison and scoped closure; implementation incomplete.**
+2 November2026. **Migration reassessment: research-backed target selected; detailed design/proof gates remain open.**
+The [tracked migration/build plan](CLOUD-MIGRATION.md) and [current technique/source selection](../research/ATMOSPHERICS-TECHNIQUES.md)
+govern the next work. The user requested substantial rework, a reviewed written plan and progressive observable POCs
+before further construction. The [migration review battery](../../evidence/atmospherics-migration-2026-11-02/REVIEW.md)
+resolved its planning findings; implementation and measurement gates remain open. This replaces the earlier claim that D0 is fully closed. The detailed candidates below
+remain reconciliation material: in particular the source cohort grammar, uniform deep-light/A0 schedules and spatial-only
+production assumption are not an instruction to continue building them. Required outcomes and shared contracts remain.
 The [current commission](../../evidence/cloud-sky-design-2026-11-01/COMMISSION.md) and
 [capability/acceptance ledger](CLOUD-CAPABILITIES.md) require five families, their isolated lifecycles, changing weather
 and four complete skies. This supersedes the former one-source/optional-storm target. The
@@ -16,16 +22,16 @@ builds standalone proofs now, not a competing game engine or a new crate/plugin 
 
 | ID | Current selection and reason | Qualification boundary |
 | --- | --- | --- |
-| CD01 source | Persistent world events/low-layer state with **family-specific authored optical masters**. Prepared detailed convective masters, column layers and filament cohorts have different producers; the first surface hierarchy is a rejected producer. A certified prepared final-density clip is another admitted source. | A universal512m cube, static noise warp or whole-sky opacity curve cannot supply the required families/dynamics. |
+| CD01 source | Persistent weather-owned events/layers with **prepared time-varying optical-density masters** and family-appropriate layer/ice products. Class-specific editable source creation and lifecycle acceptance precede bulk content. The older cohort grammar is a challenger, not the selected convective producer. | A universal512m cube, static noise warp or whole-sky opacity curve cannot supply the required families/dynamics. |
 | CD02 detail | Persistent source/material coordinates and qualified geometric/detail scales; geometry/source/loss operators create lifecycle. | Detail advection alone is not formation. Every family must pass native/motion reference review. |
 | CD03 residency | Share immutable recipes/detail; cache evaluated source fields only when phase/variant/pose/representation keys match. Use bounded atlas fields and on-demand far source evaluation, not one full dense world or one128³ allocation for every cloud. | Independent ages still cost distinct evaluated work. No phase holding to save cost. |
-| CD04 optics | One canonical coefficient query and joint air/fog/cloud integral; all-layer partial Sun depth, source-only higher scattering and clouded surface environment. | Keep tested Beer/phase/reflection principles; disclose lighting/cache approximations. |
+| CD04 optics | Complete compact-LUT clear air, joint spatial overlap, shared ordinary/filtered Sun products, bounded cloud scattering and clouded environment. Production caches have consumer-specific fidelity and update schedules. | Keep tested Beer/phase/reflection principles; disclose lighting/cache approximations. |
 | CD05 consumers | Main appearance, directional attenuation, reflected/environment radiance and optional CPU semantics bind independently. | Camera invisibility cannot destroy retained causes. Actual no-consumer retirement is a separate gate. |
 | CD06 reuse | Retain shared source decoding, normalized phases, stable Beer segment integration, path/geometry-aware reconstruction, finite mirror composition and provenance tools where their regimes fit. | Replace hardcoded single cube, short atmosphere, fixed object bounds and one-source residency as the universal design. |
 | CD07 distant sky | World-seeded virtual events/layers and family-specific filtered evaluation continue to a curved horizon in the SKY-G profile. LOD changes a representation of the same cause. | No unrelated painted horizon, camera reseeding or unqualified density averaging over clear gaps. |
 | CD08 progression | Authored spatial forcing/fronts control future births, local source persistence/drying and continuous compatible branches. Existing event IDs/material survive. | Required clear/scattered/cover/overcast/storm paths are not preset crossfades. |
-| CD09 first implementation | Spatial-only family proofs, including source evolution and consumers; no temporal history required to hide missing content or sampling. | Histories remain optional acceleration with C07 validity, never a completion substitute. |
-| CD10 scope | Complete required behaviour first, measurements throughout, representative full-sky optimization/admission afterward. | Existing cost failure remains explicit; it does not make families/weather optional. |
+| CD09 first implementation | Spatial reference plus low/mixed-resolution production rendering and independently valid temporal histories are designed together. Prove actual source content and a small coupled sentinel before expanding family assets. | History cannot repair absent structure; fresh-sample cost at cuts/births/accelerated time is part of admission. |
+| CD10 scope | Research/code reconciliation and independent migration review, isolated source/air/render POCs, early coupled appearance/cost sentinel, accepted families, weather, then full-scale admission. | Existing cost failure remains explicit; it does not make families/weather optional. |
 
 The [design review/dispositions](../../evidence/cloud-sky-design-2026-11-01/README.md) record inspected artifacts and limits.
 The author is already exposed to earlier implementations. Independent discovery/model/contract workers derived their
@@ -39,8 +45,8 @@ FS01–FS04 own fair, broken, overcast and storm skies. CL01–CL30 own shared o
 The capability ledger records pass/fail/unproven by actual evidence. Earlier local Cu evidence is partial, not a pass
 for the entire Cu family, and does not support any other family or complete sky.
 
-The mandatory dependency is **reviewed complete design → accepted isolated families → combinations/weather → full
-skies → complete-workload disposition**. Progressive measurements can reject an implementation early, but optimization
+The acceptance dependency is **reviewed migration design → source/air/render POCs → early coupled sentinel → accepted
+isolated families → combinations/weather → full skies → complete-workload disposition**. Progressive measurements can reject an implementation early, but optimization
 cannot silently narrow this order's required outcomes. Failure of one producer does not discard verified transport.
 
 ## Responsibility and public composition
@@ -752,9 +758,12 @@ Thrum runtime integration waits for its real foundation/content/render interface
 
 ## Proof and construction queue
 
+Historical capability gates below remain acceptance obligations. The [migration plan](CLOUD-MIGRATION.md) is the active
+checkbox/progress queue; its P0–P8 stages replace this table as execution instructions. Do not resume the old continuation.
+
 | Order | Required proof and rejection condition | Current evidence |
 | --- | --- | --- |
-| D0 | Complete capability/model/contract/cost synthesis; independent original-brief discovery and whole-model challenge. Reject any required mechanism/producer left unnamed or conflicting source ownership. | Independently reviewed synthesis and scoped finding closure; numerical/visual implementation gates remain open. |
+| D0 | Current [migration plan](CLOUD-MIGRATION.md): research/code reconciliation, complete interaction/cost review and observable POC sequence. Reject unspecified essential producers, conflicting ownership or unsupported closed-design claims. | Reopened2November; earlier scoped reviews retained. New plan review completed at the planning level; pre-build/POC selections remain tracked in the migration queue. |
 | R0 | Source/packing/optical invariants, analytic slabs/depth curves/air and wrong-composition counterexamples. Reject alias/overflow/double attenuation. This is correctness instrumentation, not a passed cloud family. | Old13oracle tests retained; R0 four-Z logical sampling/half/mip/finite Beer checks passed on M3 WebGPU. New world-domain/deep-light/air queries unproven. |
 | F1–F5 | Each CF family in isolation with four meaningful variants, lifecycle intervals, native/normal/accelerated reference comparison, required lighting, receiver/reflection and distance/angle routes. Correct failures before admission. | CF01partial; CF02–CF05unproven. |
 | M1 | Accepted low/high and bank/tower/anvil combinations with overlaps, common wind/light and independent consumers. Reject unrelated ambient, missing offscreen blockers or duplicated source parts. | Unproven. |

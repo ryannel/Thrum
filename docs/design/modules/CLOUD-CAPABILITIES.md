@@ -13,6 +13,10 @@ Independent requirements discovery preceded comparison with those designs and co
 **Fail** names contradicted acceptance. **Unproven** means no adequate evidence. Design/review, implementation,
 experienced quality, user acceptance and per-platform admission remain separate. Nothing below is passed by prose.
 
+The [migration plan](CLOUD-MIGRATION.md) now owns the active checked build queue. Mechanism labels in the table below
+are earlier candidates under reassessment; its observable outcomes and evidence status remain authoritative. New
+acceptance needs watched continuous motion, not only sampled frames. No capability is promoted by this plan.
+
 The source-of-truth clock, coordinate/epoch, content leases, provider selection and C08 joint-medium contracts remain
 Thrum's. All five requested families and storm progression are required for this commissioned profile, not mandatory
 for every Thrum game. Rain/lightning implementations, full meteorology, all WMO genera, halo optics, tornadoes and
