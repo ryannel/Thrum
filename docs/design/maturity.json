@@ -295,6 +295,10 @@
       "i2a_bootstrap_semantics": {
         "evidence": "../evidence/i2a/SOURCE-BOOTSTRAP.md",
         "scope": "Narrow direct-decoded project/empty-scene schema and stable-ID reference proof over rehashed staged records with a provisional manifest revision; no general F3 registry, durable admission or runtime consumption."
+      },
+      "i2a_meaning_lineage": {
+        "evidence": "../evidence/i2a/SOURCE-MEANING-HISTORY.md",
+        "scope": "Pure allocation-free linear comparison of sorted field meaning histories with local 100,000-entry cost sample and missing/changed/revived/stale-branch rejection fixtures; no descriptor grammar, canonical signature derivation, authenticated prior root or durable admission."
       }
     },
     {
