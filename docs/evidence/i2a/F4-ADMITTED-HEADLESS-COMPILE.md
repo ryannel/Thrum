@@ -31,18 +31,29 @@ RUSTC_WRAPPER= CARGO_TARGET_DIR=/Users/ryannel/Workspace/thrum/target \
   -- --ignored --nocapture
 ```
 
-Local macOS ARM64 run: 53 admitted files, 1,204,606 copied bytes; the separate
-debug Cargo build took 1,163 ms and produced a 2,306,184-byte binary. These
-are one warm-registry, cold-target observations, not a throughput or
+Local macOS ARM64 plain run: 53 admitted files, 1,204,606 copied bytes; the
+separate debug Cargo build took 1,163 ms and produced a 2,306,184-byte binary.
+These are one warm-registry, cold-target observations, not a throughput or
 cross-machine claim. Both A execution and B failure/retention assertions
 passed. `./dev check` also passed; its normal suite intentionally skips this
 native compile qualification.
 
-`--offline` stops Cargo registry/network resolution, but it is not an OS
-network sandbox for arbitrary build scripts or proc macros. The test has not
+With `THRUM_TEST_NATIVE_SANDBOX=1`, the same ignored test wraps each Cargo
+build in a local macOS `sandbox-exec` profile. The profile defaults to deny,
+explicitly denies network, permits writes only in the separate output tree,
+and denies reads of the mutable checkout. It permits broad reads elsewhere so
+Cargo can use the installed Rust toolchain and registry cache. Before each
+compile, the test proves a checkout `Cargo.toml` read and an input-tree write
+are refused. The local sandboxed A/B run passed: 53 files, 1,207,105 bytes,
+1,056 ms for A's separate debug build and the same 2,306,184-byte binary
+size. These are process-level observations for one host and fixture.
+
+The sandboxed run improves the process boundary; it does not make a trusted
+builder. Broad read permission, inherited Cargo environment/configuration and
+the external registry cache can still affect compilation. The test has not
 closed the selected dependency graph against every admitted file and verified
 external dependency root, recorded compiler/target/flags identities, or
 published a durable binary/product manifest. A successful process exit and
 binary hash therefore do not form a trusted `BuildRevision`. The next T2 step
-is the isolated, attested compiler adapter; F4 then publishes and reloads the
+is a closed, attested compiler adapter; F4 then publishes and reloads the
 verified target closure before a fresh world may start.
