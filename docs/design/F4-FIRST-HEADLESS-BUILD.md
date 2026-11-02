@@ -95,6 +95,12 @@ belongs to the fresh output tree, and build-script/proc-macro messages refuse.
 This observes one selected graph after execution; it does not authorize a
 general package graph, attest exact compiler invocations or prove all files
 read by rustc. A trusted adapter must close those inputs before publication.
+The cache preparer also walks normal/build metadata edges from the headless
+package and refuses custom-build/proc-macro targets in that possible set before
+compilation. Cargo metadata unions workspace feature use: this walk includes
+`foldhash`, while the selected compile transcript does not. It is deliberately
+an overapproximation and cannot be used alone to prune the cache to exact
+build units or define the final build identity.
 
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,

@@ -66,7 +66,7 @@ resolution, rechecks that resolution, removes Cargo's path-dependent
 digest in a separate candidate manifest. It cleans its newly created tree
 on a reported failure. Cargo metadata output is drained through bounded
 in-memory pipes with a 32 MiB JSON and 1 MiB diagnostic limit and a 120-second
-timeout. Five small Python 3.11 fixtures prove checksum-fault cleanup,
+timeout. The first five Python 3.11 fixtures prove checksum-fault cleanup,
 source-config refusal, lock-version path-escape refusal, live output-limit
 termination and refusal when a descendant keeps metadata pipes open. This
 manifest is an observation of local cache bytes, not release authentication.
@@ -87,3 +87,14 @@ placing the cache inside the project root left an undeclared manifest. The
 working fixture owns the cache beside the project, outside F3's inventory,
 and removes it after both builds. This separation is part of the selected
 builder layout, not a reason to weaken F3 admission checks.
+
+The preparer now records a conservative normal/build dependency walk from the
+headless package and refuses packages carrying custom-build or proc-macro
+targets before compilation. Six Python fixtures cover this walk as well as
+the earlier failure boundaries. The admitted A fixture's metadata walk
+reports five possible packages: the game, `thrum-core`, `thrum-mobile-shell`,
+`hashbrown` and `foldhash`. Cargo's actual build transcript reports five
+artifacts from the first four packages, with no `foldhash` artifact. Metadata
+has unioned a `hashbrown` feature used by other workspace targets. The
+possible-package record is a conservative preflight, not a selected-unit
+graph; no additional archive or extracted-source pruning follows from it.

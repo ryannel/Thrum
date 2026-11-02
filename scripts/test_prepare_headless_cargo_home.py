@@ -7,10 +7,42 @@ import tempfile
 import time
 import unittest
 
-from prepare_headless_cargo_home import collect_bounded, prepare
+from prepare_headless_cargo_home import collect_bounded, possible_headless_packages, prepare
 
 
 class PrepareHeadlessCargoHome(unittest.TestCase):
+    def test_selected_package_walk_ignores_dev_and_refuses_build_hooks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            manifest = source / "examples/i1-mobile-game/Cargo.toml"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text("[package]\nname = 'i1-mobile-game'\n")
+            packages = [
+                {"id": name, "name": name, "version": "0.1.0", "source": None,
+                 "manifest_path": str(source / path / "Cargo.toml"),
+                 "targets": [{"kind": ["lib"]}]}
+                for name, path in (
+                    ("i1-mobile-game", "examples/i1-mobile-game"),
+                    ("core", "crates/core"), ("build-helper", "crates/build-helper"),
+                    ("dev-only", "crates/dev-only"),
+                )
+            ]
+            metadata = {"packages": packages, "resolve": {"nodes": [
+                {"id": "i1-mobile-game", "features": [], "deps": [
+                    {"pkg": "core", "dep_kinds": [{"kind": None}]},
+                    {"pkg": "build-helper", "dep_kinds": [{"kind": "build"}]},
+                    {"pkg": "dev-only", "dep_kinds": [{"kind": "dev"}]},
+                ]},
+                *({"id": name, "features": [], "deps": []}
+                  for name in ("core", "build-helper", "dev-only")),
+            ]}}
+            selected = possible_headless_packages(metadata, source)
+            self.assertEqual({package["name"] for package in selected},
+                             {"i1-mobile-game", "core", "build-helper"})
+            packages[1]["targets"] = [{"kind": ["custom-build"]}]
+            with self.assertRaisesRegex(ValueError, "executable dependency hooks"):
+                possible_headless_packages(metadata, source)
+
     def test_metadata_output_is_stopped_during_collection(self):
         with tempfile.TemporaryDirectory() as directory:
             started = time.monotonic()
