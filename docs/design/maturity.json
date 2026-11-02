@@ -330,7 +330,7 @@
       },
       "i2a_staged_registry": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-REGISTRY.md",
-        "scope": "Provisional staged core.project schema 2, declared core.schema and source-carried history records are rehashed and joined for reserved path membership, unique registry record IDs and active field/version consistency. Local small-tree repeated validation cost only; scene/game record semantics, references, authenticated predecessor, combined memory reservation and durable admission remain open."
+        "scope": "Provisional staged core.project schema 2, declared core.schema and source-carried history records are rehashed and joined for reserved path membership, unique registry record IDs and active field/version consistency. Project and descriptor inputs reuse one byte buffer; a local small-tree repeated validation cost is recorded. Scene/game record semantics, references, authenticated predecessor, combined memory reservation and durable admission remain open."
       },
       "i2a_staged_records": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-RECORDS.md",
@@ -338,7 +338,7 @@
       },
       "i2a_provisional_candidate": {
         "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-CANDIDATE.md",
-        "scope": "One provisional staged registry and scene/game closure derive a JCS/SHA-256 manifest with checked record identity labels and captured exact-byte metadata. An independent small-tree oracle, A/B revision test and local release cost probe pass. Ordinary bytes need durable rehash; maximum parser/graph memory, editor opaque round-trip, authenticated prior lineage, multi-schema dispatch, durable admission and cook/run remain open."
+        "scope": "One provisional staged registry and scene/game closure derive a JCS/SHA-256 manifest with checked record identity labels and captured exact-byte metadata. An independent small-tree oracle, A/B revision test, local small-tree release probe and a 4,096 declared-record count probe pass. Ordinary bytes need durable rehash; maximum parser/graph memory, editor opaque round-trip, authenticated prior lineage, multi-schema dispatch, durable admission and cook/run remain open."
       }
     },
     {

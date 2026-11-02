@@ -311,9 +311,8 @@ pub fn validate_staged_registry<'a>(
     let project_path = fixed_path("project.json");
     let project_file =
         find_file(stage, &project_path).ok_or(StagedRegistryError::MissingProject)?;
-    let project_bytes = read_record_bytes(stage, project_file)?;
-    let project = parse_project_v2(&project_bytes).map_err(StagedRegistryError::Project)?;
-    drop(project_bytes);
+    let mut record_bytes = read_record_bytes(stage, project_file)?;
+    let project = parse_project_v2(&record_bytes).map_err(StagedRegistryError::Project)?;
 
     let history_path = fixed_path(project.history_path());
     for path in project
@@ -353,17 +352,19 @@ pub fn validate_staged_registry<'a>(
     let mut schemas = Vec::with_capacity(project.schema_paths().len());
     for path in project.schema_paths() {
         let file = find_file(stage, path).expect("membership checked above");
-        let bytes = read_record_bytes(stage, file)?;
-        let descriptor =
-            parse_schema_descriptor(&bytes).map_err(|source| StagedRegistryError::Schema {
+        read_record_bytes_into(stage, file, &mut record_bytes)?;
+        let descriptor = parse_schema_descriptor(&record_bytes).map_err(|source| {
+            StagedRegistryError::Schema {
                 path: path.clone(),
                 source,
-            })?;
+            }
+        })?;
         schemas.push(StagedSchema {
             path: path.clone(),
             descriptor,
         });
     }
+    drop(record_bytes);
     schemas.sort_unstable_by(|left, right| {
         left.descriptor
             .target_type()
@@ -607,7 +608,7 @@ mod tests {
             let limits = Limits {
                 main: 2 * 1024 * 1024 * 1024,
                 wal: 4 * 1024 * 1024,
-                temporary: 16 * 1024 * 1024,
+                temporary: 64 * 1024 * 1024,
                 free_floor: 0,
             };
             stage_declared_tree_with(&self.0, &declared, limits, |_| {}).unwrap()
@@ -965,5 +966,51 @@ mod tests {
             std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
         }
         eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
+    }
+
+    #[test]
+    #[ignore = "local maximum declared-record candidate cost probe"]
+    fn measure_4096_record_candidate_revision() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let mut record_paths = vec![
+            "records/marker.record.json".to_owned(),
+            "scenes/main.scene.json".to_owned(),
+        ];
+        let mut staged_paths: Vec<String> = PATHS.iter().map(|path| (*path).to_owned()).collect();
+        for index in 1..4_095_u32 {
+            let path = format!("scenes/scene-{index:04}.scene.json");
+            let id = format!("7a5ef644-7225-4770-9f4d-{index:012x}");
+            fixture.write(
+                &path,
+                &serde_json::to_vec(&json!({
+                    "id":id, "type":"core.scene", "schema":1, "fields":{}
+                }))
+                .unwrap(),
+            );
+            record_paths.push(path.clone());
+            staged_paths.push(path);
+        }
+        record_paths.sort_unstable();
+        fixture.write(
+            "project.json",
+            &serde_json::to_vec(&json!({
+                "id":PROJECT_ID, "type":"core.project", "schema":2,
+                "fields":{
+                    "project.format":1,
+                    "project.records":record_paths,
+                    "project.schemas":["schemas/marker.schema.json"],
+                    "project.registryHistory":"schemas/history.registry.json",
+                    "project.entryScenes":[SCENE_ID]
+                }
+            }))
+            .unwrap(),
+        );
+        let staged_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
+        let stage = fixture.stage(&staged_refs);
+        let start = std::time::Instant::now();
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
+        eprintln!("records=4096 elapsed={:?}", start.elapsed());
     }
 }
