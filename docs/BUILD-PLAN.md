@@ -66,6 +66,11 @@ and qualified. The original visual-quality and flexible-provider ambitions remai
 
 ## Cloud design handoff
 
+The [checked cloud migration/build plan](design/modules/CLOUD-MIGRATION.md) is the active cloud queue, supported by
+the [modern research and pinned source-code map](design/research/ATMOSPHERICS-TECHNIQUES.md). The current commission
+delivers this independently reviewed written plan before building further. The older continuation below is scope/history, not
+a parallel implementation queue.
+
 The [cloud capability inventory](design/modules/CLOUD-CAPABILITIES.md) and [complete system design](design/modules/CLOUDS.md)
 are revised D2 design work under the [five-family commission](evidence/cloud-sky-design-2026-11-01/COMMISSION.md).
 The earlier [Q1 source proof](evidence/cloud-source-2026-11-01/REVIEW.md) and

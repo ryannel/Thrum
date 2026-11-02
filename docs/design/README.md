@@ -18,6 +18,10 @@ reference, not the host. Existing implementations are candidates for later recon
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).
 - [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; Bevy is not the selected host.
 
+[Cloud migration/build plan](modules/CLOUD-MIGRATION.md): tracked checkboxes, stage dependencies, code ownership,
+visual POCs and combined cost gates; [modern technique/source map](research/ATMOSPHERICS-TECHNIQUES.md). The research and
+planning checkpoint is [independently reviewed](../evidence/atmospherics-migration-2026-11-02/REVIEW.md); migration implementation has not started.
+
 [Cloud D2 extension](modules/CLOUDS.md): [complete capability inventory](modules/CLOUD-CAPABILITIES.md), proposed
 five-family/world-weather/transport model and [complete-sky research](research/CLOUD-SKY-SOURCES.md). Independent
 [comparison and scoped closure](../evidence/cloud-sky-design-2026-11-01/README.md) selected the proof model; implementation/quality remain unproven. The [historical local design](modules/CLOUD-LOCAL-CLIP.md) and its
