@@ -86,20 +86,27 @@ candidate still checks its selected paths explicitly.
 
 `originEvidence` binds one adjacent canonical JSON file by filename and
 SHA-256. That record names the Rust, Apple linker, Apple SDK and crates.io
-sources with version strings and official HTTPS URLs. Origin-record format two
-also binds three adjacent canonical proof reports by filename and SHA-256:
-selected Cargo archives, sparse-index records and extracted source. The
-format-two reports each commit to one portable selection digest over the
+sources with version strings and official HTTPS URLs. Origin-record format three
+binds six adjacent canonical proof reports by filename and SHA-256: selected
+Cargo archives, sparse-index records, extracted source, and installed Cargo,
+Rustc and host Rust standard-library components. The three Cargo format-two
+reports each commit to one portable selection digest over the
 target, lockfile hash, private-root identity and exact selected archive and
 index-record maps. The matcher checks that digest, target, lockfile/archive
 selection, selected private-root digest and report shape against the manifest
-and cache candidate. The digest excludes local installation paths. It checks
-the record's bytes, shape and official hostnames. It cannot prove that those
+and cache candidate. The digest excludes local installation paths. The three
+format-three Rust component reports list each checked installed payload and
+installer-metadata path, size and SHA-256. Metadata covers the installed
+channel record, components list and component manifest. The matcher collects
+those file identities while streaming
+the complete selected Rust root once, and checks both the root digest and the
+component witnesses. It checks the record's bytes, shape and official hostnames.
+It cannot prove that those
 URLs actually supplied the installed bytes or that the reports were produced
 by a controlled job; the release preparation job and human review own that
-claim. The installed Rust component proof is not yet bound to the selected
-tool-root digest. No real reviewed manifest is committed yet. The matcher
-reports an exact root and Cargo proof-receipt match with `buildReady:false`
+claim. Other installed Rust components, Apple/system reads and the compiler
+closure still need qualification. No real reviewed manifest is committed yet.
+The matcher reports an exact root and selected proof-receipt match with `buildReady:false`
 because selected compiler reads, system libraries, output provenance and
 publication remain open.
 
@@ -119,7 +126,9 @@ ustar file/directory subset plus short GNU long-name records, and refuses
 other archive extensions before their metadata can be buffered. XZ dictionary
 memory, decompressed bytes, member count and file sizes are bounded.
 Installed paths are read through held directory descriptors without following
-aliases. It reports `buildReady:false`.
+aliases. Its format-three report includes the sorted installed payload and
+installer-metadata file identities needed for one-pass root matching and keeps
+`buildReady:false`.
 It does not fetch the inputs or attest their HTTPS transport, make the
 installed tree immutable, verify other components, or replace human review of
 the release preparation job and complete tool/SDK/dependency closure. The

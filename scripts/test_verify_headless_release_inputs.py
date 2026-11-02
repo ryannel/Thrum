@@ -23,7 +23,7 @@ def write_json(path, value):
 
 
 def origin_record(proofs):
-    return {"format": 2, "sources": {
+    return {"format": 3, "sources": {
         "rustToolchain": {"url": "https://static.rust-lang.org/dist/", "version": "1.99.1"},
         "linkerToolchain": {"url": "https://developer.apple.com/download/", "version": "27.2"},
         "sdk": {"url": "https://developer.apple.com/download/", "version": "27.2"},
@@ -91,6 +91,16 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
         rustc = rust_toolchain / "bin/rustc"
         cargo.write_bytes(b"cargo")
         rustc.write_bytes(b"rustc")
+        standard_library = rust_toolchain / "lib/rustlib/libstd.rlib"
+        standard_library.parent.mkdir(parents=True)
+        standard_library.write_bytes(b"standard library")
+        rustlib = rust_toolchain / "lib/rustlib"
+        (rustlib / "multirust-channel-manifest.toml").write_bytes(b"installed channel")
+        (rustlib / "components").write_bytes(b"cargo\nrustc\nrust-std\n")
+        for component in ("cargo", "rustc", "rust-std"):
+            (rustlib / f"manifest-{component}-{TARGET}").write_bytes(
+                f"file:{component}\n".encode(),
+            )
         linker_toolchain = root / "linker-toolchain"
         (linker_toolchain / "bin").mkdir(parents=True)
         linker = linker_toolchain / "bin/clang"
@@ -146,6 +156,33 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
                 "matchedBytes": len(b"dependency"), "buildReady": False,
             },
         }
+        for name, component, file in (
+            ("rustCargo", "cargo", cargo),
+            ("rustc", "rustc", rustc),
+            ("rustStd", "rust-std", standard_library),
+        ):
+            raw = file.read_bytes()
+            metadata = [
+                rustlib / "components",
+                rustlib / f"manifest-{component}-{TARGET}",
+                rustlib / "multirust-channel-manifest.toml",
+            ]
+            reports[name] = {
+                "format": 3, "component": component, "target": TARGET,
+                "channelSha256": "a" * 64,
+                "archiveSha256": "b" * 64,
+                "matchedFiles": 1, "matchedBytes": len(raw),
+                "installedFiles": [{
+                    "path": file.relative_to(rust_toolchain).as_posix(),
+                    "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw),
+                }],
+                "installedMetadata": [{
+                    "path": path.relative_to(rust_toolchain).as_posix(),
+                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                    "bytes": path.stat().st_size,
+                } for path in metadata],
+                "buildReady": False,
+            }
         proof_descriptors = {}
         for name, report in reports.items():
             path = release / f"{name}.json"
@@ -267,6 +304,39 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
             report["selectionSha256"] = selection_sha256(alternate)
             self.rebind_proof(args, manifest, evidence, "cargoIndex", report)
             with self.assertRaisesRegex(ValueError, "origin proof selection differs"):
+                verify_release_inputs(*args)
+
+    def test_rust_receipt_does_not_match_selected_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, manifest, evidence = self.fixture(Path(directory).resolve())
+            record = json.loads(evidence.read_text())
+            proof = evidence.parent / record["proofs"]["rustc"]["file"]
+            report = json.loads(proof.read_text())
+            report["installedFiles"][0]["sha256"] = "0" * 64
+            self.rebind_proof(args, manifest, evidence, "rustc", report)
+            with self.assertRaisesRegex(ValueError, "receipts differ from selected tool root"):
+                verify_release_inputs(*args)
+
+    def test_rust_installer_metadata_receipt_does_not_match_selected_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, manifest, evidence = self.fixture(Path(directory).resolve())
+            record = json.loads(evidence.read_text())
+            proof = evidence.parent / record["proofs"]["rustc"]["file"]
+            report = json.loads(proof.read_text())
+            report["installedMetadata"][1]["sha256"] = "0" * 64
+            self.rebind_proof(args, manifest, evidence, "rustc", report)
+            with self.assertRaisesRegex(ValueError, "receipts differ from selected tool root"):
+                verify_release_inputs(*args)
+
+    def test_rust_shared_installer_metadata_must_agree(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, manifest, evidence = self.fixture(Path(directory).resolve())
+            record = json.loads(evidence.read_text())
+            proof = evidence.parent / record["proofs"]["rustc"]["file"]
+            report = json.loads(proof.read_text())
+            report["installedMetadata"][0]["sha256"] = "0" * 64
+            self.rebind_proof(args, manifest, evidence, "rustc", report)
+            with self.assertRaisesRegex(ValueError, "disagree on installed metadata"):
                 verify_release_inputs(*args)
 
     def test_manifest_syntax_and_selection_fail_closed(self):

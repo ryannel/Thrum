@@ -18,12 +18,15 @@ from inventory_headless_tool_roots import inventory_roots
 from prepare_headless_cargo_home import verify_reuse
 from release_cargo_selection import selection_sha256
 from verify_crates_io_archive_origin import locked_archives
+from verify_rust_component_archive import safe_relative
 
 
 PROFILE = "headless-macos-arm64-dev-v1"
 TARGET = "aarch64-apple-darwin"
 ROOT_NAMES = ("rustToolchain", "linkerToolchain", "sdk")
-PROOF_NAMES = ("cargoArchives", "cargoIndex", "cargoExtraction")
+CARGO_PROOFS = ("cargoArchives", "cargoIndex", "cargoExtraction")
+RUST_PROOFS = {"rustCargo": "cargo", "rustc": "rustc", "rustStd": "rust-std"}
+PROOF_NAMES = (*CARGO_PROOFS, *RUST_PROOFS)
 ORIGIN_HOSTS = {
     "rustToolchain": {"static.rust-lang.org"},
     "linkerToolchain": {"developer.apple.com", "download.developer.apple.com", "apps.apple.com"},
@@ -145,7 +148,7 @@ def validate_manifest(manifest):
 
 def validate_origin_evidence(record):
     exact_fields(record, ("format", "sources", "proofs"), "origin evidence")
-    if type(record["format"]) is not int or record["format"] != 2:
+    if type(record["format"]) is not int or record["format"] != 3:
         raise ValueError("unsupported origin evidence format")
     exact_fields(record["sources"], ORIGIN_HOSTS, "origin evidence sources")
     for name, source in record["sources"].items():
@@ -172,7 +175,7 @@ def validate_origin_evidence(record):
 
 
 def verify_origin_proofs(record, evidence_path, manifest, candidate, lock_bytes):
-    """Bind reviewed report bytes to one selected private root; no fetch occurs here."""
+    """Bind reviewed reports to selected inputs; return Rust file witnesses."""
     root = manifest["dependencyRoot"]["sha256"]
     selection = selection_sha256(candidate)
     reports = {}
@@ -185,11 +188,14 @@ def verify_origin_proofs(record, evidence_path, manifest, candidate, lock_bytes)
         if digest != descriptor["sha256"]:
             raise ValueError(f"origin proof bytes differ: {name}")
         if (not isinstance(report, dict) or type(report.get("format")) is not int
-                or report["format"] != 2
+                or report["format"] != (2 if name in CARGO_PROOFS else 3)
                 or report.get("target") != TARGET
-                or report.get("privateRootSha256") != root
-                or report.get("selectionSha256") != selection
                 or report.get("buildReady") is not False):
+            raise ValueError(f"origin proof selection differs: {name}")
+        if name in CARGO_PROOFS and (
+            report.get("privateRootSha256") != root
+            or report.get("selectionSha256") != selection
+        ):
             raise ValueError(f"origin proof selection differs: {name}")
         reports[name] = report
 
@@ -246,6 +252,74 @@ def verify_origin_proofs(record, evidence_path, manifest, candidate, lock_bytes)
             or extraction["matchedFiles"] == 0 or extraction["matchedBytes"] == 0):
         raise ValueError("cargo extraction proof differs from selected cache")
 
+    rust_files = {}
+    channel_hash = None
+    for name, component in RUST_PROOFS.items():
+        report = reports[name]
+        exact_fields(report, (
+            "format", "component", "target", "channelSha256", "archiveSha256",
+            "matchedFiles", "matchedBytes", "installedFiles", "installedMetadata",
+            "buildReady",
+        ), f"Rust component proof {name}")
+        if report["component"] != component:
+            raise ValueError(f"Rust component proof selection differs: {name}")
+        sha256_hex(report["channelSha256"], f"Rust component {name} channel")
+        sha256_hex(report["archiveSha256"], f"Rust component {name} archive")
+        if channel_hash is None:
+            channel_hash = report["channelSha256"]
+        elif report["channelSha256"] != channel_hash:
+            raise ValueError("Rust component proofs have different channel manifests")
+        files = report["installedFiles"]
+        count(report["matchedFiles"], f"Rust component {name} files")
+        count(report["matchedBytes"], f"Rust component {name} bytes")
+        if not isinstance(files, list) or not 0 < len(files) <= 10000:
+            raise ValueError(f"Rust component {name} has no bounded file witness")
+        previous = ""
+        total = 0
+        payload_paths = set()
+        for item in files:
+            exact_fields(item, ("path", "sha256", "bytes"), f"Rust component {name} file")
+            path = item["path"]
+            if not isinstance(path, str) or path <= previous or safe_relative(path).as_posix() != path:
+                raise ValueError(f"Rust component {name} file paths are not sorted and unique")
+            previous = path
+            sha256_hex(item["sha256"], f"Rust component {name} file hash")
+            count(item["bytes"], f"Rust component {name} file bytes")
+            if path in rust_files:
+                raise ValueError("Rust component proofs overlap installed files")
+            payload_paths.add(path)
+            rust_files[path] = {"sha256": item["sha256"], "bytes": item["bytes"]}
+            total += item["bytes"]
+        if report["matchedFiles"] != len(files) or report["matchedBytes"] != total:
+            raise ValueError(f"Rust component {name} totals differ from file witnesses")
+        metadata = report["installedMetadata"]
+        required = {
+            "lib/rustlib/multirust-channel-manifest.toml",
+            "lib/rustlib/components",
+            f"lib/rustlib/manifest-{component}-{TARGET}",
+        }
+        if not isinstance(metadata, list) or len(metadata) != len(required):
+            raise ValueError(f"Rust component {name} installer metadata witness differs")
+        previous_metadata = ""
+        for item in metadata:
+            exact_fields(item, ("path", "sha256", "bytes"),
+                         f"Rust component {name} installer metadata")
+            path = item["path"]
+            if (not isinstance(path, str) or path not in required or path in payload_paths
+                    or path <= previous_metadata):
+                raise ValueError(f"Rust component {name} installer metadata path differs")
+            previous_metadata = path
+            required.remove(path)
+            sha256_hex(item["sha256"], f"Rust component {name} installer metadata hash")
+            count(item["bytes"], f"Rust component {name} installer metadata bytes")
+            identity = {"sha256": item["sha256"], "bytes": item["bytes"]}
+            if path in rust_files and rust_files[path] != identity:
+                raise ValueError("Rust component proofs disagree on installed metadata")
+            rust_files[path] = identity
+        if required:
+            raise ValueError(f"Rust component {name} installer metadata witness missing")
+    return rust_files
+
 
 def selected_file_in_root(path, root, label):
     if not path.is_absolute() or path.is_symlink() or not path.is_file():
@@ -286,7 +360,7 @@ def verify_release_inputs(manifest_path, source, cache_manifest_path, private_ho
     lock_bytes = bounded_regular_bytes(source / "Cargo.lock", 4 * 1024 * 1024)
     if hashlib.sha256(lock_bytes).hexdigest() != manifest["lockSha256"]:
         raise ValueError("admitted lockfile bytes differ from reviewed release manifest")
-    verify_origin_proofs(record, evidence, manifest, candidate, lock_bytes)
+    rust_files = verify_origin_proofs(record, evidence, manifest, candidate, lock_bytes)
     selected_file_in_root(cargo, rust_toolchain, "Cargo")
     selected_file_in_root(rustc, rust_toolchain, "Rustc")
     selected_file_in_root(linker, linker_toolchain, "linker")
@@ -297,13 +371,15 @@ def verify_release_inputs(manifest_path, source, cache_manifest_path, private_ho
         raise ValueError("admitted build selection differs from reviewed release manifest")
     if candidate["privateRoot"] != manifest["dependencyRoot"]:
         raise ValueError("private dependency root differs from reviewed release manifest")
-    roots = inventory_roots({
+    roots, observed = inventory_roots({
         "rustToolchain": rust_toolchain,
         "linkerToolchain": linker_toolchain,
         "sdk": sdk,
-    })
+    }, {"rustToolchain": rust_files})
     if roots != manifest["toolRoots"]:
         raise ValueError("native tool roots differ from reviewed release manifest")
+    if observed["rustToolchain"] != rust_files:
+        raise ValueError("Rust component receipts differ from selected tool root")
     return {
         "format": 1, "profile": PROFILE, "manifestSha256": manifest_hash,
         "selectionKey": actual_key["sha256"], "matchedInputRoots": True,
