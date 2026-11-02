@@ -403,6 +403,10 @@
       "i2a_wal_backpressure": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-WAL-BACKPRESSURE.md",
         "scope": "A test-only guard checks WAL length before blob, batch, verification and root writes, with nonblocking PASSIVE/TRUNCATE attempts and bounded repeated PASSIVE work. A pinned-reader test proves blocked checkpoint defers a new blob before its header, matching retry/conflict and complete reuse remain available, and retry succeeds after drain. Per-transaction page-growth allowances are heuristic; a hard 2 GiB WAL cap, per-write free-space floor, production concurrency policy and crash recovery remain open."
+      },
+      "i2a_chunk_kill_recovery": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-CHUNK-KILL.md",
+        "scope": "A local two-process test kills a child after the first 4 MiB SQLite blob chunk commit and before complete-state publication. Reopen preserves the prior selected root, exposes one incomplete chunk, refuses its root publication, and permits full verified restage plus a new root across reopen. This does not test final-transaction kill, assembled source candidate recovery, power loss, GC pins or production acceptance."
       }
     },
     {
