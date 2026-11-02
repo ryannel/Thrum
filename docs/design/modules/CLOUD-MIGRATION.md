@@ -5,6 +5,9 @@ This is the tracked queue for cloud rework. [CLOUDS](CLOUDS.md) owns the module 
 [capabilities](CLOUD-CAPABILITIES.md) own required outcomes; [technique selection and pinned source map](../research/ATMOSPHERICS-TECHNIQUES.md)
 justify this plan. Existing work is evidence and reusable material, not a constraint on the replacement.
 The user explicitly prioritizes the best result over minimizing rework.
+The second review adds binding [POC definitions of done](CLOUD-PROOF-ACCEPTANCE.md) and a
+[CPU/GPU/allocation/memory contract](CLOUD-PERFORMANCE.md). These support this single queue; no second execution plan.
+The governing CLOUDS document now contains only current decisions; superseded mechanisms remain at its pinned Git link.
 
 Each POC must have a documented launch command/URL, pinned scenario, visible clock/build/status and usable controls.
 Every checkbox records its artifact/evidence when completed. A screen that merely opens, an unobserved export or a
@@ -12,7 +15,11 @@ numerical report without the required visible effect is not a completed POC.
 
 ## Progress and rules for updating it
 
-A checkbox means the named deliverable and its stated gate passed. Every completed build stage links an evidence
+A checkbox means the named deliverable and its stated gate passed, in the exact scope defined by the
+[acceptance contract](CLOUD-PROOF-ACCEPTANCE.md). Each P row records implementation, contract/numerical, visible quality,
+observed motion, coupled consumers, cost-risk and actual-device status separately; a scoped helper pass never greens
+the whole stage. All new POC dimensions are currently unrun, except the explicitly preserved old baseline.
+A checkbox means no more than that scope. Every completed build stage links an evidence
 record with source/build, fixture/reference, actual images and motion, numerical findings and measured scope.
 Use `not started`, `in progress`, `blocked by <dependency>`, `failed <gate>` or `passed <scope>` in the status table.
 A rejected candidate is a recorded outcome, not a completed capability. Tests, reviews, visuals, performance and user
@@ -21,25 +28,32 @@ acceptance are separate. Update this file, the owning capability rows and eviden
 | Stage | Dependency | Status / evidence |
 | --- | --- | --- |
 | D0 Research and current-code reconciliation | Original brief | Passed research/audit scope; [retained studies](../../evidence/atmospherics-migration-2026-11-02/REVIEW.md) |
-| D1 Hardened architecture and proof plan | D0, independent reviews | Passed planning scope; [32 finding dispositions](../../evidence/atmospherics-migration-2026-11-02/REVIEW.md); docs checks passed |
-| P0 Observable proof bench and contract seam | D1 | Baseline preserved in a124167; new harness not started |
+| D1 Hardened architecture and proof plan | D0, independent reviews | First battery passed its dated planning scope; [32 dispositions](../../evidence/atmospherics-migration-2026-11-02/REVIEW.md) |
+| D1R2 Modernity / coherence / CPU-memory / visual DoD review | D1 | Passed planning scope; [second battery and dispositions](../../evidence/atmospherics-migration-round2-2026-11-02/REVIEW.md); execution gates unrun |
+| P0 Observable proof bench and contract seam | D1/D1R2 | Baseline preserved in a124167; new harness not started |
 | P1a One-source lifecycle/control feasibility | P0 | Not started; no accepted new master |
 | P2a Bounded validated air/sky reference | P0 | Not started; Sun-only WIP is narrower |
 | P3a Minimal multi-source/light/view seam | P1a + P2a/versioned clear-sky reference | Not started |
 | P4a Spatial coupled sentinel + early scaling | P1a/P2a/P3a minimums | Not started; must precede content expansion |
-| P1b/P2b/P3b Branch content / full LUTs / production renderer | P4a | Not started |
+| P1b Branch content and height-wind control | P4a | Not started |
+| P2b Full LUT atmosphere | P4a | Not started |
+| P3b Production source/light/view | P4a; source format freeze also P1b | Not started |
 | P4b Reconstruction and full overlap sentinel | P1b/P2b/P3b | Not started |
 | P5 All isolated families and variants | P4b | Not started |
 | P6 Weather/combined layers | P5 | Not started |
 | P7 Scale, adverse cases and device admission | P6; cost screening throughout | Not started |
 | P8 Thrum runtime integration | Accepted proof + I1/I2/I3 dependencies | Not started; Rust runtime does not exist |
 
-Execution order is **D1 -> P0 -> P1a/P2a/P3a minimums -> P4a -> P1b/P2b/P3b -> P4b -> P5 -> P6 -> P7**.
+Execution order is **D1/D1R2 -> P0 -> P1a/P2a/P3a minimums -> P4a -> P1b/P2b/P3b -> P4b -> P5 -> P6 -> P7**.
 P2a may run alongside source work; P4a does not wait for full atmosphere qualification, Cb, far rendering or history.
 
 The old implementation continuation is suspended while this migration is planned. Source work still needs tool/content
 qualification; the plan explicitly executes those bounded choices before dependent production work. No old queue or persistent goal
 automatically restarts. This document commissions no purchase, bulk asset campaign or automatic engine promotion.
+
+For implementation, instantiate the seven-column status vector and proof card for **each** P stage/substage before its
+first edit. Link evidence from the row when it changes; retain failures/unrun device gates even when another dimension
+passes and dependent scoped work proceeds. Do not turn unavailable M2 into a cost pass.
 
 ## Why the existing path stalled
 
@@ -199,6 +213,30 @@ silent source replacement. Initial weather stories schedule compatible branch wi
 clouds; this is controllable authored weather, not arbitrary instantaneous morphing. If the required weather response
 cannot be authored with a finite branch set, revise the content route before building the larger weather controller.
 
+
+**Admitted prepared-master wind mapping, before format freeze.** The first local profile admits wind-free masters and
+continuous horizontal winds affine in height: `u(h,t)=u_b(t)+s(t)*(h-h_b)`, fixed base h_b and bounded shear vector s.
+For this bounded Cartesian fixture, h=X_y, anchor_y=h_b, xi_y=h-h_b and u_b has zero vertical component. The spherical
+radial-height/chart profile is separately admitted, not silently replaced by this local height. Let anchor derivative be u_b, `G(t)=integral_birth^t s(v)dv`, and
+`X=anchor(t)+(xi_x+G_x*xi_y, xi_y, xi_z+G_z*xi_y)`. The inverse subtracts G*xi_y after recovering local height;
+determinant is1 and changing this instance map alone needs no source voxel rebuild. Its changed bounds, light and
+history dependencies still invalidate and their costs count. Both endpoint samples use the same current inverse; the earlier
+mix/filter commutation claim remains limited to the cooked coordinate/filter, not arbitrary world-space filtering.
+Optical coefficients retain m^-1 meaning along the **world-metre** ray. Do not normalize the inverse ray without
+converting its path parameter; choose steps/LOD using the inverse-map footprint/Jacobian and transformed support union.
+
+This is an authored affine-shear approximation, not exact Lagrangian meteorology for vertically changing matter.
+For a valid material trajectory xi(phi) in metres, the chain rule is
+`dX/dt=anchor_dot+A_dot*xi+A*(dxi/dphi)*phi_dot`, with dxi/dphi in metres per phase unit and phi_dot in phase units/s.
+Internal rise/renewal is source-relative, not another wind term. Where birth/loss prevents correspondence, history rejects it. Export must declare no baked reference wind, or an explicitly invertible,
+validated removal; unknown bake wind fails admission. A midlife wind ramp changes G continuously without resetting ID,
+phase or shape. P1b/P3b predeclare shear/condition/footprint limits, test inverse/ray/support and optical error, and
+show same-event source/Sun/reflected response. Extreme or nonlinear/rotating-height profiles outside this regime are
+rejected at authoring/admission or require a separately cooked wind-conditioned continuation/map **before use**.
+The full spherical/height-wind fixtures retain their own chart mapping/admission proof; this local formula cannot
+silently qualify them. If the required weather story exceeds the admitted map/continuations, revise the source route
+before library production rather than adding rigid drift in P6.
+
 **Joint integration rule.** V3 transport is the sole view integrator. Build sorted entry/exit intervals from planet,
 geometry, cloud supports and bounded fog. In intervals touched by cloud/fog or spatial shadow, evaluate total local
 extinction and source (air single scattering using RGB Sun transmission plus Hillaire higher-order air term, fog and
@@ -302,8 +340,11 @@ until adopted witnesses and recipes are recoverable and linked. No Broadsides co
 
 ## Budget account and reductions
 
-Targets remain browser M2-class WebGPU1280x720: clouds<=5 ms, whole GPU<=16 ms, whole browser<=512 MiB;
-native clouds<=3 ms within10 ms. No device admission is claimed. The cloud allocation includes source prep, shadows,
+Targets remain browser M2-class WebGPU1280x720: clouds<=5 ms GPU, proposed cloudCPU0.5ms/fullCPU8ms,
+whole GPU<=16 ms, whole browser<=512 MiB;
+native clouds<=3 ms within10 ms (earlier fullCPU5ms objective retained). No device admission is claimed.
+P7 measures/adopts only the standalone cloud/atmosphere fixture scope. Actual Thrum full-frame/browser-memory and
+real rough-water/transparency admission remain P8, with a production-like proxy cost envelope before P3b/P4b freeze. The cloud allocation includes source prep, shadows,
 cloud light, main/reflected/environment cloud work and reconstruction; clear-air work is additional in the full frame.
 
 Initial **allocation objectives, not predictions** for the 5 ms cloud envelope: source0.45, shadow0.55, light0.45,
@@ -318,12 +359,15 @@ and full-coverage/cut refresh explicitly; 1/16 interleaving cannot be the only r
 rays count separately. Counters must reveal occupied/empty steps, local rays, fallback/direct queries, dirty source
 voxels, uploaded bytes and history rejection, not only view resolution.
 
-Initial **resource reservations**, not measured process residency: encoded working library64 MiB, decoded current
-source pool48, bounds/index8, shared cloud light/shadows8, view/history products32, upload/staging16, clear-air/env8
+Initial **resource reservations**, not measured process residency: all simultaneous CPU+GPU encoded copies combined64 MiB, physical decoded endpoint/current
+source pool48 including guards/mips, bounds/index8, shared cloud light/shadows8, view/history products32, concurrent CPU/GPU upload/readback staging16, clear-air/env8
 (total184 MiB). The accounting remainder328 MiB is **not measured available headroom**; it must cover browser/JS or Wasm/compiler/scene/driver and peak duplication. Exhaustion
 rejects admission; it does not silently kill retained clouds. A128^3 R8 frame is2 MiB;16 frames already32 MiB per
 unique clip before flow/guards/mips. A full512^3 R8 field is128 MiB. These arithmetic examples reject blind full-world
 storage; P1 must demonstrate actual temporal/spatial compression and peak bytes within the selected library.
+
+The [performance contract](CLOUD-PERFORMANCE.md) fixes copy/lifetime scope, bounded async observation, CPU/index/GC
+work, candidate cancellation, cold pipelines and the steady/burst measurement protocol. Its per-stage worklist is mandatory.
 
 P1 measures simultaneous retained encoded CPU/GPU bytes, decoded CPU cache (if any), physical GPU texture/guard/mip bytes,
 old+new generation overlap, staging and histories at cold load, seek, quality switch and recovery. Reservation arithmetic
@@ -351,7 +395,9 @@ Do not assume per-frame/network streaming exists. If masters exceed the pool, P1
 paging/upload/seek deadlines or revise the source cook before P3—not defer it to engine integration. Portable R8/half
 packing is baseline; optional sliced-3D compressed formats require adapter and filtered-error qualification.
 
-Reduction order to qualify: remove duplicate/unchanged preparation; conservative empty-space and footprint LOD;
+Reduction priorities are hypotheses selected by the measured bottleneck, with separate exact-work, representation
+and perceptual-reduction ledgers (CPU/GC, bandwidth/residency, lighting, fill and reconstruction differ). Start with
+removing duplicate/unchanged preparation; conservative empty-space and footprint LOD;
 shared low-frequency light/shadows; independently budget reflection/env cadence; mixed view resolution with fresh
 change masks; temporal reuse where valid; then reduce high-order/ground-bounce/shaft detail. Keep family identity,
 local lifecycle, current world time, horizon continuity and consumer coherence. Every reduction states actual saved
@@ -397,10 +443,20 @@ reasoned representation choice, not a5ms prediction.
 - [x] Run docs/link/hash checks:221 Markdown files/1266 local links, maturity hashes and crate policy passed.
 - [x] Deliver the reviewed planning checkpoint on `codex/cloud-system-design` and push it to origin. No migration shader/content building in D1.
 
+### D1R2 — second independent review
+
+- [x] Review2026 applicability, whole-system coherence, CPU/GPU/memory/allocations and per-stage visual DoD independently.
+- [x] Resolve current findings, verify consequential math/contract changes, retain limitations and rejected objections.
+- [x] Validate docs/hashes and commit/push this review checkpoint; no renderer/content implementation started here.
+
 ### P0 — observable comparison bench
 
 - [x] Preserve old build/source/evidence and paused WIP status in earlier evidence plus [a124167 Sun-only checkpoint](../../evidence/cloud-air-sun-2026-11-02/README.md); this is preservation, not a new renderer.
-- [ ] Create thin proof runner, immutable scenario/source/view manifest and explicit source->light->view pass graph.
+- [ ] Create only a thin proof runner, immutable scenario/source/view manifest and explicit source->light->view graph.
+  Follow the P0 on-screen/negative-control definition of done; no generic engine/editor/allocator framework.
+- [ ] Use bounded candidate/in-flight queues, coalesce superseded work and nonblocking timestamp/counter rings; record
+  CPU allocations/GC, pending/cancelled bytes, deadline and actual frame-time scopes. No authority/input GPU waits.
+- [ ] Pin finite shader-demand/prewarm manifest and first-use timing; no per-event/time shader specialization.
 - [ ] Implement a minimal authored world event/front track immediately: stable IDs, birth/loss controls, height wind,
   one timestamp and deterministic seek. P6 expands this provider; it does not introduce world authority for the first time.
 - [ ] Pin a small visual board: family stills, watched lifecycle spans/time ratios, clear/hazy/low-Sun horizon, broken/
@@ -462,6 +518,8 @@ reasoned representation choice, not a5ms prediction.
 
 ### P1b/P2b/P3b — complete the production choices after the sentinel
 
+- [ ] P1b: test the admitted midlife height-wind/deformation map with source, Sun-depth and reflected queries before
+  source-format freeze; inverse/support/Jacobian/optical limits and baked-wind removal are explicit.
 - [ ] P1b: author a compatible Cu->Cb deepening branch from the existing boundary state, cap/outflow/anvil and unequal
   core/anvil decay. Change the permitted driver mid-life; reject global blended replacement, faded disk or discontinuity.
 - [ ] P2b: implement the four-LUT family with Rayleigh, Mie scattering/absorption, ozone, planet/ground blocking and
@@ -472,6 +530,11 @@ reasoned representation choice, not a5ms prediction.
   images/moving Sun and compare independent reference. Reject horizon/scalar-alpha hue errors or duplicate aerial transport.
 - [ ] P3b: pooled source atlas/bounds, footprint LOD and conservative occupancy/SDF versus fixed-step reference. Test temporal
   support union, quantization/erosion displacement and near/far transition without density duplication or lost gaps.
+- [ ] P3b/P4b: if lighting dominates, compare per-pixel integration with selective lighting-rate reduction against whole-
+  image mixed resolution using dense/sparse Cu/deck/storm, births/cuts/64x, thin edges and fog/geometry joins. Query subgroup
+  support or qualify a portable workgroup/cache path; do not transfer Smolder console or async-overlap claims.
+- [ ] P3b/P4b: bound a production-like rough-reflection/depth/transparency proxy's extra rays/filter/history/bytes/latency;
+  the analytic mirror alone cannot admit later water cost. Actual water/engine quality remains P8.
 - [ ] P3b: select filtered Sun/shadow plus short local rays and bounded cloud source closure using held front/back/side,
   thin/thick/low-Sun/inside/above cases. Keep point queries separately capped/admitted; compare old fit/deep alternatives.
 - [ ] Fill the per-scenario steady/burst worksheet above using measured P1/P4 terms, including host seek/decode/upload
@@ -520,7 +583,9 @@ independent reflection/view acceptance**. Four is the planned inspection sample,
 - [ ] Exercise cold load, upload peaks, long run, all-off/main-hidden, resize, quality changes and resource recreation/device loss.
 - [ ] Inspect beauty/motion first, then exclusive benchmark runs: exact device/browser/backend, viewport/DPR, warmup,
   time series p50/p95/p99/max, display cadence, source/upload/light/main/reflection/env/reconstruction work and real memory scope.
-- [ ] Qualify M2/WebGPU5/16ms and512MiB; if unavailable report unqualified, do not substitute M3 or estimate certification.
+- [ ] Qualify the exact accepted **standalone cloud/air fixture** on M2/WebGPU: cloud5ms, fixture total16ms and measured
+  fixture-browser peak512MiB comparisons, with predeclared p95/duration/burst protocol. This does not qualify the real
+  Thrum frame, rough-water/transparency or full product residency; those are P8. Missing M2/counters stay unqualified.
 - [ ] Retain failed assumptions and choose corrective architecture/quality work without erasing required lifecycle or consumers.
 
 ### P8 — production handoff and Thrum integration
@@ -529,10 +594,16 @@ independent reflection/view acceptance**. Four is the planned inspection sample,
 - [ ] Integrate one provider and shared WGSL/resource contracts; retire adopted prototype globals/duplicate paths after parity review.
 - [ ] Exercise headless semantics, provider omission/replacement, admission/restart, save/replay/network facts and device recovery.
 - [ ] Integrate actual rough-water BRDF/depth/transparency consumers; a perfect mirror remains only a scoped proof.
-- [ ] Run native workload and3/10ms qualification on actual native host; keep browser/native/engine maturity separate.
+- [ ] Run actual integrated engine browser/full-frame/memory and native3/10ms qualification with real consumers on
+  their actual hosts; keep standalone/browser/native/engine maturity and every missing measurement separate.
 - [ ] Deliver recoverable source packages, exact references/tool/license pins, selected runtime products, capability evidence and cleanup.
 
 ## Visual and review discipline
+
+The [common proof packet, status vector and per-stage DoD](CLOUD-PROOF-ACCEPTANCE.md) are binding for every P checkbox.
+Each variant/story needs its own local lifecycle and basic consumer witnesses; one per family takes the full adverse
+view/light matrix. Same accepted quality is used in timing. Definitions of done and performance protocols are frozen
+before examining candidate results, not chosen retrospectively.
 
 For every consequential change, inspect a native-size ordinary image promptly, plus the diagnostic that can reject its
 model. Observe continuous motion at normal and accelerated speed before making a motion claim. Compare controlled

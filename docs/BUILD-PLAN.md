@@ -67,7 +67,9 @@ and qualified. The original visual-quality and flexible-provider ambitions remai
 ## Cloud design handoff
 
 The [checked cloud migration/build plan](design/modules/CLOUD-MIGRATION.md) is the active cloud queue, supported by
-the [modern research and pinned source-code map](design/research/ATMOSPHERICS-TECHNIQUES.md). The current commission
+the [modern research and pinned source-code map](design/research/ATMOSPHERICS-TECHNIQUES.md),
+[observable POC definitions of done](design/modules/CLOUD-PROOF-ACCEPTANCE.md) and
+[CPU/GPU/allocation/memory contract](design/modules/CLOUD-PERFORMANCE.md). The current commission
 delivers this independently reviewed written plan before building further. The older continuation below is scope/history, not
 a parallel implementation queue.
 
