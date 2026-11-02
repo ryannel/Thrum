@@ -198,8 +198,9 @@ Proof order:
    An opt-in macOS sandbox run denies network, checkout reads and input-tree
    writes. A later local run uses a private Cargo home, restricted source and
    cache reads, and a cleared compiler environment. Broad system read roots,
-   unauthenticated index records and unclosed selected build units remain. It
-   does not attest the compiler/dependency closure or make the adapter trusted.
+   unproved index completeness, unreviewed release inputs and unclosed selected
+   build units remain. It does not attest the compiler/dependency closure or
+   make the adapter trusted.
 3. Publish and reload a verified target manifest and binary/product closure;
    corrupt/missing bytes and interrupted publication refuse, while the prior
    ready build remains available.

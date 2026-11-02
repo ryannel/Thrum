@@ -154,7 +154,7 @@ def tar_number(raw):
     return int(digits, 8)
 
 
-def tar_members(stream):
+def tar_members(stream, capture_manifest=False):
     """Yield bounded tar members; accept only short GNU long-name records."""
     count = 0
     pending_name = None
@@ -209,7 +209,7 @@ def tar_members(stream):
         if size > 1024 * 1024 * 1024:
             raise ValueError("archive member exceeds first-profile bound")
         content = hashlib.sha256()
-        manifest_bytes = bytearray() if path.name == "manifest.in" else None
+        manifest_bytes = bytearray() if capture_manifest and path.name == "manifest.in" else None
         if manifest_bytes is not None and size > 1024 * 1024:
             raise ValueError("archive component manifest is too large")
         remaining = size
@@ -300,7 +300,9 @@ def _compare_component(channel_path, sidecar_path, archive_path, root_fd, compon
         sizes = {}
         manifests = {}
         unpacked_bytes = 0
-        for name, digest, size, manifest_bytes in tar_members(BoundedXZReader(archive)):
+        for name, digest, size, manifest_bytes in tar_members(
+            BoundedXZReader(archive), capture_manifest=True,
+        ):
             if digest is None:
                 continue
             if name in hashes or name in manifests:

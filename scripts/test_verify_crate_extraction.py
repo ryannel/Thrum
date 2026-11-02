@@ -20,7 +20,7 @@ class CrateExtraction(unittest.TestCase):
         payload["privateRoot"] = root_inventory(private)
         candidate.write_text(json.dumps(payload))
 
-    def fixture(self, root, nested_empty=False):
+    def fixture(self, root, nested_empty=False, large_manifest=False):
         private = root / "private"
         registry = "index.crates.io-fixture"
         cache = private / "registry/cache" / registry
@@ -29,6 +29,9 @@ class CrateExtraction(unittest.TestCase):
         (source / "src").mkdir(parents=True)
         content = b"pub fn sample() {}\n"
         (source / "src/lib.rs").write_bytes(content)
+        manifest_content = b"x" * (1024 * 1024 + 1) if large_manifest else None
+        if manifest_content is not None:
+            (source / "manifest.in").write_bytes(manifest_content)
         if nested_empty:
             (source / "empty/child").mkdir(parents=True)
         (source / ".cargo-ok").write_bytes(b'{"v":1}')
@@ -41,6 +44,10 @@ class CrateExtraction(unittest.TestCase):
             member = tarfile.TarInfo("sample-1.2.3/src/lib.rs")
             member.size = len(content)
             tar.addfile(member, io.BytesIO(content))
+            if manifest_content is not None:
+                member = tarfile.TarInfo("sample-1.2.3/manifest.in")
+                member.size = len(manifest_content)
+                tar.addfile(member, io.BytesIO(manifest_content))
             if nested_empty:
                 member = tarfile.TarInfo("sample-1.2.3/empty/child")
                 member.type = tarfile.DIRTYPE
@@ -78,6 +85,14 @@ class CrateExtraction(unittest.TestCase):
             )
             report = compare(candidate, private, lockfile)
             self.assertEqual(report["matchedFiles"], 1)
+
+    def test_crate_manifest_name_is_ordinary_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            candidate, private, lockfile, _ = self.fixture(
+                Path(directory).resolve(), large_manifest=True,
+            )
+            report = compare(candidate, private, lockfile)
+            self.assertEqual(report["matchedFiles"], 2)
 
     def test_changed_or_extra_extracted_source_refuses(self):
         with tempfile.TemporaryDirectory() as directory:
