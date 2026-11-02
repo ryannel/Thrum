@@ -298,7 +298,7 @@
       },
       "i2a_native_space_plan": {
         "evidence": "../evidence/i2a/SOURCE-SPACE-PLAN.md",
-        "scope": "User-selected native disk thresholds are configurable planning targets rather than hard physical caps. The provisional staging API now accepts a SourceSpacePlan and a fixture proves early refusal under a low temporary target and successful capture under a raised target. SQLite admission, actual-space-fault recovery, cross-platform high-water measurement and accepted source remain open."
+        "scope": "User-selected native disk thresholds are configurable planning targets rather than hard physical caps. The provisional staging API accepts a SourceSpacePlan; fixtures prove early refusal under a low temporary target, successful capture under a raised target, and a small-source WAL estimate below the full unused stop target. SQLite admission, actual host-volume fault recovery, cross-platform high-water measurement and accepted source remain open."
       },
       "i2a_bootstrap_semantics": {
         "evidence": "../evidence/i2a/SOURCE-BOOTSTRAP.md",
