@@ -28,6 +28,7 @@ const FIRST_PROFILE_MANIFEST_BYTES: usize = 64 * 1024 * 1024;
 const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
 const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
+const SMALL_BATCH_FILE_BYTES: u64 = 4 * 1024;
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
 struct Fixture(PathBuf);
@@ -550,14 +551,7 @@ impl RootTransactionProof {
             if expected_generation > 0 {
                 self.compare_staged_candidate_with_current_root(expected_generation, candidate)?;
             }
-            for file in candidate.registry().stage().files() {
-                let mut reader = candidate
-                    .registry()
-                    .stage()
-                    .open(file.path())
-                    .map_err(ProofError::CandidateFile)?;
-                self.stage_blob(&mut reader, file.length(), *file.sha256())?;
-            }
+            self.stage_candidate_files(candidate)?;
             let stored_revision = self.stage_manifest_chunked(&manifest)?;
             if stored_revision != revision {
                 return Err(ProofError::HashMismatch);
@@ -583,6 +577,53 @@ impl RootTransactionProof {
                 }
             }
         }
+    }
+
+    fn stage_candidate_files(&mut self, candidate: &StagedCandidate<'_>) -> Result<(), ProofError> {
+        let stage = candidate.registry().stage();
+        let mut entries: Vec<([u8; 32], std::ops::Range<usize>)> = Vec::new();
+        let mut bytes = Vec::new();
+        for file in stage.files() {
+            if file.length() <= SMALL_BATCH_FILE_BYTES {
+                let length = usize::try_from(file.length()).map_err(|_| ProofError::InputLength)?;
+                if entries.len() == SMALL_BATCH_FILES || bytes.len() + length > SMALL_BATCH_BYTES {
+                    self.flush_candidate_batch(&mut entries, &mut bytes)?;
+                }
+                let mut reader = stage.open(file.path()).map_err(ProofError::CandidateFile)?;
+                let start = bytes.len();
+                bytes.resize(start + length, 0);
+                reader
+                    .read_exact(&mut bytes[start..])
+                    .map_err(|_| ProofError::InputIo)?;
+                let mut extra = [0_u8; 1];
+                if reader.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
+                    return Err(ProofError::InputLength);
+                }
+                entries.push((*file.sha256(), start..bytes.len()));
+            } else {
+                self.flush_candidate_batch(&mut entries, &mut bytes)?;
+                let mut reader = stage.open(file.path()).map_err(ProofError::CandidateFile)?;
+                self.stage_blob(&mut reader, file.length(), *file.sha256())?;
+            }
+        }
+        self.flush_candidate_batch(&mut entries, &mut bytes)
+    }
+
+    fn flush_candidate_batch(
+        &mut self,
+        entries: &mut Vec<([u8; 32], std::ops::Range<usize>)>,
+        bytes: &mut Vec<u8>,
+    ) -> Result<(), ProofError> {
+        if !entries.is_empty() {
+            self.stage_small_blob_batch(
+                entries
+                    .iter()
+                    .map(|(hash, range)| (*hash, &bytes[range.clone()])),
+            )?;
+            entries.clear();
+            bytes.clear();
+        }
+        Ok(())
     }
 
     fn stage_blob(
@@ -2199,4 +2240,99 @@ fn measure_small_blob_reuse_cost() {
         elapsed.as_secs_f64() * 1000.0,
         store.scratch.capacity()
     );
+}
+
+#[test]
+#[ignore = "local SQLite main/WAL growth probe"]
+fn measure_sqlite_physical_growth() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    store
+        .conn
+        .execute_batch("PRAGMA wal_autocheckpoint=0;")
+        .unwrap();
+    let snapshot = |label: &str, store: &RootTransactionProof| {
+        let main = fs::metadata(fixture.database()).unwrap().len();
+        let wal = fs::metadata(fixture.database().with_extension("sqlite-wal"))
+            .map(|metadata| metadata.len())
+            .unwrap_or(0);
+        let pages: i64 = store
+            .conn
+            .query_row("PRAGMA page_count", [], |row| row.get(0))
+            .unwrap();
+        let free: i64 = store
+            .conn
+            .query_row("PRAGMA freelist_count", [], |row| row.get(0))
+            .unwrap();
+        eprintln!("physical_growth {label} main={main} wal={wal} pages={pages} free={free}");
+    };
+    snapshot("schema", &store);
+    let mut large = vec![0_u8; CHUNK_BYTES];
+    for (index, byte) in large.iter_mut().enumerate() {
+        *byte = (index as u64)
+            .wrapping_mul(0x9e3779b97f4a7c15)
+            .to_le_bytes()[3];
+    }
+    let hash: [u8; 32] = Sha256::digest(&large).into();
+    store
+        .stage_blob(&mut large.as_slice(), large.len() as u64, hash)
+        .unwrap();
+    snapshot("one_4mib_blob", &store);
+    let files: Vec<_> = (0_u64..1_000)
+        .map(|index| {
+            let bytes = index.to_le_bytes();
+            let hash: [u8; 32] = Sha256::digest(bytes).into();
+            (hash, bytes)
+        })
+        .collect();
+    for group in files.chunks(SMALL_BATCH_FILES) {
+        store
+            .stage_small_blob_batch(group.iter().map(|(hash, bytes)| (*hash, bytes.as_slice())))
+            .unwrap();
+    }
+    snapshot("plus_1000_tiny_blobs", &store);
+    store
+        .stage_blob(&mut large.as_slice(), large.len() as u64, hash)
+        .unwrap();
+    snapshot("after_complete_reuse", &store);
+    let checkpoint: (i64, i64, i64) = store
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    eprintln!("physical_growth checkpoint={checkpoint:?}");
+    snapshot("after_truncate", &store);
+
+    let batch_fixture = Fixture::new();
+    let mut batched = RootTransactionProof::open(&batch_fixture.database()).unwrap();
+    batched
+        .conn
+        .execute_batch("PRAGMA wal_autocheckpoint=0;")
+        .unwrap();
+    for group in files.chunks(SMALL_BATCH_FILES) {
+        batched
+            .stage_small_blob_batch(group.iter().map(|(hash, bytes)| (*hash, bytes.as_slice())))
+            .unwrap();
+    }
+    let batched_wal = fs::metadata(batch_fixture.database().with_extension("sqlite-wal"))
+        .unwrap()
+        .len();
+    eprintln!("physical_growth batched_1000_tiny_wal={batched_wal}");
+
+    let individual_fixture = Fixture::new();
+    let mut individual = RootTransactionProof::open(&individual_fixture.database()).unwrap();
+    individual
+        .conn
+        .execute_batch("PRAGMA wal_autocheckpoint=0;")
+        .unwrap();
+    for (hash, bytes) in &files {
+        individual
+            .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, *hash)
+            .unwrap();
+    }
+    let individual_wal = fs::metadata(individual_fixture.database().with_extension("sqlite-wal"))
+        .unwrap()
+        .len();
+    eprintln!("physical_growth individual_1000_tiny_wal={individual_wal}");
 }

@@ -391,6 +391,10 @@
       "i2a_candidate_root_proof": {
         "evidence": "../evidence/i2a/SOURCE-CANDIDATE-ROOT-PROOF.md",
         "scope": "A test-only three-file validated candidate passes staged-byte verification, current-root lineage, complete file/manifest blobs and atomic root/outcome generation commit. A/B edit, drift/lineage/stale/token refusal, reopened retry and concurrent same-token winner pass; local edit-to-root timing/RSS is recorded. Physical disk/WAL reservation, GC pins, process-kill recovery, game-schema breadth and production admission remain open."
+      },
+      "i2a_sqlite_physical_growth": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-PHYSICAL-GROWTH.md",
+        "scope": "A test-only candidate path batches staged files of at most 4 KiB through the bounded 128-file/1 MiB SQLite writer while preserving staged-byte hashes, root CAS and retry. Local release measurements compare logical main/WAL lengths for a 4 MiB blob, 1,000 tiny blobs, complete reuse and an unblocked truncate checkpoint; matched batched and individual tiny-file stores differ 26.8x in WAL length. This is not a worst-case physical admission reserve, allocated-block/free-space proof, blocked checkpoint, kill recovery or production API."
       }
     },
     {
