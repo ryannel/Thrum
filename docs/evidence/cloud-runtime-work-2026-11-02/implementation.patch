@@ -384,7 +384,7 @@
 +    drainRequests();
    }
  }
- 
+
 +function startWorldEpoch() {
 +  weather = new Weather(71, {
 +    ...inputs(),
@@ -605,7 +605,7 @@
      uiDirty = true;
    }
  };
- 
+
  document.addEventListener("input", () => {
 +  abortMeasurement("Fixture input changed");
    uiDirty = true;
