@@ -92,13 +92,15 @@ export class ScalarField {
   static async create(device, dimensions, levelCount = 3) {
     const result = new ScalarField();
     result.device = device;
-    result.levels = [];
+    result.levels = [];result.resources=[];
+    const own=resource=>{result.resources.push(resource);return resource;};
+    try {
     let current = [...dimensions];
     for (let level=0; level<levelCount; level++) {
       const physical = physicalDimensions(current);
-      const texture = device.createTexture({label: `scalar level ${level}`, dimension:'3d', size:physical,
-        format:'rgba16float', usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.COPY_SRC});
-      const uniform = device.createBuffer({size:64, usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+      const texture = own(device.createTexture({label: `scalar level ${level}`, dimension:'3d', size:physical,
+        format:'rgba16float', usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.COPY_SRC}));
+      const uniform = own(device.createBuffer({size:64, usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST}));
       result.levels.push({dimensions:[...current], physical, texture, uniform,
         bytes:physical.reduce((a,b)=>a*b,1)*8});
       current = current.map(x=>Math.ceil(x/2));
@@ -108,7 +110,7 @@ export class ScalarField {
     result.mipGroups = [];
     for (let level=1; level<levelCount; level++) {
       const parent=result.levels[level-1], child=result.levels[level];
-      const dimensions=device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+      const dimensions=own(device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST}));
       device.queue.writeBuffer(dimensions,0,new Uint32Array([...parent.dimensions,0]));
       const group=device.createBindGroup({layout:result.mipPipeline.getBindGroupLayout(0),entries:[
         {binding:0,resource:{buffer:child.uniform}}, {binding:1,resource:child.texture.createView()},
@@ -117,9 +119,10 @@ export class ScalarField {
       result.mipGroups.push({group,dimensions});
     }
     return result;
+    } catch(error){result.destroy();throw error;}
   }
 
-  setParameters(lo, extent, sourceTime = 0) {
+  setParameters(lo, extent, sourceTime = 0, sourceValues = null, sourceTag = 0) {
     const base=this.levels[0].dimensions;
     for (let index=0; index<this.levels.length; index++) {
       const level=this.levels[index];
@@ -128,7 +131,7 @@ export class ScalarField {
       level.voxelPitch=extent.map((value,k)=>value/base[k]*2**index);
       level.extent=level.dimensions.map((value,k)=>value*level.voxelPitch[k]);
       const data=new ArrayBuffer(64),f=new Float32Array(data),u=new Uint32Array(data);
-      f.set([...lo,0],0); f.set([...level.extent,0],4); u.set([...level.dimensions,0],8); f[12]=sourceTime;
+      f.set([...lo,0],0); f.set([...level.extent,0],4); u.set([...level.dimensions,sourceTag],8); f.set(sourceValues ?? [sourceTime,0,0,0],12);
       this.device.queue.writeBuffer(level.uniform,0,data);
     }
   }
@@ -157,7 +160,7 @@ export class ScalarField {
   }
 
   destroy() {
-    for (const level of this.levels) { level.texture.destroy(); level.uniform.destroy(); }
-    for (const mip of this.mipGroups) mip.dimensions.destroy();
+    for(const resource of this.resources??[])resource.destroy();
+    this.resources=[];
   }
 }

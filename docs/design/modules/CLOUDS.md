@@ -16,8 +16,8 @@ builds standalone proofs now, not a competing game engine or a new crate/plugin 
 
 | ID | Current selection and reason | Qualification boundary |
 | --- | --- | --- |
-| CD01 source | Persistent world events/low-layer state with **family-specific authored optical masters**. Convective cohort graphs, column layers and filament cohorts have different producers. A certified prepared final-density clip is another admitted source. | A universal512m cube, static noise warp or whole-sky opacity curve cannot supply the required families/dynamics. |
-| CD02 detail | Persistent source/material coordinates and fixed shared detail assets; geometry/source/loss operators create lifecycle. | Detail advection alone is not formation. Every family must pass native/motion reference review. |
+| CD01 source | Persistent world events/low-layer state with **family-specific authored optical masters**. Prepared detailed convective masters, column layers and filament cohorts have different producers; the first surface hierarchy is a rejected producer. A certified prepared final-density clip is another admitted source. | A universal512m cube, static noise warp or whole-sky opacity curve cannot supply the required families/dynamics. |
+| CD02 detail | Persistent source/material coordinates and qualified geometric/detail scales; geometry/source/loss operators create lifecycle. | Detail advection alone is not formation. Every family must pass native/motion reference review. |
 | CD03 residency | Share immutable recipes/detail; cache evaluated source fields only when phase/variant/pose/representation keys match. Use bounded atlas fields and on-demand far source evaluation, not one full dense world or one128³ allocation for every cloud. | Independent ages still cost distinct evaluated work. No phase holding to save cost. |
 | CD04 optics | One canonical coefficient query and joint air/fog/cloud integral; all-layer partial Sun depth, source-only higher scattering and clouded surface environment. | Keep tested Beer/phase/reflection principles; disclose lighting/cache approximations. |
 | CD05 consumers | Main appearance, directional attenuation, reflected/environment radiance and optional CPU semantics bind independently. | Camera invisibility cannot destroy retained causes. Actual no-consumer retirement is a separate gate. |
@@ -145,64 +145,44 @@ recook the recipe or require a new range/precision profile; silent sigma clampin
 Cooked products preserve recipe/detail dependencies and hashes. The current Q1 source/master remains recoverable and
 unchanged; it is a certified small-Cu comparator/provider, not the new whole-sky source format.
 
-The chosen first producer is an evaluable **authored control graph**. It can be sampled/cooked into final density
-fields or retained as a compact recipe. Difficult content can instead adopt an actual offline fluid/artist master
-through the same coefficient interface, after its defining lifecycle passes. The first graph is not declared proven
-because its equations are compact. Its characteristic risk—smooth blobs/shells/artificial cuts—has explicit rejection
-witnesses before large sky assembly. Bakes cannot supply a missing family mechanism by themselves.
+The flat graph and subsequent [surface-source attempt](CLOUD-CU-SOURCE.md) both failed actual native shape review.
+The hierarchy implementation exposes crest buttons above bare broad flanks; correct coefficient arithmetic does not
+rescue its primitive construction. Select the detailed prepared-master fallback at the same coefficient seam, retaining
+the existing Q1 master as a held geometry/lighting comparator. Acceptable new family variants and structurally renewing
+mature content remain open source gates, not transferred Q1 evidence. Column layers and filament cohorts retain their
+own dimensional producers. The rejected hierarchy/index remains a bounded implementation/reference alternative.
 
-The initial procedural branch has a finite grammar and concrete tracks: a small filled parent, overlapping staggered
-daughters, compact growth/hold/terminal curves and a spatial drying front. Seed ranges, maximal node count and smallest
-accepted feature are cook-time constraints. This choice does not erase the earlier warning that lobe kernels can look
-like smooth blobs: they are a **candidate producer** whose visual rejection precedes adoption. Prepared final-density
-masters remain a replacement at this seam if the complete connected graph fails, not an excuse to leave lifecycle
-unspecified. The defined first graph is what the isolated proof tests.
-
-One fixed shared detail volume provides filtered erosion/roughness in persistent physical material coordinates.
-A source seed selects offsets/orientations and graph structure, not a new random texture each frame. Growth exposes new
-material through a spatial front; detail is not uniformly stretched with the whole formation. Geometry-support and
-local source/loss operators provide creation, merging and breakup. A minimum core/body fill prevents a noise-only hollow
-birth scaffold. Fine detail is reduced only under an admitted footprint/error regime, never to replace gross family form.
+The rejected Cu attempt uses explicit L0/L1/L2 geometry and no unresolved statistical noise. Other recipes may admit fixed
+shared material-detail assets with an exact scale/map/filter contract; animation of such detail does not supply local
+creation, renewal or loss. Editable inputs/cooked dependencies, source-group semantics and numerical admission are
+recoverable. The source profile's compact recipe/index and dense current field are separate products, not new owners
+of weather, time or view state. The selected light-fit profile is separate; source shape must pass its own gate.
 
 ## Evolution and motion equations
 
 ### Convective Cu and towering/Cb master
 
-A connected graph has a persistent lower condensation body and staggered daughter billow cohorts. A cohort records
-birth time, parent/material attachment, reference shape/orientation, trajectory, radius-growth track, hold interval,
-exposed-edge/drying-front track and detail coordinates. Different seeds vary graph branching, lobe count/offsets,
-width/height, asymmetry and timing; four instances must visibly differ in gross morphology, not only yaw/scale.
+The [rejected bounded Cu profile](CLOUD-CU-SOURCE.md) defined gross heads, exposed surface sites, attached cap
+protrusion/spacing and recursive medium/fine relief. A child begins inside a filled parent and emerges from its moving
+surface. It is not an independent sphere spawned outside the body. Four variants change gross topology and exposed
+organisation, not only seed/yaw/scale. Actual foam/beads/ball construction still rejects the profile.
 
-In physical local coordinates let
-`m_i=clamp(1-|diag(R_i(t))^-1(q-c_i(t))|,0,1)` and
-`rho_i=sigma_0 smoothstep(0,e_width,m_i-eta_i(q,t)(1-m_i)^p-D_i(q,t))`.
-Here `eta>=0`, `p>0`, `e_width>0`; no inverse is evaluated when any radius component is zero. A zero-radius
-birth contributes zero; integrated optical support tends continuously to zero, without claiming pointwise C1 at
-its centre. New children are embedded inside an existing filled parent before they emerge.
-`eta` samples fixed material detail plus a bounded local drying front. The deep core is protected during birth;
-erosion is strongest at the boundary. Birth core protection is explicitly released by a **separate spatial drying
-threshold**: `D_i=(1+e_width)*smoothstep(t_stop+delta_i(q),t_stop+delta_i(q)+duration_i,t)`.
-The material/exposure-time field delta is bounded and duration is positive. By the last departure time this threshold
-exceeds every m, including the centre, so density is exactly zero everywhere. Its moving spatial front creates local
-loss rather than multiplying the finished formation by one opacity. The old protected-centre-only rule was invalid.
-`R_i` grows from a small filled core, with a fixed reference detail metric rather
-than normalized-radius texture stretching. Parents overlap daughters before daughters emerge from the existing body;
-a child starts inside its parent's support. This rejects disconnected sphere popping. A max/union of same-condensate
-cohorts creates no phantom positive bridge between disjoint supports. A smooth base mask clips the condensation level.
+For the initial spherical/rigid domain, `d_j=r_j(t)-|q-c_j(t)|` is a genuine metre distance. Local material-plane drying
+E_j has a selected bounded gradient and finite terminal time. One condensate publishes
+`sigma=sigma0*smoothstep(0,w_edge,max_j(d_j-E_j))*base_mask(y)`.
+The12m material ramp is independent of parent radius; during erosion the regular spatial width is bounded9.6–16m,
+with base/union intersections qualified separately. L0/L1/L2 rates give local formation, mature replacement, roll toward
+shoulders and loss. No global opacity/noise wobble supplies lifecycle. Finite completion includes protected centres.
 
-Radius alone is not the lifecycle: new cohorts are born at distinct positions/times, head trajectories rise, older
-cohorts renew/erode and exposed spatial fronts cut support into fragments. Mature sources emit staggered new lobes
-while older edge material disappears. When feeding stops, a spatial drying/entrainment front and local detail remove
-older/exposed regions first; detached remnants have their own terminal tracks. Density reaches exact zero at finite
-retirement. Global opacity decay is not the breakup mechanism. This is authored condensation/entrainment, not buoyancy
-or water conservation. The implied local residual `D rho/Dt` has creation/loss; it is not hidden in shading.
+The current-pose16³voxel brick index has explicit count/prefix/fill, raw64-local-candidate and work/memory limits, a
+conservative erosion-aware full-material predicate and complete-generation publication. It prevents an unexamined
+256-node×256³ scan. Exact point/field/native/motion witnesses test the numerical guard, attachment, actual relief and
+breakup before family acceptance. Rigid wind preserves metre distances in the first profile; nonrigid/deformed metrics
+need separate admission rather than inheriting this width claim.
 
-Fair Cu has a shallow cap and comparatively broad lower body. A deepening event retains the same lower body and ID;
-the prescribed rising head and future child births continue above the former shallow cap. The head approaches the
-new cap with a continuous velocity track. No transform stretches all old density upward. Tower clusters have different
-ages/widths and height-dependent wind tilt. Typical source lifetimes are minutes/tens of minutes; normal witnesses
-inspect meaningful subintervals, while complete accelerated histories expose topology and repetition.
-
+A deepening event retains its lower body/event ID; rising heads and future cohorts continue above a shallow cap,
+with continuous trajectories and height-dependent wind in the admitted source provider. No transform stretches all
+old density upward. The first Cu source-only profile does not by itself qualify a storm or strong height shear.
 At cap arrival, the **same event** emits upper outflow. The first producer uses **forward emitted cohorts**, not
 an inverse radius lookup under arbitrary shear. For launch time s and sector angle theta, a cap outlet launches a
 finite-width ring/strip from its actual position. Radius grows as `r(a)=r0+v_out*a` for age a; r0 is positive. Each
@@ -332,8 +312,11 @@ all approximations report their admitted domain; semantic queries never depend o
 
 Pool handles contain logical dimensions, physical atlas offsets/guards, mip offsets, source bounds/transform and
 source/time/revision. They are not event identity. Field/cache sharing keys include every quantity affecting values;
-referencing one recipe at two ages does not mean one current field. Dirty support includes newly born/vanished density
-and filter halos. Admission/lifetime follow V1/F4 leases; no overwrite of in-flight pages.
+referencing one recipe at two ages does not mean one current field. Dirty support includes newly born/vanished density and filter halos. Cell-centred trilinear reconstruction with
+zero guards extends to half a logical voxel beyond its sample-domain box; all view/light/body integrations use that
+same conservative field support. This approximation does not redefine the analytic source. A camera move alone does
+not dirty an unchanged source/light generation; paused preview must reuse its valid products rather than rebuilding
+geometry on every orbit input. Admission/lifetime follow V1/F4 leases; no overwrite of in-flight pages.
 
 The inner128km workload is not the entire horizon population. Far candidates use a deterministic world-cell/episode
 namespace and cooked forcing tracks; only cells intersecting a ray/support request are materialized. Source shell
@@ -426,30 +409,30 @@ For each light `E_direct=E_light V_geometry exp(-tau_air-tau_fog-tau_all_cloud)`
 primary source use the same incident light. Light disabling does not remove density/source age. All illumination and
 emission zero produces zero radiance while extinction persists.
 
-The first extended cloud optical profile uses a **fixed energy-budgeted mixture of effective scattering paths**:
-`j_cloud=sigma_s [E_noncloud sum(n=0..3,w_n b_n p(g_n) exp(-b_n tau_cloud)) + L_external]`.
-E_noncloud is source irradiance times geometry/air/fog attenuation, **excluding** cloud attenuation already in the sum.
-All cloud constituents use the same fixed weights w=[.7,.2,.07,.03], sum1, and b=[1,.5,.25,.125]; these are explicit
-starting appearance parameters, not fitted physics. Liquid phase starts g=[.86,.43,.215,.1075]; ice starts with the same
-declared ice phase for each branch rather than imposing liquid isotropization on thin wisps. Phase functions normalize
-to one, sigma_s<=sigma_t, and ordinary extinction/direct-receiver transmittance remain unchanged.
+The [effective-light profile](CLOUD-LIGHT-PROFILE.md) replaces the failed lossy mixture. Exact ordinary primary
+scattering remains; the liquid-Cu comparison adds one isotropic reduced-depth bank:
+`j_cloud=E_noncloud { exp(-tau_all) sum_i(sigma_s,i*p_i) + exp(-kappa*tau_all)/(4pi) sum_i(sigma_s,i*A_i) } + sum_i(sigma_s,i)*L_external`.
+E_noncloud includes geometry/air/fog once, excluding cloud attenuation already in these terms. kappa=.25; all-cloud
+ordinary tau includes every source/layer. Receiver/direct visibility remains exp(-tau_all), never the reduced depth.
 
-The b_n prefactor matters: along a beam, each branch's integrated generated cloud-scatter power is bounded by w_n
-of incident power (`int b_n exp(-b_n tau) d tau<=1`). Fixed common weights across cloud mixtures avoid arbitrary
-local weight changes allocating the beam twice. This replaces the unbounded added-orders/B_local proposal: its thick
-homogeneous slab emitted more than twice incident upward power at5degree Sun in independent quadrature. The new
-mixture weights its primary term instead of claiming physical single scattering plus free extra energy. Its thin-limit angular-integrated source is sum(w*b)=.82125 of ordinary single scattering (about17.9% loss).
-For equal ice phases the directional ratio is also.82125. Liquid phases differ: the directional ratio is
-sum(w*b*p_n(theta))/p_0(theta), with both gains and losses by angle; front/backlit thin-Cu witnesses must qualify it.
-It can underlight or redistribute optically thin cloud and remains an appearance approximation; air/fog interactions and diffuse-source
-energy are not made physically exact by the cloud-only bound. Analytic thick/thin slab, all-media energy/reference,
-low-Sun and native thick/ice/overcast witnesses must qualify it. The historical Cu b=.2/unconditional-order profile
-remains reproducible unchanged. No claim of converged multiple scattering follows.
+A_liquid is cooked from owner-body optical thickness and light angle using a named finite-slab escaped-flux fit;
+its opaque reflectance target.8 is an authored appearance control, not measured cloud albedo. The exact primary is
+HG(.86)/albedo1. Ice initially uses its own HG(.75) exact primary with A_ice=0; a separately keyed ice cook/qualification
+can enable its bank. Extinction is owned once, even under a liquid/ice scattering split. No liquid table is borrowed
+for an unsupported phase/albedo. Other physical/reference providers can replace this source through the same contract.
 
-All branches use the same ordinary cumulative cloud tau, with branch scaling; this avoids intrinsic lighting changing
-with a camera-selected density mip. A future world-scale filtered/scattering field requires its own source/error/cost
-qualification. If the energy-bounded candidate fails required appearance, correct this closure at its seam using an
-accepted reference rather than changing extinction or relabelling a failed storm base as complete.
+The canonical body descriptor is an integral of the **transformed world coefficient** through the full owner support
+along a fixed world-metre owner-up patch frame. It is not per-lobe amount, camera-derived depth, a density mip or Sc/St's
+reference M under height shear. Its R32float cache/manual lookup is an approximation with source generation/domain/
+error. Shared wind/pose/source time and all view/light consumers read the same owner product. A primary-only owner
+omits unused new body/table preparation. Narrow towers, detached fragments, overlapped families and thick ice remain
+explicit finite-cloud witnesses rather than claimed consequences of slab calibration.
+
+The previous fixed w*b mixture bounded generated scatter events, an unnecessarily strong restriction for high-albedo
+multiple scattering, and its actual Cu image was too dark. The new empirical profile distinguishes generated events
+from escaped power. It is still an authored contrast/redistribution approximation; no converged spatial diffusion or
+arbitrary-geometry energy certificate follows. Source shape, scalar/LUT accuracy, native lighting and runtime costs
+are independent gates. Keep the rejected mixture/source and the historical Q1 b=.2 renderer exactly reproducible.
 
 **Shared light product candidate:** light-aligned deep cumulative-depth curves, built over all intersecting source
 supports, not one receiver plane or independent per-family shadow maps. Each curve stores depth and ordinary cumulative cloud tau; it can answer a sample inside a cloud, below an anvil or between layers. All layers along the same Sun
@@ -457,7 +440,7 @@ ray contribute. Cascades each estimate the entire source-facing path; overlap se
 identical upstream extinction twice. Outside a projection is clear only if conservative source projection bounds prove it.
 
 A compute column producer traverses ordered source/layer intervals, integrates nonnegative density and compresses
-samples into sorted depth knots. The fit metric bounds primary `exp(-tau)` **and** `exp(-b_n tau)` for every effective
+samples into sorted depth knots. The fit metric bounds primary `exp(-tau)` **and** `exp(-kappa*tau)` for every effective
 branch, not only primary T that is already black. The bounded streaming builder appends integration endpoints, then removes the interior knot with the smallest
 maximum deviation in those transformed terms when capacity is exceeded. Evaluate deviation at interval endpoints
 and any interior extrema of the difference of exponentials of the old/new linear-tau segments. Accumulate removed
@@ -465,7 +448,7 @@ error with the triangle bound, plus separate quadrature/storage error; do not cl
 maximum T error. Retained knot taus remain original cumulative samples and monotone. Private state is bounded K+2
 knots rather than an unbounded per-column sample array; compiler spill/private-workspace cost is still measured. The retained cumulative removal-error bound never resets after an append/removal: add the local old-to-new curve
 maximum over the complete changed support to the existing bound. Proposed **total query** absolute tolerance is0.02
-for primary T and each exp(-b_n tau): source/field quadrature0.005, compression0.005, lateral footprint0.008,
+for primary T and the reduced-depth exp(-kappa*tau): source/field quadrature0.005, compression0.005, lateral footprint0.008,
 storage0.002. Triangle accounting uses all four; a component exhausting its share invalidates the query. A radiance
 comparison separately checks weighted phase/source terms; passing T alone cannot qualify cloud appearance. Capacity overflow marks the column invalid and requests direct source
 integration/refined storage; it may not drop a thin layer. Tests cover two separated thin layers, a dense tower,
@@ -507,7 +490,7 @@ rather than hidden inside a64-contributor claim. These are provisional correctne
 work or a demonstrated efficient source index. An excess
 returns an explicit invalid/cap result, never drops a blocker. Streaming fit evaluates up to K candidate removals per
 extra endpoint and each affected exponential's endpoints/interior extremum. A conservative implementation bound is
-12*K scalar comparison locations per endpoint for four transforms; counters verify the actual factor. Thus endpoint
+6*K scalar comparison locations per endpoint for the two active transforms; counters verify the actual factor. Thus endpoint
 and fit work can already be unsuitable for5ms even before views. Instrument these counts in the first light proof;
 if typical required witnesses approach these ceilings, change sharing/light representation before scaling content.
 
@@ -535,7 +518,7 @@ a second time, and no call from A0 back into cloud ambient.
 
 Set `L_external=(1/4pi) int A0(omega) dOmega` for the named isotropic cloud ambient closure, with fine angular quadrature
 as reference. This approximates diffuse atmospheric illumination, not ground bounce or recursive cloud interreflection.
-The effective directional cloud mixture above supplies the separately named cloud-internal approximation. Initial
+The fitted directional redistribution bank above supplies the separately named cloud-internal approximation. Initial
 proofs use deterministic quadrature; cache anchor/footprint/time/error and all ray work are counted. The candidate A0 pool admits at most32768world-space
 anchors across all active source patches,24equal-solid-angle directions per anchor and512integration endpoints per
 ray (402,653,184endpoint ceiling). Initial isolated proofs start with512anchors, not the maximum pool. Angular
@@ -574,8 +557,8 @@ remaining-radiance bound from the actual possible terminal and source maxima. Fo
 sum active directional RGB irradiance<=120000lux/channel, solar half-angle>=0.0045rad, phase peaks<=8sr^-1,
 0<=sigma_s<=sigma_t<=0.1m^-1 and external space/ground diffuse terminals<=20000cd/m². The direct-only A0 solve has source ratio at most960000cd/m²
 and hence A0 and its angular mean L_external<=960000cd/m² by the same positive Beer bound. Local emissive lightning is a typed stub,
-not unbounded radiance. Geometry and direct T only reduce the bound. The mixture gives a conservative
-`j/sigma_t<=B_source=1920000cd/m²` per channel; terminals are space/ground<=20000 and a uniform Sun disk
+not unbounded radiance. Geometry and direct T only reduce the bound. The primary plus bounded redistribution bank gives a conservative
+`j/sigma_t<=B_source=2000000cd/m²` per channel; terminals are space/ground<=20000 and a uniform Sun disk
 `L_sun=E_sun/[pi*sin(alpha)^2]<=2e9cd/m²`. Disk visibility/filter coverage is evaluated from the actual ray/planet;
 central-ray directional lighting is the declared small-disk approximation (penumbrae unqualified).
 
@@ -738,9 +721,12 @@ reference oracles. Adapt source extent/species/atlas access, light cache coverag
 
 The [first new Cu candidate](../../evidence/cloud-sky-r0-2026-11-01/README.md) has now been rendered. Its CPU/WGSL
 coefficient agreement does **not** close appearance: native review rejects the few smooth ellipsoid-like lobes and
-blue-grey lighting. The current coarse graph and lossy light mixture are not accepted content/illumination. Detailed
-source/lighting corrections are under review before further family/composition work. Retain the passing packed-scalar
+blue-grey lighting. The current coarse graph and lossy light mixture are not accepted content/illumination. Independently reviewed
+lighting correction now has a bounded native comparison; the source correction also failed native geometry.
+The prepared-master fallback and its missing family/renewal content govern the next source work before composition. Retain the passing packed-scalar
 arithmetic and existing coupled reference; do not propagate this failed source into a complete sky.
+
+The [2 November correction checkpoint](../../evidence/cloud-cu-correction-2026-11-02/README.md) retains actual source rejection, held liquid lighting improvement, ordinary-shadow/mirror/off witnesses, sampled1x/16x/64x motion and GPU11.960/15.073ms median/p95 cost failure. Its local vacuum/constant-sky fixture is narrower than the selected complete light/air/surface model.
 
 The following are replaced as universal assumptions:512m isotropic source; one current field for every instance;
 short4km atmosphere; source-specific hardcoded bound applied to arbitrary families; a ground shadow texture as partial

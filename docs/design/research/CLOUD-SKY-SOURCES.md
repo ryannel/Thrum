@@ -31,7 +31,12 @@ frozen mature silhouettes, cut-looking erosion, disk anvils, beaded ice and sync
 
 The scalar four-Z-channel layout is our portable storage candidate. Its exact sampling/half/mip/guard tests must
 precede adoption. The streaming deep-depth fit adds transformed max-error accounting to the paper's general idea;
-its private workspace, lateral aliasing and fallback rates remain unmeasured. The fixed-weight passive effective light-path mixture is a named lossy appearance approximation; it replaces the first proposal's unbounded added orders/thin-limit factor after an independent low-Sun counterexample. Thick/low-Sun/ice/overcast witnesses must qualify them.
+its private workspace, lateral aliasing and fallback rates remain unmeasured. The fixed-weight passive mixture was tested and rejected for dark native Cu appearance. The
+[selected source-only fit](../modules/CLOUD-LIGHT-PROFILE.md) preserves exact primary and adds a finite-slab-calibrated
+isotropic bank; the reflectance target is authored and arbitrary-geometry energy is not certified. The primary
+production-source locators and the generated-versus-escaped distinction are retained in its proposal/review record.
+The [Cu surface source](../modules/CLOUD-CU-SOURCE.md) replaces the failed few-lobe grammar with a constrained hierarchy;
+actual appearance and motion still decide its acceptance. Thick/low-Sun/ice/overcast witnesses must qualify them.
 
 Selection is provisional until independent whole-model review. Alternatives remain compatible at explicit source/light
 seams: accepted prepared fluid/artist masters for a failed authored source, sparse full light prefixes for failed deep

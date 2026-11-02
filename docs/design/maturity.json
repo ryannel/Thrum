@@ -1113,7 +1113,7 @@
         "C13"
       ],
       "next_design_package": "D2",
-      "remaining_detailed_design": "Reviewed complete model retained; first source/lighting candidates failed native Cu appearance and corrections are under review. R0 finite packing/operator checks pass. Expanded air/deep-light/families/weather/full-sky and actual engine bindings remain unproven/unbuilt.",
+      "remaining_detailed_design": "Reviewed complete model retained; coarse and hierarchy sources failed actual Cu appearance. Prepared-master fallback selected; new variants/mature renewal remain open. Reviewed light-fit candidate has bounded native comparison pending complete optical qualification. R0 finite packing/operator checks pass. Expanded air/deep-light/families/weather/full-sky and actual engine bindings remain unproven/unbuilt.",
       "qualification": "D0/R0 then CF01-CF05 isolated, M1 combinations, CW01-CW04 weather and FS01-FS04 full skies; Q7 complete workload. Five families and storm development required for current commission. Engine bindings follow construction dependencies; no legacy qualification transfers.",
       "parent": "E1",
       "existing_candidate": {
@@ -1125,7 +1125,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "8eb8b5242142cd33e22d6a7775f688709ee824908eacfe07ae54bc004a25cb98",
+      "current_design_sha256": "21839fd027c1f930c90612dde9c45f0f69ae26619dbfd001ffe71b5ebc0a518b",
       "current_design_delta": "Complete commission supersedes optional-storm/local-only target. Reviewed family-specific authored producers, global virtual source reach, spherical SKY-G transport, finite ambient DAG, bounded light/packing/error/HDR candidates. Implementation/appearance/full-sky viability remain unproven; prior bounded cost fails.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1217,12 +1217,13 @@
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
-        "implementation": "standalone_R0_and_rejected_F1_candidate_no_engine_binding",
+        "implementation": "standalone_R0_rejected_coarse_and_hierarchy_sources_bounded_liquid_fit_no_engine_binding",
         "functional_validation": "finite_fourZ_half_mips_world_sampling_Beer_pass; Cu_CPU_WGSL_points_and_birth_numerics_bounded_pass",
-        "experienced_quality": "first_new_Cu_native_still_rejected_smooth_lobes_blue_grey_light; otherfamilies_motion_weather_fullskies_unproven",
-        "performance": "prior_bounded_cloud_allocation_failed_full_sky_unrun",
+        "experienced_quality": "coarse_and_hierarchy_Cu_geometry_rejected; prepared_Q1_comparator_fit_lighting_partial; otherfamilies_motion_weather_fullskies_unproven",
+        "performance": "prior_and_new_bounded_cloud_5ms_allocation_failed_new_GPU_p50_11_96032_p95_15_07328ms_full_sky_unrun",
         "review": "../evidence/cloud-sky-design-2026-11-01/README.md",
-        "R0_record": "../evidence/cloud-sky-r0-2026-11-01/README.md"
+        "R0_record": "../evidence/cloud-sky-r0-2026-11-01/README.md",
+        "correction_record": "../evidence/cloud-cu-correction-2026-11-02/README.md"
       }
     },
     {
