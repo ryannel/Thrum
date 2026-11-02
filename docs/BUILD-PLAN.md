@@ -94,6 +94,15 @@ The world update rate is **not a frame-rate ceiling**. Rendering and input prese
 
 Performance is part of every step. We want excellent speed and stable behavior, so each new capability needs a cost estimate and appropriate measurements while it is designed and built. The [performance plan](design/AI-PERFORMANCE.md#performance-investment-from-the-first-design) explains how.
 
+## Atmosphere and weather design preparation
+
+This work can proceed alongside water design. The [environment family design](design/modules/ENVIRONMENT.md) and [shared environmental contract](design/CONTRACTS.md#c09-environmental-fields-and-physical-exchange--e1-with-p3) already assign common time, source fields and consumers. The [render specification](design/RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator) selects an initial air/fog operator and authored cloud attenuation; their runtime and device proofs remain open. Celestial, weather and air-quality source details need further design. None of these effects is required by the first small game, and a game can choose simpler authored providers.
+
+- [ ] Design one coherent source for time of day, Sun and Moon position/light, wind, clouds and cloud shadows, temperature, humidity, pressure, precipitation, fog and atmospheric visibility. Specify units, spatial/temporal validity, authoring controls and what remains available when a visible sky or cloud renderer is off.
+- [ ] Define air quality separately from visual haze: name any pollutants, particulates or breathable-air quantities a game needs, who owns them, and how gameplay/health/audio/visibility queries use them. An attractive sky or fog shader must not silently stand in for an exposure value.
+- [ ] Implement and qualify the selected initial air/fog and authored cloud-attenuation operators; select compatible lightweight celestial and weather sources and any optional richer providers. Prove that shared Sun/Moon, wind and cloud causes agree across lighting, sky, vegetation, sound, water and surface response, while unused providers avoid their simulation, preparation and rendering cost. Record quality limits and transitions across desktop, browser and mobile profiles.
+- [ ] Integrate a selected environment provider into the larger game, then qualify changing day/night and weather, two views, save/reload, multiplayer state, device visuals and sustained CPU/GPU/memory cost. Keep unbuilt phenomena and unmeasured platform claims open.
+
 ## Water design preparation
 
 This D2 work can proceed alongside the foundation. It does not make water a dependency of the first small game.
