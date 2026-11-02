@@ -1,0 +1,664 @@
+{
+  "name": "gpu-reference-checks-24ee6ce733f76050-54e2f382-3",
+  "build": "24ee6ce733f76050",
+  "identity": {
+    "files": {
+      "index.html": "6d6f1f9314431c27fd34f5ede66703d15bc13e436a9a99de5bf574b9ad91c408",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/carriers.wgsl": "dbf25de354a0ebc0a99204a68144aea9b11a326f09b53ae66098111126e36c16",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/mix.wgsl": "509b4acfc1e7e7767c0064afb1f034d79cf448c9962a7e4563163d953b8251b2",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "f8946bb2f4d049ee8d7b1061154af46f99748f7662a3a620ae95f533eaedc933",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "f9bbf604b5ece2a7d355390358b0465b60facc479f7170daae18c542b48bf730",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "shaders/witness.wgsl": "9ce5f8c73d64a7195cd35d143f9d9e98e8439a6807328ce5b8bf43d35b7cdcc6",
+      "src/bench.js": "be60f84d0f5f37a53cbfb98c9637340a702b9cc349f1b4a8b5a590bed47640d3",
+      "src/cirrus.js": "91097d67c46ae156bf4d67b23b5ec9ffac106b839d7fbc430cf9961e42abc7dc",
+      "src/core-reference.js": "8ecf1f696c24bd53cbbc2132c810fece9b52b9926f4eefbc93ed9672e5b3b1a0",
+      "src/feed-reference.js": "9f3d3d5b4b61268d3edbb9dfcf2527caf4ef3145d189dd1480383a1b70d880e2",
+      "src/gpu-reference.js": "25c8c27d86aad89e236ccc94a97194227fa851628a0f9bcdf50f85f8a25b45fd",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/material-observer.js": "27fa82be643924abe3ec13e11ee3412f3563b45507f17f9b73e5a5a9456a2ae3",
+      "src/morphology.js": "796d6308365d03b2969f67788acb586d112a3b9ab39ecdb70f7d2fb9c251cbb5",
+      "src/motion.js": "6c00117e2111f436bb7d74b26eed4e408bead3879e9bf36da8cfeed6f007f8c9",
+      "src/optical-topology.js": "9b3c93f02548bd8b213570ab6890e0e92ac99a28b37490e58dec5360a411283e",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "84c572fae19efac94ef62423219661e88ba97c1f96670bd1b27270915a837bc5",
+      "src/source-mask-reference.js": "46267962e4899bbe46fc0a0e38dddbbb2dc4dae58c38dc6d242ddc166c08327a",
+      "src/source-slices.js": "7c63f8bae8af77af718f565502fa8d62ab59827553ac1de37a82c9dbd6ad03e8",
+      "src/source.js": "11b0966f0da6ad791d45e582d9f1e66db042f884c7e25615a052285c97e9d0c2",
+      "src/thermals.js": "72596790f0d383e2b554fb41e8583149280cb7896c07675f2d3d0906bc5028ba",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "src/witness.js": "415ad3333db44e083ba7dbc4cb38d51c91f4d76ceffb2b701befd5dd8da7fb50",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "24ee6ce733f76050"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 480,
+    "epoch": 3,
+    "weather": {
+      "time": 480,
+      "weatherTick": 480,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 1440,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:468",
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 1,
+      "inputTick": 480
+    }
+  },
+  "scope": "Finite interior GPU advection/reaction/front/source and optical-unit checks; not full morphology/cache/temporal qualification",
+  "pass": true,
+  "checks": {
+    "renewedCarrierReset": {
+      "maxError": 0.00033203124999992006,
+      "tolerance": 0.001,
+      "resetCases": [
+        {
+          "tick": 127,
+          "a": [
+            2,
+            2,
+            2
+          ],
+          "b": [
+            3,
+            3,
+            3
+          ],
+          "expectedA": [
+            2,
+            2,
+            2
+          ],
+          "expectedB": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "tick": 128,
+          "a": [
+            2,
+            2,
+            2
+          ],
+          "b": [
+            0.58544921875,
+            0.4248046875,
+            0.49072265625
+          ],
+          "expectedA": [
+            2,
+            2,
+            2
+          ],
+          "expectedB": [
+            0.5857812499999999,
+            0.42488281250000004,
+            0.49089285714285713
+          ]
+        },
+        {
+          "tick": 129,
+          "a": [
+            2,
+            2,
+            2
+          ],
+          "b": [
+            3,
+            3,
+            3
+          ],
+          "expectedA": [
+            2,
+            2,
+            2
+          ],
+          "expectedB": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "tick": 255,
+          "a": [
+            2,
+            2,
+            2
+          ],
+          "b": [
+            3,
+            3,
+            3
+          ],
+          "expectedA": [
+            2,
+            2,
+            2
+          ],
+          "expectedB": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "tick": 256,
+          "a": [
+            0.58544921875,
+            0.4248046875,
+            0.49072265625
+          ],
+          "b": [
+            3,
+            3,
+            3
+          ],
+          "expectedA": [
+            0.5857812499999999,
+            0.42488281250000004,
+            0.49089285714285713
+          ],
+          "expectedB": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "tick": 257,
+          "a": [
+            2,
+            2,
+            2
+          ],
+          "b": [
+            3,
+            3,
+            3
+          ],
+          "expectedA": [
+            2,
+            2,
+            2
+          ],
+          "expectedB": [
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "scope": "Actual joint GPU producer, staggered reset and neighboring ticks; interior constant donor charts",
+      "pass": true
+    },
+    "assembledCoreAffine": {
+      "maxError": 8.392333984376041e-07,
+      "tolerance": 2e-05,
+      "actual": [
+        0,
+        28,
+        5.960464477539063e-08,
+        0,
+        0.001500000013038516,
+        0,
+        0,
+        0,
+        0,
+        0.0049991607666015625,
+        -1.4901161193847656e-08,
+        0,
+        0,
+        0,
+        0.001500000013038516,
+        0
+      ],
+      "expected": [
+        0,
+        28,
+        0,
+        0,
+        0.0015,
+        0,
+        0,
+        0,
+        0,
+        0.005,
+        0,
+        0,
+        0,
+        0,
+        0.0015,
+        0
+      ],
+      "pass": true
+    },
+    "mixCpuReference": {
+      "maxError": 0.4849906191369655,
+      "tolerance": 1,
+      "scope": "Each channel normalized by its declared half-float/age tolerance",
+      "pass": true
+    },
+    "mixPhaseConservation": {
+      "maxError": 0.020854949951171875,
+      "tolerance": 0.05,
+      "pass": true
+    },
+    "mixBirthConservation": {
+      "maxError": 0.0019016265869140625,
+      "tolerance": 0.0031545066833496014,
+      "relativeDrift": 0.0004648460739389667,
+      "scope": "One local binary16 ULP per output plus 16 f32 epsilons of the maximum input; no exact conservation claim",
+      "pass": true
+    },
+    "mixNoBirthInjection": {
+      "maxError": 0,
+      "tolerance": 0,
+      "pass": true
+    },
+    "mixAgeMoment": {
+      "maxError": 0.0004172900477234198,
+      "tolerance": 0.001,
+      "pass": true
+    },
+    "mixCreatesBridge": {
+      "maxError": 0,
+      "tolerance": 0,
+      "components": 1,
+      "sourceSeconds": 40,
+      "kappa": 1000,
+      "pass": true
+    },
+    "connectedStemDerivative": {
+      "maxError": 1.4190231922839303e-07,
+      "tolerance": 2e-05,
+      "actual": [
+        5.9691948890686035,
+        28,
+        0.3034825325012207,
+        28
+      ],
+      "expected": [
+        5.969194747166284,
+        28,
+        0.3034826293379922,
+        28
+      ],
+      "scope": "Actual full GPU flow versus independent finite differences of the time-dependent cubic center, isolated full stem",
+      "pass": true
+    },
+    "overlapShutdownRelease": {
+      "maxError": 1.1920928955078125e-07,
+      "tolerance": 2e-05,
+      "releaseCases": [
+        {
+          "heads": 1,
+          "free": [
+            4.491635799407959,
+            1.8579514026641846,
+            2.24114990234375,
+            0
+          ],
+          "protectedFlow": [
+            3.877500057220459,
+            14,
+            2.5625,
+            14
+          ],
+          "released": [
+            4.184567928314209,
+            7.928975582122803,
+            2.401824951171875,
+            7
+          ],
+          "expected": [
+            4.184567928314209,
+            7.928975701332092,
+            2.401824951171875,
+            7
+          ],
+          "zero": [
+            4.491635799407959,
+            0.782958984375,
+            2.24114990234375,
+            0
+          ],
+          "unprotected": [
+            4.491635799407959,
+            0.782958984375,
+            2.24114990234375,
+            0
+          ]
+        },
+        {
+          "heads": 4,
+          "free": [
+            4.491635799407959,
+            1.8579514026641846,
+            2.24114990234375,
+            0
+          ],
+          "protectedFlow": [
+            3.877500057220459,
+            14,
+            2.5625,
+            14
+          ],
+          "released": [
+            4.184567928314209,
+            7.928975582122803,
+            2.401824951171875,
+            7
+          ],
+          "expected": [
+            4.184567928314209,
+            7.928975701332092,
+            2.401824951171875,
+            7
+          ],
+          "zero": [
+            4.491635799407959,
+            0.782958984375,
+            2.24114990234375,
+            0
+          ],
+          "unprotected": [
+            4.491635799407959,
+            0.782958984375,
+            2.24114990234375,
+            0
+          ]
+        },
+        {
+          "heads": 6,
+          "free": [
+            4.491635799407959,
+            1.8579514026641846,
+            2.24114990234375,
+            0
+          ],
+          "protectedFlow": [
+            3.877500057220459,
+            14,
+            2.5625,
+            14
+          ],
+          "released": [
+            4.184567928314209,
+            7.928975582122803,
+            2.401824951171875,
+            7
+          ],
+          "expected": [
+            4.184567928314209,
+            7.928975701332092,
+            2.401824951171875,
+            7
+          ],
+          "zero": [
+            4.491635799407959,
+            0.782958984375,
+            2.24114990234375,
+            0
+          ],
+          "unprotected": [
+            4.491635799407959,
+            0.782958984375,
+            2.24114990234375,
+            0
+          ]
+        }
+      ],
+      "scope": "Actual one/four/six-head flow; half activity and zero activity after normalized composition, roll amplitude0 isolates protection",
+      "pass": true
+    },
+    "renewedCarrierWeights": {
+      "maxError": 2.9802322387695312e-08,
+      "tolerance": 1e-06,
+      "actual": [
+        0,
+        1,
+        0,
+        0.4999999701976776
+      ],
+      "pass": true
+    },
+    "structuredCbPhaseCoherence": {
+      "maxError": 0,
+      "tolerance": 1e-06,
+      "actual": [
+        0.16500000655651093,
+        0.16500000655651093,
+        0.33000001311302185,
+        0.33000001311302185
+      ],
+      "pass": true
+    },
+    "cirrusFiniteIceSeed": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "icePeak": 0.27001953125,
+      "pass": true
+    },
+    "rollingAndEvaporation": {
+      "actual": [
+        0,
+        48,
+        0,
+        0,
+        9.280133247375488,
+        0,
+        0,
+        0,
+        0,
+        0.3700000047683716,
+        0,
+        0,
+        0,
+        0,
+        0.01360000018030405,
+        0
+      ],
+      "maxError": 4.6027795441716535e-07,
+      "tolerance": 2e-05,
+      "pass": true
+    },
+    "dynamicNoPhantomBirth": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "dynamicAgeWithoutBirth": {
+      "maxError": 0.0625,
+      "tolerance": 0.063,
+      "pass": true
+    },
+    "dynamicVacuumNoBirth": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "neutralReaction": {
+      "maxError": 8.8578790788163e-05,
+      "tolerance": 0.0005,
+      "pass": true
+    },
+    "crossedFrontReaction": {
+      "maxError": 1.389181497352121e-05,
+      "tolerance": 0.0005,
+      "pass": true
+    },
+    "linearAdvection": {
+      "maxError": 0,
+      "tolerance": 0.0005,
+      "pass": true
+    },
+    "noBirthWithoutLift": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "birthInEmptyField": {
+      "max": 0.0271759033203125,
+      "pass": true
+    },
+    "finiteLayerSupport": {
+      "banks": {
+        "2": {
+          "edgePeak": 0,
+          "interiorPeak": 0.794921875
+        },
+        "3": {
+          "edgePeak": 0,
+          "interiorPeak": 0.5927734375
+        }
+      },
+      "pass": true
+    },
+    "cbNoBirthBelowCondensationBase": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "mixedPhaseNoPhantomBirth": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "mixedPhaseAgeWithoutBirth": {
+      "maxError": 0,
+      "tolerance": 0.063,
+      "pass": true
+    },
+    "phaseTransferConservesProxy": {
+      "maxError": 0.0002401175311230186,
+      "tolerance": 0.0005,
+      "icePeak": 0.001613616943359375,
+      "pass": true
+    },
+    "nativeMipMean": {
+      "actual": [
+        112,
+        64,
+        128,
+        255
+      ],
+      "pass": true
+    },
+    "lowBodyStormSeed": {
+      "highPeak": 0,
+      "lowPeak": 0.91943359375,
+      "pass": true
+    },
+    "cbPhaseCoherentMorphology": {
+      "actual": [
+        0.16168001294136047,
+        0.16168001294136047,
+        0.32336002588272095,
+        0.32336002588272095
+      ],
+      "maxError": 2.5882720966485806e-08,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "phaseCoherentMorphology": {
+      "actual": [
+        0.15000006556510925,
+        0.15000006556510925,
+        0.3000001311302185,
+        0.3000001311302185
+      ],
+      "maxError": 1.311302185169616e-07,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "opticalDepth": {
+      "actualTau": 0.009000002406537533,
+      "expectedTau": 0.009,
+      "maxError": 2.406537533486408e-09,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    "beerTransmittance": {
+      "maxError": 2.983841396186904e-08,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "homogeneousSegment": {
+      "maxError": 7.029200208008568e-09,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "thinAndVacuumLimit": {
+      "maxError": 5.960464455334602e-09,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "segmentComposition": {
+      "maxError": 5.960464477539063e-08,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "clearAir": {
+      "actual": [
+        0.9003720879554749,
+        0.7784712314605713,
+        0.623827338218689
+      ],
+      "reference": [
+        0.9002577870373972,
+        0.7782526401591936,
+        0.623550538578591
+      ],
+      "maxError": 0.00027679964009796887,
+      "tolerance": 0.005,
+      "pass": true
+    },
+    "analyticAttenuationProvider": {
+      "maxError": 2.3203547305783445e-08,
+      "tolerance": 5e-05,
+      "pass": true
+    },
+    "phaseNormalization": {
+      "integral": 0.999955952167511,
+      "maxError": 4.404783248901367e-05,
+      "tolerance": 0.001,
+      "pass": true
+    }
+  },
+  "errors": []
+}

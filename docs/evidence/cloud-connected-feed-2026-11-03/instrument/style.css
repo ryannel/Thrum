@@ -1,0 +1,162 @@
+:root {
+  font: 14px/1.45 system-ui;
+  color: #dae3ec;
+  background: #101821;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  padding: 16px 22px;
+  border-bottom: 1px solid #2c3945;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+header b {
+  letter-spacing: 0.18em;
+  color: #f1f5fa;
+}
+header span {
+  margin-left: 24px;
+  color: #96aabd;
+}
+#status {
+  color: #9dd4bd;
+}
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 18px;
+  padding: 18px;
+}
+.viewport {
+  min-width: 0;
+  position: relative;
+  align-self: start;
+  position: sticky;
+  top: 18px;
+}
+canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #162433;
+  border: 1px solid #34414e;
+  border-radius: 6px;
+  touch-action: none;
+}
+#caption {
+  padding: 10px 2px;
+  color: #8fa7bc;
+  font-size: 12px;
+}
+#progress {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: #14212be0;
+  padding: 10px;
+  border-radius: 4px;
+}
+aside {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #b4c5d4;
+}
+select,
+button,
+input[type="number"] {
+  font: inherit;
+  color: #e9f0f4;
+  background: #20303e;
+  border: 1px solid #3a4b5a;
+  border-radius: 4px;
+  padding: 6px;
+}
+button {
+  cursor: pointer;
+}
+button:hover {
+  background: #30485a;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: #7eb9ca;
+}
+.buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.buttons button {
+  flex: 1;
+  white-space: nowrap;
+}
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.checks label {
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 12px;
+}
+pre {
+  font:
+    11px/1.55 ui-monospace,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: #b8cbd8;
+}
+#stats {
+  border-top: 1px solid #30404d;
+  padding-top: 9px;
+}
+.help {
+  font-size: 11px;
+  color: #8299ac;
+  margin: 0;
+}
+summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #9bb6cc;
+}
+details > label {
+  margin: 8px 0;
+}
+#receipt {
+  max-height: 250px;
+  overflow: auto;
+}
+@media (max-width: 900px) {
+  .viewport {
+    position: static;
+  }
+  main {
+    grid-template-columns: 1fr;
+  }
+  aside {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  #stats,
+  .help,
+  details {
+    grid-column: 1/-1;
+  }
+}

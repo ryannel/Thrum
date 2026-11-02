@@ -208,6 +208,129 @@ This is a measured candidate, not free detail.64s bounds age but not strain: a m
 strain can stretch2.6x. Inspect weighted distortion/LOD,1x/16x renewal boundaries and complete graph cost; retain old
 lifelong and world-coordinate comparators. Reject renewal if it merely exchanges streaks for obvious pulsing.
 
+### Close material supply and transport — next candidate
+
+Independent native/visual review still rejects detached base puffs, stacked heads and opacity-led shutdown. The next
+source proof separates material-pulse admission from sparse head controls. At moist.85,lift1 the driver produces one
+pulse every7.84–11.76s, but the dynamic shader admits only every fifth,39.2–58.8s apart, with22s source windows. That
+leaves17–37s supply gaps; a mean49s head interval at28m/s means1372m head spacing versus616m injection travel depth.
+Mixing length sqrt(2*1000*49)=313m cannot replace missing supply. Admit every finite22s source pulse at1/5strength:
+this preserves mean integrated linear source exposure, not nonlinear q or local exposure. The15s window integral
+and changed source-footprint/flank-loss coverage must be recorded. Existing32records remain bounded (under28live
+births within87s at maximum hazard.3/s); head cadence/count stay unchanged.
+
+Cb alone uses a persistent shared-cell source catchment: actual offsets at most200m from its wind-following root,
+instead of independent offsets up to4.53km apart. Radius remains660–1260m. This closes central pickup support;
+concentration can still produce a broad base reservoir and must be rejected if observed. No reset or new weather
+cell/lineage is introduced by renewing a pulse. Keep the legacy profile for matched diagnosis; other families retain
+their source profiles.
+
+Each head supplies a narrow transport conduit, not aloft q. At y0=1320m root R=(windIntegral,1.1*time), L=headY-y0>=80m,
+s=clamp((y-y0)/L,0,1),g=3s²-2s³,delta=headXZ-R, its centre is C=R+g*delta. Radius.32R0 gives352–512m. Weight is
+transportLife*(1-smoothstep(.6,1.4,r/radius))*smoothstep(1100,1350,y)*(1-smoothstep(headY-.5H,headY+.25H,y)).
+Select conduit ascent equal to the existing Uhead=28sqrt(lift), tapered by the world cap. A vertical-only stem would
+lose matter under shear. Its full horizontal target is the derived curve-following velocity
+`Rdot+g*(HdotXZ-Rdot)+g'*(uy-s*Uhead)*delta/L`, Rdot=(wind,1.1), g'=6s(1-s), HdotXZ from the same shared height wind/jet
+that moves the CPU head. Subtract shared W(y) before internal composition, add W once afterward. Cubic endpoint
+slopes vanish; use the capped target uy in this derivative. The100m/s internal cap remains final; cap activation
+breaks exact curve following and must be counted in a requested witness.
+
+Compose stem targets convexly inside the ENVIRONMENT: `(sum(b_i F_i)+max(0,1-sum_b)*E0)/max(1,sum_b)`, then apply the
+existing outer affine-head partition. No stem bypasses a full head plateau. Condensation's positive-conduit ascent
+uses these same environmental/outer weights and final speed scaling; do not apply the vertical cap twice. Register
+active head bands from min(headY-3H,1100) through max(rollTop,stemTop); the previous head-only bands omit mature lower
+stems after107–158s. Evaluate stem support before the roll's local cull. Existing band/head capacity suffices, but
+more low-altitude head visits and seven repeated carrier velocity queries cost real work.
+
+Young source must actually seed the core while the base is inside it (roughly11–18s; the12s activation nearly exhausts
+the smallest head's interval). A protected affine plateau is a material boundary: later stem matter can approach it
+asymptotically, not cross in finite time by assertion. Early q expands with the core; later supplied neck/shell and
+explicit finite mixing maintain exchange. Ufeed=24 would stall below the plateau because its lower boundary rises
+at25.452sqrt(lift); Ufeed=Uhead avoids that wrong capture equilibrium. Do not substitute control overlap for density.
+
+Shutdown must release the transported proxy as well as stop its source. Previously lift0 set head ascent/growth0
+while leaving full protective core weight1, suppressing all environmental motion and encouraging static evaporation.
+For this connected-feed candidate, compose all spatial/lifetime head+stem protection first, then blend the COMPLETE
+normalized internal result with the unprotected environmental flow using activity=min(sqrt(lift),1). Applying activity
+to raw weights is wrong: overlapping weights can keep environmental residual0 until activity<1/sumWeights (33–43s
+for4–6overlapping controls under current12s lift relaxation). Gate after normalization exactly once. Condensation's
+positive ascent signal uses the same final blend and speed cap. Full affine protection is conditional on active
+lift>=1; environmental exposure begins immediately as forcing declines and is complete at lift0 regardless of overlap.
+No new q source or decay clock;
+actual post-release fragmentation remains a gate, not a predicted pass. Legacy profile remains the comparator.
+
+Required rejection proof: actual curved-stem velocity versus independent derivative; young-core q at12–20s; native
+base/root-to-head connectivity at several thresholds across two head periods; head/neck/base volume separately;
+source-born trajectory/cap-hit witnesses; actual90–120s1x motion and matched16x including local shutdown. Optical
+connectivity must query the shared shaped coefficients, not merely raw q. Reject empty heads, recurring feed gaps,
+a saturated chimney/base reservoir, transient-only cap feeding, clipped material and fade substituted for fragmentation.
+The optical q approximation remains explicitly non-mass-conserving. Current mechanism review closes analytical
+transport/seeding plausibility and finite cost, not visual/capacity/target-device acceptance.
+
+### Frontal normal growth and trailing erosion — flag4 candidate
+
+3 November2026. Connected-feed v1 closes base gaps but its native180/480s columns and actual90s1x motion still show a
+nearly uniform shaft. The broad affine interiors plus positive occupied-q condensation over the whole below-cap
+height preserve it. A connected centre is required; missing shoulder/neck modulation outside it is the failure.
+Do not accept better material detail as missing source topology. Retain v1 as the causal-feed comparator.
+
+The next candidate keeps the rooted feed, common transport, phase transfer and shared optics, but gives actual q
+isosurfaces local outward/inward motion. [OpenVDB's accessible offset implementation](https://www.openvdb.org/documentation/doxygen/LevelSetFilter_8h_source.html)
+and [VDB Reshape SDF](https://www.sidefx.com/docs/houdini/nodes/sop/vdbreshapesdf.html) establish normal offsets as
+production modeling operations. This runtime q/Hamilton–Jacobi adaptation is ours; no SDF import, Houdini dependency,
+claim of a disclosed Nubis lifecycle or physical mass conservation follows. It must pass its own finite-grid proof.
+
+For total c=q_l+q_i and the same six UNMIXED neighbours n used by the mix pass, define
+`Gplus=sqrt(sum(max(nplus-c,nminus-c,0)^2/h²))` and
+`Gminus=sqrt(sum(max(c-nplus,c-nminus,0)^2/h²))`. Growth dt*vg*Gplus advances existing q isosurfaces into neighbouring
+air; erosion dt*ve*Gminus retreats exposed isosurfaces. Uniform q is unchanged; empty centre+neighbours cannot grow.
+This supplies local birth from existing support, not detached ellipsoid stamps or an aloft source independent of q.
+
+Use one prepared head-front helper in reaction and normal growth. Front centre F=headY+.45H; CPU-prepared halfwidth
+`min(.30R0,.35*nearestEligibleFrontVerticalSeparation)` replaces the unused duplicate speed in shape.w for this profile
+only. All other profiles retain its old packing. Eligible heads and front geometry must match CPU/GPU. Front vertical
+weight `1-smoothstep(.5,1,abs(y-F)/halfwidth)`; suppress zero/ambiguous width before division and record it. For any
+unequal adjacent widths, their supports sum<=.70separation, leaving>=.30separation exposed. Neighbour birth/expiry
+can alter width; record such changes. Geometry is not resolved evidence: default gaps are over400m, while the strongest
+forcing can leave gaps below one181m cell. Measure actual sampled low-keep intervals and reject unresolved behaviour.
+
+Multiply frontal growth by radial taper.65–1.25R and lifetime, plus a bounded prepared3D noise lookup in that head's
+moving/growing frame (feature scale must be resolvable by native q). `vg=18sqrt(lift)*moist*front*noise(.25..1)` with
+world fade8100–9100m. Existing occupied-q condensation is localized to the SAME front, limited by actual positive
+composed vertical velocity and final velocity cap. It no longer replenishes the whole shaft. The affine protection
+narrows only radially to.5R; its vertical H and.65plateau threshold remain. Core data observers must use those same
+axes. Surface motion outside this narrow core and the continuous stem can now develop shoulders and depleted wakes.
+
+There is no full-body head keep union: that would overlap along the shaft and suppress intended erosion. Head keep
+uses the same finite frontal vertical band, radial taper.55–1R, lifetime and post-normalization shutdown activity.
+Stem keep uses its normalized spatial coverage times activity. Set
+`ve=((.5+12dry²)*deficit+8*(1-headKeep))*dryNoise(.3..1)*(1-stemKeep)`,
+`deficit=clamp(dry+.6*(1-moist),0,1)`. Thus wet exposed wakes erode, frontal billows and the narrow connected core are
+protected, and declining lift releases both independently of overlap count. Normal erosion's ice speed is.08liquid.
+Retain small subtractive cleanup `.0008*deficit*pocket` (ice.08) in the existing reaction for finite extinction; remove
+its strong8*dry²addition only in this profile. Normal erosion need not extinguish an isolated discrete positive cell
+in finite arithmetic. Do not demand all ice disappears within120s or hide its later chart exit.
+
+The final pass loads each neighbour once, mixes phases/age moment/birth, erodes the OLD mixed phases proportionally
+(E_l=E*q_l/c,E_i=.08E*q_i/c), scales old age moment and birth by actual surviving-total fraction, then adds capacity-
+limited new LIQUID growth at age0 and birth equal to actual addition. Current phases are individually capped, not
+sum-capped: `actualDelta=min(rawDelta,1-liquidSurvivor)` is necessary. No extra age increment. Birth is a surviving
+q-weighted reaction/addition indicator, not exact newborn water or net mass. Newly added cap-band liquid transfers
+on the next tick; ordering is bounded by.25s and must be tested.
+
+A sufficient frozen-speed bound is `2*kappa*dt*sum(1/h²)+dt*(vg+ve)*sqrt(sum(1/h²))<=1`. With current pitch/.25s,
+maxvg25.46 and conservative maxve21m/s, bound≈.152. This supports positivity and total-stencil bounds for the growth
+operator, not exact phase ancestry or accurate normals. Count source masks, prepared noise reads and the new band-local
+head loop in the full-resolution pass. No new volume; reuse reverse scratch+copy. Mixing may be disabled diagnostically
+without disabling required normal motion. Prospective support must include positive neighbours; the current8voxel
+activation guard exceeds one normal-motion halo. Future sparse/page admission still needs its own proof.
+
+Numerical gates: vacuum/constant/ramp, phase capacity/positive bounds and age-zero birth; two-pitch axial/diagonal
+ball-front motion and finite zero-width handling. Experience gates: native radial/azimuthal shoulder contours and
+low-keep necks, genuine1x replacement over multiple head events, source-off translation/shear/fragmentation before
+optical loss, continued cap supply, no unexplained faces and complete graph cost. If the prototype remains a decorated
+shaft, revise the mechanism rather than promoting these numerical checks as appearance success.
+
 This candidate requires isolated strain/thickness and overlap tests, positive/mass/age/birth mixing checks, native
 sections and1x/16x growth/merge/loss images, fed-cap continuity and coupled consumers/cost. It is not yet accepted art.
 

@@ -1,0 +1,262 @@
+--- a/index.html
++++ b/index.html
+@@ -180,7 +180,6 @@
+           >
+           <label>Camera proof<select id="camera-proof"><option value="baseline">Baseline</option><option value="sunlit">Sunlit face</option><option value="side">Across wind</option><option value="high">High cap view</option></select></label>
+           <label>Motion seconds<select id="motion-seconds"><option value="12">12</option><option value="30">30</option><option value="90">90 · normal-speed lifecycle</option></select></label>
+-          <label><input type="checkbox" id="trace-feed" />Trace supplied material · recreates optics</label>
+           <label><input type="checkbox" id="connected-feed" checked />Connected storm feed · resets source</label>
+           <label><input type="checkbox" id="dual-rest" checked />Cb renewed material maps · resets source</label>
+           <label><input type="checkbox" id="material-structure" checked />Cb three-dimensional material structure</label>
+--- a/shaders/witness.wgsl
++++ /dev/null
+@@ -1,48 +0,0 @@
+-// Requested proof only. Approximate trajectories through each frozen source-step velocity,
+-// annotated by actual updated q. They are diagnostics, not a second material authority.
+-struct Witness {position:vec4f,record:vec4f,stats:vec4f};
+-struct PathSample {positionQ:vec4f,timeIce:vec4f};
+-@group(0) @binding(15) var<storage,read_write> witnesses:array<Witness,32>;
+-@group(0) @binding(16) var<storage,read_write> paths:array<PathSample>;
+-@group(0) @binding(17) var<storage,read_write> totals:array<atomic<u32>,8>;
+-@compute @workgroup_size(32) fn main(@builtin(local_invocation_id) id:vec3u){
+-  if(id.x==0u){
+-    for(var j=0u;j<32u;j++){
+-      let emitter=emitters[j];let age=p.weather.x-emitter.timing.x;
+-      if(emitter.location.w<1.5||age<8.||age>=8.+p.weather.y){continue;}
+-      var pair=0u;var oldest=1e20;
+-      for(var k=0u;k<16u;k++){if(witnesses[k*2u].record.y==0.){pair=k;break;}
+-        if(witnesses[k*2u].record.x<oldest){oldest=witnesses[k*2u].record.x;pair=k;}}
+-      for(var side=0u;side<2u;side++){
+-        let slot=pair*2u+side;let point=vec3f(p.weather.w+select(-80.,80.,side==1u),1320.,p.weather.x*1.1);
+-        let q=qAt(oldQ,point);let total=q.x+q.y;let admitted=total>.01&&q.w>1e-8;
+-        witnesses[slot]=Witness(vec4f(point,p.weather.x),vec4f(emitter.timing.x,select(3.,1.,admitted),0,0),vec4f(total,total,select(0.,point.y,total>.02),0));
+-        atomicAdd(&totals[0],1u);if(!admitted){atomicAdd(&totals[1],1u);}
+-      }
+-    }
+-  }
+-  storageBarrier();
+-  let slot=id.x;var w=witnesses[slot];if(w.record.y==0.){return;}
+-  var justFinished=false;
+-  if(w.record.y==1.&&p.weather.x>w.position.w+1e-5){
+-    let first=velocity(w.position.xyz);let middle=w.position.xyz+first*p.weather.y*.5;
+-    let speed=velocity(middle);let internal=length(speed-sharedWind(middle.y,1u));
+-    w.position=vec4f(w.position.xyz+speed*p.weather.y,w.position.w);
+-    let q=qAt(oldQ,w.position.xyz);let total=q.x+q.y;
+-    let wasCap=w.stats.z>=9000.;w.stats.x=min(w.stats.x,total);w.stats.y=max(w.stats.y,total);
+-    if(total>.02){w.stats.z=max(w.stats.z,w.position.y);}
+-    w.stats.w=max(w.stats.w,internal);atomicMax(&totals[7],u32(round(internal*100.)));
+-    if(!wasCap&&w.stats.z>=9000.){atomicAdd(&totals[2],1u);}
+-    if(internal>=99.99){w.record.w+=1.;atomicAdd(&totals[6],1u);}
+-    let outside=any(coords(w.position.xyz)<vec3f(0))||any(coords(w.position.xyz)>vec3f(1));
+-    if(outside||total<.001||p.weather.x-w.position.w>=420.){
+-      w.record.y=2.;justFinished=true;
+-      if(outside){atomicAdd(&totals[3],1u);}else if(total<.001){atomicAdd(&totals[4],1u);}else{atomicAdd(&totals[5],1u);}
+-    }
+-  }
+-  if((w.record.y==1.||w.record.z==0.||justFinished)&&w.record.z<512.&&(u32(p.lifecycle.x)%4u==0u||w.record.z==0.||justFinished)){
+-    let q=qAt(oldQ,w.position.xyz);let total=q.x+q.y;
+-    paths[slot*512u+u32(w.record.z)]=PathSample(vec4f(w.position.xyz,total),vec4f(p.weather.x,q.y/max(total,1e-12),w.record.y,w.record.w));w.record.z+=1.;
+-  }
+-  witnesses[slot]=w;
+-}
+--- a/src/bench.js
++++ b/src/bench.js
+@@ -57,7 +57,6 @@
+     thermals: $("thermals").checked,
+     materialCore: $("material-core").checked,
+     materialStructure: $("material-structure").checked,
+-    traceFeed: $("trace-feed").checked,
+     connectedFeed: $("connected-feed").checked,
+     dualRest: $("dual-rest").checked,
+     neckMix: $("neck-mix").checked,
+@@ -112,7 +111,6 @@
+   abortMeasurement(e.message);
+   info("Optics unavailable — " + e.message);
+   console.error(e);
+-  receipt('optical-failure',{error:e.message,stack:e.stack,gpuErrors:scene?.gpu.errors??[],sourceTime:scene?.time,sourceSteps:scene?.steps,controls:options()}).catch(console.error);
+   $("receipt").textContent = e.stack || String(e);
+ }
+ function quantile(v, p) {
+@@ -192,7 +190,7 @@
+         ["full", "shadow", "clear"][ui.provider],
+         ["volume", "shadow", "clear"][ui.provider],
+       );
+-      const next = await Scene.create($("view"), info, ui.provider, ui.family,ui.traceFeed);
++      const next = await Scene.create($("view"), info, ui.provider, ui.family);
+       if (version !== configurationVersion) {
+         await next.dispose();
+         continue;
+@@ -315,7 +313,6 @@
+ $("neck-mix").onchange = () => reset(false);
+ $("dual-rest").onchange = () => reset(false);
+ $("connected-feed").onchange = () => reset(false);
+-$("trace-feed").onchange=configure;
+ $("camera-proof").onchange=()=>{
+   if(!scene)return;
+   const views={baseline:[.3,-.18],sunlit:[2.27,-.18],side:[-1.3,-.18],high:[.3,.20]};
+@@ -491,7 +488,6 @@
+     info("Finish the motion recording before observing or timing");
+     return;
+   }
+-  if(options().traceFeed){info("Disable the trajectory proof before quiet timing");return;}
+   if (busy || !scene || fault) return;
+   abortMeasurement("Measurement restarted");
+   benchmark = {
+@@ -542,7 +538,6 @@
+   $(id).onclick = () => {
+     if (!scene) return;
+     abortMeasurement("Camera changed");
+-    $("camera-proof").value="baseline";
+     Object.assign(scene.camera, {
+       yaw: 0.3,
+       pitch: -0.18,
+--- a/src/optical-topology.js
++++ b/src/optical-topology.js
+@@ -2,7 +2,7 @@
+ import { halfToFloat } from './reference.js';
+ // Paused/busy observer borrows retired reverse scratch and the existing readback/value arrays.
+ // No source authority/history texture is modified; the next reverse pass overwrites its scratch.
+-export async function observeOpticalTopology(scene,ui,feedRoot,queryWeather){
++export async function observeOpticalTopology(scene,ui,feedRoot){
+  const g=scene.gpu,d=g.device;
+  if(!scene.opticalTopologyPipeline){
+   const code=scene.codes.optics+`@group(0) @binding(15) var out:texture_storage_3d<rgba16float,write>;
+@@ -11,7 +11,7 @@
+   scene.opticalTopologyPipeline=await g.compute('requested full shaped optical topology',code);
+   scene.opticalTopologyUniform=g.buffer('optical topology uniform',176,GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST);
+  }
+- scene.write(scene.opticalTopologyUniform,queryWeather,{...ui,alpha:1},null,scene.time);
++ scene.write(scene.opticalTopologyUniform,scene.lastSourceInput,{...ui,alpha:1},null,scene.time);
+  const q=scene.q[scene.current],a=scene.rest[scene.currentRest],b=scene.restB[scene.currentRest];
+  const group=g.group(scene.opticalTopologyPipeline,[[0,scene.opticalTopologyUniform],[1,q.createView()],[2,scene.noise.createView()],[3,scene.clamp],[4,a.createView()],[10,q.createView()],[11,a.createView()],[14,scene.repeat],[15,scene.rev.createView()],[16,b.createView()],[17,b.createView()]]);
+  const e=d.createCommandEncoder();scene.compute(e,scene.opticalTopologyPipeline,group,scene.dims);
+--- a/src/scene.js
++++ b/src/scene.js
+@@ -1,4 +1,3 @@
+-import { FeedWitness } from "./witness.js";
+ import { observeOpticalTopology } from "./optical-topology.js";
+ import { observeMaterial } from "./material-observer.js";
+ import { sourceSections } from "./source-slices.js";
+@@ -41,14 +40,13 @@
+     this.groups = new Map();
+     this.scratch = new Float32Array(44);
+   }
+-  static async create(canvas, progress, provider = 0, family = 0, traceFeed = false) {
++  static async create(canvas, progress, provider = 0, family = 0) {
+     const gpu = await Gpu.open(canvas);
+     progress("Compiling the selected provider…");
+     const names = [
+       "source",
+       "mix",
+       "carriers",
+-      "witness",
+       "support",
+       "dilate",
+       "velocity",
+@@ -74,7 +72,6 @@
+       ),
+     );
+     const s = new Scene(gpu, codes, provider, family);
+-    s.traceFeed=traceFeed;
+     try {
+       await s.init(progress);
+       return s;
+@@ -252,7 +249,6 @@
+         ),
+       ),
+     );
+-    if(this.traceFeed && this.family===1 && this.provider===0)this.witness=await FeedWitness.create(this);
+     progress("Preparing clear-air and source ingredients…");
+     const mipPipeline = this.noisePipeline
+       ? await g.compute("native material mips", this.codes.mip)
+@@ -552,7 +548,6 @@
+       const bg=this.carrierGroup(slot[1],this.rest[1],this.restB[1],this.rest[0],this.restB[0]);
+       this.compute(e,this.carrierPipeline,bg,this.restDims);
+     }
+-    this.witness?.reset(e);
+     this.gpu.submit(e);
+     this.frame++;
+   }
+@@ -566,9 +561,6 @@
+     ]);
+   }
+   render(weather, ui, ticks = 0, worldTime = this.time) {
+-    // Proof-only workaround: batched witness updates lost the tested Metal device.
+-    // Single-tick submissions are qualified separately; no production throughput claim.
+-    if(this.witness)ticks=Math.min(ticks,1);
+     const g = this.gpu;
+     if (g.pending >= 3 || g.lost) return false;
+     this.viewSize = ui.resolved ? [1280, 720] : [640, 360];
+@@ -707,7 +699,6 @@
+         this.compute(e,this.mixPipeline,bg,this.dims);
+         e.copyTextureToTexture({texture:this.rev},{texture:next},this.dims);
+       }
+-      this.witness?.step(this,e,slot[off+2],next,emit);
+       this.write(slot[off + 3], snapshot, ui, 4, nextTime);
+       if(this.carrierPipeline && ui.dualRest){
+         this.compute(e,this.carrierPipeline,this.carrierGroup(slot[off+3],rest,this.restB[this.currentRest],this.rest[1-this.currentRest],this.restB[1-this.currentRest]),this.restDims,
+@@ -944,9 +935,8 @@
+       iceDominantOccupied: c[15],
+       opticalColumns:
+         this.family === 1 ? await this.probeColumns(ui, queryWeather) : null,
+-      morphology: this.family === 1 ? await this.probeMorphology(ui,queryWeather) : null,
++      morphology: this.family === 1 ? await this.probeMorphology(ui) : null,
+       materialDeformation: await observeMaterial(this,ui),
+-      feedTrajectories:this.witness?await this.witness.observe(this):null,
+       thermalHeads: this.thermalDriver.heads.length,
+       thermalForceHeads: this.thermalDriver.forceHeads,
+       emitterCount: this.family === 4 ? (queryWeather.moist > .001 && queryWeather.lift > .001 ? CIRRUS_HEADS : 0) : this.driver.pulses.length,
+@@ -957,7 +947,7 @@
+       errors: g.errors,
+     };
+   }
+-  async probeMorphology(ui,queryWeather) {
++  async probeMorphology(ui) {
+     const g = this.gpu,
+       [nx, ny, nz] = this.dims,
+       bytes = nx * ny * nz * 8;
+@@ -1001,7 +991,7 @@
+     const nativeAnalysisCpuMs=performance.now()-started;
+     return {
+       ...result,connectivityThresholds,
+-      opticalTopology:feedRoot?await observeOpticalTopology(this,ui,feedRoot,queryWeather):null,
++      opticalTopology:feedRoot?await observeOpticalTopology(this,ui,feedRoot):null,
+       sections,
+       analysisCpuMs:nativeAnalysisCpuMs,
+       observerReadbackBytes: bytes,
+--- a/src/witness.js
++++ /dev/null
+@@ -1,33 +0,0 @@
+-export class FeedWitness {
+-  static async create(scene){
+-    const w=new FeedWitness(),g=scene.gpu;
+-    w.pipeline=await g.compute('requested supplied-material trajectory witness',scene.codes.source.replace('fn main(','fn sourceStep(')+scene.codes.witness);
+-    w.state=g.buffer('witness state',32*48,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST);
+-    w.paths=g.buffer('witness paths',32*512*32,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST);
+-    w.totals=g.buffer('witness totals',32,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST);return w;
+-  }
+-  reset(encoder){encoder.clearBuffer(this.state);encoder.clearBuffer(this.paths);encoder.clearBuffer(this.totals);}
+-  step(scene,encoder,uniform,q,emit){
+-    const thermal=scene.thermalBindings.get(uniform)??{heads:scene.zeroHeads,bands:scene.zeroBands};
+-    const bg=scene.cachedGroup('witness/'+uniform.label+'/'+q.label+'/'+thermal.heads.label,this.pipeline,()=>[
+-      [0,uniform],[1,q.createView()],[6,scene.clamp],[8,emit],[9,scene.curl.createView()],[10,scene.repeat],[13,thermal.heads],[14,thermal.bands],[15,this.state],[16,this.paths],[17,this.totals],
+-    ]);
+-    const pass=encoder.beginComputePass();pass.setPipeline(this.pipeline);pass.setBindGroup(0,bg);pass.dispatchWorkgroups(1);pass.end();
+-  }
+-  async observe(scene){
+-    const g=scene.gpu,stateBytes=32*48,pathBytes=32*512*32,totalBytes=stateBytes+pathBytes+32;
+-    this.read??=g.buffer('witness requested readback',totalBytes,GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST);
+-    const e=g.device.createCommandEncoder();e.copyBufferToBuffer(this.state,0,this.read,0,stateBytes);e.copyBufferToBuffer(this.paths,0,this.read,stateBytes,pathBytes);e.copyBufferToBuffer(this.totals,0,this.read,stateBytes+pathBytes,32);g.submit(e);
+-    await this.read.mapAsync(GPUMapMode.READ);const bytes=this.read.getMappedRange().slice(0);this.read.unmap();
+-    const state=new Float32Array(bytes,0,stateBytes/4),paths=new Float32Array(bytes,stateBytes,pathBytes/4),totals=Array.from(new Uint32Array(bytes,stateBytes+pathBytes,8));
+-    const tracks=[];
+-    for(let i=0;i<32;i++){
+-      const s=state.subarray(i*12,i*12+12);if(s[5]===0)continue;
+-      const count=Math.min(512,Math.round(s[6])),samples=[];
+-      for(let j=0;j<count;j++)samples.push(Array.from(paths.subarray((i*512+j)*8,(i*512+j+1)*8)));
+-      const head=scene.thermalDriver.heads.find(h=>Math.abs(h.birth-s[4])<1e-4);
+-      tracks.push({slot:i,sourceBirthTime:s[4],sourceHeadId:head?.id??null,seedTime:s[3],state:['unused','active','terminated','no-birth-at-seed'][Math.round(s[5])],position:Array.from(s.subarray(0,3)),minQ:s[8],maxQ:s[9],maxHeightWithQAbovePoint02:s[10],maxInternalSpeed:s[11],speedCapSteps:s[7],samples});
+-    }
+-    return {scope:'Requested proof-only RK2 paths through frozen per-tick composed velocity, sampled against updated raw q; admission at head-cohort age8s needs positive reaction-birth proxy and q>.01. Not exact parcel lineage or optical visibility.32tracks,2/cohort,512samples/track,1Hz plus endpoints; old cohorts overwritten after16new cohorts.',sourceTime:scene.time,sampleLayout:['x','y','z','qLiquid+qIce','sourceTime','iceFraction','state(1active/2terminated/3no-birth)','speedCapSteps'],totals:{seedAttempts:totals[0],noBirthAtSeed:totals[1],capArrivalsWithQAbovePoint02:totals[2],boundaryTerminations:totals[3],lowQTerminations:totals[4],ageTerminations:totals[5],speedCapSteps:totals[6],maxInternalSpeed:totals[7]/100},tracks};
+-  }
+-}

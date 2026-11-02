@@ -1,0 +1,379 @@
+{
+  "name": "motion-1x-18025-e3-6a4a22dc8669ff65-1ba0c930-8-6a4a22dc8669ff65-1ba0c930-9",
+  "build": "6a4a22dc8669ff65",
+  "identity": {
+    "files": {
+      "index.html": "fa698bfab11d2a1868a15d767d43c2c09c30f52774aaa9b0a8cb51a24f77a9ac",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/carriers.wgsl": "dbf25de354a0ebc0a99204a68144aea9b11a326f09b53ae66098111126e36c16",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/mix.wgsl": "509b4acfc1e7e7767c0064afb1f034d79cf448c9962a7e4563163d953b8251b2",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "f8946bb2f4d049ee8d7b1061154af46f99748f7662a3a620ae95f533eaedc933",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "f9bbf604b5ece2a7d355390358b0465b60facc479f7170daae18c542b48bf730",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench.js": "da9de5e11bc94a6d554a5c59cc33dde1bc83b3f5951b68bb6ad03e260de1eda8",
+      "src/cirrus.js": "91097d67c46ae156bf4d67b23b5ec9ffac106b839d7fbc430cf9961e42abc7dc",
+      "src/core-reference.js": "8ecf1f696c24bd53cbbc2132c810fece9b52b9926f4eefbc93ed9672e5b3b1a0",
+      "src/feed-reference.js": "9f3d3d5b4b61268d3edbb9dfcf2527caf4ef3145d189dd1480383a1b70d880e2",
+      "src/gpu-reference.js": "25c8c27d86aad89e236ccc94a97194227fa851628a0f9bcdf50f85f8a25b45fd",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/material-observer.js": "27fa82be643924abe3ec13e11ee3412f3563b45507f17f9b73e5a5a9456a2ae3",
+      "src/morphology.js": "796d6308365d03b2969f67788acb586d112a3b9ab39ecdb70f7d2fb9c251cbb5",
+      "src/motion.js": "6c00117e2111f436bb7d74b26eed4e408bead3879e9bf36da8cfeed6f007f8c9",
+      "src/optical-topology.js": "24114949f59fc002ef6f2631e1573789981d07b466d0b9063fd0c6ef9a914d66",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "6b34913e66ca58946be51d645fae4183942915f698943ff40e6e26e29f36f756",
+      "src/source-mask-reference.js": "46267962e4899bbe46fc0a0e38dddbbb2dc4dae58c38dc6d242ddc166c08327a",
+      "src/source-slices.js": "7c63f8bae8af77af718f565502fa8d62ab59827553ac1de37a82c9dbd6ad03e8",
+      "src/source.js": "11b0966f0da6ad791d45e582d9f1e66db042f884c7e25615a052285c97e9d0c2",
+      "src/thermals.js": "72596790f0d383e2b554fb41e8583149280cb7896c07675f2d3d0906bc5028ba",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "6a4a22dc8669ff65"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 270.31436499999614,
+    "epoch": 3,
+    "weather": {
+      "time": 270.31436499999614,
+      "weatherTick": 270,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 810.9430949999885,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:260",
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 1,
+      "inputTick": 270
+    }
+  },
+  "scope": "Actual canvas stream, not displayed-FPS or whole-GPU timing; start/end source times are queued snapshot metadata",
+  "capture": "motion-1x-18025-e3-6a4a22dc8669ff65-1ba0c930-8.webm",
+  "outcome": "fixed-fixture",
+  "start": {
+    "revision": 32,
+    "fault": null,
+    "gpuErrors": 0,
+    "rate": 1,
+    "imageFrame": 123,
+    "epoch": 3,
+    "sourceTime": 180.25,
+    "worldTime": 180.3000650000001,
+    "settings": {
+      "family": 1,
+      "sun": 32,
+      "mode": 0,
+      "provider": 0,
+      "fog": false,
+      "mirror": true,
+      "main": true,
+      "alpha": 1,
+      "emptyWork": true,
+      "resolved": true,
+      "extinctionScale": 1,
+      "cachedVelocity": false,
+      "sourceDiagnostic": false,
+      "viewSteps": 96,
+      "materialSpace": "advected",
+      "materialFilter": true,
+      "thermals": true,
+      "materialCore": true,
+      "materialStructure": true,
+      "connectedFeed": true,
+      "dualRest": true,
+      "neckMix": true
+    },
+    "weatherTargets": {
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3
+    },
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.18,
+      "distance": 15000,
+      "panX": 0,
+      "panY": 0
+    },
+    "playing": true,
+    "submittedFrame": {
+      "frame": 123,
+      "presented": true,
+      "time": 180.04172000000014,
+      "committedSourceTime": 180.25,
+      "sourceSteps": 721,
+      "worldTime": 180.29172000000014,
+      "weatherInput": {
+        "time": 180.04172000000014,
+        "weatherTick": 180,
+        "revision": 0,
+        "frontX": 1000000,
+        "frontActive": false,
+        "seed": 71,
+        "windIntegral": 540.1251600000004,
+        "rainFlux": 0.002,
+        "latestLightning": "lightning:71:169",
+        "moist": 0.85,
+        "dry": 0.08,
+        "lift": 1,
+        "wind": 3,
+        "storm": 1,
+        "inputTick": 180
+      },
+      "sourceInputRange": [],
+      "camera": {
+        "yaw": 0.3,
+        "pitch": -0.18,
+        "distance": 15000,
+        "panX": 0,
+        "panY": 0,
+        "position": [
+          4361.185371228017,
+          3314.556398612637,
+          14098.526689748629
+        ],
+        "target": [
+          0,
+          6000,
+          0
+        ]
+      },
+      "viewSize": [
+        1280,
+        720
+      ],
+      "domain": [
+        [
+          -12000,
+          500,
+          -12000
+        ],
+        [
+          12000,
+          15000,
+          12000
+        ]
+      ],
+      "look": {
+        "kappa": [
+          0.0045,
+          0.0018
+        ],
+        "MS": [
+          1,
+          0.25,
+          0
+        ],
+        "exposure": 0.5
+      },
+      "epoch": 3,
+      "family": 1,
+      "controls": {
+        "family": 1,
+        "sun": 32,
+        "mode": 0,
+        "provider": 0,
+        "fog": false,
+        "mirror": true,
+        "main": true,
+        "alpha": 0.16688000000056036,
+        "emptyWork": true,
+        "resolved": true,
+        "extinctionScale": 1,
+        "cachedVelocity": false,
+        "sourceDiagnostic": false,
+        "viewSteps": 96,
+        "materialSpace": "advected",
+        "materialFilter": true,
+        "thermals": true,
+        "materialCore": true,
+        "materialStructure": true,
+        "connectedFeed": true,
+        "dualRest": true,
+        "neckMix": true,
+        "sourceOnly": false
+      },
+      "lightBuilt": true
+    }
+  },
+  "end": {
+    "revision": 32,
+    "fault": null,
+    "gpuErrors": 0,
+    "rate": 1,
+    "imageFrame": 3502,
+    "epoch": 3,
+    "sourceTime": 270.25,
+    "worldTime": 270.31436499999614,
+    "settings": {
+      "family": 1,
+      "sun": 32,
+      "mode": 0,
+      "provider": 0,
+      "fog": false,
+      "mirror": true,
+      "main": true,
+      "alpha": 1,
+      "emptyWork": true,
+      "resolved": true,
+      "extinctionScale": 1,
+      "cachedVelocity": false,
+      "sourceDiagnostic": false,
+      "viewSteps": 96,
+      "materialSpace": "advected",
+      "materialFilter": true,
+      "thermals": true,
+      "materialCore": true,
+      "materialStructure": true,
+      "connectedFeed": true,
+      "dualRest": true,
+      "neckMix": true
+    },
+    "weatherTargets": {
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3
+    },
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.18,
+      "distance": 15000,
+      "panX": 0,
+      "panY": 0
+    },
+    "playing": true,
+    "submittedFrame": {
+      "frame": 3502,
+      "presented": true,
+      "time": 270.0551449999962,
+      "committedSourceTime": 270.25,
+      "sourceSteps": 1081,
+      "worldTime": 270.3051449999962,
+      "weatherInput": {
+        "time": 270.0551449999962,
+        "weatherTick": 270,
+        "revision": 0,
+        "frontX": 1000000,
+        "frontActive": false,
+        "seed": 71,
+        "windIntegral": 810.1654349999885,
+        "rainFlux": 0.002,
+        "latestLightning": "lightning:71:260",
+        "moist": 0.85,
+        "dry": 0.08,
+        "lift": 1,
+        "wind": 3,
+        "storm": 1,
+        "inputTick": 270
+      },
+      "sourceInputRange": [],
+      "camera": {
+        "yaw": 0.3,
+        "pitch": -0.18,
+        "distance": 15000,
+        "panX": 0,
+        "panY": 0,
+        "position": [
+          4361.185371228017,
+          3314.556398612637,
+          14098.526689748629
+        ],
+        "target": [
+          0,
+          6000,
+          0
+        ]
+      },
+      "viewSize": [
+        1280,
+        720
+      ],
+      "domain": [
+        [
+          -12000,
+          500,
+          -12000
+        ],
+        [
+          12000,
+          15000,
+          12000
+        ]
+      ],
+      "look": {
+        "kappa": [
+          0.0045,
+          0.0018
+        ],
+        "MS": [
+          1,
+          0.25,
+          0
+        ],
+        "exposure": 0.5
+      },
+      "epoch": 3,
+      "family": 1,
+      "controls": {
+        "family": 1,
+        "sun": 32,
+        "mode": 0,
+        "provider": 0,
+        "fog": false,
+        "mirror": true,
+        "main": true,
+        "alpha": 0.22057999998469313,
+        "emptyWork": true,
+        "resolved": true,
+        "extinctionScale": 1,
+        "cachedVelocity": false,
+        "sourceDiagnostic": false,
+        "viewSteps": 96,
+        "materialSpace": "advected",
+        "materialFilter": true,
+        "thermals": true,
+        "materialCore": true,
+        "materialStructure": true,
+        "connectedFeed": true,
+        "dualRest": true,
+        "neckMix": true,
+        "sourceOnly": false
+      },
+      "lightBuilt": true
+    }
+  },
+  "elapsedMs": 90002.71999979019,
+  "requestedFps": 15,
+  "mimeType": "video/webm;codecs=vp9",
+  "bytes": 4421204
+}
