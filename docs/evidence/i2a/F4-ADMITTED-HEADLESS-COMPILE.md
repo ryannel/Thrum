@@ -90,8 +90,8 @@ proc-macro events, and a sorted Cargo-ID or admitted-relative-path/version,
 target, kind and feature digest. The observed unit digest is
 `47042cc82aa994ad4383eba23b10891b66c296a9b1a87acd2a12c0bf5834b4c1`. This is
 an observed selected graph, not a complete file-read trace or compiler
-invocation attestation. The latest run used 53 admitted files (1,225,138 B),
-1,148 ms for A's debug build and a 2,345,736 B executable; these are one
+invocation attestation. The latest run used 53 admitted files (1,225,519 B),
+1,103 ms for A's debug build and a 2,345,736 B executable; these are one
 warm-cache local observation, not a performance guarantee.
 
 The sandboxed run improves the process boundary; it does not make a trusted
@@ -115,6 +115,18 @@ than the test process architecture. These are local cold-output-tree
 observations, not a latency guarantee. The direct linker and SDK are selected
 by path but their complete bytes and loaded dependency closure are not yet
 authenticated.
+
+The read grant was narrowed once more to the resolved Clang toolchain root
+and MacOSX SDK root, retaining the selected Rust toolchain and named system
+roots. Two passing A builds took 1,572 and 1,103 ms; the latter is near the
+direct-linker run with the broader developer grant. A separate sorted
+path/type/length/SHA-256 inventory experiment measured 394 files, 1.03 GB
+logical bytes and 0.59 seconds for the installed Rust toolchain; 5,730 files,
+2.88 GB and 5.95 seconds for the selected Xcode toolchain; and 33,507 files,
+0.95 GB and 5.66 seconds for the SDK. Symlink targets and directory paths
+were included in those candidate digests. The whole developer tree would
+cover roughly 117,000 files and took 26.5 seconds to inventory. These are
+one-host cold observations, not verified release roots or edit-time costs.
 
 Broad system reads remain; general selected-unit and build-script/proc-macro
 inputs, exact compiler/dependency identities and the output manifest are not
