@@ -28,13 +28,28 @@ fn rollingVelocity(d:vec3f,R:f32,H:f32,A:f32)->vec3f {
   let r2=dot(d.xz,d.xz)/(R*R);let E=exp(-r2-d.y*d.y/(H*H));
   return vec3f(2.*A*d.y*d.x/(H*H),2.*A*(1.-r2),2.*A*d.y*d.z/(H*H))*E;
 }
-fn thermalVelocity(x:vec3f)->vec3f {
-  let band=u32(clamp(floor(x.y/500.),0.,31.));let offset=band*49u;let count=thermalBands[offset];var v=vec3f(0);
-  for(var j=0u;j<count;j++){let h=thermalHeads[thermalBands[offset+1u+j]];let d=x-h.position.xyz;
-    let r2=dot(d.xz,d.xz)/(h.position.w*h.position.w);let y2=d.y*d.y/(h.shape.y*h.shape.y);if(r2>9.||y2>9.){continue;}
-    v+=rollingVelocity(d,h.position.w,h.shape.y,h.shape.x);
+struct ThermalFlow {roll:vec3f,spread:vec2f};
+fn thermalVelocity(x:vec3f)->ThermalFlow {
+  let band=u32(clamp(floor(x.y/500.),0.,31.));let offset=band*49u;let count=thermalBands[offset];var v=vec3f(0);var spread=vec2f(0);
+  for(var j=0u;j<count;j++){
+    let h=thermalHeads[thermalBands[offset+1u+j]];let d=x-h.position.xyz;
+    let c=h.identity.y;let s=h.identity.z;let a=h.identity.w;
+    let local=vec3f((c*d.x+s*d.z)/a,d.y,(-s*d.x+c*d.z)*a);
+    let r2=dot(local.xz,local.xz)/(h.position.w*h.position.w);let y2=d.y*d.y/(h.shape.y*h.shape.y);
+    if(r2>9.||y2>9.){continue;}
+    var roll=rollingVelocity(local,h.position.w,h.shape.y,h.shape.x);
+    roll+=rollingVelocity(local-vec3f(.65*h.position.w,.15*h.shape.y,0),.55*h.position.w,.75*h.shape.y,.45*h.shape.x);
+    let horizontal=vec2f(c*a*roll.x-s*roll.z/a,s*a*roll.x+c*roll.z/a);
+    v+=vec3f(horizontal.x,roll.y,horizontal.y);
+    if(x.y>9000.&&h.position.y>7000.){
+    let capSupport=1.-smoothstep(2.,3.,sqrt(r2));
+    let arrival=smoothstep(7000.,9000.,h.position.y)*h.shape.z;
+    let radial=local.xz/sqrt(dot(local.xz,local.xz)+160000.);
+    let pushed=vec2f(c*a*radial.x-s*radial.y/a,s*a*radial.x+c*radial.y/a);
+    spread+=16.*arrival*exp(-r2/9.)*capSupport*pushed;
+    }
   }
-  return v;
+  return ThermalFlow(v,spread);
 }
 fn hash3(x:vec3f)->f32 {
   return fract(sin(dot(x,vec3f(127.1,311.7,74.7)))*43758.5453);
@@ -99,14 +114,16 @@ fn flow(x:vec3f)->vec4f {
   let c=textureSampleLevel(curlField,linearRepeat,fract((x-vec3f(p.weather.w,0.,p.weather.x*1.1))/vec3f(2400.)),0.).xyz;
   let eddy=c*vec3f(18.,12.,18.)*smoothstep(layer.x-150.,layer.x+200.,x.y);
   var convective=0.;
-  var internal=eddy+vec3f(radialDir.x*outflow,up,shear*3.+radialDir.y*outflow);
+  var internal=eddy+vec3f(radialDir.x*outflow,up,radialDir.y*outflow);
   if(kind==1u&&p.front.z>.5){
     let head=thermalVelocity(x);let cap=1.-smoothstep(layer.z-600.,layer.z+700.,x.y);
-    convective=max(head.y,0.)*cap;
-    internal=eddy*.5+vec3f(radialDir.x*outflow,up,shear*3.+radialDir.y*outflow)+head*vec3f(1,cap,1);
+    convective=max(head.roll.y,0.)*cap;
+    let spread=head.spread*smoothstep(layer.z-600.,layer.z+700.,x.y)*p.front.y;
+    internal=eddy*.5+vec3f(spread.x,up,spread.y)+head.roll*vec3f(1,cap,1);
   }
   if(kind==1u){let scale=min(1.,100./max(length(internal),1e-6));internal*=scale;convective*=scale;}
-  return vec4f(internal+vec3f(p.weather.z*(1.+.6*shear),0,1.1),convective);
+  let jet=select(0.,smoothstep(5500.,9500.,x.y),kind==1u&&p.front.z>.5);
+  return vec4f(internal+vec3f(p.weather.z*(1.+.6*shear)+18.*jet,0,1.1+3.*shear-5.*jet),convective);
 }
 fn velocity(x:vec3f)->vec3f {return flow(x).xyz;
 }
@@ -139,7 +156,7 @@ fn localSource(x:vec3f)->vec3f {
     let fall=select(e.timing.w,10.,packet);
     let window=smoothstep(0.,rise,age)*(1.-smoothstep(rise+hold,rise+hold+fall,age));
     if(packet&&window<=0.){continue;}
-    let center=e.location.xy+select(vec2f(0),vec2f(p.weather.w,p.weather.x*1.1),kind==1u);
+    let center=e.location.xy*select(1.,2.,packet)+select(vec2f(0),vec2f(p.weather.w,p.weather.x*1.1),kind==1u);
     let radius=e.location.z*select(1.,2.,kind==1u);
     let r=length((x.xz-center)/vec2f(radius));
     let mask=1.-smoothstep(.25,1.25,r);
@@ -292,7 +309,8 @@ fn backtracedRest(x:vec3f,dt:f32)->vec3f {
     let height=smoothstep(layer.x+100.,layer.x+400.,x.y)*(1.-smoothstep(layer.z-1500.,layer.z-500.,x.y));
     add.x+=condensingSource(adv.x,field.w,p.control.x,p.control.z,height);
     let shear=clamp((x.y-layer.x)/8000.,0.,1.);
-    let flow=vec3f(p.weather.w*(1.+.6*shear),0,p.weather.x*(1.1+3.*shear));
+    let jet=smoothstep(5500.,9500.,x.y);
+    let flow=vec3f(p.weather.w*(1.+.6*shear)+18.*jet*p.weather.x,0,p.weather.x*(1.1+3.*shear-5.*jet));
     let pocket=valueNoise((x-flow)/vec3f(1100.,800.,1100.)+vec3f(.13,p.weather.x*.001,.37));
     let deficit=clamp(p.control.y+.6*(1.-p.control.x),0.,1.);
     let E=(.0008+.008*p.control.y*p.control.y)*deficit*(.2+1.0*smoothstep(.25,.75,pocket));

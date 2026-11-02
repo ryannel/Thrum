@@ -107,3 +107,13 @@ assert.equal(validateMotion(before, after), "fixed-fixture");
 assert.equal(validateMotion(before, {...after, revision: 3}), "fixture-changed");
 assert.equal(validateMotion(before, {...after, fault: "history expired"}), "faulted-or-paused");
 assert.equal(validateMotion(before, {...after, imageFrame: 20}), "no-source-or-image-progress");
+
+// A held profile has an independent integral; catches CPU head jet/base drift.
+const steady = {...f, wind: 0, windIntegral: 0, lift: 1};
+const jetHead = new ThermalDriver();
+jetHead.reset(0, steady, [{...pulse, x: 100, z: -50}]);
+for (let i = 1; i <= 1000; i++) jetHead.update(i * .25, .25, steady, []);
+const h = jetHead.heads[0], u = (8400 - 5500) / 4000;
+const jetSeconds = 4000 * (u**3 - .5*u**4) / 28;
+assert.ok(Math.abs(h.x - (200 + 18*jetSeconds)) < .001);
+assert.ok(Math.abs(h.z - (-100 + 1.1*250 + 3*118.75 - 5*jetSeconds)) < .001);

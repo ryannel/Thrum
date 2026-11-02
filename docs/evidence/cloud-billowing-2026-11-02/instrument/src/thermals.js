@@ -29,8 +29,9 @@ export class ThermalDriver {
       const old = h.y;
       h.y += speed * dt;
       const shear = clamp(((old + h.y) * 0.5 - 1100) / 8000, 0, 1);
-      h.x += weather.wind * (1 + 0.6 * shear) * dt;
-      h.z += (1.1 + 3 * shear) * dt;
+      const jet = smooth(5500, 9500, (old + h.y) * 0.5);
+      h.x += (weather.wind * (1 + 0.6 * shear) + 18 * jet) * dt;
+      h.z += (1.1 + 3 * shear - 5 * jet) * dt;
     }
     this.heads = this.heads.filter((h) => time - h.birth < 420 && h.y < 11000);
     for (const p of pulses) {
@@ -41,14 +42,17 @@ export class ThermalDriver {
         throw Error("Thermal head capacity exceeded");
       const age = seeded ? Math.max(0, time - p.birth) : 0;
       const y = 1400 + speed * age;
+      const u = clamp((y - 5500) / 4000, 0, 1);
+      const integral = 4000 * (u ** 3 - 0.5 * u ** 4) + Math.max(0, y - 9500);
+      const jetTime = speed > 1e-6 ? integral / speed : 0;
       const shear = clamp((300 + speed * age * 0.5) / 8000, 0, 1);
       this.heads.push({
         id: p.id,
         serial: p.serial,
         birth: p.birth,
-        x: weather.windIntegral + p.x + weather.wind * 0.6 * shear * age,
+        x: weather.windIntegral + 2 * p.x + weather.wind * 0.6 * shear * age + 18 * jetTime,
         y,
-        z: p.z + 1.1 * time + 3 * shear * age,
+        z: 2 * p.z + 1.1 * time + 3 * shear * age - 5 * jetTime,
         r0: clamp(p.radius * 2.6, 1100, 1600),
       });
     }
@@ -66,7 +70,7 @@ export class ThermalDriver {
         (1 - smooth(8400, 9900, h.y));
       const A = 24 * Math.sqrt(weather.lift) * window;
       this.data.set(
-        [h.x, h.y, h.z, R, A, H, window, speed, h.serial, h.birth, age, h.r0],
+        [h.x, h.y, h.z, R, A, H, window, speed, h.serial, Math.cos(h.serial * 2.4), Math.sin(h.serial * 2.4), 1 + .28 * Math.sin(h.serial * 1.7)],
         i * 12,
       );
       if (A < 1e-4) continue;

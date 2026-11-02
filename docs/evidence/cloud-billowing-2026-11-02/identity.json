@@ -10,23 +10,23 @@
     "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
     "shaders/optics.wgsl": "97f36dce04c4940d074d44ae6b09f87e2afdace33e4b4c38bcb02692a000bb57",
     "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
-    "shaders/source.wgsl": "d1511c444ff60e38fd501332375364c2a41fc2cefde06b9a150f7c2da073703a",
+    "shaders/source.wgsl": "5230bb7ac28874ae00fc11d8cef916575fc51d11b823bd0364d4d4626bdd72aa",
     "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
     "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
     "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
     "src/bench.js": "03b344b310a626392cbdfa7692d113da44d7c36672502b418d74dc28f1915995",
     "src/gpu-reference.js": "0b722fc8d53a0a4727eb5fd9eaf07bc2eb452adf35c19198c6d3c703afb75ec2",
     "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
-    "src/morphology.js": "121c27277260de863ab339f5feddd2b00078ae232fcc8baac70a6bdbaac436e4",
+    "src/morphology.js": "174912a68392f1f3b520bb26dc21df14350e85254fed1e4f0cb107d97684d35a",
     "src/motion.js": "a1dae42eaf1f33a7ce754446a3801c6f3880c18750dc29b03aa121af35c20c3b",
     "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
     "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
     "src/scene.js": "2600ad5193af40c87147433af5b3a01ce70f080f6edf12724fcc35da1b32fe50",
     "src/source-mask-reference.js": "1053878ea53457001c4d55971c12819e7e622248efc556bc61ab2720c9530968",
     "src/source.js": "8ba7b3939b1684d366c32048b2f92f5c3e54a3fa1512c5f5a9af62f1ce35a772",
-    "src/thermals.js": "d2d7f57f15b72017218260277ce7b0879c685a188ff4c8884e562edf51662837",
+    "src/thermals.js": "49238d0508a8ffcbb04ae61ac1a20607ebc361752f7269c7da06ec0bd56b328e",
     "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
     "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
   },
-  "build": "9d84ac657834807f"
+  "build": "ebbb321b0ed2b253"
 }

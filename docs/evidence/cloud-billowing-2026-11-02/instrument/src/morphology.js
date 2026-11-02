@@ -95,6 +95,8 @@ export function analyzeDensity(
     heads.push({
       id: a[8],
       position: Array.from(a.subarray(0, 3)),
+      orientation: [a[9], a[10]],
+      aspect: a[11],
       radius: a[3],
       height: a[5],
       amplitude: a[4],
@@ -117,13 +119,11 @@ export function analyzeDensity(
         bounds[0][2] +
         ((Math.floor(i / plane) + 0.5) * (bounds[1][2] - bounds[0][2])) / nz;
     if (
-      heads.some(
-        (h) =>
-          ((x - h.position[0]) ** 2 + (z - h.position[2]) ** 2) /
-            (4 * h.radius ** 2) +
-            (y - h.position[1]) ** 2 / (4 * h.height ** 2) <=
-          1,
-      )
+      heads.some((h) => {
+        const dx=x-h.position[0], dz=z-h.position[2], [c,s]=h.orientation;
+        const u=(c*dx+s*dz)/h.aspect, v=(-s*dx+c*dz)*h.aspect;
+        return (u*u+v*v)/(4*h.radius**2)+(y-h.position[1])**2/(4*h.height**2)<=1;
+      })
     )
       overlap += q[i];
   }
