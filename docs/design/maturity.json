@@ -443,6 +443,10 @@
       "i2a_256_descriptor_candidate_cost": {
         "evidence": "../evidence/i2a/SOURCE-256-CANDIDATE-COST.md",
         "scope": "An ignored release fixture validates a full provisional candidate with 256 descriptors, 4,096 declared scene/game records, 100,000 field-history entries, 1,024 version entries and one large opaque game value, then derives its canonical manifest revision. One local elapsed sample and an isolated whole-process RSS sample are recorded. Only one game record and one required edge are live; all-type game distribution, 65,536-edge overlap, authenticated prior root, editor/source-store peak, target/device performance and production admission remain open."
+      },
+      "i2a_all_type_max_edges_candidate": {
+        "evidence": "../evidence/i2a/SOURCE-ALL-TYPE-EDGE-COST.md",
+        "scope": "An ignored release fixture validates one provisional candidate with 256 source-carried game types, two records per type, 3,584 scenes and 65,536 distributed required references under dense carried history, then derives its revision. A 65,664-edge candidate refuses. Three isolated local elapsed/RSS observations include fixture generation and staging in whole-process RSS but time only validation. Authenticated prior root, external roots, two-candidate/editor/store peak, target performance and production admission remain open."
       }
     },
     {
