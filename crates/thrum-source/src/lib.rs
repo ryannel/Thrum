@@ -9,6 +9,7 @@ mod json;
 mod manifest;
 mod path;
 mod record;
+mod semantic;
 mod stage;
 
 pub use inventory::{Inventory, InventoryError, InventoryFile, scan_declared_tree};
@@ -16,4 +17,5 @@ pub use json::{JsonError, MAX_RECORD_BYTES, MAX_RECORD_NODES, parse_record_json}
 pub use manifest::{ManifestEntry, ManifestError, RecordDescriptor, SourceRevision, TreeManifest};
 pub use path::{PathError, SourcePath, validate_paths};
 pub use record::{RecordEnvelope, RecordError, validate_record_envelope};
+pub use semantic::{BootstrapError, BootstrapProfile, BootstrapScene, validate_bootstrap_profile};
 pub use stage::{StageError, StagedFile, StagedLease, StagedTree, stage_declared_tree};

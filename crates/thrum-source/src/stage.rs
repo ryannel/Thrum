@@ -186,7 +186,7 @@ pub fn stage_declared_tree(
     stage_declared_tree_with(project_root, declared, Limits::V1, |_| {})
 }
 
-fn stage_declared_tree_with(
+pub(crate) fn stage_declared_tree_with(
     project_root: &Path,
     declared: &[SourcePath],
     limits: Limits,
