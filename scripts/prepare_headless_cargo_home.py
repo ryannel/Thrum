@@ -263,7 +263,7 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
             raise ValueError(f"{label} must be absolute: {path}")
     if not source.is_dir() or not shared_home.is_dir() or not cargo.is_file() or not rustc.is_file():
         raise ValueError("source, shared Cargo home and selected compiler binaries must exist")
-    if source.is_symlink() or cargo.parent != rustc.parent:
+    if source.is_symlink() or cargo.is_symlink() or rustc.is_symlink() or cargo.parent != rustc.parent:
         raise ValueError("source must be an ordinary tree and Cargo/Rustc one toolchain")
     if destination.exists() or destination.is_symlink():
         raise ValueError("private Cargo home destination must be absent")
@@ -311,6 +311,10 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
     destination.mkdir()
     manifest_created = False
     try:
+        tool_executables = {
+            name: {"sha256": sha256_file(path), "bytes": path.stat().st_size}
+            for name, path in (("cargo", cargo), ("rustc", rustc))
+        }
         scratch = destination / "_prepare"
         (scratch / "tmp").mkdir(parents=True)
         private_index = destination / "registry/index" / index_root.name
@@ -366,6 +370,9 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
             package["id"] for package in private_metadata["packages"]
         } != {package["id"] for package in metadata["packages"]}:
             raise ValueError("private Cargo resolution changed after cache pruning")
+        for name, path in (("cargo", cargo), ("rustc", rustc)):
+            if sha256_file(path) != tool_executables[name]["sha256"]:
+                raise ValueError(f"selected {name} executable changed during cache preparation")
         shutil.rmtree(scratch)
         # Cargo's usage database contains host/path-specific cache bookkeeping;
         # the locked offline compile can recreate or omit it. It is not input.
@@ -379,6 +386,7 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
             "registryArchives": copied_archives,
             "verifiedLockArchives": len(verified_archives),
             "possibleBuildPackages": possible_packages,
+            "toolExecutables": tool_executables,
             "privateRoot": inventory,
         }
         with manifest_path.open("x", encoding="utf-8") as output:

@@ -403,6 +403,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     use std::ffi::OsString;
     use std::fs;
+    use std::io::Read;
     use std::path::{Path, PathBuf};
     use std::process::Command;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -1006,6 +1007,9 @@ mod tests {
             owned_cache = Some(prepared);
         }
         let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
+        if let Some(cache) = &owned_cache {
+            cache.assert_tool_bytes();
+        }
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
         let built_a = cargo_build_headless(
@@ -1075,6 +1079,9 @@ mod tests {
         if let (Some(path), Some(before)) = (&private_cargo_home, private_cache_before) {
             assert_eq!(tree_hashes(path), before);
         }
+        if let Some(cache) = &owned_cache {
+            cache.assert_tool_bytes();
+        }
         drop(owned_cache);
     }
 
@@ -1099,6 +1106,17 @@ mod tests {
 
     struct PreparedCacheHome {
         path: PathBuf,
+        cargo_hash: String,
+        rustc_hash: String,
+    }
+
+    impl PreparedCacheHome {
+        fn assert_tool_bytes(&self) {
+            let cargo = Path::new(env!("CARGO"));
+            let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            assert_eq!(file_sha256_hex(cargo), self.cargo_hash);
+            assert_eq!(file_sha256_hex(&rustc), self.rustc_hash);
+        }
     }
 
     impl Drop for PreparedCacheHome {
@@ -1132,8 +1150,10 @@ mod tests {
             destination.file_name().unwrap().to_string_lossy()
         ));
         assert!(!destination.exists() && !manifest_path.exists());
-        let owner = PreparedCacheHome {
+        let mut owner = PreparedCacheHome {
             path: destination.clone(),
+            cargo_hash: String::new(),
+            rustc_hash: String::new(),
         };
         let started = Instant::now();
         let result =
@@ -1148,7 +1168,7 @@ mod tests {
                 .arg("--cargo")
                 .arg(cargo)
                 .arg("--rustc")
-                .arg(rustc)
+                .arg(&rustc)
                 .arg("--target")
                 .arg(target)
                 .output()
@@ -1177,6 +1197,15 @@ mod tests {
                 "thrum-mobile-shell"
             ]
         );
+        owner.cargo_hash = candidate["toolExecutables"]["cargo"]["sha256"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        owner.rustc_hash = candidate["toolExecutables"]["rustc"]["sha256"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        owner.assert_tool_bytes();
         eprintln!(
             "prepared-private-cargo-home prep_ms={} {}",
             started.elapsed().as_millis(),
@@ -1208,6 +1237,25 @@ mod tests {
         visit(root, root, &mut output);
         output.sort_unstable_by(|left, right| left.0.cmp(&right.0));
         output
+    }
+
+    fn file_sha256_hex(path: &Path) -> String {
+        let mut file = fs::File::open(path).unwrap();
+        let mut hash = Sha256::new();
+        let mut buffer = [0u8; 64 * 1024];
+        loop {
+            let count = file.read(&mut buffer).unwrap();
+            if count == 0 {
+                break;
+            }
+            hash.update(&buffer[..count]);
+        }
+        use std::fmt::Write as _;
+        let mut hex = String::with_capacity(64);
+        for byte in hash.finalize() {
+            write!(&mut hex, "{byte:02x}").unwrap();
+        }
+        hex
     }
 
     fn inspect_headless_cargo_units(
