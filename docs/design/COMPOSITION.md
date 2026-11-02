@@ -185,6 +185,8 @@ checkpoint, and recovery may restore the prior compatible tuple until the new on
 readers still needed by retained saves or content. Executable hot reload, asset reload and live feature selection are separate
 capabilities. This provides a portable initial composition model without requiring a cross-platform binary plugin ABI.
 
+The [cloud provider recipes](modules/CLOUD-PROVIDERS.md) specify runtime full-sky versus shadow-only selection,
+layout-neutral queries, compatibility and removal; these are design examples, not implemented public APIs.
 The [cloud consumer matrix](modules/CLOUDS.md#responsibility-and-public-composition) concretizes one provider family:
 main cloud drawing can be off while attenuation or a reflected cloud remains. Bind retained consumers explicitly;
 retire only unused products. RC-one/RC-four resource capacities are load-time selections, not promises of zero-cost

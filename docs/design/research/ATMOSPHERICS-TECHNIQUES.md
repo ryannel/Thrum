@@ -1,6 +1,6 @@
 # Atmospherics technique selection and source map
 
-2 November 2026. Current research recommendation for the [cloud migration](../modules/CLOUD-MIGRATION.md).
+2 November 2026. Current runtime selection/research support for the [cloud migration](../modules/CLOUD-MIGRATION.md).
 The [production baseline](../modules/CLOUD-PRODUCTION-BASELINE.md) now locks the mechanisms. This is a selected implementation specification with qualification gates, not a claim of completed implementation or a recovered
 studio architecture. The [capabilities](../modules/CLOUD-CAPABILITIES.md) retain the full commissioned experience.
 
@@ -9,14 +9,14 @@ studio architecture. The [capabilities](../modules/CLOUD-CAPABILITIES.md) retain
 | Responsibility | Selected direction | Basis and important limit |
 | --- | --- | --- |
 | Clear atmosphere, horizon and aerial perspective | Hillaire's complete transmittance + multiple-scattering + sky-view + aerial-perspective LUT family; RGB aerial extinction is our extension/validated alternative to mean-alpha fast AP; a bounded direct segment integrator for spatial shadows/overlap | Author paper and MIT comparison code; Bevy's current sky/PBR/environment joins. A Sun-only transmittance LUT does not complete this system. |
-| Cloud morphology and lifecycle | **Houdini FX22.0.459** SOP/sparse Pyro/VDB/Karma -> class-specific3D optical animation; persistent event identities in synchronized finite world episodes | Nubis³ establishes prepared morphology/up-rez; Smolder 2026 establishes baked evolving volumes. Neither supplies our five-family library. New content must demonstrate local renewal and topology change. |
+| Cloud morphology and lifecycle | Native runtime sparse3D optical control, bounded advection/local source-loss and persistent IDs under live weather; no Houdini or lifecycle clips | Nubis³ establishes3D morphology/up-rez/rendering; our live optical source is an explicit adaptation. Smolder supports an optional prepared-volume provider, not the required dynamic lifecycle. New content must demonstrate local renewal and topology change. |
 | Runtime density | Cooked low-frequency fields, bounded detail and conservative occupied-region traversal; projected-footprint LOD | Nubis Evolved/³; Smolder brick occupancy. Detail noise decorates the lifecycle and cannot create the missing lifecycle by assertion. |
-| Direct light and cloud shadows | Cascaded full-column Beer shadows for behind-caster receivers; complete secondary Sun marches for interior cloud/air/fog queries | Epic current5.8 documents BSM and secondary marches. Our domain split is explicit; a column total cannot give arbitrary interior tau. K48 is retired from baseline. |
-| Cloud multiple scattering | Two-lobe HG with liquid/ice settings, primary plus one additional MS approximation octave; baked all-cloud ambient accessibility and disk-excluded clear-sky upper-hemisphere mean | Epic single-octave game recommendation and published cloud-lighting lineage. Fitted liquid closure is an optional comparator, not a prerequisite or accepted thick/ice light model. |
-| Ambient and reflections | Common sky/cloud radiance generation, filtered environment/irradiance products; independent local reflected rays where parallax matters | Bevy source, Patry 2021 and RDR2's stated consumer architecture. Constant blue ambient and a perfect mirror do not prove clouded diffuse lighting or rough water. |
+| Direct light and cloud shadows | Receiver Beer shadows; current3D point-to-Sun visibility cache plus2local Sun samples, complete direct-ray oracle/fallback | Nubis³ slides125–127/154 disclose voxel tail caching plus2local samples; Epic documents BSM/secondary rays. Our dimensions/current cadence are adaptations; a column total cannot give arbitrary interior tau. K48 is retired from baseline. |
+| Cloud multiple scattering | Two-lobe HG with liquid/ice settings, primary plus one additional MS approximation octave; current runtime voxel ambient accessibility and disk-excluded clear-sky upper-hemisphere mean | Epic single-octave game recommendation and published cloud-lighting lineage. Fitted liquid closure is an optional comparator, not a prerequisite or accepted thick/ice light model. |
+| Ambient and reflections | Current same-source sky/cloud radiance generation, filtered environment/irradiance products; independent local reflected rays where parallax matters | Bevy source, Patry 2021 and RDR2's stated consumer architecture. Constant blue ambient and a perfect mirror do not prove clouded diffuse lighting or rough water. |
 | Local fog / overlapping media | Integrate summed coefficients/source in overlapping intervals; compose disjoint radiance/transmittance segments once | Godot integration code and transport algebra. Use bounded volumes first; froxels become a selected dense-volume tier only if their combined cost wins. |
 | View cost | Disjoint320x180far/640x360near rays, independent histories/current spatial fallback and bounded fresh samples; selective lighting-rate experiments optional | Nubis lineage and actual Takram resolve code. Fresh growth, cuts and disocclusion must receive current samples; old history cannot supply new matter. |
-| Weather | Authored spatial fronts, event births and height wind baked once into synchronized episode density/pose tracks under E1/W1; no runtime extra wind | Retained research and Guerrilla's regional authoring/scheduler. Scientific meteorology is optional; persistent local growth and coherent weather remain required. |
+| Weather | Live regional fronts/controls, persistent source state and W applied once in source transport under E1/W1 | Retained research and Guerrilla's regional authoring/scheduler. Scientific meteorology is optional; persistent local growth and coherent weather remain required. |
 
 We select these principles together. Copying a dense console texture layout, a 16-frame refresh window or a shipped
 millisecond number would not establish suitability for Thrum. Format support, memory, content cadence and simultaneous
@@ -34,10 +34,10 @@ are challengers/reference paths, not prerequisites for the browser production ba
 - [Smolder2026 speaker notes](https://www.realtimerendering.com/advances/s2026/content/AlexanderMueller_Smolder_Siggraph26.pdf)
   support shipped baked animated-volume production. Its whole-animation-memory limitation and future-streaming note
   are retained; our bounded frame-window streamer is conventional texture IO, not a claimed Smolder feature.
-- [Houdini22.0.459 production announcement](https://www.sidefx.com/forum/topic/104614/) pins the selected1October2026
-  release. [Cloud modeling](https://www.sidefx.com/docs/houdini/model/cloud.html) and
+- Optional authoring reference, **not a dependency**: [Houdini22.0.459 production announcement](https://www.sidefx.com/forum/topic/104614/) records the1October2026
+  release; the previous selected toolchain is superseded. [Cloud modeling](https://www.sidefx.com/docs/houdini/model/cloud.html) and
   [sparse Pyro](https://www.sidefx.com/docs/houdini/nodes/sop/pyrosolver.html) supply concrete authoring operations.
-  Local tool access/license, content and full-episode storage remain execution prerequisites.
+  No installation/licence or full-episode cache is required by the current native generator.
 - [Epic animated SVT documentation](https://dev.epicgames.com/documentation/unreal-engine/sparse-volume-textures-in-unreal-engine?lang=en-US)
   provides adjacent-frame/interpolation/page/prefetch API precedent, but the product is explicitly **Experimental**.
   Do not call it shipped adoption proof or import its implementation. Our runtime is a selected independent portable
@@ -47,6 +47,28 @@ are challengers/reference paths, not prerequisites for the browser production ba
 New neural/Gaussian methods, hardware-specific light sharing and custom transport compression are optional; newest
 publication date alone does not establish adoption. Accessible pinned code below teaches pass ordering/math/resources,
 with source-specific rights and portability limits. No private Decima/UE runtime was accessed.
+
+## Visual-first selection and dynamic source adaptation
+
+[The new selection review](../../evidence/cloud-dynamic-revision-2026-11-02/visual-selection.md) uses primary independent
+reviews of Burning Shores for its3D cloud appearance, including reviewer text rather than only developer marketing.
+It does not claim universal consensus or that visual praise proves an unpublished runtime weather model. Full DF
+video motion was not watched here. The selected default retains genuine3D morphology/rendering economies rather than
+calling an older2.5D weather-map method equivalent to that close-cloud result. Compare cheaper methods only within
+an explicitly accepted distance/quality domain and complete CPU/GPU/memory scope.
+
+Root re-read retained Nubis³ speaker notes slides123–129,147–154 and171–174 on2November: decoupled Sun samples stored
+in a256x256x32 voxel grid after the first2local samples; sky-direction accumulated density for ambient; console test
+cloud costs2.2–4ms at960x540 with named optimizations. Those are **their** source/view/workload, not a Thrum prediction.
+Our point caches use complete source-to-boundary tails, current generation and independent consumers, with measured
+error/fallback and full update cost. No8-frame amortization transfers automatically to fast-changing weather.
+
+The native source uses bounded MacCormack semi-Lagrangian scalar advection plus exact positive local reaction and
+authored internal velocities/phase-class transfer. [Selle et al., author paper](https://faculty.cc.gatech.edu/~jarek/papers/maccormack.pdf)
+supports the advection/limiter, not cloud art quality. Root inspected the author-hosted abstract and limiter/reversion
+passages after the original Stanford locator returned404. Genus rules and the reduced E1 control law are explicit Thrum
+choices; [source alternatives/reconciliation](../../evidence/cloud-dynamic-revision-2026-11-02/source-review.md) retains
+why a full thermodynamic/parcel model is optional. No whole-publication combination is claimed production-proven.
 
 ## Primary research and material actually inspected
 
@@ -111,15 +133,14 @@ or recurring task has been installed. Prefer a complete proven fit over a newer 
 
 ## Deductions and unresolved qualification
 
-Our combination of weather-owned prepared sequences, footprint-aware source/light products, ordered overlap and
-independent histories is a synthesis. The disjoint transfer algebra is established; RGB aerial extension, domain-selected Sun shadow paths and episode playback admission
+Our combination of live reduced optical-control evolution, footprint-aware source/light products, ordered overlap and
+independent histories is a synthesis. The disjoint transfer algebra is established; RGB aerial extension, dynamic source/genus recipes and current voxel-light error/admission
 are our explicit adaptations. Specialized far summaries are optional. Their quality/cost must be demonstrated by the migration POCs. Publications leave some authoring inputs and runtime
 choices private. We do not present deductions as knowledge of their internals.
 
-The largest unresolved dependency is a selected, recoverable, phase-complete source sample for each family—not
-another transport formula. Cu/Cb especially need actual growing towers, mature renewal and breakup. A named VDB
-workflow is a concrete production route, but an unseen VDB sequence is not accepted content. The build plan puts that
-sample and an early coupled cost/appearance sentinel ahead of broad content manufacture or engine integration.
+The largest unproved mechanism is the native live3D source producing convincing morphology/renewal/breakup under
+new runtime forcing at viable cost. Published advection or a named voxel renderer does not prove those cues. P1/P4a
+therefore exercise actual source creation and coupled images/motion before broad variants or engine integration.
 
 
 ## Second-review consequences

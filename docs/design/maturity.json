@@ -996,7 +996,7 @@
         "A04",
         "A05"
       ],
-      "current_design_sha256": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "current_design_sha256": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1036,7 +1036,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "current_design_sha256": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1074,7 +1074,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "current_design_sha256": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1125,8 +1125,8 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "b80f3824f3f436f7c386235483a8ce7b23a62c31bac11c1fcf05eb05b7681a24",
-      "current_design_delta": "Production-derived baseline now selects Houdini baked world episodes, uniform 3D optical animation, conventional sparse streaming/LOD, Hillaire air, receiver BSM/interior secondary Sun rays, fixed cloud scattering/ambient and independent reconstructed views. Prior algorithm competitions are optional; five-family/weather/consumer scope retained. Implementation/content/device qualification unrun; prior bounded cost fails.",
+      "current_design_sha256": "176cd6c0ff81082119db0c501e2d7e5cb2e46768354c13ae8d16ba969e96eff8",
+      "current_design_delta": "Runtime revision removes Houdini/baked lifecycle. Selects native sparse 3D optical-control transport/source-loss under live E1 weather, Nubis3 visual/render lineage with point voxel lighting, Hillaire air, receiver BSM and independent views. Explicit replaceable provider and complete-atmosphere scope contracts. Dynamic source/combined visuals/device performance unproved; prior bounded cost fails.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -1213,7 +1213,7 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "reviewed_production_baseline_selected_implementation_not_started",
+        "status": "reviewed_native_runtime_atmosphere_provider_plan_implementation_not_started",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
@@ -1239,7 +1239,10 @@
         "proof_acceptance": "modules/CLOUD-PROOF-ACCEPTANCE.md",
         "performance_execution": "modules/CLOUD-PERFORMANCE.md",
         "production_baseline": "modules/CLOUD-PRODUCTION-BASELINE.md",
-        "production_baseline_review": "../evidence/cloud-production-baseline-2026-11-02/REVIEW.md"
+        "production_baseline_review": "../evidence/cloud-production-baseline-2026-11-02/REVIEW.md",
+        "runtime_revision_review": "../evidence/cloud-dynamic-revision-2026-11-02/REVIEW.md",
+        "provider_contract": "modules/CLOUD-PROVIDERS.md",
+        "atmosphere_coverage": "modules/ATMOSPHERE-SYSTEM.md"
       }
     },
     {
@@ -1271,7 +1274,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "current_design_sha256": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1310,7 +1313,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "current_design_sha256": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1352,7 +1355,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "current_design_sha256": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1631,7 +1634,7 @@
     "review": "research/COMPOSITION-REVIEW.md",
     "reviewed_design_sha256": "b2f58e968f2fb30e1a7b95c4a77f10e75db30927dfae1a267a08c8ddce050053",
     "contract_sha256": "7c9503bbc56772a77531ec1e52e686043171bf2d43101e500bc398b4c39a26ea",
-    "current_design_sha256": "32d8dfa1f3f7b03db0a754ac1a673e0b82d572cb3ebe30da9a987b7b25d0b9c7",
+    "current_design_sha256": "bf1f4468a9390b87f62fdc4889cddee1daa5ca257b50947bc3ff92f2d6b20dfb",
     "current_design_delta": "First-use teaching order and starter graduation added; direct code, claimed-capability conformance and optional packaging retained. Prior review hashes preserved. Guided/direct/headless creation share one source/runtime; valid draft and chosen runtime readiness distinguished pending A02/D1.",
     "current_resolution": "C3 and initial specs supersede open selection notes in earlier review_scope/current_design_delta; historical hashes preserved."
   },
@@ -2734,7 +2737,7 @@
       "ARCHITECTURE-DECISIONS.md": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
       "BASELINE-SPEC.md": "a4e5bc4c2b97a89877db71e35b0d2ff8da2b98dbb9d8b557a62334551cd0a894",
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
-      "COMPOSITION.md": "32d8dfa1f3f7b03db0a754ac1a673e0b82d572cb3ebe30da9a987b7b25d0b9c7",
+      "COMPOSITION.md": "bf1f4468a9390b87f62fdc4889cddee1daa5ca257b50947bc3ff92f2d6b20dfb",
       "CONSTRUCTION-PLAN.md": "66c2eebccf81a02b587a6247fe7cf0d565438892ff2b2fd5b399f9d3a9bdff7c",
       "CONTRACTS.md": "27096b316a165dd56296274f2ef1d721fcef6031282c4d040e9a7c1a9c006378",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
@@ -2751,7 +2754,7 @@
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
-      "README.md": "052df636e642295657b636e23493913bdcb6f13cf69bcbfc1b6096c108570c95",
+      "README.md": "90854be2e043bf830f7eac020f54113c60077c80863091e97a1bf6575f13196a",
       "RENDER-SPEC.md": "63fed32c0f6ba686d323a8d62799c367b17b0da048eaf02ee12869aa2610189c",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
@@ -2762,7 +2765,7 @@
       "TRAVELLER-APP.md": "93edf76b93b66f47a2db7b132bbfa56c8d2e2572343694a15dcad51c9060a25d",
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
-      "modules/ENVIRONMENT.md": "4ba4a8b78894b795b3e4810b66b40c781218632e3e92c9dc363db869bfc85c61",
+      "modules/ENVIRONMENT.md": "2184845d56963422a1e82c82cc423bafa9fd9ae974d52bb9f32f026c5e025652",
       "modules/NETWORKING.md": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
       "modules/PLATFORM-RUNTIME.md": "f5dcfc94e7eb2a748885a5de3f2e8d56fcc7546df0ab37a28ccc1e465981d933",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",

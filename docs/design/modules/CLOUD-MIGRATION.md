@@ -6,11 +6,13 @@
 [POC DoD](CLOUD-PROOF-ACCEPTANCE.md) and [CPU/GPU/memory discipline](CLOUD-PERFORMANCE.md) govern evidence.
 This is the only active checkbox queue. Earlier research-led candidate comparisons are historical.
 
-The default is **Houdini22 -> authored VDB optical animation -> ordinary sparse volume playback/LOD -> Hillaire air +
-Beer shadows + one cloud MS octave -> joint RGB media -> current environment and independent reflections -> per-view
-reconstruction**. No custom lifecycle solver, far-transfer codec, fitted light bank, runtime wind warp or optical-flow
-reconstruction must succeed to build this baseline. This is an assembly of established methods, not a claim one
-studio ships our exact implementation. Local art and device measurements remain unrun.
+The default is **live E1 weather/wind -> native evolving sparse3D optical source -> Nubis³-style detail/occupancy/voxel
+lighting -> Hillaire air + Beer receiver shadows + one cloud MS octave -> joint RGB media -> environment and independent
+reflections -> per-view reconstruction**. [Provider selection](CLOUD-PROVIDERS.md) is replaceable; the
+[complete atmosphere coverage map](ATMOSPHERE-SYSTEM.md) separates delivered optics/weather from neighbouring effects.
+Houdini and complete baked lifecycle playback are removed. The renderer has production lineage; the dynamic source
+and exact combined image/cost are unproved. Visual success leads selection; lower cost wins only at equivalent accepted
+quality, behaviour and consumer scope. POCs verify this selected model, not an indefinite algorithm competition.
 
 ## Progress and completion semantics
 
@@ -25,22 +27,22 @@ readouts, usable controls, native beauty and its diagnostic views.
 | --- | --- | --- |
 | D0/D1 | Original commission | Historical research/first review retained; no implementation pass |
 | D1R2 | D1 | [Second review](../../evidence/atmospherics-migration-round2-2026-11-02/REVIEW.md) retained; previous experimental gate choices superseded |
-| D2 Production baseline | Current user direction | [Independently reviewed](../../evidence/cloud-production-baseline-2026-11-02/REVIEW.md); written specification selected, construction unrun |
+| D2 Runtime revision | Current user direction | Native runtime3D default and provider/scope contracts selected; [independent review closed](../../evidence/cloud-dynamic-revision-2026-11-02/REVIEW.md). Previous baked selection/review retained as superseded history |
 | P0 Thin observable bench | D2 | Old proof preserved in a124167; new harness unbuilt |
-| P1a Houdini source pilot | P0 + licensed Houdini prerequisite | Unbuilt; tool chosen, installation/license not yet verified |
+| P1a Live source/control pilot | P0 | Unbuilt; no paid authoring dependency |
 | P2a Air reference | P0 | Unbuilt |
 | P3a Same-source consumers and ordinary LOD | P1a/P2a minimums | Unbuilt |
 | P4a Small spatial coupled/cost sentinel | P1a/P2a/P3a minimums | Unbuilt; before library expansion |
-| P1b Complete representative source recipes | P4a | Unbuilt |
+| P1b Cb/Sc/St/Ci live source regimes | P4a | Unbuilt |
 | P2b Complete four-LUT air | P4a | Unbuilt |
 | P3b Baseline production sampling/light | P4a + P1b representative source conformance before format/library freeze | Unbuilt |
 | P4b Baseline reconstruction/full overlap | P1b/P2b/P3b | Unbuilt |
 | P5 Five isolated families/variation | P4b | Unbuilt |
-| P6 Authored weather/combined layers | P5 | Unbuilt |
+| P6 Dynamic weather/combined layers | P5 | Unbuilt |
 | P7 Complete standalone skies/device fixture | P6, costs screened throughout | Unbuilt |
 | P8 Thrum integration/product admission | Accepted proof + engine I1/I2/I3 dependencies | Unbuilt; no engine runtime yet |
 
-Normal parameter tuning within the chosen architecture is expected. It may adjust source cadence/resolution/material
+Normal parameter tuning within the chosen architecture is expected. It may adjust fixed-step source cadence/resolution/material
 coefficients, page/mip/step counts, shadow resolution and temporal weights while retaining the witnessed cues. POCs
 verify a concrete implementation; they do not defer these foundations to a later research competition. Architecture
 changes need contradictory evidence and an explicit revision. No paid tools/services are purchased by this plan.
@@ -53,85 +55,85 @@ with exact pins at checkpoints; engine packages and permitted dependencies are r
 
 | Unit / first stage | Owns | Reads / prohibited coupling |
 | --- | --- | --- |
-| `authoring/`, P1a | Houdini scene/recipes, shared episode drivers, VDB/pose/ID/AO export and Karma reference recipe | World story/metre/second/wind inputs. No runtime camera or per-consumer sky assets. |
-| `cook/`, P1a | Offline optical calibration, guarded bricks/mips/occupancy, manifest/physical-byte/provenance validation | Exported fields/tracks. Does not become weather authority or renderer. |
-| `src/episode`, P0 | Immutable episode facts and sampled world clock/poses/IDs/cause stubs | Admitted manifest. No GPU, private clock, view culling or numerical wind integration. Future E1/W1. |
-| `src/source`, P1a/P3a | Pure query contract, frame-pair keys, support/index, bounded IO/decode/admission/lease requests | Episode snapshot and cooked source. No lighting, history or view ownership. Future F4/V3 boundary separates lease and sample roles. |
+| `recipes/`, P1a | Native deterministic basis generator, genus/control parameters, seed and reference/proof recipes | No paid authoring, lifecycle movie or per-consumer source. |
+| `cook/`, P1a | Static basis noise/mips, optical calibration, manifests/hash/physical bytes | Optional imported shapes follow rights/admission. No weather authority or full animated cache. |
+| `src/weather`, P0/P1a | Fixed-step weather/front controls, shared W, stable cause IDs and forcing/replay | One E1/W1 authority; no camera/GPU feedback or private clock. |
+| `src/source`, P1a/P3a | Provider-neutral query/admission; native q update, support/index, bounded source/checkpoint leases | Weather snapshot/recipe/source state. No lighting, history or view ownership. Future F4/V3 boundary separates lease and sample roles. |
 | `src/gpu`, P0 onward | Resources, pipelines, upload/submission/fences/epochs, one ordered queue and physical inventory | Demands/leases; no source facts or UI policy. Future V1. |
 | `shaders/source`, P1a/P3a | One coefficient/occupancy/pose query used by all optical passes | No per-view cloud recipe, duplicate wind or independent source texture. |
-| `shaders/air` P2a; `shaders/light` minimal P3a/P4a, complete P3b | Air LUTs/segments, BSM/direct Sun queries, phase/MS/ambient source, generation keys | Common coefficient query plus Sun/air/fog/geometry. No camera-final tint, environment feedback or hidden optical readback. Future V3. |
+| `shaders/air` P2a; `shaders/light` minimal P3a/P4a, complete P3b | Air LUTs/segments, BSM/point-voxel-cache/local/direct Sun queries, phase/MS/current ambient source, generation keys | Common coefficient query plus Sun/air/fog/geometry. No camera-final tint, environment feedback or hidden optical readback. Future V3. |
 | `shaders/transport`, P3a/P4a | Sorted shared media, disjoint interval transport for main/reflected/environment rays | Coefficients/light/terminals and view demands. No separate completed fog overlay. Future V2/V3. |
 | `src/views` requests P0/P3a; `shaders/resolve` P4b | Independent projection/prior samples, reactive/fresh masks, temporal/spatial resolve and display adapter | Optical S/T/guides. Cannot alter source or supply a main-view reflection. Future V2/V4. |
 | `src/bench` and proof cards, P0 onward | Scenarios/controls, inspector/capture and nonblocking counters | Calls narrow units; does not own clock, source, GPU lifetime or light formulas. Future T1/T2. |
 
 Implement one source query first and add readers without copying its math. Keep the orchestration file to dependency
-ordering and publication; numerical algorithms, source decode, controls and resource ownership stay in their units.
+ordering and publication; numerical algorithms, source preparation, controls and resource ownership stay in their units.
 CPU references and GPU tests compare the same declared semantics independently. A changed source/lease/light/view
 contract updates every affected producer/consumer and its proof card before a dependent slice continues. P8 maps these
 roles onto the actual engine API; no prototype coordinator, browser loader or private final resolver is promoted wholesale.
 
-## D2 — lock and review the production baseline
+## D2 — runtime revision and provider selection
 
-- [x] Choose Houdini FX22.0.459 + sparse Pyro/SOP/VDB/Karma/cooker; declare actual licensed-install prerequisite.
-- [x] Choose baked episode wind/poses, source frame playback/streaming, all-five3D optical output and material convention.
-- [x] Choose the complete air/cloud/shadow/ambient/environment/reflection/reconstruction path and starting defaults.
-- [x] Move algorithm challengers into the optional register; retain tests/references without making them prerequisites.
-- [x] [Independent authoring, rendering and whole-system review](../../evidence/cloud-production-baseline-2026-11-02/REVIEW.md); resolve findings and verify consequential fixes.
-- [x] Align canonical scope/DoD/performance/source records; docs/hash/whitespace checks and commit/push form this planning checkpoint.
+- [x] Remove mandatory Houdini, baked world stories/wind and offline all-cloud ambient; preserve13a19ad as history.
+- [x] Select Burning Shores/Nubis³ visual comparator and real3D field/rendering direction; document actual evidence/limits.
+- [x] Select native runtime3D source operators/recipes, live weather controls and current voxel light; no physics solver prerequisite.
+- [x] Specify replaceable provider roles, full versus shadow-only recipes and whole-atmosphere delivery/owner matrix.
+- [x] [Independent source, rendering and whole-system review](../../evidence/cloud-dynamic-revision-2026-11-02/REVIEW.md); verify consequential corrections.
+- [x] Align scope/capabilities/DoD/performance/research; documentation/hash/whitespace checks and commit/push form this planning checkpoint.
 
 ## P0 — thin comparison bench
 
 - [ ] Implement only the selected source/light/view seams with an existing tiny comparison source; no general SDK/editor.
-- [ ] Load an authored episode/ID/pose manifest and one world clock; play/pause/seek1x/16x/64x, camera/Sun/consumer toggles.
+- [ ] Load recipe/weather controls and one world clock; play/pause/replay1x/16x/64x, camera/Sun/consumer toggles.
+- [ ] Prove full versus independent analytic shadow-only provider configuration and reject incompatible full-sky selection.
 - [ ] Show main, independent mirror, receiver, environment and optical diagnostics with matching generation/time/build.
 - [ ] Retain stable Beer/phase/clock/oracle cases, late-result/epoch/idle/all-off/main-hidden and Mac trackpad checks.
 - [ ] Bounded jobs/pages/fences, nonblocking counter/timestamp ring, allocation/GC and shader-demand/first-frame records.
 - [ ] Pin the small family/motion/air/light reference board. Match source/camera/exposure in comparisons and keep a held-out reference.
 - [ ] Done: runnable visible bench plus scoped correctness/observer/control receipts, not family or budget acceptance.
 
-## P1a — selected Houdini source pilot
+## P1a — live native3D source/control pilot
 
-- [ ] Verify chosen Houdini production installation/license and tool pin; no tool-selection experiment or substitute solver.
-- [ ] Create one recoverable Cu clip with actual local growth, continuing mature renewal and breakup using the locked recipe.
-- [ ] Export baked shared-wind density, event-local poses/IDs/bounds and optical channels; runtime applies wind zero additional times.
-- [ ] Run the selected RG16F brick/mip/frame-window cook with accessibility and optional motion field; compare24Hz source
-  to4Hz initial runtime frames and intermediate times. Increase cadence/detail only where required cues fail.
-- [ ] Review fixed/world-locked views, tagged local birth/renewal/loss, native beauty and actual1x/16x/64x playback.
-- [ ] Record scratch/durable/master bytes before larger caching; first pilot peak<=2GiB. Stage regenerable recipe and package.
-- [ ] Done: one conventional authored source works and is visually accepted for the pilot scope, with real IO/decode/peak receipts.
+- [ ] Generate pinned native3D base/erosion/strand ingredients; no paid tool, clip library or bulk asset prerequisite.
+- [ ] Implement bounded source advection/local reaction with small independent CPU oracle, halos, source birth/support and immutable snapshot.
+- [ ] One Cu undergoes actual local growth, continuing mature replacement and irregular breakup under live source/dry controls.
+- [ ] Change wind direction/shear and move a new dry/lift front **after** development starts; existing matter/IDs respond.
+- [ ] Compare resolved fixed/world-locked beauty and source regions at normal1x and actual16x/64x; inspect topology and material transport.
+- [ ] Count all source/state/scratch/halo/mip/pass/lease bytes, CPU control work and update backlog from the start.
+- [ ] Done: observed local birth/renewal/loss and changed-driver response, with recoverable native recipe and actual source-work receipts.
+  A static volume globally faded/scaled/retimed or noise-only animation fails. This does not qualify a family library or5ms.
 
 ## P2a/P3a — minimum air and same-source consumers
 
 - [ ] P2a: bounded RGB clear-air/Sun/reference segment with visible sky/neutral-depth response, independent optical oracle.
-- [ ] P3a: selected optical frames feed main/mirror/receiver/environment from one source time and pose; main-off retains causes.
+- [ ] P3a: selected current optical snapshot feeds main/mirror/receiver/environment from one source time and pose; main-off retains causes.
 - [ ] Verify ordinary support/occupancy and footprint mips against resolved source, thin gaps, horizon, low Sun and offscreen blockers.
-- [ ] Stress1/2/16/64/regional groups, shared density products/authored independent birth times, sparse/full cover and1x/16x/64x; direct index traversal is oracle.
+- [ ] Stress1/2/16/64/regional groups, shared static ingredients/independently evolving cells, sparse/full cover and1x/16x/64x; direct index traversal is oracle.
 - [ ] Done: source/consumer/domain integrity and measured cost slopes. No special far summary or competing field architecture.
 
 ## P4a — early spatial coupled sentinel
 
-- [ ] One accepted Cu + clear air + one fog + ground/interface mirror, shared Sun/BSM/ambient/environment and independent reflected ray.
+- [ ] Two live cells/layers (one renewing Cu) + clear air + one fog + ground/interface mirror, shared Sun/BSM/current voxel light/environment and independent reflected ray.
+- [ ] While main is hidden, perturb wind/drying and an offscreen blocker; receiver/mirror/ambient and rain/lightning cause stubs keep common IDs/time.
 - [ ] Move shadow through air/fog/terrain/reflection. Compare direct/ambient/optical panes and same-point/time receipts.
 - [ ] Observe native1x/accelerated lifecycle and consumer motion; reject stale shadow, double fog/air, static life or main-history reflection.
-- [ ] Fill a combined source/IO/CPU/light/main/reflected/env/air/memory ledger using actual pages and early stress counts.
+- [ ] Fill a combined source/IO/CPU/light/main/reflected/env/air/memory ledger using actual source voxels/passes and early stress counts.
 - [ ] Done: passed pilot image/motion/coupling with quantified cost-risk outcome. Missing M2 is unqualified, structural overrun triggers correction.
 
-## P1b — representative authoring recipes, same chosen format
+## P1b — representative live source regimes before layout/library freeze
 
-- [ ] A continuous same-ID Cu-to-Cb episode develops towers, cap/outflow/anvil and unequal decay from its authored inception.
-- [ ] A connected Sc/St pilot closes and opens real holes/edges; a Ci pilot emits/shears and loses local strands/tails.
-- [ ] All export3D optical frames through the same selected source query; no required runtime column/filament/cohort solver.
-- [ ] Before P3b format freeze, include dense Sc/St at the admitted extent/pitch, thin Ci and tall mixed-phase Cb adverse
-  frames in physical page/IO/peak estimates. Change a second cloud's position above unchanged Cu to verify episode AO
-  changes while identical density remains shareable; no unrelated accessibility reuse.
-- [ ] One short authored weather trace proves survivor IDs and baked height-wind coherence in source, shadow and reflection.
-- [ ] Done: representative morphology/cook conformance and coupled cost before making the full variant library. No live branch/shear editor gate.
+- [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
+- [ ] Sc/St connected3D cells/sheet closes/opens actual holes; Ci sources/advects/loses high strands/tails under shared shear.
+- [ ] Dense deck at admitted extent/pitch, thin ice and tall mixed-phase Cb qualify source/halo/material/occupancy bytes and resolution.
+- [ ] Two source regions exchange transported support across a boundary without clipping, duplicate material or camera-dependent placement.
+- [ ] Same-point/time source, shadow, point-light-cache, ambient and reflection respond to independent runtime forcing.
+- [ ] Done: all representative3D regimes and live control/lineage/cost before P3b format freeze or large variation library.
 
 ## P2b/P3b — implement the specified production path
 
 - [ ] Four air LUTs plus separate RGB aerial T, spherical terminals and stable segment fallback; surface/ambient/reflected air share inputs.
-- [ ] Selected sparse frame-window IO/pages/ordinary mips/occupancy, world-cell and screen/light tile lists; current-time fallback quality floor.
-- [ ] Selected cascaded BSM full-column receiver path and complete interior secondary Sun rays, one MS octave, baked accessibility/clear-sky ambient; material/front-back/thin/thick cases.
+- [ ] Selected native dynamic sparse field/pages/ordinary mips/occupancy, world-cell and screen/light tile lists; current-time fallback quality floor and conservative growth halo.
+- [ ] Selected receiver BSM, current3D voxel Sun tail +2local samples, complete-ray oracle/fallback, one MS octave and runtime ambient accessibility; material/front-back/thin/thick cases.
 - [ ] Current six-face32² environment -> SH9/roughness, direct Sun excluded from lighting cube; no recursive environment or double solar energy.
 - [ ] Bound production-like rough-reflection/depth/transparency extra work before freezing final quality; real water remains P8.
 - [ ] Fill scenario steady/burst and old/new/IO/compile/allocation ledger; compare numerical/spatial references and inspect actual images.
@@ -156,10 +158,12 @@ Each family needs its mechanism pilot then4 distinct review variants (inspection
 - [ ] Every variant: native appearance and personally observed normal/accelerated life plus basic light/shadow/reflection/LOD routes.
   One per family takes the full adverse Sun/view matrix. Done: CF packet with cue verdicts and all-retained-consumer cost; unresolved cues stay failed.
 
-## P6 — four authored weather stories and combined layers
+## P6 — runtime weather and combined layers
 
-- [ ] FAIR/BROKEN/OVERCAST/STORM episode data and CW01–CW04 routes: clear-to-scattered, increasing cover, overcast, developing/approaching storm.
-- [ ] Fronts/staggered local births, continuing mature renewal and persistent survivors use baked density/pose and one wind table.
+- [ ] FAIR/BROKEN/OVERCAST/STORM forcing recipes and CW01–CW04 routes: clear-to-scattered, increasing cover, overcast, developing/approaching storm.
+- [ ] Fronts/staggered local births, mature renewal and survivors use live source state and one shared wind provider.
+- [ ] Inject new controls/fronts after the original trace, alter storm intensity and wind midlife; run continuously without clip reset.
+- [ ] Typed rain/lightning flux or potential/event causes, headless consumers, checkpoint/restore and provider stop/load keep honest source epochs.
 - [ ] Same-condensate parts/adjacent tiles partition once; distinct layers add. Rain/lightning cause stubs keep IDs/time/support with main draw off.
 - [ ] Done: observed normal/accelerated local development, consumer correspondence, weather continuity and cost. No global sky crossfade.
 
@@ -182,5 +186,5 @@ Each family needs its mechanism pilot then4 distinct review variants (inspection
 
 See the baseline's [optional register](CLOUD-PRODUCTION-BASELINE.md#optional-experiments--not-prerequisites).
 A proposal must name a measured baseline deficit and projected gain before activation. No challenge implementation,
-private-source investigation, scientific solver, live wind/branch response, special far codec or new light fit is a
+private-source investigation, scientific solver, arbitrary cross-provider live migration, special far codec or new light fit is a
 prerequisite for a required P stage. Proven source/transport references and rejection witnesses remain useful.

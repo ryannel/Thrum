@@ -1,5 +1,11 @@
 # Complete-sky research and selection
 
+**Historical source/candidate record.** The current runtime selection is
+[ATMOSPHERICS-TECHNIQUES](ATMOSPHERICS-TECHNIQUES.md) and the
+[production baseline](../modules/CLOUD-PRODUCTION-BASELINE.md). Cohort/fitted/deep/packed candidates below retain
+their original evidence and limitations; they do not prescribe the current native3D source or require Houdini.
+
+
 1 November 2026. Supports the proposed [complete cloud model](../modules/CLOUDS.md) and
 [capability ledger](../modules/CLOUD-CAPABILITIES.md). The [earlier study](CLOUD-SYSTEM-SOURCES.md)
 remains the prepared local-source lineage. It is not evidence that one finite cube supplies all families.
