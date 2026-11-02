@@ -383,6 +383,10 @@
       "i2a_stored_root_lineage": {
         "evidence": "../evidence/i2a/SOURCE-STORED-ROOT-LINEAGE.md",
         "scope": "Test-only recovery verifies the current root revision, exact canonical manifest bytes and one complete history blob, then compares source-carried fields and type versions under a generation precondition; a changed root loses final CAS. Corrupt chunk/layout/hash, wrong project and stale lineage refuse. A 100,000-entry local decode/root-read cost and RSS probe passes. Candidate staged-byte provenance, GC pins, physical reservation, kill recovery and production admission remain open."
+      },
+      "i2a_staged_candidate_lineage": {
+        "evidence": "../evidence/i2a/SOURCE-STAGED-CANDIDATE-LINEAGE.md",
+        "scope": "A test-only validated one-scene candidate supplies history only after its staged file is reread and rehashed; a same-length post-validation mutation refuses. Complete-blob reuse verifies supplied bytes with one lazily sized reusable scratch buffer. Local 1,000-file new/batch/reuse helper timing and RSS are recorded. Full candidate file staging, GC pins, physical reservation, kill recovery and production admission remain open."
       }
     },
     {

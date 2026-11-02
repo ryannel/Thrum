@@ -80,6 +80,11 @@ pub struct StagedTree {
 }
 
 impl StagedTree {
+    #[cfg(test)]
+    pub(crate) fn test_directory(&self) -> &Path {
+        &self.owner.path
+    }
+
     /// Files in portable path order.
     pub fn files(&self) -> &[StagedFile] {
         &self.files

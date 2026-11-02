@@ -13,10 +13,13 @@ use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
+use crate::budget::Limits;
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
 use crate::manifest_json::{ManifestDecodeError, decode_manifest_jcs};
+use crate::registry_stage::{StagedCandidate, StagedRegistryError, validate_staged_candidate};
+use crate::stage::stage_declared_tree_with;
 use crate::{ManifestEntry, SourcePath, TreeManifest};
 
 const MAX_PAGE_COUNT: i64 = 13_631_488;
@@ -42,6 +45,10 @@ impl Fixture {
 
     fn database(&self) -> PathBuf {
         self.0.join("source.sqlite")
+    }
+
+    fn source_root(&self) -> PathBuf {
+        self.0.join("source")
     }
 }
 
@@ -74,6 +81,7 @@ enum ProofError {
     Manifest(ManifestDecodeError),
     History(HistoryError),
     Lineage(CarriedHistoryError),
+    CandidateStage(StagedRegistryError),
 }
 
 impl fmt::Display for ProofError {
@@ -83,6 +91,7 @@ impl fmt::Display for ProofError {
             Self::Manifest(error) => write!(formatter, "manifest: {error}"),
             Self::History(error) => write!(formatter, "history: {error:?}"),
             Self::Lineage(error) => write!(formatter, "lineage: {error:?}"),
+            Self::CandidateStage(error) => write!(formatter, "candidate stage: {error:?}"),
             other => write!(formatter, "{other:?}"),
         }
     }
@@ -96,10 +105,37 @@ impl From<rusqlite::Error> for ProofError {
 
 struct RootTransactionProof {
     conn: Connection,
+    scratch: Vec<u8>,
 }
 
 fn blob_chunk_count(length: u64) -> Result<i64, ProofError> {
     i64::try_from(length.div_ceil(CHUNK_BYTES as u64)).map_err(|_| ProofError::InputLength)
+}
+
+fn verify_supplied_blob(
+    input: &mut impl Read,
+    length: u64,
+    expected_hash: [u8; 32],
+    buffer: &mut [u8],
+) -> Result<(), ProofError> {
+    let mut digest = Sha256::new();
+    let mut remaining = length;
+    while remaining > 0 {
+        let count = remaining.min(buffer.len() as u64) as usize;
+        input
+            .read_exact(&mut buffer[..count])
+            .map_err(|_| ProofError::InputIo)?;
+        digest.update(&buffer[..count]);
+        remaining -= count as u64;
+    }
+    let mut extra = [0_u8; 1];
+    if input.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
+        return Err(ProofError::InputLength);
+    }
+    if digest.finalize().as_slice() != expected_hash {
+        return Err(ProofError::HashMismatch);
+    }
+    Ok(())
 }
 
 fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), ProofError> {
@@ -326,7 +362,10 @@ impl RootTransactionProof {
         assert_eq!(synchronous, 2);
         assert_eq!(foreign_keys, 1);
         assert_eq!(max_page_count, MAX_PAGE_COUNT);
-        Ok(Self { conn })
+        Ok(Self {
+            conn,
+            scratch: Vec::new(),
+        })
     }
 
     fn root(&self) -> rusqlite::Result<(i64, Option<Vec<u8>>)> {
@@ -393,6 +432,21 @@ impl RootTransactionProof {
         let candidate =
             parse_registry_history(candidate_history_bytes).map_err(ProofError::History)?;
         compare_carried_histories(&prior, &candidate).map_err(ProofError::Lineage)
+    }
+
+    fn compare_staged_candidate_with_current_root(
+        &mut self,
+        expected_generation: i64,
+        candidate: &StagedCandidate<'_>,
+    ) -> Result<(), ProofError> {
+        let bytes = candidate
+            .rehashed_history_bytes()
+            .map_err(ProofError::CandidateStage)?;
+        self.compare_history_with_current_root(
+            expected_generation,
+            candidate.registry().project().id(),
+            &bytes,
+        )
     }
 
     fn stage_blob(
@@ -524,23 +578,40 @@ impl RootTransactionProof {
         input: &mut impl Read,
         length: u64,
         expected_hash: [u8; 32],
+        after_chunk: impl FnMut(i64),
+    ) -> Result<(), ProofError> {
+        let mut scratch = std::mem::take(&mut self.scratch);
+        let result =
+            self.stage_blob_with_scratch(input, length, expected_hash, &mut scratch, after_chunk);
+        self.scratch = scratch;
+        result
+    }
+
+    fn stage_blob_with_scratch(
+        &mut self,
+        input: &mut impl Read,
+        length: u64,
+        expected_hash: [u8; 32],
+        scratch: &mut Vec<u8>,
         mut after_chunk: impl FnMut(i64),
     ) -> Result<(), ProofError> {
         let chunk_count = blob_chunk_count(length)?;
+        let scratch_len = length.min(CHUNK_BYTES as u64).max(1) as usize;
+        scratch.resize(scratch_len, 0);
         if self.begin_blob(length, expected_hash, chunk_count)? {
+            verify_supplied_blob(input, length, expected_hash, scratch)?;
             return Ok(());
         }
-        let mut buffer = vec![0_u8; CHUNK_BYTES];
         let mut digest = Sha256::new();
         let mut remaining = length;
         for index in 0..chunk_count {
             let count = usize::try_from(remaining.min(CHUNK_BYTES as u64))
                 .map_err(|_| ProofError::InputLength)?;
             input
-                .read_exact(&mut buffer[..count])
+                .read_exact(&mut scratch[..count])
                 .map_err(|_| ProofError::InputIo)?;
-            digest.update(&buffer[..count]);
-            self.append_blob_chunk(length, expected_hash, chunk_count, index, &buffer[..count])?;
+            digest.update(&scratch[..count]);
+            self.append_blob_chunk(length, expected_hash, chunk_count, index, &scratch[..count])?;
             remaining -= count as u64;
             after_chunk(index);
         }
@@ -938,7 +1009,13 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
     store
         .stage_blob(&mut repeated_input, bytes.len() as u64, hash)
         .unwrap();
-    assert_eq!(repeated_input.len(), bytes.len());
+    assert!(repeated_input.is_empty());
+    let mut changed_input = bytes.clone();
+    changed_input[0] ^= 1;
+    assert!(matches!(
+        store.stage_blob(&mut changed_input.as_slice(), bytes.len() as u64, hash),
+        Err(ProofError::HashMismatch)
+    ));
 
     let retry_bytes = vec![8_u8; CHUNK_BYTES + 17];
     let retry_hash: [u8; 32] = Sha256::digest(&retry_bytes).into();
@@ -1057,7 +1134,7 @@ fn completion_transaction_excludes_same_hash_retry_reset() {
     second
         .stage_blob(&mut second_input, bytes.len() as u64, hash)
         .unwrap();
-    assert_eq!(second_input.len(), bytes.len());
+    assert!(second_input.is_empty());
     assert_eq!(first.commit_probe(0, 1, 1, [3; 32], hash).unwrap(), 1);
 }
 
@@ -1438,6 +1515,116 @@ fn lineage_manifest(history_bytes: &[u8]) -> TreeManifest {
     .unwrap()
 }
 
+fn minimal_source_stage(fixture: &Fixture) -> crate::StagedTree {
+    const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let root = fixture.source_root();
+    fs::create_dir_all(root.join("scenes")).unwrap();
+    fs::create_dir_all(root.join("schemas")).unwrap();
+    fs::write(
+        root.join("project.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":LINEAGE_PROJECT_ID,"type":"core.project","schema":2,
+            "fields":{
+                "project.format":1,
+                "project.records":["scenes/main.scene.json"],
+                "project.schemas":[],
+                "project.registryHistory":"schemas/history.registry.json",
+                "project.entryScenes":[SCENE_ID]
+            }
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        root.join("scenes/main.scene.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":SCENE_ID,"type":"core.scene","schema":1,"fields":{}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        root.join("schemas/history.registry.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":LINEAGE_HISTORY_ID,"type":"core.registry-history","schema":1,
+            "fields":{"registry.fields":[],"registry.versions":[]}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let paths = [
+        "project.json",
+        "scenes/main.scene.json",
+        "schemas/history.registry.json",
+    ]
+    .map(|path| SourcePath::parse(path).unwrap());
+    stage_declared_tree_with(
+        &root,
+        &paths,
+        Limits {
+            main: 2 * 1024 * 1024 * 1024,
+            wal: 4 * 1024 * 1024,
+            temporary: 64 * 1024 * 1024,
+            free_floor: 0,
+        },
+        |_| {},
+    )
+    .unwrap()
+}
+
+#[test]
+fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
+    let fixture = Fixture::new();
+    let stage = minimal_source_stage(&fixture);
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let manifest = candidate.provisional_manifest().unwrap();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    for file in stage.files() {
+        let mut reader = stage.open(file.path()).unwrap();
+        store
+            .stage_blob(&mut reader, file.length(), *file.sha256())
+            .unwrap();
+    }
+    store.stage_manifest_chunked(&manifest).unwrap();
+    store
+        .commit_manifest_probe(0, 1, 1, [1; 32], &manifest)
+        .unwrap();
+    assert!(
+        store
+            .compare_staged_candidate_with_current_root(1, &candidate)
+            .is_ok()
+    );
+
+    let second_stage = minimal_source_stage(&fixture);
+    let second_candidate = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let history_path = SourcePath::parse("schemas/history.registry.json").unwrap();
+    let history_file = second_stage
+        .files()
+        .iter()
+        .find(|file| file.path() == &history_path)
+        .unwrap();
+    let staged_history_path = second_stage.test_directory().join(history_path.as_str());
+    let mut changed = fs::read(&staged_history_path).unwrap();
+    changed[0] = b'[';
+    fs::write(staged_history_path, changed).unwrap();
+    assert!(matches!(
+        store.compare_staged_candidate_with_current_root(1, &second_candidate),
+        Err(ProofError::CandidateStage(
+            StagedRegistryError::StagedDrift(_)
+        ))
+    ));
+    let mut changed_reader = second_stage.open(&history_path).unwrap();
+    assert!(matches!(
+        store.stage_blob(
+            &mut changed_reader,
+            history_file.length(),
+            *history_file.sha256(),
+        ),
+        Err(ProofError::HashMismatch)
+    ));
+    assert_eq!(store.root().unwrap().0, 1);
+}
+
 #[test]
 fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage() {
     let fixture = Fixture::new();
@@ -1705,4 +1892,35 @@ fn measure_small_blob_batch_cost() {
         )
         .unwrap();
     assert_eq!(complete, 1_000);
+}
+
+#[test]
+#[ignore = "local verified small-blob reuse cost probe"]
+fn measure_small_blob_reuse_cost() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let files: Vec<_> = (0_u64..1_000)
+        .map(|index| {
+            let bytes = index.to_le_bytes();
+            let hash: [u8; 32] = Sha256::digest(bytes).into();
+            (hash, bytes)
+        })
+        .collect();
+    for group in files.chunks(SMALL_BATCH_FILES) {
+        store
+            .stage_small_blob_batch(group.iter().map(|(hash, bytes)| (*hash, bytes.as_slice())))
+            .unwrap();
+    }
+    let start = std::time::Instant::now();
+    for (hash, bytes) in &files {
+        store
+            .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, *hash)
+            .unwrap();
+    }
+    let elapsed = start.elapsed();
+    eprintln!(
+        "small_blob_reuse_cost files=1000 bytes=8000 elapsed_ms={:.3} scratch_capacity={}",
+        elapsed.as_secs_f64() * 1000.0,
+        store.scratch.capacity()
+    );
 }
