@@ -525,8 +525,11 @@ name = "i1-mobile-game"
 version = "0.1.0"
 dependencies = [
  "pollster",
+ "sha2",
+ "thrum-cook",
  "thrum-core",
  "thrum-mobile-shell",
+ "thrum-source",
  "wgpu",
  "winit",
 ]

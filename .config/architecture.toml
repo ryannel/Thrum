@@ -22,7 +22,7 @@ allowed_workspace_dependencies = []
 
 [packages.i1-mobile-game]
 manifest = "examples/i1-mobile-game/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell"]
+allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-source", "thrum-cook"]
 
 # Every direct third-party crate must be listed here with an exact Cargo
 # requirement, its declared license, purpose and target/build cost note.

@@ -4,6 +4,7 @@
 //! bound yet. Cooking never opens the mutable working tree.
 
 use sha2::{Digest, Sha256};
+use std::io;
 use thrum_source::{
     AcceptedSourceRoot, MAX_RECORD_BYTES, PinnedSource, SourcePath, SourceStoreError, parse_scene,
     project_v2_json::parse_project_v2,
@@ -231,6 +232,67 @@ fn derive_revision(
     digest.update(project_input_hash);
     digest.update(scene_input_hash);
     SceneProductRevision(digest.finalize().into())
+}
+
+/// Verified match between one admitted rule source file and bytes embedded by a
+/// statically linked game. This is a source-code match, not binary attestation.
+pub struct LinkedRuleSource {
+    path: SourcePath,
+    sha256: [u8; 32],
+}
+
+impl LinkedRuleSource {
+    /// Admitted path whose exact contents were checked.
+    pub fn path(&self) -> &SourcePath {
+        &self.path
+    }
+
+    /// SHA-256 of the matched source bytes.
+    pub fn sha256(&self) -> [u8; 32] {
+        self.sha256
+    }
+}
+
+/// A statically linked game's declared rule source is not the pinned source.
+#[derive(Debug)]
+pub enum LinkedRuleError {
+    /// The declared code path is absent from this source revision.
+    Missing,
+    /// Embedded source bytes differ from the admitted file identity.
+    Mismatch,
+    /// Verified source read failed; the code match is not established.
+    Source(SourceStoreError),
+}
+
+/// Verify a compiled game's declared source length/digest against one admitted
+/// code file. The caller's build metadata needs separate T2 attestation; it
+/// need not embed whole source files in a production binary. This bounds
+/// memory to the existing pin scratch and checks stored bytes. A complete
+/// ready build must also bind the actual binary, toolchain/dependency closure
+/// and target manifest.
+pub fn verify_linked_rule_source(
+    pin: &mut PinnedSource<'_>,
+    path: &SourcePath,
+    linked_length: u64,
+    linked_sha256: [u8; 32],
+) -> Result<LinkedRuleSource, LinkedRuleError> {
+    let entry = pin
+        .manifest()
+        .files()
+        .binary_search_by(|file| file.path().cmp(path))
+        .ok()
+        .map(|index| &pin.manifest().files()[index])
+        .ok_or(LinkedRuleError::Missing)?;
+    let (length, admitted_hash) = entry.content_identity();
+    if length != linked_length || admitted_hash != linked_sha256 {
+        return Err(LinkedRuleError::Mismatch);
+    }
+    pin.copy_file_to(path, &mut io::sink())
+        .map_err(LinkedRuleError::Source)?;
+    Ok(LinkedRuleSource {
+        path: path.clone(),
+        sha256: admitted_hash,
+    })
 }
 
 /// A pinned source cannot produce this bounded first-profile scene product.
@@ -611,6 +673,53 @@ mod tests {
         .unwrap();
         assert_eq!(absent_loaded.label(), None);
         absent_pin.close().unwrap();
+    }
+
+    #[test]
+    fn admitted_rule_bytes_match_linked_bytes_and_a_new_code_edit_refuses() {
+        const LINKED: &[u8] = b"pub fn decide() -> u64 { 1 }\n";
+        let fixture = Fixture::new();
+        fs::create_dir(fixture.root().join("game")).unwrap();
+        let rules_path = SourcePath::parse("game/rules.rs").unwrap();
+        let mut paths = fixture.write("rules", false, false);
+        paths.push(rules_path.clone());
+        paths.sort_unstable();
+        fs::write(fixture.root().join(rules_path.as_str()), LINKED).unwrap();
+        let mut store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let a = fixture.admit(&mut store, 0, 1, &paths);
+        fs::write(
+            fixture.root().join(rules_path.as_str()),
+            vec![b'X'; LINKED.len()],
+        )
+        .unwrap();
+        let mut a_pin = store.pin_current(a.generation).unwrap();
+        let linked_hash: [u8; 32] = Sha256::digest(LINKED).into();
+        let matched =
+            verify_linked_rule_source(&mut a_pin, &rules_path, LINKED.len() as u64, linked_hash)
+                .unwrap();
+        assert_eq!(matched.path(), &rules_path);
+        assert_eq!(matched.sha256(), linked_hash);
+        a_pin.close().unwrap();
+        let b = fixture.admit(&mut store, a.generation, 2, &paths);
+        let mut b_pin = store.pin_current(b.generation).unwrap();
+        assert!(matches!(
+            verify_linked_rule_source(&mut b_pin, &rules_path, LINKED.len() as u64, linked_hash),
+            Err(LinkedRuleError::Mismatch)
+        ));
+        b_pin.close().unwrap();
+        let mut historical = store.pin_accepted(a).unwrap();
+        verify_linked_rule_source(
+            &mut historical,
+            &rules_path,
+            LINKED.len() as u64,
+            linked_hash,
+        )
+        .unwrap();
+        historical.close().unwrap();
     }
 
     #[test]
