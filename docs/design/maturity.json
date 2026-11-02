@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "8f94e6029b505630ccc3af0a382b048834f9f9bec1f824532878ab95fc65d062",
+    "design_sha256": "5bf615013f78f8acc5265b0a7b7af2b761a8773096f2fb171e6082c8aed8c63b",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2887,6 +2887,14 @@
       "whole_tick_design_review_evidence": "../evidence/i1-headless/WHOLE-TICK-DESIGN-REVIEW.md",
       "design_review": "reviewed_for_selected_mechanism; no open design findings in scoped read-only challenge",
       "design_review_evidence": "../evidence/i1-headless/MEMORY-DESIGN-REVIEW.md"
+    },
+    "process_allocation_audit": {
+      "implementation": "standalone_diagnostic_global_allocator_example_only",
+      "functional_validation": "passed_local_standalone_two_peer_protected_callback_old_snapshot_competing_pool_acknowledgement_final_release_and_private_allocation_control",
+      "performance_measurement": "three_serial_local_macos_arm64_requested_rust_heap_and_whole_process_peak_observations_only",
+      "platform_performance": "not_run",
+      "scope": "A separate example binary counts successful Rust global-allocator requests around selected closed-value protected host admission and callback. A private 257-byte allocation in each of 16 game decisions adds 16 requests and 4112 requested bytes without changing pool charges. API-boundary live bytes exclude allocator-internal overlap, C/OS/GPU and compiler-elided allocations; process RSS spans all modes. This does not constrain arbitrary native rules, remote queues or device memory and does not promote the general process cap.",
+      "evidence": "../evidence/i1-headless/PROCESS-ALLOCATION-AUDIT.md"
     },
     "mobile_core_portability": {
       "implementation": "portable_core_only_no_app_shell",
