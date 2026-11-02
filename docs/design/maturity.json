@@ -287,6 +287,10 @@
       "i2a_manifest_identity": {
         "evidence": "../evidence/i2a/SOURCE-MANIFEST.md",
         "scope": "Pure JCS/SHA-256 manifest identity from supplied exact-byte metadata with a 100k-entry local cost probe; staged-byte verification, F3 closure and durable source admission remain unbuilt."
+      },
+      "i2a_provisional_stage": {
+        "evidence": "../evidence/i2a/PROVISIONAL-STAGE.md",
+        "scope": "Native complete-tree inventory and provisional exact-byte staging with local budget, drift and old-reader fixtures; no F3 schema/dependency validation, durable source admission, cook or save."
       }
     },
     {
