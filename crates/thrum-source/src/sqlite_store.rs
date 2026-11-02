@@ -15,6 +15,8 @@ use crate::{ManifestEntry, SourcePath, TreeManifest};
 
 const MAX_PAGE_COUNT: i64 = 13_631_488;
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
+const SMALL_BATCH_FILES: usize = 128;
+const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
 struct Fixture(PathBuf);
@@ -241,6 +243,83 @@ impl RootTransactionProof {
         expected_hash: [u8; 32],
     ) -> Result<(), ProofError> {
         self.stage_blob_with(input, length, expected_hash, |_| {})
+    }
+
+    fn stage_small_blob_batch<'a>(
+        &mut self,
+        files: impl IntoIterator<Item = ([u8; 32], &'a [u8])>,
+    ) -> Result<(), ProofError> {
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let mut count = 0_usize;
+        let mut total_bytes = 0_usize;
+        for (hash, bytes) in files {
+            count += 1;
+            total_bytes = total_bytes
+                .checked_add(bytes.len())
+                .ok_or(ProofError::InputLength)?;
+            if count > SMALL_BATCH_FILES || total_bytes > SMALL_BATCH_BYTES {
+                return Err(ProofError::InputLength);
+            }
+            if Sha256::digest(bytes).as_slice() != hash {
+                return Err(ProofError::HashMismatch);
+            }
+            let length = i64::try_from(bytes.len()).map_err(|_| ProofError::InputLength)?;
+            let chunk_count = i64::from(!bytes.is_empty());
+            let existing: Option<(i64, i64, i64)> = tx
+                .query_row(
+                    "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+                    params![hash.as_slice()],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                )
+                .optional()?;
+            match existing {
+                Some((old_length, old_chunks, 1)) => {
+                    if old_length != length || old_chunks != chunk_count {
+                        return Err(ProofError::BlobMetadataMismatch);
+                    }
+                    continue;
+                }
+                Some((_, _, 0)) => {
+                    tx.execute(
+                        "DELETE FROM blob_chunks WHERE hash=?1",
+                        params![hash.as_slice()],
+                    )?;
+                    tx.execute(
+                        "UPDATE blob_header SET length=?2, chunk_count=?3 WHERE hash=?1",
+                        params![hash.as_slice(), length, chunk_count],
+                    )?;
+                }
+                None => {
+                    tx.execute(
+                        "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, ?3, 0)",
+                        params![hash.as_slice(), length, chunk_count],
+                    )?;
+                }
+                Some(_) => return Err(ProofError::BlobMetadataMismatch),
+            }
+            if !bytes.is_empty() {
+                tx.execute(
+                    "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 0, ?2)",
+                    params![hash.as_slice(), bytes],
+                )?;
+                let stored: Vec<u8> = tx.query_row(
+                    "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+                    params![hash.as_slice()],
+                    |row| row.get(0),
+                )?;
+                if stored.len() != bytes.len() || Sha256::digest(&stored).as_slice() != hash {
+                    return Err(ProofError::HashMismatch);
+                }
+            }
+            tx.execute(
+                "UPDATE blob_header SET state=1 WHERE hash=?1 AND state=0",
+                params![hash.as_slice()],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
     }
 
     fn stage_manifest_chunked(&mut self, manifest: &TreeManifest) -> Result<[u8; 32], ProofError> {
@@ -982,6 +1061,86 @@ fn manifest_root_requires_each_direct_file_blob_complete() {
 }
 
 #[test]
+fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first = b"first source";
+    let second = b"second source";
+    let first_hash: [u8; 32] = Sha256::digest(first).into();
+    let second_hash: [u8; 32] = Sha256::digest(second).into();
+    assert!(matches!(
+        store.stage_small_blob_batch([
+            (first_hash, first.as_slice()),
+            (second_hash, b"wrong source".as_slice()),
+        ]),
+        Err(ProofError::HashMismatch)
+    ));
+    let count: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM blob_header", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(count, 0);
+    store
+        .stage_small_blob_batch([
+            (first_hash, first.as_slice()),
+            (second_hash, second.as_slice()),
+        ])
+        .unwrap();
+    store
+        .stage_small_blob_batch([(first_hash, first.as_slice())])
+        .unwrap();
+    let complete: i64 = store
+        .conn
+        .query_row(
+            "SELECT count(*) FROM blob_header WHERE state=1",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(complete, 2);
+    let manifest = TreeManifest::new(
+        "2a5ef644-7225-4770-9f4d-e1d9c0a7d515",
+        Vec::new(),
+        vec![
+            ManifestEntry::new(
+                SourcePath::parse("src/first.rs").unwrap(),
+                first.len() as u64,
+                first_hash,
+                None,
+            )
+            .unwrap(),
+            ManifestEntry::new(
+                SourcePath::parse("src/second.rs").unwrap(),
+                second.len() as u64,
+                second_hash,
+                None,
+            )
+            .unwrap(),
+        ],
+    )
+    .unwrap();
+    let revision = store.stage_manifest_chunked(&manifest).unwrap();
+    assert_eq!(
+        store
+            .commit_manifest_probe(0, 1, 1, [7; 32], &manifest)
+            .unwrap(),
+        1
+    );
+    drop(store);
+    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
+    let stored: Vec<u8> = reopened
+        .conn
+        .query_row(
+            "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![second_hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(stored, second);
+}
+
+#[test]
 #[ignore = "local maximum-manifest SQLite streaming cost probe"]
 fn measure_maximum_manifest_sqlite_stream() {
     const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
@@ -1016,4 +1175,58 @@ fn measure_maximum_manifest_sqlite_stream() {
         elapsed.as_secs_f64() * 1000.0
     );
     assert!(chunks > 1);
+}
+
+#[test]
+#[ignore = "local small-file SQLite transaction amplification probe"]
+fn measure_small_blob_transaction_cost() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let start = std::time::Instant::now();
+    for index in 0_u64..1_000 {
+        let bytes = index.to_le_bytes();
+        let hash: [u8; 32] = Sha256::digest(bytes).into();
+        store
+            .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
+            .unwrap();
+    }
+    let elapsed = start.elapsed();
+    eprintln!(
+        "small_blob_transaction_cost files=1000 bytes=8000 elapsed_ms={:.3}",
+        elapsed.as_secs_f64() * 1000.0
+    );
+}
+
+#[test]
+#[ignore = "local small-file batched SQLite cost probe"]
+fn measure_small_blob_batch_cost() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let files: Vec<_> = (0_u64..1_000)
+        .map(|index| {
+            let bytes = index.to_le_bytes();
+            let hash: [u8; 32] = Sha256::digest(bytes).into();
+            (hash, bytes)
+        })
+        .collect();
+    let start = std::time::Instant::now();
+    for group in files.chunks(SMALL_BATCH_FILES) {
+        store
+            .stage_small_blob_batch(group.iter().map(|(hash, bytes)| (*hash, bytes.as_slice())))
+            .unwrap();
+    }
+    let elapsed = start.elapsed();
+    eprintln!(
+        "small_blob_batch_cost files=1000 bytes=8000 elapsed_ms={:.3}",
+        elapsed.as_secs_f64() * 1000.0
+    );
+    let complete: i64 = store
+        .conn
+        .query_row(
+            "SELECT count(*) FROM blob_header WHERE state=1",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(complete, 1_000);
 }
