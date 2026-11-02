@@ -114,7 +114,9 @@ standard crates, system linker or SDK, so it is not a release toolchain root.
 The pruned cache now carries a separate reuse key. It hashes the complete
 admitted `Cargo.toml` path/content set, `Cargo.lock`, pinned toolchain and
 headless build declarations, host target, fixed offline/locked build recipe,
-and the selected Cargo/Rustc executable paths, lengths and hashes. This corrects a reuse
+and the selected Cargo/Rustc executable lengths and hashes. Version two keeps
+local tool paths in the candidate manifest and checks them at reuse, while the
+selection key itself can match identical tool bytes at another installation. This corrects a reuse
 hole: an already locked crate can become a headless dependency after a manifest
 edit without changing the lockfile, while the old pruned cache lacks its
 archive. The verification command requires the caller's target and exact

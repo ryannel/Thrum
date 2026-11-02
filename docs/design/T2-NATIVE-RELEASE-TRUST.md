@@ -1,7 +1,8 @@
-# Proposed release trust for the first native headless builder
+# Release trust for the first native headless builder
 
-Status: **decision requested**, 2 November 2026. This is a T2/F4 release
-input policy proposal for the CPU-only macOS ARM64 profile. It does not mark
+Status: **selected policy**, 2 November 2026. The user selected a reviewed
+exact-hash manifest from official HTTPS origins for the first CPU-only macOS
+ARM64 development profile. This does not approve a particular manifest or mark
 the current local compiler qualification ready. The [shared contracts](CONTRACTS.md) still
 requires a target BuildRevision distinct from accepted source, cooked product
 and active world or match identity.
@@ -30,7 +31,7 @@ says rustup uses HTTPS but does not validate download signatures. Therefore a
 successful offline build and local SHA-256 inventory cannot alone be called a
 release-verified toolchain/dependency root.
 
-## Recommended first profile
+## Selected first profile
 
 Use a **reviewed release input manifest**, produced once by a controlled
 release preparation job, as the project's trust anchor. The release job fetches
@@ -65,7 +66,42 @@ provide publisher signatures. Signing the project's release manifest can be
 added later without changing BuildRevision semantics. The first profile stays
 macOS ARM64; other platforms need their own selected adapter and evidence.
 
-## Stronger alternative
+### First exact-input matcher
+
+The first [release-input verifier](../../scripts/verify_headless_release_inputs.py)
+accepts a caller-selected, canonical JSON manifest outside the admitted game
+source and private Cargo home. The trusted engine release loader, not game
+source or this verifier, must choose that manifest. The version-one manifest
+has exactly `format`, `profile`, `target`, `selectionKey`, `lockSha256`,
+`dependencyRoot`, `toolRoots` and `originEvidence`. Its profile is
+`headless-macos-arm64-dev-v1`, target `aarch64-apple-darwin`, and SHA-256 values
+use lowercase hexadecimal. `dependencyRoot` records the prepared private
+cache's digest, file count and logical bytes. `toolRoots` records the existing
+descriptor-relative inventory for named Rust, linker and SDK roots. The
+selection key covers admitted Cargo manifest membership and bytes, lockfile,
+toolchain/build declarations, fixed recipe, target and Cargo/Rustc executable
+byte identities. It excludes local executable paths so one reviewed manifest
+can match the same installed bytes on another Mac; the local private-cache
+candidate still checks its selected paths explicitly.
+
+`originEvidence` binds one adjacent canonical JSON file by filename and
+SHA-256. That record names the Rust, Apple linker, Apple SDK and crates.io
+sources with version strings and official HTTPS URLs. The matcher checks the
+record's bytes, shape and official hostnames. It cannot prove that those URLs
+actually supplied the installed bytes; the controlled preparation job and
+human release review own that provenance claim. No real reviewed manifest is
+committed yet. The matcher reports an exact root match with `buildReady:false`
+because selected compiler reads, system libraries, output provenance and
+publication remain open.
+
+Cold verification streams the selected Rust/linker/SDK roots once per release
+selection, using the [measured candidate inventory](../evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
+of about 4.86 GB logical reads and 11 seconds on this host. The dependency
+cache's 67.8 MB local rehash remains in the per-edit path until a sealed-root
+mechanism proves equivalent retention. Do not charge the cold tool scan to
+every world update or silently omit it from first selection latency.
+
+## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for
 every toolchain, SDK, registry index and archive before the first ready build.
@@ -75,6 +111,6 @@ native adapter and does not remove the need for exact compiler-read closure or
 artifact publication. Choose this only if the first development build must
 meet that stronger supply-chain guarantee.
 
-**Decision needed:** whether the reviewed release input manifest and official
-HTTPS origins are sufficient for the first native development profile, or
-publisher/project signatures are mandatory from its first ready BuildRevision.
+The signed-mirror option was not selected for the first development profile.
+It remains available as a later release/security tier without changing the
+first profile's exact BuildRevision identity or source/authority contracts.

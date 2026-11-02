@@ -126,7 +126,7 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
             cached.write_bytes(b"accepted dependency")
             candidate = Path(directory) / "candidate.json"
             candidate.write_text(json.dumps({
-                "format": 1, "target": target, "toolExecutables": tools,
+                "format": 2, "target": target, "toolExecutables": tools,
                 "reuseKey": cargo_reuse_key(source, target, tools),
                 "privateRoot": root_inventory(private_home),
             }))
@@ -172,6 +172,9 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
             tools = {"cargo": {"sha256": "a" * 64, "bytes": 1},
                      "rustc": {"sha256": "b" * 64, "bytes": 1}}
             first = cargo_reuse_key(source, "aarch64-apple-darwin", tools)
+            relocated = {name: {**identity, "path": f"/different/{name}"}
+                         for name, identity in tools.items()}
+            self.assertEqual(first, cargo_reuse_key(source, "aarch64-apple-darwin", relocated))
             (source / "App").mkdir()
             (source / "App/Cargo.toml").write_text("[package]\nname = 'app'\n")
             with_child = cargo_reuse_key(source, "aarch64-apple-darwin", tools)

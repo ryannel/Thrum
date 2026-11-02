@@ -96,7 +96,8 @@ candidate tree digest. Its index origin is still the mutable host cache, so
 the digest identifies observed bytes but does not authenticate their release.
 The candidate manifest binds a separate cache reuse key to those selection
 inputs, the pinned toolchain/build declarations, and the exact Cargo/Rustc
-executable paths, lengths and hashes. A verifier checks the caller-selected
+executable lengths and hashes. Local paths remain in the candidate manifest
+and are checked separately, so the key itself is portable. A verifier checks the caller-selected
 target and executable files against that candidate before a later admitted-source
 build reuses the pruned cache. It also rehashes the complete private cache tree
 against the candidate digest and refuses new ambient Cargo config or implicit
@@ -105,6 +106,10 @@ input attestation or a substitute for source immutability during compilation.
 The local per-edit rehash is an explicit latency cost; a future authenticated,
 immutable dependency root may use a cheaper verified retention mechanism only
 after proving the same byte-integrity guarantee.
+The first [release-input matcher](../evidence/i2a/F4-RELEASE-INPUT-MATCHER.md)
+can compare that portable selection, cache root and selected Rust/linker/SDK
+root bytes to a caller-selected manifest. It cannot establish that the
+manifest was reviewed or that all compiler reads and outputs are closed.
 On macOS, both metadata passes run in a deny-network sandbox with source,
 private cache, toolchain and required system read grants; an external path
 dependency refuses before its manifest can be read. Other build hosts need
