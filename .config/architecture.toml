@@ -12,6 +12,10 @@ allowed_workspace_dependencies = ["thrum-core"]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.i1-mobile-game]
+manifest = "examples/i1-mobile-game/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell"]
+
 # Every direct third-party crate must be listed here with an exact Cargo
 # requirement, its declared license, purpose and target/build cost note.
 # The check validates declarations; license/provenance review remains human work.
@@ -22,3 +26,21 @@ requirement = "=0.17.1"
 license = "MIT OR Apache-2.0"
 purpose = "Precharged, fixed-capacity confirmed replica object index with inspectable table allocation"
 target_cost = "One pinned crate with no transitive dependencies in the selected feature set; measure native, Wasm and phone lookup, churn and rehash tails before qualification"
+
+[external_dependencies.winit]
+requirement = "=0.30.13"
+license = "Apache-2.0"
+purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell"
+target_cost = "Target-specific mobile dependency with substantial platform glue and transitive closure; first iOS static-library compile measured separately, Android native build requires NDK and GameActivity packaging"
+
+[external_dependencies.wgpu]
+requirement = "=30.0.1"
+license = "MIT OR Apache-2.0"
+purpose = "Minimal native Metal/Vulkan clear surface to prove mobile presentation and surface recreation without a second world"
+target_cost = "Large target-specific native graphics closure and device/surface memory; only Metal or Vulkan enabled per mobile target, startup, surface recovery and sustained device costs remain to measure"
+
+[external_dependencies.pollster]
+requirement = "=0.4.0"
+license = "Apache-2.0/MIT"
+purpose = "Block first mobile adapter/device creation in the initial synchronous shell"
+target_cost = "Small single-purpose native dependency; startup blocking must be measured and replaced if it harms responsiveness"

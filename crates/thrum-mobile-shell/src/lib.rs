@@ -130,6 +130,11 @@ impl MobileGate {
         self.ready_for_play() && self.focused && self.clock_active
     }
 
+    /// Tracked starts that still reserve one possible queued action each.
+    pub fn active_touches(&self) -> usize {
+        self.touches.iter().flatten().count()
+    }
+
     /// A pause must be applied to the host before draining or resuming it.
     pub fn pause_pending(&self) -> bool {
         self.pause_pending

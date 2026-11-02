@@ -31,6 +31,7 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 .gradle/
+examples/i1-mobile-game/android/app/build/
 local.properties
 
 # Local secrets and environment overrides. Commit sample files explicitly.
