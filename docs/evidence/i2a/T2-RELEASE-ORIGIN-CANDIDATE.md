@@ -61,6 +61,17 @@ costs, not per-edit or runtime costs. Other
 installed Rust components, system libraries, Xcode and the private Cargo
 cache still lack the same origin-to-byte closure.
 
+The host `rust-std` archive was then downloaded from the selected official
+channel URL over HTTPS. Its SHA-256 was
+`fe79d6ab5a0321de26463999d8c112b8ad3eafbcbcf822d66a2300b45dde1031`,
+matching that channel record. This archive uses 61 GNU long-name records, each
+at most 156 bytes. The verifier now accepts bounded long-name records and
+continues to refuse other tar extensions; a new fixture covers both an
+accepted long name and an oversized refusal. It matched all 59 installed host
+standard-library payload files (152,233,278 unpacked bytes). This adds the
+selected host standard library to the local component origin candidate;
+compiler-read closure and a reviewed release manifest remain open.
+
 ## Selected Xcode
 
 `xcodebuild -version` reported Xcode 27.2, build `27B52`, and `xcrun --sdk
