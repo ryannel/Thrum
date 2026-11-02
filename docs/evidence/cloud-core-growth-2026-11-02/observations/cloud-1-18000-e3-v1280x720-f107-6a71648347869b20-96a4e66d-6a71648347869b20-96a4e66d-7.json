@@ -1,0 +1,171 @@
+{
+  "name": "cloud-1-18000-e3-v1280x720-f107-6a71648347869b20-96a4e66d-6a71648347869b20-96a4e66d-7",
+  "build": "6a71648347869b20",
+  "identity": {
+    "files": {
+      "index.html": "80da48d1b870b40edaecd4951ba25c09d9fa4ee1330f1d6696e30a1f359a550b",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/mix.wgsl": "03ab0f9df8defc506d9c4310f0ce1edcd5d64dfeef52a73262623efd96f59e11",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "8e6aa0cd5a714d910448f5943a1361420235788a2bd2736f3e19f95c29039427",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "9dd8fc43cb05113fc0a28de8e61a1a4380f7baaec1185c0bd2e2fd1b25984487",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench.js": "9dece72409d25d5eb5ea48772928afd994b762647aad051c34dd7f64b19217ef",
+      "src/cirrus.js": "91097d67c46ae156bf4d67b23b5ec9ffac106b839d7fbc430cf9961e42abc7dc",
+      "src/core-reference.js": "99947962c6f6b19cb2f8cb5191ee1d441b842428dcbe132bbe4f94c472977ef9",
+      "src/gpu-reference.js": "aab4b6017d6101649cc76ed0286fadbd8f23fdb8fcfbb145f33b5385afb52f11",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/morphology.js": "adbbb3e84fa56fd7e59997760c58f182db70b30a4ceeb74d801baa2d16d6c7e9",
+      "src/motion.js": "a1dae42eaf1f33a7ce754446a3801c6f3880c18750dc29b03aa121af35c20c3b",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "ff31d28dfcfc136a8f199ce449b3a0a0414eee90549e07f5114d7276f7b255ad",
+      "src/source-mask-reference.js": "1053878ea53457001c4d55971c12819e7e622248efc556bc61ab2720c9530968",
+      "src/source-slices.js": "7c63f8bae8af77af718f565502fa8d62ab59827553ac1de37a82c9dbd6ad03e8",
+      "src/source.js": "8ba7b3939b1684d366c32048b2f92f5c3e54a3fa1512c5f5a9af62f1ce35a772",
+      "src/thermals.js": "fbd5c53f859f8393aea1084ba260324a7ffd96ce6aa2c4bb73bec05a7ea283ca",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "6a71648347869b20"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 180,
+    "epoch": 3,
+    "weather": {
+      "time": 180,
+      "weatherTick": 180,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 540,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:169",
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 1,
+      "inputTick": 180
+    }
+  },
+  "submittedFrame": {
+    "frame": 106,
+    "presented": true,
+    "time": 180,
+    "committedSourceTime": 180,
+    "sourceSteps": 720,
+    "worldTime": 180,
+    "weatherInput": {
+      "time": 180,
+      "weatherTick": 180,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 540,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:169",
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 1,
+      "inputTick": 180
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.18,
+      "distance": 15000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        4361.185371228017,
+        3314.556398612637,
+        14098.526689748629
+      ],
+      "target": [
+        0,
+        6000,
+        0
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -12000,
+        500,
+        -12000
+      ],
+      [
+        12000,
+        15000,
+        12000
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.0045,
+        0.0018
+      ],
+      "MS": [
+        1,
+        0.25,
+        0
+      ],
+      "exposure": 0.5
+    },
+    "epoch": 3,
+    "family": 1,
+    "controls": {
+      "family": 1,
+      "sun": 32,
+      "mode": 0,
+      "provider": 0,
+      "fog": false,
+      "mirror": true,
+      "main": true,
+      "alpha": 1,
+      "emptyWork": true,
+      "resolved": true,
+      "extinctionScale": 1,
+      "cachedVelocity": false,
+      "sourceDiagnostic": false,
+      "viewSteps": 384,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": true,
+      "materialCore": true,
+      "materialStructure": true,
+      "neckMix": true
+    },
+    "lightBuilt": true
+  },
+  "capture": "cloud-1-18000-e3-v1280x720-f107-6a71648347869b20-96a4e66d.png"
+}
