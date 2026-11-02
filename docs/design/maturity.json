@@ -427,6 +427,10 @@
       "i2a_live_free_floor": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-LIVE-FLOOR.md",
         "scope": "The test-only candidate path activates a live volume-free check after initial preflight and runs it before every guarded write and checkpoint. It charges the configured free floor, incoming heuristic transaction allowance and uncheckpointed logical-to-physical main debt. Injected post-preflight shortage refuses before a blob header, and a checkpoint-boundary shortage leaves WAL length unchanged; local tiny-edit smoke cost is recorded. This is not a certified upper bound on SQLite/VFS growth, concurrent actors, the 2 GiB WAL cap or the 8 GiB production floor."
+      },
+      "i2a_sustained_blocked_wal": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-SUSTAINED-WAL.md",
+        "scope": "A test-only SQLite reader holds a WAL snapshot while repeated 4 MiB blob writes approach an injected 40 MiB stop. The guard spaces PASSIVE work, defers a chunk, leaves the selected root unchanged, and retries the same hash after the reader drains. One local release run records completed writes, WAL length and elapsed time before deferral. It does not qualify a hard 2 GiB cap, multiwriter coordination, process/power loss, a production admission path or the 8 GiB free floor."
       }
     },
     {

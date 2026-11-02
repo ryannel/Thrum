@@ -3228,6 +3228,91 @@ fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
         .unwrap();
 }
 
+#[test]
+fn sustained_blocked_reader_defers_chunk_staging_and_resumes_after_drain() {
+    let fixture = Fixture::new();
+    let mut writer = RootTransactionProof::open(&fixture.database()).unwrap();
+    writer
+        .conn
+        .execute_batch("PRAGMA wal_autocheckpoint=0")
+        .unwrap();
+    writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?))
+        })
+        .unwrap();
+    let reader = Connection::open(fixture.database()).unwrap();
+    reader.execute_batch("BEGIN").unwrap();
+    let _: i64 = reader
+        .query_row("SELECT generation FROM root WHERE id=1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    writer.wal_guard = WalGuard {
+        passive_at: 8 * MIB,
+        next_passive_at: 8 * MIB,
+        stop_at: 40 * MIB,
+    };
+    let started = Instant::now();
+    let mut completed = 0;
+    let mut deferred = None;
+    for index in 1..=16_u8 {
+        let bytes = vec![index; CHUNK_BYTES];
+        let hash: [u8; 32] = Sha256::digest(&bytes).into();
+        match writer.stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash) {
+            Ok(()) => completed += 1,
+            Err(ProofError::WalBackpressure) => {
+                deferred = Some((bytes, hash));
+                break;
+            }
+            Err(error) => panic!("unexpected staging error: {error}"),
+        }
+    }
+    assert!(completed >= 2);
+    let (deferred_bytes, deferred_hash) = deferred.expect("WAL stop must defer a chunk");
+    let wal_bytes = fs::metadata(fixture.database().with_extension("sqlite-wal"))
+        .unwrap()
+        .len();
+    eprintln!(
+        "blocked_reader_chunks completed={completed} wal_bytes={wal_bytes} elapsed_ms={:.3}",
+        started.elapsed().as_secs_f64() * 1000.0
+    );
+    assert!(writer.wal_guard.next_passive_at > 40 * MIB);
+    let passive: (i64, i64, i64) = writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert!(passive.1 > passive.2);
+    assert_eq!(writer.root().unwrap(), (0, None));
+    let blocked: (i64, i64, i64) = writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(blocked.0, 1);
+    reader.execute_batch("COMMIT").unwrap();
+    writer
+        .stage_blob(
+            &mut deferred_bytes.as_slice(),
+            deferred_bytes.len() as u64,
+            deferred_hash,
+        )
+        .unwrap();
+    let complete: bool = writer
+        .conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM blob_header WHERE hash=?1 AND state=1)",
+            params![deferred_hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(complete);
+}
+
 struct KillChildOnDrop(Child);
 
 impl Drop for KillChildOnDrop {
