@@ -24,6 +24,7 @@ mod semantic;
 mod sqlite_store;
 mod stage;
 
+pub use bootstrap_json::{SceneRecord, parse_scene};
 pub use budget::SourceSpacePlan;
 pub use inventory::{Inventory, InventoryError, InventoryFile, scan_declared_tree};
 pub use json::{JsonError, MAX_RECORD_BYTES, MAX_RECORD_NODES, parse_record_json};

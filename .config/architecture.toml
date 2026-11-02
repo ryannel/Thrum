@@ -12,6 +12,10 @@ allowed_workspace_dependencies = ["thrum-core"]
 manifest = "crates/thrum-source/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-cook]
+manifest = "crates/thrum-cook/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-source"]
+
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
@@ -83,7 +87,7 @@ target_cost = "Native tooling dev-dependency only; production manifest emission 
 requirement = "=0.11.1"
 license = "MIT OR Apache-2.0"
 purpose = "SHA-256 of exact source file bytes and canonical tree manifests"
-target_cost = "Native tooling only; source-byte hashing scales with declared content and remains outside simulation callbacks"
+target_cost = "Native source and cook tooling only; source-byte/product hashing scales with declared content and remains outside simulation callbacks"
 
 [external_dependencies.unicase]
 requirement = "=2.10.0"

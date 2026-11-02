@@ -103,7 +103,8 @@ impl ManifestEntry {
         (self.length, self.sha256)
     }
 
-    pub(crate) fn record_identity(&self) -> Option<(&str, &str)> {
+    /// Validated stable record ID and type, when this file is a record.
+    pub fn record_identity(&self) -> Option<(&str, &str)> {
         self.record
             .as_ref()
             .map(|record| (record.id.as_str(), record.record_type.as_str()))
