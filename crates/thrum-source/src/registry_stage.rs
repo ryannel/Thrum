@@ -1,13 +1,16 @@
 //! Staged-byte and declaration proof for the first source-carried registry.
 //!
-//! This validates project, descriptor and history records only. Game records,
-//! scene IDs, prior-root lineage and durable admission remain separate gates.
+//! Registry validation precedes a bounded scene/game-record closure pass.
+//! Prior-root lineage, physical peak admission and durable admission remain
+//! separate gates.
 
 use std::collections::HashSet;
 use std::io::Read;
 
 use sha2::{Digest, Sha256};
 
+use crate::bootstrap_json::parse_scene;
+use crate::game_json::{GameRecordError, GameRecordSummary, parse_game_record};
 use crate::history_json::{HistoryError, parse_registry_history};
 use crate::project_v2_json::{ProjectV2, ProjectV2Error, parse_project_v2};
 use crate::registry::{RegistryConsistencyError, validate_active_registry_with};
@@ -55,6 +58,102 @@ pub enum StagedRegistryError {
     Registry(RegistryConsistencyError),
     /// Two staged engine records claim one stable ID.
     DuplicateRecordId(String),
+}
+
+/// A registry's declared scene/game records failed the first closure profile.
+#[derive(Debug)]
+pub enum StagedRecordError {
+    /// The game-record profile needs one unambiguous active descriptor.
+    GameSchemaCount(usize),
+    /// Stage bytes changed or could not be reread.
+    Stage(StagedRegistryError),
+    /// A declared `core.scene` record failed its fixed schema.
+    Scene {
+        /// Source path of the scene.
+        path: SourcePath,
+        /// Fixed-schema parser error.
+        source: serde_json::Error,
+    },
+    /// A declared game record failed the source-carried descriptor.
+    Game {
+        /// Source path of the game record.
+        path: SourcePath,
+        /// Bounded game parser error.
+        source: GameRecordError,
+    },
+    /// An ID collides with another scene, game or registry record.
+    DuplicateRecordId(String),
+    /// A project entry ID does not name a staged scene.
+    UnresolvedEntryScene(String),
+    /// A required game reference does not name a staged scene.
+    UnresolvedGameScene {
+        /// Source game record ID.
+        source_id: String,
+        /// Required target scene ID.
+        target_id: String,
+    },
+    /// Required-edge summaries exceed this first profile's 65,536-edge cap.
+    TooManyRequiredEdges,
+}
+
+/// One checked scene identity paired with its staged source path.
+pub struct StagedScene {
+    path: SourcePath,
+    id: String,
+}
+
+impl StagedScene {
+    /// Declared staged path.
+    pub fn path(&self) -> &SourcePath {
+        &self.path
+    }
+
+    /// Canonical stable scene ID.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+/// One checked game record paired with its staged source path.
+pub struct StagedGame {
+    path: SourcePath,
+    summary: GameRecordSummary,
+}
+
+impl StagedGame {
+    /// Declared staged path.
+    pub fn path(&self) -> &SourcePath {
+        &self.path
+    }
+
+    /// Descriptor-bound identity and required references.
+    pub fn summary(&self) -> &GameRecordSummary {
+        &self.summary
+    }
+}
+
+/// Checked scene/game identities and required local reference closure.
+pub struct StagedRecords {
+    scenes: Vec<StagedScene>,
+    games: Vec<StagedGame>,
+    required_edges: usize,
+}
+
+impl StagedRecords {
+    /// Scene records in declared path order.
+    pub fn scenes(&self) -> &[StagedScene] {
+        &self.scenes
+    }
+
+    /// Game records in declared path order.
+    pub fn games(&self) -> &[StagedGame] {
+        &self.games
+    }
+
+    /// Number of checked required game-to-scene references.
+    pub fn required_edges(&self) -> usize {
+        self.required_edges
+    }
 }
 
 /// One descriptor paired with its declared and rehashed source path.
@@ -206,6 +305,103 @@ pub fn validate_staged_registry<'a>(
     })
 }
 
+/// Rehash declared scene/game bytes and resolve required local scene IDs.
+///
+/// The first closure profile accepts one active game descriptor when game
+/// records exist. This avoids a second full parse or an order-dependent JSON
+/// envelope probe on the source-edit path. A later multi-schema profile must
+/// select its dispatch and physical peak separately. This result is not a
+/// manifest, an authenticated lineage comparison or an admitted source root.
+pub fn validate_staged_records(
+    registry: &StagedRegistry<'_>,
+) -> Result<StagedRecords, StagedRecordError> {
+    const MAX_REQUIRED_EDGES: usize = 65_536;
+
+    let paths = registry.project.record_paths();
+    let scene_count = paths
+        .iter()
+        .filter(|path| path.as_str().starts_with("scenes/"))
+        .count();
+    let game_count = paths.len() - scene_count;
+    if game_count != 0 && registry.schemas.len() != 1 {
+        return Err(StagedRecordError::GameSchemaCount(registry.schemas.len()));
+    }
+    let mut scenes = Vec::with_capacity(scene_count);
+    let mut games = Vec::with_capacity(game_count);
+    let mut required_edges = 0_usize;
+    let mut bytes = Vec::new();
+    for path in paths {
+        let file = find_file(registry.stage, path).expect("registry checked declared membership");
+        read_record_bytes_into(registry.stage, file, &mut bytes)
+            .map_err(StagedRecordError::Stage)?;
+        if path.as_str().starts_with("scenes/") {
+            let scene = parse_scene(&bytes).map_err(|source| StagedRecordError::Scene {
+                path: path.clone(),
+                source,
+            })?;
+            scenes.push(StagedScene {
+                path: path.clone(),
+                id: scene.id,
+            });
+        } else {
+            let descriptor = &registry.schemas[0].descriptor;
+            let summary = parse_game_record(&bytes, descriptor).map_err(|source| {
+                StagedRecordError::Game {
+                    path: path.clone(),
+                    source,
+                }
+            })?;
+            required_edges = required_edges
+                .checked_add(summary.references().len())
+                .filter(|edges| *edges <= MAX_REQUIRED_EDGES)
+                .ok_or(StagedRecordError::TooManyRequiredEdges)?;
+            games.push(StagedGame {
+                path: path.clone(),
+                summary,
+            });
+        }
+    }
+
+    let mut all_ids = Vec::with_capacity(2 + registry.schemas.len() + paths.len());
+    all_ids.push(registry.project.id());
+    all_ids.push(registry.history_id.as_str());
+    all_ids.extend(
+        registry
+            .schemas
+            .iter()
+            .map(|item| item.descriptor.record_id()),
+    );
+    all_ids.extend(scenes.iter().map(StagedScene::id));
+    all_ids.extend(games.iter().map(|item| item.summary.id()));
+    all_ids.sort_unstable();
+    if let Some(pair) = all_ids.windows(2).find(|pair| pair[0] == pair[1]) {
+        return Err(StagedRecordError::DuplicateRecordId(pair[0].to_owned()));
+    }
+
+    let mut scene_ids: Vec<_> = scenes.iter().map(StagedScene::id).collect();
+    scene_ids.sort_unstable();
+    for id in registry.project.entry_scenes() {
+        if scene_ids.binary_search(&id.as_str()).is_err() {
+            return Err(StagedRecordError::UnresolvedEntryScene(id.clone()));
+        }
+    }
+    for game in &games {
+        for reference in game.summary.references() {
+            if scene_ids.binary_search(&reference.target_id()).is_err() {
+                return Err(StagedRecordError::UnresolvedGameScene {
+                    source_id: game.summary.id().to_owned(),
+                    target_id: reference.target_id().to_owned(),
+                });
+            }
+        }
+    }
+    Ok(StagedRecords {
+        scenes,
+        games,
+        required_edges,
+    })
+}
+
 fn fixed_path(text: &str) -> SourcePath {
     SourcePath::parse(text).expect("fixed portable source path")
 }
@@ -222,24 +418,35 @@ fn read_record_bytes(
     stage: &StagedTree,
     file: &StagedFile,
 ) -> Result<Vec<u8>, StagedRegistryError> {
+    let mut bytes = Vec::new();
+    read_record_bytes_into(stage, file, &mut bytes)?;
+    Ok(bytes)
+}
+
+fn read_record_bytes_into(
+    stage: &StagedTree,
+    file: &StagedFile,
+    bytes: &mut Vec<u8>,
+) -> Result<(), StagedRegistryError> {
     let path = file.path();
     if file.length() > MAX_RECORD_BYTES as u64 {
         return Err(StagedRegistryError::RecordTooLarge(path.clone()));
     }
-    let mut bytes = Vec::with_capacity(file.length() as usize + 1);
+    bytes.clear();
+    bytes.reserve(file.length() as usize + 1);
     stage
         .open(path)
         .map_err(StagedRegistryError::Stage)?
         .take(file.length() + 1)
-        .read_to_end(&mut bytes)
+        .read_to_end(bytes)
         .map_err(|source| StagedRegistryError::Io {
             path: path.clone(),
             source,
         })?;
-    if bytes.len() as u64 != file.length() || Sha256::digest(&bytes).as_slice() != file.sha256() {
+    if bytes.len() as u64 != file.length() || Sha256::digest(&*bytes).as_slice() != file.sha256() {
         return Err(StagedRegistryError::StagedDrift(path.clone()));
     }
-    Ok(bytes)
+    Ok(())
 }
 
 #[cfg(test)]
@@ -332,8 +539,25 @@ mod tests {
             }))
             .unwrap(),
         );
-        fixture.write("records/marker.record.json", b"{}");
-        fixture.write("scenes/main.scene.json", b"{}");
+        fixture.write(
+            "records/marker.record.json",
+            &serde_json::to_vec(&json!({
+                "id":GAME_ID, "type":"game.marker", "schema":1,
+                "fields":{
+                    "marker.caption":"first marker",
+                    "marker.scene":SCENE_ID,
+                    "x.game.marker.notes":{"nested":[true, null, {"n": 3}]}
+                }
+            }))
+            .unwrap(),
+        );
+        fixture.write(
+            "scenes/main.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":1, "fields":{}
+            }))
+            .unwrap(),
+        );
         let schema_bytes = serde_json::to_vec(&json!({
             "id":SCHEMA_ID, "type":"core.schema", "schema":1,
             "fields":{
@@ -473,6 +697,74 @@ mod tests {
     }
 
     #[test]
+    fn staged_scene_game_and_required_reference_close_over_captured_bytes() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let old = fixture.stage(PATHS);
+        let registry = validate_staged_registry(&old, &[]).unwrap();
+        let records = validate_staged_records(&registry).unwrap();
+        assert_eq!(records.scenes().len(), 1);
+        assert_eq!(records.scenes()[0].id(), SCENE_ID);
+        assert_eq!(records.games().len(), 1);
+        assert_eq!(records.games()[0].summary().id(), GAME_ID);
+        assert_eq!(records.games()[0].summary().record_type(), "game.marker");
+        assert_eq!(
+            records.games()[0].summary().definition_hash(),
+            registry.schemas()[0].descriptor().definition_hash()
+        );
+        assert_eq!(records.required_edges(), 1);
+
+        let path = "records/marker.record.json";
+        let game = fs::read_to_string(fixture.0.join(path)).unwrap();
+        fixture.write(path, game.replace(SCENE_ID, PROJECT_ID).as_bytes());
+        // A captured candidate still reads its own exact bytes after an edit.
+        assert!(validate_staged_records(&registry).is_ok());
+        let new = fixture.stage(PATHS);
+        let registry = validate_staged_registry(&new, &[]).unwrap();
+        assert!(matches!(
+            validate_staged_records(&registry),
+            Err(StagedRecordError::UnresolvedGameScene { target_id, .. }) if target_id == PROJECT_ID
+        ));
+    }
+
+    #[test]
+    fn staged_record_identity_and_schema_errors_refuse() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let path = "records/marker.record.json";
+        let game = fs::read_to_string(fixture.0.join(path)).unwrap();
+        fixture.write(path, game.replace(GAME_ID, SCENE_ID).as_bytes());
+        let stage = fixture.stage(PATHS);
+        let registry = validate_staged_registry(&stage, &[]).unwrap();
+        assert!(matches!(
+            validate_staged_records(&registry),
+            Err(StagedRecordError::DuplicateRecordId(id)) if id == SCENE_ID
+        ));
+
+        fixture.write(
+            path,
+            game.replace("\"game.marker\"", "\"game.other\"").as_bytes(),
+        );
+        let stage = fixture.stage(PATHS);
+        let registry = validate_staged_registry(&stage, &[]).unwrap();
+        assert!(matches!(
+            validate_staged_records(&registry),
+            Err(StagedRecordError::Game { .. })
+        ));
+
+        fixture.write(path, game.as_bytes());
+        let project_path = "project.json";
+        let project = fs::read_to_string(fixture.0.join(project_path)).unwrap();
+        fixture.write(project_path, project.replace(SCENE_ID, GAME_ID).as_bytes());
+        let stage = fixture.stage(PATHS);
+        let registry = validate_staged_registry(&stage, &[]).unwrap();
+        assert!(matches!(
+            validate_staged_records(&registry),
+            Err(StagedRecordError::UnresolvedEntryScene(id)) if id == GAME_ID
+        ));
+    }
+
+    #[test]
     #[ignore = "local small staged-registry validation cost probe"]
     fn measure_small_staged_registry() {
         let fixture = Fixture::new();
@@ -481,6 +773,20 @@ mod tests {
         let start = std::time::Instant::now();
         for _ in 0..1_000 {
             std::hint::black_box(validate_staged_registry(&stage, &[]).unwrap());
+        }
+        eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
+    }
+
+    #[test]
+    #[ignore = "local small staged-record closure cost probe"]
+    fn measure_small_staged_record_closure() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let stage = fixture.stage(PATHS);
+        let registry = validate_staged_registry(&stage, &[]).unwrap();
+        let start = std::time::Instant::now();
+        for _ in 0..1_000 {
+            std::hint::black_box(validate_staged_records(&registry).unwrap());
         }
         eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
     }
