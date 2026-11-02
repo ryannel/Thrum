@@ -1,0 +1,22 @@
+{
+  "scope": "Written production-baseline checkpoint; hashes are artifact identity, not implementation/visual/performance proof.",
+  "sha256": {
+    "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md": "9c70c54572308839ae587d443858d3ff929cf7bf7822cf379c7ccd31f4f85aa9",
+    "docs/design/modules/CLOUD-MIGRATION.md": "25f0a8ac121fa3d468165b8bf5c18cb706ace12434c4f91064d49cd845ae17c9",
+    "docs/design/modules/CLOUDS.md": "b80f3824f3f436f7c386235483a8ce7b23a62c31bac11c1fcf05eb05b7681a24",
+    "docs/design/modules/CLOUD-CAPABILITIES.md": "615c8574689f70dd883c8c40ed47d78deb3624be5e044ba0a3820d2b0f467b38",
+    "docs/design/modules/CLOUD-PROOF-ACCEPTANCE.md": "8e5d3b31d703babda11bbe945050082a1b3aa4470bf8c39151edfbf3e4419e20",
+    "docs/design/modules/CLOUD-PERFORMANCE.md": "f6a7531578eab1eb89d70b1477a2c92c38de32bebcfd05caab7053062384e9b2",
+    "docs/design/research/ATMOSPHERICS-TECHNIQUES.md": "24b5909b249d3d5a158fb649363de0ad71e6e9daa39c853d3bf08c39891b8359",
+    "docs/evidence/cloud-production-baseline-2026-11-02/REVIEW.md": "5a6042d7b17f01baca4f0c75c0250cde8275339373e99d56db8bdc3e873abf1e",
+    "docs/evidence/cloud-production-baseline-2026-11-02/authoring-closure.md": "082c6eeb2cb47ac929f3da3d8065ced8ad4590c4847d4c08994fcb17e37c190e",
+    "docs/evidence/cloud-production-baseline-2026-11-02/authoring-review.md": "443dc49f10c94754d69e5db1583bdcafcea359a030d1639991ebbc3079a36911",
+    "docs/evidence/cloud-production-baseline-2026-11-02/authoring.md": "59a6b349effd745474b422db41d2acc8778589e9e7a34a50552be1d14ee58db6",
+    "docs/evidence/cloud-production-baseline-2026-11-02/rendering-closure.md": "606d6e29a030660e4568850df80ee1b5e328d85df38b4a9b146fc81b82308e1b",
+    "docs/evidence/cloud-production-baseline-2026-11-02/rendering-critical-review.md": "7b66dd2417a8d789a684383898637f177c72173d0790d37d12e0a4df67f44533",
+    "docs/evidence/cloud-production-baseline-2026-11-02/rendering.md": "392de6a12f6aa289bfacefcd253b3f24e3bc4874eee335319b75c77db90d9002",
+    "docs/evidence/cloud-production-baseline-2026-11-02/system-closure.md": "e5a1373f9785cfc369f0f40e26fbcfb5b66c67ae1c2c1747eec7d6e3fc985c20",
+    "docs/evidence/cloud-production-baseline-2026-11-02/system-review-v2.md": "dde612e5960853e96548f874b35f07cc38cd831df7478331b94d44b7f936cefb",
+    "docs/evidence/cloud-production-baseline-2026-11-02/system.md": "cdaf38d53ea88292d74d118a598e82e5739db8418ae0cf35d5069fe3c70c0d2c"
+  }
+}

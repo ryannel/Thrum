@@ -18,9 +18,10 @@ reference, not the host. Existing implementations are candidates for later recon
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).
 - [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; Bevy is not the selected host.
 
-[Cloud migration/build plan](modules/CLOUD-MIGRATION.md):
+[Cloud migration/build plan](modules/CLOUD-MIGRATION.md), with the
+[locked Houdini/volume/air/light production baseline](modules/CLOUD-PRODUCTION-BASELINE.md):
 [POC definitions of done](modules/CLOUD-PROOF-ACCEPTANCE.md), [CPU/GPU/memory execution](modules/CLOUD-PERFORMANCE.md),
-and [second review battery](../evidence/atmospherics-migration-round2-2026-11-02/REVIEW.md); tracked checkboxes, stage dependencies, code ownership,
+and [production-baseline review](../evidence/cloud-production-baseline-2026-11-02/REVIEW.md), with the historical [second review battery](../evidence/atmospherics-migration-round2-2026-11-02/REVIEW.md); tracked checkboxes, stage dependencies, code ownership,
 visual POCs and combined cost gates; [modern technique/source map](research/ATMOSPHERICS-TECHNIQUES.md). The research and
 planning checkpoint is [independently reviewed](../evidence/atmospherics-migration-2026-11-02/REVIEW.md); migration implementation has not started.
 

@@ -1125,8 +1125,8 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "31eb5bf87d3916ed65d38f314c31709d1036883b798b454dd13feb64eb2d854b",
-      "current_design_delta": "Complete commission supersedes optional-storm/local-only target. Reviewed family-specific authored producers, global virtual source reach, spherical SKY-G transport, finite ambient DAG, bounded light/packing/error/HDR candidates. Implementation/appearance/full-sky viability remain unproven; prior bounded cost fails.",
+      "current_design_sha256": "b80f3824f3f436f7c386235483a8ce7b23a62c31bac11c1fcf05eb05b7681a24",
+      "current_design_delta": "Production-derived baseline now selects Houdini baked world episodes, uniform 3D optical animation, conventional sparse streaming/LOD, Hillaire air, receiver BSM/interior secondary Sun rays, fixed cloud scattering/ambient and independent reconstructed views. Prior algorithm competitions are optional; five-family/weather/consumer scope retained. Implementation/content/device qualification unrun; prior bounded cost fails.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -1213,7 +1213,7 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "second_reviewed_migration_plan_implementation_not_started",
+        "status": "reviewed_production_baseline_selected_implementation_not_started",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
@@ -1237,7 +1237,9 @@
         "migration_review": "../evidence/atmospherics-migration-2026-11-02/REVIEW.md",
         "migration_second_review": "../evidence/atmospherics-migration-round2-2026-11-02/REVIEW.md",
         "proof_acceptance": "modules/CLOUD-PROOF-ACCEPTANCE.md",
-        "performance_execution": "modules/CLOUD-PERFORMANCE.md"
+        "performance_execution": "modules/CLOUD-PERFORMANCE.md",
+        "production_baseline": "modules/CLOUD-PRODUCTION-BASELINE.md",
+        "production_baseline_review": "../evidence/cloud-production-baseline-2026-11-02/REVIEW.md"
       }
     },
     {
@@ -2749,7 +2751,7 @@
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
-      "README.md": "d4142fbbb2a6d14901ed6c3f86f81c4d1522b6354db5271bd015c059dc927636",
+      "README.md": "052df636e642295657b636e23493913bdcb6f13cf69bcbfc1b6096c108570c95",
       "RENDER-SPEC.md": "63fed32c0f6ba686d323a8d62799c367b17b0da048eaf02ee12869aa2610189c",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
