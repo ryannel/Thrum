@@ -451,6 +451,10 @@
       "i2a_first_profile_consumer_handoff": {
         "evidence": "../evidence/i2a/SOURCE-FIRST-PROFILE-CONSUMERS.md",
         "scope": "Design reconciliation of the bounded local source profile with F4, T1, W1/F1, P7 and N1: distinct accepted source, ready build, active world/match and private save roots; explicit refusal and retention behavior; and a small edit-to-restore proof queue. No consumer implementation, general external dependency resolver, physical storage admission or runtime qualification is claimed."
+      },
+      "i2a_all_type_candidate_overlap": {
+        "evidence": "../evidence/i2a/SOURCE-CANDIDATE-OVERLAP.md",
+        "scope": "One ignored release fixture keeps two full 256-type, 4,096-record, 65,536-edge provisional candidates and their 100,000-field histories live, compares lineage and matching revisions, then measures unchanged restage and validation/lineage times plus three fresh-process RSS peaks on local macOS ARM64. This pessimistic overlap does not authenticate a prior root, run SQLite/editor application or measure edit-to-ready."
       }
     },
     {
