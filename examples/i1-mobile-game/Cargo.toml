@@ -19,9 +19,9 @@ thrum-mobile-shell = { path = "../../crates/thrum-mobile-shell" }
 [target.'cfg(target_os = "ios")'.dependencies]
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal"] }
-pollster = "=0.4.0"
+pollster = "=1.0.1"
 
 [target.'cfg(target_os = "android")'.dependencies]
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06", "android-game-activity"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "vulkan"] }
-pollster = "=0.4.0"
+pollster = "=1.0.1"

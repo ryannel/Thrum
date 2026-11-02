@@ -257,6 +257,20 @@ mod tests {
         .unwrap()
     }
 
+    fn hex(bytes: &[u8]) -> String {
+        use std::fmt::Write;
+
+        let mut result = String::with_capacity(bytes.len() * 2);
+        for byte in bytes {
+            write!(&mut result, "{byte:02x}").unwrap();
+        }
+        result
+    }
+
+    fn digest_hex(bytes: &[u8]) -> String {
+        hex(&Sha256::digest(bytes))
+    }
+
     #[test]
     fn exact_bytes_and_declared_roots_have_one_order_independent_revision() {
         let files = vec![
@@ -300,8 +314,8 @@ mod tests {
         let oracle = json!({
             "dependencyRoots": ["a", "z"],
             "files": [
-                {"hash": format!("{:x}", Sha256::digest(b"{}")), "kind":"file", "length":2, "path":"scene.json", "recordId":null, "recordType":null},
-                {"hash": format!("{:x}", Sha256::digest(b"fn game() {}")), "kind":"file", "length":12, "path":"src/game.rs", "recordId":null, "recordType":null}
+                {"hash": digest_hex(b"{}"), "kind":"file", "length":2, "path":"scene.json", "recordId":null, "recordType":null},
+                {"hash": digest_hex(b"fn game() {}"), "kind":"file", "length":12, "path":"src/game.rs", "recordId":null, "recordType":null}
             ],
             "format": 1,
             "projectId": PROJECT_ID
@@ -310,6 +324,10 @@ mod tests {
         assert_eq!(
             manifest.revision().0.as_slice(),
             Sha256::digest(oracle_bytes).as_slice()
+        );
+        assert_eq!(
+            hex(manifest.revision().as_bytes()),
+            "3c0f7abb9265d184f2a9fa1f2f5565d8a4b43acd10b0ea002386f9f31653d1ff"
         );
     }
 
