@@ -1,0 +1,8 @@
+# Scoped review dispositions
+
+2 November2026. Read-only Sol High reviewers: dynamic_cloud_source (mechanism) and atmosphere_scope_provider (lifecycle/recorder). Original reports are retained in the instrument. Neither reviewer watched a browser video or independently qualified final art/performance.
+
+- Mechanism: persistent controls, shared weather/backtrace flow and finite-E attribution were checked. Every-fifth packet membership was reconciled between controls and base feed. Normalizing by sum(E) cancelled overlapping axial falloff; removed. Dead22s packet windows continued to suppress flank loss; now ignored. Larger heads can still overlap strongly: the source must be rejected if sustained motion remains a torch or a regular puff stack. The present art is not a final pass.
+- Recorder P1: endpoint equality missed transient/reverted controls and faults. Monotone fixtureRevision now covers DOM input/change, front/play/camera/reset/configuration/failure. Healthy end, epoch, source and submitted-image progression are required. Scoped re-review found no remaining ordinary UI-path attribution blocker; validator tests pass. Browser fixed-fixture clips were subsequently generated and native frames inspected by the primary agent. They are not displayed-FPS evidence.
+- Background-history P1 and reset-chart P2 remain open, with causal findings preserved in the lifecycle report. They are not silently counted as fixed or accepted recovery.
+- Resource review found bounded24 thermal table pairs, same tick mapped to all q/carrier passes, table labels in cached bind-group keys, and no thermal resources in source-less profiles. This is static ownership review, not driver/process memory qualification.

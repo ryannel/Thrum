@@ -1266,6 +1266,14 @@
           "correctness": "CPU_reset_intent_GPU_phase_sum_material_phase_mip_below_base_seed_transport_and_mixed_phase_no_phantom_birth_age_cases_pass_Cu_mask_cache_oracle_pass",
           "experienced_quality": "connected_cap_visible_from_clear_at480s_bounded600s_shutdown_core_weakens_upper_ice_persists_zero_birth_and_faces_tower_columnar_soft_and_breakup_art_rejected_sameID_Cu_Cb_transfer_unbuilt_long1060s_chart_edge_failure",
           "performance": "M3_Max_corrected_shader_10s_1x16x_queued_progress_observed_53_1MiB_logical_Cb_whole_GPU_totals_rejected_process_M2_fullsky_unqualified"
+        },
+        "runtime_storm_billowing": {
+          "record": "../evidence/cloud-billowing-2026-11-02/README.md",
+          "build": "9d84ac657834807f",
+          "implementation": "standalone_thermal_packets_rolling_advection_occupied_condensation_finite_local_evaporation_shared_optics_no_engine_binding",
+          "correctness": "CPU_roll_finite_neck_loss_bounded_control_reset_and_motion_validator_pass_GPU_current_build_pending",
+          "experienced_quality": "actual1x16x_clips_and_native_frames_rising_lobes_fed_cap_visible_but_stack_regularity_softness_not_final_accepted_breakup_in_progress",
+          "performance": "53_3MiB_normal_logical_plus_lazy_observer_scratch_whole_GPU_M2_fullsky_unqualified"
         }
       }
     },
