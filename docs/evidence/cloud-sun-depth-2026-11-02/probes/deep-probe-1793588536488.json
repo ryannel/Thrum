@@ -1,0 +1,4021 @@
+{
+  "schema": "thrum.deep-sun-probe.v1",
+  "scope": "Finite actual GPU input-stream/compression and filtered query/direct-path capture; no appearance, full SKY-G, source quality, uniform numerical certificate or performance pass",
+  "quiescent_caller_required": true,
+  "generation_valid": true,
+  "uniform_provenance": "exact caller-supplied192B snapshot of the Scene used for source/light/view; existing uniform buffer not independently read back",
+  "identity": {
+    "deep": {
+      "shader": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "profile": "thrum.deep-sun.tau-tube.k48.64x64.512.v1"
+    },
+    "fit": {
+      "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+    },
+    "sources": {
+      "deep-probes.js": "9534c54cc0ba7bdc1c87796e0c2a2fcd848a04aba1a351beae5c217a1842cc3c",
+      "deep-sun.js": "cf711ac8f0a7d562839c8cf1d51930700c096cea21c99d0bdae966a008a0457f",
+      "deep-sun.wgsl": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+      "gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "../cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1"
+    },
+    "shaders": {
+      "path_sha256": "03d0adba2f24694002145b4c79af047ca30b9e808fdf89413e5fa50cbd75be10",
+      "query_sha256": "4c046c739bccfc54e0189f6c127c9c2c9a0211c3ad06de49180506babd07a9f1"
+    },
+    "uniform_sha256": "b831302f419426dc058bbddb6a99a1b9cd2f6034c744947244e3fb7141bfc012"
+  },
+  "frame": {
+    "source_time_s": 90,
+    "source_model": "prepared",
+    "max_level": 0,
+    "inspection_view": "0",
+    "camera_route": "local",
+    "variant": 0,
+    "seed": 0,
+    "shift_m": [
+      0,
+      0,
+      0
+    ],
+    "lo_m": [
+      0,
+      0,
+      0
+    ],
+    "extent_m": [
+      512,
+      512,
+      512
+    ],
+    "master_lo_m": [
+      0,
+      0,
+      0
+    ],
+    "master_extent_m": [
+      512,
+      512,
+      512
+    ],
+    "reference_point_m": [
+      177.532882688,
+      153.1774139392,
+      230.1775207424
+    ],
+    "allocation_profile": {
+      "nominalSide": 128,
+      "crop": false,
+      "specialize128": false,
+      "appliedSpecialization": false,
+      "aligned": true,
+      "alignmentCells": 4,
+      "logicalMin": [
+        0,
+        0,
+        0
+      ],
+      "logicalMaxExclusive": [
+        128,
+        128,
+        128
+      ],
+      "dimensions": [
+        128,
+        128,
+        128
+      ],
+      "fieldBounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "extent": [
+          512,
+          512,
+          512
+        ]
+      },
+      "gridProducer": "canonical-trilinear",
+      "mipPhasePreserved": true,
+      "supportIdentity": {
+        "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+        "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+        "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+        "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+        "sourceKnots": 162,
+        "uniqueChunks": 154,
+        "calibrationOnly": true
+      }
+    },
+    "camera_m": [
+      607.6271801180363,
+      180,
+      931.4127080550365
+    ],
+    "target_m": [
+      256,
+      80,
+      256
+    ],
+    "sun_direction": [
+      -0.7794228619673722,
+      0.49999999907712306,
+      0.37749172595630187
+    ],
+    "sun_elevation_deg": 30,
+    "light_model": "2",
+    "depth_model": "deep",
+    "sun_reference_patches": false,
+    "deep_identity": {
+      "shader": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "profile": "thrum.deep-sun.tau-tube.k48.64x64.512.v1"
+    },
+    "fit_identity": {
+      "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+    },
+    "main_cloud": true,
+    "mirror": true,
+    "requested_source_time_s": 90,
+    "source_updated": false,
+    "light_updated": true,
+    "source_stats": {
+      "profile": "retained Q1 static geometry comparator",
+      "encoded_source_bytes": 6491440,
+      "allocation_profile": {
+        "nominalSide": 128,
+        "crop": false,
+        "specialize128": false,
+        "appliedSpecialization": false,
+        "aligned": true,
+        "alignmentCells": 4,
+        "logicalMin": [
+          0,
+          0,
+          0
+        ],
+        "logicalMaxExclusive": [
+          128,
+          128,
+          128
+        ],
+        "dimensions": [
+          128,
+          128,
+          128
+        ],
+        "fieldBounds": {
+          "min": [
+            0,
+            0,
+            0
+          ],
+          "extent": [
+            512,
+            512,
+            512
+          ]
+        },
+        "gridProducer": "canonical-trilinear",
+        "mipPhasePreserved": true,
+        "supportIdentity": {
+          "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+          "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+          "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+          "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+          "sourceKnots": 162,
+          "uniqueChunks": 154,
+          "calibrationOnly": true
+        }
+      }
+    },
+    "cpu_encode_ms": 0.20000004768371582,
+    "queue_complete_ms": 26.299999952316284,
+    "gpu_bracket_ms": 17.891328,
+    "gpu_raw_timestamps_ns": [
+      "2103540428505088",
+      "2103540446396416"
+    ],
+    "gpu_timing_scope": "first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency",
+    "invalid_view_paths": 0,
+    "source_field_bytes": 5316544,
+    "sun_depth_fallbacks": 0,
+    "sun_depth_invalid_footprints": 0,
+    "sun_depth_unsupported": 0,
+    "deep_bytes": {
+      "nodes": 1672704,
+      "metadata": 139392,
+      "metadataStride": 32,
+      "totalGPU": 1812096,
+      "privateState": "O(1) scalar/vector state; compiler allocation/spills unmeasured"
+    },
+    "scatter_fit_bytes": {
+      "table": 262144,
+      "axes": 2048,
+      "profile": 32,
+      "sharedGPU": 264224,
+      "cpuRecoveryPayload": 292941,
+      "products": {
+        "body": 65536,
+        "bank": 65536,
+        "total": 131072
+      }
+    },
+    "scope": "requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame"
+  },
+  "source_time_s": 90,
+  "uniform_u32": [
+    0,
+    0,
+    0,
+    1119092736,
+    1140850688,
+    1140850688,
+    1140850688,
+    1131413504,
+    1142417444,
+    1127481344,
+    1147722346,
+    1071877689,
+    1132462080,
+    1117782016,
+    1132462080,
+    1055957975,
+    3209136194,
+    1056964608,
+    1052853912,
+    1065353216,
+    1054813430,
+    2147483648,
+    1063675494,
+    1135541873,
+    3202770534,
+    3210589143,
+    1046424822,
+    1137203492,
+    1061652546,
+    3204448256,
+    3200337560,
+    1138234823,
+    1202702336,
+    1202062336,
+    1200782336,
+    947628162,
+    1169915904,
+    1175232512,
+    1181376512,
+    1040187392,
+    128,
+    128,
+    128,
+    18,
+    1,
+    2,
+    0,
+    0
+  ],
+  "logical_dimensions": [
+    128,
+    128,
+    128
+  ],
+  "field_physical_dimensions": [
+    130,
+    130,
+    34
+  ],
+  "scene": {
+    "lo_m": [
+      0,
+      0,
+      0
+    ],
+    "extent_m": [
+      512,
+      512,
+      512
+    ],
+    "sun_direction": [
+      -0.7794228792190552,
+      0.5,
+      0.37749171257019043
+    ],
+    "basis": {
+      "U": [
+        0.4358898997306824,
+        0,
+        0.8999999761581421
+      ],
+      "V": [
+        -0.44999998807907104,
+        -0.8660253882408142,
+        0.2179449498653412
+      ],
+      "W": [
+        0.7794228792190552,
+        -0.5,
+        -0.37749171257019043
+      ]
+    }
+  },
+  "profile": {
+    "nominalColumns": 64,
+    "physicalColumns": 66,
+    "knots": 48,
+    "intervals": 512,
+    "endpoints": 513,
+    "exponents": [
+      1,
+      0.25
+    ],
+    "compressionAllocation": 0.005,
+    "tubeEpsilon": 0.004998,
+    "numericalReserve": 0.000002,
+    "fallbackCap": 4096,
+    "backendUniformCertificate": false
+  },
+  "projection": {
+    "raw_half_m": [
+      344.6595879793167,
+      395.7643441557884,
+      427.48396468162537
+    ],
+    "half_m": [
+      367.6368938446045,
+      422.1486337661743,
+      427.48396468162537
+    ],
+    "guard_m": [
+      0.0034465958797931674,
+      0.003957643441557884,
+      0.004274839646816254
+    ],
+    "nominal_pitch_m": [
+      11.488652932643891,
+      13.192144805192948
+    ],
+    "derived_from_xyz_ignoring_scene_basis_w": true
+  },
+  "layout": {
+    "nodes": "[physical_y,physical_x,knot,depth_m/cumulative_tau]",
+    "metadata": {
+      "stride_bytes": 32,
+      "words": [
+        "count",
+        "compression_valid",
+        "nominal_primary_bound",
+        "nominal_kappa_bound",
+        "coefficient_requests",
+        "endpoint_visits",
+        "anchor_builds",
+        "failure_bits"
+      ],
+      "word_type": "all f32"
+    },
+    "field": "[physical_z,physical_y,physical_x,RGBA16F]; X fastest, four consecutive logical Z per RGBA; one packed texel halo, tight rows",
+    "paths": "[selected_column_index,endpoint_index,depth_m/cumulative_tau/sigma_midpoint_per_m/valid]; endpoint0=[0,0,0,1]"
+  },
+  "binaries": {
+    "nodes": {
+      "filename": "deep-probe-1793588536488-nodes.f32",
+      "bytes": 1672704,
+      "sha256": "64958761904f479e0239d2ce2e8c3152d0b5a40a9906bfa1b19da248106c2657",
+      "shape": [
+        66,
+        66,
+        48,
+        2
+      ],
+      "format": "little-endian float32"
+    },
+    "metadata": {
+      "filename": "deep-probe-1793588536488-metadata.f32",
+      "bytes": 139392,
+      "sha256": "42be8b4c301f08daf29920048b13c44567fd24ddf014c59d51c53fdb80b2aa0d",
+      "shape": [
+        66,
+        66,
+        8
+      ],
+      "format": "little-endian float32"
+    },
+    "field": {
+      "filename": "deep-probe-1793588536488-field.rgba16f",
+      "bytes": 4596800,
+      "sha256": "278761a8b6a9482087289b993b95d87f0a58cf714d6885eee440b5fc1c0c039a",
+      "shape": [
+        34,
+        130,
+        130,
+        4
+      ],
+      "format": "little-endian float16"
+    },
+    "paths": {
+      "filename": "deep-probe-1793588536488-paths.f32",
+      "bytes": 131328,
+      "sha256": "c3c118b07985c98b5ac9bd96e8ba98e0f43e1d6bc5b7fd542c941eb5082b5369",
+      "shape": [
+        16,
+        513,
+        4
+      ],
+      "format": "little-endian float32"
+    }
+  },
+  "metadata_summary": {
+    "columns": 4356,
+    "valid": 4356,
+    "invalid": 0,
+    "count_min": 2,
+    "count_max": 29,
+    "failure_bits_histogram": {
+      "0": 4356
+    },
+    "coefficient_requests": 2230272,
+    "endpoint_visits": 2233041,
+    "anchor_builds": 7125
+  },
+  "selected_columns": [
+    {
+      "physical_xy": [
+        0,
+        0
+      ],
+      "linear_index": 0,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "actual-clear"
+    },
+    {
+      "physical_xy": [
+        65,
+        65
+      ],
+      "linear_index": 4355,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "actual-clear"
+    },
+    {
+      "physical_xy": [
+        65,
+        0
+      ],
+      "linear_index": 65,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "guard-corner"
+    },
+    {
+      "physical_xy": [
+        0,
+        65
+      ],
+      "linear_index": 4290,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "guard-corner"
+    },
+    {
+      "physical_xy": [
+        40,
+        41
+      ],
+      "linear_index": 2746,
+      "count": 29,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 539,
+        "anchor_builds": 28,
+        "failure_bits": 0
+      },
+      "final_tau": 4.296018600463867,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        27,
+        41
+      ],
+      "linear_index": 2733,
+      "count": 27,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 537,
+        "anchor_builds": 26,
+        "failure_bits": 0
+      },
+      "final_tau": 4.164802074432373,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        28,
+        42
+      ],
+      "linear_index": 2800,
+      "count": 26,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 536,
+        "anchor_builds": 25,
+        "failure_bits": 0
+      },
+      "final_tau": 7.476099014282227,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        27,
+        42
+      ],
+      "linear_index": 2799,
+      "count": 25,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 535,
+        "anchor_builds": 24,
+        "failure_bits": 0
+      },
+      "final_tau": 1.6755315065383911,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        30,
+        37
+      ],
+      "linear_index": 2472,
+      "count": 11,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 521,
+        "anchor_builds": 10,
+        "failure_bits": 0
+      },
+      "final_tau": 6.863931179046631,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        29,
+        40
+      ],
+      "linear_index": 2669,
+      "count": 13,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 523,
+        "anchor_builds": 12,
+        "failure_bits": 0
+      },
+      "final_tau": 6.862028121948242,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        29,
+        42
+      ],
+      "linear_index": 2801,
+      "count": 13,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 523,
+        "anchor_builds": 12,
+        "failure_bits": 0
+      },
+      "final_tau": 10.83095932006836,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        30,
+        44
+      ],
+      "linear_index": 2934,
+      "count": 11,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 521,
+        "anchor_builds": 10,
+        "failure_bits": 0
+      },
+      "final_tau": 7.048417091369629,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        41,
+        46
+      ],
+      "linear_index": 3077,
+      "count": 14,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 524,
+        "anchor_builds": 13,
+        "failure_bits": 0
+      },
+      "final_tau": 2.6634440422058105,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        32,
+        32
+      ],
+      "linear_index": 2144,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "centre"
+    },
+    {
+      "physical_xy": [
+        33,
+        32
+      ],
+      "linear_index": 2145,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "centre"
+    },
+    {
+      "physical_xy": [
+        32,
+        33
+      ],
+      "linear_index": 2210,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "centre"
+    }
+  ],
+  "path_summaries": [
+    {
+      "physical_xy": [
+        0,
+        0
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        65,
+        65
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        65,
+        0
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        0,
+        65
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        40,
+        41
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        4.296018600463867,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        27,
+        41
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        4.164802074432373,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        28,
+        42
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        7.476110458374023,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        27,
+        42
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        1.675531268119812,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        30,
+        37
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        6.863931179046631,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        29,
+        40
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        6.862028121948242,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        29,
+        42
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        10.83095645904541,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        30,
+        44
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        7.048417091369629,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        41,
+        46
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        2.6634440422058105,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        32,
+        32
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        33,
+        32
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        32,
+        33
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        854.9679565429688,
+        0,
+        0,
+        1
+      ]
+    }
+  ],
+  "query": {
+    "rows": [
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          36.28892135620117,
+          787.6102905273438,
+          -52.45709228515625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          202.88430786132812,
+          680.7393188476562,
+          -133.14291381835938
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          369.4797058105469,
+          573.8682861328125,
+          -213.82875061035156
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          536.0750732421875,
+          466.997314453125,
+          -294.51458740234375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -24.075096130371094,
+          45.002685546875,
+          806.5145874023438
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          142.52029418945312,
+          -61.86830520629883,
+          725.8287353515625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          309.1156921386719,
+          -168.7393035888672,
+          645.1429443359375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          475.7110900878906,
+          -275.61029052734375,
+          564.4570922851562
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          361.7951354980469,
+          787.6102905273438,
+          619.6290893554688
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          528.3905029296875,
+          680.7393188476562,
+          538.9432373046875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          694.9859008789062,
+          573.8682861328125,
+          458.2574462890625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          861.581298828125,
+          466.997314453125,
+          377.57159423828125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -349.581298828125,
+          45.002685546875,
+          134.4283905029297
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          -182.9859161376953,
+          -61.86830520629883,
+          53.74256896972656
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          -16.390520095825195,
+          -168.7393035888672,
+          -26.943260192871094
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          150.20486450195312,
+          -275.61029052734375,
+          -107.62908935546875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          86.16489699482918,
+          112.13323084414006
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -6.794631004333496,
+          319.1962585449219,
+          479.0160217285156
+        ],
+        "terms": [
+          0.9989175796508789,
+          0.9997292757034302
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          86.16489699482918,
+          112.13323084414006
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          159.80076599121094,
+          212.3252716064453,
+          398.3302001953125
+        ],
+        "terms": [
+          0.9967561960220337,
+          0.9991880059242249
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          86.16489699482918,
+          112.13323084414006
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          326.3961486816406,
+          105.45427703857422,
+          317.64434814453125
+        ],
+        "terms": [
+          0.09051450341939926,
+          0.5485036969184875
+        ],
+        "direct_tau_512": 2.4174132347106934,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          86.16489699482918,
+          112.13323084414006
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          492.9915466308594,
+          -1.4167115688323975,
+          236.9585418701172
+        ],
+        "terms": [
+          0.013623623177409172,
+          0.3416435122489929
+        ],
+        "direct_tau_512": 4.288689136505127,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          112.13323084414006
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -71.8958740234375,
+          319.1962585449219,
+          344.5987854003906
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          112.13323084414006
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          94.69951629638672,
+          212.3252716064453,
+          263.9129638671875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          112.13323084414006
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          261.294921875,
+          105.45427703857422,
+          183.2271270751953
+        ],
+        "terms": [
+          0.03336964175105095,
+          0.42740318179130554
+        ],
+        "direct_tau_512": 3.384983777999878,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          112.13323084414006
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          427.8902893066406,
+          -1.4167115688323975,
+          102.54129791259766
+        ],
+        "terms": [
+          0.015532790683209896,
+          0.35303062200546265
+        ],
+        "direct_tau_512": 4.157446384429932,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -51.69893819689751,
+          125.325375649333
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -72.82454681396484,
+          307.7715148925781,
+          357.813720703125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -51.69893819689751,
+          125.325375649333
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          93.77084350585938,
+          200.90054321289062,
+          277.1278991699219
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -51.69893819689751,
+          125.325375649333
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          260.3662414550781,
+          94.02954864501953,
+          196.44207763671875
+        ],
+        "terms": [
+          0.004359944723546505,
+          0.2569628059864044
+        ],
+        "direct_tau_512": 5.452128887176514,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -51.69893819689751,
+          125.325375649333
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          426.9616394042969,
+          -12.84144401550293,
+          115.7562484741211
+        ],
+        "terms": [
+          0.0005846165004186332,
+          0.15549500286579132
+        ],
+        "direct_tau_512": 7.482367992401123,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          125.325375649333
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -77.83233642578125,
+          307.7715148925781,
+          347.47393798828125
+        ],
+        "terms": [
+          0.9994722604751587,
+          0.9998679757118225
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          125.325375649333
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          88.76305389404297,
+          200.90054321289062,
+          266.7881164550781
+        ],
+        "terms": [
+          0.9984176158905029,
+          0.9996041655540466
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          125.325375649333
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          255.3584442138672,
+          94.02954864501953,
+          186.102294921875
+        ],
+        "terms": [
+          0.5365518927574158,
+          0.8558596968650818
+        ],
+        "direct_tau_512": 0.6170417070388794,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          125.325375649333
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          421.9538269042969,
+          -12.84144401550293,
+          105.41645812988281
+        ],
+        "terms": [
+          0.18720866739749908,
+          0.6577812433242798
+        ],
+        "direct_tau_512": 1.6746690273284912,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          37
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          59.36465162336827
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -33.12664794921875,
+          364.89520263671875,
+          364.11749267578125
+        ],
+        "terms": [
+          0.9995121359825134,
+          0.9998779892921448
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          37
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          59.36465162336827
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          133.46875,
+          258.0242004394531,
+          283.4316711425781
+        ],
+        "terms": [
+          0.9985370635986328,
+          0.9996340274810791
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          37
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          59.36465162336827
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          300.06414794921875,
+          151.15321350097656,
+          202.745849609375
+        ],
+        "terms": [
+          0.0017497966764494777,
+          0.20452523231506348
+        ],
+        "direct_tau_512": 6.3526506423950195,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          37
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          59.36465162336827
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          466.6595153808594,
+          44.28221893310547,
+          122.06002044677734
+        ],
+        "terms": [
+          0.0010552566964179277,
+          0.18023516237735748
+        ],
+        "direct_tau_512": 6.860743999481201,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          40
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          98.9410860389471
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -55.94383239746094,
+          330.6210021972656,
+          362.4031982421875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          40
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          98.9410860389471
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          110.65155792236328,
+          223.75,
+          281.7173767089844
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          40
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          98.9410860389471
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          277.2469482421875,
+          116.87901306152344,
+          201.0315399169922
+        ],
+        "terms": [
+          0.0010927882976830006,
+          0.18181680142879486
+        ],
+        "direct_tau_512": 6.829996109008789,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          40
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          98.9410860389471
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          443.84234619140625,
+          10.008020401000977,
+          120.34571075439453
+        ],
+        "terms": [
+          0.001061903079971671,
+          0.18051829934120178
+        ],
+        "direct_tau_512": 6.861667633056641,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          42
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          125.325375649333
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -67.81676483154297,
+          307.7715148925781,
+          368.15350341796875
+        ],
+        "terms": [
+          0.9999011754989624,
+          0.999975323677063
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          42
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          125.325375649333
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          98.77863311767578,
+          200.90054321289062,
+          287.4676818847656
+        ],
+        "terms": [
+          0.999703586101532,
+          0.9999259114265442
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          42
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          125.325375649333
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          265.3740234375,
+          94.02954864501953,
+          206.7818603515625
+        ],
+        "terms": [
+          0.00037641279050149024,
+          0.1392887681722641
+        ],
+        "direct_tau_512": 7.8874735832214355,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          29,
+          42
+        ],
+        "light_xy_m": [
+          -40.21028526425362,
+          125.325375649333
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          431.96942138671875,
+          -12.84144401550293,
+          126.09603881835938
+        ],
+        "terms": [
+          0.000022012533008819446,
+          0.06849634647369385
+        ],
+        "direct_tau_512": 10.831576347351074,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          44
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          151.7096652597189
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -74.6819076538086,
+          284.92205810546875,
+          384.2436218261719
+        ],
+        "terms": [
+          0.9988113641738892,
+          0.9997026920318604
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          44
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          151.7096652597189
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          91.91349029541016,
+          178.0510711669922,
+          303.55780029296875
+        ],
+        "terms": [
+          0.9964382648468018,
+          0.9991083741188049
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          44
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          151.7096652597189
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          258.5088806152344,
+          71.18008422851562,
+          222.87197875976562
+        ],
+        "terms": [
+          0.0009754953789524734,
+          0.17672838270664215
+        ],
+        "direct_tau_512": 7.040798187255859,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          44
+        ],
+        "light_xy_m": [
+          -28.721632331609726,
+          151.7096652597189
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          425.1042785644531,
+          -35.69091033935547,
+          142.18614196777344
+        ],
+        "terms": [
+          0.00086878304136917,
+          0.17168322205543518
+        ],
+        "direct_tau_512": 7.04769229888916,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          46
+        ],
+        "light_xy_m": [
+          97.65354992747308,
+          178.0939548701048
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          -31.469167709350586,
+          262.0726013183594,
+          503.7315979003906
+        ],
+        "terms": [
+          0.9989945888519287,
+          0.9997485280036926
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          46
+        ],
+        "light_xy_m": [
+          97.65354992747308,
+          178.0939548701048
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          135.126220703125,
+          155.2016143798828,
+          423.0457763671875
+        ],
+        "terms": [
+          0.9969867467880249,
+          0.999245822429657
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          46
+        ],
+        "light_xy_m": [
+          97.65354992747308,
+          178.0939548701048
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          301.72161865234375,
+          48.33061981201172,
+          342.3599548339844
+        ],
+        "terms": [
+          0.07175005972385406,
+          0.5175539255142212
+        ],
+        "direct_tau_512": 2.6675901412963867,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          46
+        ],
+        "light_xy_m": [
+          97.65354992747308,
+          178.0939548701048
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          468.3170166015625,
+          -58.540374755859375,
+          261.67413330078125
+        ],
+        "terms": [
+          0.07038197666406631,
+          0.5150689482688904
+        ],
+        "direct_tau_512": 2.6686971187591553,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          6.57125186920166,
+          422.01885986328125,
+          370.4212646484375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          173.16664123535156,
+          315.1478576660156,
+          289.7354431152344
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          339.76202392578125,
+          208.27687072753906,
+          209.0496063232422
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          506.357421875,
+          101.40587615966797,
+          128.36378479003906
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          11.579039573669434,
+          422.01885986328125,
+          380.76104736328125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          178.17442321777344,
+          315.1478576660156,
+          300.0752258300781
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          344.76983642578125,
+          208.27687072753906,
+          219.389404296875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          5.7443264663219455,
+          -6.596072402596474
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          511.3652038574219,
+          101.40587615966797,
+          138.7035675048828
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          6.596072402596474
+        ],
+        "projected_depth_m": 106.87099117040634,
+        "world_m": [
+          0.6347866654396057,
+          410.5941162109375,
+          373.2964172363281
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          6.596072402596474
+        ],
+        "projected_depth_m": 320.612973511219,
+        "world_m": [
+          167.2301788330078,
+          303.72314453125,
+          292.610595703125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          6.596072402596474
+        ],
+        "projected_depth_m": 534.3549558520317,
+        "world_m": [
+          333.8255615234375,
+          196.85214233398438,
+          211.92477416992188
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -5.7443264663219455,
+          6.596072402596474
+        ],
+        "projected_depth_m": 748.0969381928444,
+        "world_m": [
+          500.42095947265625,
+          89.98114776611328,
+          131.23895263671875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": -8.549679293632508,
+        "world_m": [
+          -53.67258834838867,
+          845.3206176757812,
+          -8.88674545288086
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          -47.00877380371094,
+          841.0457763671875,
+          -12.114178657531738
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 854.9679293632507,
+        "world_m": [
+          619.372802734375,
+          413.56182861328125,
+          -334.85748291015625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 863.5176086568832,
+        "world_m": [
+          626.03662109375,
+          409.2869873046875,
+          -338.0849304199219
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": -8.549679293632508,
+        "world_m": [
+          -114.03660583496094,
+          102.71302032470703,
+          850.0848999023438
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          -107.37279510498047,
+          98.43817901611328,
+          846.8574829101562
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 854.9679293632507,
+        "world_m": [
+          559.0087890625,
+          -329.0457763671875,
+          524.1141967773438
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 863.5176086568832,
+        "world_m": [
+          565.672607421875,
+          -333.32061767578125,
+          520.88671875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": -8.549679293632508,
+        "world_m": [
+          271.8336181640625,
+          845.3206176757812,
+          663.199462890625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          278.4974365234375,
+          841.0457763671875,
+          659.9719848632812
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 854.9679293632507,
+        "world_m": [
+          944.8790283203125,
+          413.56182861328125,
+          337.22869873046875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          373.38122031092644,
+          -428.7447061687708
+        ],
+        "projected_depth_m": 863.5176086568832,
+        "world_m": [
+          951.5427856445312,
+          409.2869873046875,
+          334.0012512207031
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": -8.549679293632508,
+        "world_m": [
+          -439.5428161621094,
+          102.71302032470703,
+          177.9987335205078
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          -432.8789978027344,
+          98.43817901611328,
+          174.77130126953125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 854.9679293632507,
+        "world_m": [
+          233.5025634765625,
+          -329.0457763671875,
+          -147.9720001220703
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -373.38122031092644,
+          428.7447061687708
+        ],
+        "projected_depth_m": 863.5176086568832,
+        "world_m": [
+          240.1663818359375,
+          -333.32061767578125,
+          -151.19943237304688
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -367.6368938446045,
+          -422.1486337661743
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          285.7176818847656,
+          621.5914306640625,
+          -166.87835693359375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          379.12554677724836,
+          435.34077857136725
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          225.35365295410156,
+          -121.01616668701172,
+          692.0933227539062
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          379.12554677724836,
+          -422.1486337661743
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          611.223876953125,
+          621.5914306640625,
+          505.20782470703125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -367.6368938446045,
+          435.34077857136725
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          -100.15255737304688,
+          -121.01616668701172,
+          20.00712776184082
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          91.90922346115113,
+          118.72930324673654
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          242.63412475585938,
+          153.1774139404297,
+          364.5947570800781
+        ],
+        "terms": [
+          0.997911274433136,
+          0.9994771480560303
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -57.44326466321946,
+          118.72930324673654
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          177.5328826904297,
+          153.1774139404297,
+          230.17752075195312
+        ],
+        "terms": [
+          0.6502506732940674,
+          0.8853229284286499
+        ],
+        "direct_tau_512": 1.0735621452331543,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -45.954611730575564,
+          131.92144805192947
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          176.6042022705078,
+          141.75267028808594,
+          243.39247131347656
+        ],
+        "terms": [
+          0.7658168077468872,
+          0.9266202449798584
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -57.44326466321946,
+          131.92144805192947
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          171.59640502929688,
+          141.75267028808594,
+          233.05267333984375
+        ],
+        "terms": [
+          0.8960702419281006,
+          0.9687522649765015
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -344.6555879793167,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          105.76811218261719,
+          256,
+          -54.19002151489258
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -344.6595879793167,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          105.76636505126953,
+          256,
+          -54.19362258911133
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -344.66358797931673,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          105.7646255493164,
+          256,
+          -54.19721984863281
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -367.6328938446045,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          95.75253295898438,
+          256,
+          -74.86959838867188
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -367.64089384460453,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          95.7490463256836,
+          256,
+          -74.87679290771484
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          344.6555879793167,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          406.2319030761719,
+          256,
+          566.1900024414062
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          344.6595879793167,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          406.233642578125,
+          256,
+          566.193603515625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          344.66358797931673,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          406.2353820800781,
+          256,
+          566.1972045898438
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          367.6328938446045,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          416.2474670410156,
+          256,
+          586.8695678710938
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          367.64089384460453,
+          0
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          416.2509460449219,
+          256,
+          586.8767700195312
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -395.7603441557884
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          434.0921630859375,
+          598.738525390625,
+          169.74603271484375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -395.7643441557884
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          434.0939636230469,
+          598.741943359375,
+          169.7451629638672
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -395.76834415578844
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          434.09576416015625,
+          598.7454223632812,
+          169.74429321289062
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -422.1446337661743
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          445.965087890625,
+          621.5879516601562,
+          163.99571228027344
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -422.15263376617435
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          445.96868896484375,
+          621.5949096679688,
+          163.9939727783203
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          395.7603441557884
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          77.90785217285156,
+          -86.7385025024414,
+          342.25396728515625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          395.7643441557884
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          77.90605163574219,
+          -86.7419662475586,
+          342.2548522949219
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          395.76834415578844
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          77.90425109863281,
+          -86.74543762207031,
+          342.2557067871094
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          422.1446337661743
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          66.03491973876953,
+          -109.58796691894531,
+          348.0043029785156
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          422.15263376617435
+        ],
+        "projected_depth_m": 427.48396468162537,
+        "world_m": [
+          66.03131866455078,
+          -109.59490203857422,
+          348.00604248046875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          86.16489699482918,
+          112.13323084414006
+        ],
+        "projected_depth_m": 475.905912109375,
+        "world_m": [
+          280.8396301269531,
+          134.67880249023438,
+          339.7084045410156
+        ],
+        "terms": [
+          0.43714195489883423,
+          0.8131217956542969
+        ],
+        "direct_tau_512": 0.8241888284683228,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          40,
+          41
+        ],
+        "light_xy_m": [
+          86.16489699482918,
+          112.13323084414006
+        ],
+        "projected_depth_m": 475.913912109375,
+        "world_m": [
+          280.8458557128906,
+          134.6748046875,
+          339.70538330078125
+        ],
+        "terms": [
+          0.43684184551239014,
+          0.8129822611808777
+        ],
+        "direct_tau_512": 0.8252389430999756,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          112.13323084414006
+        ],
+        "projected_depth_m": 439.1690041503906,
+        "world_m": [
+          187.10479736328125,
+          153.04725646972656,
+          219.15904235839844
+        ],
+        "terms": [
+          0.29900869727134705,
+          0.7394706606864929
+        ],
+        "direct_tau_512": 1.2041743993759155,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          27,
+          41
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          112.13323084414006
+        ],
+        "projected_depth_m": 439.17700415039064,
+        "world_m": [
+          187.1110382080078,
+          153.0432586669922,
+          219.15602111816406
+        ],
+        "terms": [
+          0.2989433705806732,
+          0.7394301891326904
+        ],
+        "direct_tau_512": 1.2044153213500977,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -51.69893819689751,
+          125.325375649333
+        ],
+        "projected_depth_m": 447.51827783203123,
+        "world_m": [
+          192.68374633789062,
+          137.44789123535156,
+          229.22219848632812
+        ],
+        "terms": [
+          0.14331570267677307,
+          0.6152809262275696
+        ],
+        "direct_tau_512": 1.946282148361206,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          28,
+          42
+        ],
+        "light_xy_m": [
+          -51.69893819689751,
+          125.325375649333
+        ],
+        "projected_depth_m": 447.52627783203127,
+        "world_m": [
+          192.68997192382812,
+          137.4438934326172,
+          229.21917724609375
+        ],
+        "terms": [
+          0.143223837018013,
+          0.6151822805404663
+        ],
+        "direct_tau_512": 1.9470185041427612,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          125.325375649333
+        ],
+        "projected_depth_m": 529.3413979492187,
+        "world_m": [
+          251.4507598876953,
+          96.53632354736328,
+          187.99485778808594
+        ],
+        "terms": [
+          0.5552712678909302,
+          0.863229513168335
+        ],
+        "direct_tau_512": 0.5864080786705017,
+        "valid": true
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          27,
+          42
+        ],
+        "light_xy_m": [
+          -63.1875911295414,
+          125.325375649333
+        ],
+        "projected_depth_m": 529.3493979492188,
+        "world_m": [
+          251.45700073242188,
+          96.5323257446289,
+          187.99185180664062
+        ],
+        "terms": [
+          0.5551958084106445,
+          0.8631994724273682
+        ],
+        "direct_tau_512": 0.5863029956817627,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          54.820364951129584,
+          30.016605462647565
+        ],
+        "projected_depth_m": 332.07450843575606,
+        "world_m": [
+          192.02386474609375,
+          277.7095947265625,
+          347.8965759277344
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          -60.85582816871079,
+          295.7614051736695
+        ],
+        "projected_depth_m": 525.4579598558893,
+        "world_m": [
+          172.74411010742188,
+          -49.12388229370117,
+          228.70509338378906
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          293.0155988415923,
+          38.49411107619263
+        ],
+        "projected_depth_m": 805.2924811759889,
+        "world_m": [
+          660.872802734375,
+          33.75886535644531,
+          385.4840393066406
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          211.48395078865016,
+          -392.18991307447266
+        ],
+        "projected_depth_m": 850.2154541112687,
+        "world_m": [
+          854.15576171875,
+          384.2806701660156,
+          201.2821044921875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          144.0998585624306,
+          -319.15581300538133
+        ],
+        "projected_depth_m": 159.23898060014122,
+        "world_m": [
+          253.3555145263672,
+          666.51953125,
+          417.3917236328125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          -95.88842916982077,
+          -133.47603501056602
+        ],
+        "projected_depth_m": 618.8869955113751,
+        "world_m": [
+          423.4513244628906,
+          275.8921203613281,
+          68.35693359375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          66.53551267403081,
+          37.01508192670105
+        ],
+        "projected_depth_m": 560.3426147939855,
+        "world_m": [
+          371.8984375,
+          157.51467895507812,
+          273.7961730957031
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          -91.24203555745326,
+          -274.51491018439043
+        ],
+        "projected_depth_m": 539.0450380752654,
+        "world_m": [
+          426.7134704589844,
+          437.95635986328125,
+          71.93965148925781
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true
+      },
+      {
+        "kind": "pinned-material-witness",
+        "world_m": [
+          177.5328826904297,
+          153.1774139404297,
+          230.17752075195312
+        ],
+        "light_xy_m": [
+          -57.4432546038106,
+          118.72929292095523
+        ],
+        "projected_depth_m": 427.4839631281193,
+        "terms": [
+          0.6502506732940674,
+          0.8853229284286499
+        ],
+        "direct_tau_512": 1.0735621452331543,
+        "valid": true
+      }
+    ],
+    "count": 125,
+    "valid_count": 125,
+    "counters": {
+      "unused_view_caps": 0,
+      "fallback_requests": 0,
+      "invalid_footprints": 0,
+      "unsupported": 0
+    },
+    "operator": "physical g=64*(dot(p-centre,U/V)/(2*Huv)+.5)+.5; floor/fract four neighbours, interpolate each retained ordinary tau at dot(p-centre,W)+Hw, average exp(-tau) and exp(-.25tau) separately",
+    "boundary": "clear before -rawW-guardW or laterally beyond Huv+guard; otherwise invalidtap requests one bounded direct path; domainflag1/invalidframe or fallback request>=4096 returnsnegative invalid",
+    "direct": "512 uniform midpoint samples on finite half-voxel source ray-box intersection toward scene.sun.xyz; same packed field; separate quadrature from full-projection input stream"
+  },
+  "bytes": {
+    "retained_binaries": 6540224,
+    "query_readback": 2000,
+    "probe_counter_readback": 16,
+    "field_readback_staging": 5657600,
+    "deep_product": {
+      "nodes": 1672704,
+      "metadata": 139392,
+      "metadataStride": 32,
+      "totalGPU": 1812096,
+      "privateState": "O(1) scalar/vector state; compiler allocation/spills unmeasured"
+    }
+  },
+  "checks": {
+    "capture_inputs_and_layout": true,
+    "compression_quality": "OFFLINE_VALIDATOR_REQUIRED",
+    "source_quadrature": "UNQUALIFIED",
+    "lateral_filtering_quality": "UNQUALIFIED",
+    "radiance_appearance": "UNQUALIFIED",
+    "performance": "NOT_MEASURED"
+  },
+  "limits": [
+    "Paths are a replay using the builder exact deepSigma/frame/quadrature expressions; original build input stream was not retained",
+    "Compression numerical reserve2e-6 is an unqualified candidate, not a universal GPU certificate",
+    "Query direct reference shares packed source reconstruction; it does not qualify canonical-source or atmospheric/full-sky accuracy",
+    "Probe counters are isolated from the rendered graph and have no per-query atomic ordering meaning"
+  ],
+  "build_identity": {
+    "build_id": "82909fdc44fa6191112b602bf079bc155d81d14df159a4d0ccdfd1ecd4a6c56d",
+    "files": {
+      "scripts/cloud_sky_proof/test_convective.mjs": "97c5a2a459b81c5e367bd728fb22e64f1515539a684863c283a1543a8072a9f7",
+      "scripts/cloud_sky_proof/scatter-fit.js": "de3cb5d0a49febe58167ab6bf4bbf3393505bd9b653b28aa866ad48d39691808",
+      "scripts/cloud_sky_proof/validate_deep_sun.py": "9e8a37db2701e772151dc572d3c5311bdd71a637512f54fa51a0d45382195aa0",
+      "scripts/cloud_sky_proof/clock.js": "e4189fe1afd035c3647efd49124f03bf186812aade37f4908bef0d99c350e582",
+      "scripts/cloud_sky_proof/convective.js": "6852d010498d444a10a430c5349b5cb3a655a19e7aacf56681ace4bdacbf3a0f",
+      "scripts/cloud_sky_proof/prepared-cu.js": "40a62b37fe55f31086416322f9665703441c4ca97619bfff6e74cc4c043aef78",
+      "scripts/cloud_sky_proof/test_scatter_profile.py": "19e47463eb291bda7faf479e08135c09076ea7b9ee187f5ee8f690bcb251fb09",
+      "scripts/cloud_sky_proof/test_deep_light_reference.py": "eb4adfc6235f66413d221bf4a9c74dafd4475c580bef0da92795c519a1deac45",
+      "scripts/cloud_sky_proof/scatter-fit.wgsl": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01",
+      "scripts/cloud_sky_proof/prepared_support.py": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+      "scripts/cloud_sky_proof/deep-probes.js": "9534c54cc0ba7bdc1c87796e0c2a2fcd848a04aba1a351beae5c217a1842cc3c",
+      "scripts/cloud_sky_proof/cu-preview.wgsl": "197185242415bcc30a98b3b4a4b543b6c7335ba21f2fd93c1c453138bdf51882",
+      "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+      "scripts/cloud_sky_proof/cook_scatter_profile.py": "04fa89c76e435bbeb4af266d692a7ee4d089b3be9ea98ea5f7a6b4ea5d97d347",
+      "scripts/cloud_sky_proof/fit-probes.js": "0f87c580079fefe00455118614adba8d49fb1b256a3270b4f2fe4a6119842776",
+      "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+      "scripts/cloud_sky_proof/deep-sun.js": "cf711ac8f0a7d562839c8cf1d51930700c096cea21c99d0bdae966a008a0457f",
+      "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+      "scripts/cloud_sky_proof/cu.html": "47144a1b91ac61e2d05b793e2129dafa979e98ecc1e056f8f6969fba10b6fa33",
+      "scripts/cloud_sky_proof/serve.py": "1058597db63bb94927f293ab4c771c368e2180178a1c3e5175e79134738a93b1",
+      "scripts/cloud_sky_proof/deep-sun.wgsl": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+      "scripts/cloud_sky_proof/packing-proof.js": "b030f8cd951bf9495c2e982a44849b88cb09db660e5b0cc8f856c2d8d64cca35",
+      "scripts/cloud_sky_proof/test_validate_deep_sun.py": "8e76a79f90e694404779a8741b8657b15ae6aac9ee4b4d4b6964781eeab5e659",
+      "scripts/cloud_sky_proof/deep_light_reference.py": "7cf11972b80f75a6b455f1a095c87a1c6fa4e980e632de061df246ae94fe9ee2",
+      "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "scripts/cloud_sky_proof/test_clock.mjs": "245cfa5e849f49686a8d2621db22419b41c8af41621330c52489fe124cd0e808",
+      "scripts/cloud_sky_proof/test_resource_lifecycle.mjs": "91ab81d7f1a15b1b842058af73daf975463c61dbe77ffc27dda6acbf079300b9",
+      "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+      "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+      "scripts/cloud_sky_proof/prepared-field-probes.js": "58b8ac0edafd18bee91a9a585245327336fd5f9b36e76d2797c2f31e7eee3277",
+      "scripts/cloud_sky_proof/cu-preview.js": "27410d28138b3d92cc0ec4f0aba82bca8af0414f074f828601e0d60eb083913d",
+      "scripts/cloud_sky_proof/convective-hierarchy.js": "d3d124cb3cfd42ed93405826f1abded8042c696bb4fd276340f140d4f3d39e3c",
+      "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+      "scripts/cloud_sky_proof/scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+      "scripts/cloud_sky_proof/analyse_checkpoint.py": "7bcaf89bb37af883fc616ffd6f0b44c3d7a67c2fd93cedc734d6689f808fdd6e",
+      "scripts/cloud_sky_proof/cu-source.js": "8e6bdddd6c4ad1a09acfd6de32cf85dcafe31e64d8329280b6b50fe1478f2722",
+      "scripts/cloud_sky_proof/test_prepared_support.py": "a0cd295057d0dd934e313405e1acb1d7105fb013593e9386b3a64b2e1b2a454e",
+      "scripts/cloud_sky_proof/test_hierarchy.mjs": "d9d4924fd86624b95c18128741f63d43c4ae63a05bff1872a704d05e36f16a39",
+      "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+      "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/A.f32": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/profile.json": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/axes.f32": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+      "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/cloudclip.json": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/density.bin": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd"
+    },
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "host": {
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "dpr": 2,
+      "canvas": [
+        1280,
+        720
+      ],
+      "url": "http://localhost:8143/scripts/cloud_sky_proof/cu.html?source_crop=0&source_fast=0",
+      "prepared_options": {
+        "crop": false,
+        "specialize128": false
+      },
+      "visibility": "visible"
+    }
+  }
+}

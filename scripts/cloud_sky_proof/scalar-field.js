@@ -23,7 +23,7 @@ fn fillField(@builtin(global_invocation_id) id: vec3<u32>) {
   for (var channel = 0; channel < 4; channel++) {
     let logical = vec3<i32>(xy, zBase + channel);
     if (all(logical >= vec3<i32>(0)) && all(logical < vec3<i32>(field.grid.xyz))) {
-      let q = field.lo.xyz + (vec3<f32>(logical) + .5) / vec3<f32>(field.grid.xyz) * field.extent.xyz;
+      let q = field.lo.xyz + (vec3<f32>(logical) + .5) * (field.extent.xyz / vec3<f32>(field.grid.xyz));
       value[channel] = roundHalf(canonicalSigma(q, field.source.x));
     }
   }

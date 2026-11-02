@@ -1,0 +1,1554 @@
+{
+  "identity": {
+    "build_id": "66498a81aa44a1e525a945e686ff8000e74e24f5326b5ee13399dfc944d903a4",
+    "files": {
+      "scripts/cloud_sky_proof/test_convective.mjs": "97c5a2a459b81c5e367bd728fb22e64f1515539a684863c283a1543a8072a9f7",
+      "scripts/cloud_sky_proof/scatter-fit.js": "de3cb5d0a49febe58167ab6bf4bbf3393505bd9b653b28aa866ad48d39691808",
+      "scripts/cloud_sky_proof/validate_deep_sun.py": "9e8a37db2701e772151dc572d3c5311bdd71a637512f54fa51a0d45382195aa0",
+      "scripts/cloud_sky_proof/clock.js": "e4189fe1afd035c3647efd49124f03bf186812aade37f4908bef0d99c350e582",
+      "scripts/cloud_sky_proof/convective.js": "6852d010498d444a10a430c5349b5cb3a655a19e7aacf56681ace4bdacbf3a0f",
+      "scripts/cloud_sky_proof/prepared-cu.js": "40a62b37fe55f31086416322f9665703441c4ca97619bfff6e74cc4c043aef78",
+      "scripts/cloud_sky_proof/test_scatter_profile.py": "19e47463eb291bda7faf479e08135c09076ea7b9ee187f5ee8f690bcb251fb09",
+      "scripts/cloud_sky_proof/test_deep_light_reference.py": "eb4adfc6235f66413d221bf4a9c74dafd4475c580bef0da92795c519a1deac45",
+      "scripts/cloud_sky_proof/scatter-fit.wgsl": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01",
+      "scripts/cloud_sky_proof/prepared_support.py": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+      "scripts/cloud_sky_proof/deep-probes.js": "47e5a8d696f36fd6fc32ec8203e18cf63a867a2c2aad888bfdc83a0de5c86d89",
+      "scripts/cloud_sky_proof/cu-preview.wgsl": "197185242415bcc30a98b3b4a4b543b6c7335ba21f2fd93c1c453138bdf51882",
+      "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+      "scripts/cloud_sky_proof/cook_scatter_profile.py": "04fa89c76e435bbeb4af266d692a7ee4d089b3be9ea98ea5f7a6b4ea5d97d347",
+      "scripts/cloud_sky_proof/fit-probes.js": "0f87c580079fefe00455118614adba8d49fb1b256a3270b4f2fe4a6119842776",
+      "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+      "scripts/cloud_sky_proof/deep-sun.js": "cf711ac8f0a7d562839c8cf1d51930700c096cea21c99d0bdae966a008a0457f",
+      "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+      "scripts/cloud_sky_proof/cu.html": "47144a1b91ac61e2d05b793e2129dafa979e98ecc1e056f8f6969fba10b6fa33",
+      "scripts/cloud_sky_proof/serve.py": "1058597db63bb94927f293ab4c771c368e2180178a1c3e5175e79134738a93b1",
+      "scripts/cloud_sky_proof/deep-sun.wgsl": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+      "scripts/cloud_sky_proof/packing-proof.js": "b030f8cd951bf9495c2e982a44849b88cb09db660e5b0cc8f856c2d8d64cca35",
+      "scripts/cloud_sky_proof/test_validate_deep_sun.py": "8e76a79f90e694404779a8741b8657b15ae6aac9ee4b4d4b6964781eeab5e659",
+      "scripts/cloud_sky_proof/deep_light_reference.py": "7cf11972b80f75a6b455f1a095c87a1c6fa4e980e632de061df246ae94fe9ee2",
+      "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "scripts/cloud_sky_proof/test_clock.mjs": "245cfa5e849f49686a8d2621db22419b41c8af41621330c52489fe124cd0e808",
+      "scripts/cloud_sky_proof/test_resource_lifecycle.mjs": "91ab81d7f1a15b1b842058af73daf975463c61dbe77ffc27dda6acbf079300b9",
+      "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+      "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+      "scripts/cloud_sky_proof/prepared-field-probes.js": "58b8ac0edafd18bee91a9a585245327336fd5f9b36e76d2797c2f31e7eee3277",
+      "scripts/cloud_sky_proof/cu-preview.js": "5d8354d7a57691a81c37c02a2e7c227280fab2a4fe0d8a5cd412a1060aa82f5d",
+      "scripts/cloud_sky_proof/convective-hierarchy.js": "d3d124cb3cfd42ed93405826f1abded8042c696bb4fd276340f140d4f3d39e3c",
+      "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+      "scripts/cloud_sky_proof/scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+      "scripts/cloud_sky_proof/analyse_checkpoint.py": "7bcaf89bb37af883fc616ffd6f0b44c3d7a67c2fd93cedc734d6689f808fdd6e",
+      "scripts/cloud_sky_proof/cu-source.js": "8e6bdddd6c4ad1a09acfd6de32cf85dcafe31e64d8329280b6b50fe1478f2722",
+      "scripts/cloud_sky_proof/test_prepared_support.py": "a0cd295057d0dd934e313405e1acb1d7105fb013593e9386b3a64b2e1b2a454e",
+      "scripts/cloud_sky_proof/test_hierarchy.mjs": "d9d4924fd86624b95c18128741f63d43c4ae63a05bff1872a704d05e36f16a39",
+      "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+      "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/A.f32": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/profile.json": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/axes.f32": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+      "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/cloudclip.json": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/density.bin": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd"
+    },
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "host": {
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "dpr": 2,
+      "canvas": [
+        1280,
+        720
+      ],
+      "url": "http://localhost:8143/scripts/cloud_sky_proof/cu.html",
+      "prepared_options": {
+        "crop": true,
+        "specialize128": true
+      },
+      "visibility": "visible"
+    }
+  },
+  "schema": "thrum.prepared-field-allocation-probe.v1",
+  "scope": "Finite actual GPU full/cropped packed-field/mip/guard codeword equivalence and separate canonical-query parity; no appearance, lateral-quality, full-sky or performance pass",
+  "nominal_side": 256,
+  "requested_age_s": 90,
+  "source_time_s": 90,
+  "source_calibration": {
+    "sigma_max_per_m": 0.125,
+    "calibration_only": true,
+    "production_source_admission": false
+  },
+  "source_support_identity": {
+    "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+    "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+    "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+    "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+    "sourceKnots": 162,
+    "uniqueChunks": 154,
+    "calibrationOnly": true
+  },
+  "source_hashes": {
+    "prepared-cu.js": "40a62b37fe55f31086416322f9665703441c4ca97619bfff6e74cc4c043aef78",
+    "prepared-field-probes.js": "58b8ac0edafd18bee91a9a585245327336fd5f9b36e76d2797c2f31e7eee3277",
+    "scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+    "../cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865"
+  },
+  "master_bounds": {
+    "min": [
+      0,
+      0,
+      0
+    ],
+    "extent": [
+      512,
+      512,
+      512
+    ]
+  },
+  "allocation_profiles": [
+    {
+      "role": "full-generic",
+      "allocation": {
+        "nominalSide": 256,
+        "crop": false,
+        "specialize128": false,
+        "appliedSpecialization": false,
+        "aligned": true,
+        "alignmentCells": 4,
+        "logicalMin": [
+          0,
+          0,
+          0
+        ],
+        "logicalMaxExclusive": [
+          256,
+          256,
+          256
+        ],
+        "dimensions": [
+          256,
+          256,
+          256
+        ],
+        "fieldBounds": {
+          "min": [
+            0,
+            0,
+            0
+          ],
+          "extent": [
+            512,
+            512,
+            512
+          ]
+        },
+        "gridProducer": "canonical-trilinear",
+        "mipPhasePreserved": true,
+        "supportIdentity": {
+          "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+          "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+          "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+          "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+          "sourceKnots": 162,
+          "uniqueChunks": 154,
+          "calibrationOnly": true
+        }
+      },
+      "field_bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "extent": [
+          512,
+          512,
+          512
+        ]
+      },
+      "encoded_source_bytes": 6491440,
+      "field_bytes": 40369856,
+      "field_shader_sha256": "eb1e0c3703b603bf28e21631f5166e53a32abd943654b883aacee0aa682ac1b7",
+      "canonical_shader_sha256": "bbae1be71b9f3a3562f7989e01a7cc0e8e03808d9e37736bf626f0b8d09389bd"
+    },
+    {
+      "role": "crop-generic",
+      "allocation": {
+        "nominalSide": 256,
+        "crop": true,
+        "specialize128": true,
+        "appliedSpecialization": false,
+        "aligned": true,
+        "alignmentCells": 4,
+        "logicalMin": [
+          64,
+          28,
+          52
+        ],
+        "logicalMaxExclusive": [
+          192,
+          116,
+          208
+        ],
+        "dimensions": [
+          128,
+          88,
+          156
+        ],
+        "fieldBounds": {
+          "min": [
+            128,
+            56,
+            104
+          ],
+          "extent": [
+            256,
+            176,
+            312
+          ]
+        },
+        "gridProducer": "canonical-trilinear",
+        "mipPhasePreserved": true,
+        "supportIdentity": {
+          "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+          "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+          "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+          "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+          "sourceKnots": 162,
+          "uniqueChunks": 154,
+          "calibrationOnly": true
+        }
+      },
+      "field_bounds": {
+        "min": [
+          128,
+          56,
+          104
+        ],
+        "extent": [
+          256,
+          176,
+          312
+        ]
+      },
+      "encoded_source_bytes": 6491440,
+      "field_bytes": 4450272,
+      "field_shader_sha256": "eb1e0c3703b603bf28e21631f5166e53a32abd943654b883aacee0aa682ac1b7",
+      "canonical_shader_sha256": "bbae1be71b9f3a3562f7989e01a7cc0e8e03808d9e37736bf626f0b8d09389bd"
+    }
+  ],
+  "levels": [
+    {
+      "level": 0,
+      "full_sha256": "bf905a96ef60ebe8c2beb0b11eed6c3024f0a8d37812ecea7debac34dcf99a7e",
+      "crop_sha256": "da42e9d6decf737b556865785ac0e3ac3b5d197ef6f4738bda0b97205d465749",
+      "full_bytes": 35145792,
+      "crop_bytes": 3837600,
+      "full_world": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "pitch": [
+          2,
+          2,
+          2
+        ],
+        "extent": [
+          512,
+          512,
+          512
+        ]
+      },
+      "crop_world": {
+        "min": [
+          128,
+          56,
+          104
+        ],
+        "pitch": [
+          2,
+          2,
+          2
+        ],
+        "extent": [
+          256,
+          176,
+          312
+        ]
+      },
+      "full_vs_crop": {
+        "pass": true,
+        "criterion": "Exact binary16 codewords in cropped logical subregion; all guards/padding and full logical exterior exactly +0; no infinity/NaN",
+        "full_dimensions": [
+          256,
+          256,
+          256
+        ],
+        "crop_dimensions": [
+          128,
+          88,
+          156
+        ],
+        "logical_offset": [
+          64,
+          28,
+          52
+        ],
+        "full_physical": [
+          258,
+          258,
+          66
+        ],
+        "crop_physical": [
+          130,
+          90,
+          41
+        ],
+        "logical_compared": 1757184,
+        "crop_allocated_codewords": 1918800,
+        "full_scanned_codewords": 17572896,
+        "mismatch_count": 0,
+        "logical_mismatch_count": 0,
+        "crop_guard_nonzero": 0,
+        "full_guard_nonzero": 0,
+        "full_outside_crop_nonzero": 0,
+        "full_logical_nonzero_codewords": 443432,
+        "crop_logical_nonzero_codewords": 443432,
+        "full_nonfinite": 0,
+        "crop_nonfinite": 0,
+        "mismatch_rows": [],
+        "outside_rows": []
+      },
+      "generic_vs_specialized": null
+    },
+    {
+      "level": 1,
+      "full_sha256": "cd7d8a37a88b89d90b716ef04aebbe2914348a3a98ae3ddc7e35979793db46df",
+      "crop_sha256": "59cae0b3985d5d60adf6eef74c04a391e1498f96c5c96b7cc8f46febf2daef61",
+      "full_bytes": 4596800,
+      "crop_bytes": 534336,
+      "full_world": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "pitch": [
+          4,
+          4,
+          4
+        ],
+        "extent": [
+          512,
+          512,
+          512
+        ]
+      },
+      "crop_world": {
+        "min": [
+          128,
+          56,
+          104
+        ],
+        "pitch": [
+          4,
+          4,
+          4
+        ],
+        "extent": [
+          256,
+          176,
+          312
+        ]
+      },
+      "full_vs_crop": {
+        "pass": true,
+        "criterion": "Exact binary16 codewords in cropped logical subregion; all guards/padding and full logical exterior exactly +0; no infinity/NaN",
+        "full_dimensions": [
+          128,
+          128,
+          128
+        ],
+        "crop_dimensions": [
+          64,
+          44,
+          78
+        ],
+        "logical_offset": [
+          32,
+          14,
+          26
+        ],
+        "full_physical": [
+          130,
+          130,
+          34
+        ],
+        "crop_physical": [
+          66,
+          46,
+          22
+        ],
+        "logical_compared": 219648,
+        "crop_allocated_codewords": 267168,
+        "full_scanned_codewords": 2298400,
+        "mismatch_count": 0,
+        "logical_mismatch_count": 0,
+        "crop_guard_nonzero": 0,
+        "full_guard_nonzero": 0,
+        "full_outside_crop_nonzero": 0,
+        "full_logical_nonzero_codewords": 64602,
+        "crop_logical_nonzero_codewords": 64602,
+        "full_nonfinite": 0,
+        "crop_nonfinite": 0,
+        "mismatch_rows": [],
+        "outside_rows": []
+      },
+      "generic_vs_specialized": null
+    },
+    {
+      "level": 2,
+      "full_sha256": "c4395b2651acf9f5aa9dc48bf78e083a3e26eef7488c039e65898d8e14861ea1",
+      "crop_sha256": "5584dde094229771c093b3d838003af346ef2ce2ff78d5120c870eabc9743838",
+      "full_bytes": 627264,
+      "crop_bytes": 78336,
+      "full_world": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "pitch": [
+          8,
+          8,
+          8
+        ],
+        "extent": [
+          512,
+          512,
+          512
+        ]
+      },
+      "crop_world": {
+        "min": [
+          128,
+          56,
+          104
+        ],
+        "pitch": [
+          8,
+          8,
+          8
+        ],
+        "extent": [
+          256,
+          176,
+          312
+        ]
+      },
+      "full_vs_crop": {
+        "pass": true,
+        "criterion": "Exact binary16 codewords in cropped logical subregion; all guards/padding and full logical exterior exactly +0; no infinity/NaN",
+        "full_dimensions": [
+          64,
+          64,
+          64
+        ],
+        "crop_dimensions": [
+          32,
+          22,
+          39
+        ],
+        "logical_offset": [
+          16,
+          7,
+          13
+        ],
+        "full_physical": [
+          66,
+          66,
+          18
+        ],
+        "crop_physical": [
+          34,
+          24,
+          12
+        ],
+        "logical_compared": 27456,
+        "crop_allocated_codewords": 39168,
+        "full_scanned_codewords": 313632,
+        "mismatch_count": 0,
+        "logical_mismatch_count": 0,
+        "crop_guard_nonzero": 0,
+        "full_guard_nonzero": 0,
+        "full_outside_crop_nonzero": 0,
+        "full_logical_nonzero_codewords": 9195,
+        "crop_logical_nonzero_codewords": 9195,
+        "full_nonfinite": 0,
+        "crop_nonfinite": 0,
+        "mismatch_rows": [],
+        "outside_rows": []
+      },
+      "generic_vs_specialized": null
+    }
+  ],
+  "canonical_point_parity": {
+    "scope": "Arbitrary-position canonical decoder is independent of field crop/producer specialization; CPU discrepancy reported separately",
+    "roles": [
+      "full-generic",
+      "crop-generic"
+    ],
+    "shader_sha256": "4e2e1342938e0e43afc28b16a4ec049948191b9530705ed00212a93fbee54b28",
+    "output_sha256": [
+      "fd7737569c039a2989ad4285df8f8f9757ebcd833d9308f0b46706e853898c0e",
+      "fd7737569c039a2989ad4285df8f8f9757ebcd833d9308f0b46706e853898c0e"
+    ],
+    "pass": true,
+    "rows": [
+      {
+        "point_m": [
+          0,
+          0,
+          0
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          512,
+          512,
+          512
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          256,
+          144,
+          260
+        ],
+        "canonical_cpu": 0.06274509803921569,
+        "gpu_values": [
+          0.062745101749897,
+          0.062745101749897
+        ],
+        "gpu_f32_bits": [
+          1031831681,
+          1031831681
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          3.7106813177700815e-9,
+          3.7106813177700815e-9
+        ]
+      },
+      {
+        "point_m": [
+          130,
+          58,
+          110
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          382,
+          230,
+          410
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          129,
+          57,
+          109
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          383,
+          231,
+          411
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          128,
+          48,
+          112
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          384,
+          240,
+          416
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          -1,
+          144,
+          260
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          513,
+          144,
+          260
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          134,
+          62,
+          114
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          378,
+          226,
+          406
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          131,
+          59,
+          111
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          381,
+          229,
+          409
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          132,
+          60,
+          112
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          164.29544067382812,
+          463.9694519042969,
+          366.55218505859375
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          348.7643737792969,
+          53.394920349121094,
+          246.6451873779297
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          7.935136318206787,
+          289.6468505859375,
+          281.244873046875
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          215.7293243408203,
+          377.107666015625,
+          452.04010009765625
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          33.93376922607422,
+          397.3098449707031,
+          343.4014892578125
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          85.69322204589844,
+          39.888031005859375,
+          122.86739349365234
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          125.25171661376953,
+          377.7010803222656,
+          40.0281867980957
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          453.30633544921875,
+          338.60333251953125,
+          129.78550720214844
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          112.42515563964844,
+          135.4862060546875,
+          167.81729125976562
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          252.07647705078125,
+          131.4564971923828,
+          331.2528076171875
+        ],
+        "canonical_cpu": 0.08633915583353043,
+        "gpu_values": [
+          0.08633915334939957,
+          0.08633915334939957
+        ],
+        "gpu_f32_bits": [
+          1034998421,
+          1034998421
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          2.484130859348177e-9,
+          2.484130859348177e-9
+        ]
+      },
+      {
+        "point_m": [
+          267.0768127441406,
+          377.3934631347656,
+          473.4626770019531
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          206.96954345703125,
+          256.29364013671875,
+          212.02659606933594
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          40.90327072143555,
+          415.5486755371094,
+          259.5143127441406
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          447.0180358886719,
+          93.0132827758789,
+          398.98248291015625
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          189.82632446289062,
+          229.94305419921875,
+          482.9593200683594
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          143.3745880126953,
+          340.76446533203125,
+          101.19145965576172
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          117.49593353271484,
+          250.47125244140625,
+          316.2170715332031
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          482.74871826171875,
+          271.1217346191406,
+          461.6924743652344
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          114.83216857910156,
+          271.47723388671875,
+          298.7358093261719
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          482.6634216308594,
+          144.9238739013672,
+          216.89764404296875
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          506.7938232421875,
+          428.2455139160156,
+          145.87852478027344
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          19.47005271911621,
+          446.96435546875,
+          384.0677795410156
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          192.06100463867188,
+          229.37522888183594,
+          480.28515625
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          244.55810546875,
+          427.220947265625,
+          185.79591369628906
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          251.81930541992188,
+          91.4743881225586,
+          401.39898681640625
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          260.69805908203125,
+          131.81155395507812,
+          480.9359130859375
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          34.333038330078125,
+          415.112060546875,
+          31.34455108642578
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          86.95449829101562,
+          261.3645324707031,
+          3.9139909744262695
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          368.4950866699219,
+          53.46583557128906,
+          9.84469985961914
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          309.10693359375,
+          360.9903259277344,
+          470.86065673828125
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          106.04071044921875,
+          145.60211181640625,
+          213.36407470703125
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      },
+      {
+        "point_m": [
+          121.01605987548828,
+          264.54205322265625,
+          99.5002670288086
+        ],
+        "canonical_cpu": 0,
+        "gpu_values": [
+          0,
+          0
+        ],
+        "gpu_f32_bits": [
+          0,
+          0
+        ],
+        "gpu_allocation_parity": true,
+        "cpu_absolute_errors": [
+          0,
+          0
+        ]
+      }
+    ],
+    "max_cpu_absolute_error": 3.7106813177700815e-9,
+    "cpu_error_qualification": "reported only; no new threshold or source-quality admission"
+  },
+  "pass": true,
+  "bytes": {
+    "private_source_payloads": 12982880,
+    "private_packed_fields": 44820128,
+    "source_and_field_uniforms": 576,
+    "retained_raw_field_payloads": 0,
+    "readback_policy": "Per-mip sequential full/crop/(128generic); compact hashes and bounded mismatch witnesses retained. Backend residency/peak and timing not measured."
+  },
+  "limits": [
+    "All-time support follows the pinned CPU metadata proof; these finite GPU ages do not replace that proof",
+    "Exact crop/mip codewords depend on four-cell-aligned offsets and fixed original pitch at each mip",
+    "The128-only producer shortcut is checked against full generic all-codeword output; canonical source queries always retain trilinear semantics",
+    "Private inspector allocations/submissions are observer work and never part of a frame-time claim"
+  ],
+  "capture_gpu_scopes": {
+    "validation": null,
+    "out_of_memory": null,
+    "device_lost": null,
+    "device_lost_promise_failure": null,
+    "queue_completion_failure": null,
+    "push_failure": null,
+    "pop_failures": [],
+    "filters": [
+      "validation",
+      "out-of-memory"
+    ],
+    "pass": true
+  }
+}

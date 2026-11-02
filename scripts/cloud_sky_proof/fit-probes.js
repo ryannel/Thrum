@@ -74,7 +74,7 @@ export async function checkScatterFit(device,fit,products,sourceObject,state){
   requireValue(state.light_model===undefined||String(state.light_model)==='2','fitted light model 2 required');
   const dims=[...products.dimensions], [nx,ny,nz]=dims,recipe=sourceObject.recipe,frame=sourceObject.frame;
   requireValue(dims.length===3&&dims.every(x=>Number.isInteger(x)&&x>0),'logical dimensions');
-  const time=state.source_time_s,bounds=recipe.bounds;
+  const time=state.source_time_s,bounds=sourceObject.fieldBounds??recipe.bounds;
   for(const v of [bounds.min,bounds.extent,state.lo_m,state.extent_m,state.sun_direction])requireValue(v?.length===3&&v.every(Number.isFinite),'finite XYZ state/bounds');
   requireValue(bounds.extent.every(x=>x>0)&&state.extent_m.every(x=>x>0),'positive source extents');
   requireValue(Math.abs(Math.hypot(...state.sun_direction)-1)<1e-6,'unit Sun direction');

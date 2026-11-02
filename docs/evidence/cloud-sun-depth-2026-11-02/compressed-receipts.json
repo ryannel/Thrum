@@ -1,0 +1,51 @@
+[
+  {
+    "path": "motion/motion-1793588380273-full16.json.gz",
+    "uncompressed_sha256": "6d65eff360f3c3e1faf1eb88be7f30ca47f0200f02b463b0e9c58e28418a18f9",
+    "uncompressed_bytes": 3934099,
+    "gzip_sha256": "4e8cfc5d80c17318639b8dd11b4bd82317c95d206b0d884d4c2f36b099734939",
+    "gzip_bytes": 146998
+  },
+  {
+    "path": "motion/motion-1793588403807-growth.json.gz",
+    "uncompressed_sha256": "f863a6ef85adfe27a77865fef9d06955cc6e12cf8676a0162f036d06b22bc624",
+    "uncompressed_bytes": 4793194,
+    "gzip_sha256": "3ca9b00236038ea9678519cf933a3cbd328c19c7d6dde3a10bfdd2bd74e31945",
+    "gzip_bytes": 176268
+  },
+  {
+    "path": "motion/motion-1793588435351-breakup.json.gz",
+    "uncompressed_sha256": "c0c914df19fd811bcf93532808b449d4171cfe3334a478b5b442ae98402140a4",
+    "uncompressed_bytes": 5910639,
+    "gzip_sha256": "a6b5db4f15c08313aa4a76cb8dfef254a406eb8ccec93fd694972b0ff31ce3bc",
+    "gzip_bytes": 200248
+  },
+  {
+    "path": "motion/motion-1793588475511-full64.json.gz",
+    "uncompressed_sha256": "63f1833ca3bf0af995d4ce298d967fd18c186d8a86de46d9a3629e353e137fc0",
+    "uncompressed_bytes": 1032518,
+    "gzip_sha256": "a2c7a20d9af0319c867f5f9ad820134253bcc191c22f04db178b19f72b72e878",
+    "gzip_bytes": 43614
+  },
+  {
+    "path": "cost/cost-1793588334741-fresh-source-1x.json.gz",
+    "uncompressed_sha256": "9e40388ead3ef10cd75110381fb7e4d371ce0fc260bf3935bd3027ac352c4904",
+    "uncompressed_bytes": 1961872,
+    "gzip_sha256": "379fa4f61e67c6c2eb88ed3cfe5e0ec6ad6f4d882b2ebb566d90590006a4ac5b",
+    "gzip_bytes": 69809
+  },
+  {
+    "path": "cost/cost-1793588540222-fresh-source-1x.json.gz",
+    "uncompressed_sha256": "fa24b64cb5fabb5d721a5242d51141e9bf2224cc29634a1ab7bf416b86e3da4f",
+    "uncompressed_bytes": 1960664,
+    "gzip_sha256": "64c210075a0f48d85e08d50541c9ae5ca1c6e40ef8e87e1e9d90c19220c34ab5",
+    "gzip_bytes": 70216
+  },
+  {
+    "path": "cost/cost-1793589037436-fresh-source-1x.json.gz",
+    "uncompressed_sha256": "03bf49e36eabff04d9fece8ebe6e4e432b5dff4b68c41664a6cdf5a002a3b520",
+    "uncompressed_bytes": 2985470,
+    "gzip_sha256": "e13dc3bd0b47bfbbda8106b430ed3a6232cb58346a2394df7883311d7e376aa4",
+    "gzip_bytes": 124132
+  }
+]

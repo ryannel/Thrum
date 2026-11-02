@@ -2,7 +2,7 @@
 struct Scene {
   lo:vec4f, extent:vec4f, camera:vec4f, lookAt:vec4f,
   sun:vec4f, U:vec4f, V:vec4f, W:vec4f,
-  E:vec4f, sky:vec4f, grid:vec4u, switches:vec4u
+  E:vec4f, sky:vec4f, grid:vec4u, switches:vec4u,referencePoint:vec4f
 }
 @group(0) @binding(0) var density:texture_3d<f32>;
 @group(0) @binding(1) var filtered:sampler;
@@ -21,7 +21,7 @@ fn rayBox(o:vec3f,d:vec3f,lo:vec3f,hi:vec3f)->vec2f {
   return vec2f(near,far);
 }
 fn sigmaAt(p:vec3f)->f32 {
-  let u=(p-scene.lo.xyz)/scene.extent.xyz*vec3f(scene.grid.xyz);
+  let u=(p-scene.lo.xyz)/(scene.extent.xyz/vec3f(scene.grid.xyz));
   return samplePacked(density,filtered,u,scene.grid.xyz);
 }
 fn sourceInterval(o:vec3f,d:vec3f)->vec2f {
@@ -44,6 +44,12 @@ fn sunTau(p:vec3f)->f32 {
   if(any(uv.xy<vec2f(0.))||any(uv.xy>vec2f(1.))||uv.z<=0.) {return 0.;}
   return textureSampleLevel(prefix,filtered,vec3f((uv.xy*64.+1.)/66.,(min(uv.z,1.)*64.+1.5)/66.),0.).x;
 }
+var<private> directSunReference:bool=false;
+fn cloudSunTerms(p:vec3f)->vec2f {
+  if(directSunReference){return exp(-vec2f(1.,.25)*tauDirect(p,scene.sun.xyz,512u));}
+  if((scene.grid.w&16u)!=0u){return deepSunTerms(p);}
+  return exp(-vec2f(1.,.25)*sunTau(p));
+}
 fn externalAmbient(p:vec3f)->vec3f {
   let u=clamp((p-scene.lo.xyz)/scene.extent.xyz,vec3f(0.),vec3f(1.));
   return textureSampleLevel(ambient,filtered,u,0.).rgb;
@@ -59,15 +65,17 @@ fn bankCell(c:vec2i)->f32 {
   return textureLoad(bankA,c,0).r;
 }
 fn bankAt(p:vec3f)->f32 {
-  let u=(p.xz-scene.lo.xz)/scene.extent.xz*vec2f(scene.grid.xz)-.5;
+  let u=(p.xz-scene.lo.xz)/(scene.extent.xz/vec2f(scene.grid.xz))-.5;
   let c=vec2i(floor(u));let f=fract(u);
   return mix(mix(bankCell(c),bankCell(c+vec2i(1,0)),f.x),mix(bankCell(c+vec2i(0,1)),bankCell(c+vec2i(1,1)),f.x),f.y);
 }
 fn cloudSource(p:vec3f,ray:vec3f,sigma:f32)->vec3f {
-  let tau=sunTau(p);let mu=dot(ray,scene.sun.xyz);
-  var directional=hg(mu,.86)*exp(-tau);
-  if(scene.grid.w==0u){directional=.7*hg(mu,.86)*exp(-tau)+.1*hg(mu,.43)*exp(-.5*tau)+.0175*hg(mu,.215)*exp(-.25*tau)+.00375*hg(mu,.1075)*exp(-.125*tau);}
-  else if(scene.grid.w==2u&&scene.sun.w>0.){directional+=bankAt(p)/(4.*PI)*exp(-.25*tau);}
+  let mu=dot(ray,scene.sun.xyz);let model=scene.grid.w&15u;
+  var terms=vec2f(1.);if(scene.sun.w>0.){terms=cloudSunTerms(p);}
+  if(any(terms<vec2f(0.))){return vec3f(1e8,0.,1e8);}
+  var directional=hg(mu,.86)*terms.x;
+  if(model==0u){let tau=sunTau(p);directional=.7*hg(mu,.86)*exp(-tau)+.1*hg(mu,.43)*exp(-.5*tau)+.0175*hg(mu,.215)*exp(-.25*tau)+.00375*hg(mu,.1075)*exp(-.125*tau);}
+  else if(model==2u&&scene.sun.w>0.){directional+=bankAt(p)/(4.*PI)*terms.y;}
   return sigma*(scene.E.rgb*scene.sun.w*geometryVisibility(p,scene.sun.xyz)*directional+externalAmbient(p));
 }
 struct Pair {S:vec3f,T:f32}
@@ -102,7 +110,8 @@ fn surface(p:vec3f,normal:vec3f,kind:u32)->vec3f {
   var albedo=vec3f(.38,.43,.34);
   if(kind==2u) {albedo=vec3f(.6,.18,.08);}else{let q=fract(p.xz/200.);if(q.x<.02||q.y<.02){albedo*=.65;}}
   // Constant diffuse receiver term is a fixture, not a qualified full-sky surface environment.
-  return albedo/PI*(scene.E.rgb*scene.sun.w*geometryVisibility(p+normal*.02,scene.sun.xyz)*exp(-sunTau(p))*max(0.,dot(normal,scene.sun.xyz))+scene.sky.rgb*PI*.5);
+  var lightT=1.;if(scene.sun.w>0.){let terms=cloudSunTerms(p);if(any(terms<vec2f(0.))){return vec3f(1e8,0.,1e8);}lightT=terms.x;}
+  return albedo/PI*(scene.E.rgb*scene.sun.w*geometryVisibility(p+normal*.02,scene.sun.xyz)*lightT*max(0.,dot(normal,scene.sun.xyz))+scene.sky.rgb*PI*.5);
 }
 fn terminal(o:vec3f,d:vec3f,hit:Hit)->vec3f {
   if(hit.kind==0u) {return scene.sky.rgb;}
@@ -140,6 +149,21 @@ struct Vertex { @builtin(position) position:vec4f,@location(0) uv:vec2f }
   let forward=normalize(scene.lookAt.xyz-scene.camera.xyz);let right=normalize(cross(forward,vec3f(0.,1.,0.)));let up=cross(right,forward);
   let q=vec2f((in.uv.x*2.-1.)*scene.camera.w,1.-in.uv.y*2.);
   let ray=normalize(forward+scene.lookAt.w*(right*q.x+up*q.y));
+  // Two 32x32 native comparison patches follow the retained source material point
+  // and its virtual mirror point. Derivatives are evaluated uniformly.
+  let patchRadius=16.*vec2f(abs(dpdx(in.uv.x)),abs(dpdy(in.uv.y)));
+  directSunReference=false;
+  if((scene.grid.w&32u)!=0u){
+    let materialPoint=scene.referencePoint.xyz;
+    for(var leg=0u;leg<2u;leg++){
+      var point=materialPoint;if(leg==1u){point.y= -point.y;}
+      let relative=point-scene.camera.xyz;let z=dot(relative,forward);
+      if(z>0.){
+        let centre=.5+vec2f(dot(relative,right)/scene.camera.w,-dot(relative,up))/(2.*z*scene.lookAt.w);
+        if(all(abs(in.uv-centre)<patchRadius)){directSunReference=true;}
+      }
+    }
+  }
   if(scene.switches.w==1u){return vec4f(pow(shapeDiagnostic(scene.camera.xyz,ray),vec3f(1./2.2)),1.);}
   let hit=hitScene(scene.camera.xyz,ray,scene.switches.y!=0u);
   var far=terminal(scene.camera.xyz,ray,hit);

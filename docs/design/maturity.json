@@ -1125,7 +1125,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "21839fd027c1f930c90612dde9c45f0f69ae26619dbfd001ffe71b5ebc0a518b",
+      "current_design_sha256": "fd6756675c96f5ddfef32a7fee496890d1c5813418fdcea04048ac18c39fda49",
       "current_design_delta": "Complete commission supersedes optional-storm/local-only target. Reviewed family-specific authored producers, global virtual source reach, spherical SKY-G transport, finite ambient DAG, bounded light/packing/error/HDR candidates. Implementation/appearance/full-sky viability remain unproven; prior bounded cost fails.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",

@@ -1,0 +1,25 @@
+{
+  "deep": {
+    "shader": "5cfb5ba76ff231e921936bff3a0a3e235b520d2bce556ac6c63866864d60a11f",
+    "profile": "thrum.deep-sun.tau-tube.k48.64x64.512.v1"
+  },
+  "fit": {
+    "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+    "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+    "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+    "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+  },
+  "sources": {
+    "deep-probes.js": "664077b1fa43243e10edff2395afb68059154c79054e3e37891bac77afc77461",
+    "deep-sun.js": "cf711ac8f0a7d562839c8cf1d51930700c096cea21c99d0bdae966a008a0457f",
+    "deep-sun.wgsl": "5cfb5ba76ff231e921936bff3a0a3e235b520d2bce556ac6c63866864d60a11f",
+    "scalar-field.js": "16d8430d170213ec50f0dae56b44a8bc19d2566b14d1ca759f6a1cc8959170c8",
+    "gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+    "../cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1"
+  },
+  "shaders": {
+    "path_sha256": "9c502dfef056650b8dfbb83c316ff9f338ce29ac19ffdb773549489b953d4dcb",
+    "query_sha256": "27977c407132908e12690c54baff15c06d19c33688544ab0c74c5ee4b54dad94"
+  },
+  "uniform_sha256": "b831302f419426dc058bbddb6a99a1b9cd2f6034c744947244e3fb7141bfc012"
+}
