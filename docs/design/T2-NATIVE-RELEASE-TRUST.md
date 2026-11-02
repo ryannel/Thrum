@@ -169,6 +169,15 @@ profile. Such records require declared environment values or checked extra
 paths before a build could be promoted. This refusal does not trace implicit
 compiler reads or establish that rustc reported every input.
 
+The local [compiler-receipt candidate](../evidence/i2a/F4-RUSTC-RECEIPTS.md)
+uses Cargo's stable wrapper hook to record exact rustc invocation bytes and
+completion, then reconciles them with the fresh Cargo artifact stream. The
+selected rustc environment contains Cargo's macOS
+`DYLD_FALLBACK_LIBRARY_PATH`; only that `DYLD_` name is accepted in this narrow
+candidate, with its exact value retained in the receipt. Its resolution and
+loaded-library reads are not yet closed. The verifier reports `buildReady:false`
+until compiler/system reads, release review and output publication are proven.
+
 ## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for

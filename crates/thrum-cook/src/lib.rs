@@ -920,6 +920,7 @@ mod tests {
     fn admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary() {
         let mut private_cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME").map(PathBuf::from);
         let prepare_cargo_home = std::env::var_os("THRUM_TEST_PREPARE_CARGO_HOME").is_some();
+        let rustc_wrapper = std::env::var_os("THRUM_TEST_RUSTC_RECEIPT_WRAPPER").map(PathBuf::from);
         assert!(
             (private_cargo_home.is_none() && !prepare_cargo_home)
                 || std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some(),
@@ -928,6 +929,12 @@ mod tests {
         assert!(
             private_cargo_home.is_none() || !prepare_cargo_home,
             "select an existing private home or prepare a new one"
+        );
+        assert!(
+            rustc_wrapper.is_none()
+                || (private_cargo_home.is_some() || prepare_cargo_home)
+                    && std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some(),
+            "rustc receipt candidate requires private Cargo home and native sandbox"
         );
         let fixture = Fixture::new();
         let mut paths = fixture.write("Admitted headless game", false, false);
@@ -1018,6 +1025,7 @@ mod tests {
             &a_output,
             checkout,
             private_cargo_home.as_deref(),
+            rustc_wrapper.as_deref(),
         );
         let build_elapsed = started.elapsed();
         assert!(
@@ -1031,6 +1039,42 @@ mod tests {
         let dep_info = private_cargo_home
             .as_deref()
             .map(|home| inspect_headless_dep_info(a_materialized.path(), home, &a_output));
+        if rustc_wrapper.is_some() {
+            let transcript = a_output.join("cargo-transcript.jsonl");
+            fs::write(&transcript, &built_a.stdout).unwrap();
+            let rustc = Path::new(env!("CARGO"))
+                .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            let report =
+                Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
+                    .arg(checkout.join("scripts/verify_rustc_receipts.py"))
+                    .arg("--receipt-dir")
+                    .arg(a_output.join("rustc-receipts"))
+                    .arg("--rustc")
+                    .arg(rustc)
+                    .arg("--source")
+                    .arg(a_materialized.path())
+                    .arg("--cache")
+                    .arg(private_cargo_home.as_deref().unwrap())
+                    .arg("--output")
+                    .arg(&a_output)
+                    .arg("--transcript")
+                    .arg(transcript)
+                    .output()
+                    .unwrap();
+            assert!(
+                report.status.success(),
+                "{}",
+                String::from_utf8_lossy(&report.stderr)
+            );
+            let receipt: serde_json::Value = serde_json::from_slice(&report.stdout).unwrap();
+            assert_eq!(receipt["compiles"], 5);
+            assert!(receipt["probes"].as_u64().unwrap() > 0);
+            assert_eq!(receipt["buildReady"], false);
+            eprintln!(
+                "admitted-headless-a rustc_receipts compiles={} probes={} set_sha256={}",
+                receipt["compiles"], receipt["probes"], receipt["receiptSetSha256"]
+            );
+        }
         assert_eq!(tree_hashes(a_materialized.path()), a_files);
         let binary_name = format!("headless{}", std::env::consts::EXE_SUFFIX);
         let binary_a = a_output.join("debug").join(&binary_name);
@@ -1073,6 +1117,7 @@ mod tests {
             &b_output,
             checkout,
             private_cargo_home.as_deref(),
+            rustc_wrapper.as_deref(),
         );
         assert!(!built_b.status.success());
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
@@ -1618,6 +1663,7 @@ mod tests {
         output: &Path,
         checkout: &Path,
         private_cargo_home: Option<&Path>,
+        rustc_wrapper: Option<&Path>,
     ) -> std::process::Output {
         let sandbox = std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some();
         let mut command = if sandbox {
@@ -1625,6 +1671,24 @@ mod tests {
         } else {
             Command::new(env!("CARGO"))
         };
+        let selected_wrapper = rustc_wrapper.map(|wrapper| {
+            assert!(wrapper.is_absolute() && wrapper.is_file() && !wrapper.is_symlink());
+            assert!(!wrapper.starts_with(input) && !wrapper.starts_with(output));
+            let selected = output.join("rustc-receipt-wrapper");
+            fs::copy(wrapper, &selected).unwrap();
+            fs::create_dir(output.join("rustc-receipts")).unwrap();
+            selected
+        });
+        if let Some(wrapper) = &selected_wrapper {
+            let cargo = Path::new(env!("CARGO"));
+            let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            command
+                .env("THRUM_SELECTED_RUSTC", rustc)
+                .env("THRUM_RECEIPT_DIR", output.join("rustc-receipts"))
+                .env("RUSTC_WRAPPER", wrapper);
+        } else {
+            command.env("RUSTC_WRAPPER", "");
+        }
         command
             .current_dir(input)
             .args([
@@ -1639,7 +1703,6 @@ mod tests {
             ])
             .env("CARGO_TARGET_DIR", output)
             .env("CARGO_INCREMENTAL", "0")
-            .env("RUSTC_WRAPPER", "")
             .env("CARGO_NET_OFFLINE", "true")
             .output()
             .unwrap()

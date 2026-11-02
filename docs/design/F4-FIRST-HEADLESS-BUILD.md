@@ -124,6 +124,16 @@ belongs to the fresh output tree, and build-script/proc-macro messages refuse.
 This observes one selected graph after execution; it does not authorize a
 general package graph, attest exact compiler invocations or prove all files
 read by rustc. A trusted adapter must close those inputs before publication.
+The first macOS invocation candidate uses Cargo's stable `RUSTC_WRAPPER` hook
+to write bounded receipts for the selected rustc path, raw ordered arguments,
+working directory, child environment and exit. A strict verifier reconciles
+successful compile receipts with the fresh Cargo artifact transcript and
+refuses unsupported paths and hooks. This remains an observed graph after
+execution. The wrapper does not observe rustc's implicit file reads, loaded
+libraries, linker subprocess reads or the full macOS system boundary, and its
+own executable still needs release selection. It runs per rustc process, not
+per engine tick or source-file scan; cold tool/dependency inventory stays
+outside the edit path. See the [local receipt proof](../evidence/i2a/F4-RUSTC-RECEIPTS.md).
 The cache preparer also walks normal/build metadata edges from the headless
 package and refuses custom-build/proc-macro targets in that possible set before
 compilation. Cargo metadata unions workspace feature use: this walk includes
