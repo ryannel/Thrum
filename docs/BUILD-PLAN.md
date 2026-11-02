@@ -4,6 +4,8 @@ The first goal is a small game that follows one clear path: **a player acts, the
 
 This is the central to-do list. A checked box means that particular piece is done; it does not mean the larger stage is finished. The [detailed construction plan](design/CONSTRUCTION-PLAN.md) gives contributors the full sequence and technical requirements.
 
+**Current integration focus:** Turn the provisional source candidate and test-only SQLite proofs into one production admitted-source path, then cook, run, save and restore a small game from its pinned revision. The [holistic consolidation review](evidence/integration/FOUNDATION-CONSOLIDATION-2026-11-02.md) records what is working, what was measured and which wider claims remain open. The unchecked tasks under **Editable game and save** below are the completion gates.
+
 ## Done
 
 - [x] Set up the repository, contributor commands, linting, and checks that guard the project structure.
