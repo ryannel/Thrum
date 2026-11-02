@@ -439,24 +439,26 @@ supports, not one receiver plane or independent per-family shadow maps. Each cur
 ray contribute. Cascades each estimate the entire source-facing path; overlap selects/blends estimates, never adds
 identical upstream extinction twice. Outside a projection is clear only if conservative source projection bounds prove it.
 
-A compute column producer traverses ordered source/layer intervals, integrates nonnegative density and compresses
-samples into sorted depth knots. The fit metric bounds primary `exp(-tau)` **and** `exp(-kappa*tau)` for every effective
-branch, not only primary T that is already black. The bounded streaming builder appends integration endpoints, then removes the interior knot with the smallest
-maximum deviation in those transformed terms when capacity is exceeded. Evaluate deviation at interval endpoints
-and any interior extrema of the difference of exponentials of the old/new linear-tau segments. Accumulate removed
-error with the triangle bound, plus separate quadrature/storage error; do not claim the area heuristic alone bounds
-maximum T error. Retained knot taus remain original cumulative samples and monotone. Private state is bounded K+2
-knots rather than an unbounded per-column sample array; compiler spill/private-workspace cost is still measured. The retained cumulative removal-error bound never resets after an append/removal: add the local old-to-new curve
-maximum over the complete changed support to the existing bound. Proposed **total query** absolute tolerance is0.02
-for primary T and the reduced-depth exp(-kappa*tau): source/field quadrature0.005, compression0.005, lateral footprint0.008,
-storage0.002. Triangle accounting uses all four; a component exhausting its share invalidates the query. A radiance
-comparison separately checks weighted phase/source terms; passing T alone cannot qualify cloud appearance. Capacity overflow marks the column invalid and requests direct source
-integration/refined storage; it may not drop a thin layer. Tests cover two separated thin layers, a dense tower,
-low Sun, translated sources and partial interior depth. Lateral filtering evaluates/averages transmittances/closure
-terms per curve before weighting, rather than exponentiating mean tau across clear gaps. A filtered query retains each branch term independently;
--log(mean primary T) is not reused as a tau that reproduces the other branches. Public point/segment tau remains a
-point query. One invalid column/tap, outside-domain footprint, stale generation or changed support invalidates the
-whole footprint and requests refined/direct evaluation; invalid is never averaged as clear.
+A compute column producer traverses ordered source/layer intervals and integrates nonnegative density into ordered
+ordinary cumulative tau. The [bounded Sun profile](CLOUD-SUN-PROFILE.md) selects a one-pass tau-tube compressor after
+the initial K48 minimum-local-removal stream failed a smooth quadratic-depth witness (actual reduced-term error.01458
+against.005). The independently challenged tube chooses original endpoints, maintains an anchor-dependent feasible
+slope intersection and admits each actual endpoint before updating that intersection. Its real-arithmetic bound covers
+both `exp(-tau)` and `exp(-kappa*tau)` over each complete piece; disjoint pieces combine by maximum. K overflow remains
+invalid/refined/direct, never a dropped blocker. The old failed method and its cumulative-removal counterexample remain
+in the independent reference. Numeric/backend/storage/source integration qualification is separate.
+
+Proposed **total query** absolute tolerance stays0.02 for both terms: source/field quadrature0.005, compression0.005,
+lateral footprint0.008 and storage0.002. A component exhausting its share invalidates the query. A radiance comparison
+separately checks weighted source terms; passing T alone cannot qualify appearance. The first local profile uses
+66physical/64nominal columns,K48,512midpoint source samples and once-only proposed2e-6 numerical reserve, not a uniform
+backend certificate. Clear/slab/two-layer/tower/gradual/opaque/grazing CPU witnesses now pass; many thin steps overflowK48.
+
+Lateral filtering evaluates/averages transmittances/closure terms per curve before weighting, rather than exponentiating
+mean tau across clear gaps. Each branch remains independent; -log(mean primary T) is not reused as ordinary tau for the
+other branch. Public point/segment tau stays distinct from a filtered closure. One invalid tap/outside-domain footprint,
+stale generation or changed support invalidates the whole footprint. A centre outside source projection does not alone
+prove its four-tap footprint clear. The padded product/domain and bounded direct fallback must preserve that distinction.
 
 One candidate reservation is512²×8near knots,256²×12mid and128²×16far, with depth32 plus tau32
 (8bytes/node):24MiB before per-column count/error/validity metadata. One indexed storage buffer can contain the
@@ -488,16 +490,19 @@ node visits and256candidate episode/support tests, with counters and explicit qu
 contributing primitives proceed to density evaluation. Traversing empty/displaced virtual cells is therefore measured
 rather than hidden inside a64-contributor claim. These are provisional correctness/admission ceilings, not expected
 work or a demonstrated efficient source index. An excess
-returns an explicit invalid/cap result, never drops a blocker. Streaming fit evaluates up to K candidate removals per
-extra endpoint and each affected exponential's endpoints/interior extremum. A conservative implementation bound is
-6*K scalar comparison locations per endpoint for the two active transforms; counters verify the actual factor. Thus endpoint
-and fit work can already be unsuitable for5ms even before views. Instrument these counts in the first light proof;
-if typical required witnesses approach these ceilings, change sharing/light representation before scaling content.
+returns an explicit invalid/cap result, never drops a blocker. The selected tau tube visits each input endpoint at most
+twice and computes its two exponential/log delta constraints only at new anchors, at mostK+1 before capacity failure.
+There is no K-way minimum scan or repeated candidate-fit exponential work. Count endpoint evaluations, tube retries,
+anchors and fallbacks explicitly. Even this O(N) fit does not remove the coefficient/index/texture visits above; those
+ceilings can still be unsuitable for5ms. Change sharing/representation if actual required witnesses approach them.
 
 The first refinement pool admits65536extra columns at up to16knots and2048integration endpoints each (8MiB nodes plus1MiB metadata). At most65536direct
 fallback light rays per graph each admit2048subdivision endpoints and the same local primitive cap. Per-column count/
 error/generation metadata reserves16bytes (5.25MiB base), with explicit overflow flags/counters. Allocate no unbounded
-per-column sample list: K+2 retained nodes plus error/fit state; record compiler private/spill storage separately.
+per-column sample list: the tau tube writes at mostK completed anchors with constant working state; record compiler
+private/spill storage separately. The local instrument uses32B metadata with work counters, whereas this whole-workload
+reservation uses16B. UniformK48 would require126MiB nodes plus5.25MiB metadata (10.5MiB with instrumentation); the
+24MiB8/12/16-knot example remains a separate unqualified capacity candidate, not a silent K48 promotion.
 Source index/candidate/ambient/probe buffers, in-flight old/new generations and CPU mirrors join the actual peak ledger.
 No timing or residency fit follows from these maxima. A capacity failure is a visible failed proof, requiring larger
 admission or another verified representation; neither fabricated clear nor dropping a family is allowed. The scenario
@@ -727,6 +732,12 @@ The prepared-master fallback and its missing family/renewal content govern the n
 arithmetic and existing coupled reference; do not propagate this failed source into a complete sky.
 
 The [2 November correction checkpoint](../../evidence/cloud-cu-correction-2026-11-02/README.md) retains actual source rejection, held liquid lighting improvement, ordinary-shadow/mirror/off witnesses, sampled1x/16x/64x motion and GPU11.960/15.073ms median/p95 cost failure. Its local vacuum/constant-sky fixture is narrower than the selected complete light/air/surface model.
+The [Sun-depth/coupling checkpoint](../../evidence/cloud-sun-depth-2026-11-02/README.md) proves finite tau-tube compression,
+source allocation/mip equivalence, main-hidden shadow/mirror independence and sampled1x/16x/64x coherence. Cropped64²
+lateral point-T still fails (.1215/.0917 vs.008), and native backlit reference error remains locally visible. Fresh native
+GPU p50/p95 is12.976/17.075ms against5ms. These failures prevent promotion; a filtered production visibility closure
+must be selected explicitly and kept separate from the strict point-tau service before dependent expansion.
+
 
 The following are replaced as universal assumptions:512m isotropic source; one current field for every instance;
 short4km atmosphere; source-specific hardcoded bound applied to arbitrary families; a ground shadow texture as partial
