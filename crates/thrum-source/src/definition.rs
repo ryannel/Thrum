@@ -10,7 +10,7 @@ use crate::manifest::{write_decimal, write_hex, write_jcs_string};
 const FIELD_DOMAIN: &[u8] = b"thrum-f3-field-meaning-v1\0";
 const TYPE_VERSION_DOMAIN: &[u8] = b"thrum-f3-type-version-v1\0";
 const MAX_SYMBOL_BYTES: usize = 128;
-const MAX_FIELDS: usize = 128;
+pub(crate) const MAX_FIELDS: usize = 128;
 
 /// Required or optional presence of a known field in the first schema profile.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

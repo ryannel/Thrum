@@ -12,6 +12,7 @@ mod manifest;
 mod meaning;
 mod path;
 mod record;
+pub mod schema_json;
 mod semantic;
 mod stage;
 
