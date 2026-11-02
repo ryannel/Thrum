@@ -37,7 +37,12 @@ locations; empty/duplicate/outside entries and other `DYLD_` overrides refuse.
 An information-only probe may omit the variable. The first profile also
 requires its three Cargo probes to use the admitted source root as working
 directory and one of the two exact argument forms observed with Cargo 1.99.1;
-an unknown query refuses. Library resolution remains an open read boundary.
+an unknown query refuses. The observed debug profile also requires its recorded
+SDK and linker to share the expected Xcode developer layout and a bounded `-C`
+set; an extra linker argument, alternate codegen spelling or alternate linker
+refuses. This checks explicit options and layout consistency, not an
+independently authenticated Xcode selection or all compiler/linker reads.
+Library resolution remains an open read boundary.
 The report includes per-unit receipt hashes, a receipt-set digest,
 artifact paths and `buildReady:false`.
 
@@ -81,27 +86,26 @@ The source and private cache inventories were unchanged after both builds.
 The receipt digest contains temporary absolute paths and is an observation,
 not a portable BuildRevision input. After the crate/manifest environment check
 was added, two more opt-in A/B qualifications passed with 1,598 and 4,293 ms
-A compiles. These uncontrolled runs do not isolate a performance change or
+A compiles. A later run with the codegen check took 1,460 ms. These uncontrolled
+runs do not isolate a performance change or
 establish a build-latency tail.
+After the review found rustc's alternate codegen spellings, the verifier
+refused those forms in the fixture and the sandboxed A/B run passed again;
+A's fresh-output compile took 1,300 ms in that run.
 
-Python refusal fixtures cover incomplete or malformed receipts, wrong
-compiler/source, duplicate unit, altered fixed environment, escaped artifact
-or library path, proc-macro input, and an `--extern` path not reported by Cargo.
-Another fixture refuses a source file inside the allowed root when Cargo's
-target names a different source; a two-unit fixture accepts a valid dependency
-and refuses the wrong extern name. The macOS dynamic-library search fixture
-refuses an outside or empty entry and wrong private home. Another fixture
-refuses a probe from the cache root or with an unrecognized query. The ten
-Python fixtures also refuse wrong child crate/manifest values and a Cargo
-target source outside its package directory. Six Rust
-wrapper tests cover byte preservation, limits, probe classification,
+Eleven Python fixtures cover valid one- and two-unit receipts plus refusal of
+incomplete or malformed receipts, mismatched source/manifest/extern identity,
+unsupported hooks, escaped paths, changed child environment, unrecognized
+probes and extra codegen/linker options. Six Rust wrapper tests cover byte
+preservation, limits, probe classification,
 exclusive receipt creation, process outcomes and exact child environment.
 `./dev check` passes; its normal test suite omits the expensive A/B fixture.
 
 ## Remaining release boundary
 
 The wrapper and Cargo transcript describe invocations and reported outputs,
-not every file rustc or the linker opened. The sandbox still allows named
+not a complete allowlist for every rustc option and not every file rustc or
+the linker opened. The sandbox still allows named
 system roots and broader metadata reads; loaded libraries, Xcode support
 bytes, path ancestors and Cargo's `DYLD_FALLBACK_LIBRARY_PATH` resolution need
 closure. The B build uses the wrapper, but its failed receipts have not been

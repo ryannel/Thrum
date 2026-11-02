@@ -48,6 +48,12 @@ class VerifyRustcReceipts(unittest.TestCase):
         rustc = root / "toolchain/bin/rustc"
         rustc.parent.mkdir(parents=True)
         rustc.write_bytes(b"compiler")
+        developer = root / "Xcode.app/Contents/Developer"
+        sdk = developer / "Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+        sdk.mkdir(parents=True)
+        linker = developer / "Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
+        linker.parent.mkdir(parents=True)
+        linker.write_bytes(b"linker")
         environment = sorted((
             (b"CARGO_HOME", os.fsencode(cache)),
             (b"CARGO_INCREMENTAL", b"0"),
@@ -56,6 +62,7 @@ class VerifyRustcReceipts(unittest.TestCase):
             (b"CARGO_MANIFEST_PATH", os.fsencode(source / "Cargo.toml")),
             (b"CARGO_NET_OFFLINE", b"true"),
             (b"CARGO_TARGET_DIR", os.fsencode(output)),
+            (b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER", os.fsencode(linker)),
             (b"DYLD_FALLBACK_LIBRARY_PATH", b":".join((
                 os.fsencode(output / "debug/deps"),
                 os.fsencode(rustc.parent.parent / "lib"),
@@ -64,10 +71,14 @@ class VerifyRustcReceipts(unittest.TestCase):
             (b"HOME", os.fsencode(root)),
             (b"RUSTC", os.fsencode(rustc)),
             (b"RUSTC_WRAPPER", os.fsencode(output / "rustc-receipt-wrapper")),
+            (b"SDKROOT", os.fsencode(sdk)),
         ))
         arguments = [
             b"--crate-name", b"headless", b"src/main.rs", b"--emit=dep-info,link",
             b"--out-dir", os.fsencode(output / "debug/deps"),
+            b"-C", b"embed-bitcode=no", b"-C", b"debuginfo=2",
+            b"-C", b"split-debuginfo=unpacked", b"-C", b"metadata=0123456789abcdef",
+            b"-C", b"linker=" + os.fsencode(linker),
         ]
         (directory / "101.receipt").write_bytes(receipt(
             rustc, source, [b"-vV"], environment, kind=0,
@@ -147,6 +158,7 @@ class VerifyRustcReceipts(unittest.TestCase):
             (receipts / "100.receipt").write_bytes(receipt(rustc, source, [
                 b"--crate-name", b"dep", b"src/dep.rs", b"--emit=dep-info,link",
                 b"--out-dir", os.fsencode(output / "debug/deps"),
+                *arguments[6:],
             ], dep_environment))
             entries = [json.loads(line) for line in transcript.read_text().splitlines()]
             entries.insert(0, {
@@ -283,6 +295,29 @@ class VerifyRustcReceipts(unittest.TestCase):
             records[0]["manifest_path"] = str(nested_manifest)
             transcript.write_text("\n".join(json.dumps(record) for record in records) + "\n")
             with self.assertRaisesRegex(ValueError, "outside its package"):
+                inspect(*args[:6])
+
+    def test_codegen_flags_and_xcode_linker_are_selected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            path.write_bytes(receipt(rustc, source, arguments + [
+                b"-C", b"link-arg=/outside/script",
+            ], environment))
+            with self.assertRaisesRegex(ValueError, "unsupported rustc codegen"):
+                inspect(*args[:6])
+            for extra in ([b"--codegen=link-arg=/outside/script"],
+                          [b"--codegen", b"linker=/other/clang"],
+                          [b"-O"], [b"-g"], [b"--sysroot=/outside"],
+                          [b"--target=another-target"], [b"--print=link-args"]):
+                path.write_bytes(receipt(rustc, source, arguments + extra, environment))
+                with self.assertRaisesRegex(ValueError, "alternate compiler control"):
+                    inspect(*args[:6])
+            changed = [(name, b"/other/clang" if name ==
+                        b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER" else value)
+                       for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, changed))
+            with self.assertRaisesRegex(ValueError, "not ordinary and absolute"):
                 inspect(*args[:6])
 
 
