@@ -134,6 +134,20 @@ artifact before publishing a `BuildRevision`. The [native materialization
 proof](../../evidence/i2a/F4-PINNED-MATERIALIZATION.md) measures the small
 fixture only.
 
+### Fixed first headless build declaration
+
+The [selected native build profile](../F4-FIRST-HEADLESS-BUILD.md) names one
+strict `build/headless.json` file in the admitted tree. F4 checks its fixed
+format and key set, portable input paths, accepted-manifest membership, package
+spelling and entry-scene match against the cooked product from the same source
+root. The declaration is bounded to 64 KiB and parsed off the game callback.
+It does not parse Cargo or attest an executable. An admitted source with invalid
+build metadata stays accepted but fails build preparation while earlier ready
+identities remain independent. The [bounded proof](../../evidence/i2a/F4-BUILD-DECLARATION.md)
+checks a duplicate key and a missing named toolchain file. T2 compiler isolation,
+complete package closure, artifact retention and verified `BuildRevision`
+publication remain the next implementation gates.
+
 The [first-use review](../FIRST-USE-WALKTHROUGHS.md) makes reimport a concrete authoring obligation: F3/F4 preserve
 source-to-canonical identity correspondence, while T1 records game-owned overrides and exposes mapping conflicts.
 Imported node/material/skin/clip identities must be distinguished from mutable names and array positions. Where an

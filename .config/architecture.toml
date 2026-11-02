@@ -74,8 +74,8 @@ target_cost = "Native source tooling only; bundled SQLite C build and disk I/O s
 [external_dependencies.serde_json]
 requirement = "=1.0.154"
 license = "MIT OR Apache-2.0"
-purpose = "Strict source JSON parsing, stable round-trip f64 semantics and exact optional-value carry-through in native tooling"
-target_cost = "Native tooling only; float_roundtrip adds parser work and raw_value retains untouched source syntax, with bounded record memory separate from streaming scratch"
+purpose = "Strict source and first-profile build-declaration JSON parsing, stable round-trip f64 semantics and exact optional-value carry-through in native tooling"
+target_cost = "Native source/cook tooling only; float_roundtrip adds parser work and raw_value retains untouched source syntax, with bounded record memory separate from streaming scratch"
 
 [external_dependencies.serde_json_canonicalizer]
 requirement = "=0.4.1"
