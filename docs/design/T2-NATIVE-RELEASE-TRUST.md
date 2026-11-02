@@ -106,14 +106,15 @@ accepts caller-supplied channel manifest, SHA-256 sidecar, component archive
 and installed toolchain. It checks the selected official HTTPS URL/hash pair,
 then streams the checksum-verified archive once and compares every file in its
 installer manifest with the installed component. It accepts the selected
-ustar file/directory subset and refuses archive extensions before their
-metadata can be buffered; XZ dictionary memory, decompressed bytes, member
-count and file sizes are bounded. Installed paths are read through held
-directory descriptors without following aliases. It reports `buildReady:false`.
+ustar file/directory subset plus short GNU long-name records, and refuses
+other archive extensions before their metadata can be buffered. XZ dictionary
+memory, decompressed bytes, member count and file sizes are bounded.
+Installed paths are read through held directory descriptors without following
+aliases. It reports `buildReady:false`.
 It does not fetch the inputs or attest their HTTPS transport, make the
 installed tree immutable, verify other components, or replace human review of
 the release preparation job and complete tool/SDK/dependency closure. The
-[local Cargo/Rustc component proof](../evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
+[local Cargo/Rustc/host-standard-library component proof](../evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
 is one host's partial origin candidate.
 
 ## Considered stronger alternative

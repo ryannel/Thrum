@@ -164,6 +164,25 @@ class RustComponentArchive(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "trailing compressed data"):
                 compare_component(*args)
 
+    def test_bounded_gnu_long_name_and_oversized_refusal(self):
+        for name, accepted in (("component/" + "a" * 130, True),
+                               ("componentx/" + "é" * 130, True),
+                               ("component/" + "a" * 5000, False)):
+            with self.subTest(length=len(name), multibyte="é" in name):
+                tar_bytes = io.BytesIO()
+                with tarfile.open(fileobj=tar_bytes, mode="w", format=tarfile.GNU_FORMAT) as tar:
+                    item = tarfile.TarInfo(name)
+                    item.size = 1
+                    tar.addfile(item, io.BytesIO(b"x"))
+                archive = lzma.compress(tar_bytes.getvalue())
+                reader = verifier.BoundedXZReader(io.BytesIO(archive))
+                if accepted:
+                    members = list(verifier.tar_members(reader))
+                    self.assertEqual(members[0][0].as_posix(), name)
+                else:
+                    with self.assertRaisesRegex(ValueError, "oversized GNU long-name"):
+                        list(verifier.tar_members(reader))
+
 
 if __name__ == "__main__":
     unittest.main()

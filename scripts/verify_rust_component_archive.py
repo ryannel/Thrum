@@ -155,11 +155,14 @@ def tar_number(raw):
 
 
 def tar_members(stream):
-    """Yield bounded ustar members; reject PAX/GNU extensions before buffering."""
+    """Yield bounded tar members; accept only short GNU long-name records."""
     count = 0
+    pending_name = None
     while True:
         header = read_exact(stream, 512)
         if header == bytes(512):
+            if pending_name is not None:
+                raise ValueError("orphaned GNU long-name record")
             if read_exact(stream, 512) != bytes(512):
                 raise ValueError("invalid tar end marker")
             while tail := stream.read(64 * 1024):
@@ -174,12 +177,27 @@ def tar_members(stream):
         if expected_checksum != actual_checksum or header[257:263] not in (b"ustar\0", b"ustar "):
             raise ValueError("invalid or unsupported ustar header")
         kind = header[156:157]
-        if kind not in (b"0", b"\0", b"5"):
+        if kind not in (b"0", b"\0", b"5", b"L"):
             raise ValueError("unsupported tar member type")
-        name = header[:100].split(b"\0", 1)[0].decode("utf-8")
-        prefix = header[345:500].split(b"\0", 1)[0].decode("utf-8")
-        path = safe_relative(f"{prefix}/{name}" if prefix else name)
         size = tar_number(header[124:136])
+        if kind == b"L":
+            if pending_name is not None or size == 0 or size > 4096:
+                raise ValueError("invalid or oversized GNU long-name record")
+            name_bytes = read_exact(stream, size)
+            if not name_bytes.endswith(b"\0") or b"\0" in name_bytes[:-1]:
+                raise ValueError("malformed GNU long-name record")
+            pending_name = safe_relative(name_bytes[:-1].decode("utf-8"))
+            padding = (-size) % 512
+            if padding and read_exact(stream, padding) != bytes(padding):
+                raise ValueError("nonzero GNU long-name padding")
+            continue
+        if pending_name is not None:
+            path = pending_name
+            pending_name = None
+        else:
+            name = header[:100].split(b"\0", 1)[0].decode("utf-8")
+            prefix = header[345:500].split(b"\0", 1)[0].decode("utf-8")
+            path = safe_relative(f"{prefix}/{name}" if prefix else name)
         if kind == b"5":
             if size:
                 raise ValueError("tar directory contains data")
