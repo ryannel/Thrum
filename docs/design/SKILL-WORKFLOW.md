@@ -81,3 +81,22 @@ rule. No new giant skill or fictional SDK commands are needed. The C4 protocols 
 future contribution/game skills should expose the small file/admission/run workflow and call implemented checks.
 Behavioral trials, deterministic convention enforcement and actual game/asset/campaign handoffs remain required when
 those tools exist. This was a source/instruction review, not an Astra behavioral test or implementation of the tooling.
+
+## Water and Clouds skill transfer — 2 November 2026
+
+The available Water and Clouds Codex chat turns showed a recurring gap between researched components and a
+working module: attractive cloud frames without convincing growth and breakup, and water diagnostics that passed
+while wakes or impact were not visible. Their later developer walkthroughs exposed missing source laws and timing;
+the content reviews exposed an incomplete path from editable inputs to the runtime consumer. These findings led to
+focused additions in the engine-module-design research, review and implementation references.
+
+Thrum's existing performance guidance remains authoritative: choose representations with an analytical cost account,
+including repeated cheap work, data movement and creator workload. The new creator journey should follow C04/C05's
+provider and F4 product authorities, C10's authored operations, and the current `docs/BUILD-PLAN.md`. Describe
+not-yet-implemented tools as proposals; `./dev help` is the source for real commands. A documentation walkthrough
+does not advance the maturity ledger or qualify a rendered scene.
+
+The entrypoints remain focused and route detail to references, following
+[OpenAI's Astra skill guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
+and [prompting guidance](https://developers.openai.com/api/docs/guides/latest-model). No fixed reviewer count or
+universal offline pipeline was added.

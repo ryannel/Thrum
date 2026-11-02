@@ -87,7 +87,8 @@ Delegate detailed technique selection to module design once its responsibility a
 Keep selection status (proposed, provisional, selected, superseded) separate from implementation and proof status.
 
 For each module commission, supply the requirement set, external contracts, budget, key interactions, open decisions,
-research depth and completion criteria. Use [engine-module-design](../engine-module-design/SKILL.md) for research,
+research depth and completion criteria. Include the relevant creator journey and content source when either could
+change the module boundary or its proof. Use [engine-module-design](../engine-module-design/SKILL.md) for research,
 synthesis and proof. Child research may expose a missing owner or contract; integrate that finding across affected
 consumers before treating the module design as settled. The architecture owner retains the shared contract and
 whole-scene budget, even when module studies run independently. For this project's coordinated research programme,

@@ -54,6 +54,9 @@ must test a stated prediction or an uncertainty analysis cannot resolve; it must
 Keep such gaps explicitly unfinished. Numerical/perceptual/hardware qualification may remain unrun after a reasoned
 design is complete; analytical confidence does not turn those measurements into passed evidence.
 
+For a substantial build-ready design, walk representative developer and content journeys from the saved plan. Resolve
+consequential choices the implementer would otherwise have to invent; keep unrun qualification visible.
+
 Include a cost account when selecting the module's representation: workload multipliers, repeated work/data movement,
 working set, critical path, alternatives and verification. Investigate frequent cheap operations as well as expensive
 ones. AI can absorb substantial internal complexity when specialization is worthwhile and checkable; hand-editing
