@@ -13,7 +13,7 @@ use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
-use crate::budget::Limits;
+use crate::budget::{BudgetError, Limits};
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
@@ -29,6 +29,7 @@ const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
 const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 const SMALL_BATCH_FILE_BYTES: u64 = 4 * 1024;
+const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
 struct Fixture(PathBuf);
@@ -86,6 +87,7 @@ enum ProofError {
     CandidateStage(StagedRegistryError),
     CandidateManifest(ManifestError),
     CandidateFile(StageError),
+    Budget(BudgetError),
 }
 
 impl fmt::Display for ProofError {
@@ -98,6 +100,7 @@ impl fmt::Display for ProofError {
             Self::CandidateStage(error) => write!(formatter, "candidate stage: {error:?}"),
             Self::CandidateManifest(error) => write!(formatter, "candidate manifest: {error:?}"),
             Self::CandidateFile(error) => write!(formatter, "candidate file: {error:?}"),
+            Self::Budget(error) => write!(formatter, "physical preflight: {error:?}"),
             other => write!(formatter, "{other:?}"),
         }
     }
@@ -109,9 +112,73 @@ impl From<rusqlite::Error> for ProofError {
     }
 }
 
+fn physical_io(path: &Path, source: io::Error) -> ProofError {
+    ProofError::Budget(BudgetError::Io {
+        path: path.to_owned(),
+        source,
+    })
+}
+
+fn next_stored_blob(
+    rows: &mut rusqlite::Rows<'_>,
+) -> Result<Option<([u8; 32], i64, i64)>, ProofError> {
+    let Some(row) = rows.next()? else {
+        return Ok(None);
+    };
+    let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+        return Err(ProofError::BlobMetadataMismatch);
+    };
+    let hash: [u8; 32] = bytes
+        .try_into()
+        .map_err(|_| ProofError::BlobMetadataMismatch)?;
+    Ok(Some((hash, row.get(1)?, row.get(2)?)))
+}
+
+fn charge_projected_blob(
+    projected_main: &mut u64,
+    length: u64,
+    stored: Option<(i64, i64)>,
+) -> Result<(), ProofError> {
+    if let Some((stored_length, 1)) = stored {
+        if stored_length != i64::try_from(length).map_err(|_| ProofError::InputLength)? {
+            return Err(ProofError::BlobMetadataMismatch);
+        }
+        return Ok(());
+    }
+    let rounded = length
+        .div_ceil(SQLITE_PAGE_BYTES)
+        .checked_mul(SQLITE_PAGE_BYTES)
+        .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+    let chunks = length.div_ceil(CHUNK_BYTES as u64);
+    *projected_main = projected_main
+        .checked_add(
+            rounded
+                .checked_mul(2)
+                .ok_or(ProofError::Budget(BudgetError::Overflow))?,
+        )
+        .and_then(|value| value.checked_add(16 * 1024))
+        .and_then(|value| value.checked_add(chunks.checked_mul(SQLITE_PAGE_BYTES)?))
+        .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+    Ok(())
+}
+
+fn required_free_bytes(
+    projected_main: u64,
+    remaining_wal: u64,
+    checkpoint_debt: u64,
+    free_floor: u64,
+) -> Result<u64, ProofError> {
+    projected_main
+        .checked_add(remaining_wal)
+        .and_then(|value| value.checked_add(checkpoint_debt))
+        .and_then(|value| value.checked_add(free_floor))
+        .ok_or(ProofError::Budget(BudgetError::Overflow))
+}
+
 struct RootTransactionProof {
     conn: Connection,
     scratch: Vec<u8>,
+    path: PathBuf,
 }
 
 struct OutcomeRow {
@@ -410,6 +477,7 @@ impl RootTransactionProof {
         Ok(Self {
             conn,
             scratch: Vec::new(),
+            path: path.to_owned(),
         })
     }
 
@@ -539,6 +607,33 @@ impl RootTransactionProof {
         candidate: &StagedCandidate<'_>,
         after_initial_lookup: impl FnOnce(),
     ) -> Result<(i64, [u8; 32]), ProofError> {
+        // Test fixtures use the selected main/WAL ceilings without assuming
+        // CI has the production 8 GiB free-floor headroom.
+        let limits = Limits {
+            free_floor: 0,
+            ..Limits::V1
+        };
+        self.admit_staged_candidate_probe_with_limits(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            candidate,
+            limits,
+            after_initial_lookup,
+        )
+    }
+
+    fn admit_staged_candidate_probe_with_limits(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        candidate: &StagedCandidate<'_>,
+        limits: Limits,
+        after_initial_lookup: impl FnOnce(),
+    ) -> Result<(i64, [u8; 32]), ProofError> {
         let manifest = candidate
             .provisional_manifest()
             .map_err(ProofError::CandidateManifest)?;
@@ -548,6 +643,7 @@ impl RootTransactionProof {
         }
         after_initial_lookup();
         let attempted = (|| {
+            self.preflight_candidate_space(&manifest, revision, limits)?;
             if expected_generation > 0 {
                 self.compare_staged_candidate_with_current_root(expected_generation, candidate)?;
             }
@@ -577,6 +673,121 @@ impl RootTransactionProof {
                 }
             }
         }
+    }
+
+    fn preflight_candidate_space(
+        &self,
+        manifest: &TreeManifest,
+        revision: [u8; 32],
+        limits: Limits,
+    ) -> Result<(), ProofError> {
+        let mut count = HashCountWriter {
+            digest: Sha256::new(),
+            length: 0,
+        };
+        manifest
+            .write_jcs(&mut count)
+            .map_err(|_| ProofError::OutputIo)?;
+        if count.length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
+            return Err(ProofError::InputLength);
+        }
+        let mut blobs: Vec<_> = manifest
+            .files()
+            .iter()
+            .map(ManifestEntry::blob_identity)
+            .collect();
+        blobs.push((count.length, revision));
+        blobs.sort_unstable_by_key(|(_, hash)| *hash);
+        if blobs
+            .windows(2)
+            .any(|pair| pair[0].1 == pair[1].1 && pair[0].0 != pair[1].0)
+        {
+            return Err(ProofError::BlobMetadataMismatch);
+        }
+        blobs.dedup_by_key(|(_, hash)| *hash);
+        let count_limit = i64::try_from(blobs.len() + 1)
+            .map_err(|_| ProofError::Budget(BudgetError::Overflow))?;
+        let stored_count: i64 = self.conn.query_row(
+            "SELECT count(*) FROM (SELECT 1 FROM blob_header LIMIT ?1)",
+            params![count_limit],
+            |row| row.get(0),
+        )?;
+        let mut projected_main = 64 * 1024_u64;
+        if stored_count == 0 {
+            for (length, _) in blobs {
+                charge_projected_blob(&mut projected_main, length, None)?;
+            }
+        } else if usize::try_from(stored_count).is_ok_and(|count| count <= blobs.len()) {
+            let mut statement = self
+                .conn
+                .prepare("SELECT hash, length, state FROM blob_header ORDER BY hash")?;
+            let mut rows = statement.query([])?;
+            let mut current = next_stored_blob(&mut rows)?;
+            for (length, hash) in blobs {
+                while matches!(current, Some((stored_hash, _, _)) if stored_hash < hash) {
+                    current = next_stored_blob(&mut rows)?;
+                }
+                let stored = match current {
+                    Some((stored_hash, stored_length, state)) if stored_hash == hash => {
+                        Some((stored_length, state))
+                    }
+                    _ => None,
+                };
+                charge_projected_blob(&mut projected_main, length, stored)?;
+            }
+        } else {
+            let mut statement = self
+                .conn
+                .prepare("SELECT length, state FROM blob_header WHERE hash=?1")?;
+            for (length, hash) in blobs {
+                let stored = statement
+                    .query_row(params![hash.as_slice()], |row| {
+                        Ok((row.get(0)?, row.get(1)?))
+                    })
+                    .optional()?;
+                charge_projected_blob(&mut projected_main, length, stored)?;
+            }
+        }
+        let pages: i64 = self
+            .conn
+            .query_row("PRAGMA page_count", [], |row| row.get(0))?;
+        let logical_main = u64::try_from(pages)
+            .map_err(|_| ProofError::Budget(BudgetError::Overflow))?
+            .checked_mul(SQLITE_PAGE_BYTES)
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        let physical_main = fs::metadata(&self.path)
+            .map_err(|source| physical_io(&self.path, source))?
+            .len();
+        let main = physical_main.max(logical_main);
+        if main
+            .checked_add(projected_main)
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?
+            > limits.main
+        {
+            return Err(ProofError::Budget(BudgetError::MainLimit));
+        }
+        let wal_path = self.path.with_extension("sqlite-wal");
+        let wal = match fs::metadata(&wal_path) {
+            Ok(metadata) => metadata.len(),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
+            Err(source) => return Err(physical_io(&wal_path, source)),
+        };
+        if wal >= limits.wal {
+            return Err(ProofError::Budget(BudgetError::WalLimit));
+        }
+        let required = required_free_bytes(
+            projected_main,
+            limits.wal - wal,
+            logical_main.saturating_sub(physical_main),
+            limits.free_floor,
+        )?;
+        let volume = self.path.parent().ok_or(ProofError::InputIo)?;
+        let available =
+            fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
+        if available < required {
+            return Err(ProofError::Budget(BudgetError::FreeSpace));
+        }
+        Ok(())
     }
 
     fn stage_candidate_files(&mut self, candidate: &StagedCandidate<'_>) -> Result<(), ProofError> {
@@ -1857,6 +2068,126 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
 }
 
 #[test]
+fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
+    let fixture = Fixture::new();
+    let stage = minimal_source_stage(&fixture, "space check");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let manifest = candidate.provisional_manifest().unwrap();
+    let revision = *manifest.revision().as_bytes();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let limits = Limits {
+        free_floor: 0,
+        ..Limits::V1
+    };
+    assert!(matches!(
+        store.admit_staged_candidate_probe_with_limits(
+            0,
+            1,
+            1,
+            [1; 32],
+            &candidate,
+            Limits {
+                main: 4096,
+                ..limits
+            },
+            || {},
+        ),
+        Err(ProofError::Budget(BudgetError::MainLimit))
+    ));
+    assert!(matches!(
+        store.admit_staged_candidate_probe_with_limits(
+            0,
+            1,
+            1,
+            [1; 32],
+            &candidate,
+            Limits { wal: 1, ..limits },
+            || {},
+        ),
+        Err(ProofError::Budget(BudgetError::WalLimit))
+    ));
+    let available = fs4::available_space(&fixture.0).unwrap();
+    assert!(matches!(
+        store.admit_staged_candidate_probe_with_limits(
+            0,
+            1,
+            1,
+            [1; 32],
+            &candidate,
+            Limits {
+                free_floor: available,
+                ..limits
+            },
+            || {},
+        ),
+        Err(ProofError::Budget(BudgetError::FreeSpace))
+    ));
+    let rows: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM blob_header", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(rows, 0);
+    assert_eq!(store.root().unwrap(), (0, None));
+
+    store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &candidate)
+        .unwrap();
+    let pages: i64 = store
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    store
+        .preflight_candidate_space(
+            &manifest,
+            revision,
+            Limits {
+                main: pages as u64 * SQLITE_PAGE_BYTES + 64 * 1024,
+                ..limits
+            },
+        )
+        .unwrap();
+    let unrelated = [0x77_u8];
+    let unrelated_hash: [u8; 32] = Sha256::digest(unrelated).into();
+    store
+        .stage_blob(&mut unrelated.as_slice(), 1, unrelated_hash)
+        .unwrap();
+    let pages: i64 = store
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    store
+        .preflight_candidate_space(
+            &manifest,
+            revision,
+            Limits {
+                main: pages as u64 * SQLITE_PAGE_BYTES + 64 * 1024,
+                ..limits
+            },
+        )
+        .unwrap();
+}
+
+#[test]
+fn candidate_space_preflight_reserves_existing_checkpoint_debt() {
+    let fixture = Fixture::new();
+    let store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let logical_pages: i64 = store
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    let physical_main = fs::metadata(fixture.database()).unwrap().len();
+    let debt = (logical_pages as u64 * SQLITE_PAGE_BYTES).saturating_sub(physical_main);
+    assert!(debt > 0);
+    let without_debt = required_free_bytes(100_000, 1, 0, 8_000_000_000).unwrap();
+    let with_debt = required_free_bytes(100_000, 1, debt, 8_000_000_000).unwrap();
+    assert_eq!(with_debt - without_debt, debt);
+    assert!(matches!(
+        required_free_bytes(u64::MAX, 1, debt, 0),
+        Err(ProofError::Budget(BudgetError::Overflow))
+    ));
+}
+
+#[test]
 fn concurrent_same_token_winner_is_recovered_after_stale_preflight() {
     let fixture = Fixture::new();
     let mut first_store = RootTransactionProof::open(&fixture.database()).unwrap();
@@ -2335,4 +2666,107 @@ fn measure_sqlite_physical_growth() {
         .unwrap()
         .len();
     eprintln!("physical_growth individual_1000_tiny_wal={individual_wal}");
+}
+
+#[test]
+#[ignore = "local maximum-candidate physical preflight cost probe"]
+fn measure_maximum_candidate_space_preflight() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let files = (0_u64..100_000)
+        .map(|index| {
+            ManifestEntry::new(
+                SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
+                1,
+                Sha256::digest(index.to_le_bytes()).into(),
+                None,
+            )
+            .unwrap()
+        })
+        .collect();
+    let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
+    let revision = *manifest.revision().as_bytes();
+    let start = std::time::Instant::now();
+    store
+        .preflight_candidate_space(
+            &manifest,
+            revision,
+            Limits {
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+    eprintln!(
+        "maximum_candidate_space_preflight fresh_files=100000 elapsed_ms={:.3}",
+        start.elapsed().as_secs_f64() * 1000.0
+    );
+    {
+        // Metadata-only rows isolate lookup cost; this is not a valid blob
+        // closure or an admission benchmark.
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .unwrap();
+        {
+            let mut insert = tx
+                .prepare(
+                    "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 1)",
+                )
+                .unwrap();
+            for file in manifest.files() {
+                let (length, hash) = file.blob_identity();
+                insert
+                    .execute(params![hash.as_slice(), length as i64])
+                    .unwrap();
+            }
+        }
+        tx.commit().unwrap();
+    }
+    let start = std::time::Instant::now();
+    store
+        .preflight_candidate_space(
+            &manifest,
+            revision,
+            Limits {
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+    eprintln!(
+        "maximum_candidate_space_preflight populated_files=100000 elapsed_ms={:.3}",
+        start.elapsed().as_secs_f64() * 1000.0
+    );
+    let small = TreeManifest::new(
+        PROJECT_ID,
+        Vec::new(),
+        vec![
+            ManifestEntry::new(
+                SourcePath::parse("src/file-000000.bin").unwrap(),
+                1,
+                Sha256::digest(0_u64.to_le_bytes()).into(),
+                None,
+            )
+            .unwrap(),
+        ],
+    )
+    .unwrap();
+    let small_revision = *small.revision().as_bytes();
+    let start = std::time::Instant::now();
+    store
+        .preflight_candidate_space(
+            &small,
+            small_revision,
+            Limits {
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+    eprintln!(
+        "maximum_candidate_space_preflight small_files=1 stored_rows=100000 elapsed_ms={:.3}",
+        start.elapsed().as_secs_f64() * 1000.0
+    );
 }

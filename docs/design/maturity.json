@@ -395,6 +395,10 @@
       "i2a_sqlite_physical_growth": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-PHYSICAL-GROWTH.md",
         "scope": "A test-only candidate path batches staged files of at most 4 KiB through the bounded 128-file/1 MiB SQLite writer while preserving staged-byte hashes, root CAS and retry. Local release measurements compare logical main/WAL lengths for a 4 MiB blob, 1,000 tiny blobs, complete reuse and an unblocked truncate checkpoint; matched batched and individual tiny-file stores differ 26.8x in WAL length. This is not a worst-case physical admission reserve, allocated-block/free-space proof, blocked checkpoint, kill recovery or production API."
+      },
+      "i2a_candidate_space_preflight": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-SPACE-PREFLIGHT.md",
+        "scope": "A test-only prewrite candidate check charges each distinct missing file/manifest hash, current SQLite logical/main/WAL lengths, existing checkpoint debt and actual available volume space. Injected main/WAL/free-space limits refuse without a blob or root write; local 100,000-entry fresh/populated and one-file/large-store costs are recorded. The planning allowance is not a proven physical upper bound; per-write WAL guard, temporary recheck, reserve lock, process-kill recovery and production API remain open."
       }
     },
     {
