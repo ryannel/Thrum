@@ -288,6 +288,10 @@
         "evidence": "../evidence/i2a/SOURCE-MANIFEST.md",
         "scope": "Pure JCS/SHA-256 manifest identity from supplied exact-byte metadata with a 100k-entry local cost probe; staged-byte verification, F3 closure and durable source admission remain unbuilt."
       },
+      "i2a_manifest_writer": {
+        "evidence": "../evidence/i2a/SOURCE-MANIFEST-WRITER.md",
+        "scope": "One canonical emitter now feeds both SourceRevision hashing and a fallible streaming writer. Exact small-manifest bytes match an independent JCS oracle, a failing writer reports its error, and a local 100,000-entry writer cost/RSS probe passes. No stage-byte closure, SQLite manifest blob or admitted root is implied."
+      },
       "i2a_provisional_stage": {
         "evidence": "../evidence/i2a/PROVISIONAL-STAGE.md",
         "scope": "Native complete-tree inventory and provisional exact-byte staging with local budget, drift and old-reader fixtures; no F3 schema/dependency validation, durable source admission, cook or save."
