@@ -132,10 +132,12 @@ are retained. All-stage checkboxes remain open where their complete contract is 
 Active bounded risk proof: repair the Cb low-body seed, supply-to-cap transport and phase-coherent optical query.
 Keep P1a/P4a gates open; this early Cb discrimination does not promote a family or skip coupled acceptance.
 [Source, phase/filter/grid reviews, actual images and cost receipts](../../evidence/cloud-storm-source-2026-11-02/README.md)
-are retained. Active source work replaces the steady column with bounded pulse-associated thermal chains and local finite-time evaporation. Record actual1x/16x motion alongside held source images; do not tune
+are retained. [Thermal/asymmetric-cap/local-breakup proof](../../evidence/cloud-billowing-2026-11-02/README.md) now has real1x/16x clips and bounded120s shutdown fragmentation. Active tiers remain too soft/regular. Next inspect3D q/head cross-sections, condensation support and source/material bandwidth before refining active billowing; the720s downwind chart exit requires regional exchange. Record actual1x/16x motion alongside held source images; do not tune
 lighting or opacity to hide that failed cue. Regional exchange remains necessary after the long-run chart-edge failure.
 
-- [x] Preserve bounded clear-start Cb cap-arrival/phase/filter source pilot, phase-corrected no-birth/age and shutdown observations, actual images and available-host1x/16x cost screens; CF02 art, same-ID Cu→Cb transfer, irregular breakup and complete P1b remain open.
+- [x] Preserve bounded clear-start Cb cap-arrival/phase/filter pilot and [asymmetric thermal/local-breakup proof](../../evidence/cloud-billowing-2026-11-02/README.md): final GPU/CPU checks, real growth/breakup clips and available-host cost screens. CF02 active billowing art, same-ID Cu→Cb transfer and complete P1b remain open.
+- [ ] Diagnose remaining active soft tiers in3D q/head and source/material bandwidth; prove local split/replacement at1x without losing finite breakup/fed cap.
+- [ ] Recover optics after a long host/background gap as an explicit new optical epoch, with current-time chart/seed alignment; preserve CPU weather and declare lost q continuity.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
 - [ ] Sc/St connected3D cells/sheet closes/opens actual holes; Ci sources/advects/loses high strands/tails under shared shear.
 - [ ] Dense deck at admitted extent/pitch, thin ice and tall mixed-phase Cb qualify source/halo/material/occupancy bytes and resolution.
