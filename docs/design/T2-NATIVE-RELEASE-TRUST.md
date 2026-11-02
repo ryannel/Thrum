@@ -136,6 +136,15 @@ upstream version, extracted source is archive-identical, or a particular
 selected build and environment are fully closed. It reports
 `buildReady:false`.
 
+The cold [crate extraction comparator](../../scripts/verify_crate_extraction.py)
+compares each selected locked archive's regular tar payload with the matching
+private Cargo source tree, including complete file and directory membership.
+The [37-package local pass](../evidence/i2a/T2-CRATE-EXTRACTION-CANDIDATE.md)
+matched 2,634 extracted files against the same private-root digest used by the
+archive and index origin candidates. It closes that local byte link, while
+selected build-unit and compiler/system reads, release review and target
+publication remain open. Its report also keeps `buildReady:false`.
+
 ## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for
