@@ -4,7 +4,7 @@
 //! full source closure, so this is not an accepted-source admission API.
 
 use std::fs;
-use std::io::Read;
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -45,6 +45,7 @@ impl Drop for Fixture {
 enum ProofError {
     Sql(rusqlite::Error),
     InputIo,
+    OutputIo,
     InputLength,
     HashMismatch,
     MissingChunk,
@@ -64,6 +65,111 @@ impl From<rusqlite::Error> for ProofError {
 
 struct RootTransactionProof {
     conn: Connection,
+}
+
+fn blob_chunk_count(length: u64) -> Result<i64, ProofError> {
+    i64::try_from(length.div_ceil(CHUNK_BYTES as u64)).map_err(|_| ProofError::InputLength)
+}
+
+struct HashCountWriter {
+    digest: Sha256,
+    length: u64,
+}
+
+impl Write for HashCountWriter {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        self.length = self
+            .length
+            .checked_add(bytes.len() as u64)
+            .ok_or_else(|| io::Error::other("manifest length overflow"))?;
+        self.digest.update(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+struct ManifestBlobWriter<'a> {
+    store: &'a mut RootTransactionProof,
+    buffer: Vec<u8>,
+    digest: Sha256,
+    length: u64,
+    written: u64,
+    hash: [u8; 32],
+    chunk_count: i64,
+    next_chunk: i64,
+    failure: Option<ProofError>,
+}
+
+impl ManifestBlobWriter<'_> {
+    fn append_full_chunk(&mut self) -> io::Result<()> {
+        if let Err(error) = self.store.append_blob_chunk(
+            self.length,
+            self.hash,
+            self.chunk_count,
+            self.next_chunk,
+            &self.buffer,
+        ) {
+            self.failure = Some(error);
+            return Err(io::Error::other("SQLite blob chunk write failed"));
+        }
+        self.next_chunk += 1;
+        self.buffer.clear();
+        Ok(())
+    }
+
+    fn finish(mut self) -> Result<(), ProofError> {
+        if let Some(error) = self.failure.take() {
+            return Err(error);
+        }
+        if self.written != self.length {
+            return Err(ProofError::InputLength);
+        }
+        if !self.buffer.is_empty() {
+            self.append_full_chunk()
+                .map_err(|_| self.failure.take().unwrap_or(ProofError::OutputIo))?;
+        }
+        if self.next_chunk != self.chunk_count {
+            return Err(ProofError::InvalidChunkLayout);
+        }
+        if self.digest.finalize().as_slice() != self.hash {
+            return Err(ProofError::HashMismatch);
+        }
+        self.store
+            .verify_and_complete_blob(self.length, self.hash, self.chunk_count, || {})
+    }
+}
+
+impl Write for ManifestBlobWriter<'_> {
+    fn write(&mut self, mut bytes: &[u8]) -> io::Result<usize> {
+        if self.failure.is_some() {
+            return Err(io::Error::other("previous SQLite blob write failed"));
+        }
+        let count = bytes.len();
+        let next = self
+            .written
+            .checked_add(count as u64)
+            .filter(|next| *next <= self.length)
+            .ok_or_else(|| io::Error::other("manifest exceeded declared length"))?;
+        self.digest.update(bytes);
+        while !bytes.is_empty() {
+            let take = bytes.len().min(CHUNK_BYTES - self.buffer.len());
+            self.buffer.extend_from_slice(&bytes[..take]);
+            bytes = &bytes[take..];
+            if self.buffer.len() == CHUNK_BYTES {
+                self.append_full_chunk()?;
+            }
+        }
+        self.written = next;
+        Ok(count)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        // Partial chunks must retain their fixed layout until finish.
+        Ok(())
+    }
 }
 
 impl RootTransactionProof {
@@ -136,6 +242,38 @@ impl RootTransactionProof {
         self.stage_blob_with(input, length, expected_hash, |_| {})
     }
 
+    fn stage_manifest_chunked(&mut self, manifest: &TreeManifest) -> Result<[u8; 32], ProofError> {
+        let mut count = HashCountWriter {
+            digest: Sha256::new(),
+            length: 0,
+        };
+        manifest
+            .write_jcs(&mut count)
+            .map_err(|_| ProofError::OutputIo)?;
+        let length = count.length;
+        let hash: [u8; 32] = count.digest.finalize().into();
+        let chunk_count = blob_chunk_count(length)?;
+        if self.begin_blob(length, hash, chunk_count)? {
+            return Ok(hash);
+        }
+        let mut writer = ManifestBlobWriter {
+            store: self,
+            buffer: Vec::with_capacity(CHUNK_BYTES),
+            digest: Sha256::new(),
+            length,
+            written: 0,
+            hash,
+            chunk_count,
+            next_chunk: 0,
+            failure: None,
+        };
+        if manifest.write_jcs(&mut writer).is_err() {
+            return Err(writer.failure.take().unwrap_or(ProofError::OutputIo));
+        }
+        writer.finish()?;
+        Ok(hash)
+    }
+
     fn stage_blob_with(
         &mut self,
         input: &mut impl Read,
@@ -143,8 +281,41 @@ impl RootTransactionProof {
         expected_hash: [u8; 32],
         mut after_chunk: impl FnMut(i64),
     ) -> Result<(), ProofError> {
-        let chunk_count = length.div_ceil(CHUNK_BYTES as u64);
-        let chunk_count = i64::try_from(chunk_count).map_err(|_| ProofError::InputLength)?;
+        let chunk_count = blob_chunk_count(length)?;
+        if self.begin_blob(length, expected_hash, chunk_count)? {
+            return Ok(());
+        }
+        let mut buffer = vec![0_u8; CHUNK_BYTES];
+        let mut digest = Sha256::new();
+        let mut remaining = length;
+        for index in 0..chunk_count {
+            let count = usize::try_from(remaining.min(CHUNK_BYTES as u64))
+                .map_err(|_| ProofError::InputLength)?;
+            input
+                .read_exact(&mut buffer[..count])
+                .map_err(|_| ProofError::InputIo)?;
+            digest.update(&buffer[..count]);
+            self.append_blob_chunk(length, expected_hash, chunk_count, index, &buffer[..count])?;
+            remaining -= count as u64;
+            after_chunk(index);
+        }
+        let mut extra = [0_u8; 1];
+        if input.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
+            return Err(ProofError::InputLength);
+        }
+        if digest.finalize().as_slice() != expected_hash {
+            return Err(ProofError::HashMismatch);
+        }
+
+        self.verify_and_complete_blob(length, expected_hash, chunk_count, || {})
+    }
+
+    fn begin_blob(
+        &mut self,
+        length: u64,
+        expected_hash: [u8; 32],
+        chunk_count: i64,
+    ) -> Result<bool, ProofError> {
         let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
         let tx = self
             .conn
@@ -162,7 +333,7 @@ impl RootTransactionProof {
                     return Err(ProofError::BlobMetadataMismatch);
                 }
                 // The caller still verifies its candidate stage separately.
-                return Ok(());
+                return Ok(true);
             }
             Some((_, _, 0)) => {
                 tx.execute(
@@ -183,50 +354,41 @@ impl RootTransactionProof {
             Some(_) => return Err(ProofError::BlobMetadataMismatch),
         }
         tx.commit()?;
-        let mut buffer = vec![0_u8; CHUNK_BYTES];
-        let mut digest = Sha256::new();
-        let mut remaining = length;
-        for index in 0..chunk_count {
-            let count = usize::try_from(remaining.min(CHUNK_BYTES as u64))
-                .map_err(|_| ProofError::InputLength)?;
-            input
-                .read_exact(&mut buffer[..count])
-                .map_err(|_| ProofError::InputIo)?;
-            digest.update(&buffer[..count]);
-            let tx = self
-                .conn
-                .transaction_with_behavior(TransactionBehavior::Immediate)?;
-            let inserted = tx.execute(
-                "INSERT INTO blob_chunks (hash, chunk_index, bytes)
+        Ok(false)
+    }
+
+    fn append_blob_chunk(
+        &mut self,
+        length: u64,
+        expected_hash: [u8; 32],
+        chunk_count: i64,
+        index: i64,
+        bytes: &[u8],
+    ) -> Result<(), ProofError> {
+        let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let inserted = tx.execute(
+            "INSERT INTO blob_chunks (hash, chunk_index, bytes)
                  SELECT ?1, ?2, ?3
                  WHERE EXISTS (
                    SELECT 1 FROM blob_header
                    WHERE hash=?1 AND length=?4 AND chunk_count=?5 AND state=0
                  )",
-                params![
-                    expected_hash.as_slice(),
-                    index,
-                    &buffer[..count],
-                    sql_length,
-                    chunk_count
-                ],
-            )?;
-            if inserted != 1 {
-                return Err(ProofError::StaleBlobWriter);
-            }
-            tx.commit()?;
-            remaining -= count as u64;
-            after_chunk(index);
+            params![
+                expected_hash.as_slice(),
+                index,
+                bytes,
+                sql_length,
+                chunk_count
+            ],
+        )?;
+        if inserted != 1 {
+            return Err(ProofError::StaleBlobWriter);
         }
-        let mut extra = [0_u8; 1];
-        if input.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
-            return Err(ProofError::InputLength);
-        }
-        if digest.finalize().as_slice() != expected_hash {
-            return Err(ProofError::HashMismatch);
-        }
-
-        self.verify_and_complete_blob(length, expected_hash, chunk_count, || {})
+        tx.commit()?;
+        Ok(())
     }
 
     fn verify_and_complete_blob(
@@ -618,4 +780,94 @@ fn canonical_manifest_bytes_reopen_from_complete_blob() {
         )
         .unwrap();
     assert_eq!(stored, canonical);
+}
+
+#[test]
+fn large_manifest_streams_directly_to_verified_sqlite_chunks() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let files = (0..26_000)
+        .map(|index| {
+            ManifestEntry::new(
+                SourcePath::parse(&format!("src/file-{index:05}.bin")).unwrap(),
+                1,
+                Sha256::digest([index as u8]).into(),
+                None,
+            )
+            .unwrap()
+        })
+        .collect();
+    let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
+    let revision = *manifest.revision().as_bytes();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.stage_manifest_chunked(&manifest).unwrap(), revision);
+    let (length, chunks, state): (i64, i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+            params![revision.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .unwrap();
+    assert!(length > CHUNK_BYTES as i64);
+    assert_eq!(chunks, 2);
+    assert_eq!(state, 1);
+    assert_eq!(store.commit_probe(0, 1, 1, [8; 32], revision).unwrap(), 1);
+    drop(store);
+
+    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut stored = Sha256::new();
+    let mut stored_length = 0;
+    for index in 0..chunks {
+        let bytes: Vec<u8> = reopened
+            .conn
+            .query_row(
+                "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
+                params![revision.as_slice(), index],
+                |row| row.get(0),
+            )
+            .unwrap();
+        stored_length += bytes.len() as i64;
+        stored.update(bytes);
+    }
+    assert_eq!(stored_length, length);
+    assert_eq!(stored.finalize().as_slice(), revision);
+    assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
+}
+
+#[test]
+#[ignore = "local maximum-manifest SQLite streaming cost probe"]
+fn measure_maximum_manifest_sqlite_stream() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let files = (0..100_000)
+        .map(|index| {
+            ManifestEntry::new(
+                SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
+                1,
+                Sha256::digest([index as u8]).into(),
+                None,
+            )
+            .unwrap()
+        })
+        .collect();
+    let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
+    let revision = *manifest.revision().as_bytes();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let start = std::time::Instant::now();
+    assert_eq!(store.stage_manifest_chunked(&manifest).unwrap(), revision);
+    let elapsed = start.elapsed();
+    let (length, chunks): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT length, chunk_count FROM blob_header WHERE hash=?1 AND state=1",
+            params![revision.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    eprintln!(
+        "maximum_manifest_sqlite_stream files=100000 bytes={length} chunks={chunks} elapsed_ms={:.3}",
+        elapsed.as_secs_f64() * 1000.0
+    );
+    assert!(chunks > 1);
 }

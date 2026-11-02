@@ -367,6 +367,10 @@
       "i2a_manifest_blob_bridge": {
         "evidence": "../evidence/i2a/SOURCE-MANIFEST-BLOB.md",
         "scope": "A small test-only canonical TreeManifest is written to bytes, verified as a complete SQLite blob, committed as root digest with outcome and recovered exactly after reopen. This fixture buffers the small manifest and does not check its referenced source file blob, authenticated prior lineage, physical budget, crash durability or general accepted-source closure."
+      },
+      "i2a_manifest_chunk_writer": {
+        "evidence": "../evidence/i2a/SOURCE-MANIFEST-CHUNKS.md",
+        "scope": "A test-only bounded writer emits canonical 100,000-entry manifest bytes directly to four verified 4 MiB SQLite chunks. A smaller two-chunk fixture checks root/outcome and reopened stored digest. Local Rust 1.99.1 release cost/RSS is recorded, but referenced file closure, prior-root authority, physical disk/WAL reservation, process-kill recovery and production admission remain open."
       }
     },
     {
