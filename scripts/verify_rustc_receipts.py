@@ -19,6 +19,14 @@ MAX_RECEIPT = 1024 * 1024
 MAX_TRANSCRIPT = 4 * 1024 * 1024
 MAX_RECEIPTS = 64
 NAME = re.compile(r"[0-9]+\.receipt\Z")
+PROBE_QUERY = (
+    b"-", b"--crate-name", b"___", b"--print=file-names",
+    b"--crate-type", b"bin", b"--crate-type", b"rlib",
+    b"--crate-type", b"dylib", b"--crate-type", b"cdylib",
+    b"--crate-type", b"staticlib", b"--crate-type", b"proc-macro",
+    b"--print=sysroot", b"--print=split-debuginfo", b"--print=crate-name",
+    b"--print=cfg", b"-Wwarnings",
+)
 
 
 def ordinary_bytes(path, maximum):
@@ -230,6 +238,14 @@ def validate_macos_dynamic_path(environment, rustc, cache, output):
         raise ValueError("Cargo macOS dynamic library path escapes selected locations")
 
 
+def validate_cargo_probe(receipt, source):
+    cwd = Path(os.fsdecode(receipt["cwd"]))
+    if not cwd.is_absolute() or cwd.is_symlink() or cwd.resolve(strict=True) != source:
+        raise ValueError("Cargo rustc probe working directory differs from admitted source")
+    if tuple(receipt["arguments"]) not in ((b"-vV",), PROBE_QUERY):
+        raise ValueError("first profile refuses unrecognized Cargo rustc probe arguments")
+
+
 def inspect(receipt_dir, rustc, source, cache, output, transcript):
     roots = {"source": source.resolve(strict=True), "cache": cache.resolve(strict=True),
              "output": output.resolve(strict=True)}
@@ -281,8 +297,7 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
             raise ValueError("successful build includes failed or incomplete rustc invocation")
         receipt_hashes.append(receipt["sha256"])
         if receipt["kind"] == 0:
-            if any(arg == b"--emit" or arg.startswith(b"--emit=") for arg in receipt["arguments"]):
-                raise ValueError("rustc emission misclassified as probe")
+            validate_cargo_probe(receipt, roots["source"])
             probes += 1
             continue
         crate, source_identity, externs = compile_identity(receipt, roots)
