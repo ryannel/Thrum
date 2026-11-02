@@ -241,7 +241,14 @@ impl StageBudget {
         {
             return Err(BudgetError::TemporaryLimit);
         }
-        let projected_wal = limits.wal - usage.wal;
+        // A planning target is not a promise to fill the remaining WAL on
+        // every capture. Estimate at most two passes over projected SQLite
+        // growth, then cap new work at the selected stop target. The later
+        // store rechecks observed WAL and handles a real space fault.
+        let projected_wal = projected_main
+            .checked_mul(2)
+            .ok_or(BudgetError::Overflow)?
+            .min(limits.wal - usage.wal);
         let required_free = projected_stage
             .checked_add(projected_main)
             .and_then(|bytes| bytes.checked_add(projected_wal))
@@ -546,6 +553,30 @@ mod tests {
             StageBudget::reserve_with_limits(&root, &inventory, window, limits),
             Err(BudgetError::MainLimit)
         ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn tiny_capture_plans_wal_work_without_charging_entire_stop_target() {
+        let root =
+            std::env::temp_dir().join(format!("thrum-budget-wal-plan-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("project.json"), b"{}").unwrap();
+        let inventory =
+            scan_declared_tree(&root, &[SourcePath::parse("project.json").unwrap()]).unwrap();
+        let window = SourceWriterWindow::acquire(&root).unwrap();
+        let plan = StageBudget::reserve_with_limits(
+            &root,
+            &inventory,
+            window,
+            Limits {
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+        assert!(plan.projected_wal < 512 * MIB);
+        drop(plan);
         fs::remove_dir_all(root).unwrap();
     }
 
