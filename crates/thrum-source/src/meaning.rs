@@ -19,9 +19,23 @@ pub struct MeaningEntry<'a> {
     pub retired: bool,
 }
 
-impl MeaningEntry<'_> {
-    fn key(&self) -> (&str, &str) {
+pub(crate) trait FieldHistoryView {
+    fn history_key(&self) -> (&str, &str);
+    fn history_signature(&self) -> &[u8; 32];
+    fn is_retired(&self) -> bool;
+}
+
+impl FieldHistoryView for MeaningEntry<'_> {
+    fn history_key(&self) -> (&str, &str) {
         (self.type_id, self.field_id)
+    }
+
+    fn history_signature(&self) -> &[u8; 32] {
+        &self.signature
+    }
+
+    fn is_retired(&self) -> bool {
+        self.retired
     }
 }
 
@@ -51,9 +65,18 @@ pub struct TypeVersionEntry<'a> {
     pub definition_hash: [u8; 32],
 }
 
-impl TypeVersionEntry<'_> {
-    fn key(&self) -> (&str, u64) {
+pub(crate) trait TypeVersionHistoryView {
+    fn history_key(&self) -> (&str, u64);
+    fn history_definition_hash(&self) -> &[u8; 32];
+}
+
+impl TypeVersionHistoryView for TypeVersionEntry<'_> {
+    fn history_key(&self) -> (&str, u64) {
         (self.type_id, self.version)
+    }
+
+    fn history_definition_hash(&self) -> &[u8; 32] {
+        &self.definition_hash
     }
 }
 
@@ -80,13 +103,20 @@ pub fn compare_meaning_histories(
     prior: &[MeaningEntry<'_>],
     candidate: &[MeaningEntry<'_>],
 ) -> Result<(), MeaningHistoryError> {
-    validate_order(prior, MeaningHistoryError::PriorOrder)?;
-    validate_order(candidate, MeaningHistoryError::CandidateOrder)?;
+    compare_field_history_views(prior, candidate)
+}
+
+pub(crate) fn compare_field_history_views<P: FieldHistoryView, C: FieldHistoryView>(
+    prior: &[P],
+    candidate: &[C],
+) -> Result<(), MeaningHistoryError> {
+    validate_field_order(prior, MeaningHistoryError::PriorOrder)?;
+    validate_field_order(candidate, MeaningHistoryError::CandidateOrder)?;
 
     let mut candidate_index = 0;
     for (prior_index, old) in prior.iter().enumerate() {
         while let Some(new) = candidate.get(candidate_index) {
-            match new.key().cmp(&old.key()) {
+            match new.history_key().cmp(&old.history_key()) {
                 Ordering::Less => candidate_index += 1,
                 Ordering::Equal => break,
                 Ordering::Greater => return Err(MeaningHistoryError::MissingPrior(prior_index)),
@@ -95,10 +125,10 @@ pub fn compare_meaning_histories(
         let Some(new) = candidate.get(candidate_index) else {
             return Err(MeaningHistoryError::MissingPrior(prior_index));
         };
-        if new.signature != old.signature {
+        if new.history_signature() != old.history_signature() {
             return Err(MeaningHistoryError::ChangedMeaning(prior_index));
         }
-        if old.retired && !new.retired {
+        if old.is_retired() && !new.is_retired() {
             return Err(MeaningHistoryError::RevivedRetired(prior_index));
         }
         candidate_index += 1;
@@ -115,13 +145,20 @@ pub fn compare_type_version_histories(
     prior: &[TypeVersionEntry<'_>],
     candidate: &[TypeVersionEntry<'_>],
 ) -> Result<(), TypeVersionHistoryError> {
+    compare_type_version_views(prior, candidate)
+}
+
+pub(crate) fn compare_type_version_views<P: TypeVersionHistoryView, C: TypeVersionHistoryView>(
+    prior: &[P],
+    candidate: &[C],
+) -> Result<(), TypeVersionHistoryError> {
     for (index, pair) in prior.windows(2).enumerate() {
-        if pair[0].key() >= pair[1].key() {
+        if pair[0].history_key() >= pair[1].history_key() {
             return Err(TypeVersionHistoryError::PriorOrder(index + 1));
         }
     }
     for (index, pair) in candidate.windows(2).enumerate() {
-        if pair[0].key() >= pair[1].key() {
+        if pair[0].history_key() >= pair[1].history_key() {
             return Err(TypeVersionHistoryError::CandidateOrder(index + 1));
         }
     }
@@ -129,7 +166,7 @@ pub fn compare_type_version_histories(
     let mut candidate_index = 0;
     for (prior_index, old) in prior.iter().enumerate() {
         while let Some(new) = candidate.get(candidate_index) {
-            match new.key().cmp(&old.key()) {
+            match new.history_key().cmp(&old.history_key()) {
                 Ordering::Less => candidate_index += 1,
                 Ordering::Equal => break,
                 Ordering::Greater => {
@@ -140,7 +177,7 @@ pub fn compare_type_version_histories(
         let Some(new) = candidate.get(candidate_index) else {
             return Err(TypeVersionHistoryError::MissingPrior(prior_index));
         };
-        if new.definition_hash != old.definition_hash {
+        if new.history_definition_hash() != old.history_definition_hash() {
             return Err(TypeVersionHistoryError::ChangedDefinition(prior_index));
         }
         candidate_index += 1;
@@ -148,12 +185,12 @@ pub fn compare_type_version_histories(
     Ok(())
 }
 
-fn validate_order(
-    entries: &[MeaningEntry<'_>],
+fn validate_field_order<T: FieldHistoryView>(
+    entries: &[T],
     error: fn(usize) -> MeaningHistoryError,
 ) -> Result<(), MeaningHistoryError> {
     for (index, pair) in entries.windows(2).enumerate() {
-        if pair[0].key() >= pair[1].key() {
+        if pair[0].history_key() >= pair[1].history_key() {
             return Err(error(index + 1));
         }
     }

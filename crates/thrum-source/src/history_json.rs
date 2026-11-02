@@ -10,6 +10,10 @@ use serde::de::{DeserializeSeed, Error as _, MapAccess, SeqAccess, Visitor};
 
 use crate::MAX_RECORD_BYTES;
 use crate::definition::valid_symbol;
+use crate::meaning::{
+    FieldHistoryView, MeaningHistoryError, TypeVersionHistoryError, TypeVersionHistoryView,
+    compare_field_history_views, compare_type_version_views,
+};
 use crate::record::canonical_uuid;
 
 const MAX_FIELD_HISTORY: usize = 100_000;
@@ -55,6 +59,20 @@ impl HistoryField<'_> {
     }
 }
 
+impl FieldHistoryView for HistoryField<'_> {
+    fn history_key(&self) -> (&str, &str) {
+        (self.type_id(), self.field_id())
+    }
+
+    fn history_signature(&self) -> &[u8; 32] {
+        self.signature()
+    }
+
+    fn is_retired(&self) -> bool {
+        self.retired()
+    }
+}
+
 /// One immutable type-version definition carried in registry history.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct HistoryVersion<'a> {
@@ -80,6 +98,16 @@ impl HistoryVersion<'_> {
     }
 }
 
+impl TypeVersionHistoryView for HistoryVersion<'_> {
+    fn history_key(&self) -> (&str, u64) {
+        (self.type_id(), self.version())
+    }
+
+    fn history_definition_hash(&self) -> &[u8; 32] {
+        self.definition_hash()
+    }
+}
+
 /// Locally well-formed, sorted history from one supplied source record.
 pub struct RegistryHistory<'a> {
     record_id: Cow<'a, str>,
@@ -102,6 +130,32 @@ impl RegistryHistory<'_> {
     pub fn versions(&self) -> &[HistoryVersion<'_>] {
         &self.versions
     }
+}
+
+/// Parsed candidate history cannot monotonically extend a supplied predecessor.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CarriedHistoryError {
+    /// A permanent field ID was removed, changed or revived.
+    Field(MeaningHistoryError),
+    /// A permanent type-version definition was removed or changed.
+    Version(TypeVersionHistoryError),
+}
+
+/// Compare two parsed source-carried histories without a second entry vector.
+///
+/// This uses the same monotonic rules as the pure slice comparators. Both JSON
+/// input buffers remain live through the comparison. The caller must obtain
+/// `prior` from the current admitted root under its generation precondition;
+/// this function cannot authenticate either source.
+pub fn compare_carried_histories(
+    prior: &RegistryHistory<'_>,
+    candidate: &RegistryHistory<'_>,
+) -> Result<(), CarriedHistoryError> {
+    compare_field_history_views(prior.fields(), candidate.fields())
+        .map_err(CarriedHistoryError::Field)?;
+    compare_type_version_views(prior.versions(), candidate.versions())
+        .map_err(CarriedHistoryError::Version)?;
+    Ok(())
 }
 
 /// Parse one `core.registry-history` schema 1 record without a JSON value tree.
@@ -518,6 +572,7 @@ fn hex_nibble(byte: u8) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     const HISTORY_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const HASH: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -593,6 +648,82 @@ mod tests {
     }
 
     #[test]
+    fn parsed_candidate_preserves_both_prior_histories() {
+        let prior_bytes = small_history();
+        let prior = parse_registry_history(prior_bytes.as_bytes()).unwrap();
+        let mut value: serde_json::Value = serde_json::from_slice(prior_bytes.as_bytes()).unwrap();
+        value["fields"]["registry.fields"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.marker", "fieldId":"marker.tint", "signature":HASH, "retired":false
+            }));
+        value["fields"]["registry.versions"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.marker", "targetVersion":2, "definitionHash":HASH
+            }));
+        let candidate_bytes = serde_json::to_vec(&value).unwrap();
+        let candidate = parse_registry_history(&candidate_bytes).unwrap();
+        assert_eq!(compare_carried_histories(&prior, &candidate), Ok(()));
+
+        value["fields"]["registry.fields"] = json!([]);
+        let bytes = serde_json::to_vec(&value).unwrap();
+        let missing = parse_registry_history(&bytes).unwrap();
+        assert_eq!(
+            compare_carried_histories(&prior, &missing),
+            Err(CarriedHistoryError::Field(
+                MeaningHistoryError::MissingPrior(0)
+            ))
+        );
+
+        value = serde_json::from_slice(&candidate_bytes).unwrap();
+        value["fields"]["registry.fields"][0]["signature"] = json!("00".repeat(32));
+        let bytes = serde_json::to_vec(&value).unwrap();
+        let changed = parse_registry_history(&bytes).unwrap();
+        assert_eq!(
+            compare_carried_histories(&prior, &changed),
+            Err(CarriedHistoryError::Field(
+                MeaningHistoryError::ChangedMeaning(0)
+            ))
+        );
+
+        value = serde_json::from_slice(&candidate_bytes).unwrap();
+        value["fields"]["registry.versions"][0]["definitionHash"] = json!("00".repeat(32));
+        let bytes = serde_json::to_vec(&value).unwrap();
+        let changed = parse_registry_history(&bytes).unwrap();
+        assert_eq!(
+            compare_carried_histories(&prior, &changed),
+            Err(CarriedHistoryError::Version(
+                TypeVersionHistoryError::ChangedDefinition(0)
+            ))
+        );
+
+        value["fields"]["registry.versions"] = json!([]);
+        let bytes = serde_json::to_vec(&value).unwrap();
+        let missing = parse_registry_history(&bytes).unwrap();
+        assert_eq!(
+            compare_carried_histories(&prior, &missing),
+            Err(CarriedHistoryError::Version(
+                TypeVersionHistoryError::MissingPrior(0)
+            ))
+        );
+
+        let mut retired_value: serde_json::Value =
+            serde_json::from_slice(prior_bytes.as_bytes()).unwrap();
+        retired_value["fields"]["registry.fields"][0]["retired"] = json!(true);
+        let retired_bytes = serde_json::to_vec(&retired_value).unwrap();
+        let retired_prior = parse_registry_history(&retired_bytes).unwrap();
+        assert_eq!(
+            compare_carried_histories(&retired_prior, &prior),
+            Err(CarriedHistoryError::Field(
+                MeaningHistoryError::RevivedRetired(0)
+            ))
+        );
+    }
+
+    #[test]
     #[ignore = "local maximum field-history parse and memory probe"]
     fn measure_maximum_field_history() {
         let mut bytes = format!("{{\"id\":\"{HISTORY_ID}\",\"type\":\"core.registry-history\",\"schema\":1,\"fields\":{{\"registry.fields\":[").into_bytes();
@@ -615,7 +746,17 @@ mod tests {
             bytes.len(),
             start.elapsed()
         );
+        let candidate_bytes = bytes.clone();
+        let candidate = parse_registry_history(&candidate_bytes).unwrap();
+        let compare_start = std::time::Instant::now();
+        assert_eq!(compare_carried_histories(&history, &candidate), Ok(()));
+        eprintln!(
+            "two_history_fields=200000 compare_elapsed={:?}",
+            compare_start.elapsed()
+        );
+        std::hint::black_box(candidate);
         std::hint::black_box(history);
+        drop(candidate_bytes);
 
         let end = bytes
             .windows(b"],\"registry.versions\"".len())
