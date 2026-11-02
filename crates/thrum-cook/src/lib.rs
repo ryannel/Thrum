@@ -5,7 +5,11 @@
 
 use sha2::{Digest, Sha256};
 use std::io;
+mod build_declaration;
 mod native_worktree;
+pub use build_declaration::{
+    BuildDeclaration, BuildDeclarationError, read_pinned_build_declaration,
+};
 pub use native_worktree::{
     BuildScratchPlan, MaterializeError, MaterializedSource, materialize_pinned_source,
 };
@@ -806,6 +810,105 @@ mod tests {
         ));
         assert_eq!(fs::read(destination.join("sentinel")).unwrap(), b"keep");
         pin.close().unwrap();
+    }
+
+    #[test]
+    fn accepted_source_can_have_a_valid_scene_but_an_unbuildable_declaration() {
+        let fixture = Fixture::new();
+        fs::create_dir(fixture.root().join("build")).unwrap();
+        fs::create_dir(fixture.root().join("game")).unwrap();
+        fs::write(
+            fixture.root().join("Cargo.toml"),
+            b"[package]\nname='small-game'\nversion='0.1.0'\n",
+        )
+        .unwrap();
+        fs::write(
+            fixture.root().join("Cargo.lock"),
+            b"# pinned fixture lock\n",
+        )
+        .unwrap();
+        fs::write(
+            fixture.root().join("rust-toolchain.toml"),
+            b"[toolchain]\nchannel='1.99.1'\n",
+        )
+        .unwrap();
+        fs::write(fixture.root().join("game/rules.rs"), b"pub fn rule() {}\n").unwrap();
+        let mut paths = fixture.write("A", false, false);
+        paths.extend(
+            [
+                "Cargo.toml",
+                "Cargo.lock",
+                "rust-toolchain.toml",
+                "game/rules.rs",
+                "build/headless.json",
+            ]
+            .map(|path| SourcePath::parse(path).unwrap()),
+        );
+        paths.sort_unstable();
+        let declaration_path = fixture.root().join("build/headless.json");
+        let valid = serde_json::to_vec(&serde_json::json!({
+            "format":1,
+            "cargoManifest":"Cargo.toml",
+            "cargoLock":"Cargo.lock",
+            "rustToolchain":"rust-toolchain.toml",
+            "package":"small-game",
+            "ruleSource":"game/rules.rs",
+            "entryScene":SCENE_ID
+        }))
+        .unwrap();
+        fs::write(&declaration_path, &valid).unwrap();
+        let mut store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let a = fixture.admit(&mut store, 0, 1, &paths);
+        let mut a_pin = store.pin_current(a.generation).unwrap();
+        let a_scene = cook_entry_scene(&mut a_pin, SceneTarget::Headless).unwrap();
+        let duplicate_key = String::from_utf8(valid)
+            .unwrap()
+            .replace("\"format\":1", "\"format\":1,\"format\":1");
+        fs::write(&declaration_path, duplicate_key).unwrap();
+        let declared_inputs = read_pinned_build_declaration(&mut a_pin, &a_scene).unwrap();
+        assert_eq!(declared_inputs.source_root(), a);
+        assert_eq!(declared_inputs.scene_product(), a_scene.revision());
+        assert_eq!(declared_inputs.package(), "small-game");
+        assert_eq!(declared_inputs.rule_source().as_str(), "game/rules.rs");
+        a_pin.close().unwrap();
+
+        let b = fixture.admit(&mut store, a.generation, 2, &paths);
+        let mut b_pin = store.pin_current(b.generation).unwrap();
+        let b_scene = cook_entry_scene(&mut b_pin, SceneTarget::Headless).unwrap();
+        assert!(matches!(
+            read_pinned_build_declaration(&mut b_pin, &a_scene),
+            Err(BuildDeclarationError::ProductMismatch)
+        ));
+        assert!(matches!(
+            read_pinned_build_declaration(&mut b_pin, &b_scene),
+            Err(BuildDeclarationError::Syntax(_))
+        ));
+        b_pin.close().unwrap();
+
+        let missing_toolchain = serde_json::to_vec(&serde_json::json!({
+            "format":1,
+            "cargoManifest":"Cargo.toml",
+            "cargoLock":"Cargo.lock",
+            "rustToolchain":"missing-toolchain.toml",
+            "package":"small-game",
+            "ruleSource":"game/rules.rs",
+            "entryScene":SCENE_ID
+        }))
+        .unwrap();
+        fs::write(&declaration_path, missing_toolchain).unwrap();
+        let c = fixture.admit(&mut store, b.generation, 3, &paths);
+        let mut c_pin = store.pin_current(c.generation).unwrap();
+        let c_scene = cook_entry_scene(&mut c_pin, SceneTarget::Headless).unwrap();
+        assert!(matches!(
+            read_pinned_build_declaration(&mut c_pin, &c_scene),
+            Err(BuildDeclarationError::MissingInput(path)) if path.as_str() == "missing-toolchain.toml"
+        ));
+        c_pin.close().unwrap();
+        assert_eq!(declared_inputs.source_root(), a);
     }
 
     #[test]
