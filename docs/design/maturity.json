@@ -463,6 +463,10 @@
       "i2a_all_type_candidate_overlap": {
         "evidence": "../evidence/i2a/SOURCE-CANDIDATE-OVERLAP.md",
         "scope": "One ignored release fixture keeps two full 256-type, 4,096-record, 65,536-edge provisional candidates and their 100,000-field histories live, compares lineage and matching revisions, then measures unchanged restage and validation/lineage times plus three fresh-process RSS peaks on local macOS ARM64. This pessimistic overlap does not authenticate a prior root, run SQLite/editor application or measure edit-to-ready."
+      },
+      "i2a_native_source_store": {
+        "evidence": "../evidence/i2a/SOURCE-NATIVE-STORE.md",
+        "scope": "A public native append-only SQLite store admits only validated staged candidates after full staged-byte rehash, authenticated current-root lineage, unique complete file/manifest closure, selected space-plan checks and one root/outcome generation transaction. Reopen checks root/outcome identity; current and historical-outcome pins authenticate the canonical manifest and stream file chunks with bounded scratch and final hash verification. Local tests cover retry, stale/conflicting token, final-outcome rollback, incompatible store refusal, corrupt/output read refusal, multi-chunk old-root pin retention and a drained WAL overrun. Three local release runs measure ten small store admissions and pinned scene copies. This does not qualify arbitrary external dependency roots, editor application, host-volume/power-loss durability, cross-platform physical high-water, collector deletion, cook/run/save or edit-to-ready latency."
       }
     },
     {

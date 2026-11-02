@@ -147,7 +147,6 @@ impl StagedCandidate<'_> {
         &self.records
     }
 
-    #[cfg(test)]
     pub(crate) fn rehashed_history_bytes(&self) -> Result<Vec<u8>, StagedRegistryError> {
         let path = fixed_path(self.registry.project.history_path());
         let file = find_file(self.registry.stage, &path).expect("candidate checked history path");
