@@ -11,6 +11,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
+use crate::{ManifestEntry, SourcePath, TreeManifest};
+
 const MAX_PAGE_COUNT: i64 = 13_631_488;
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
@@ -578,4 +580,42 @@ fn stale_stream_cannot_append_after_same_hash_replacement_completes() {
         .unwrap();
     assert_eq!(count, 1);
     assert_eq!(first.commit_probe(0, 1, 1, [4; 32], hash).unwrap(), 1);
+}
+
+#[test]
+fn canonical_manifest_bytes_reopen_from_complete_blob() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let source_bytes = b"small source file";
+    let entry = ManifestEntry::new(
+        SourcePath::parse("src/game.rs").unwrap(),
+        source_bytes.len() as u64,
+        Sha256::digest(source_bytes).into(),
+        None,
+    )
+    .unwrap();
+    let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), vec![entry]).unwrap();
+    let mut canonical = Vec::new();
+    manifest.write_jcs(&mut canonical).unwrap();
+    let revision = *manifest.revision().as_bytes();
+    assert_eq!(Sha256::digest(&canonical).as_slice(), revision);
+
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    store
+        .stage_blob(&mut canonical.as_slice(), canonical.len() as u64, revision)
+        .unwrap();
+    assert_eq!(store.commit_probe(0, 1, 1, [1; 32], revision).unwrap(), 1);
+    drop(store);
+
+    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
+    let stored: Vec<u8> = reopened
+        .conn
+        .query_row(
+            "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![revision.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(stored, canonical);
 }
