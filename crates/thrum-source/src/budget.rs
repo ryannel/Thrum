@@ -1,7 +1,7 @@
-//! Conservative native staging preflight under the selected v1 store budget.
+//! Native staging preflight under a configurable space plan.
 //!
-//! This guards provisional capture only. A durable SQLite admission repeats
-//! its own actual chunk/WAL/root peak check before any accepted publication.
+//! This checks provisional capture only. It neither reserves filesystem blocks
+//! nor makes a later SQLite admission accepted.
 
 use std::fs::{self, File, OpenOptions};
 use std::path::{Path, PathBuf};
@@ -13,6 +13,33 @@ use crate::Inventory;
 const GIB: u64 = 1024 * 1024 * 1024;
 const MIB: u64 = 1024 * 1024;
 
+/// Planning thresholds for native source staging, in bytes.
+///
+/// A plan guides early refusal and observed free-space checks. It is not a
+/// physical quota: SQLite page growth and other processes can exceed an
+/// estimate. A durable store must handle real write/space faults atomically.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SourceSpacePlan {
+    /// Target for the SQLite main file after candidate publication.
+    pub main_target_bytes: u64,
+    /// Observed WAL stop target; a later store owns checkpoint/backpressure.
+    pub wal_stop_bytes: u64,
+    /// Target for managed staging and other temporary files.
+    pub temporary_target_bytes: u64,
+    /// Desired observed volume free space after projected work.
+    pub free_headroom_bytes: u64,
+}
+
+impl SourceSpacePlan {
+    /// First native planning defaults; callers may select different values.
+    pub const DEFAULT: Self = Self {
+        main_target_bytes: 52 * GIB,
+        wal_stop_bytes: 2 * GIB,
+        temporary_target_bytes: 2 * GIB,
+        free_headroom_bytes: 8 * GIB,
+    };
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct Limits {
     pub(crate) main: u64,
@@ -22,12 +49,24 @@ pub(crate) struct Limits {
 }
 
 impl Limits {
+    #[cfg(test)]
     pub(crate) const V1: Self = Self {
-        main: 52 * GIB,
-        wal: 2 * GIB,
-        temporary: 2 * GIB,
-        free_floor: 8 * GIB,
+        main: SourceSpacePlan::DEFAULT.main_target_bytes,
+        wal: SourceSpacePlan::DEFAULT.wal_stop_bytes,
+        temporary: SourceSpacePlan::DEFAULT.temporary_target_bytes,
+        free_floor: SourceSpacePlan::DEFAULT.free_headroom_bytes,
     };
+}
+
+impl From<SourceSpacePlan> for Limits {
+    fn from(plan: SourceSpacePlan) -> Self {
+        Self {
+            main: plan.main_target_bytes,
+            wal: plan.wal_stop_bytes,
+            temporary: plan.temporary_target_bytes,
+            free_floor: plan.free_headroom_bytes,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -37,7 +76,7 @@ struct PhysicalUsage {
     temporary: u64,
 }
 
-/// A provisional source stage cannot fit the selected physical peak.
+/// A provisional source stage cannot fit the selected plan or actual volume.
 #[derive(Debug)]
 pub enum BudgetError {
     /// Another cooperating native source capture holds the project lock.
@@ -46,13 +85,13 @@ pub enum BudgetError {
     UnsafeStore(PathBuf),
     /// One byte counter or rounded estimate overflowed.
     Overflow,
-    /// SQLite main-file projection exceeds the 52 GiB v1 bucket.
+    /// SQLite main-file projection exceeds the selected target.
     MainLimit,
-    /// WAL already reached its 2 GiB stop-and-checkpoint boundary.
+    /// WAL already reached the selected stop-and-checkpoint target.
     WalLimit,
-    /// Existing managed temporary use plus stage projection exceeds 2 GiB.
+    /// Existing managed temporary use plus stage projection exceeds its target.
     TemporaryLimit,
-    /// Actual available space cannot preserve the 8 GiB free floor after peak.
+    /// Observed available space cannot preserve the selected planned headroom.
     FreeSpace,
     /// A named filesystem operation failed.
     Io {
