@@ -132,8 +132,8 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "996f74b7e30d4b36471769b9c6d784114d15b582fb373d55a3f12a1072b849f0",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "current_design_sha256": "631a87cdefa3eaef07b930cf841938576e46d96bbf9edcffaa111770b6b154f5",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
       ],
@@ -2763,7 +2763,7 @@
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "8f33be4e88119ec48eeee6cb23576ccc03f92b5764633be52fce3a0781835c1f",
       "modules/NETWORKING.md": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
-      "modules/PLATFORM-RUNTIME.md": "996f74b7e30d4b36471769b9c6d784114d15b582fb373d55a3f12a1072b849f0",
+      "modules/PLATFORM-RUNTIME.md": "631a87cdefa3eaef07b930cf841938576e46d96bbf9edcffaa111770b6b154f5",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
       "modules/TOOLS-DELIVERY.md": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
@@ -2983,12 +2983,12 @@
     },
     "mobile_app_shell": {
       "design": "selected_one_winit_event_loop_one_headless_host_finite_touch_and_result_delivery_gate_with_android_activity_pause_bridge",
-      "implementation": "partial_ios_app_source_static_libraries_linked_unsigned_simulator_bundle_and_android_gameactivity_gradle_source",
-      "functional_validation": "local_bundled_game_authority_replica_result_and_60_240_hz_deadline_clock_tests_and_ios_target_compile_link_only",
-      "visual_validation": "not_run",
+      "implementation": "partial_ios_app_source_static_libraries_linked_unsigned_simulator_bundle_and_assembled_android_gameactivity_apk",
+      "functional_validation": "local_bundled_game_authority_replica_result_and_60_240_hz_deadline_clock_tests_ios_simulator_process_launch_black_scene_and_android_apk_assembly_only",
+      "visual_validation": "ios_simulator_attempted_black_scene_no_game_frame",
       "platform_performance": "not_run",
       "performance_measurement": "not_run",
-      "scope": "The app integrates the finite lifecycle/touch gate, bounded pending intents, one-peer receipt cursor, real headless host, in-memory replica, configurable-clock deadline scheduling and one-color Metal/Vulkan surface response. iOS device/simulator Rust libraries compile and an unsigned simulator app links. No simulator/device run, Android Rust app build or APK, actual JNI/lifecycle/surface behavior, memory/CPU/GPU/power measurement or sustained display claim exists. Android SDK/NDK/Gradle and working CoreSimulatorService are unavailable locally.",
+      "scope": "The app integrates the finite lifecycle/touch gate, bounded pending intents, one-peer receipt cursor, real headless host, in-memory replica, configurable-clock deadline scheduling and one-color Metal/Vulkan surface response. iOS device/simulator Rust libraries compile and an unsigned simulator app links. An Xcode 27.2 iPhone 13 simulator launched the process after a UIKit scene manifest was added, but only a black scene appeared; input/lifecycle/surface behavior is not qualified. The Android ARM64 Rust library and signed debug APK assemble with stable AGP 9.4.1 and Gradle 9.6.0, but have not run on an emulator or device. No JNI, GPU, memory/CPU/power or sustained display claim exists.",
       "evidence": "../evidence/i1-headless/MOBILE-APP-SHELL.md"
     }
   }
