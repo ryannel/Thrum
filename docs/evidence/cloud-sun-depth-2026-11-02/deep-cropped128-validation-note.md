@@ -8,7 +8,7 @@ New actual capture: `captures/deep-probe-1793588276463.json`, SHA256 `7694298759
 
 Old full128 actual capture: `captures/deep-probe-1793583015463.json`, SHA256 `31599dad01d3a8040f082449ca7c23126e98bd69aa704f3d4dfc5b637ffb3d5b`. Old offline report: `deep-validation-30.json`, SHA256 `185f70ccf79f69bbfe6c83bc5ee69d904a442eaf5331261ba7b24f632322c426`.
 
-New [offline report](../deep-validation-cropped128-30.json), SHA256 `a906ac90ef32079b7e884f05d9e040668650da570747fd22991da5207da7df86`.
+New [offline report](deep-validation-cropped128-30.json), SHA256 `a906ac90ef32079b7e884f05d9e040668650da570747fd22991da5207da7df86`.
 
 The **unchanged** independent validator SHA256 is `9e8a37db2701e772151dc572d3c5311bdd71a637512f54fa51a0d45382195aa0`. Exact command from worktree root:
 
