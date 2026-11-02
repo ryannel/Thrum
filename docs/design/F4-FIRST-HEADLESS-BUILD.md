@@ -85,6 +85,8 @@ establish release provenance. The first profile therefore keeps the smaller
 private-cache candidate while a reviewed release manifest or equivalent trust
 root for exact dependency and toolchain bytes remains an explicit readiness
 gate.
+The [first-profile release trust proposal](T2-NATIVE-RELEASE-TRUST.md) makes
+the origin and manifest choice reviewable before a local root can be promoted.
 
 The first [native preparation tool](../../scripts/prepare_headless_cargo_home.py)
 now copies and SHA-checks every lockfile archive and exact index records from
