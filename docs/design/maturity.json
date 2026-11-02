@@ -319,6 +319,10 @@
       "i2a_carried_lineage": {
         "evidence": "../evidence/i2a/SOURCE-CARRIED-LINEAGE.md",
         "scope": "Pure monotonic comparison directly over two parsed source-carried history vectors without copying entries, with local 100,000-field/two-buffer cost and process RSS samples; current admitted predecessor authentication, full parser/graph reservation and durable admission remain unbuilt."
+      },
+      "i2a_project_v2_declaration": {
+        "evidence": "../evidence/i2a/SOURCE-PROJECT-V2.md",
+        "scope": "Direct bounded core.project schema 2 decoding of sorted scene/game record, schema, history and entry-scene declarations, with a local 4,096-record/256-schema cost sample; no staged membership/ID closure, game-record validation or durable admission."
       }
     },
     {
