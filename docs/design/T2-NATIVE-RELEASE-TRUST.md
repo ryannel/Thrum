@@ -145,6 +145,12 @@ archive and index origin candidates. It closes that local byte link, while
 selected build-unit and compiler/system reads, release review and target
 publication remain open. Its report also keeps `buildReady:false`.
 
+The current post-build dep-info audit now refuses explicit rustc comment
+dependencies such as `# env-dep:` and `# checksum:` for the narrow fixture
+profile. Such records require declared environment values or checked extra
+paths before a build could be promoted. This refusal does not trace implicit
+compiler reads or establish that rustc reported every input.
+
 ## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for

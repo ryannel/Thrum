@@ -114,6 +114,18 @@ execution and covers reported source paths only; it does not attest every
 compiler file read, binary dependency, environment input or the trustworthiness
 of the compiler that wrote the `.d` files.
 
+The first-profile audit now also refuses any dep-info comment after the first
+rule. Cargo's [rustc dep-info parser](https://doc.rust-lang.org/stable/nightly-rustc/src/cargo/compiler/fingerprint/dep_info.rs.html)
+reads `# env-dep:` comments as compilation environment dependencies and
+`# checksum:` comments as file checksums. The local five-unit fixture injects
+each comment form and verifies refusal. A fresh opt-in sandboxed A/B run still
+passed: A's 53-file build took 1,103 ms, and the selected-unit and normalized
+dep-info digests matched the prior local observation; none of its five rustc
+units emitted these comments. This is a narrow fail-closed profile until
+environment values and additional checksum paths can be bound explicitly.
+It does not trace implicit compiler environment reads or make rustc's emitted
+dep-info a trusted witness.
+
 The sandboxed run improves the process boundary; it does not make a trusted
 builder. The prepared cache's index records were copied from mutable host
 state and its tree digest is diagnostic rather than a release-verified root.

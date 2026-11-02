@@ -1427,6 +1427,12 @@ mod tests {
             assert!(entry.metadata().unwrap().len() <= 1024 * 1024);
             let bytes = fs::read(entry.path()).unwrap();
             let text = std::str::from_utf8(&bytes).unwrap();
+            for line in text.lines().skip(1) {
+                assert!(
+                    !line.trim_start().starts_with('#'),
+                    "first headless profile refuses dep-info comment dependencies"
+                );
+            }
             let first = text.lines().next().unwrap();
             let (target, dependencies) = first.split_once(": ").unwrap();
             let target = parse_dep_info_words(target);
@@ -1507,7 +1513,7 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
-    fn dep_info_audit_refuses_source_escape_malformed_rule_and_missing_unit() {
+    fn dep_info_audit_refuses_source_escape_comments_malformed_rule_and_missing_unit() {
         let fixture = Fixture::new();
         let input = fixture.root().join(".engine/input");
         let cargo_home = fixture.root().join(".engine/cargo-home");
@@ -1543,6 +1549,24 @@ mod tests {
             std::panic::catch_unwind(|| inspect_headless_dep_info(&input, &cargo_home, &output))
                 .is_err()
         );
+        for comment in [
+            "# env-dep:HOME=/outside\n",
+            "# checksum:sha256=0 file_len:1 /outside\n",
+        ] {
+            fs::write(
+                &depfiles[4],
+                format!("{}\n{comment}", rule(&depfiles[4], &source)),
+            )
+            .unwrap();
+            assert!(
+                std::panic::catch_unwind(|| inspect_headless_dep_info(
+                    &input,
+                    &cargo_home,
+                    &output
+                ))
+                .is_err()
+            );
+        }
         fs::write(&depfiles[4], b"not a dependency rule\n").unwrap();
         assert!(
             std::panic::catch_unwind(|| inspect_headless_dep_info(&input, &cargo_home, &output))
