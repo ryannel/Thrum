@@ -1125,7 +1125,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "fd6756675c96f5ddfef32a7fee496890d1c5813418fdcea04048ac18c39fda49",
+      "current_design_sha256": "864b7de3a6b0990e0ad16e47515458bbb696c2026e91ef341b0d6f8c9b4ca744",
       "current_design_delta": "Complete commission supersedes optional-storm/local-only target. Reviewed family-specific authored producers, global virtual source reach, spherical SKY-G transport, finite ambient DAG, bounded light/packing/error/HDR candidates. Implementation/appearance/full-sky viability remain unproven; prior bounded cost fails.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1218,12 +1218,19 @@
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
         "implementation": "standalone_R0_rejected_coarse_and_hierarchy_sources_bounded_liquid_fit_no_engine_binding",
-        "functional_validation": "finite_fourZ_half_mips_world_sampling_Beer_pass; Cu_CPU_WGSL_points_and_birth_numerics_bounded_pass",
-        "experienced_quality": "coarse_and_hierarchy_Cu_geometry_rejected; prepared_Q1_comparator_fit_lighting_partial; otherfamilies_motion_weather_fullskies_unproven",
-        "performance": "prior_and_new_bounded_cloud_5ms_allocation_failed_new_GPU_p50_11_96032_p95_15_07328ms_full_sky_unrun",
+        "functional_validation": "finite_R0_packing_and_field_crop_all_mip_codewords_pass; bounded_tau_tube_PL_compression_and_GPU_arithmetic_pass; lateral_point_T_gate_fails; complete_SKY_G_unproven",
+        "experienced_quality": "coarse_and_hierarchy_Cu_geometry_rejected; retained_Q1_liquid_fit_native_shadow_mirror_main_hidden_and_sampled_1x16x64x_coherence_partial; backlit_local_gradient_error_persists; newfamilies_weather_fullskies_unproven",
+        "performance": "bounded_cloud_5ms_failed; cropped_fresh_deep_GPU_p50_12_976128_p95_17_0754048ms; nonadditive_component_timestamp_intervals_rejected; full_sky_and_target_devices_unrun",
         "review": "../evidence/cloud-sky-design-2026-11-01/README.md",
         "R0_record": "../evidence/cloud-sky-r0-2026-11-01/README.md",
-        "correction_record": "../evidence/cloud-cu-correction-2026-11-02/README.md"
+        "correction_record": "../evidence/cloud-cu-correction-2026-11-02/README.md",
+        "coupled_depth_record": "../evidence/cloud-sun-depth-2026-11-02/README.md",
+        "index_experiment": {
+          "record": "../evidence/cloud-depth-index-2026-11-02/README.md",
+          "decision": "rejected_for_selected_runtime_no_repeatable_whole_graph_gain",
+          "correctness": "finite_defined_table_entries_GPU_point_terms_and_one_native_image_match_binary; independent_admission_tests_pass",
+          "performance": "ABBA_reversal_and_worse_indexed_completion_cadence; original_binary_and_whole_only_timing_restored; no_new_budget_pass"
+        }
       }
     },
     {

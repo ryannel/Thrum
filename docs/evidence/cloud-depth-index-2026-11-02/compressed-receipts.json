@@ -1,0 +1,30 @@
+[
+  {
+    "file": "cost/cost-1793591143779-fresh-source-1x.json.gz",
+    "raw_sha256": "c97f11671f1442a20aaf8d26228b593fde69d65ed2bf33c2dc6896fa09aad1b6",
+    "raw_bytes": 3020741,
+    "gzip_sha256": "b417124f7d8a2b7ecaaf24009c29bec394ac0034d6cf5653cb1aa2d2da86aa7f",
+    "gzip_bytes": 123997
+  },
+  {
+    "file": "cost/cost-1793591313058-fresh-source-1x.json.gz",
+    "raw_sha256": "6e0b15616c980f21ee5a2ac9cc4268b6e89115054cbeb511bf1fa8224fd4f3a8",
+    "raw_bytes": 3019471,
+    "gzip_sha256": "b575eb35282e32641040461110482d58322ceeb63df63a6d5679b6ae1c92f59e",
+    "gzip_bytes": 125334
+  },
+  {
+    "file": "cost/cost-1793591425676-fresh-source-1x.json.gz",
+    "raw_sha256": "de45dd60304c29f525251aeb5579064c589bd8a26551abfd9874eeed8ac0e00a",
+    "raw_bytes": 3018940,
+    "gzip_sha256": "2959300c4da2c34a58495b1cb4e182d87dd3e6fd053431a15cf9bab95418f4db",
+    "gzip_bytes": 124908
+  },
+  {
+    "file": "cost/cost-1793591535000-fresh-source-1x.json.gz",
+    "raw_sha256": "a3c5b99232307866c661aa5742d6f633e1e9d75adbdc9921bceb352a8736da77",
+    "raw_bytes": 3020202,
+    "gzip_sha256": "03d897c8e5be2dbad0cc8b47532d74aefcc2b5864ba0528af3970968322b1440",
+    "gzip_bytes": 124815
+  }
+]

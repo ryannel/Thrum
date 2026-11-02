@@ -1,0 +1,6033 @@
+{
+  "schema": "thrum.deep-sun-probe.v1",
+  "scope": "Finite actual GPU input-stream/compression and filtered query/direct-path capture; no appearance, full SKY-G, source quality, uniform numerical certificate or performance pass",
+  "quiescent_caller_required": true,
+  "generation_valid": true,
+  "uniform_provenance": "exact caller-supplied192B snapshot of the Scene used for source/light/view; existing uniform buffer not independently read back",
+  "identity": {
+    "deep": {
+      "shader": "a887cb736999c87a8cdcf1df291bdcdc9363d9658b5ad3fe82c582a469da5f81",
+      "profile": "thrum.deep-sun.tau-tube.k48.64x64.512.indexed.v2"
+    },
+    "fit": {
+      "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+    },
+    "sources": {
+      "deep-probes.js": "0b7483ec4ee53ee6db226d52f5e5a50ea1fc224331f795a396ae387291885792",
+      "deep-sun.js": "9067b62a7f518d8e57a3cc37056c2126e950bb1cb5a33434ecf35db3eeccd637",
+      "deep-sun.wgsl": "a887cb736999c87a8cdcf1df291bdcdc9363d9658b5ad3fe82c582a469da5f81",
+      "scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+      "gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "../cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1"
+    },
+    "shaders": {
+      "path_sha256": "fdf850ff270f55425c8e4220c20c63783ef234ffe20240e7bba6fcc2da559253",
+      "query_sha256": "3f730885a6bfe690db881ba753a06b4353f0e0e0b3146b57a77010534641e605"
+    },
+    "uniform_sha256": "955f23501eededbc94a6b15d68574500ae4bf7083fc88755017992c62e356382"
+  },
+  "frame": {
+    "source_time_s": 90,
+    "source_model": "prepared",
+    "max_level": 0,
+    "inspection_view": "0",
+    "camera_route": "local",
+    "variant": 0,
+    "seed": 0,
+    "shift_m": [
+      0,
+      0,
+      0
+    ],
+    "lo_m": [
+      128,
+      48,
+      112
+    ],
+    "extent_m": [
+      256,
+      192,
+      304
+    ],
+    "master_lo_m": [
+      0,
+      0,
+      0
+    ],
+    "master_extent_m": [
+      512,
+      512,
+      512
+    ],
+    "reference_point_m": [
+      177.532882688,
+      153.1774139392,
+      230.1775207424
+    ],
+    "allocation_profile": {
+      "nominalSide": 128,
+      "crop": true,
+      "specialize128": true,
+      "appliedSpecialization": true,
+      "aligned": true,
+      "alignmentCells": 4,
+      "logicalMin": [
+        32,
+        12,
+        28
+      ],
+      "logicalMaxExclusive": [
+        96,
+        60,
+        104
+      ],
+      "dimensions": [
+        64,
+        48,
+        76
+      ],
+      "fieldBounds": {
+        "min": [
+          128,
+          48,
+          112
+        ],
+        "extent": [
+          256,
+          192,
+          304
+        ]
+      },
+      "gridProducer": "exact-source-centres",
+      "mipPhasePreserved": true,
+      "supportIdentity": {
+        "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+        "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+        "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+        "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+        "sourceKnots": 162,
+        "uniqueChunks": 154,
+        "calibrationOnly": true
+      }
+    },
+    "camera_m": [
+      607.6271801180363,
+      180,
+      931.4127080550365
+    ],
+    "target_m": [
+      256,
+      80,
+      256
+    ],
+    "sun_direction": [
+      -0.7794228619673722,
+      0.49999999907712306,
+      0.37749172595630187
+    ],
+    "sun_elevation_deg": 30,
+    "light_model": "2",
+    "depth_model": "deep",
+    "sun_reference_patches": false,
+    "depth_query": "indexed",
+    "deep_identity": {
+      "shader": "a887cb736999c87a8cdcf1df291bdcdc9363d9658b5ad3fe82c582a469da5f81",
+      "profile": "thrum.deep-sun.tau-tube.k48.64x64.512.indexed.v2"
+    },
+    "fit_identity": {
+      "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+    },
+    "main_cloud": true,
+    "mirror": true,
+    "requested_source_time_s": 90,
+    "source_updated": false,
+    "light_updated": true,
+    "source_stats": {
+      "profile": "retained Q1 static geometry comparator",
+      "encoded_source_bytes": 6491440,
+      "allocation_profile": {
+        "nominalSide": 128,
+        "crop": true,
+        "specialize128": true,
+        "appliedSpecialization": true,
+        "aligned": true,
+        "alignmentCells": 4,
+        "logicalMin": [
+          32,
+          12,
+          28
+        ],
+        "logicalMaxExclusive": [
+          96,
+          60,
+          104
+        ],
+        "dimensions": [
+          64,
+          48,
+          76
+        ],
+        "fieldBounds": {
+          "min": [
+            128,
+            48,
+            112
+          ],
+          "extent": [
+            256,
+            192,
+            304
+          ]
+        },
+        "gridProducer": "exact-source-centres",
+        "mipPhasePreserved": true,
+        "supportIdentity": {
+          "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+          "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+          "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+          "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+          "sourceKnots": 162,
+          "uniqueChunks": 154,
+          "calibrationOnly": true
+        }
+      }
+    },
+    "cpu_encode_ms": 0.20000004768371582,
+    "queue_complete_ms": 28.40000009536743,
+    "gpu_bracket_ms": 15.990784,
+    "gpu_raw_timestamps_ns": [
+      "2105858906390528",
+      "2105858922381312"
+    ],
+    "gpu_component_timing": {
+      "available": true,
+      "components": {
+        "source_field_mips": {
+          "status": "reused",
+          "query_indices": null,
+          "duration_ms": null,
+          "raw_timestamps_ns": null,
+          "timestamp_valid": null
+        },
+        "fit_products": {
+          "status": "updated",
+          "query_indices": [
+            0,
+            1
+          ],
+          "duration_ms": 0.065536,
+          "raw_timestamps_ns": [
+            "2105858906390528",
+            "2105858906456064"
+          ],
+          "timestamp_valid": true
+        },
+        "sun_depth": {
+          "status": "updated",
+          "representation": "deep",
+          "query_indices": [
+            2,
+            3
+          ],
+          "duration_ms": 0.720896,
+          "raw_timestamps_ns": [
+            "2105858908422144",
+            "2105858909143040"
+          ],
+          "timestamp_valid": true
+        },
+        "ambient": {
+          "status": "updated",
+          "query_indices": [
+            4,
+            5
+          ],
+          "duration_ms": 0.196608,
+          "raw_timestamps_ns": [
+            "2105858911371264",
+            "2105858911567872"
+          ],
+          "timestamp_valid": true
+        },
+        "final_views": {
+          "status": "rendered",
+          "main_cloud_enabled": true,
+          "mirror_enabled": true,
+          "inspection_view": "0",
+          "query_indices": [
+            6,
+            7
+          ],
+          "duration_ms": 14.7456,
+          "raw_timestamps_ns": [
+            "2105858906783744",
+            "2105858921529344"
+          ],
+          "timestamp_valid": true
+        }
+      },
+      "whole_bracket_query_indices": [
+        0,
+        8
+      ],
+      "raw_query_timestamps_ns": [
+        "2105858906390528",
+        "2105858906456064",
+        "2105858908422144",
+        "2105858909143040",
+        "2105858911371264",
+        "2105858911567872",
+        "2105858906783744",
+        "2105858921529344",
+        "2105858922381312"
+      ],
+      "timestamp_intervals_complete": true,
+      "non_overlapping": false,
+      "contained_in_whole": true,
+      "additive_sum_ms": null,
+      "unattributed_gpu_gap_ms": null,
+      "scope": "Pass begin/end intervals; timed cache dispatches are split into separate passes, adding instrumentation/pass-boundary overhead. Whole bracket still ends after compute reads the actual rendered canvas. Gap includes transitions/markers/idle/quantization; no CPU or presentation attribution.",
+      "observer_storage": {
+        "query_set_count": 12,
+        "query_readback_bytes": 96,
+        "query_resolve_bytes": 256,
+        "used_query_count": 9
+      }
+    },
+    "gpu_timing_scope": "first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency",
+    "invalid_view_paths": 0,
+    "source_field_bytes": 653376,
+    "sun_depth_fallbacks": 0,
+    "sun_depth_invalid_footprints": 0,
+    "sun_depth_unsupported": 0,
+    "deep_bytes": {
+      "nodes": 1672704,
+      "metadata": 139392,
+      "metadataStride": 32,
+      "index": 2230272,
+      "indexWordsPerColumn": 128,
+      "totalGPU": 4042368,
+      "privateState": "O(1) scalar/vector state; compiler allocation/spills unmeasured"
+    },
+    "scatter_fit_bytes": {
+      "table": 262144,
+      "axes": 2048,
+      "profile": 32,
+      "sharedGPU": 264224,
+      "cpuRecoveryPayload": 292941,
+      "products": {
+        "body": 19456,
+        "bank": 19456,
+        "total": 38912
+      }
+    },
+    "scope": "requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame"
+  },
+  "source_time_s": 90,
+  "uniform_u32": [
+    1124073472,
+    1111490560,
+    1121976320,
+    1119092736,
+    1132462080,
+    1128267776,
+    1134034944,
+    1131413504,
+    1142417444,
+    1127481344,
+    1147722346,
+    1071877689,
+    1132462080,
+    1117782016,
+    1132462080,
+    1055957975,
+    3209136194,
+    1056964608,
+    1052853912,
+    1065353216,
+    1054813430,
+    2147483648,
+    1063675494,
+    1128617994,
+    3202770534,
+    3210589143,
+    1046424822,
+    1127390647,
+    1061652546,
+    3204448256,
+    3200337560,
+    1129440534,
+    1202702336,
+    1202062336,
+    1200782336,
+    947628162,
+    1169915904,
+    1175232512,
+    1181376512,
+    1040187392,
+    64,
+    48,
+    76,
+    82,
+    1,
+    2,
+    0,
+    0
+  ],
+  "logical_dimensions": [
+    64,
+    48,
+    76
+  ],
+  "field_physical_dimensions": [
+    66,
+    50,
+    21
+  ],
+  "scene": {
+    "lo_m": [
+      128,
+      48,
+      112
+    ],
+    "extent_m": [
+      256,
+      192,
+      304
+    ],
+    "sun_direction": [
+      -0.7794228792190552,
+      0.5,
+      0.37749171257019043
+    ],
+    "basis": {
+      "U": [
+        0.4358898997306824,
+        0,
+        0.8999999761581421
+      ],
+      "V": [
+        -0.44999998807907104,
+        -0.8660253882408142,
+        0.2179449498653412
+      ],
+      "W": [
+        0.7794228792190552,
+        -0.5,
+        -0.37749171257019043
+      ]
+    }
+  },
+  "profile": {
+    "nominalColumns": 64,
+    "physicalColumns": 66,
+    "knots": 48,
+    "intervals": 512,
+    "endpoints": 513,
+    "exponents": [
+      1,
+      0.25
+    ],
+    "compressionAllocation": 0.005,
+    "tubeEpsilon": 0.004998,
+    "numericalReserve": 0.000002,
+    "fallbackCap": 4096,
+    "indexedSelectorBit": 64,
+    "indexIntervals": 512,
+    "indexPacking": "4u8/u32",
+    "backendUniformCertificate": false
+  },
+  "projection": {
+    "raw_half_m": [
+      195.2656832933426,
+      176.93400877714157,
+      208.4586980342865
+    ],
+    "half_m": [
+      208.28339551289875,
+      188.72960936228435,
+      208.4586980342865
+    ],
+    "guard_m": [
+      0.001952656832933426,
+      0.001769340087771416,
+      0.0020845869803428653
+    ],
+    "nominal_pitch_m": [
+      6.508856109778086,
+      5.897800292571386
+    ],
+    "derived_from_xyz_ignoring_scene_basis_w": true
+  },
+  "layout": {
+    "nodes": "[physical_y,physical_x,knot,depth_m/cumulative_tau]",
+    "metadata": {
+      "stride_bytes": 32,
+      "words": [
+        "count",
+        "compression_valid",
+        "nominal_primary_bound",
+        "nominal_kappa_bound",
+        "coefficient_requests",
+        "endpoint_visits",
+        "anchor_builds",
+        "failure_bits"
+      ],
+      "word_type": "all f32"
+    },
+    "index": "[physical_y,physical_x,128u32]; four byte segment indices per word, low byte first, original interval0..511; count2/invalid row contents unspecified",
+    "field": "[physical_z,physical_y,physical_x,RGBA16F]; X fastest, four consecutive logical Z per RGBA; one packed texel halo, tight rows",
+    "paths": "[selected_column_index,endpoint_index,depth_m/cumulative_tau/sigma_midpoint_per_m/valid]; endpoint0=[0,0,0,1]"
+  },
+  "binaries": {
+    "nodes": {
+      "filename": "deep-probe-1793591080135-nodes.f32",
+      "bytes": 1672704,
+      "sha256": "0320671c8cf39ba1984e6ae1377153b50e43242c4952ffc8377a116d97a7e213",
+      "shape": [
+        66,
+        66,
+        48,
+        2
+      ],
+      "format": "little-endian float32"
+    },
+    "metadata": {
+      "filename": "deep-probe-1793591080135-metadata.f32",
+      "bytes": 139392,
+      "sha256": "b717d6b600d713fe17598291223c672fad20d5d49894847999713aed70b6a6b0",
+      "shape": [
+        66,
+        66,
+        8
+      ],
+      "format": "little-endian float32"
+    },
+    "field": {
+      "filename": "deep-probe-1793591080135-field.rgba16f",
+      "bytes": 554400,
+      "sha256": "4af579bc83e29c9c7acc8287a6328841255fe3602ba7035a0ddee395b4ab5523",
+      "shape": [
+        21,
+        50,
+        66,
+        4
+      ],
+      "format": "little-endian float16"
+    },
+    "paths": {
+      "filename": "deep-probe-1793591080135-paths.f32",
+      "bytes": 131328,
+      "sha256": "a092da43d5cf1366966149bc922ff7e90ffcf9a7612d370fa6a149f33050c7c0",
+      "shape": [
+        16,
+        513,
+        4
+      ],
+      "format": "little-endian float32"
+    },
+    "index": {
+      "filename": "deep-probe-1793591080135-index.u32",
+      "bytes": 2230272,
+      "sha256": "4546fd4a9a132e88b953de158ab59e4a00d3c119cda458634c423b94c3d49d5c",
+      "shape": [
+        66,
+        66,
+        128
+      ],
+      "format": "little-endian uint32 packed4xu8",
+      "active_rows": "admitted metadata count>2 only; count2/invalid bytes are unspecified and MUST NOT be read"
+    }
+  },
+  "metadata_summary": {
+    "index_build": {
+      "rows": 986,
+      "interval_visits": 504832,
+      "u32_word_stores": 126208,
+      "anchor_advances": 10655,
+      "provenance": "Derived from admitted metadata and fixed selected builder, not a hardware counter"
+    },
+    "columns": 4356,
+    "valid": 4356,
+    "invalid": 0,
+    "count_min": 2,
+    "count_max": 31,
+    "failure_bits_histogram": {
+      "0": 4356
+    },
+    "coefficient_requests": 2230272,
+    "endpoint_visits": 2240927,
+    "anchor_builds": 15011
+  },
+  "selected_columns": [
+    {
+      "physical_xy": [
+        0,
+        0
+      ],
+      "linear_index": 0,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "actual-clear"
+    },
+    {
+      "physical_xy": [
+        65,
+        65
+      ],
+      "linear_index": 4355,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "actual-clear"
+    },
+    {
+      "physical_xy": [
+        65,
+        0
+      ],
+      "linear_index": 65,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "guard-corner"
+    },
+    {
+      "physical_xy": [
+        0,
+        65
+      ],
+      "linear_index": 4290,
+      "count": 2,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 512,
+        "anchor_builds": 1,
+        "failure_bits": 0
+      },
+      "final_tau": 0,
+      "selection_kind": "guard-corner"
+    },
+    {
+      "physical_xy": [
+        23,
+        37
+      ],
+      "linear_index": 2465,
+      "count": 31,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 541,
+        "anchor_builds": 30,
+        "failure_bits": 0
+      },
+      "final_tau": 4.609997272491455,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        30,
+        21
+      ],
+      "linear_index": 1416,
+      "count": 25,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 535,
+        "anchor_builds": 24,
+        "failure_bits": 0
+      },
+      "final_tau": 3.368058443069458,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        45,
+        35
+      ],
+      "linear_index": 2355,
+      "count": 25,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 535,
+        "anchor_builds": 24,
+        "failure_bits": 0
+      },
+      "final_tau": 3.8254706859588623,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        23,
+        38
+      ],
+      "linear_index": 2531,
+      "count": 25,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 535,
+        "anchor_builds": 24,
+        "failure_bits": 0
+      },
+      "final_tau": 3.9435360431671143,
+      "selection_kind": "highest-knot-count"
+    },
+    {
+      "physical_xy": [
+        21,
+        26
+      ],
+      "linear_index": 1737,
+      "count": 15,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 525,
+        "anchor_builds": 14,
+        "failure_bits": 0
+      },
+      "final_tau": 5.750673770904541,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        39,
+        32
+      ],
+      "linear_index": 2151,
+      "count": 12,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 522,
+        "anchor_builds": 11,
+        "failure_bits": 0
+      },
+      "final_tau": 10.969161033630371,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        19,
+        37
+      ],
+      "linear_index": 2461,
+      "count": 4,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 514,
+        "anchor_builds": 3,
+        "failure_bits": 0
+      },
+      "final_tau": 0.010567649267613888,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        41,
+        41
+      ],
+      "linear_index": 2747,
+      "count": 13,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 523,
+        "anchor_builds": 12,
+        "failure_bits": 0
+      },
+      "final_tau": 6.4942779541015625,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        30,
+        47
+      ],
+      "linear_index": 3132,
+      "count": 14,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 524,
+        "anchor_builds": 13,
+        "failure_bits": 0
+      },
+      "final_tau": 4.276032447814941,
+      "selection_kind": "mid-active"
+    },
+    {
+      "physical_xy": [
+        32,
+        32
+      ],
+      "linear_index": 2144,
+      "count": 15,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 525,
+        "anchor_builds": 14,
+        "failure_bits": 0
+      },
+      "final_tau": 11.803977966308594,
+      "selection_kind": "centre"
+    },
+    {
+      "physical_xy": [
+        33,
+        32
+      ],
+      "linear_index": 2145,
+      "count": 13,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 523,
+        "anchor_builds": 12,
+        "failure_bits": 0
+      },
+      "final_tau": 12.225381851196289,
+      "selection_kind": "centre"
+    },
+    {
+      "physical_xy": [
+        32,
+        33
+      ],
+      "linear_index": 2210,
+      "count": 12,
+      "compression_valid": true,
+      "nominal_bounds": [
+        0.004999999888241291,
+        0.004999999888241291
+      ],
+      "work": {
+        "coefficient_requests": 512,
+        "endpoint_visits": 522,
+        "anchor_builds": 11,
+        "failure_bits": 0
+      },
+      "final_tau": 13.55825138092041,
+      "selection_kind": "centre"
+    }
+  ],
+  "path_summaries": [
+    {
+      "physical_xy": [
+        0,
+        0
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        65,
+        65
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        65,
+        0
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        0,
+        65
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        23,
+        37
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        4.609997272491455,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        30,
+        21
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        3.368058443069458,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        45,
+        35
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        3.8254740238189697,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        23,
+        38
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        3.9435360431671143,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        21,
+        26
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        5.750673770904541,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        39,
+        32
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        10.969161033630371,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        19,
+        37
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        0.010567649267613888,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        41,
+        41
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        6.494278907775879,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        30,
+        47
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        4.276032447814941,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        32,
+        32
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        11.803977966308594,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        33,
+        32
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        12.225381851196289,
+        0,
+        1
+      ]
+    },
+    {
+      "physical_xy": [
+        32,
+        33
+      ],
+      "endpoint_count": 513,
+      "valid_endpoint_count": 513,
+      "first": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "last": [
+        416.91741943359375,
+        13.55825138092041,
+        0,
+        1
+      ]
+    }
+  ],
+  "query": {
+    "rows": [
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          128.1900177001953,
+          388.17047119140625,
+          90.85917663574219
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          209.4287567138672,
+          336.0557861328125,
+          51.513458251953125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          290.6675109863281,
+          283.9411315917969,
+          12.167742729187012
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          371.90625,
+          231.82644653320312,
+          -27.1779727935791
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          140.09376525878906,
+          56.17355728149414,
+          555.177978515625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          221.33250427246094,
+          4.058881759643555,
+          515.832275390625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          302.5712585449219,
+          -48.05579376220703,
+          476.4865417480469
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          383.80999755859375,
+          -100.17047119140625,
+          437.1408386230469
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          312.60443115234375,
+          388.17047119140625,
+          471.62725830078125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          393.8431701660156,
+          336.0557861328125,
+          432.2815246582031
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          475.0819091796875,
+          283.9411315917969,
+          392.9358215332031
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          556.3206176757812,
+          231.82644653320312,
+          353.590087890625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          -44.32063674926758,
+          56.17355728149414,
+          174.40989685058594
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          36.9181022644043,
+          4.058881759643555,
+          135.06417846679688
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          118.15684509277344,
+          -48.05579376220703,
+          95.71846771240234
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          199.3955841064453,
+          -100.17047119140625,
+          56.37275314331055
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          26.54010131657124
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          95.2459716796875,
+          199.18760681152344,
+          273.1521301269531
+        ],
+        "terms": [
+          0.998633861541748,
+          0.9996582269668579
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.998633861541748,
+          0.9996582269668579
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          26.54010131657124
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          176.48471069335938,
+          147.07293701171875,
+          233.80642700195312
+        ],
+        "terms": [
+          0.7594810724258423,
+          0.9335319399833679
+        ],
+        "direct_tau_512": 0.2807975113391876,
+        "valid": true,
+        "binary_reference_terms": [
+          0.7594810724258423,
+          0.9335319399833679
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          26.54010131657124
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          257.72344970703125,
+          94.95825958251953,
+          194.46070861816406
+        ],
+        "terms": [
+          0.03883190453052521,
+          0.4439120292663574
+        ],
+        "direct_tau_512": 3.2488040924072266,
+        "valid": true,
+        "binary_reference_terms": [
+          0.03883190453052521,
+          0.4439120292663574
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          26.54010131657124
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          338.9621887207031,
+          42.84358596801758,
+          155.114990234375
+        ],
+        "terms": [
+          0.010211363434791565,
+          0.3178853988647461
+        ],
+        "direct_tau_512": 4.613134384155273,
+        "valid": true,
+        "binary_reference_terms": [
+          0.010211363434791565,
+          0.3178853988647461
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          -67.82470336457094
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          157.5701446533203,
+          280.909912109375,
+          293.5915832519531
+        ],
+        "terms": [
+          0.9988933801651001,
+          0.9997232556343079
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9988933801651001,
+          0.9997232556343079
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          -67.82470336457094
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          238.8088836669922,
+          228.79525756835938,
+          254.24588012695312
+        ],
+        "terms": [
+          0.9966838955879211,
+          0.9991699457168579
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9966838955879211,
+          0.9991699457168579
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          -67.82470336457094
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          320.0476379394531,
+          176.68057250976562,
+          214.90016174316406
+        ],
+        "terms": [
+          0.03617288917303085,
+          0.43610966205596924
+        ],
+        "direct_tau_512": 3.364314556121826,
+        "valid": true,
+        "binary_reference_terms": [
+          0.03617288917303085,
+          0.43610966205596924
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          -67.82470336457094
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          401.286376953125,
+          124.56590270996094,
+          175.554443359375
+        ],
+        "terms": [
+          0.03445642068982124,
+          0.4308414161205292
+        ],
+        "direct_tau_512": 3.3676884174346924,
+        "valid": true,
+        "binary_reference_terms": [
+          0.03445642068982124,
+          0.4308414161205292
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          81.36070137222607,
+          14.744500731428465
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          162.97117614746094,
+          209.40289306640625,
+          399.4566955566406
+        ],
+        "terms": [
+          0.9986431002616882,
+          0.9996605515480042
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9986431002616882,
+          0.9996605515480042
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          81.36070137222607,
+          14.744500731428465
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          244.2099151611328,
+          157.28822326660156,
+          360.1109619140625
+        ],
+        "terms": [
+          0.9959348440170288,
+          0.9989821314811707
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9959348440170288,
+          0.9989821314811707
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          81.36070137222607,
+          14.744500731428465
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          325.4486389160156,
+          105.17355346679688,
+          320.7652587890625
+        ],
+        "terms": [
+          0.16121625900268555,
+          0.6336532831192017
+        ],
+        "direct_tau_512": 1.8263437747955322,
+        "valid": true,
+        "binary_reference_terms": [
+          0.16121625900268555,
+          0.6336532831192017
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          81.36070137222607,
+          14.744500731428465
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          406.6873779296875,
+          53.058876037597656,
+          281.4195556640625
+        ],
+        "terms": [
+          0.021814662963151932,
+          0.3843148350715637
+        ],
+        "direct_tau_512": 3.827385663986206,
+        "valid": true,
+        "binary_reference_terms": [
+          0.021814662963151932,
+          0.3843148350715637
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          32.43790160914262
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          92.59196472167969,
+          194.07997131347656,
+          274.4375305175781
+        ],
+        "terms": [
+          0.9984028935432434,
+          0.9996005296707153
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9984028935432434,
+          0.9996005296707153
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          32.43790160914262
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          173.83070373535156,
+          141.9652862548828,
+          235.09181213378906
+        ],
+        "terms": [
+          0.995216429233551,
+          0.9988019466400146
+        ],
+        "direct_tau_512": 0.00023020613298285753,
+        "valid": true,
+        "binary_reference_terms": [
+          0.995216429233551,
+          0.9988019466400146
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          32.43790160914262
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          255.06944274902344,
+          89.85061645507812,
+          195.74609375
+        ],
+        "terms": [
+          0.1051797866821289,
+          0.5694860219955444
+        ],
+        "direct_tau_512": 2.234950542449951,
+        "valid": true,
+        "binary_reference_terms": [
+          0.1051797866821289,
+          0.5694860219955444
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          32.43790160914262
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          336.30816650390625,
+          37.73594284057617,
+          156.400390625
+        ],
+        "terms": [
+          0.01978493109345436,
+          0.37504494190216064
+        ],
+        "direct_tau_512": 3.940676212310791,
+        "valid": true,
+        "binary_reference_terms": [
+          0.01978493109345436,
+          0.37504494190216064
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          21,
+          26
+        ],
+        "light_xy_m": [
+          -74.851845262448,
+          -38.33570190171401
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          118.76579284667969,
+          255.3717041015625,
+          247.29684448242188
+        ],
+        "terms": [
+          0.9989339113235474,
+          0.9997333288192749
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9989339113235474,
+          0.9997333288192749
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          21,
+          26
+        ],
+        "light_xy_m": [
+          -74.851845262448,
+          -38.33570190171401
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          200.00453186035156,
+          203.2570343017578,
+          207.9511260986328
+        ],
+        "terms": [
+          0.9968052506446838,
+          0.9992003440856934
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9968052506446838,
+          0.9992003440856934
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          21,
+          26
+        ],
+        "light_xy_m": [
+          -74.851845262448,
+          -38.33570190171401
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          281.2432861328125,
+          151.14234924316406,
+          168.60540771484375
+        ],
+        "terms": [
+          0.008794807828962803,
+          0.30623623728752136
+        ],
+        "direct_tau_512": 4.718435764312744,
+        "valid": true,
+        "binary_reference_terms": [
+          0.008794807828962803,
+          0.30623623728752136
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          21,
+          26
+        ],
+        "light_xy_m": [
+          -74.851845262448,
+          -38.33570190171401
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          362.4820251464844,
+          99.02767944335938,
+          129.2596893310547
+        ],
+        "terms": [
+          0.003187131369486451,
+          0.23760192096233368
+        ],
+        "direct_tau_512": 5.7519097328186035,
+        "valid": true,
+        "binary_reference_terms": [
+          0.003187131369486451,
+          0.23760192096233368
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          39,
+          32
+        ],
+        "light_xy_m": [
+          42.30756471355756,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          153.91033935546875,
+          224.725830078125,
+          360.45269775390625
+        ],
+        "terms": [
+          0.9988529682159424,
+          0.9997130632400513
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9988529682159424,
+          0.9997130632400513
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          39,
+          32
+        ],
+        "light_xy_m": [
+          42.30756471355756,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          235.14907836914062,
+          172.6111602783203,
+          321.1069641113281
+        ],
+        "terms": [
+          0.6813654899597168,
+          0.9085420966148376
+        ],
+        "direct_tau_512": 0.38737228512763977,
+        "valid": true,
+        "binary_reference_terms": [
+          0.6813654899597168,
+          0.9085420966148376
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          39,
+          32
+        ],
+        "light_xy_m": [
+          42.30756471355756,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          316.3878173828125,
+          120.4964828491211,
+          281.7612609863281
+        ],
+        "terms": [
+          0.0008911560871638358,
+          0.17277801036834717
+        ],
+        "direct_tau_512": 7.02512264251709,
+        "valid": true,
+        "binary_reference_terms": [
+          0.0008911560871638358,
+          0.17277801036834717
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          39,
+          32
+        ],
+        "light_xy_m": [
+          42.30756471355756,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          397.6265563964844,
+          68.3818130493164,
+          242.41554260253906
+        ],
+        "terms": [
+          0.00001722478737065103,
+          0.06442263722419739
+        ],
+        "direct_tau_512": 10.970183372497559,
+        "valid": true,
+        "binary_reference_terms": [
+          0.00001722478737065103,
+          0.06442263722419739
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          19,
+          37
+        ],
+        "light_xy_m": [
+          -87.86955748200415,
+          26.54010131657124
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          83.89739227294922,
+          199.18760681152344,
+          249.7202606201172
+        ],
+        "terms": [
+          0.9992406368255615,
+          0.9998100996017456
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9992406368255615,
+          0.9998100996017456
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          19,
+          37
+        ],
+        "light_xy_m": [
+          -87.86955748200415,
+          26.54010131657124
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          165.13613891601562,
+          147.07293701171875,
+          210.37454223632812
+        ],
+        "terms": [
+          0.9977236986160278,
+          0.9994304776191711
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9977236986160278,
+          0.9994304776191711
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          19,
+          37
+        ],
+        "light_xy_m": [
+          -87.86955748200415,
+          26.54010131657124
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          246.3748779296875,
+          94.95825958251953,
+          171.02882385253906
+        ],
+        "terms": [
+          0.9962089657783508,
+          0.9990509152412415
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9962089657783508,
+          0.9990509152412415
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          19,
+          37
+        ],
+        "light_xy_m": [
+          -87.86955748200415,
+          26.54010131657124
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          327.6136169433594,
+          42.84358596801758,
+          131.68310546875
+        ],
+        "terms": [
+          0.98948734998703,
+          0.997361421585083
+        ],
+        "direct_tau_512": 0.010690638795495033,
+        "valid": true,
+        "binary_reference_terms": [
+          0.98948734998703,
+          0.997361421585083
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          41
+        ],
+        "light_xy_m": [
+          55.32527693311373,
+          50.13130248685678
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          135.6985321044922,
+          178.7570343017578,
+          383.7371826171875
+        ],
+        "terms": [
+          0.9997292757034302,
+          0.9999322891235352
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9997292757034302,
+          0.9999322891235352
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          41
+        ],
+        "light_xy_m": [
+          55.32527693311373,
+          50.13130248685678
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          216.93727111816406,
+          126.6423568725586,
+          344.3914794921875
+        ],
+        "terms": [
+          0.9991881847381592,
+          0.9997969269752502
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9991881847381592,
+          0.9997969269752502
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          41
+        ],
+        "light_xy_m": [
+          55.32527693311373,
+          50.13130248685678
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          298.176025390625,
+          74.52767944335938,
+          305.0457458496094
+        ],
+        "terms": [
+          0.0019759403076022863,
+          0.21083536744117737
+        ],
+        "direct_tau_512": 6.279747009277344,
+        "valid": true,
+        "binary_reference_terms": [
+          0.0019759403076022863,
+          0.21083536744117737
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          41,
+          41
+        ],
+        "light_xy_m": [
+          55.32527693311373,
+          50.13130248685678
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          379.4147644042969,
+          22.413007736206055,
+          265.7000427246094
+        ],
+        "terms": [
+          0.0015639213379472494,
+          0.19886288046836853
+        ],
+        "direct_tau_512": 6.492546081542969,
+        "valid": true,
+        "binary_reference_terms": [
+          0.0015639213379472494,
+          0.19886288046836853
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          47
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          85.51810424228509
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          88.56587982177734,
+          148.1111602783203,
+          327.0118713378906
+        ],
+        "terms": [
+          0.9991699457168579,
+          0.9997923970222473
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9991699457168579,
+          0.9997923970222473
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          47
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          85.51810424228509
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          169.80462646484375,
+          95.99649047851562,
+          287.6661682128906
+        ],
+        "terms": [
+          0.8905472755432129,
+          0.971436083316803
+        ],
+        "direct_tau_512": 0.1161799356341362,
+        "valid": true,
+        "binary_reference_terms": [
+          0.8905472755432129,
+          0.971436083316803
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          47
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          85.51810424228509
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          251.04336547851562,
+          43.881813049316406,
+          248.32044982910156
+        ],
+        "terms": [
+          0.014065115712583065,
+          0.34437835216522217
+        ],
+        "direct_tau_512": 4.2772040367126465,
+        "valid": true,
+        "binary_reference_terms": [
+          0.014065115712583065,
+          0.34437835216522217
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          30,
+          47
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          85.51810424228509
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          332.2821044921875,
+          -8.232861518859863,
+          208.97474670410156
+        ],
+        "terms": [
+          0.013953283429145813,
+          0.34369176626205444
+        ],
+        "direct_tau_512": 4.277202606201172,
+        "valid": true,
+        "binary_reference_terms": [
+          0.013953283429145813,
+          0.34369176626205444
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          134.05032348632812,
+          224.725830078125,
+          319.4468994140625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          215.2890625,
+          172.6111602783203,
+          280.1011657714844
+        ],
+        "terms": [
+          0.22706472873687744,
+          0.6902992725372314
+        ],
+        "direct_tau_512": 1.4847475290298462,
+        "valid": true,
+        "binary_reference_terms": [
+          0.22706472873687744,
+          0.6902992725372314
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          296.5278015136719,
+          120.4964828491211,
+          240.75546264648438
+        ],
+        "terms": [
+          0.0003223083622287959,
+          0.133988618850708
+        ],
+        "direct_tau_512": 8.040969848632812,
+        "valid": true,
+        "binary_reference_terms": [
+          0.0003223083622287959,
+          0.133988618850708
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          32
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          377.76654052734375,
+          68.3818130493164,
+          201.4097442626953
+        ],
+        "terms": [
+          0.000007474761787307216,
+          0.05228767544031143
+        ],
+        "direct_tau_512": 11.80471420288086,
+        "valid": true,
+        "binary_reference_terms": [
+          0.000007474761787307216,
+          0.05228767544031143
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          136.88746643066406,
+          224.725830078125,
+          325.30487060546875
+        ],
+        "terms": [
+          0.9990801811218262,
+          0.999769926071167
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          0.9990801811218262,
+          0.999769926071167
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          218.12620544433594,
+          172.6111602783203,
+          285.9591369628906
+        ],
+        "terms": [
+          0.24576735496520996,
+          0.704094648361206
+        ],
+        "direct_tau_512": 1.4067180156707764,
+        "valid": true,
+        "binary_reference_terms": [
+          0.24576735496520996,
+          0.704094648361206
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          299.3649597167969,
+          120.4964828491211,
+          246.61343383789062
+        ],
+        "terms": [
+          0.00035360766923986375,
+          0.13712935149669647
+        ],
+        "direct_tau_512": 7.942976474761963,
+        "valid": true,
+        "binary_reference_terms": [
+          0.00035360766923986375,
+          0.13712935149669647
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          33,
+          32
+        ],
+        "light_xy_m": [
+          3.254428054889043,
+          -2.948900146285693
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          380.60369873046875,
+          68.3818130493164,
+          207.26771545410156
+        ],
+        "terms": [
+          0.00000490443198941648,
+          0.04705944284796715
+        ],
+        "direct_tau_512": 12.22575855255127,
+        "valid": true,
+        "binary_reference_terms": [
+          0.00000490443198941648,
+          0.04705944284796715
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          2.948900146285693
+        ],
+        "projected_depth_m": 52.114674508571625,
+        "world_m": [
+          131.3963165283203,
+          219.61819458007812,
+          320.7322998046875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          2.948900146285693
+        ],
+        "projected_depth_m": 156.34402352571487,
+        "world_m": [
+          212.6350555419922,
+          167.50350952148438,
+          281.3865661621094
+        ],
+        "terms": [
+          0.22574520111083984,
+          0.6892942190170288
+        ],
+        "direct_tau_512": 1.4925100803375244,
+        "valid": true,
+        "binary_reference_terms": [
+          0.22574520111083984,
+          0.6892942190170288
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          2.948900146285693
+        ],
+        "projected_depth_m": 260.5733725428581,
+        "world_m": [
+          293.873779296875,
+          115.38883972167969,
+          242.0408477783203
+        ],
+        "terms": [
+          0.00031521369237452745,
+          0.13324511051177979
+        ],
+        "direct_tau_512": 8.053019523620605,
+        "valid": true,
+        "binary_reference_terms": [
+          0.00031521369237452745,
+          0.13324511051177979
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "selected-column-interior",
+        "column_xy": [
+          32,
+          33
+        ],
+        "light_xy_m": [
+          -3.254428054889043,
+          2.948900146285693
+        ],
+        "projected_depth_m": 364.8027215600014,
+        "world_m": [
+          375.1125183105469,
+          63.274166107177734,
+          202.6951446533203
+        ],
+        "terms": [
+          0.0000012988630260224454,
+          0.03375909850001335
+        ],
+        "direct_tau_512": 13.558796882629395,
+        "valid": true,
+        "binary_reference_terms": [
+          0.0000012988630260224454,
+          0.03375909850001335
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": -4.16917396068573,
+        "world_m": [
+          84.32109832763672,
+          416.3123779296875,
+          112.1058578491211
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          87.57064819335938,
+          414.2278137207031,
+          110.53202819824219
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 416.917396068573,
+        "world_m": [
+          412.5256042480469,
+          205.76910400390625,
+          -46.850830078125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 421.0865700292587,
+        "world_m": [
+          415.775146484375,
+          203.6845245361328,
+          -48.424659729003906
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": -4.16917396068573,
+        "world_m": [
+          96.22484588623047,
+          84.31548309326172,
+          576.4246826171875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          99.47439575195312,
+          82.23089599609375,
+          574.850830078125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 416.917396068573,
+        "world_m": [
+          424.4293518066406,
+          -126.2278060913086,
+          417.46795654296875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 421.0865700292587,
+        "world_m": [
+          427.67889404296875,
+          -128.31239318847656,
+          415.8941345214844
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": -4.16917396068573,
+        "world_m": [
+          268.7355041503906,
+          416.3123779296875,
+          492.8739318847656
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          271.98504638671875,
+          414.2278137207031,
+          491.30010986328125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 416.917396068573,
+        "world_m": [
+          596.9400024414062,
+          205.76910400390625,
+          333.917236328125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          211.5378235677878,
+          -191.67850950857004
+        ],
+        "projected_depth_m": 421.0865700292587,
+        "world_m": [
+          600.1895751953125,
+          203.6845245361328,
+          332.3434143066406
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": -4.16917396068573,
+        "world_m": [
+          -88.1895523071289,
+          84.31548309326172,
+          195.65658569335938
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 0,
+        "world_m": [
+          -84.94001007080078,
+          82.23089599609375,
+          194.082763671875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 416.917396068573,
+        "world_m": [
+          240.01495361328125,
+          -126.2278060913086,
+          36.69989776611328
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "column-terminal",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -211.5378235677878,
+          191.67850950857004
+        ],
+        "projected_depth_m": 421.0865700292587,
+        "world_m": [
+          243.26449584960938,
+          -128.31239318847656,
+          35.126068115234375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          0,
+          0
+        ],
+        "light_xy_m": [
+          -208.28339551289875,
+          -188.72960936228435
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          250.1396942138672,
+          307.44464111328125,
+          35.41228485107422
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          65,
+          65
+        ],
+        "light_xy_m": [
+          214.79225162267684,
+          194.62740965485574
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          262.0434265136719,
+          -24.552278518676758,
+          499.7310791015625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          65,
+          0
+        ],
+        "light_xy_m": [
+          214.79225162267684,
+          -188.72960936228435
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          434.5541076660156,
+          307.44464111328125,
+          416.18035888671875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          0,
+          65
+        ],
+        "light_xy_m": [
+          -208.28339551289875,
+          194.62740965485574
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          77.62903594970703,
+          -24.552278518676758,
+          118.9630126953125
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -58.579704988002774,
+          29.489001462856933
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          217.19564819335938,
+          118.46177673339844,
+          217.7052459716797
+        ],
+        "terms": [
+          0.17875799536705017,
+          0.5751763582229614
+        ],
+        "direct_tau_512": 2.855017900466919,
+        "valid": true,
+        "binary_reference_terms": [
+          0.17875799536705017,
+          0.5751763582229614
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -13.01771221955617,
+          -64.87580321828524
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          279.51983642578125,
+          200.18409729003906,
+          238.1446990966797
+        ],
+        "terms": [
+          0.13961392641067505,
+          0.591045618057251
+        ],
+        "direct_tau_512": 2.7895522117614746,
+        "valid": true,
+        "binary_reference_terms": [
+          0.13961392641067505,
+          0.591045618057251
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          84.61512942711512,
+          17.693400877714158
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          284.92083740234375,
+          128.67706298828125,
+          344.0097961425781
+        ],
+        "terms": [
+          0.5045983195304871,
+          0.8329538702964783
+        ],
+        "direct_tau_512": 0.5714596509933472,
+        "valid": true,
+        "binary_reference_terms": [
+          0.5045983195304871,
+          0.8329538702964783
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "between-four-columns",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -58.579704988002774,
+          35.386801755428316
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          214.54164123535156,
+          113.35413360595703,
+          218.9906463623047
+        ],
+        "terms": [
+          0.27178674936294556,
+          0.6814006567001343
+        ],
+        "direct_tau_512": 1.5315277576446533,
+        "valid": true,
+        "binary_reference_terms": [
+          0.27178674936294556,
+          0.6814006567001343
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -195.2616832933426,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          170.8874053955078,
+          144,
+          88.26448822021484
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -195.2656832933426,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          170.8856658935547,
+          144,
+          88.2608871459961
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -195.26968329334258,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          170.8839111328125,
+          144,
+          88.25728607177734
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -208.27939551289876,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          165.21311950683594,
+          144,
+          76.54854583740234
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": -1,
+        "light_xy_m": [
+          -208.28739551289874,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          165.20962524414062,
+          144,
+          76.54135131835938
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          195.2616832933426,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          341.11260986328125,
+          144,
+          439.7355041503906
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          195.2656832933426,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          341.1143493652344,
+          144,
+          439.7391052246094
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          195.26968329334258,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          341.1160888671875,
+          144,
+          439.7427062988281
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          208.27939551289876,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          346.7868957519531,
+          144,
+          451.4514465332031
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 0,
+        "edge_sign": 1,
+        "light_xy_m": [
+          208.28739551289874,
+          0
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          346.7903747558594,
+          144,
+          451.4586486816406
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -176.93000877714158
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          335.6184997558594,
+          297.22589111328125,
+          225.43899536132812
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -176.93400877714157
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          335.62030029296875,
+          297.2293395996094,
+          225.43812561035156
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -176.93800877714156
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          335.6221008300781,
+          297.2328186035156,
+          225.437255859375
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -188.72560936228436
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          340.926513671875,
+          307.441162109375,
+          222.8682098388672
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": -1,
+        "light_xy_m": [
+          0,
+          -188.73360936228434
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          340.93011474609375,
+          307.4480895996094,
+          222.86647033691406
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          176.93000877714158
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          176.38150024414062,
+          -9.225879669189453,
+          302.5610046386719
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          176.93400877714157
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          176.37969970703125,
+          -9.22934341430664,
+          302.5618591308594
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          176.93800877714156
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          176.37789916992188,
+          -9.232808113098145,
+          302.562744140625
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          188.72560936228436
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          171.07347106933594,
+          -19.44116973876953,
+          305.1318054199219
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "critical-lateral-edge",
+        "edge_axis": 1,
+        "edge_sign": 1,
+        "light_xy_m": [
+          0,
+          188.73360936228434
+        ],
+        "projected_depth_m": 208.4586980342865,
+        "world_m": [
+          171.06988525390625,
+          -19.448097229003906,
+          305.133544921875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          26.54010131657124
+        ],
+        "projected_depth_m": 179.1402108154297,
+        "world_m": [
+          194.25257873535156,
+          135.67483520507812,
+          225.2010498046875
+        ],
+        "terms": [
+          0.3769541382789612,
+          0.7835597395896912
+        ],
+        "direct_tau_512": 0.9760496616363525,
+        "valid": true,
+        "binary_reference_terms": [
+          0.3769541382789612,
+          0.7835597395896912
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          23,
+          37
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          26.54010131657124
+        ],
+        "projected_depth_m": 179.14821081542968,
+        "world_m": [
+          194.25881958007812,
+          135.67083740234375,
+          225.19802856445312
+        ],
+        "terms": [
+          0.37687069177627563,
+          0.7835161685943604
+        ],
+        "direct_tau_512": 0.9762498736381531,
+        "valid": true,
+        "binary_reference_terms": [
+          0.37687069177627563,
+          0.7835161685943604
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          -67.82470336457094
+        ],
+        "projected_depth_m": 197.86890954589845,
+        "world_m": [
+          271.17431640625,
+          208.03280639648438,
+          238.57058715820312
+        ],
+        "terms": [
+          0.4110696017742157,
+          0.8007165193557739
+        ],
+        "direct_tau_512": 0.890637993812561,
+        "valid": true,
+        "binary_reference_terms": [
+          0.4110696017742157,
+          0.8007165193557739
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          30,
+          21
+        ],
+        "light_xy_m": [
+          -16.272140274445213,
+          -67.82470336457094
+        ],
+        "projected_depth_m": 197.87690954589843,
+        "world_m": [
+          271.1805725097656,
+          208.02880859375,
+          238.56756591796875
+        ],
+        "terms": [
+          0.4109600782394409,
+          0.8006630539894104
+        ],
+        "direct_tau_512": 0.8909974098205566,
+        "valid": true,
+        "binary_reference_terms": [
+          0.4109600782394409,
+          0.8006630539894104
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          81.36070137222607,
+          14.744500731428465
+        ],
+        "projected_depth_m": 214.96903771972657,
+        "world_m": [
+          289.9035949707031,
+          127.97571563720703,
+          337.98052978515625
+        ],
+        "terms": [
+          0.30786824226379395,
+          0.7448883652687073
+        ],
+        "direct_tau_512": 1.177752137184143,
+        "valid": true,
+        "binary_reference_terms": [
+          0.30786824226379395,
+          0.7448883652687073
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          45,
+          35
+        ],
+        "light_xy_m": [
+          81.36070137222607,
+          14.744500731428465
+        ],
+        "projected_depth_m": 214.97703771972655,
+        "world_m": [
+          289.9098205566406,
+          127.97171783447266,
+          337.9775085449219
+        ],
+        "terms": [
+          0.3078356385231018,
+          0.7448686957359314
+        ],
+        "direct_tau_512": 1.1776697635650635,
+        "valid": true,
+        "binary_reference_terms": [
+          0.3078356385231018,
+          0.7448686957359314
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          32.43790160914262
+        ],
+        "projected_depth_m": 204.3832528076172,
+        "world_m": [
+          211.27357482910156,
+          117.9456787109375,
+          216.95741271972656
+        ],
+        "terms": [
+          0.5517934560775757,
+          0.8618744015693665
+        ],
+        "direct_tau_512": 0.5945374965667725,
+        "valid": true,
+        "binary_reference_terms": [
+          0.5517934560775757,
+          0.8618744015693665
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "retained-knot-neighbour",
+        "column_xy": [
+          23,
+          38
+        ],
+        "light_xy_m": [
+          -61.834133042891814,
+          32.43790160914262
+        ],
+        "projected_depth_m": 204.39125280761718,
+        "world_m": [
+          211.27981567382812,
+          117.9416732788086,
+          216.9543914794922
+        ],
+        "terms": [
+          0.5515139102935791,
+          0.8617652058601379
+        ],
+        "direct_tau_512": 0.5950682759284973,
+        "valid": true,
+        "binary_reference_terms": [
+          0.5515139102935791,
+          0.8617652058601379
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          31.058285896909723,
+          13.419496760671997
+        ],
+        "projected_depth_m": 161.93313761008275,
+        "world_m": [
+          227.2361297607422,
+          155.6411590576172,
+          312.440185546875
+        ],
+        "terms": [
+          0.5227523446083069,
+          0.8499570488929749
+        ],
+        "direct_tau_512": 0.6956267952919006,
+        "valid": true,
+        "binary_reference_terms": [
+          0.5227523446083069,
+          0.8499570488929749
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          -34.477656459273284,
+          132.22578494423067
+        ],
+        "projected_depth_m": 256.2348327261579,
+        "world_m": [
+          218.70774841308594,
+          5.601046085357666,
+          243.75296020507812
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          166.00696199649914,
+          17.209527557495893
+        ],
+        "projected_depth_m": 392.69361199962316,
+        "world_m": [
+          464.21337890625,
+          36.97865676879883,
+          347.6098327636719
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          119.81549214525143,
+          -175.33599109400777
+        ],
+        "projected_depth_m": 414.5998943952502,
+        "world_m": [
+          547.7987060546875,
+          192.7748260498047,
+          255.8037567138672
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          81.63927053251048,
+          -142.68470177632088
+        ],
+        "projected_depth_m": 77.65145201863817,
+        "world_m": [
+          253.83969116210938,
+          332.9721984863281,
+          355.756591796875
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          -54.32525394562347,
+          -59.67301071670363
+        ],
+        "projected_depth_m": 301.79465891951367,
+        "world_m": [
+          331.92120361328125,
+          149.01036071777344,
+          166.8682861328125
+        ],
+        "terms": [
+          0.16072753071784973,
+          0.5819993615150452
+        ],
+        "direct_tau_512": 1.6217865943908691,
+        "valid": true,
+        "binary_reference_terms": [
+          0.16072753071784973,
+          0.5819993615150452
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          37.69546183739751,
+          16.548299328166625
+        ],
+        "projected_depth_m": 273.2460199298389,
+        "world_m": [
+          315.4810485839844,
+          97.27509307861328,
+          277.07586669921875
+        ],
+        "terms": [
+          0.0005509543116204441,
+          0.15304714441299438
+        ],
+        "direct_tau_512": 7.5872673988342285,
+        "valid": true,
+        "binary_reference_terms": [
+          0.0005509543116204441,
+          0.15304714441299438
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "seeded-interior",
+        "light_xy_m": [
+          -51.69285590647996,
+          -122.72713357144093
+        ],
+        "projected_depth_m": 262.86044881870674,
+        "world_m": [
+          331.0967712402344,
+          223.0839385986328,
+          170.1924591064453
+        ],
+        "terms": [
+          1,
+          1
+        ],
+        "direct_tau_512": 0,
+        "valid": true,
+        "binary_reference_terms": [
+          1,
+          1
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      },
+      {
+        "kind": "pinned-material-witness",
+        "world_m": [
+          177.5328826904297,
+          153.1774139404297,
+          230.17752075195312
+        ],
+        "light_xy_m": [
+          -64.64325441307574,
+          19.99088983906131
+        ],
+        "projected_depth_m": 155.47863018134194,
+        "terms": [
+          0.457210898399353,
+          0.8094955682754517
+        ],
+        "direct_tau_512": 1.0725123882293701,
+        "valid": true,
+        "binary_reference_terms": [
+          0.457210898399353,
+          0.8094955682754517
+        ],
+        "binary_reference_valid": true,
+        "selected_vs_binary_absolute_errors": [
+          0,
+          0
+        ],
+        "selected_vs_binary_bitwise_equal": true,
+        "index_lookup_diagnostics": {
+          "valid": true,
+          "binary_retries": 0,
+          "adjacent_corrections": 0
+        }
+      }
+    ],
+    "count": 125,
+    "valid_count": 125,
+    "selected_lookup": "indexed",
+    "indexed_lookup_exercised": true,
+    "binary_reference_forced_locally": true,
+    "selected_vs_binary_bitwise_pass": true,
+    "index_lookup_diagnostics": {
+      "scope": "Finite probe points only; repeats lookups without new runtime counters or direct-source rays",
+      "valid_points": 125,
+      "binary_retries": 0,
+      "adjacent_corrections": 0
+    },
+    "counters": {
+      "unused_view_caps": 0,
+      "fallback_requests": 0,
+      "invalid_footprints": 0,
+      "unsupported": 0
+    },
+    "operator": "physical g=64*(dot(p-centre,U/V)/(2*Huv)+.5)+.5; floor/fract four neighbours, interpolate each retained ordinary tau at dot(p-centre,W)+Hw, average exp(-tau) and exp(-.25tau) separately",
+    "boundary": "clear before -rawW-guardW or laterally beyond Huv+guard; otherwise invalidtap requests one bounded direct path; domainflag1/invalidframe or fallback request>=4096 returnsnegative invalid",
+    "direct": "512 uniform midpoint samples on finite half-voxel source ray-box intersection toward scene.sun.xyz; same packed field; separate quadrature from full-projection input stream"
+  },
+  "bytes": {
+    "retained_binaries": 4728096,
+    "query_readback": 4000,
+    "probe_counter_readback": 16,
+    "field_readback_staging": 806400,
+    "deep_product": {
+      "nodes": 1672704,
+      "metadata": 139392,
+      "metadataStride": 32,
+      "index": 2230272,
+      "indexWordsPerColumn": 128,
+      "totalGPU": 4042368,
+      "privateState": "O(1) scalar/vector state; compiler allocation/spills unmeasured"
+    }
+  },
+  "checks": {
+    "capture_inputs_and_layout": true,
+    "compression_quality": "OFFLINE_VALIDATOR_REQUIRED",
+    "source_quadrature": "UNQUALIFIED",
+    "lateral_filtering_quality": "UNQUALIFIED",
+    "radiance_appearance": "UNQUALIFIED",
+    "performance": "NOT_MEASURED",
+    "exact_lookup_parity": true
+  },
+  "limits": [
+    "Paths are a replay using the builder exact deepSigma/frame/quadrature expressions; original build input stream was not retained",
+    "Compression numerical reserve2e-6 is an unqualified candidate, not a universal GPU certificate",
+    "Query direct reference shares packed source reconstruction; it does not qualify canonical-source or atmospheric/full-sky accuracy",
+    "Probe counters are isolated from the rendered graph and have no per-query atomic ordering meaning"
+  ],
+  "build_identity": {
+    "build_id": "3da8416b41ff33440ccd69271ec9efc46bde19c3f5dbb75e0cc97c6b83231c12",
+    "files": {
+      "scripts/cloud_sky_proof/test_convective.mjs": "97c5a2a459b81c5e367bd728fb22e64f1515539a684863c283a1543a8072a9f7",
+      "scripts/cloud_sky_proof/scatter-fit.js": "de3cb5d0a49febe58167ab6bf4bbf3393505bd9b653b28aa866ad48d39691808",
+      "scripts/cloud_sky_proof/validate_deep_sun.py": "9e8a37db2701e772151dc572d3c5311bdd71a637512f54fa51a0d45382195aa0",
+      "scripts/cloud_sky_proof/dense_light_reference.py": "2a4543fac62525327dbe43a74140fa0cea842d576fcbbd5d0f772e76500b2dd6",
+      "scripts/cloud_sky_proof/clock.js": "e4189fe1afd035c3647efd49124f03bf186812aade37f4908bef0d99c350e582",
+      "scripts/cloud_sky_proof/convective.js": "6852d010498d444a10a430c5349b5cb3a655a19e7aacf56681ace4bdacbf3a0f",
+      "scripts/cloud_sky_proof/prepared-cu.js": "40a62b37fe55f31086416322f9665703441c4ca97619bfff6e74cc4c043aef78",
+      "scripts/cloud_sky_proof/test_scatter_profile.py": "19e47463eb291bda7faf479e08135c09076ea7b9ee187f5ee8f690bcb251fb09",
+      "scripts/cloud_sky_proof/test_deep_light_reference.py": "eb4adfc6235f66413d221bf4a9c74dafd4475c580bef0da92795c519a1deac45",
+      "scripts/cloud_sky_proof/scatter-fit.wgsl": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01",
+      "scripts/cloud_sky_proof/prepared_support.py": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+      "scripts/cloud_sky_proof/deep-probes.js": "0b7483ec4ee53ee6db226d52f5e5a50ea1fc224331f795a396ae387291885792",
+      "scripts/cloud_sky_proof/cu-preview.wgsl": "197185242415bcc30a98b3b4a4b543b6c7335ba21f2fd93c1c453138bdf51882",
+      "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+      "scripts/cloud_sky_proof/cook_scatter_profile.py": "04fa89c76e435bbeb4af266d692a7ee4d089b3be9ea98ea5f7a6b4ea5d97d347",
+      "scripts/cloud_sky_proof/fit-probes.js": "0f87c580079fefe00455118614adba8d49fb1b256a3270b4f2fe4a6119842776",
+      "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+      "scripts/cloud_sky_proof/deep-sun.js": "9067b62a7f518d8e57a3cc37056c2126e950bb1cb5a33434ecf35db3eeccd637",
+      "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+      "scripts/cloud_sky_proof/cu.html": "07e108313d40ec299104887235c06b946659435de06a3fda343d69945d9449b6",
+      "scripts/cloud_sky_proof/serve.py": "1058597db63bb94927f293ab4c771c368e2180178a1c3e5175e79134738a93b1",
+      "scripts/cloud_sky_proof/deep-sun.wgsl": "a887cb736999c87a8cdcf1df291bdcdc9363d9658b5ad3fe82c582a469da5f81",
+      "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+      "scripts/cloud_sky_proof/packing-proof.js": "b030f8cd951bf9495c2e982a44849b88cb09db660e5b0cc8f856c2d8d64cca35",
+      "scripts/cloud_sky_proof/test_validate_deep_sun.py": "8e76a79f90e694404779a8741b8657b15ae6aac9ee4b4d4b6964781eeab5e659",
+      "scripts/cloud_sky_proof/deep_light_reference.py": "7cf11972b80f75a6b455f1a095c87a1c6fa4e980e632de061df246ae94fe9ee2",
+      "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "scripts/cloud_sky_proof/test_clock.mjs": "245cfa5e849f49686a8d2621db22419b41c8af41621330c52489fe124cd0e808",
+      "scripts/cloud_sky_proof/test_resource_lifecycle.mjs": "91ab81d7f1a15b1b842058af73daf975463c61dbe77ffc27dda6acbf079300b9",
+      "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+      "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+      "scripts/cloud_sky_proof/prepared-field-probes.js": "58b8ac0edafd18bee91a9a585245327336fd5f9b36e76d2797c2f31e7eee3277",
+      "scripts/cloud_sky_proof/test_air_reference.py": "3e4b35a52b5603a0a7139a4f45a08697fff2c35145c1ad54c4200c1e6b9e2250",
+      "scripts/cloud_sky_proof/cu-preview.js": "a0824ac0069b16c931cc1f2afbee456eac7470cad38b7721f79d1f34bfd71cd0",
+      "scripts/cloud_sky_proof/convective-hierarchy.js": "d3d124cb3cfd42ed93405826f1abded8042c696bb4fd276340f140d4f3d39e3c",
+      "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+      "scripts/cloud_sky_proof/scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+      "scripts/cloud_sky_proof/air_reference.py": "00e8923e88d30e6f45fc0dbdc394e1352319d53657ecf9e3079e9cfe8ed9b64e",
+      "scripts/cloud_sky_proof/analyse_checkpoint.py": "7bcaf89bb37af883fc616ffd6f0b44c3d7a67c2fd93cedc734d6689f808fdd6e",
+      "scripts/cloud_sky_proof/cu-source.js": "8e6bdddd6c4ad1a09acfd6de32cf85dcafe31e64d8329280b6b50fe1478f2722",
+      "scripts/cloud_sky_proof/test_prepared_support.py": "a0cd295057d0dd934e313405e1acb1d7105fb013593e9386b3a64b2e1b2a454e",
+      "scripts/cloud_sky_proof/test_hierarchy.mjs": "d9d4924fd86624b95c18128741f63d43c4ae63a05bff1872a704d05e36f16a39",
+      "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+      "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/A.f32": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/profile.json": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/axes.f32": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+      "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/cloudclip.json": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/density.bin": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd"
+    },
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "host": {
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "dpr": 2,
+      "canvas": [
+        1280,
+        720
+      ],
+      "url": "http://localhost:8143/scripts/cloud_sky_proof/cu.html",
+      "prepared_options": {
+        "crop": true,
+        "specialize128": true
+      },
+      "visibility": "visible"
+    }
+  }
+}
