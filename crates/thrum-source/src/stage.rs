@@ -13,8 +13,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use sha2::{Digest, Sha256};
 
 use crate::budget::{
-    BudgetError, Limits, SourceWriterWindow, StageBudget, create_private_directory,
-    ensure_directory,
+    BudgetError, Limits, SourceSpacePlan, SourceWriterWindow, StageBudget,
+    create_private_directory, ensure_directory,
 };
 use crate::{InventoryError, SourcePath, scan_declared_tree};
 
@@ -188,7 +188,20 @@ pub fn stage_declared_tree(
     project_root: &Path,
     declared: &[SourcePath],
 ) -> Result<StagedTree, StageError> {
-    stage_declared_tree_with(project_root, declared, Limits::V1, |_| {})
+    stage_declared_tree_with_plan(project_root, declared, SourceSpacePlan::DEFAULT)
+}
+
+/// Stage a declared tree under a caller-selected native space plan.
+///
+/// A plan permits early refusal and live free-space checks. It cannot promise
+/// a physical peak or an accepted source root; a later durable store owns
+/// SQLite failures, authenticated lineage and root/outcome publication.
+pub fn stage_declared_tree_with_plan(
+    project_root: &Path,
+    declared: &[SourcePath],
+    plan: SourceSpacePlan,
+) -> Result<StagedTree, StageError> {
+    stage_declared_tree_with(project_root, declared, plan.into(), |_| {})
 }
 
 pub(crate) fn stage_declared_tree_with(
@@ -405,13 +418,17 @@ mod tests {
         }
     }
 
-    fn small_limits() -> Limits {
-        Limits {
-            main: 2 * 1024 * 1024 * 1024,
-            wal: 4 * 1024 * 1024,
-            temporary: 16 * 1024 * 1024,
-            free_floor: 0,
+    fn small_plan() -> SourceSpacePlan {
+        SourceSpacePlan {
+            main_target_bytes: 2 * 1024 * 1024 * 1024,
+            wal_stop_bytes: 4 * 1024 * 1024,
+            temporary_target_bytes: 16 * 1024 * 1024,
+            free_headroom_bytes: 0,
         }
+    }
+
+    fn small_limits() -> Limits {
+        small_plan().into()
     }
 
     fn paths() -> Vec<SourcePath> {
@@ -482,17 +499,17 @@ mod tests {
         fixture.write("project.json", b"{}");
         fixture.write("scenes/main.scene.json", b"first");
         fixture.write("src/game.rs", b"fn game() {}");
-        let refused_limits = Limits {
-            temporary: 0,
-            ..small_limits()
+        let refused_plan = SourceSpacePlan {
+            temporary_target_bytes: 0,
+            ..small_plan()
         };
         assert!(matches!(
-            stage_declared_tree_with(&fixture.0, &paths(), refused_limits, |_| {}),
+            stage_declared_tree_with_plan(&fixture.0, &paths(), refused_plan),
             Err(StageError::Budget(BudgetError::TemporaryLimit))
         ));
         assert!(!fixture.0.join(".engine/staging").exists());
 
-        let prior = stage_declared_tree_with(&fixture.0, &paths(), small_limits(), |_| {}).unwrap();
+        let prior = stage_declared_tree_with_plan(&fixture.0, &paths(), small_plan()).unwrap();
         let mut inserted = false;
         let changed = stage_declared_tree_with(&fixture.0, &paths(), small_limits(), |_| {
             if !inserted {

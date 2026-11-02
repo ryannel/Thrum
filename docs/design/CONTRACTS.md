@@ -321,8 +321,10 @@ Apply-back explicitly merges marked authored fields against play base and curren
 internals and earned inventory are excluded. Stopping discards unretained test state, not authored files or retained saves.
 
 Retain the exact products or qualified input/toolchain closure required by supported source/save/release roots.
-Publication, readers and collection share pin/lease rules so a new root cannot reference collected bytes. Reserve old
+Publication, readers and collection share pin/lease rules so a new root cannot reference collected bytes. Plan old
 valid data, candidate writes, retained restore closure and headroom before acceptance, counting shared content once.
+Configurable native disk thresholds guide early refusal and WAL backpressure; they are not hard physical caps. A real
+space fault keeps the prior root selected unless the atomic root/outcome transaction already committed.
 Automatic cleanup cannot delete unique masters, selected revisions or another agent's live work. An evictable asset
 cache is not a durable save. Browser runtime save durability/quota/export and native guarantees are declared separately;
 full browser authoring is outside the initial SDK. Unsupported storage loss is diagnosed, never repaired with invented state.
