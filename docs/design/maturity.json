@@ -411,6 +411,10 @@
       "i2a_root_transaction_kill": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-ROOT-KILL.md",
         "scope": "A local child process is killed after root-generation and retry-outcome SQL writes but before SQLite commit. An independent reader and post-kill reopen see the old generation and no new outcome; the same request then commits both and survives reopen. This is one test-only open-transaction interruption, not a power-loss flush proof, full candidate recovery, physical reserve or production API."
+      },
+      "i2a_game_candidate_root": {
+        "evidence": "../evidence/i2a/SOURCE-GAME-CANDIDATE-ROOT.md",
+        "scope": "One five-file test candidate carries a game-owned descriptor, its immutable history, a game record with optional exact JSON bytes and a required local scene reference through validated staging and SQLite root/outcome publication. A/B caption edit, reopened exact game bytes, same-token retry and invalid-reference refusal pass. Local tiny edit-to-root timing is recorded; editor application, multi-schema/external dependency closure, GC pins, physical bound, cook/run consumer and production acceptance remain open."
       }
     },
     {

@@ -21,6 +21,7 @@ use crate::history_json::{
 };
 use crate::manifest_json::{ManifestDecodeError, decode_manifest_jcs};
 use crate::registry_stage::{StagedCandidate, StagedRegistryError, validate_staged_candidate};
+use crate::schema_json::parse_schema_descriptor;
 use crate::stage::stage_declared_tree_with;
 use crate::{ManifestEntry, ManifestError, SourcePath, StageError, TreeManifest};
 
@@ -2081,6 +2082,107 @@ fn minimal_source_stage(fixture: &Fixture, label: &str) -> crate::StagedTree {
     .unwrap()
 }
 
+fn game_source_stage(fixture: &Fixture, caption: &str, game_scene_id: &str) -> crate::StagedTree {
+    const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    const GAME_ID: &str = "4a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    const SCHEMA_ID: &str = "5a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    const HISTORY_ID: &str = "6a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let root = fixture.source_root();
+    for directory in ["records", "scenes", "schemas"] {
+        fs::create_dir_all(root.join(directory)).unwrap();
+    }
+    fs::write(
+        root.join("project.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":LINEAGE_PROJECT_ID,"type":"core.project","schema":2,
+            "fields":{
+                "project.format":1,
+                "project.records":["records/marker.record.json","scenes/main.scene.json"],
+                "project.schemas":["schemas/marker.schema.json"],
+                "project.registryHistory":"schemas/history.registry.json",
+                "project.entryScenes":[SCENE_ID]
+            }
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        root.join("records/marker.record.json"),
+        format!(
+            "{{\"id\":\"{GAME_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.caption\":{},\"marker.scene\":\"{game_scene_id}\",\"x.game.marker.notes\":{{\"escaped\":\"\\u0061\", \"list\":[1,  2]}}}}}}",
+            serde_json::to_string(caption).unwrap()
+        ),
+    )
+    .unwrap();
+    fs::write(
+        root.join("scenes/main.scene.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":SCENE_ID,"type":"core.scene","schema":1,"fields":{}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let schema = serde_json::to_vec(&serde_json::json!({
+        "id":SCHEMA_ID,"type":"core.schema","schema":1,
+        "fields":{
+            "schema.targetType":"game.marker","schema.targetVersion":1,
+            "schema.fields":[
+                {"id":"marker.caption","kind":"text","presence":"optional","maxUtf8Bytes":1024},
+                {"id":"marker.scene","kind":"record-ref","presence":"required","targetType":"core.scene","resolution":"required"}
+            ],
+            "schema.optionalExtensionPrefix":"x.game.marker."
+        }
+    }))
+    .unwrap();
+    fs::write(root.join("schemas/marker.schema.json"), &schema).unwrap();
+    let descriptor = parse_schema_descriptor(&schema).unwrap();
+    let hex = |hash: &[u8; 32]| {
+        let mut text = String::with_capacity(64);
+        for byte in hash {
+            use std::fmt::Write as _;
+            write!(&mut text, "{byte:02x}").unwrap();
+        }
+        text
+    };
+    fs::write(
+        root.join("schemas/history.registry.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":HISTORY_ID,"type":"core.registry-history","schema":1,
+            "fields":{
+                "registry.fields":[
+                    {"typeId":"game.marker","fieldId":"marker.caption","signature":hex(descriptor.fields()[0].signature()),"retired":false},
+                    {"typeId":"game.marker","fieldId":"marker.scene","signature":hex(descriptor.fields()[1].signature()),"retired":false}
+                ],
+                "registry.versions":[
+                    {"typeId":"game.marker","targetVersion":1,"definitionHash":hex(descriptor.definition_hash())}
+                ]
+            }
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let paths = [
+        "project.json",
+        "records/marker.record.json",
+        "scenes/main.scene.json",
+        "schemas/history.registry.json",
+        "schemas/marker.schema.json",
+    ]
+    .map(|path| SourcePath::parse(path).unwrap());
+    stage_declared_tree_with(
+        &root,
+        &paths,
+        Limits {
+            main: 2 * GIB,
+            wal: 4 * MIB,
+            temporary: 64 * MIB,
+            free_floor: 0,
+        },
+        |_| {},
+    )
+    .unwrap()
+}
+
 #[test]
 fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
     let fixture = Fixture::new();
@@ -2191,6 +2293,98 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
         )
         .unwrap();
     assert!(first_complete);
+}
+
+#[test]
+fn game_schema_candidate_reaches_root_with_exact_optional_bytes() {
+    const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    const GAME_ID: &str = "4a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = game_source_stage(&fixture, "first marker", SCENE_ID);
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    assert_eq!(first.records().required_edges(), 1);
+    assert_eq!(first.records().games()[0].summary().id(), GAME_ID);
+    let (_, first_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+
+    let second_stage = game_source_stage(&fixture, "second marker", SCENE_ID);
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let manifest = second.provisional_manifest().unwrap();
+    let game = manifest
+        .files()
+        .iter()
+        .find(|file| file.record_identity() == Some((GAME_ID, "game.marker")))
+        .unwrap();
+    assert_eq!(game.record_identity(), Some((GAME_ID, "game.marker")));
+    let (generation, second_revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    assert_eq!(generation, 2);
+    assert_ne!(first_revision, second_revision);
+    drop(store);
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    let game_bytes = {
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .unwrap();
+        let bytes = read_complete_blob(&tx, game.blob_identity().1, MAX_HISTORY_BYTES).unwrap();
+        tx.commit().unwrap();
+        bytes
+    };
+    assert_eq!(
+        game_bytes,
+        fs::read(
+            second_stage
+                .test_directory()
+                .join("records/marker.record.json")
+        )
+        .unwrap()
+    );
+    assert!(game_bytes.windows(6).any(|window| window == b"\\u0061"));
+    assert_eq!(
+        store
+            .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+            .unwrap(),
+        (2, second_revision)
+    );
+
+    let invalid_stage = game_source_stage(&fixture, "invalid target", LINEAGE_PROJECT_ID);
+    assert!(matches!(
+        validate_staged_candidate(&invalid_stage, &[]),
+        Err(crate::registry_stage::StagedCandidateError::Records(
+            crate::registry_stage::StagedRecordError::UnresolvedGameScene { .. }
+        ))
+    ));
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+}
+
+#[test]
+#[ignore = "local game-schema candidate edit-to-root cost probe"]
+fn measure_game_schema_candidate_edit_to_root() {
+    const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = game_source_stage(&fixture, "first marker", SCENE_ID);
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+
+    let start = Instant::now();
+    let second_stage = game_source_stage(&fixture, "second marker", SCENE_ID);
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let (generation, _) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    assert_eq!(generation, 2);
+    eprintln!(
+        "game_schema_candidate_edit_to_root files=5 elapsed_ms={:.3}",
+        start.elapsed().as_secs_f64() * 1000.0
+    );
 }
 
 #[test]
