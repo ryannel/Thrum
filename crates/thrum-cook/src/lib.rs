@@ -1455,10 +1455,42 @@ mod tests {
         let cargo_home = fs::canonicalize(cargo_home).unwrap();
         let toolchain =
             fs::canonicalize(Path::new(env!("CARGO")).parent().unwrap().parent().unwrap()).unwrap();
+        let developer = std::env::var_os("DEVELOPER_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                let selected = Command::new("/usr/bin/xcode-select")
+                    .arg("-p")
+                    .output()
+                    .unwrap();
+                assert!(selected.status.success());
+                PathBuf::from(String::from_utf8(selected.stdout).unwrap().trim_end())
+            });
+        let developer = if developer.join("Contents/Developer").is_dir() {
+            developer.join("Contents/Developer")
+        } else {
+            developer
+        };
+        let developer = fs::canonicalize(developer).unwrap();
+        let xcrun_path = |args: &[&str]| {
+            let found = Command::new("/usr/bin/xcrun")
+                .env("DEVELOPER_DIR", &developer)
+                .env_remove("SDKROOT")
+                .env_remove("TOOLCHAINS")
+                .args(args)
+                .output()
+                .unwrap();
+            assert!(found.status.success());
+            let path = String::from_utf8(found.stdout).unwrap();
+            let path = fs::canonicalize(path.trim_end()).unwrap();
+            assert!(path.starts_with(&developer));
+            path
+        };
+        let linker = xcrun_path(&["--sdk", "macosx", "--find", "clang"]);
+        let sdk = xcrun_path(&["--sdk", "macosx", "--show-sdk-path"]);
         let profile = output.join("build.sb");
         fs::write(
             &profile,
-            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System\") (subpath \"/usr\") (subpath \"/Library\") (subpath \"/Applications\") (subpath \"/opt\") (subpath \"/private/etc\") (subpath \"/private/var\") (subpath \"/var\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
+            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System\") (subpath \"/usr\") (subpath \"/Library\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"DEVELOPER\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         )
         .unwrap();
         let paths = SandboxPaths {
@@ -1466,12 +1498,18 @@ mod tests {
             output: &output,
             cargo_home: &cargo_home,
             toolchain: &toolchain,
+            developer: &developer,
         };
         let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
             .output()
             .unwrap();
         assert!(!blocked_read.status.success());
+        let blocked_project = sandbox_command(&profile, paths, "/bin/cat")
+            .arg(input.parent().unwrap().parent().unwrap().join("Cargo.toml"))
+            .output()
+            .unwrap();
+        assert!(!blocked_project.status.success());
         let blocked_write = sandbox_command(&profile, paths, "/usr/bin/touch")
             .arg(input.join("should-not-exist"))
             .output()
@@ -1489,6 +1527,21 @@ mod tests {
             }
         }
         let mut command = sandbox_command(&profile, paths, env!("CARGO"));
+        let rustc_version = Command::new(toolchain.join("bin/rustc"))
+            .arg("-vV")
+            .output()
+            .unwrap();
+        assert!(rustc_version.status.success());
+        let rustc_version = String::from_utf8(rustc_version.stdout).unwrap();
+        let host = rustc_version
+            .lines()
+            .find_map(|line| line.strip_prefix("host: "))
+            .unwrap();
+        assert!(host.ends_with("-apple-darwin"));
+        let linker_variable = format!(
+            "CARGO_TARGET_{}_LINKER",
+            host.to_ascii_uppercase().replace('-', "_")
+        );
         command
             .env_clear()
             .env("HOME", cargo_home.parent().unwrap())
@@ -1499,6 +1552,8 @@ mod tests {
                 format!("{}:/usr/bin:/bin", toolchain.join("bin").display()),
             )
             .env("RUSTFLAGS", "")
+            .env(linker_variable, linker)
+            .env("SDKROOT", sdk)
             .env("LC_ALL", "C")
             .env("TMPDIR", output.join("tmp"));
         command
@@ -1515,13 +1570,13 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
-    #[cfg(target_os = "macos")]
     #[derive(Clone, Copy)]
     struct SandboxPaths<'a> {
         input: &'a Path,
         output: &'a Path,
         cargo_home: &'a Path,
         toolchain: &'a Path,
+        developer: &'a Path,
     }
 
     #[cfg(target_os = "macos")]
@@ -1542,6 +1597,8 @@ mod tests {
             .arg(parameter("CARGO_HOME", paths.cargo_home))
             .arg("-D")
             .arg(parameter("TOOLCHAIN", paths.toolchain))
+            .arg("-D")
+            .arg(parameter("DEVELOPER", paths.developer))
             .arg("-f")
             .arg(profile)
             .arg(program);
