@@ -311,6 +311,10 @@
       "i2a_registry_history_record": {
         "evidence": "../evidence/i2a/SOURCE-REGISTRY-HISTORY.md",
         "scope": "Direct bounded one-record core.registry-history decoding with sorted at-most-100,000 field and 1,024 version entries, strict lowercase hashes and local dense parse/RSS probe; no staged declaration/path verification, active-descriptor consistency, authenticated predecessor or durable admission."
+      },
+      "i2a_registry_consistency": {
+        "evidence": "../evidence/i2a/SOURCE-REGISTRY-CONSISTENCY.md",
+        "scope": "Pure linear allocation-free join of parsed active descriptors to parsed source field and type-version history with missing/retired/changed/orphan rejection fixtures; no staged-tree declaration/byte verification, authenticated prior history, game-record closure or durable admission."
       }
     },
     {
