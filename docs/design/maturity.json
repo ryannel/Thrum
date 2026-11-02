@@ -132,7 +132,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "9350216c237cc8530769706c7fdaa73243326ff01fafbbb7804c9cfa2817c41d",
+      "current_design_sha256": "996f74b7e30d4b36471769b9c6d784114d15b582fb373d55a3f12a1072b849f0",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -148,7 +148,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+        "BASELINE-SPEC.md": "57af4a075baf1589dabd6235587966cdaf07440c34a43111f21392d9d8e671b6",
         "FOUNDATION-SPEC.md": "3b9dd4867f02156dfe638541968e1f26cfe447bd89244c32b5166bfaa59c120e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -211,7 +211,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+        "BASELINE-SPEC.md": "57af4a075baf1589dabd6235587966cdaf07440c34a43111f21392d9d8e671b6",
         "FOUNDATION-SPEC.md": "3b9dd4867f02156dfe638541968e1f26cfe447bd89244c32b5166bfaa59c120e",
         "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f"
       },
@@ -1539,7 +1539,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8"
+        "BASELINE-SPEC.md": "57af4a075baf1589dabd6235587966cdaf07440c34a43111f21392d9d8e671b6"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Trace/evidence/package schemas, scoped validators and exact platform packaging steps."
@@ -1609,7 +1609,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "b3786975abae244a6ff2c7c89e67d906cceae33548a60e3a81588cdf4aaebe81",
+  "contract_sha256": "c145526f3d8cd31eb9b82635bf32c651da614f4183df300963e4f63d00473572",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -2354,9 +2354,9 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
     "contract_revision": "C4",
-    "contract_sha256": "b3786975abae244a6ff2c7c89e67d906cceae33548a60e3a81588cdf4aaebe81",
+    "contract_sha256": "c145526f3d8cd31eb9b82635bf32c651da614f4183df300963e4f63d00473572",
     "specifications": {
-      "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+      "BASELINE-SPEC.md": "57af4a075baf1589dabd6235587966cdaf07440c34a43111f21392d9d8e671b6",
       "FOUNDATION-SPEC.md": "3b9dd4867f02156dfe638541968e1f26cfe447bd89244c32b5166bfaa59c120e",
       "RENDER-SPEC.md": "3d0626a7298d9ce26c0cd2955207f634e23f86a6b8c29f44660a07f676a9738f",
       "PLAY-ENVIRONMENT-SPEC.md": "288fbc73c6254085aae8c1596d1a96b37d5a56de54d94caddd1506b56ea96daa",
@@ -2731,11 +2731,11 @@
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
       "ARCHITECTURE-BRIEF.md": "0fc5254679ce0cf88182adf315ec653f57af241e823fb3a38fda687980632a60",
       "ARCHITECTURE-DECISIONS.md": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
-      "BASELINE-SPEC.md": "16a139d47d9c01e43921c381bf443cb22e17dba469df910c5a4e5972da837cf8",
+      "BASELINE-SPEC.md": "57af4a075baf1589dabd6235587966cdaf07440c34a43111f21392d9d8e671b6",
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "f744a7b0a323247c7fb19222ddb26a2b578d644728d0a8ffd5a0683a97e9e2af",
-      "CONTRACTS.md": "b3786975abae244a6ff2c7c89e67d906cceae33548a60e3a81588cdf4aaebe81",
+      "CONTRACTS.md": "c145526f3d8cd31eb9b82635bf32c651da614f4183df300963e4f63d00473572",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -2763,7 +2763,7 @@
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "8f33be4e88119ec48eeee6cb23576ccc03f92b5764633be52fce3a0781835c1f",
       "modules/NETWORKING.md": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
-      "modules/PLATFORM-RUNTIME.md": "9350216c237cc8530769706c7fdaa73243326ff01fafbbb7804c9cfa2817c41d",
+      "modules/PLATFORM-RUNTIME.md": "996f74b7e30d4b36471769b9c6d784114d15b582fb373d55a3f12a1072b849f0",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
       "modules/TOOLS-DELIVERY.md": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
@@ -2845,7 +2845,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "005919aaf62f657b0eb83908f7be69b5bef6c3c33052ddabba2ecd676d37c233",
+    "design_sha256": "2da3c0502586c6032e680736d42c4781f2dce6ed166d36d043e551c919c33c45",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2862,7 +2862,8 @@
     "pending_storage_evidence": "../evidence/i1-headless/PENDING-STORAGE.md",
     "due_scratch_evidence": "../evidence/i1-headless/DUE-SCRATCH.md",
     "publication_memory": {
-      "design": "selected_for_precommit_byte_admission",
+      "design": "optional_bounded_profile; general_hard_process_cap_retired_in_favor_of_measured_low_footprint_and_pressure_response",
+      "direction_evidence": "../evidence/i1-headless/MEMORY-DIRECTION-2026-11-02.md",
       "implementation": "partial_charged_authority_snapshots_inline_lease_directory_precharged_lease_floor_charged_peer_registry_pending_and_completed_due_scratch_baseline_live_group_columns_finite_replica_index_peer_progress_and_charged_baseline_result_keys_sealed_host_idle_delivery_floor_bounded_peer_join_fixed_slot_future_output_credits_precharged_fixed_slot_world_change_journal_free_list_slots_dirty_flags_and_pinned_id_index_inline_host_schedule_protected_edit_and_baseline_gates_rule_output_context_and_partitioned_future_payload_credits_and_sorted_replica_event_and_live_change_validation_prepared_rule_immutable_payloads_and_value_admission_only",
       "functional_validation": "pool_input_history_prepared_rule_terminal_fault_charged_authority_reader_release_multiplayer_structural_peak_record_snapshot_replica_lifetime_closed_action_output_changed_only_progress_lease_compaction_floor_contention_pending_reconnect_due_retry_completed_history_overlap_full_gap_sorted_peer_registry_join_two_peer_baseline_live_group_finite_replica_event_link_charged_progress_gap_atomic_retry_capacity_release_sorted_live_change_order_retry_baseline_key_tight_pool_duplicate_epoch_gap_host_peer_join_unpublished_capacity_idle_floor_result_callback_floor_and_fixed_slot_future_credit_contention_reader_retry_dirty_page_gap_join_release_and_fixed_slot_journal_activation_order_despawn_free_generation_foreign_pool_and_retained_world_empty_spare_index_exact_refusal_release_inline_schedule_vector_edit_baseline_control_cost_max_sixteen_input_page_contention_two_peer_variable_outputs_delayed_output_credit_old_payload_reader_cumulative_budget_context_swap_and_combined_refusal_tests_only",
       "performance_measurement": "local_charged_authority_idle_batch_before_after_lease_floor_pending_queue_small_large_complete_due_scratch_baseline_build_clone_replica_admission_live_group_steady_idle_changed_tick_authority_replica_and_submit_callback_ack_batches_before_after_callback_floor_two_peer_completed_history_peer_registry_isolated_one_event_replica_charged_peer_progress_changed_result_and_many_change_sorted_validation_and_256_result_baseline_admission_comparisons_fixed_slot_protected_changed_callback_sixteen_change_and_paired_world_index_backend_protected_inline_schedule_and_protected_variable_output_complete_callback_comparisons_idle_and_changed_only_replica_one_edit_two_edit_rule_page_record_clone_record_validation_and_standalone_full_shape_group_clone_paths_only; whole_byte_gate_not_run",

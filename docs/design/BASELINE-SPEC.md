@@ -81,7 +81,7 @@ reported separately. These are content constraints, not permission to discard a 
 ## Budget allocation and failure rules
 
 The platform document remains the sole numeric whole-frame/residency envelope: desktop CPU 5 ms/GPU 10 ms at 60 Hz,
-browser CPU 8 ms/GPU 16 ms and mobile CPU 7 ms/GPU 16 ms at 30 Hz; 3 GiB/512 MiB/1 GiB respective memory planning caps.
+browser CPU 8 ms/GPU 16 ms and mobile CPU 7 ms/GPU 16 ms at 30 Hz; 3 GiB/512 MiB/1 GiB respective memory planning targets, not universal runtime hard limits.
 CPU includes simulation ticks due that callback, extraction, UI, audio submission, networking and mandatory platform
 work. GPU includes every active view and shadow/media pass. Parallel work is counted in both work and critical-path
 reports; CPU+GPU arithmetic is not a proof of frame time.
