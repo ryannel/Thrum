@@ -347,6 +347,10 @@
       "i2a_dense_candidate_cost": {
         "evidence": "../evidence/i2a/SOURCE-CANDIDATE-MEMORY.md",
         "scope": "Isolated local macOS arm64 runs measure a 4,096-record one-descriptor candidate with full 100,000-field/1,024-version carried history and 8.3 MiB opaque game record, plus a separate 256-descriptor staged registry and direct game parse. Peak process RSS and validation elapsed are reported; this does not prove a physical allocation reservation, authenticated prior, 65,536-edge peak or multi-schema game dispatch."
+      },
+      "i2a_sqlite_transaction_proof": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-TXN.md",
+        "scope": "Test-only native SQLite file store verifies selected page, incremental-vacuum, WAL, FULL synchronous and main-page-count settings, then tests one atomic generation/retry-outcome transaction across reopen, same/different token, stale generation and injected outcome failure. It stores supplied digest bytes only; no verified blob closure, authenticated predecessor, physical reserve, crash/process-kill proof or accepted-source API exists."
       }
     },
     {

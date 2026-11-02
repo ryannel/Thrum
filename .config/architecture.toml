@@ -61,6 +61,12 @@ license = "MIT OR Apache-2.0"
 purpose = "Cross-platform native available-space, allocation-granularity and cooperative lock probes before source staging"
 target_cost = "Native tooling only; sync OS filesystem bindings, no game callback or portable core dependency"
 
+[external_dependencies.rusqlite]
+requirement = "=0.40.2"
+license = "MIT"
+purpose = "Test the selected native SQLite root/outcome transaction and reopen behavior before admission integration"
+target_cost = "Native tooling tests only; bundled SQLite C build with no release source-tooling, portable core or game-callback dependency yet"
+
 [external_dependencies.serde_json]
 requirement = "=1.0.154"
 license = "MIT OR Apache-2.0"
