@@ -14,12 +14,12 @@ The unsigned app is written under `target/i1-mobile-ios-sim/ThrumI1.app`. Signin
 
 ## Android debug package
 
-With Android SDK, NDK, Gradle 8.13, JDK 17, the pinned Rust Android target and offline Cargo cache:
+With Android SDK, NDK 28.2.13676358, Gradle 8.13, JDK 17, the pinned Rust Android target and offline Cargo cache:
 
 ```sh
 bash examples/i1-mobile-game/android/build-debug.sh
 ```
 
-Set `ANDROID_HOME` and `ANDROID_NDK_HOME`; the NDK's `aarch64-linux-android-clang` and `aarch64-linux-android-clang++` must be on `PATH`, and the target linker must be configured for Rust. The script builds `libi1_mobile_game.so`, places it under the ignored Gradle build directory, and assembles a debug APK. The Java Activity uses the `android-activity` 0.6.1 matching GameActivity 4.4.0 dependency and forwards foreground transitions through JNI. This package has not been assembled or run locally yet.
+Set `ANDROID_HOME`; `ANDROID_NDK_HOME` may override the selected SDK NDK path. The script selects the NDK LLVM toolchain and API 28 Rust target linker, builds `libi1_mobile_game.so`, places it under the ignored Gradle build directory, and assembles a debug APK. The Java Activity uses the `android-activity` 0.6.1 matching GameActivity 4.4.0 dependency and forwards foreground transitions through JNI. This package has not been assembled or run locally yet.
 
 The I1 shell is local play only. Later multiplayer clients must leave the remote authority running independently of the phone surface.
