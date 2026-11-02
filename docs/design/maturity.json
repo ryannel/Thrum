@@ -419,6 +419,10 @@
       "i2a_root_read_pin": {
         "evidence": "../evidence/i2a/SOURCE-ROOT-READ-PIN.md",
         "scope": "A test-only current-root reader registers one durable revision pin in a short transaction before out-of-transaction manifest/history decode, retains it across root advance/reopen, and releases it after success or validation refusal. Failed release under writer contention retains an in-process ID for next-read or explicit retry; non-reused IDs avoid stale cleanup. Local 100,000-entry read cost is recorded. No collector enforces transitive closure, abandoned-pin recovery, staged pin or production admission yet."
+      },
+      "i2a_gc_mark_probe": {
+        "evidence": "../evidence/i2a/SOURCE-GC-MARK-PROOF.md",
+        "scope": "A test-only mark snapshots the selected root and durable read pins, decodes each verified canonical manifest outside a long SQLite read transaction, and records unreachable complete-blob candidates only if a root/pin epoch still matches. Tests cover root advance, release, publication and pin races, plus a 128-candidate refusal limit that preserves old marks. A partial covering index keeps incomplete headers out of the at-most-4,096-complete-blob inventory scan; an 8 MiB WAL allowance remains heuristic. No deleting state or chunk removal, staged/save/build/release owner pins, abandoned-pin recovery, scalable batching or production GC exists."
       }
     },
     {

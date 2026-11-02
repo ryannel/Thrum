@@ -1,8 +1,9 @@
 //! Isolated SQLite transaction proof for the later native source store.
 //!
-//! Test-only: the fixtures do not bind a fully validated candidate, physical
-//! reservation or GC pins, so this is not an accepted-source admission API.
+//! Test-only: the fixtures do not bind a physical reservation or complete GC
+//! retention/deletion protocol, so this is not an accepted-source admission API.
 
+use std::collections::HashSet;
 use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
@@ -32,6 +33,8 @@ const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
 const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 const SMALL_BATCH_FILE_BYTES: u64 = 4 * 1024;
+const GC_MARK_SCAN_BLOBS: usize = 4096;
+const GC_MARK_CANDIDATES: usize = 128;
 const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
 const MIB: u64 = 1024 * 1024;
 const GIB: u64 = 1024 * MIB;
@@ -87,6 +90,8 @@ enum ProofError {
     CorruptRootBlob,
     CorruptOutcome,
     MissingRootPin,
+    StaleGcEpoch,
+    GcMarkLimit,
     Manifest(ManifestDecodeError),
     History(HistoryError),
     Lineage(CarriedHistoryError),
@@ -483,12 +488,22 @@ impl RootTransactionProof {
                generation INTEGER NOT NULL,
                revision BLOB NOT NULL
              );
+             CREATE TABLE IF NOT EXISTS gc_epoch (
+               id INTEGER PRIMARY KEY CHECK (id=1),
+               generation INTEGER NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS gc_mark (
+               hash BLOB PRIMARY KEY,
+               epoch INTEGER NOT NULL
+             );
              CREATE TABLE IF NOT EXISTS blob_header (
                hash BLOB PRIMARY KEY,
                length INTEGER NOT NULL,
                chunk_count INTEGER NOT NULL,
                state INTEGER NOT NULL CHECK (state IN (0, 1))
              );
+             CREATE INDEX IF NOT EXISTS complete_blob_hash
+               ON blob_header (hash) WHERE state=1;
              CREATE TABLE IF NOT EXISTS blob_chunks (
                hash BLOB NOT NULL,
                chunk_index INTEGER NOT NULL,
@@ -497,6 +512,10 @@ impl RootTransactionProof {
                FOREIGN KEY (hash) REFERENCES blob_header(hash)
              );
              INSERT OR IGNORE INTO root (id, generation, revision) VALUES (1, 0, NULL);",
+        )?;
+        conn.execute(
+            "INSERT OR IGNORE INTO gc_epoch (id, generation) VALUES (1, 0)",
+            [],
         )?;
         let page_size: i64 = conn.query_row("PRAGMA page_size", [], |row| row.get(0))?;
         let auto_vacuum: i64 = conn.query_row("PRAGMA auto_vacuum", [], |row| row.get(0))?;
@@ -588,6 +607,7 @@ impl RootTransactionProof {
             "INSERT INTO read_pin (generation, revision) VALUES (?1, ?2)",
             params![generation, revision.as_slice()],
         )?;
+        tx.execute("UPDATE gc_epoch SET generation=generation+1 WHERE id=1", [])?;
         let id = tx.last_insert_rowid();
         tx.commit()?;
         Ok(RootReadPin {
@@ -619,6 +639,7 @@ impl RootTransactionProof {
         if tx.execute("DELETE FROM read_pin WHERE id=?1", params![id])? != 1 {
             return Err(ProofError::MissingRootPin);
         }
+        tx.execute("UPDATE gc_epoch SET generation=generation+1 WHERE id=1", [])?;
         tx.commit()?;
         Ok(())
     }
@@ -633,6 +654,119 @@ impl RootTransactionProof {
             }
         }
         Ok(())
+    }
+
+    fn mark_unreachable_probe(&mut self) -> Result<usize, ProofError> {
+        self.mark_unreachable_probe_with(|| {})
+    }
+
+    fn mark_unreachable_probe_with(
+        &mut self,
+        after_snapshot: impl FnOnce(),
+    ) -> Result<usize, ProofError> {
+        let (epoch, roots) = {
+            let tx = self
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Deferred)?;
+            let epoch: i64 =
+                tx.query_row("SELECT generation FROM gc_epoch WHERE id=1", [], |row| {
+                    row.get(0)
+                })?;
+            let mut roots = Vec::new();
+            if let (_, Some(revision)) = root_identity(&tx)? {
+                roots.push(revision);
+            }
+            {
+                let mut statement = tx.prepare("SELECT revision FROM read_pin")?;
+                let mut rows = statement.query([])?;
+                while let Some(row) = rows.next()? {
+                    let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+                        return Err(ProofError::CorruptRootBlob);
+                    };
+                    roots.push(bytes.try_into().map_err(|_| ProofError::CorruptRootBlob)?);
+                }
+            }
+            tx.commit()?;
+            roots.sort_unstable();
+            roots.dedup();
+            (epoch, roots)
+        };
+        let mut reachable = HashSet::new();
+        for revision in roots {
+            reachable.insert(revision);
+            let bytes = {
+                let tx = self
+                    .conn
+                    .transaction_with_behavior(TransactionBehavior::Deferred)?;
+                let bytes = read_complete_blob(&tx, revision, FIRST_PROFILE_MANIFEST_BYTES)?;
+                tx.commit()?;
+                bytes
+            };
+            let manifest = decode_manifest_jcs(&bytes, FIRST_PROFILE_MANIFEST_BYTES)
+                .map_err(ProofError::Manifest)?;
+            if !manifest.dependency_roots().is_empty() {
+                return Err(ProofError::UnsupportedDependencyRoots);
+            }
+            for file in manifest.files() {
+                reachable.insert(file.blob_identity().1);
+            }
+        }
+        // Bound the read-side inventory and the later writer transaction. New
+        // complete blobs staged after this snapshot simply wait for another
+        // mark; a publication or pin change invalidates it below.
+        let candidates = {
+            let tx = self
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Deferred)?;
+            let mut candidates = Vec::new();
+            {
+                let mut scan =
+                    tx.prepare("SELECT hash FROM blob_header WHERE state=1 ORDER BY hash")?;
+                let mut rows = scan.query([])?;
+                let mut scanned = 0;
+                while let Some(row) = rows.next()? {
+                    scanned += 1;
+                    if scanned > GC_MARK_SCAN_BLOBS {
+                        return Err(ProofError::GcMarkLimit);
+                    }
+                    let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+                        return Err(ProofError::BlobMetadataMismatch);
+                    };
+                    let hash: [u8; 32] = bytes
+                        .try_into()
+                        .map_err(|_| ProofError::BlobMetadataMismatch)?;
+                    if !reachable.contains(&hash) {
+                        candidates.push(hash);
+                        if candidates.len() > GC_MARK_CANDIDATES {
+                            return Err(ProofError::GcMarkLimit);
+                        }
+                    }
+                }
+            }
+            tx.commit()?;
+            candidates
+        };
+        after_snapshot();
+        self.ensure_wal_room(8 * MIB)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let current_epoch: i64 =
+            tx.query_row("SELECT generation FROM gc_epoch WHERE id=1", [], |row| {
+                row.get(0)
+            })?;
+        if current_epoch != epoch {
+            return Err(ProofError::StaleGcEpoch);
+        }
+        tx.execute("DELETE FROM gc_mark", [])?;
+        if !candidates.is_empty() {
+            let mut insert = tx.prepare("INSERT INTO gc_mark (hash, epoch) VALUES (?1, ?2)")?;
+            for hash in &candidates {
+                insert.execute(params![hash.as_slice(), epoch])?;
+            }
+        }
+        tx.commit()?;
+        Ok(candidates.len())
     }
 
     fn compare_history_with_current_root(
@@ -1486,6 +1620,7 @@ impl RootTransactionProof {
             "INSERT INTO outcome (epoch, key, request_hash, generation, revision) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![epoch, key, request_hash.as_slice(), next, revision.as_slice()],
         )?;
+        tx.execute("UPDATE gc_epoch SET generation=generation+1 WHERE id=1", [])?;
         after_sql();
         tx.commit()?;
         Ok(next)
@@ -2486,6 +2621,198 @@ fn busy_pin_release_retains_id_until_next_bounded_read() {
     store
         .compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &history)
         .unwrap();
+}
+
+#[test]
+fn gc_mark_keeps_selected_and_pinned_manifest_closures() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "old scene for GC");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let old_manifest = first.provisional_manifest().unwrap();
+    let old_scene = first_stage
+        .files()
+        .iter()
+        .find(|file| file.path().as_str() == "scenes/main.scene.json")
+        .unwrap()
+        .sha256()
+        .to_owned();
+    let (_, old_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+    let pin = store.pin_current_root(1).unwrap();
+    let second_stage = minimal_source_stage(&fixture, "new scene for GC");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let new_manifest = second.provisional_manifest().unwrap();
+    let (_, new_revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    let orphan = b"unpublished source blob";
+    let orphan_hash: [u8; 32] = Sha256::digest(orphan).into();
+    store
+        .stage_blob(&mut orphan.as_slice(), orphan.len() as u64, orphan_hash)
+        .unwrap();
+
+    assert_eq!(store.mark_unreachable_probe().unwrap(), 1);
+    let marked: Vec<Vec<u8>> = {
+        let mut scan = store
+            .conn
+            .prepare("SELECT hash FROM gc_mark ORDER BY hash")
+            .unwrap();
+        scan.query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    assert_eq!(marked, vec![orphan_hash.to_vec()]);
+
+    store.release_root_pin(pin.id).unwrap();
+    let marked_count = store.mark_unreachable_probe().unwrap();
+    let still_reachable: HashSet<[u8; 32]> = std::iter::once(new_revision)
+        .chain(
+            new_manifest
+                .files()
+                .iter()
+                .map(|file| file.blob_identity().1),
+        )
+        .collect();
+    let expected: HashSet<[u8; 32]> = std::iter::once(old_revision)
+        .chain(
+            old_manifest
+                .files()
+                .iter()
+                .map(|file| file.blob_identity().1),
+        )
+        .chain(std::iter::once(orphan_hash))
+        .filter(|hash| !still_reachable.contains(hash))
+        .collect();
+    let marked: HashSet<[u8; 32]> = {
+        let mut scan = store.conn.prepare("SELECT hash FROM gc_mark").unwrap();
+        scan.query_map([], |row| row.get::<_, Vec<u8>>(0))
+            .unwrap()
+            .map(|row| row.unwrap().try_into().unwrap())
+            .collect()
+    };
+    assert!(expected.contains(&old_revision));
+    assert!(expected.contains(&old_scene));
+    assert_eq!(marked_count, expected.len());
+    assert_eq!(marked, expected);
+}
+
+#[test]
+fn gc_mark_refuses_publication_or_pin_change_after_snapshot() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "old selected scene");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+    let orphan = b"preexisting mark";
+    let orphan_hash: [u8; 32] = Sha256::digest(orphan).into();
+    store
+        .stage_blob(&mut orphan.as_slice(), orphan.len() as u64, orphan_hash)
+        .unwrap();
+    assert_eq!(store.mark_unreachable_probe().unwrap(), 1);
+    let second_stage = minimal_source_stage(&fixture, "new selected scene");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    assert!(matches!(
+        store.mark_unreachable_probe_with(|| {
+            let mut publisher = RootTransactionProof::open(&fixture.database()).unwrap();
+            publisher
+                .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+                .unwrap();
+        }),
+        Err(ProofError::StaleGcEpoch)
+    ));
+    let marked: Vec<Vec<u8>> = {
+        let mut scan = store.conn.prepare("SELECT hash FROM gc_mark").unwrap();
+        scan.query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    assert_eq!(marked, vec![orphan_hash.to_vec()]);
+    assert!(matches!(
+        store.mark_unreachable_probe_with(|| {
+            RootTransactionProof::open(&fixture.database())
+                .unwrap()
+                .pin_current_root(2)
+                .unwrap();
+        }),
+        Err(ProofError::StaleGcEpoch)
+    ));
+    assert_eq!(store.mark_unreachable_probe().unwrap(), 3);
+}
+
+#[test]
+fn gc_mark_limits_writer_batch_and_keeps_previous_marks_on_refusal() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let blobs: Vec<[u8; 2]> = (0..=GC_MARK_CANDIDATES)
+        .map(|index| (index as u16).to_le_bytes())
+        .collect();
+    store
+        .stage_small_blob_batch(blobs[..GC_MARK_CANDIDATES].iter().map(|bytes| {
+            let hash: [u8; 32] = Sha256::digest(bytes).into();
+            (hash, bytes.as_slice())
+        }))
+        .unwrap();
+    assert_eq!(store.mark_unreachable_probe().unwrap(), GC_MARK_CANDIDATES);
+    let last = blobs.last().unwrap();
+    let last_hash: [u8; 32] = Sha256::digest(last).into();
+    store
+        .stage_small_blob_batch([(last_hash, last.as_slice())])
+        .unwrap();
+    assert!(matches!(
+        store.mark_unreachable_probe(),
+        Err(ProofError::GcMarkLimit)
+    ));
+    let marks: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM gc_mark", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(marks, GC_MARK_CANDIDATES as i64);
+    let last_marked: bool = store
+        .conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM gc_mark WHERE hash=?1)",
+            params![last_hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(!last_marked);
+}
+
+#[test]
+fn gc_mark_uses_complete_only_index_with_many_incomplete_headers() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    {
+        let tx = store.conn.transaction().unwrap();
+        let mut insert = tx
+            .prepare(
+                "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, 0, 0, 0)",
+            )
+            .unwrap();
+        for index in 0..=GC_MARK_SCAN_BLOBS {
+            let mut hash = [0_u8; 32];
+            hash[..8].copy_from_slice(&(index as u64).to_le_bytes());
+            insert.execute(params![hash.as_slice()]).unwrap();
+        }
+        drop(insert);
+        tx.commit().unwrap();
+    }
+    let plan: String = store
+        .conn
+        .query_row(
+            "EXPLAIN QUERY PLAN SELECT hash FROM blob_header WHERE state=1 ORDER BY hash",
+            [],
+            |row| row.get(3),
+        )
+        .unwrap();
+    assert!(plan.contains("complete_blob_hash"), "{plan}");
+    assert_eq!(store.mark_unreachable_probe().unwrap(), 0);
 }
 
 #[test]
