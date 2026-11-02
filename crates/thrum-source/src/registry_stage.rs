@@ -1470,6 +1470,25 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "local 256-descriptor full provisional candidate cost probe"]
+    fn measure_dense_256_descriptor_candidate() {
+        let (_fixture, stage) = dense_fixture(256);
+        let start = std::time::Instant::now();
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        assert_eq!(candidate.registry().schemas().len(), 256);
+        assert_eq!(candidate.records().games().len(), 1);
+        assert_eq!(candidate.records().required_edges(), 1);
+        let revision = candidate.provisional_manifest().unwrap().revision();
+        std::hint::black_box(revision);
+        eprintln!(
+            "dense_256_candidate files={} copied_bytes={} elapsed={:?}",
+            stage.files().len(),
+            stage.copied_bytes(),
+            start.elapsed()
+        );
+    }
+
+    #[test]
     #[ignore = "local two-buffer maximum history lineage cost probe"]
     fn measure_dense_staged_history_lineage() {
         let (fixture, prior_stage) = dense_fixture(1);
