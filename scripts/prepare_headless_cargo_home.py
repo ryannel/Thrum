@@ -197,43 +197,77 @@ def root_inventory(root):
         raise ValueError("private Cargo inventory requires POSIX no-follow reads")
     if not root.is_absolute() or root.is_symlink() or not root.is_dir():
         raise ValueError("private Cargo home must be an ordinary absolute directory")
+    root = root.resolve(strict=True)
+
     def identity(info):
         return (
             info.st_dev, info.st_ino, info.st_mode, info.st_size,
             info.st_mtime_ns, info.st_ctime_ns,
         )
 
+    nofollow = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+    directory_flags = nofollow | os.O_DIRECTORY
+    records = []
+
+    def visit(directory_fd, parts):
+        with os.scandir(directory_fd) as entries:
+            names = sorted(entry.name for entry in entries)
+        for name in names:
+            relative_name = "/".join((*parts, name))
+            before = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+            if stat.S_ISDIR(before.st_mode):
+                child_fd = os.open(name, directory_flags, dir_fd=directory_fd)
+                try:
+                    if identity(before) != identity(os.fstat(child_fd)):
+                        raise ValueError(f"private cache directory changed: {relative_name}")
+                    visit(child_fd, (*parts, name))
+                finally:
+                    os.close(child_fd)
+            elif stat.S_ISREG(before.st_mode):
+                fd = os.open(name, nofollow, dir_fd=directory_fd)
+                with os.fdopen(fd, "rb") as stream:
+                    opened = os.fstat(stream.fileno())
+                    if identity(before) != identity(opened):
+                        raise ValueError(f"private cache file changed before hashing: {relative_name}")
+                    content = hashlib.sha256()
+                    length = 0
+                    for chunk in iter(lambda: stream.read(CHUNK), b""):
+                        content.update(chunk)
+                        length += len(chunk)
+                    if identity(opened) != identity(os.fstat(stream.fileno())):
+                        raise ValueError(f"private cache file changed while hashing: {relative_name}")
+                if length != before.st_size:
+                    raise ValueError(f"private cache file length changed: {relative_name}")
+                records.append(((*parts, name), os.fsencode(relative_name), length, content.digest()))
+            else:
+                raise ValueError(f"private cache contains a non-file entry: {relative_name}")
+            if identity(before) != identity(os.stat(
+                name, dir_fd=directory_fd, follow_symlinks=False,
+            )):
+                raise ValueError(f"private cache entry changed during inventory: {relative_name}")
+
+    root_fd = os.open(root, directory_flags)
+    try:
+        before_root = identity(os.fstat(root_fd))
+        if before_root != identity(os.stat(root, follow_symlinks=False)):
+            raise ValueError("private cache root changed before inventory")
+        visit(root_fd, ())
+        if before_root != identity(os.fstat(root_fd)) or before_root != identity(
+            os.stat(root, follow_symlinks=False)
+        ):
+            raise ValueError("private cache root changed during inventory")
+    finally:
+        os.close(root_fd)
+
     digest = hashlib.sha256(b"thrum.cargo-home.v1\0")
-    count = total = 0
-    for path in sorted(root.rglob("*")):
-        before = path.lstat()
-        if stat.S_ISDIR(before.st_mode):
-            continue
-        if not stat.S_ISREG(before.st_mode):
-            raise ValueError(f"private cache contains a non-file entry: {path}")
-        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
-        fd = os.open(path, flags)
-        with os.fdopen(fd, "rb") as stream:
-            opened = os.fstat(stream.fileno())
-            if not stat.S_ISREG(opened.st_mode) or identity(before) != identity(opened):
-                raise ValueError(f"private cache file changed before hashing: {path}")
-            content = hashlib.sha256()
-            length = 0
-            for chunk in iter(lambda: stream.read(CHUNK), b""):
-                content.update(chunk)
-                length += len(chunk)
-            if identity(opened) != identity(os.fstat(stream.fileno())):
-                raise ValueError(f"private cache file changed while hashing: {path}")
-        if length != before.st_size or identity(before) != identity(path.lstat()):
-            raise ValueError(f"private cache file changed during inventory: {path}")
-        relative = path.relative_to(root).as_posix().encode("utf-8")
+    total = 0
+    for _, relative, length, content_digest in sorted(records):
         digest.update(len(relative).to_bytes(4, "little"))
         digest.update(relative)
         digest.update(length.to_bytes(8, "little"))
-        digest.update(content.digest())
-        count += 1
+        digest.update(content_digest)
         total += length
-    return {"sha256": digest.hexdigest(), "files": count, "bytes": total}
+    return {"sha256": digest.hexdigest(), "files": len(records), "bytes": total}
 
 
 def possible_headless_packages(metadata, source):
