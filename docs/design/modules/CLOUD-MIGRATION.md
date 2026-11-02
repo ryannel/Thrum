@@ -33,7 +33,7 @@ readouts, usable controls, native beauty and its diagnostic views.
 | P2a Air reference | P0 | Small GPU/CPU air-transmittance check passes; complete P2a appearance unqualified |
 | P3a Same-source consumers and ordinary LOD | P1a/P2a minimums | Main/receiver/independent mirror wired to one source; environment/occupancy/LOD and accuracy unbuilt/unqualified |
 | P4a Small spatial coupled/cost sentinel | P1a/P2a/P3a minimums | Unbuilt; before library expansion |
-| P1b Cb/Sc/St/Ci live source regimes | P4a | Unbuilt |
+| P1b Cb/Sc/St/Ci live source regimes | P4a | [Bounded Cb mechanism pilot](../../evidence/cloud-storm-source-2026-11-02/README.md); columnar source art and complete regimes remain unaccepted |
 | P2b Complete four-LUT air | P4a | Unbuilt |
 | P3b Baseline production sampling/light | P4a + P1b representative source conformance before format/library freeze | Unbuilt |
 | P4b Baseline reconstruction/full overlap | P1b/P2b/P3b | Unbuilt |
@@ -129,6 +129,13 @@ are retained. All-stage checkboxes remain open where their complete contract is 
 
 ## P1b — representative live source regimes before layout/library freeze
 
+Active bounded risk proof: repair the Cb low-body seed, supply-to-cap transport and phase-coherent optical query.
+Keep P1a/P4a gates open; this early Cb discrimination does not promote a family or skip coupled acceptance.
+[Source, phase/filter/grid reviews, actual images and cost receipts](../../evidence/cloud-storm-source-2026-11-02/README.md)
+are retained. Next source work must replace the steady column with organised fed rolling heads/billows; do not tune
+lighting or opacity to hide that failed cue. Regional exchange remains necessary after the long-run chart-edge failure.
+
+- [x] Preserve bounded clear-start Cb cap-arrival/phase/filter source pilot, finite checks, actual images and available-host cost screen; CF02 art and complete P1b remain open.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
 - [ ] Sc/St connected3D cells/sheet closes/opens actual holes; Ci sources/advects/loses high strands/tails under shared shear.
 - [ ] Dense deck at admitted extent/pitch, thin ice and tall mixed-phase Cb qualify source/halo/material/occupancy bytes and resolution.
