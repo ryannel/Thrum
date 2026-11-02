@@ -23,8 +23,9 @@ code or additional dependency.
 
 The Python verifier runs after Cargo exits. It requires the selected compiler,
 source/cache/output roots, known fixed environment values, successful probes
-and compiles, dep-info emission, one source file under a selected root per
-compile, output and `--extern` paths under the fresh output root, dependency
+and compiles, one of the two observed dep-info/metadata/link emission sets,
+one source file under a selected root per compile, output and `--extern` paths
+under the fresh output root, dependency
 library search under its `debug/deps`, and no executable Cargo hooks. It
 compares each receipt's crate and source to Cargo's structured target and
 requires each `--extern` path to be an artifact Cargo reported from the named
@@ -39,8 +40,9 @@ requires its three Cargo probes to use the admitted source root as working
 directory and one of the two exact argument forms observed with Cargo 1.99.1;
 an unknown query refuses. The observed debug profile also requires its recorded
 SDK and linker to share the expected Xcode developer layout and a bounded `-C`
-set; an extra linker argument, alternate codegen spelling or alternate linker
-refuses. This checks explicit options and layout consistency, not an
+set and matches rustc crate types to Cargo's reported target; an extra linker
+argument, alternate codegen spelling or alternate linker refuses. This checks
+explicit options and layout consistency, not an
 independently authenticated Xcode selection or all compiler/linker reads.
 Library resolution remains an open read boundary.
 The report includes per-unit receipt hashes, a receipt-set digest,
@@ -92,11 +94,14 @@ establish a build-latency tail.
 After the review found rustc's alternate codegen spellings, the verifier
 refused those forms in the fixture and the sandboxed A/B run passed again;
 A's fresh-output compile took 1,300 ms in that run.
+The exact emission/crate-type check passed a later sandboxed A/B run with a
+1,389 ms A compile.
 
-Eleven Python fixtures cover valid one- and two-unit receipts plus refusal of
+Twelve Python fixtures cover valid one- and two-unit receipts plus refusal of
 incomplete or malformed receipts, mismatched source/manifest/extern identity,
 unsupported hooks, escaped paths, changed child environment, unrecognized
-probes and extra codegen/linker options. Six Rust wrapper tests cover byte
+probes, extra codegen/linker options and mismatched emit/crate-type records.
+Six Rust wrapper tests cover byte
 preservation, limits, probe classification,
 exclusive receipt creation, process outcomes and exact child environment.
 `./dev check` passes; its normal test suite omits the expensive A/B fixture.

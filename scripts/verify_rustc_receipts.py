@@ -162,10 +162,13 @@ def compile_identity(receipt, roots):
     arguments = receipt["arguments"]
     validate_first_profile_codegen(arguments, receipt["environment"])
     emit = flag_value(arguments, b"--emit")
-    if b"dep-info" not in emit.split(b","):
-        raise ValueError("compile receipt lacks dep-info emission")
-    if any(b"proc-macro" in value.split(b",") for value in flag_values(arguments, b"--crate-type")):
-        raise ValueError("first headless profile refuses proc macros")
+    if emit not in (b"dep-info,metadata,link", b"dep-info,link"):
+        raise ValueError("first profile refuses unexpected rustc emission")
+    crate_types = flag_values(arguments, b"--crate-type")
+    if (not crate_types or len(crate_types) != len(set(crate_types))
+            or any(value not in (b"lib", b"bin", b"rlib", b"staticlib", b"cdylib")
+                   for value in crate_types)):
+        raise ValueError("first headless profile refuses proc macros or unsupported crate types")
     crate = flag_value(arguments, b"--crate-name").decode("ascii")
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", crate):
         raise ValueError("invalid compiled crate name")
@@ -210,7 +213,7 @@ def compile_identity(receipt, roots):
         if not separator or kind != b"dependency":
             raise ValueError("first profile refuses other rustc library search paths")
         selected_directory(Path(os.fsdecode(path)), roots["output"], "rustc library path")
-    return crate, sources[0], sorted(externs)
+    return crate, sources[0], sorted(externs), [value.decode("ascii") for value in crate_types]
 
 
 def selected_xcode_linker(environment):
@@ -355,12 +358,13 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
             validate_cargo_probe(receipt, roots["source"])
             probes += 1
             continue
-        crate, source_identity, externs = compile_identity(receipt, roots)
+        crate, source_identity, externs, crate_types = compile_identity(receipt, roots)
         if receipt["environment"].get(b"CARGO_CRATE_NAME") != crate.encode("ascii"):
             raise ValueError("rustc child Cargo crate name differs from compile receipt")
         if crate in compiles:
             raise ValueError("first profile has duplicate crate-name invocations")
         compiles[crate] = {"source": source_identity, "externs": externs,
+                           "crateTypes": crate_types,
                            "manifestEnvironment": {
                                name: receipt["environment"].get(name)
                                for name in (b"CARGO_MANIFEST_DIR", b"CARGO_MANIFEST_PATH")
@@ -417,6 +421,8 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
                 kind in ("custom-build", "proc-macro") for kind in message["target"]["kind"]
             ):
                 raise ValueError("first profile refuses executable Cargo hooks")
+            if message["target"].get("crate_types") != compiles[target]["crateTypes"]:
+                raise ValueError("Cargo target crate types differ from rustc receipt")
             paths = message["filenames"]
             if not isinstance(paths, list) or not paths:
                 raise ValueError("Cargo unit has no artifacts")
