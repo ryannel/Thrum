@@ -1,0 +1,1785 @@
+--- a/index.html
++++ b/index.html
+@@ -98,6 +98,7 @@
+             <option value="2">Cloud direct light</option>
+             <option value="3">Ambient accessibility</option>
+             <option value="4">Source age</option>
++            <option value="5">Cloud opacity · no lighting</option>
+           </select></label
+         >
+         <label
+@@ -126,6 +127,34 @@
+         </div>
+         <details>
+           <summary>Proof controls</summary>
++          <div class="buttons">
++            <button id="frame-cell">Frame cell</button
++            ><button id="inspect-billows">Inspect billows</button>
++          </div>
++          <label
++            >Optical density scale<select id="extinction">
++              <option value="1" selected>1 · baseline</option>
++              <option value="2">2</option>
++              <option value="3">3</option>
++              <option value="4">4</option>
++            </select></label
++          >
++          <label
++            ><input type="checkbox" id="source-only" />Source-only diagnostic
++            (no new images)</label
++          >
++          <label
++            ><input type="checkbox" id="cached-velocity" />Experimental velocity
++            cache</label
++          >
++          <label
++            ><input type="checkbox" id="empty-work" checked />Skip empty source
++            work</label
++          >
++          <label
++            ><input type="checkbox" id="resolved" />Full resolution
++            reference</label
++          >
+           <label
+             >Advance source seconds<input
+               id="advance-seconds"
+@@ -135,6 +164,7 @@
+               max="600" /></label
+           ><button id="advance">Advance deterministically</button
+           ><button id="tests">GPU reference checks</button
++          ><button id="mask-tests">Compare source work mask</button
+           ><button id="recover">Recreate optical epoch</button>
+         </details>
+         <pre id="stats">Waiting for first frame.</pre>
+--- /dev/null
++++ b/shaders/dilate.wgsl
+@@ -0,0 +1,12 @@
++@group(0) @binding(0) var q:texture_3d<f32>;
++@group(0) @binding(1) var<storage,read> support:array<u32>;
++@group(0) @binding(2) var<storage,read_write> enabled:array<u32>;
++@compute @workgroup_size(4,4,4) fn main(@builtin(global_invocation_id) brick:vec3u) {
++  let n=(textureDimensions(q)+7u)/8u;if(any(brick>=n)){return;}
++  var value=0u;
++  for(var z=-1;z<=1;z++){for(var y=-1;y<=1;y++){for(var x=-1;x<=1;x++){
++    let b=vec3i(brick)+vec3i(x,y,z);
++    if(all(b>=vec3i(0))&&all(b<vec3i(n))){value|=support[(u32(b.z)*n.y+u32(b.y))*n.x+u32(b.x)];}
++  }}}
++  enabled[(brick.z*n.y+brick.y)*n.x+brick.x]=value;
++}
+--- a/shaders/display.wgsl
++++ b/shaders/display.wgsl
+@@ -1,11 +1,12 @@
+ @group(0) @binding(0) var image:texture_2d<f32>;
+ @group(0) @binding(1) var samp:sampler;
++@group(0) @binding(2) var<uniform> params:array<vec4f,10>;
+ @vertex fn vs(@builtin(vertex_index) i:u32)->@builtin(position) vec4f {
+   let a=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));
+   return vec4f(a[i],0,1);
+ }
+ @fragment fn fs(@builtin(position) p:vec4f)->@location(0) vec4f {
+-  let uv=p.xy/vec2f(textureDimensions(image)*2u);
++  let uv=clamp(p.xy/vec2f(1280,720)*params[8].xy,vec2f(.5),params[8].xy-vec2f(.5))/vec2f(textureDimensions(image));
+   var c=textureSampleLevel(image,samp,uv,0.).rgb;
+   let a=2.51;
+   let b=.03;
+--- a/shaders/optics.wgsl
++++ b/shaders/optics.wgsl
+@@ -65,11 +65,23 @@
+   }
+   return tau;
+ }
++// Independent thin-plane attenuation provider. There is no density field in this profile.
++fn analyticShadowT(x:vec3f)->f32 {
++  if(x.y>=2200.){return 1.;}
++  let caster=x+p.sun.xyz*((2200.-x.y)/max(p.sun.y,.03));
++  let wave=.55+.35*sin((caster.x-p.weather.w)*.0012)*cos(caster.z*.001);
++  let front=1.-.85*smoothstep(p.front.x-400.,p.front.x+400.,caster.x);
++  let amount=max(0.,wave)*p.control.x*(1.-p.control.y)*front;
++  return exp(-amount*1.8);
++}
+ fn directT(x:vec3f)->vec2f {
++  if(p.domain.w>1.5){return vec2f(1);}
++  if(p.domain.w>.5){let t=analyticShadowT(x);return vec2f(t,pow(t,p.domain.y));}
+   let tau=tauRay(x,p.sun.xyz,32u,1.);
+   return exp(-vec2f(tau,tau*p.domain.y));
+ }
+ fn cacheT(x:vec3f)->vec2f {
++  if(p.domain.w>.5){return directT(x);}
+   let uv=uvw(x);
+   if(any(uv<vec3f(0))||any(uv>vec3f(1))) {
+     return directT(x);
+--- a/shaders/source.wgsl
++++ b/shaders/source.wgsl
+@@ -17,6 +17,8 @@
+ @group(0) @binding(8) var<storage,read> emitters:array<Emitter,32>;
+ @group(0) @binding(9) var curlField:texture_3d<f32>;
+ @group(0) @binding(10) var linearRepeat:sampler;
++@group(0) @binding(11) var<storage,read> activeBricks:array<u32>;
++@group(0) @binding(12) var<storage,read> velocityField:array<vec4f>;
+ fn hash3(x:vec3f)->f32 {
+   return fract(sin(dot(x,vec3f(127.1,311.7,74.7)))*43758.5453);
+ }
+@@ -80,6 +82,12 @@
+   let e=exp(-k*dt);
+   return q*e+(s/max(k,vec2f(1e-8)))*(1.-e);
+ }
++// These isolated layer proofs author a finite bank, not a sheet cut by the simulation box.
++fn bankRadius(x:vec3f)->f32 {
++  // Authored world footprint; resizing a storage domain must not resize the bank.
++  return length(x.xz/vec2f(4000.,3200.));
++}
++fn bankSupport(x:vec3f)->f32 {return 1.-smoothstep(.65,1.,bankRadius(x));}
+ fn localSource(x:vec3f)->vec3f {
+   let kind=u32(p.control.w);
+   let layer=weatherLayer();
+@@ -107,7 +115,9 @@
+     let cells=valueNoise(vec3f(x.x*.00065,0,x.z*.00065));
+     let coverage=select(smoothstep(.27,.67,cells),.8+.2*cells,kind==3u);
+     s=coverage*exp(-pow((x.y-(layer.x+220.))/330.,2.))*(.55+.45*valueNoise(x*.003+vec3f(p.weather.x*.007,0,0)));
+-    spatial=1.;
++    let bank=bankSupport(x);
++    s*=bank;
++    spatial=bank;
+   }
+   if(kind==4u) {
+     let stripe=pow(.5+.5*sin(x.z*.009+x.x*.0015+4.*valueNoise(x*.0007)),6.);
+@@ -135,7 +145,7 @@
+       let n=textureSampleLevel(basis,linearRepeat,fract(x/vec3f(4800.,3200.,4200.)+vec3f(.41,.17,.29)),0.);
+       q=clamp((n.x-.28)/.30,0.,1.)*height*radial*.86;
+       if(kind==2u||kind==3u) {
+-        q=height*select(smoothstep(.3,.7,n.x),.65+.35*n.x,kind==3u);
++        q=height*select(smoothstep(.3,.7,n.x),.65+.35*n.x,kind==3u)*bankSupport(x);
+       }
+       if(kind==4u) {
+         q=localSource(x).x*22.;
+@@ -157,8 +167,13 @@
+     textureStore(outputQ,id,vec4f(rest,1.));
+     return;
+   }
++  if(p.domain.z>.5) {
++    let bricks=(dims+7u)/8u;let b=id/8u;
++    if(activeBricks[(b.z*bricks.y+b.y)*bricks.x+b.x]==0u){textureStore(outputQ,id,vec4f(0));return;}
++  }
+   let dt=p.weather.y;
+-  let vel=velocity(x);
++  var vel=vec3f(0);
++  if(p.camera.w>.5){vel=velocityField[(id.z*dims.y+id.y)*dims.x+id.x].xyz;}else{vel=velocity(x);}
+   if(stage==1) {
+     textureStore(outputQ,id,qAt(oldQ,x-vel*dt));
+     return;
+@@ -195,6 +210,7 @@
+   var decay=.0015+p.control.y*.018+source.z+flank*.0025;
+   decay+=(1.-smoothstep(layer.x-100.,layer.x+45.,x.y))*.06;
+   decay+=smoothstep(layer.y,layer.y+600.,x.y)*.008;
++  if(kind==2u||kind==3u){decay+=.08*smoothstep(.75,1.,bankRadius(x));}
+   var add=vec2f(source.x,0.);
+   if(kind==4u) {
+     add=vec2f(0.,source.x);
+--- /dev/null
++++ b/shaders/support.wgsl
+@@ -0,0 +1,35 @@
++// Conservative work mask for the dense oracle. This is not sparse storage.
++struct Params { camera:vec4f,focus:vec4f,sun:vec4f,bmin:vec4f,bmax:vec4f,weather:vec4f,control:vec4f,front:vec4f,image:vec4f,domain:vec4f };
++struct Emitter { location:vec4f,timing:vec4f };
++@group(0) @binding(0) var<uniform> p:Params;
++@group(0) @binding(1) var q:texture_3d<f32>;
++@group(0) @binding(2) var<storage,read> emitters:array<Emitter,32>;
++@group(0) @binding(3) var<storage,read_write> support:array<u32>;
++var<workgroup> occupied:atomic<u32>;
++@compute @workgroup_size(4,4,4) fn main(@builtin(workgroup_id) brick:vec3u,@builtin(local_invocation_id) local:vec3u) {
++  let n=textureDimensions(q);let bricks=(n+7u)/8u;
++  if(all(local==vec3u(0))){atomicStore(&occupied,0u);}
++  workgroupBarrier();
++  for(var k=0u;k<8u;k++) {
++    let cell=brick*8u+local+vec3u(k&1u,(k>>1u)&1u,(k>>2u)&1u)*4u;
++    if(all(cell<n)){let v=textureLoad(q,vec3i(cell),0);if(v.x+v.y>0.){atomicStore(&occupied,1u);}}
++  }
++  workgroupBarrier();
++  if(any(local!=vec3u(0))){return;}
++  var enabled=atomicLoad(&occupied);
++  // Only Cu has a certified prospective source bound in this first optimization.
++  if(u32(p.control.w)!=0u){enabled=1u;}
++  if(p.control.x>0.&&p.control.z>0.) {
++    let lo=mix(p.bmin.xyz,p.bmax.xyz,vec3f(brick*8u)/vec3f(n));
++    let hi=mix(p.bmin.xyz,p.bmax.xyz,vec3f(min((brick+1u)*8u,n))/vec3f(n));
++    // Even32 overlapping maximum-rate pulses beyond900m contribute <1e-9 per tick,
++    // below half the minimum RGBA16F subnormal. XZ bounds enclose the compact kernel.
++    if(lo.y<=2120.&&hi.y>=320.) {
++      for(var i=0u;i<32u;i++) {
++        let e=emitters[i];let radius=e.location.z*1.25;
++        if(e.location.w>.5&&all(hi.xz>=e.location.xy-vec2f(radius))&&all(lo.xz<=e.location.xy+vec2f(radius))){enabled=1u;}
++      }
++    }
++  }
++  support[(brick.z*bricks.y+brick.y)*bricks.x+brick.x]=enabled;
++}
+--- /dev/null
++++ b/shaders/velocity.wgsl
+@@ -0,0 +1,9 @@
++// Source functions/declarations precede this entry point; the original step is unreachable.
++@compute @workgroup_size(4,4,4) fn main(@builtin(global_invocation_id) id:vec3u) {
++  let dims=textureDimensions(oldQ);if(any(id>=dims)){return;}
++  let flat=(id.z*dims.y+id.y)*dims.x+id.x;
++  if(p.domain.z>.5){let n=(dims+7u)/8u;let b=id/8u;
++    if(activeBricks[(b.z*n.y+b.y)*n.x+b.x]==0u){velocityField[flat]=vec4f(0);return;}}
++  let x=pos((vec3f(id)+.5)/vec3f(dims));
++  velocityField[flat]=vec4f(velocity(x),0);
++}
+--- a/shaders/view.wgsl
++++ b/shaders/view.wgsl
+@@ -4,7 +4,9 @@
+ ;
+ fn beer(source:vec3f,sigma:vec3f,ds:f32)->Transport {
+   let t=exp(-sigma*ds);
+-  return Transport(source*(1.-t)/max(sigma,vec3f(1e-10)),t);
++  let x=sigma*ds;
++  let integral=select((1.-t)/max(sigma,vec3f(1e-20)),vec3f(ds)*(1.-x*.5+x*x/6.),x<vec3f(.001));
++  return Transport(source*integral,t);
+ }
+ fn join(a:Transport,b:Transport)->Transport {
+   return Transport(a.s+a.t*b.s,a.t*b.t);
+@@ -61,11 +63,7 @@
+   if(p.domain.w>1.5) {
+     return 1.;
+   }
+-  if(p.domain.w>.5) {
+-    let drift=p.weather.w;
+-    let v=.55+.35*sin((x.x-drift)*.0012)*cos(x.z*.001);
+-    return exp(-max(0.,v)*1.8);
+-  }
++  if(p.domain.w>.5){return analyticShadowT(x);}
+   let center=(p.bmin.xyz+p.bmax.xyz)*.5;
+   let extent=(p.bmax.xyz-p.bmin.xyz)*2.;
+   let uv=(x.xz-center.xz)/extent.xz+.5;
+@@ -140,6 +138,12 @@
+   let ray=integrate(o,d,atmosphereExit(o,d),true);
+   return ray.s+ray.t*skyBoundary(d);
+ }
++// Geometry diagnostic: the same coefficient field and96 steps, with no lighting/cache/air/fog.
++fn opacityRay(o:vec3f,d:vec3f,terminal:f32)->vec3f {
++  let iv=rayBox(o,d,p.bmin.xyz,p.bmax.xyz);let a=max(0.,iv.x);let b=min(iv.y,terminal);
++  var tau=0.;if(b>a){let ds=(b-a)/96.;for(var i=0u;i<96u;i++){let c=coefficients(o+d*(a+(f32(i)+.5)*ds),1.);tau+=(c.x+c.y)*ds;}}
++  return mix(vec3f(.02,.04,.08),vec3f(.95),1.-exp(-tau));
++}
+ @vertex fn vs(@builtin(vertex_index) i:u32)->@builtin(position) vec4f {
+   let a=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));
+   return vec4f(a[i],0,1);
+@@ -171,6 +175,7 @@
+       hit=true;
+     }
+   }
++  if(mode==5u){return vec4f(opacityRay(p.camera.xyz,d,terminal),1);}
+   let near=integrate(p.camera.xyz,d,terminal,p.front.w>.5);
+   var background=skyBoundary(d);
+   if(hit) {
+--- a/src/bench.js
++++ b/src/bench.js
+@@ -1,6 +1,8 @@
+ import { Scene } from "./scene.js";
++import { compareSourceMask } from "./source-mask-reference.js";
+ import { runGpuReferenceChecks } from "./gpu-reference.js";
+ import { Weather, WorldClock, validateProvider } from "./weather.js";
++const observationRun = crypto.randomUUID().slice(0, 8);
+ const $ = (id) => document.getElementById(id),
+   status = $("status");
+ let scene = null,
+@@ -13,12 +15,16 @@
+   last = performance.now(),
+   lastHud = 0,
+   frames = 0,
++  lastPresentedWall = 0,
++  presentedFrames = 0,
+   skips = 0,
+   advanceTarget = null,
+   benchmark = null,
+   configurationVersion = 0,
+   opticalEpoch = 0,
+-  configurationPending = false;
++  observationSerial = 0,
++  configurationPending = false,
++  pendingReset = null;
+ const cpuSamples = [],
+   gpuSamples = [];
+ let uiDirty = true,
+@@ -37,6 +43,11 @@
+     mirror: $("mirror").checked,
+     main: $("main").checked,
+     alpha: 1,
++    emptyWork: $("empty-work").checked,
++    resolved: $("resolved").checked,
++    extinctionScale: Number($("extinction").value),
++    cachedVelocity: $("cached-velocity").checked,
++    sourceDiagnostic: $("source-only").checked,
+   };
+ }
+ function inputs() {
+@@ -50,8 +61,37 @@
+ function info(s) {
+   status.textContent = s;
+ }
++function abortMeasurement(reason) {
++  if (benchmark) {
++    const aborted = benchmark;
++    benchmark = null;
++    receipt("measurement-aborted", {
++      outcome: "aborted",
++      reason,
++      elapsedMs: performance.now() - aborted.started,
++      sourceSeconds: (scene?.time ?? aborted.time) - aborted.time,
++      rateRequested: aborted.rate,
++      controls: aborted.settings,
++      sourceSteps: (scene?.steps ?? aborted.steps) - aborted.steps,
++      submittedImageGraphs: aborted.presentations,
++      frames: aborted.frames,
++    }).catch(console.error);
++  }
++}
++function drainRequests() {
++  if (configurationPending) {
++    queueMicrotask(configure);
++    return;
++  }
++  if (pendingReset) {
++    const next = pendingReset;
++    pendingReset = null;
++    queueMicrotask(() => reset(next.clear, next.newWorld));
++  }
++}
+ function fail(e) {
+   fault = e;
++  abortMeasurement(e.message);
+   info("Optics unavailable — " + e.message);
+   console.error(e);
+   $("receipt").textContent = e.stack || String(e);
+@@ -74,7 +114,14 @@
+ }
+ async function receipt(name, data) {
+   const record = {
+-    name,
++    name:
++      name +
++      "-" +
++      identity?.build +
++      "-" +
++      observationRun +
++      "-" +
++      ++observationSerial,
+     build: identity?.build,
+     identity,
+     host: {
+@@ -98,6 +145,7 @@
+   return record;
+ }
+ async function configure() {
++  abortMeasurement("Optical configuration changed");
+   configurationVersion++;
+   if (configurationRunning) return;
+   configurationPending = true;
+@@ -154,25 +202,42 @@
+   } finally {
+     configurationRunning = false;
+     busy = false;
+-    if (configurationPending) queueMicrotask(configure);
+-    last = performance.now();
++    drainRequests();
+   }
+ }
+ 
++function startWorldEpoch() {
++  weather = new Weather(71, {
++    ...inputs(),
++    storm: options().family === 1 ? 1 : 0,
++  });
++  clock.reset();
++  advanceTarget = null;
++}
+ async function reset(clear = false, newWorld = true) {
+-  if (busy || !scene) return;
++  if (busy) {
++    pendingReset = { clear, newWorld };
++    info("Source reset queued after observation/configuration");
++    return;
++  }
++  if (!scene) {
++    if (newWorld) {
++      startWorldEpoch();
++      fault = null;
++      uiDirty = true;
++      info("New CPU world epoch · optical source omitted");
++    } else
++      info(
++        "Optical resources are omitted; enable the optical pipeline to create an epoch",
++      );
++    return;
++  }
++  abortMeasurement("Source epoch reset");
+   busy = true;
+   fault = null;
+   try {
+     await scene.gpu.device.queue.onSubmittedWorkDone();
+-    if (newWorld) {
+-      weather = new Weather(71, {
+-        ...inputs(),
+-        storm: options().family === 1 ? 1 : 0,
+-      });
+-      clock.reset();
+-      advanceTarget = null;
+-    }
++    if (newWorld) startWorldEpoch();
+     scene.family = options().family;
+     scene.camera.distance =
+       scene.family === 1 ? 25000 : scene.family === 4 ? 16000 : 7500;
+@@ -193,8 +258,7 @@
+     fail(e);
+   } finally {
+     busy = false;
+-    if (configurationPending) queueMicrotask(configure);
+-    last = performance.now();
++    drainRequests();
+   }
+ }
+ for (const id of ["moist", "dry", "lift", "wind"])
+@@ -207,18 +271,25 @@
+     }
+   };
+ $("play").onclick = () => {
++  abortMeasurement("Playback changed");
+   playing = !playing;
+   $("play").textContent = playing ? "Pause" : "Play";
++  uiDirty = true;
+ };
+ $("clear").onclick = () => reset(true);
+ $("reset").onclick = () => reset(false);
+-$("recover").onclick = () => reset(false, false);
++$("recover").onclick = () =>
++  scene?.gpu.lost ? configure() : reset(false, false);
+ $("family").onchange = () => reset(false);
+ $("front").onclick = () => {
++  abortMeasurement("Weather front changed");
++  uiDirty = true;
+   weather.sendFront();
+   info("Dry front queued · world owns its advance");
+ };
+ $("storm").onclick = () => {
++  abortMeasurement("Storm forcing changed");
++  uiDirty = true;
+   weather.command({ storm: 1, lift: 1.8, moist: 0.95, dry: 0.02 });
+   $("lift").value = "1.8";
+   $("moist").value = ".95";
+@@ -231,8 +302,9 @@
+ $("optical").onchange = configure;
+ $("advance").onclick = () => {
+   if (busy || !scene) return;
++  abortMeasurement("Replay advance requested");
+   advanceTarget =
+-    scene.time +
++    (scene.sourcePipeline ? scene.time : clock.time) +
+     Math.max(
+       0.25,
+       Math.round(Number($("advance-seconds").value) / 0.25) * 0.25,
+@@ -243,6 +315,7 @@
+ };
+ $("probe").onclick = async () => {
+   if (busy || !scene || fault) return;
++  abortMeasurement("Observation requested: probe");
+   busy = true;
+   try {
+     await receipt("source-" + Math.round(scene.time * 100), {
+@@ -254,12 +327,12 @@
+     fail(e);
+   } finally {
+     busy = false;
+-    if (configurationPending) queueMicrotask(configure);
+-    last = performance.now();
++    drainRequests();
+   }
+ };
+ $("capture").onclick = async () => {
+   if (busy || !scene || fault) return;
++  abortMeasurement("Observation requested: capture");
+   busy = true;
+   try {
+     await scene.gpu.device.queue.onSubmittedWorkDone();
+@@ -276,7 +349,15 @@
+       "-" +
+       Math.round(submittedFrame.time * 100) +
+       "-e" +
+-      scene.epoch;
++      scene.epoch +
++      "-v" +
++      scene.viewSize.join("x") +
++      "-f" +
++      scene.frame +
++      "-" +
++      identity.build +
++      "-" +
++      observationRun;
+     const saved = await fetch("/capture", {
+       method: "POST",
+       headers: { "X-Capture-Name": name },
+@@ -289,16 +370,19 @@
+     fail(e);
+   } finally {
+     busy = false;
+-    if (configurationPending) queueMicrotask(configure);
+-    last = performance.now();
++    drainRequests();
+   }
+ };
+ $("bench").onclick = () => {
+   if (busy || !scene || fault) return;
++  abortMeasurement("Measurement restarted");
+   benchmark = {
+     started: performance.now(),
+     frames: 0,
++    presentations: 0,
+     steps: scene.steps,
++    frameStart: scene.frame,
++    epoch: scene.epoch,
+     time: scene.time,
+     skips,
+     settings: options(),
+@@ -310,6 +394,7 @@
+ };
+ $("tests").onclick = async () => {
+   if (busy || !scene || fault) return;
++  abortMeasurement("Observation requested: tests");
+   busy = true;
+   try {
+     const result = await runGpuReferenceChecks(scene);
+@@ -323,16 +408,65 @@
+     fail(e);
+   } finally {
+     busy = false;
+-    if (configurationPending) queueMicrotask(configure);
+-    last = performance.now();
++    drainRequests();
++    uiDirty = true;
++  }
++};
++
++for (const [id, close] of [
++  ["frame-cell", false],
++  ["inspect-billows", true],
++]) {
++  $(id).onclick = () => {
++    if (!scene) return;
++    abortMeasurement("Camera changed");
++    Object.assign(scene.camera, {
++      yaw: 0.3,
++      pitch: -0.18,
++      panX: 0,
++      panY: 0,
++      distance: close
++        ? 4000
++        : scene.family === 1
++          ? 25000
++          : scene.family === 4
++            ? 16000
++            : 7500,
++    });
++    uiDirty = true;
++  };
++}
++$("mask-tests").onclick = async () => {
++  if (playing || advanceTarget !== null) {
++    info("Pause and finish any advance before the full-field observation");
++    return;
++  }
++  if (busy || !scene || fault) return;
++  abortMeasurement("Observation requested: mask-tests");
++  busy = true;
++  try {
++    const result = await compareSourceMask(scene);
++    await receipt("source-mask-comparison", result);
++    info(
++      result.pass
++        ? "Whole-field source mask comparison passed"
++        : "Source work mask differs from dense oracle",
++    );
++  } catch (e) {
++    fail(e);
++  } finally {
++    busy = false;
++    drainRequests();
+     uiDirty = true;
+   }
+ };
+ 
+ document.addEventListener("input", () => {
++  abortMeasurement("Fixture input changed");
+   uiDirty = true;
+ });
+ document.addEventListener("change", () => {
++  abortMeasurement("Fixture controls changed");
+   uiDirty = true;
+ });
+ const canvas = $("view");
+@@ -344,6 +478,7 @@
+ canvas.onpointerup = () => (drag = null);
+ canvas.onpointermove = (e) => {
+   if (!drag || !scene) return;
++  abortMeasurement("Camera changed");
+   uiDirty = true;
+   const dx = e.clientX - drag.x,
+     dy = e.clientY - drag.y;
+@@ -365,6 +500,7 @@
+   (e) => {
+     e.preventDefault();
+     if (!scene) return;
++    abortMeasurement("Camera changed");
+     uiDirty = true;
+     const dx = Math.max(-120, Math.min(120, e.deltaX)),
+       dy = Math.max(-120, Math.min(120, e.deltaY));
+@@ -395,9 +531,17 @@
+     scope: "Available-host standalone pilot; not M2/full-sky admission",
+     elapsedMs: now - b.started,
+     frames: b.frames,
+-    callbackFps: b.frames / ((now - b.started) / 1000),
++    submittedGraphsHz: b.frames / ((now - b.started) / 1000),
++    cadenceScope:
++      "Successful graph/image submissions; source progress is queued for GPU execution; not completed-GPU or actual display cadence",
++    submittedImageGraphs: b.presentations,
++    submittedImageHz: b.presentations / ((now - b.started) / 1000),
++    previewPolicy:
++      "At16x at most20Hz and64x at most5Hz presentation while every required source tick executes; camera/control edits request immediate presentation; normal1x unchanged",
+     sourceSeconds: scene.time - b.time,
+     sourceSteps: scene.steps - b.steps,
++    sourceAgeAtEnd: Math.max(0, clock.time - scene.time),
++    pendingGraphsAtEnd: scene.gpu.pending,
+     skips: skips - b.skips,
+     controls: b.settings,
+     rateRequested: b.rate,
+@@ -407,6 +551,8 @@
+       p99: quantile(cpuSamples, 0.99),
+     },
+     gpu: {
++      scope:
++        "Presentation-graph queries only; source-only graphs excluded; accelerated total GPU work unqualified",
+       samples: g.length,
+       orderedTotalSamples: g.filter((v) => v.wholeMs !== null).length,
+       rejectedTotalSamples: g.filter((v) => v.wholeMs === null).length,
+@@ -435,9 +581,14 @@
+   const elapsed = Math.max(0, (now - last) / 1000);
+   last = now;
+   const cpuStart = performance.now();
++  if (scene?.gpu.lost && !fault)
++    fail(Error("Optical device lost; recreate optical epoch"));
+   let target = null;
+   if (advanceTarget !== null)
+-    target = Math.min(advanceTarget, (scene?.time ?? clock.time) + 8);
++    target = Math.min(
++      advanceTarget,
++      (scene?.sourcePipeline ? scene.time : clock.time) + 8,
++    );
+   clock.step(
+     elapsed,
+     Number($("rate").value),
+@@ -461,34 +612,62 @@
+         ? Math.max(0, Math.min(8, Math.floor((gap + 1e-7) / 0.25)))
+         : 0;
+     const residual = Math.max(0, gap - ticks * 0.25);
++    const paced =
++      (playing || advanceTarget !== null) && Number($("rate").value) >= 16;
++    const needsPresentation =
++      !$("source-only").checked &&
++      (uiDirty ||
++        !paced ||
++        now - lastPresentedWall >= (Number($("rate").value) >= 64 ? 200 : 50));
+     const ui = {
+       ...options(),
+       alpha: playing ? Math.min(1, residual / 0.25) : 1,
++      sourceOnly: !needsPresentation,
+     };
+-    try {
+-      if (scene.render(weather, ui, ticks, clock.time)) {
+-        frames++;
+-        uiDirty = false;
+-        lastRenderWorldTime = clock.time;
+-        const stamp = scene.timings.latest;
+-        if (stamp && stamp.frame !== lastGpuFrame) {
+-          lastGpuFrame = stamp.frame;
+-          if (benchmark) gpuSamples.push(stamp);
+-        }
+-        if (benchmark) {
+-          benchmark.frames++;
+-          if (now - benchmark.started >= 10000) finishBenchmark(now);
+-        }
+-      } else skips++;
+-    } catch (e) {
+-      fail(e);
++    if (ticks > 0 || needsPresentation) {
++      try {
++        if (scene.render(weather, ui, ticks, clock.time)) {
++          frames++;
++          if (scene.lastSubmission.presented) {
++            lastPresentedWall = now;
++            presentedFrames++;
++          }
++          uiDirty = false;
++          lastRenderWorldTime = clock.time;
++          const stamp = scene.timings.latest;
++          if (stamp && stamp.frame !== lastGpuFrame) {
++            lastGpuFrame = stamp.frame;
++            if (
++              benchmark &&
++              stamp.epoch === benchmark.epoch &&
++              stamp.frame >= benchmark.frameStart
++            )
++              gpuSamples.push(stamp);
++          }
++          if (benchmark) {
++            benchmark.frames++;
++            if (scene.lastSubmission.presented) benchmark.presentations++;
++          }
++        } else skips++;
++      } catch (e) {
++        fail(e);
++      }
++    } else {
++      uiDirty = false;
++      lastRenderWorldTime = clock.time;
+     }
+   }
+-  if (advanceTarget !== null && scene && scene.time >= advanceTarget - 1e-6) {
++  if (
++    advanceTarget !== null &&
++    scene &&
++    (scene.sourcePipeline ? scene.time : clock.time) >= advanceTarget - 1e-6
++  ) {
+     advanceTarget = null;
++    uiDirty = true;
+     info("Deterministic advance complete");
+   }
+   if (benchmark) cpuSamples.push(performance.now() - cpuStart);
++  if (benchmark && now - benchmark.started >= 10000) finishBenchmark(now);
+   if (now - lastHud > 500) {
+     const wall = (now - previousHudWall) / 1000,
+       sourceTime = scene?.time ?? previousHudTime,
+@@ -498,7 +677,7 @@
+     lastHud = now;
+     const g = scene?.timings.latest;
+     $("stats").textContent =
+-      `World ${clock.time.toFixed(2)}s · tick ${weather.tick} · epoch ${clock.epoch}\nSource ${scene?.time.toFixed(2) ?? "retired"}s · ${scene?.steps ?? 0} steps\nRequested ${playing ? $("rate").value : 0}x · source delivered ${delivered.toFixed(1)}x\nOptical epoch ${scene?.epoch ?? "none"} · age ${scene ? Math.max(0, clock.time - scene.time).toFixed(2) : "—"}s\nFrames ${frames} · queue ${scene?.gpu.pending ?? 0}/3 · skipped ${skips}\nGPU ${g ? (g.wholeMs === null ? "cross-pass timing unqualified" : g.wholeMs.toFixed(2) + "ms / ordered query interval") : "unavailable"}\n${g ? "source " + (g.sourceMs ?? 0).toFixed(2) + " · light " + (g.lightMs ?? 0).toFixed(2) + " · view " + (g.viewMs ?? 0).toFixed(2) : ""}\nLogical live textures/buffers ${scene ? (scene.gpu.bytes / 1048576).toFixed(1) : "0"}MiB\n${scene?.provider === 0 ? scene.dims.join("×") + " dense source reference" : "Volume source retired"}\nWeather rain ${weather.state.storm * 0.002} kg/m²/s · causes ${weather.events.length}\nBuild ${identity?.build ?? "loading"}\n${fault ? "UNAVAILABLE " + fault.message : scene?.gpu.errors.length ? "ERRORS " + scene.gpu.errors.join("\n") : "No GPU errors"}\nPilot: full families/air/environment/TAA unqualified`;
++      `World ${clock.time.toFixed(2)}s · tick ${weather.tick} · epoch ${clock.epoch}\nQueued source ${scene?.sourcePipeline ? scene.time.toFixed(2) + "s" : "not used"} · ${scene?.steps ?? 0} steps\nRequested ${playing ? $("rate").value : 0}x · source delivered ${delivered.toFixed(1)}x\nSubmitted image ${scene?.lastPresentation?.time.toFixed(2) ?? "—"}s · preview20Hz/5Hz at16x/64x\nOptical epoch ${scene?.epoch ?? "none"} · age ${scene?.sourcePipeline ? Math.max(0, clock.time - scene.time).toFixed(2) + "s" : "—"}\nGraphs ${frames} · images ${presentedFrames} · queue ${scene?.gpu.pending ?? 0}/3 · skipped ${skips}\nGPU ${g ? (g.wholeMs === null ? "cross-pass timing unqualified" : g.wholeMs.toFixed(2) + "ms / ordered query interval") : "unavailable"}\n${g ? "source " + (g.sourceMs ?? 0).toFixed(2) + " · light " + (g.lightMs ?? 0).toFixed(2) + " · view " + (g.viewMs ?? 0).toFixed(2) : ""}\nLogical live textures/buffers ${scene ? (scene.gpu.bytes / 1048576).toFixed(1) : "0"}MiB\n${scene?.provider === 0 ? scene.dims.join("×") + " dense source reference" : "Volume source retired"}\nWeather rain ${weather.state.storm * 0.002} kg/m²/s · causes ${weather.events.length}\nBuild ${identity?.build ?? "loading"}\n${fault ? "UNAVAILABLE " + fault.message : scene?.gpu.errors.length ? "ERRORS " + scene.gpu.errors.join("\n") : "No GPU errors"}\nPilot: full families/air/environment/TAA unqualified`;
+   }
+ }
+ try {
+--- a/src/gpu-reference.js
++++ b/src/gpu-reference.js
+@@ -1,7 +1,7 @@
+ import { airTransmittance, halfToFloat, floatToHalf } from "./reference.js";
+ export async function runGpuReferenceChecks(scene) {
+   if (scene.referenceResult)
+-    return { ...scene.referenceResult, reusedWithinOpticalEpoch: true };
++    return { ...scene.referenceResult, reusedForSameDeviceAndShader: true };
+   const g = scene.gpu;
+   if (!scene.sourcePipeline)
+     throw Error("Numerical source checks need the live volume provider");
+@@ -47,6 +47,7 @@
+       [8, 8, 8],
+     );
+   }
++  let lastSourceRaw;
+   async function execute() {
+     g.device.queue.writeBuffer(uniform, 0, params);
+     const e = g.device.createCommandEncoder();
+@@ -73,6 +74,7 @@
+     await read.mapAsync(GPUMapMode.READ);
+     const raw = new Uint16Array(read.getMappedRange().slice(0));
+     read.unmap();
++    lastSourceRaw = raw;
+     const values = [];
+     for (let z = 2; z < 6; z++)
+       for (let y = 2; y < 6; y++)
+@@ -117,6 +119,25 @@
+   const noLift = await execute();
+   params[26] = 1;
+   const birth = await execute();
++  params.set([-5000, 1200, -4000, 0.0045], 12);
++  params.set([5000, 1240, 4000, 0.0018], 16);
++  const banks = {};
++  for (const kind of [2, 3]) {
++    params[27] = kind;
++    params[39] = 0;
++    const interior = await execute();
++    let edgePeak = 0;
++    for (let z = 0; z < 8; z++)
++      for (let y = 0; y < 8; y++)
++        for (let x = 0; x < 8; x++)
++          if (x === 0 || x === 7 || z === 0 || z === 7)
++            edgePeak = Math.max(
++              edgePeak,
++              halfToFloat(lastSourceRaw[(z * 8 + y) * 128 + x * 4]),
++            );
++    banks[kind] = { edgePeak, interiorPeak: Math.max(...interior) };
++  }
++  params[27] = 0;
+   const ones = g.texture("oracle constant material", [1, 1, 1], "rgba8unorm");
+   g.device.queue.writeTexture(
+     { texture: ones },
+@@ -128,19 +149,23 @@
+   params.set([-1, -1, -1, 0.0045], 12);
+   params.set([1, 1, 1, 0.0018], 16);
+   params.set([1, 0.25, 0, 0], 36);
++  params.set([0.8, 0.6, 0, 1], 8);
++  params.set([0.85, 0.08, 0, 0], 24);
++  params[23] = 25;
+   g.device.queue.writeBuffer(uniform, 0, params);
+   const code =
+     scene.codes.optics +
+-    `@group(0) @binding(15) var<storage,read_write> result:array<vec4f>; @compute @workgroup_size(1) fn main(){let tau=tauRay(vec3f(-2,0,0),vec3f(1,0,0),32u,1.);result[0]=vec4f(tau,exp(-tau),0,0);result[1]=vec4f(airRayT(vec3f(0,1000,0),vec3f(sqrt(.75),.5,0)),0);var integral=0.;for(var i=0u;i<2048u;i++){integral+=phase(-1.+(f32(i)+.5)*2./2048.,0.,1.)*2./2048.*2.*PI;}result[2]=vec4f(integral,0,0,0);}`;
++    scene.codes.view +
++    `@group(0) @binding(15) var<storage,read_write> result:array<vec4f>; @compute @workgroup_size(1) fn main(){let tau=tauRay(vec3f(-2,0,0),vec3f(1,0,0),32u,1.);result[0]=vec4f(tau,exp(-tau),0,0);result[1]=vec4f(airRayT(vec3f(0,1000,0),vec3f(sqrt(.75),.5,0)),0);var integral=0.;for(var i=0u;i<2048u;i++){integral+=phase(-1.+(f32(i)+.5)*2./2048.,0.,1.)*2./2048.*2.*PI;}result[2]=vec4f(integral,0,0,0);let j=vec3f(.2,.1,.03);let sigma=vec3f(.4,.2,.1);let full=beer(j,sigma,2.);let part=beer(j,sigma,1.);let split=join(part,part);result[3]=vec4f(full.s,0.);result[4]=vec4f(full.t,0.);result[5]=vec4f(max(max(abs(full.s-split.s).x,abs(full.s-split.s).y),abs(full.s-split.s).z),max(max(abs(full.t-split.t).x,abs(full.t-split.t).y),abs(full.t-split.t).z),0,0);result[6]=vec4f(beer(j,vec3f(0.,1e-9,1e-6),2.).s,0);result[7]=vec4f(analyticShadowT(vec3f(0)),analyticShadowT(vec3f(800,600,0)),analyticShadowT(vec3f(0,2300,0)),0);}`;
+   const pipeline = await g.compute("independent optical probes", code),
+     result = g.buffer(
+       "oracle optical result",
+-      48,
++      128,
+       GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+     ),
+     mapped = g.buffer(
+       "oracle optical readback",
+-      48,
++      128,
+       GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+     );
+   const bg = g.group(pipeline, [
+@@ -156,7 +181,7 @@
+   ]);
+   const e = g.device.createCommandEncoder();
+   scene.compute(e, pipeline, bg, [1, 1, 1]);
+-  e.copyBufferToBuffer(result, 0, mapped, 0, 48);
++  e.copyBufferToBuffer(result, 0, mapped, 0, 128);
+   g.submit(e);
+   await mapped.mapAsync(GPUMapMode.READ);
+   const optical = Array.from(
+@@ -184,12 +209,48 @@
+       max: Math.max(...birth),
+       pass: birth.some((v) => v > 0.002),
+     },
+-    analyticBeer: {
++    finiteLayerSupport: {
++      banks,
++      pass: Object.values(banks).every(
++        (b) => b.edgePeak === 0 && b.interiorPeak > 0.05,
++      ),
++    },
++    opticalDepth: {
+       actualTau: optical[0],
+       expectedTau: 0.009,
+       maxError: Math.abs(optical[0] - 0.009),
+       tolerance: 1e-5,
+     },
++    beerTransmittance: {
++      maxError: Math.abs(optical[1] - Math.exp(-0.009)),
++      tolerance: 1e-6,
++    },
++    homogeneousSegment: {
++      maxError: Math.max(
++        ...[0.4, 0.2, 0.1].map((s, i) =>
++          Math.abs(
++            optical[12 + i] -
++              ([0.2, 0.1, 0.03][i] / s) * (1 - Math.exp(-s * 2)),
++          ),
++        ),
++      ),
++      tolerance: 1e-6,
++    },
++    thinAndVacuumLimit: {
++      maxError: Math.max(
++        ...[0, 1e-9, 1e-6].map((s, i) =>
++          Math.abs(
++            optical[24 + i] -
++              [0.2, 0.1, 0.03][i] * (s === 0 ? 2 : -Math.expm1(-s * 2) / s),
++          ),
++        ),
++      ),
++      tolerance: 1e-6,
++    },
++    segmentComposition: {
++      maxError: Math.max(optical[20], optical[21]),
++      tolerance: 1e-6,
++    },
+     clearAir: {
+       actual: optical.slice(4, 7),
+       reference: referenceAir,
+@@ -197,6 +258,22 @@
+         ...referenceAir.map((v, i) => Math.abs(v - optical[4 + i])),
+       ),
+       tolerance: 0.005,
++    },
++    analyticAttenuationProvider: {
++      maxError: Math.max(
++        Math.abs(
++          optical[28] -
++            Math.exp(
++              -(0.55 + 0.35 * Math.sin(((2200 * 0.8) / 0.6 - 25) * 0.0012)) *
++                0.85 *
++                0.92 *
++                1.8,
++            ),
++        ),
++        Math.abs(optical[28] - optical[29]),
++        Math.abs(optical[30] - 1),
++      ),
++      tolerance: 5e-5,
+     },
+     phaseNormalization: {
+       integral: optical[8],
+--- a/src/gpu.js
++++ b/src/gpu.js
+@@ -11,9 +11,11 @@
+     this.completed = 0;
+     this.submitted = 0;
+     this.epoch = 1;
+-    device.addEventListener("uncapturederror", (e) =>
+-      this.errors.push(String(e.error)),
+-    );
++    device.addEventListener("uncapturederror", (e) => {
++      this.errorCount = (this.errorCount ?? 0) + 1;
++      if (this.errors.length < 64)
++        this.errors.push(e.error.message ?? String(e.error));
++    });
+     device.lost.then((v) => {
+       this.errors.push("Device lost: " + v.message);
+       this.lost = true;
+--- a/src/scene.js
++++ b/src/scene.js
+@@ -32,6 +32,9 @@
+     progress("Compiling the selected provider…");
+     const names = [
+       "source",
++      "support",
++      "dilate",
++      "velocity",
+       "noise",
+       "curl",
+       "optics",
+@@ -83,6 +86,23 @@
+         "source / bounded MacCormack",
+         this.codes.source,
+       );
++      this.velocityPipeline = await g.compute(
++        "shared per-tick velocity",
++        this.codes.source
++          .replace("fn main(", "fn sourceStep(")
++          .replace(
++            "var<storage,read> velocityField",
++            "var<storage,read_write> velocityField",
++          ) + this.codes.velocity,
++      );
++      this.supportPipeline = await g.compute(
++        "conservative source support",
++        this.codes.support,
++      );
++      this.dilatePipeline = await g.compute(
++        "source stencil guard",
++        this.codes.dilate,
++      );
+       this.noisePipeline = await g.compute(
+         "native volume basis",
+         this.codes.noise,
+@@ -115,6 +135,25 @@
+       g.format,
+     );
+     this.q = [0, 1].map((i) => g.texture("optical q " + i, this.dims));
++    const brickCount = this.dims.reduce(
++      (count, n) => count * Math.ceil(n / 8),
++      1,
++    );
++    this.support = g.buffer(
++      "raw source support",
++      brickCount * 4,
++      GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
++    );
++    this.active = g.buffer(
++      "guarded source support",
++      brickCount * 4,
++      GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
++    );
++    this.velocityField = g.buffer(
++      "float32 shared velocity",
++      16,
++      GPUBufferUsage.STORAGE,
++    );
+     this.fwd = g.texture("advection forward", this.dims);
+     this.rev = g.texture("advection reverse", this.dims);
+     this.rest = [0, 1].map((i) =>
+@@ -137,7 +176,7 @@
+     this.air = g.texture("air transmittance", [256, 64]);
+     this.view = g.texture(
+       "current optical image",
+-      this.viewSize,
++      [1280, 720],
+       "rgba16float",
+       GPUTextureUsage.RENDER_ATTACHMENT,
+     );
+@@ -217,7 +256,19 @@
+   write(buffer, snapshot, ui, stage = null, time = this.time) {
+     const a = this.scratch,
+       [lo, hi] = this.bounds();
+-    a.set([...this.cameraPosition(), ui.mirror ? 1 : 0], 0);
++    a.set(
++      [
++        ...this.cameraPosition(),
++        stage === null
++          ? ui.mirror
++            ? 1
++            : 0
++          : ui.cachedVelocity !== false
++            ? 1
++            : 0,
++      ],
++      0,
++    );
+     a.set([...this.target(), ui.mode], 4);
+     const elev = (ui.sun * Math.PI) / 180,
+       az = -0.7;
+@@ -230,8 +281,8 @@
+       ],
+       8,
+     );
+-    a.set([...lo, 0.0045], 12);
+-    a.set([...hi, 0.0018], 16);
++    a.set([...lo, 0.0045 * (ui.extinctionScale ?? 1)], 12);
++    a.set([...hi, 0.0018 * (ui.extinctionScale ?? 1)], 16);
+     a.set([time, 0.25, snapshot.wind, snapshot.windIntegral], 20);
+     a.set([snapshot.moist, snapshot.dry, snapshot.lift, this.family], 24);
+     a.set(
+@@ -246,7 +297,7 @@
+       [
+         stage === null ? (ui.alpha ?? 1) : this.dims[0],
+         0.25,
+-        0,
++        stage === null ? 0 : ui.emptyWork !== false ? 1 : 0,
+         stage === null ? ui.provider : stage,
+       ],
+       36,
+@@ -259,7 +310,16 @@
+       this.groups.set(key, this.gpu.group(pipeline, entries()));
+     return this.groups.get(key);
+   }
+-  sourceGroup(buffer, old, forward, reverse, out, rest, emitters) {
++  sourceGroup(
++    buffer,
++    old,
++    forward,
++    reverse,
++    out,
++    rest,
++    emitters,
++    active = this.active,
++  ) {
+     const key = [
+       buffer.label,
+       old.label,
+@@ -268,6 +328,8 @@
+       out.label,
+       rest.label,
+       emitters.label,
++      active.label,
++      this.velocityField.label,
+     ].join("|");
+     return this.cachedGroup(key, this.sourcePipeline, () => [
+       [0, buffer],
+@@ -281,7 +343,36 @@
+       [8, emitters],
+       [9, this.curl.createView()],
+       [10, this.repeat],
++      [11, active],
++      [12, this.velocityField],
+     ]);
++  }
++  ensureVelocityField() {
++    if (!this.sourcePipeline || this.velocityField.size > 16) return;
++    this.velocityField = this.gpu.buffer(
++      "float32 shared velocity/full",
++      this.dims.reduce((a, b) => a * b, 1) * 16,
++      GPUBufferUsage.STORAGE,
++    );
++  }
++  velocityGroup(uniform, q) {
++    return this.cachedGroup(
++      "velocity/" +
++        uniform.label +
++        "/" +
++        q.label +
++        "/" +
++        this.velocityField.label,
++      this.velocityPipeline,
++      () => [
++        [0, uniform],
++        [1, q.createView()],
++        [9, this.curl.createView()],
++        [10, this.repeat],
++        [11, this.active],
++        [12, this.velocityField],
++      ],
++    );
+   }
+   compute(e, pipeline, group, dims, timestamp) {
+     const pass = e.beginComputePass(
+@@ -297,12 +388,14 @@
+       throw Error("Source reset requires a drained explicit epoch boundary");
+     this.time = time;
+     this.steps = 0;
++    this.lastPresentation = null;
+     this.epoch++;
+     this.current = 0;
+     this.currentRest = 0;
+     this.family = Number(ui.family);
+     const state = weather.sample(time);
+     this.lastControl = state;
++    this.lastSourceInput = state;
+     const data = this.driver.reset(time, state, !clear);
+     const emit = this.emitters[this.frame % 3][0];
+     this.gpu.device.queue.writeBuffer(emit, 0, data);
+@@ -345,14 +438,26 @@
+   render(weather, ui, ticks = 0, worldTime = this.time) {
+     const g = this.gpu;
+     if (g.pending >= 3 || g.lost) return false;
++    this.viewSize = ui.resolved ? [1280, 720] : [640, 360];
++    if (this.sourcePipeline && ui.cachedVelocity) this.ensureVelocityField();
++    // Reject stale forcing before mutating the driver or staging any source update.
++    for (let n = 0; n < ticks; n++) weather.sample(this.time + n * 0.25);
++    const sourceInputRange = [];
+     const e = g.device.createCommandEncoder(),
+       frameSlot = this.frame % 3,
+       slot = this.uniforms[frameSlot];
+-    const sample = this.frame % 12 === 0 && this.timings.begin();
++    const sample =
++      !ui.sourceOnly && this.frame % 12 === 0 && this.timings.begin();
+     ticks = this.sourcePipeline ? ticks : 0;
+     for (let n = 0; n < ticks; n++) {
+       const nextTime = this.time + 0.25,
+         snapshot = weather.sample(this.time);
++      this.lastSourceInput = snapshot;
++      sourceInputRange.push({
++        time: snapshot.time,
++        tick: snapshot.weatherTick,
++        revision: snapshot.revision,
++      });
+       const emit = this.emitters[frameSlot][n];
+       g.device.queue.writeBuffer(
+         emit,
+@@ -364,12 +469,66 @@
+         rest = this.rest[this.currentRest],
+         off = n * 4;
+       this.write(slot[off], snapshot, ui, 1, nextTime);
++      if (ui.emptyWork !== false) {
++        const supportGroup = this.cachedGroup(
++          "support/" + frameSlot + "/" + n + "/" + this.current,
++          this.supportPipeline,
++          () => [
++            [0, slot[off]],
++            [1, q.createView()],
++            [2, emit],
++            [3, this.support],
++          ],
++        );
++        const pass = e.beginComputePass(
++          sample && n === 0
++            ? { timestampWrites: this.timings.descriptor(0, null) }
++            : {},
++        );
++        pass.setPipeline(this.supportPipeline);
++        pass.setBindGroup(0, supportGroup);
++        pass.dispatchWorkgroups(...this.dims.map((v) => Math.ceil(v / 8)));
++        pass.end();
++        const guardGroup = this.cachedGroup(
++          "guard/" + this.current,
++          this.dilatePipeline,
++          () => [
++            [0, q.createView()],
++            [1, this.support],
++            [2, this.active],
++          ],
++        );
++        this.compute(
++          e,
++          this.dilatePipeline,
++          guardGroup,
++          this.dims.map((v) => Math.ceil(v / 8)),
++        );
++      }
++
++      if (ui.cachedVelocity !== false) {
++        const vg = this.velocityGroup(slot[off], q);
++        this.compute(
++          e,
++          this.velocityPipeline,
++          vg,
++          this.dims,
++          sample && n === 0 && ui.emptyWork === false
++            ? this.timings.descriptor(0, null)
++            : null,
++        );
++      }
+       this.compute(
+         e,
+         this.sourcePipeline,
+         this.sourceGroup(slot[off], q, q, q, this.fwd, rest, emit),
+         this.dims,
+-        sample && n === 0 ? this.timings.descriptor(0, null) : null,
++        sample &&
++          n === 0 &&
++          ui.emptyWork === false &&
++          ui.cachedVelocity === false
++          ? this.timings.descriptor(0, null)
++          : null,
+       );
+       this.write(slot[off + 1], snapshot, ui, 2, nextTime);
+       this.compute(
+@@ -413,6 +572,21 @@
+       this.currentRest = 1 - this.currentRest;
+       this.time = nextTime;
+       this.steps++;
++    }
++    if (ui.sourceOnly) {
++      g.submit(e);
++      this.lastSubmission = {
++        frame: this.frame++,
++        time: this.time,
++        committedSourceTime: this.time,
++        sourceSteps: this.steps,
++        sourceInputRange,
++        worldTime,
++        epoch: this.epoch,
++        presented: false,
++        weatherInput: this.lastSourceInput,
++      };
++      return true;
+     }
+     const alpha = this.steps > 0 ? (ui.alpha ?? 1) : 1;
+     ui = { ...ui, alpha };
+@@ -476,14 +650,20 @@
+       ],
+       ...(sample ? { timestampWrites: this.timings.descriptor(4, 5) } : {}),
+     });
++    pass.setViewport(0, 0, ...this.viewSize, 0, 1);
+     pass.setPipeline(this.viewPipeline);
+     pass.setBindGroup(0, bg);
+     pass.draw(3);
+     pass.end();
+-    const display = this.cachedGroup("display", this.displayPipeline, () => [
+-      [0, this.view.createView()],
+-      [1, this.clamp],
+-    ]);
++    const display = this.cachedGroup(
++      "display/" + frameSlot,
++      this.displayPipeline,
++      () => [
++        [0, this.view.createView()],
++        [1, this.clamp],
++        [2, v],
++      ],
++    );
+     pass = e.beginRenderPass({
+       colorAttachments: [
+         {
+@@ -503,16 +683,31 @@
+     g.submit(e);
+     this.lastSubmission = {
+       frame: this.frame,
++      presented: true,
+       time: visibleTime,
+       committedSourceTime: this.time,
+       sourceSteps: this.steps,
+       worldTime,
+       weatherInput: this.lastControl,
++      sourceInputRange,
++      camera: {
++        ...this.camera,
++        position: this.cameraPosition(),
++        target: this.target(),
++      },
++      viewSize: this.viewSize,
++      domain: this.bounds(),
++      look: {
++        kappa: [0.0045, 0.0018].map((k) => k * (ui.extinctionScale ?? 1)),
++        MS: [1, 0.25, 0],
++        exposure: 0.5,
++      },
+       epoch: this.epoch,
+       family: this.family,
+       controls: { ...ui },
+       lightBuilt,
+     };
++    this.lastPresentation = this.lastSubmission;
+     if (sample)
+       this.timings.collect(this.frame, {
+         sourceTicks: ticks,
+@@ -565,7 +760,7 @@
+       time: this.time,
+       steps: this.steps,
+       epoch: this.epoch,
+-      weather: this.lastControl,
++      weather: this.lastSourceInput,
+       dims: this.dims,
+       voxels: c[0],
+       opticalProxySum: c[1] / 1000,
+--- /dev/null
++++ b/src/source-mask-reference.js
+@@ -0,0 +1,386 @@
++// Whole-field differential check: optimized work selection must preserve decoded RGBA16F.
++export async function compareSourceMask(scene) {
++  if (
++    scene.maskReference?.epoch === scene.epoch &&
++    scene.maskReference?.sourceTime === scene.time
++  )
++    return { ...scene.maskReference, reusedForSameSourceSnapshot: true };
++  if (scene.family !== 0 || !scene.sourcePipeline)
++    throw Error("Mask oracle requires the Cu volume provider");
++  const g = scene.gpu;
++  await g.device.queue.onSubmittedWorkDone();
++  const dims = scene.dims;
++  scene.ensureVelocityField();
++  scene.maskFixture ??= await makeFixture(scene);
++  const {
++    old,
++    dense,
++    masked,
++    fwd,
++    rev,
++    uniform,
++    emit,
++    counters,
++    read,
++    pipeline,
++    group,
++  } = scene.maskFixture;
++  const params = new Float32Array(40),
++    pulse = new Float32Array(256);
++  params.set([...scene.bounds()[0], 0.0045], 12);
++  params.set([...scene.bounds()[1], 0.0018], 16);
++  params.set([10, 0.25, 3, 0], 20);
++  params.set([0.85, 0.08, 1, 0], 24);
++  params.set([1e6, 0, 71, 1], 28);
++  params.set([dims[0], 0.25, 0, 1], 36);
++  const rest = scene.rest[scene.currentRest];
++  const records = [];
++  for (const fixture of ["empty-birth", "existing-source", "edge-birth"]) {
++    const init = g.device.createCommandEncoder();
++    if (fixture === "existing-source")
++      init.copyTextureToTexture(
++        { texture: scene.q[scene.current] },
++        { texture: old },
++        dims,
++      );
++    else {
++      // WebGPU zero initialization for a new field; clear an already-used input explicitly.
++      g.device.queue.writeTexture(
++        { texture: old },
++        new Uint16Array(dims.reduce((a, b) => a * b, 1) * 4),
++        { bytesPerRow: dims[0] * 8, rowsPerImage: dims[1] },
++        dims,
++      );
++    }
++    g.submit(init);
++    await g.device.queue.onSubmittedWorkDone();
++    for (let step = 0; step < 12; step++) {
++      pulse.fill(0);
++      pulse.set([
++        fixture === "edge-birth" ? -4900 : 0,
++        0,
++        600,
++        1,
++        0,
++        1,
++        30,
++        10,
++      ]);
++      g.device.queue.writeBuffer(emit, 0, pulse);
++      params[20] = 10 + step * 0.25;
++      params[22] = step >= 6 ? -12 : 3;
++      params[26] = step >= 6 ? 2 : 1;
++      params[28] = step >= 6 ? -300 : 1e6;
++      for (const skip of [false, true]) {
++        const output = skip ? masked : dense;
++        for (const stage of [1, 2, 3]) {
++          params[3] = skip ? 1 : 0;
++          params[38] = skip ? 1 : 0;
++          params[39] = stage;
++          g.device.queue.writeBuffer(uniform, 0, params);
++          const e = g.device.createCommandEncoder();
++          if (skip && stage === 1) {
++            const sg = g.group(scene.supportPipeline, [
++              [0, uniform],
++              [1, old.createView()],
++              [2, emit],
++              [3, scene.support],
++            ]);
++            const sp = e.beginComputePass();
++            sp.setPipeline(scene.supportPipeline);
++            sp.setBindGroup(0, sg);
++            sp.dispatchWorkgroups(...dims.map((v) => Math.ceil(v / 8)));
++            sp.end();
++            const dg = g.group(scene.dilatePipeline, [
++              [0, old.createView()],
++              [1, scene.support],
++              [2, scene.active],
++            ]);
++            scene.compute(
++              e,
++              scene.dilatePipeline,
++              dg,
++              dims.map((v) => Math.ceil(v / 8)),
++            );
++          }
++          if (skip && stage === 1)
++            scene.compute(
++              e,
++              scene.velocityPipeline,
++              scene.velocityGroup(uniform, old),
++              dims,
++            );
++          scene.compute(
++            e,
++            scene.sourcePipeline,
++            scene.sourceGroup(
++              uniform,
++              old,
++              stage === 1 ? old : fwd,
++              stage === 3 ? rev : old,
++              stage === 1 ? fwd : stage === 2 ? rev : output,
++              rest,
++              emit,
++            ),
++            dims,
++          );
++          g.submit(e);
++          await g.device.queue.onSubmittedWorkDone();
++        }
++      }
++      const e = g.device.createCommandEncoder();
++      e.clearBuffer(counters);
++      scene.compute(e, pipeline, group, dims);
++      e.copyBufferToBuffer(counters, 0, read, 0, 16);
++      e.copyTextureToTexture({ texture: masked }, { texture: old }, dims);
++      g.submit(e);
++      await read.mapAsync(GPUMapMode.READ);
++      const values = Array.from(
++        new Uint32Array(read.getMappedRange().slice(0)),
++      );
++      read.unmap();
++      records.push({
++        fixture,
++        step,
++        differentVoxels: values[0],
++        invalidVoxels: values[1],
++        maxAbsDifference: new Float32Array(
++          new Uint32Array([values[2]]).buffer,
++        )[0],
++        activeBricks: values[3],
++      });
++    }
++  }
++  const queued = await compareQueuedGraphs(scene, scene.maskFixture);
++  records.push(...queued.records);
++  scene.maskReference = {
++    queuedGraphsHighWater: queued.highWater,
++    epoch: scene.epoch,
++    sourceTime: scene.time,
++    scope:
++      "36 serial plus24 batched full-resolution source ticks across clear birth, existing source, edge birth and changed wind/lift/front; three queued eight-tick graphs; mask plus shared float32 velocity equal direct dense decoded RGBA16F all four channels; carrier unchanged",
++    pass:
++      records.every((r) => !r.differentVoxels && !r.invalidVoxels) &&
++      g.errors.length === 0,
++    records,
++    errors: [...g.errors],
++    oracleLogicalBytes: scene.maskFixture.logicalBytes,
++    sharedVelocityBytes: scene.velocityField.size,
++  };
++  return scene.maskReference;
++}
++
++async function makeFixture(scene) {
++  const g = scene.gpu;
++  const byteStart = g.bytes;
++  const dims = scene.dims;
++  const old = g.texture("mask oracle input", dims),
++    dense = g.texture("mask oracle dense", dims),
++    masked = g.texture("mask oracle masked", dims),
++    fwd = g.texture("mask oracle forward", dims),
++    rev = g.texture("mask oracle reverse", dims);
++  const uniform = g.buffer(
++      "mask oracle uniform",
++      160,
++      GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
++    ),
++    emit = g.buffer(
++      "mask oracle emitters",
++      1024,
++      GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
++    ),
++    counters = g.buffer(
++      "mask differential counters",
++      16,
++      GPUBufferUsage.STORAGE |
++        GPUBufferUsage.COPY_SRC |
++        GPUBufferUsage.COPY_DST,
++    ),
++    read = g.buffer(
++      "mask differential readback",
++      16,
++      GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
++    );
++  const code = `@group(0) @binding(0) var a:texture_3d<f32>;@group(0) @binding(1) var b:texture_3d<f32>;
++  @group(0) @binding(2) var<storage,read_write> counts:array<atomic<u32>,4>;
++  @group(0) @binding(3) var<storage,read> mask:array<u32>;
++  @compute @workgroup_size(4,4,4) fn main(@builtin(global_invocation_id) id:vec3u){let n=textureDimensions(a);if(any(id>=n)){return;}
++  let av=textureLoad(a,vec3i(id),0);let bv=textureLoad(b,vec3i(id),0);
++  if(any(av!=bv)){atomicAdd(&counts[0],1u);}
++  if(any(av!=av)||any(bv!=bv)||any(abs(av)>vec4f(65504))||any(abs(bv)>vec4f(65504))){atomicAdd(&counts[1],1u);}
++  let d=abs(av-bv);atomicMax(&counts[2],bitcast<u32>(max(max(d.x,d.y),max(d.z,d.w))));
++  let flat=(id.z*n.y+id.y)*n.x+id.x;if(flat<arrayLength(&mask)){atomicAdd(&counts[3],mask[flat]);}}
++  `;
++  const pipeline = await g.compute("exact source mask differential", code);
++  const group = g.group(pipeline, [
++    [0, masked.createView()],
++    [1, dense.createView()],
++    [2, counters],
++    [3, scene.active],
++  ]);
++
++  return {
++    logicalBytes: g.bytes - byteStart,
++    old,
++    dense,
++    masked,
++    fwd,
++    rev,
++    uniform,
++    emit,
++    counters,
++    read,
++    pipeline,
++    group,
++  };
++}
++
++async function compareQueuedGraphs(scene, f) {
++  const g = scene.gpu,
++    dims = scene.dims;
++  await g.device.queue.onSubmittedWorkDone();
++  if (!f.batches) {
++    const before = g.bytes;
++    f.batches = Array.from({ length: 3 }, (_, job) => ({
++      uniforms: Array.from({ length: 48 }, (_, i) =>
++        g.buffer(
++          `queued oracle uniform ${job}/${i}`,
++          160,
++          GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
++        ),
++      ),
++      emitters: Array.from({ length: 8 }, (_, i) =>
++        g.buffer(
++          `queued oracle emitter ${job}/${i}`,
++          1024,
++          GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
++        ),
++      ),
++      read: g.buffer(
++        `queued oracle read ${job}`,
++        16,
++        GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
++      ),
++    }));
++    f.logicalBytes += g.bytes - before;
++  }
++  const records = [],
++    p = new Float32Array(40),
++    pulse = new Float32Array(256);
++  p.set([...scene.bounds()[0], 0.0045], 12);
++  p.set([...scene.bounds()[1], 0.0018], 16);
++  p.set([10, 0.25, 3, 0], 20);
++  p.set([0.85, 0.08, 1, 0], 24);
++  p.set([1e6, 0, 71, 1], 28);
++  p.set([dims[0], 0.25, 0, 1], 36);
++  let highWater = 0;
++  for (let job = 0; job < 3; job++) {
++    const b = f.batches[job],
++      e = g.device.createCommandEncoder();
++    e.clearBuffer(f.counters);
++    if (job === 1)
++      e.copyTextureToTexture(
++        { texture: scene.q[scene.current] },
++        { texture: f.old },
++        dims,
++      );
++    else
++      g.device.queue.writeTexture(
++        { texture: f.old },
++        new Uint16Array(dims.reduce((a, b) => a * b, 1) * 4),
++        { bytesPerRow: dims[0] * 8, rowsPerImage: dims[1] },
++        dims,
++      );
++    for (let step = 0; step < 8; step++) {
++      pulse.fill(0);
++      pulse.set([job === 2 ? -4900 : 0, 0, 600, 1, 0, 1, 30, 10]);
++      g.device.queue.writeBuffer(b.emitters[step], 0, pulse);
++      p[20] = 10 + step * 0.25;
++      p[22] = step >= 4 ? -12 : 3;
++      p[26] = step >= 4 ? 2 : 1;
++      p[28] = step >= 4 ? -300 : 1e6;
++      for (let variant = 0; variant < 2; variant++)
++        for (let stage = 1; stage <= 3; stage++) {
++          const u = b.uniforms[step * 6 + variant * 3 + stage - 1];
++          p[3] = variant;
++          p[38] = variant;
++          p[39] = stage;
++          g.device.queue.writeBuffer(u, 0, p);
++          if (variant === 1 && stage === 1) {
++            const sg = g.group(scene.supportPipeline, [
++              [0, u],
++              [1, f.old.createView()],
++              [2, b.emitters[step]],
++              [3, scene.support],
++            ]);
++            const sp = e.beginComputePass();
++            sp.setPipeline(scene.supportPipeline);
++            sp.setBindGroup(0, sg);
++            sp.dispatchWorkgroups(...dims.map((v) => Math.ceil(v / 8)));
++            sp.end();
++            const dg = g.group(scene.dilatePipeline, [
++              [0, f.old.createView()],
++              [1, scene.support],
++              [2, scene.active],
++            ]);
++            scene.compute(
++              e,
++              scene.dilatePipeline,
++              dg,
++              dims.map((v) => Math.ceil(v / 8)),
++            );
++            scene.compute(
++              e,
++              scene.velocityPipeline,
++              scene.velocityGroup(u, f.old),
++              dims,
++            );
++          }
++          scene.compute(
++            e,
++            scene.sourcePipeline,
++            scene.sourceGroup(
++              u,
++              f.old,
++              stage === 1 ? f.old : f.fwd,
++              stage === 3 ? f.rev : f.old,
++              stage === 1
++                ? f.fwd
++                : stage === 2
++                  ? f.rev
++                  : variant === 1
++                    ? f.masked
++                    : f.dense,
++              scene.rest[scene.currentRest],
++              b.emitters[step],
++            ),
++            dims,
++          );
++        }
++      // Keep every mismatch even if a later tick reconverges. Equal paths may share the next input.
++      scene.compute(e, f.pipeline, f.group, dims);
++      e.copyTextureToTexture({ texture: f.masked }, { texture: f.old }, dims);
++    }
++    e.copyBufferToBuffer(f.counters, 0, b.read, 0, 16);
++    g.submit(e);
++    highWater = Math.max(highWater, g.pending);
++  }
++  await Promise.all(
++    f.batches.map(async (b, job) => {
++      await b.read.mapAsync(GPUMapMode.READ);
++      const a = Array.from(new Uint32Array(b.read.getMappedRange().slice(0)));
++      b.read.unmap();
++      records.push({
++        fixture: ["queued-empty", "queued-existing", "queued-edge"][job],
++        queuedGraph: job,
++        steps: 8,
++        differentVoxels: a[0],
++        invalidVoxels: a[1],
++        maxAbsDifference: new Float32Array(new Uint32Array([a[2]]).buffer)[0],
++        activeBrickVisits: a[3],
++      });
++    }),
++  );
++  records.sort((a, b) => a.queuedGraph - b.queuedGraph);
++  return { records, highWater };
++}
+--- a/src/source.js
++++ b/src/source.js
+@@ -59,6 +59,7 @@
+     if (seeded) {
+       for (let i = 0; i < 5; i++) this.spawn(time - 15 - i * 4);
+     }
++    this.threshold = 1 + 0.5 * random(this.seed + this.serial * 17);
+     return this.update(time, 0, weather);
+   }
+ }
+--- a/src/weather.js
++++ b/src/weather.js
+@@ -43,6 +43,15 @@
+     this.enqueue({ type: "controls", patch: { ...patch } });
+   }
+   enqueue(command) {
++    // Controls are desired state at the next barrier. Coalesce adjacent uncommitted UI updates.
++    if (
++      command.type === "controls" &&
++      this.pending.at(-1)?.type === "controls"
++    ) {
++      const previous = this.pending.at(-1);
++      previous.patch = { ...previous.patch, ...command.patch };
++      return;
++    }
+     if (this.pending.length >= 64)
+       throw Error("Weather command capacity exceeded");
+     this.pending.push(command);
+--- a/style.css
++++ b/style.css
+@@ -144,6 +144,9 @@
+   overflow: auto;
+ }
+ @media (max-width: 900px) {
++  .viewport {
++    position: static;
++  }
+   main {
+     grid-template-columns: 1fr;
+   }
+--- a/tests/weather.test.mjs
++++ b/tests/weather.test.mjs
+@@ -88,3 +88,32 @@
+   observed,
+   observed.map((f) => delayed.sample(f.time)),
+ );
++
++const drag = new Weather();
++for (let i = 0; i < 10000; i++) drag.command({ wind: i % 13 });
++assert.equal(drag.pending.length, 1);
++drag.step();
++assert.equal(drag.target.wind, 9999 % 13);
++assert.equal(drag.commands.length, 1);
++
++// Reset must reproduce the recipe independently of the previous run's renewal state.
++for (const seeded of [false, true]) {
++  const used = new SourceDriver(71),
++    fresh = new SourceDriver(71),
++    driverWeather = { moist: 0.85, lift: 1 };
++  for (let i = 0; i < 1800; i++) used.update(i * 0.25, 0.25, driverWeather);
++  assert.deepEqual(
++    used.reset(0, driverWeather, seeded),
++    fresh.reset(0, driverWeather, seeded),
++  );
++  for (let i = 1; i <= 1200; i++) {
++    assert.deepEqual(
++      used.update(i * 0.25, 0.25, driverWeather),
++      fresh.update(i * 0.25, 0.25, driverWeather),
++    );
++    assert.deepEqual(
++      used.pulses.map((p) => p.id),
++      fresh.pulses.map((p) => p.id),
++    );
++  }
++}

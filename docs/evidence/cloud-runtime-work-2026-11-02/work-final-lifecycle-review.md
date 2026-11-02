@@ -1,0 +1,15 @@
+# Final lifecycle and scheduling delta review
+
+2 November 2026. Bounded read-only review of the pilot after checkpoint `a65113f850bee519`, focused on source-only submission, preview pacing, observation labels and reset/configuration consistency. CPU weather/reference tests pass. I did not run GPU, inspect motion or qualify display cadence, memory, visual quality or budgets.
+
+## Consequential remaining issue
+
+**A new-world reset is silently lost while optics are off.** `bench.js::reset` queues a request if busy, then returns immediately when `scene` is null. Global optical-off disposes the scene but deliberately keeps CPU Weather/WorldClock running. Pressing “Seeded start” or changing family in that state therefore does not start a new CPU world. A reset queued during configuration that ends in optical-off is likewise drained and dropped. This conflicts with the stated separation of headless weather authority from optical source. Apply new-world reset to Weather/WorldClock even without a scene; initialize q from that world when optics is re-enabled. An optical-only reset can require an active scene or report that no optical source exists. A small no-GPU test should cover optics-off → advance weather → new-world reset → re-enable and confirm new world epoch/time/seed, with no stale optical epoch presented.
+
+## Reviewed closure and limits
+
+- The RAF host alone advances WorldClock. The loop submits a graph only when there are source ticks or an image is due. At high rates, fixed source work can submit without light/view/display; normal 1× keeps the ordinary image path. `lastSubmission` and `lastPresentation` are separate, and the HUD calls the latter a **submitted image**. The benchmark labels GPU queries as presentation-graph-only, filters samples by epoch/start frame and leaves accelerated total GPU work unqualified. These are sound evidence boundaries in the code read.
+- The 50/200 ms pacing applies to ordinary 16×/64× image requests; `uiDirty` and final deterministic-advance or pause flush request an image. Front/storm handlers now set `uiDirty`. A diagnostic source-only switch intentionally suppresses images; it should not be used as an image-motion witness. Actual OS display frequency is still unknown.
+- Failure aborts an active benchmark; source weather is preflighted before driver/source updates; `Scene.reset` drains and clears `lastPresentation`; configuration and reset requests are deferred through the observed busy window. The new `ensureVelocityField` guard does not allocate the full source field for a source-less provider. Device loss, GPU completion, queue pressure and the real 16×/64× experience remain untested here.
+
+Reviewed SHA-256: `bench.js` 46173b10be66b2eedbb7fd7c595d2d438287c6f361f8cbdbf8c1ce464fcfcb7f; `scene.js` b069c87a979a9371119ac444e655ba7a90353ea73d9b14566c0515669bc3e597; `weather.js` d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15; `gpu.js` 8afc01d2f1274b47d371855249eb1cc2cb38c18799d07e67530f8c13c3545582; `source.js` fb11df7af42af813980cb8fa7ee791884bc066db8d61229c8077dce669d553df.

@@ -128,3 +128,10 @@ reviewer claims to have watched the renderer or validated device performance.
 Next: improve and judge source morphology at resolved reference quality, add explicit segment/cache oracles and
 current environment, then exercise the small coupled sentinel before family/library expansion. Keep this checkpoint
 as the reproducible baseline; do not promote its private coordinator or inferred qualification into engine APIs.
+
+## Subsequent reset erratum
+
+The [source-work checkpoint](../cloud-runtime-work-2026-11-02/README.md) corrects a renewal-threshold reset bug.
+Prior warmup could change later pulse timing despite the same seed and controls. These retained images and receipts
+remain actual historical observations, but their reset sequence is not a golden fresh-start invariant. The later
+checkpoint restores used/fresh driver equality and retains its regression; the historical instrument is unchanged.

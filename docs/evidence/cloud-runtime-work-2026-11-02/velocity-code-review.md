@@ -1,0 +1,20 @@
+# Shared velocity source optimization audit
+
+2 November 2026. Read-only audit of build `db6c0ab5d3ef5809`, pinned by `captures/source-mask-comparison-db6c0ab5d3ef5809-1.json`. Current SHA-256 hashes of `source.wgsl`, `velocity.wgsl`, `scene.js`, and `source-mask-reference.js` match that receipt. No source changes or new GPU run were made.
+
+## Code path
+
+- `Scene` compiles the velocity entry by retaining the same `source.wgsl` helper declarations and `velocity(x)` function, renaming the source entry, changing binding 12 to writable, then appending `velocity.wgsl`. This avoids a copied velocity formula. The current generated module compiled and the pinned receipt reports zero GPU errors. The string replacement is sensitive to the exact `fn main(` and declaration text; a later formatter/edit should be checked through compilation.
+- The velocity pass computes `x = pos((id + .5) / textureDimensions(oldQ))`. Source stages 1–3 compute the identical full-resolution center using `textureDimensions(outputQ)`; both are `[96,80,80]` for this path. They receive the same `snapshot`, `nextTime`, bounds, family and material inputs. Stage-specific `p.domain.w` differs, but `velocity(x)` does not read it. `Scene.write` puts `cachedVelocity` in `p.camera.w` for source stages, separate from the presentation mirror bit, and puts `emptyWork` in `p.domain.z` for both prepass and source stages.
+- For each source tick, the encoder orders raw support, one-brick dilation, cached velocity, forward, reverse, correction/reaction, then half-resolution carrier. The three q stages read one float32 velocity at the same flattened voxel index. Inactive bricks are zeroed by the velocity pass and the source stages return zero before reading it. When caching is disabled, the source stages evaluate `velocity(x)` directly. The carrier still evaluates `velocity(x)` at its own half-resolution centers and does not read the full-resolution cache.
+- One `velocityField` buffer is reused across ticks/frames. Its size is `96*80*80*16 = 9,830,400` bytes, matching one `vec4f` per full-resolution voxel. It is overwritten before any source read within each tick. The passes and submitted graphs use one ordered WebGPU queue, so subsequent writes cannot overtake preceding q reads. Frame uniforms/emitters have separate slots, and the immutable bind groups bind the shared buffer rather than capturing its contents.
+
+## Pinned comparison scope
+
+The comparison runs three 12-tick Cu fixtures: empty-field birth, a copy of the live existing source, and edge birth. At tick 6 it changes wind, lift, and front. For each tick it runs an unmasked direct-velocity q update and a masked cached-velocity update, then compares **all four decoded RGBA16F channels** over the entire `96*80*80` output. Each of 36 records reports zero differing voxels, zero invalid voxels, zero maximum difference; the receipt reports no GPU errors. The test's shared forward/reverse scratch is recomputed separately for each route before each correction, and the oracle waits for submitted work before reusing its single uniform buffer. This is meaningful exact equality for the admitted fixtures. It does not test the half-resolution carrier, other families, arbitrary forcing histories, sparse storage, visual acceptance or speed.
+
+## One receipt defect
+
+`compareSourceMask` returns `scene.maskReference` immediately on a repeated invocation and labels it `reusedWithinOpticalEpoch`. `Scene.reset` increments the optical epoch but does not clear `maskReference`. A comparison requested after a same-Scene reset can therefore return the preceding epoch's result without running against the new existing-source state. Clear or key this cached receipt by optical epoch (and relevant source revision) before treating subsequent requests as fresh. The supplied build's first pinned receipt remains valid for its recorded fixture/run.
+
+Normal-rate and source-only 64x timings are still pending. The comparison establishes equality, not that the extra prepass and 9.38 MiB logical velocity buffer reduce complete source cost or fit the selected budgets.

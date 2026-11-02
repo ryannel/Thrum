@@ -1250,6 +1250,14 @@
           "correctness": "finite_CPU_causal_replay_and_GPU_interior_advection_reaction_depth_air_phase_checks_pass",
           "experienced_quality": "sampled_local_growth_renewal_and_front_loss_visible_soft_morphology_below_reference_continuous_motion_unqualified",
           "performance": "logical_resources_25_1MiB_short_1x16x_cadence_observed_64x_history_capacity_failed_cross_pass_totals_rejected_M2_native_full_system_unrun"
+        },
+        "runtime_source_work": {
+          "record": "../evidence/cloud-runtime-work-2026-11-02/README.md",
+          "build": "752b5eafbbe430ca",
+          "implementation": "standalone_dense_reference_conservative_work_mask_optional_shared_velocity_finite_Sc_St_bank_no_engine_binding",
+          "correctness": "CPU_reset_replay_regression_and_GPU_finite_transport_layer_support_mask_cache_queued_graph_equivalence_pass",
+          "experienced_quality": "seeded_Sc_box_wall_removed_same_camera_before_after_boundary_occupancy_zero_at0_60_300s_other_morphology_motion_cache_error_unqualified",
+          "performance": "shared_velocity_retained_optional_off_short_single_cell_screen_inconclusive_adverse_full_sky_AB_required_64x_history_capacity_failure_not_closed_M2_and_whole_GPU_unqualified"
         }
       }
     },

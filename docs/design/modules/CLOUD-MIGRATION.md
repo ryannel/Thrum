@@ -87,6 +87,7 @@ roles onto the actual engine API; no prototype coordinator, browser loader or pr
 are retained. All-stage checkboxes remain open where their complete contract is not yet proved.
 
 - [x] Preserve [first running bench checkpoint](../../evidence/cloud-runtime-pilot-2026-11-02/README.md), finite CPU/GPU checks, independent code review and actual growth/front images; complete P0 remains open.
+- [x] Preserve [source-work and box-boundary correction checkpoint](../../evidence/cloud-runtime-work-2026-11-02/README.md): exact direct/mask/cached-velocity comparisons, causal reset correction, scoped lifecycle checks and actual Sc before/after images. Full P0/P1a and visual/device gates remain open.
 - [ ] Implement only the selected source/light/view seams with an existing tiny comparison source; no general SDK/editor.
 - [ ] Load recipe/weather controls and one world clock; play/pause/replay1x/16x/64x, camera/Sun/consumer toggles.
 - [ ] Prove full versus independent analytic shadow-only provider configuration and reject incompatible full-sky selection.
@@ -178,6 +179,7 @@ Each family needs its mechanism pilot then4 distinct review variants (inspection
 - [ ] Freeze representative counts/coverage/routes from CLOUDS; named512-event/etc cases are stress fixtures, not hard product populations.
 - [ ] Wide/close/horizon/clear-side storm/deck-edge, repetition/renewal, low Sun, cold/seek/swap/resize/recovery and all-off/retained modes.
 - [ ] Same accepted settings in visual and exclusive benchmark runs: actual M2 cloud5ms, total standalone16ms and fixture-browser peak512MiB comparisons.
+- [ ] Retain direct velocity evaluation and shared per-tick float32 caching until a matched full-sky A/B decision: five-family/layer mixes, calm and storm/transition workloads,1x/16x/64x, CPU/GPU/physical memory/bandwidth/cache pressure, whole graph and source floor. Single-Cu results do not eliminate the option; preserve equivalent source outputs and visual quality.
 - [ ] Predeclared p95/60s warm steady plus bursts; CPU/IO/queue/observer/driver scope and deadline misses separate; missing devices/counters unqualified.
 - [ ] Done: FS quality/fixture-cost scope only. P8 owns actual Thrum frame, rough-water consumers and full product memory.
 
