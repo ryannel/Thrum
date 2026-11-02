@@ -1,5 +1,7 @@
 # I1 combined headless foundation status
 
+**Direction update, 2 November 2026:** The process-cap and enforceable game-allocation decisions named in this checkpoint are no longer general I1 prerequisites. See the [current memory direction](MEMORY-DIRECTION-2026-11-02.md) and [central work list](../../BUILD-PLAN.md). This checkpoint's test and measurement scope remains historical.
+
 2 November 2026. Read against code checkpoint `3e599d6713263ec3e04ef5bd1ff6db5c5c2ffcb0` and the linked local evidence. This is a **scope review**, not a new benchmark or a claim that the I1 foundation is complete. The headless game has no renderer, transport adapter, save path or native phone app shell. `RUSTC_WRAPPER= ./dev check` passes the repository gate; `RUSTC_WRAPPER= ./dev check-web` compiles the portable core for Wasm. These checks prove neither device behavior nor performance.
 
 | Path | Working evidence | Measured scope and remaining limit |

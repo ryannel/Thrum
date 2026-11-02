@@ -1,5 +1,7 @@
 # I1 game-work memory boundary: provisional architecture choice
 
+**Direction update, 2 November 2026:** The general hard process cap discussed below was retired. The [current memory direction](MEMORY-DIRECTION-2026-11-02.md) uses direct native rules with measured allocation and pressure behavior; the strict alternatives below are optional future profiles.
+
 2 November 2026. **Proposed, not selected or implemented.** The [protected host](PROTECTED-PATH-AUDIT.md) and [typed two-peer fixture](TYPED-PROJECTION.md) bound selected engine-owned allocations and cooperating `RuleContext` output. The [private-allocation control](PROCESS-ALLOCATION-AUDIT.md) proves that an arbitrary Rust `Vec` inside `GameRules::decide` raises allocator requests without changing the pool charge. A sealed returned value is therefore insufficient to certify a whole-process cap. C02's [whole-process publication target](../../design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world) remains unchanged.
 
 ## The choice that changes the public engine

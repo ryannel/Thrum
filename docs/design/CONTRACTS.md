@@ -60,7 +60,7 @@ inputs, ordering and required nondeterministic results; fixed dt alone does not 
 Suspend/long gaps follow explicit pause/catch-up policy with a work cap; never apply hidden wall-clock elapsed time
 unboundedly. Every asynchronous result has an epoch/version check before publication.
 
-F1 owns a bounded publication pool per world with whole-process admission. W1 publishes a `SnapshotId(world_epoch,tick)` **immutable read-model bundle**:
+F1 owns publication lifetimes and reports retained work and memory pressure. There is **no engine-wide hard process-memory ceiling** or requirement that native game rules fit a predeclared byte allowance. A selected bounded host profile may use a shared reservation pool for its own owner-byte guarantees; that profile is optional and its charges are not OS RSS. W1 publishes a `SnapshotId(world_epoch,tick)` **immutable read-model bundle**:
 copied or copy-on-write pages, identified events and versioned provider-sample/product handles. Published pages never
 alias arrays that the next physics/world step can mutate. Registered consumers acquire `SnapshotLease` and required
 CPU product/provider leases; raw borrowed references cannot outlive them. Baseline P3 queries execute within the
@@ -71,17 +71,18 @@ retention; they do not pin arbitrary whole-world epochs forever. V2 extraction c
 staging/GPU resource leases. Release the world snapshot only when CPU extraction and required copies finish; GPU
 submission completion governs the packet/resources independently. Region retirement cannot free leased old data.
 
-Before publishing beyond the pool's count/byte admission cap, cancel/defer optional unsubmitted stale-view work and
+When retained snapshots or optional presentation work create pressure, cancel/defer optional unsubmitted stale-view work and
 invalidate its histories, then await actual lease release. Never reuse in-use pages. A required reader that cannot
 finish causes backpressure or the explicit overload state, not unbounded retention or silent tick loss. A skipped
-view outside its retained sample horizon resets history and resumes from a valid snapshot. Exact page layout and
-caps are detailed parameters; these lifetime rules are mandatory for the design.
-For an authority that promises admitted-input progress under competing pool use, each accepted input protects its
-future rule-created immutable output bytes separately from snapshot and group storage. Rule callbacks spend only
+view outside its retained sample horizon resets history and resumes from a valid snapshot. Count/backlog limits and
+explicit failure states remain necessary for correctness; implementation byte budgets are measured and tuned against
+named workloads rather than imposed as a universal hard memory cap.
+In a selected bounded host profile that promises admitted-input progress under competing pool use, each accepted input protects its
+future rule-created immutable output bytes separately from snapshot and group storage. Rule callbacks in that profile spend only
 their own preadmitted output allowance; pre-existing charged owners may be shared without another byte charge.
-An exhausted declared allowance is a terminal rule-contract fault before that action's edits, while ordinary reader
-backpressure remains retryable before the tick starts.
-An admitted structural-growth profile declares separate finite physical-slot and live-object caps. A pure typed-action
+An exhausted declared allowance is a terminal fault of that selected rule contract before the action's edits. Native rules outside
+that profile may allocate private work; their allocation, latency and retained-memory costs require measurement.
+The selected bounded structural-growth profile declares separate finite physical-slot and live-object caps. A pure typed-action
 classifier supplies a maximum spawn count before sequencing; the authority checks prepared spawns against the stored
 bound at execution. A new input that raises the possible page/root high-water must atomically fund every older pending
 input's increased future credit before its own sequence advances. Due preflight uses that admitted absolute horizon;

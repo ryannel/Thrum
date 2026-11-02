@@ -1,5 +1,7 @@
 # I1 process-memory boundary and next proof
 
+**Direction update, 2 November 2026:** The proposed general hard process cap and its next-proof requirements below are historical. The [current memory direction](MEMORY-DIRECTION-2026-11-02.md) keeps the pool as an optional bounded profile and asks for measured low-footprint behavior in the general runtime.
+
 2 November 2026. **Status: scope analysis, not a process-memory qualification.** The selected fixed-slot and bounded structural profiles precharge engine-managed world, snapshot, group, result, required-replica and callback owners before accepted inputs can require them. Their tests include two peers, maximum pending work, old readers, complete competing pool occupation and final release. The current `PublicationPool` limit is a checked **logical requested-owner-byte** limit for those selected paths. C02's wider whole-process admission target remains open.
 
 | Owner | Current authority and evidence | What a process claim still needs |
