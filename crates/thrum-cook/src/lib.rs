@@ -35,6 +35,8 @@ pub struct SceneProduct {
     root: AcceptedSourceRoot,
     target: SceneTarget,
     revision: SceneProductRevision,
+    project_input_hash: [u8; 32],
+    scene_input_hash: [u8; 32],
     scene_id: String,
     label: Option<String>,
 }
@@ -64,6 +66,171 @@ impl SceneProduct {
     pub fn label(&self) -> Option<&str> {
         self.label.as_deref()
     }
+
+    /// Encode this immutable product for a future content-addressed manifest.
+    /// The independent byte digest must be retained by that manifest and
+    /// supplied to `load_scene_artifact` before a consumer uses these bytes.
+    pub fn artifact(&self) -> SceneArtifact {
+        let label_bytes = self
+            .label
+            .as_ref()
+            .map_or(&[][..], |label| label.as_bytes());
+        let label_len = u32::try_from(label_bytes.len()).expect("bounded source record");
+        let mut bytes = Vec::with_capacity(COOK_FORMAT.len() + 138 + label_bytes.len());
+        bytes.extend_from_slice(COOK_FORMAT);
+        bytes.push(target_byte(self.target));
+        bytes.extend_from_slice(self.revision.as_bytes());
+        bytes.extend_from_slice(&self.project_input_hash);
+        bytes.extend_from_slice(&self.scene_input_hash);
+        bytes.extend_from_slice(self.scene_id.as_bytes());
+        bytes.push(u8::from(self.label.is_some()));
+        bytes.extend_from_slice(&label_len.to_le_bytes());
+        bytes.extend_from_slice(label_bytes);
+        SceneArtifact {
+            content_hash: Sha256::digest(&bytes).into(),
+            bytes,
+        }
+    }
+}
+
+/// Serialized product bytes plus a digest for a future trusted build manifest.
+pub struct SceneArtifact {
+    bytes: Vec<u8>,
+    content_hash: [u8; 32],
+}
+
+impl SceneArtifact {
+    /// Exact encoded product bytes.
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// SHA-256 of `bytes`; the build manifest must retain this separately.
+    pub fn content_hash(&self) -> [u8; 32] {
+        self.content_hash
+    }
+}
+
+/// A serialized product cannot satisfy a trusted manifest entry.
+#[derive(Debug, Eq, PartialEq)]
+pub enum SceneLoadError {
+    /// Encoded bytes differ from the manifest's expected content hash.
+    ContentHash,
+    /// Truncated, oversized or unsupported product encoding.
+    Format,
+    /// Encoded product key disagrees with its inputs or the manifest.
+    Revision,
+}
+
+/// Load verified product bytes using expected identities from a trusted build
+/// manifest. Root provenance comes from that manifest, not the reusable
+/// product bytes. The caller must verify the manifest and its source/code closure.
+pub fn load_scene_artifact(
+    bytes: &[u8],
+    expected_content_hash: [u8; 32],
+    expected_root: AcceptedSourceRoot,
+    expected_revision: SceneProductRevision,
+) -> Result<SceneProduct, SceneLoadError> {
+    if bytes.len() > COOK_FORMAT.len() + 138 + MAX_RECORD_BYTES {
+        return Err(SceneLoadError::Format);
+    }
+    if Sha256::digest(bytes).as_slice() != expected_content_hash {
+        return Err(SceneLoadError::ContentHash);
+    }
+    let mut cursor = bytes;
+    if take(&mut cursor, COOK_FORMAT.len())? != COOK_FORMAT {
+        return Err(SceneLoadError::Format);
+    }
+    let target = match take(&mut cursor, 1)?[0] {
+        1 => SceneTarget::Headless,
+        _ => return Err(SceneLoadError::Format),
+    };
+    let revision = take(&mut cursor, 32)?;
+    let project_input_hash: [u8; 32] = take(&mut cursor, 32)?.try_into().expect("fixed slice");
+    let scene_input_hash: [u8; 32] = take(&mut cursor, 32)?.try_into().expect("fixed slice");
+    let derived = derive_revision(target, project_input_hash, scene_input_hash);
+    if revision != expected_revision.as_bytes() || derived != expected_revision {
+        return Err(SceneLoadError::Revision);
+    }
+    let id = std::str::from_utf8(take(&mut cursor, 36)?)
+        .map_err(|_| SceneLoadError::Format)?
+        .to_owned();
+    if !canonical_uuid(&id) {
+        return Err(SceneLoadError::Format);
+    }
+    let has_label = take(&mut cursor, 1)?[0];
+    if has_label > 1 {
+        return Err(SceneLoadError::Format);
+    }
+    let label_len = u32::from_le_bytes(take(&mut cursor, 4)?.try_into().expect("fixed slice"));
+    if label_len as usize > MAX_RECORD_BYTES || (has_label == 0 && label_len != 0) {
+        return Err(SceneLoadError::Format);
+    }
+    let label_bytes = take(&mut cursor, label_len as usize)?;
+    if !cursor.is_empty() {
+        return Err(SceneLoadError::Format);
+    }
+    let label = if has_label == 1 {
+        Some(
+            std::str::from_utf8(label_bytes)
+                .map_err(|_| SceneLoadError::Format)?
+                .to_owned(),
+        )
+    } else {
+        None
+    };
+    Ok(SceneProduct {
+        root: expected_root,
+        target,
+        revision: expected_revision,
+        project_input_hash,
+        scene_input_hash,
+        scene_id: id,
+        label,
+    })
+}
+
+fn take<'a>(cursor: &mut &'a [u8], len: usize) -> Result<&'a [u8], SceneLoadError> {
+    if len > cursor.len() {
+        return Err(SceneLoadError::Format);
+    }
+    let (value, tail) = cursor.split_at(len);
+    *cursor = tail;
+    Ok(value)
+}
+
+fn canonical_uuid(id: &str) -> bool {
+    let bytes = id.as_bytes();
+    bytes.len() == 36
+        && bytes
+            .iter()
+            .copied()
+            .enumerate()
+            .all(|(index, byte)| match index {
+                8 | 13 | 18 | 23 => byte == b'-',
+                _ => byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte),
+            })
+        && matches!(bytes[14], b'1'..=b'8')
+        && matches!(bytes[19], b'8' | b'9' | b'a' | b'b')
+}
+
+fn target_byte(target: SceneTarget) -> u8 {
+    match target {
+        SceneTarget::Headless => 1,
+    }
+}
+
+fn derive_revision(
+    target: SceneTarget,
+    project_input_hash: [u8; 32],
+    scene_input_hash: [u8; 32],
+) -> SceneProductRevision {
+    let mut digest = Sha256::new();
+    digest.update(COOK_FORMAT);
+    digest.update([target_byte(target)]);
+    digest.update(project_input_hash);
+    digest.update(scene_input_hash);
+    SceneProductRevision(digest.finalize().into())
 }
 
 /// A pinned source cannot produce this bounded first-profile scene product.
@@ -117,19 +284,16 @@ pub fn cook_entry_scene(
     if scene.id != *entry_id {
         return Err(SceneCookError::Scene);
     }
-    let mut digest = Sha256::new();
-    digest.update(COOK_FORMAT);
-    digest.update([match target {
-        SceneTarget::Headless => 1,
-    }]);
     // Only declared direct inputs enter the cook key. An unrelated admitted
     // file may advance SourceRevision without invalidating this product.
-    digest.update(input_hash(pin, &project_path)?);
-    digest.update(input_hash(pin, &scene_path)?);
+    let project_input_hash = input_hash(pin, &project_path)?;
+    let scene_input_hash = input_hash(pin, &scene_path)?;
     Ok(SceneProduct {
         root,
         target,
-        revision: SceneProductRevision(digest.finalize().into()),
+        revision: derive_revision(target, project_input_hash, scene_input_hash),
+        project_input_hash,
+        scene_input_hash,
         scene_id: scene.id,
         label: scene.label,
     })
@@ -320,6 +484,36 @@ mod tests {
         let prior = cook_entry_scene(&mut a_pin, SceneTarget::Headless).unwrap();
         assert_eq!(prior.label(), Some("A"));
         assert_eq!(prior.source_root(), a);
+        let artifact = prior.artifact();
+        let loaded = load_scene_artifact(
+            artifact.bytes(),
+            artifact.content_hash(),
+            a,
+            prior.revision(),
+        )
+        .unwrap();
+        assert_eq!(loaded.label(), Some("A"));
+        assert_eq!(loaded.revision(), prior.revision());
+        let mut damaged = artifact.bytes().to_vec();
+        *damaged.last_mut().unwrap() ^= 1;
+        assert_eq!(
+            load_scene_artifact(&damaged, artifact.content_hash(), a, prior.revision())
+                .err()
+                .unwrap(),
+            SceneLoadError::ContentHash
+        );
+        let truncated = &artifact.bytes()[..artifact.bytes().len() - 1];
+        assert_eq!(
+            load_scene_artifact(
+                truncated,
+                Sha256::digest(truncated).into(),
+                a,
+                prior.revision()
+            )
+            .err()
+            .unwrap(),
+            SceneLoadError::Format
+        );
         a_pin.close().unwrap();
 
         let b_paths = fixture.write("B", false, false);
@@ -328,6 +522,17 @@ mod tests {
         let b_product = cook_entry_scene(&mut b_pin, SceneTarget::Headless).unwrap();
         assert_eq!(b_product.label(), Some("B"));
         assert_ne!(b_product.revision(), prior.revision());
+        assert_eq!(
+            load_scene_artifact(
+                artifact.bytes(),
+                artifact.content_hash(),
+                a,
+                b_product.revision()
+            )
+            .err()
+            .unwrap(),
+            SceneLoadError::Revision
+        );
         b_pin.close().unwrap();
 
         let c_paths = fixture.write("B", false, true);
@@ -336,6 +541,11 @@ mod tests {
         let c_product = cook_entry_scene(&mut c_pin, SceneTarget::Headless).unwrap();
         assert_ne!(c_product.source_root(), b_product.source_root());
         assert_eq!(c_product.revision(), b_product.revision());
+        assert_eq!(c_product.artifact().bytes(), b_product.artifact().bytes());
+        assert_eq!(
+            c_product.artifact().content_hash(),
+            b_product.artifact().content_hash()
+        );
         c_pin.close().unwrap();
 
         let d_paths = fixture.write("D", true, true);
@@ -352,6 +562,55 @@ mod tests {
         let historical_product = cook_entry_scene(&mut historical, SceneTarget::Headless).unwrap();
         assert_eq!(historical_product.revision(), prior.revision());
         historical.close().unwrap();
+    }
+
+    #[test]
+    fn absent_and_empty_captions_remain_distinct_after_checked_load() {
+        let fixture = Fixture::new();
+        let mut store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let paths = fixture.write("", false, false);
+        let empty_root = fixture.admit(&mut store, 0, 1, &paths);
+        let mut empty_pin = store.pin_current(empty_root.generation).unwrap();
+        let empty = cook_entry_scene(&mut empty_pin, SceneTarget::Headless).unwrap();
+        assert_eq!(empty.label(), Some(""));
+        let empty_artifact = empty.artifact();
+        let empty_loaded = load_scene_artifact(
+            empty_artifact.bytes(),
+            empty_artifact.content_hash(),
+            empty_root,
+            empty.revision(),
+        )
+        .unwrap();
+        assert_eq!(empty_loaded.label(), Some(""));
+        empty_pin.close().unwrap();
+
+        fs::write(
+            fixture.root().join("scenes/main.scene.json"),
+            serde_json::to_vec(&serde_json::json!({
+                "id":SCENE_ID,"type":"core.scene","schema":1,"fields":{}
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let absent_root = fixture.admit(&mut store, empty_root.generation, 2, &paths);
+        let mut absent_pin = store.pin_current(absent_root.generation).unwrap();
+        let absent = cook_entry_scene(&mut absent_pin, SceneTarget::Headless).unwrap();
+        assert_eq!(absent.label(), None);
+        assert_ne!(absent.revision(), empty.revision());
+        let absent_artifact = absent.artifact();
+        let absent_loaded = load_scene_artifact(
+            absent_artifact.bytes(),
+            absent_artifact.content_hash(),
+            absent_root,
+            absent.revision(),
+        )
+        .unwrap();
+        assert_eq!(absent_loaded.label(), None);
+        absent_pin.close().unwrap();
     }
 
     #[test]

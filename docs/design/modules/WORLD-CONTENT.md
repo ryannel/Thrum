@@ -56,10 +56,15 @@ project and scene input digests. The project bytes already contain the entry ID,
 and the scene bytes already contain the caption. It does not hash the
 whole `SourceRevision`: unrelated admitted files may advance the root without recooking
 an unchanged scene. The product retains its source-root provenance separately. This
-first profile has one entry scene, one CPU-only target and an in-memory product. It is
-not a `BuildRevision` or runnable game: code binary/toolchain/schema closure, durable
-product bytes/manifest, load-time verification and run/save pins remain later F4/F1/P7
-work. A complete build key must add those inputs before W1 or N1 may activate a world.
+first profile has one entry scene and one CPU-only target. The product has a compact
+bounded byte encoding and independent content hash. A load requires expected hash,
+product revision and accepted root from a trusted future build manifest; it checks
+byte integrity, format, product-key inputs and identity. Provenance stays in the
+manifest, so identical scene products from different accepted roots have identical
+encoded bytes. This is still not a `BuildRevision` or runnable game: code
+binary/toolchain/schema closure, durable product publication/manifest and run/save
+pins remain later F4/F1/P7 work. A complete build key must add those inputs before
+W1 or N1 may activate a world.
 
 The cook path allocates two bounded record buffers, parses only the selected project and
 scene, and scans manifest record metadata once for the entry ID. Its cost is `O(project
@@ -67,7 +72,9 @@ bytes + scene bytes + manifest entries)` plus the native store's verified chunk 
 it is offline and never runs in a world callback. At the admitted 100,000-entry maximum,
 the one-time ID scan may need an index if it becomes a repeated cook bottleneck. Avoid
 an always-live ID map until a workload justifies its memory. The product retains only
-the caption and fixed identity/provenance; the input buffers are dropped after cooking.
+the caption and fixed identity/provenance/input digests; the input buffers are dropped
+after cooking. Serialization allocates one bounded output buffer; load hashes the
+bytes once before decoding fixed fields.
 The [first executable proof](../../evidence/i2a/F4-HEADLESS-SCENE-COOK.md) checks edits,
 unrelated files, historical pins and failure retention. End-to-end edit-to-ready,
 product storage and runtime performance are still unqualified.
