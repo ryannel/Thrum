@@ -225,6 +225,18 @@ class VerifyRustcReceipts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "HOME differs"):
                 inspect(*args[:6])
 
+    def test_cargo_probe_requires_selected_cwd_and_exact_query(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            probe = receipts / "101.receipt"
+            probe.write_bytes(receipt(rustc, cache, [b"-vV"], environment, kind=0))
+            with self.assertRaisesRegex(ValueError, "probe working directory"):
+                inspect(*args[:6])
+            probe.write_bytes(receipt(rustc, source, [b"--print=sysroot"], environment, kind=0))
+            with self.assertRaisesRegex(ValueError, "unrecognized Cargo rustc probe"):
+                inspect(*args[:6])
+
 
 if __name__ == "__main__":
     unittest.main()
