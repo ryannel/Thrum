@@ -737,6 +737,7 @@ source allocation/mip equivalence, main-hidden shadow/mirror independence and sa
 lateral point-T still fails (.1215/.0917 vs.008), and native backlit reference error remains locally visible. Fresh native
 GPU p50/p95 is12.976/17.075ms against5ms. These failures prevent promotion; a filtered production visibility closure
 must be selected explicitly and kept separate from the strict point-tau service before dependent expansion.
+The [exact interval-index experiment](../../evidence/cloud-depth-index-2026-11-02/README.md) preserves captured query/image outputs but has no repeatable ABBA speedup. It is archived; binary lookup without the extra table remains selected.
 
 
 The following are replaced as universal assumptions:512m isotropic source; one current field for every instance;

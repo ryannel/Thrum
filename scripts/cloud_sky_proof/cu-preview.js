@@ -69,37 +69,7 @@ function scene(time){
   put(8,[90000,85000,75000,.00006]);put(9,(lightMode!=='0'?[6000,9000,15000]:[0,0,0]).concat([sourceObject.sigmaMax]));
   const referencePoint=masterLo.map((v,i)=>v+masterExtent[i]*[.3467439115,.2991746366,.4495654702][i]);put(12,[...referencePoint,1]);
   u.set([...field.levels[0].dimensions,(Number($('light-model').value)|($('depth-model').value==='deep'?16:0)|($('reference-light').checked?32:0))],40);u.set([$('main').checked?1:0,$('reflection').checked?($('route').value==='local'?2:1):0,$('transmittance').checked?1:0,Number($('view').value)],44);
-  return {source_time_s:time,source_model:sourceObject.kind,max_level:sourceObject.maxLevel,inspection_view:$('view').value,camera_route:$('route').value,variant:recipe.variant,seed:recipe.seed,shift_m:shift,lo_m:lo,extent_m:extent,master_lo_m:masterLo,master_extent_m:masterExtent,reference_point_m:referencePoint,allocation_profile:sourceObject.allocationProfile,camera_m:camera,target_m:target,sun_direction:sun,sun_elevation_deg:elevation,light_model:$('light-model').value,depth_model:$('depth-model').value,sun_reference_patches:$('reference-light').checked,deep_identity:deep.identity,fit_identity:fit.identity,main_cloud:$('main').checked,mirror:$('reflection').checked,data};
-}
-// Dense per-frame query slots never read an inactive/stale component timestamp.
-// Whole bracket retains its actual-render consumer; component intervals are
-// additive only when valid, ordered, nonoverlapping and inside that bracket.
-function decodeGpuComponentTiming(stamps,records,wholeIndices){
-  const available=stamps!==null,components={},intervals=[];
-  const wholeStart=available?stamps[wholeIndices[0]]:null,wholeEnd=available?stamps[wholeIndices[1]]:null;
-  const wholeValid=typeof wholeStart==='bigint'&&typeof wholeEnd==='bigint'&&wholeStart>0n&&wholeEnd>wholeStart;
-  let complete=available;
-  for(const [name,record] of Object.entries(records)){
-    const active=record.status==='updated'||record.status==='rendered',pair=active?record.query_indices:null;
-    const start=available&&pair?stamps[pair[0]]:null,end=available&&pair?stamps[pair[1]]:null;
-    const valid=typeof start==='bigint'&&typeof end==='bigint'&&start>0n&&end>=start;
-    components[name]={...record,query_indices:pair,duration_ms:valid?Number(end-start)/1e6:null,
-      raw_timestamps_ns:typeof start==='bigint'&&typeof end==='bigint'?[String(start),String(end)]:null,
-      timestamp_valid:active&&available?valid:null};
-    if(active){if(valid)intervals.push({start,end,index:pair[0]});else complete=false;}
-  }
-  intervals.sort((a,b)=>a.index-b.index);
-  const nonoverlap=complete?intervals.every((x,i)=>i===0||x.start>=intervals[i-1].end):null;
-  const contained=complete&&wholeValid?intervals.every(x=>x.start>=wholeStart&&x.end<=wholeEnd):null;
-  const admitted=complete&&wholeValid&&nonoverlap&&contained;
-  const sum=admitted?intervals.reduce((n,x)=>n+x.end-x.start,0n):null;
-  return {available,components,whole_bracket_query_indices:wholeIndices,
-    raw_query_timestamps_ns:available?Array.from(stamps,String):null,
-    timestamp_intervals_complete:available?complete:null,non_overlapping:nonoverlap,contained_in_whole:contained,
-    additive_sum_ms:admitted?Number(sum)/1e6:null,
-    unattributed_gpu_gap_ms:admitted?Number(wholeEnd-wholeStart-sum)/1e6:null,
-    scope:'Pass begin/end intervals; timed cache dispatches are split into separate passes, adding instrumentation/pass-boundary overhead. Whole bracket still ends after compute reads the actual rendered canvas. Gap includes transitions/markers/idle/quantization; no CPU or presentation attribution.',
-    observer_storage:{query_set_count:available?12:0,query_readback_bytes:available?96:0,query_resolve_bytes:available?256:0,used_query_count:available?stamps.length:0}};
+  return {source_time_s:time,source_model:sourceObject.kind,max_level:sourceObject.maxLevel,inspection_view:$('view').value,camera_route:$('route').value,variant:recipe.variant,seed:recipe.seed,shift_m:shift,lo_m:lo,extent_m:extent,master_lo_m:masterLo,master_extent_m:masterExtent,reference_point_m:referencePoint,allocation_profile:sourceObject.allocationProfile,camera_m:camera,target_m:target,sun_direction:sun,sun_elevation_deg:elevation,light_model:$('light-model').value,depth_model:$('depth-model').value,depth_query:'binary',sun_reference_patches:$('reference-light').checked,deep_identity:deep.identity,fit_identity:fit.identity,main_cloud:$('main').checked,mirror:$('reflection').checked,data};
 }
 async function renderFrame(time){
   age=time;$('exact').value=time.toFixed(2);$('seek').value=time;
@@ -111,67 +81,29 @@ async function renderFrame(time){
   const wantedLightKey=JSON.stringify([sourceObject.kind,recipe.variant,recipe.seed,sourceObject.maxLevel,field.levels[0].dimensions,state.source_time_s,state.lo_m,$('sun').value,$('light-model').value,$('depth-model').value,fit.identity,deep.identity]);
   const lightUpdated=$('view').value!=='1'&&lightCacheKey!==wantedLightKey;
   const encoder=device.createCommandEncoder();
-  const sunEnabled=new Float32Array(state.data)[19]>0,geometryView=state.inspection_view==='1';
-  const fitUpdated=lightUpdated&&state.light_model==='2'&&sunEnabled,sunUpdated=lightUpdated&&sunEnabled;
-  const componentRecords={
-    source_field_mips:{status:sourceUpdated?'updated':'reused',query_indices:null},
-    fit_products:{status:geometryView?'disabled-geometry-view':state.light_model!=='2'?'disabled-model':!sunEnabled?'disabled-sun':fitUpdated?'updated':'reused',query_indices:null},
-    sun_depth:{status:geometryView?'disabled-geometry-view':!sunEnabled?'disabled-sun':sunUpdated?'updated':'reused',representation:state.depth_model,query_indices:null},
-    ambient:{status:geometryView?'disabled-geometry-view':lightUpdated?'updated':'reused',query_indices:null},
-    final_views:{status:'rendered',main_cloud_enabled:state.main_cloud,mirror_enabled:state.mirror,inspection_view:state.inspection_view,query_indices:null},
-  };
-  let nextQuery=0,wholeEndIndex=null;
-  const componentStamp=name=>{
-    if(!querySet)return {};
-    const pair=[nextQuery++,nextQuery++];componentRecords[name].query_indices=pair;
-    return {timestampWrites:{querySet,beginningOfPassWriteIndex:pair[0],endOfPassWriteIndex:pair[1]}};
-  };
-  if(querySet&&!sourceUpdated&&!lightUpdated){
-    const marker=encoder.beginComputePass({timestampWrites:{querySet,beginningOfPassWriteIndex:nextQuery++}});
-    marker.setPipeline(sentinelPipeline);marker.setBindGroup(0,sentinelGroup);marker.dispatchWorkgroups(1);marker.end();
-  }
-  if(sourceUpdated){const sourcePass=encoder.beginComputePass(componentStamp('source_field_mips'));sourceObject.encode(sourcePass);sourcePass.end();}
-  const encodeSun=pass=>{
-    if(state.depth_model==='deep')deep.encode(pass,deepInput);
-    else{pass.setPipeline(prefixPipeline);pass.setBindGroup(0,prefixInput);pass.setBindGroup(1,prefixOutput);pass.dispatchWorkgroups(9,9);}
-  };
-  const encodeAmbient=pass=>{pass.setPipeline(ambientPipeline);pass.setBindGroup(0,ambientInput);pass.setBindGroup(1,ambientOutput);pass.dispatchWorkgroups(2,2,2);};
-  if(lightUpdated){
-    if(querySet){
-      // Core WebGPU timestamps are pass boundaries. Preserve dispatch order and
-      // kernels, while disclosing that these timed passes perturb scheduling.
-      if(fitUpdated){const pass=encoder.beginComputePass(componentStamp('fit_products'));fitProducts.encode(pass);pass.end();}
-      if(sunUpdated){const pass=encoder.beginComputePass(componentStamp('sun_depth'));encodeSun(pass);pass.end();}
-      const pass=encoder.beginComputePass(componentStamp('ambient'));encodeAmbient(pass);pass.end();
-    }else{
-      // Preserve the original combined cache pass when timestamps unavailable.
-      const caches=encoder.beginComputePass();if(fitUpdated)fitProducts.encode(caches);if(sunUpdated)encodeSun(caches);encodeAmbient(caches);caches.end();
+  const beginStamp=querySet?{timestampWrites:{querySet,beginningOfPassWriteIndex:0}}:{};
+  if(querySet&&!sourceUpdated&&!lightUpdated){const marker=encoder.beginComputePass(beginStamp);marker.setPipeline(sentinelPipeline);marker.setBindGroup(0,sentinelGroup);marker.dispatchWorkgroups(1);marker.end();}
+  if(sourceUpdated){const sourcePass=encoder.beginComputePass(beginStamp);sourceObject.encode(sourcePass);sourcePass.end();}
+  if(lightUpdated) {
+    const caches=encoder.beginComputePass(sourceUpdated?{}:beginStamp);
+    if($('light-model').value==='2'&&new Float32Array(state.data)[19]>0)fitProducts.encode(caches);
+    if(new Float32Array(state.data)[19]>0){
+      if($('depth-model').value==='deep')deep.encode(caches,deepInput);
+      else {caches.setPipeline(prefixPipeline);caches.setBindGroup(0,prefixInput);caches.setBindGroup(1,prefixOutput);caches.dispatchWorkgroups(9,9);}
     }
+    caches.setPipeline(ambientPipeline);caches.setBindGroup(0,ambientInput);caches.setBindGroup(1,ambientOutput);caches.dispatchWorkgroups(2,2,2);caches.end();
   }
   const renderedTexture=context.getCurrentTexture();
-  const draw=encoder.beginRenderPass({...componentStamp('final_views'),colorAttachments:[{view:renderedTexture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});
+  const draw=encoder.beginRenderPass({colorAttachments:[{view:renderedTexture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});
   draw.setPipeline(imagePipeline);draw.setBindGroup(0,imageInput);draw.draw(3);draw.end();
-  if(querySet){
-    wholeEndIndex=nextQuery++;
-    const marker=encoder.beginComputePass({timestampWrites:{querySet,endOfPassWriteIndex:wholeEndIndex}});marker.setPipeline(endSentinelPipeline);marker.setBindGroup(0,device.createBindGroup({layout:endSentinelPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:markerBuffer}},{binding:1,resource:renderedTexture.createView()}]}));marker.dispatchWorkgroups(1);marker.end();
-    encoder.resolveQuerySet(querySet,0,nextQuery,queryResolve,0);encoder.copyBufferToBuffer(queryResolve,0,queryRead,0,nextQuery*8);
-  }
+  if(querySet){const marker=encoder.beginComputePass({timestampWrites:{querySet,endOfPassWriteIndex:1}});marker.setPipeline(endSentinelPipeline);marker.setBindGroup(0,device.createBindGroup({layout:endSentinelPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:markerBuffer}},{binding:1,resource:renderedTexture.createView()}]}));marker.dispatchWorkgroups(1);marker.end();encoder.resolveQuerySet(querySet,0,2,queryResolve,0);encoder.copyBufferToBuffer(queryResolve,0,queryRead,0,16);}
   const encoded=performance.now();device.queue.submit([encoder.finish()]);sourceObject.markSubmitted();if(lightUpdated)lightCacheKey=wantedLightKey;
-  let gpu=null,rawStamps=null,componentTiming;
-  if(querySet){
-    let mapped=false;
-    try{
-      await queryRead.mapAsync(GPUMapMode.READ);mapped=true;
-      const stamps=new BigUint64Array(queryRead.getMappedRange()).slice(0,nextQuery);
-      rawStamps=[String(stamps[0]),String(stamps[wholeEndIndex])];
-      if(stamps[wholeEndIndex]>stamps[0]&&stamps[0]>0n)gpu=Number(stamps[wholeEndIndex]-stamps[0])/1e6;
-      componentTiming=decodeGpuComponentTiming(stamps,componentRecords,[0,wholeEndIndex]);
-    }finally{if(mapped)queryRead.unmap();}
-  }else{componentTiming=decodeGpuComponentTiming(null,componentRecords,[null,null]);}
+  let gpu=null,rawStamps=null;
+  if(querySet){await queryRead.mapAsync(GPUMapMode.READ);const stamps=new BigUint64Array(queryRead.getMappedRange());rawStamps=Array.from(stamps,String);if(stamps[1]>stamps[0]&&stamps[0]>0n)gpu=Number(stamps[1]-stamps[0])/1e6;queryRead.unmap();}
   await device.queue.onSubmittedWorkDone();
   const counters=new Uint32Array((await readBuffer(device,errors,16)).buffer);
   const end=performance.now();
-  lastFrame={...state,data:undefined,requested_source_time_s:time,source_updated:sourceUpdated,light_updated:lightUpdated,source_stats:sourceFrame.stats,cpu_encode_ms:encoded-start,queue_complete_ms:end-encoded,gpu_bracket_ms:gpu,gpu_raw_timestamps_ns:rawStamps,gpu_component_timing:componentTiming,gpu_timing_scope:'first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency',invalid_view_paths:counters[0],source_field_bytes:field.levels.reduce((n,l)=>n+l.bytes,0),sun_depth_fallbacks:counters[1],sun_depth_invalid_footprints:counters[2],sun_depth_unsupported:counters[3],deep_bytes:deep.bytes,scatter_fit_bytes:{...fit.bytes,products:fitProducts.bytes},scope:'requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame'};
+  lastFrame={...state,data:undefined,requested_source_time_s:time,source_updated:sourceUpdated,light_updated:lightUpdated,source_stats:sourceFrame.stats,cpu_encode_ms:encoded-start,queue_complete_ms:end-encoded,gpu_bracket_ms:gpu,gpu_raw_timestamps_ns:rawStamps,gpu_timing_scope:'first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency',invalid_view_paths:counters[0],source_field_bytes:field.levels.reduce((n,l)=>n+l.bytes,0),sun_depth_fallbacks:counters[1],sun_depth_invalid_footprints:counters[2],sun_depth_unsupported:counters[3],deep_bytes:deep.bytes,scatter_fit_bytes:{...fit.bytes,products:fitProducts.bytes},scope:'requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame'};
   if(counters[0]||counters[3]){clock.seek(time,performance.now());pause();throw Error(`Stopped invalid graph: view step caps ${counters[0]}, Sun-depth unsupported ${counters[3]}, fallback requests ${counters[1]}`);}
   $('status').textContent=`Candidate ${recipe.name} · ${time.toFixed(2)} s · ${gpu===null?'GPU query unavailable':gpu.toFixed(2)+' ms GPU bracket'} · ${(end-encoded).toFixed(2)} ms queue · not accepted`;
 }
@@ -266,7 +198,7 @@ async function load(){
   prefixOutput=device.createBindGroup({layout:prefixPipeline.getBindGroupLayout(1),entries:[{binding:0,resource:prefix.createView()}]});
   ambientOutput=device.createBindGroup({layout:ambientPipeline.getBindGroupLayout(1),entries:[{binding:1,resource:ambient.createView()}]});
   if(device.features.has('timestamp-query')) {
-    querySet=device.createQuerySet({type:'timestamp',count:12});queryResolve=device.createBuffer({size:256,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC});queryRead=device.createBuffer({size:96,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    querySet=device.createQuerySet({type:'timestamp',count:2});queryResolve=device.createBuffer({size:256,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC});queryRead=device.createBuffer({size:16,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
     const marker=markerBuffer=device.createBuffer({size:4,usage:GPUBufferUsage.STORAGE});
     sentinelPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:await compileShader(device,'@group(0) @binding(0) var<storage,read_write> marker:atomic<u32>; @compute @workgroup_size(1) fn main(){atomicAdd(&marker,1u);}'),entryPoint:'main'}});
     endSentinelPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:await compileShader(device,'@group(0) @binding(0) var<storage,read_write> marker:atomic<u32>; @group(0) @binding(1) var rendered:texture_2d<f32>; @compute @workgroup_size(1) fn main(){atomicAdd(&marker,bitcast<u32>(textureLoad(rendered,vec2i(textureDimensions(rendered)/2u),0).x));}'),entryPoint:'main'}});

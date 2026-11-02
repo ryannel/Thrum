@@ -138,3 +138,35 @@ patch differs by up to21display codes. Fresh-source/light native GPU p50/p95 is1
 Do not enlarge the grid blindly or relabel these failed gates as passed. Select the production filtered-visibility
 meaning separately from the point-tau API, and use measured component costs to choose the query layout. All higher
 full-sky/air/fog/environment claims remain unproved.
+
+## Rejected interval-index cost experiment
+
+The bounded interval-index experiment was tested before introducing another optical approximation. The tube anchors are original
+endpoints of the uniform512-interval integration stream. For each admitted column, a512-byte table maps each original
+input interval to its retained compressed segment. Pack4unsigned byte indices peru32, with one writer per word. The
+extra4356×512=2,230,272B increases local nodes/metadata/index storage to4,042,368B. This is a local profile cost, not
+a uniform allocation for the full cascade worksheet. Building it walks512intervals and at most47anchors per column:
+2,230,272interval visits, at most204,732anchor advances and557,568word stores; no new source, exp or log evaluations.
+
+Use the exact producer's f32depth grid, not host-recomputed support. At a finite interior query, choose a candidate
+original interval with floor(depth/span×512), load its packed segment and actual anchor endpoints. Match the binary
+search's boundary convention, correct at most one adjacent segment when rounding crosses a boundary, then assert
+actual ordered finite endpoints bracket the query and the index is below count-1. Failed verification must use the
+bounded existing search or an explicit invalid result, never a clamped guessed segment. Keep terminal values and the
+count2/clear fast path unchanged. Anchor interpolation/exponent/filter arithmetic must remain identical.
+
+Prediction: remove roughly4×log2(K)dependent midpoint node probes per four-column query in exchange for four packed
+index reads and eight endpoint reads, plus rare checked correction. Metadata/frame checks and eight exponentials remain.
+The added build/table traffic may offset the saving; the current overlapping pass intervals cannot prove dominance.
+Reject unless all admitted captured tables/brackets and GPU point/native images agree with the unchanged binary
+reference, failure/retirement paths hold, and matched integrated timing supports retention. Preserve prior optical
+failures; this experiment changes lookup work only, not the visibility footprint or source quality.
+
+Actual candidate GPU125point queries match forced binary terms bitwise, and native90s/Sun30 images match the earlier
+selected frame exactly. Independent readback validates every504,832defined index entry. The same-build ABBA whole-graph
+medians are15.172(indexed),16.974(binary),16.679(binary),17.891(indexed)ms; completed cadence medians31.0/30.0/30.0/31.1ms.
+The reversal and worse indexed cadence do not establish a repeatable gain. Reject the index as the selected runtime
+path, preserve exact candidate sources/evidence, and restore binary lookup without its2,230,272B table/build. The
+nonadditive component-timestamp experiment is also retained as evidence; the selected renderer returns to the earlier
+combined cache pass/whole-only measurement path. This restores a previously qualified diagnostic, not a new measured
+performance win. Both cloud and complete-sky budgets remain open failures.
