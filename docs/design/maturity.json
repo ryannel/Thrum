@@ -2965,6 +2965,14 @@
       "scope": "A borrowed typed view decodes one inline counter and borrows its charged payload; it creates no parallel owner in source. The protected two-peer host handles 16 delayed actions and context-created payloads under full competing pool use. Allocator counters cover one idle and one due callback, not view cost alone; RSS covers the isolated fixture process. A fresh charged baseline builds a replica after result acknowledgement, but successful reconnect, arbitrary private rule allocation, remote queues, allocator metadata and named devices remain unqualified.",
       "evidence": "../evidence/i1-headless/TYPED-PROJECTION.md"
     },
+    "sustained_headless_cost": {
+      "implementation": "standalone_diagnostic_modes_for_selected_protected_local_and_two_peer_host",
+      "functional_validation": "passed_local_30000_measured_callbacks_replica_results_events_acknowledgements_old_reader_full_competing_pool_and_final_release",
+      "performance_measurement": "three_serial_local_macos_arm64_timing_allocator_requested_live_logical_pool_and_isolated_process_peak_rss_observations",
+      "platform_performance": "not_run",
+      "scope": "Synthetic-clock 64-object local and 4096-object 16-action two-peer protected runs show stable requested-live and pool checkpoints after warmup. The rule increments a targeted counter with one charged output payload. No saved-game restart, real transport, broad game-private work, 25-percent world churn, thermal run or named-device claim follows.",
+      "evidence": "../evidence/i1-headless/SUSTAINED-HOST-COST.md"
+    },
     "mobile_core_portability": {
       "implementation": "portable_core_only_no_app_shell",
       "functional_validation": "compile_passed_for_ios_device_ios_simulator_and_android_arm64_only",

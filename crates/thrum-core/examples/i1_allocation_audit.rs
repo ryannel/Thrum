@@ -529,6 +529,262 @@ fn run_typed(match_play: bool) -> RunSample {
     }
 }
 
+struct SustainedRule {
+    pool: PublicationPool,
+}
+
+impl GameRules for SustainedRule {
+    type Entity = CounterRecord;
+    type Action = NumberRecord;
+    type Change = Handle;
+    type Rejection = ();
+    type Event = NumberRecord;
+
+    fn decide(
+        &self,
+        world: &World<CounterRecord>,
+        _actor: ActorId,
+        action: &NumberRecord,
+        _context: &mut RuleContext<'_>,
+    ) -> Result<Handle, ()> {
+        let id = StableId(u128::from(u64::from_le_bytes(*action.inline())));
+        world.handle_for(id).ok_or(())
+    }
+
+    fn prepare(
+        &self,
+        world: &World<CounterRecord>,
+        handle: Handle,
+        context: &mut RuleContext<'_>,
+    ) -> PreparedCommit<CounterRecord, NumberRecord> {
+        let next = CounterView::from(&world.get(handle).unwrap().state).count + 1;
+        let payload = context
+            .try_copy_payload(&[next as u8; 16])
+            .expect("admitted output allowance");
+        PreparedCommit {
+            edits: PreparedEdits::One(WorldEdit::Replace(
+                handle,
+                CounterRecord::try_new(&self.pool, next.to_le_bytes(), [Some(payload)]).unwrap(),
+            )),
+            event: Some(number(&self.pool, next)),
+        }
+    }
+}
+
+fn percentile(samples: &mut [u128], percent: usize) -> u128 {
+    samples.sort_unstable();
+    samples[(samples.len() - 1) * percent / 100]
+}
+
+fn run_sustained(objects: u64, peers: u64, actions_per_peer: u64) {
+    const WARMUP: u64 = 1_000;
+    const MEASURED: u64 = 30_000;
+    const CHECKPOINT_STEP: u64 = 5_000;
+    let setup = Instant::now();
+    let pool = PublicationPool::new(64 * 1024 * 1024);
+    let mut world = World::new(WorldEpoch(3));
+    for id in 1..=objects {
+        world
+            .spawn(
+                StableId(u128::from(id)),
+                CounterRecord::try_new(&pool, 0_u64.to_le_bytes(), [None]).unwrap(),
+            )
+            .unwrap();
+    }
+    let inline = ClosedValueLimits {
+        max_inline_bytes: 8,
+        max_payload_slots: 0,
+        max_payload_bytes: 0,
+    };
+    let mut authority = Authority::try_new_closed_snapshot_charged(
+        if peers == 1 {
+            AuthorityId::Standalone(SessionId(3))
+        } else {
+            AuthorityId::Match(MatchId(3))
+        },
+        SustainedRule { pool: pool.clone() },
+        world,
+        pool.clone(),
+        SnapshotWriteBounds {
+            max_edits_per_action: 1,
+            max_spawns_per_action: 0,
+        },
+        ClosedGameLimits {
+            action: inline,
+            entity: ClosedValueLimits {
+                max_inline_bytes: 8,
+                max_payload_slots: 1,
+                max_payload_bytes: 16,
+            },
+            event: inline,
+            rejection: ClosedValueLimits {
+                max_inline_bytes: 0,
+                max_payload_slots: 0,
+                max_payload_bytes: 0,
+            },
+        },
+    )
+    .unwrap();
+    for peer in 1..=peers {
+        authority
+            .register_peer(PeerId(peer), 1, ActorId(peer))
+            .unwrap();
+    }
+    let origin = Instant::now();
+    let (mut host, initial) = HeadlessHost::with_protected_output_replica(
+        origin,
+        ClockConfig {
+            max_ticks_per_call: NonZeroU32::new(1).unwrap(),
+            ..ClockConfig::default()
+        },
+        HostBudget {
+            callback_cpu: Duration::from_secs(1),
+            other_work: Duration::from_millis(1),
+            tick_cost_bound: Duration::from_millis(1),
+        },
+        authority,
+        &pool,
+        objects as usize,
+        peers as usize,
+        PublicationBytes::required_charge(16).unwrap(),
+    )
+    .unwrap();
+    drop(initial);
+    let setup_ns = setup.elapsed().as_nanos();
+    let mut samples = Vec::with_capacity(MEASURED as usize);
+    let mut held = None;
+    let mut held_identity = None;
+    let mut max_pool_bytes = pool.used_bytes();
+    let mut live_checkpoints = [0_usize; 7];
+    let mut pool_checkpoints = [0_usize; 7];
+    let before = heap_sample();
+    PEAK_BYTES.store(before.live_bytes, Ordering::Relaxed);
+    let mut last_event_id = 0;
+    for tick in 1..=WARMUP + MEASURED {
+        let started = Instant::now();
+        for peer in 1..=peers {
+            for action_index in 0..actions_per_peer {
+                let sequence = (tick - 1) * actions_per_peer + action_index + 1;
+                let target = 1
+                    + ((tick - 1) * peers * actions_per_peer
+                        + (peer - 1) * actions_per_peer
+                        + action_index)
+                        % objects;
+                host.submit(Input {
+                    origin: Origin {
+                        peer: PeerId(peer),
+                        connection_epoch: 1,
+                        sequence,
+                    },
+                    actor: ActorId(peer),
+                    schedule: InputSchedule::NextTick {
+                        observed_tick: tick - 1,
+                    },
+                    action: number(&pool, target),
+                })
+                .unwrap();
+            }
+        }
+        let pressure = if tick == WARMUP + 250 {
+            let reservation = pool
+                .try_reserve(pool.limit_bytes() - pool.used_bytes())
+                .unwrap();
+            assert_eq!(pool.used_bytes(), pool.limit_bytes());
+            Some(reservation)
+        } else {
+            None
+        };
+        let report = host
+            .on_callback_charged(origin + Duration::from_nanos(16_666_667 * tick))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0] else {
+            panic!("expected protected replica publication");
+        };
+        assert_eq!(
+            admitted.results().len(),
+            (peers * actions_per_peer) as usize
+        );
+        assert_eq!(admitted.events().len(), (peers * actions_per_peer) as usize);
+        assert!(
+            admitted
+                .results()
+                .iter()
+                .all(|result| matches!(result.disposition, ResultDisposition::Committed))
+        );
+        assert_eq!(admitted.events()[0].id, last_event_id + 1);
+        last_event_id = admitted.events().last().unwrap().id;
+        for peer in 1..=peers {
+            host.acknowledge_results(PeerId(peer), tick * actions_per_peer)
+                .unwrap();
+        }
+        drop(report);
+        drop(pressure);
+        if tick == WARMUP + 100 {
+            let snapshot = host.authority().snapshot().clone();
+            let target = StableId(u128::from(1 + tick * peers * actions_per_peer % objects));
+            let handle = host.authority().world().handle_for(target).unwrap();
+            let old_count = CounterView::from(&snapshot.get(handle).unwrap().state).count;
+            held_identity = Some((handle, old_count));
+            held = Some(snapshot);
+        }
+        if tick == WARMUP + 200 {
+            let snapshot = held.as_ref().unwrap();
+            let (handle, old_count) = held_identity.take().unwrap();
+            assert_eq!(snapshot.tick(), WARMUP + 100);
+            assert_eq!(snapshot.records().count(), objects as usize);
+            assert_eq!(
+                CounterView::from(&snapshot.get(handle).unwrap().state).count,
+                old_count
+            );
+            assert!(
+                CounterView::from(&host.authority().world().get(handle).unwrap().state).count
+                    > old_count
+            );
+            drop(held.take());
+        }
+        max_pool_bytes = max_pool_bytes.max(pool.used_bytes());
+        if tick >= WARMUP && (tick - WARMUP).is_multiple_of(CHECKPOINT_STEP) {
+            let index = ((tick - WARMUP) / CHECKPOINT_STEP) as usize;
+            live_checkpoints[index] = heap_sample().live_bytes;
+            pool_checkpoints[index] = pool.used_bytes();
+        }
+        if tick > WARMUP {
+            samples.push(started.elapsed().as_nanos());
+        }
+    }
+    let after = heap_sample();
+    let expected = (WARMUP + MEASURED) * peers * actions_per_peer;
+    assert_eq!(last_event_id, expected);
+    assert_eq!(host.replica().unwrap().tick(), WARMUP + MEASURED);
+    let mut total = 0;
+    for id in 1..=objects {
+        let id = StableId(u128::from(id));
+        let replica = CounterView::from(host.replica().unwrap().get(id).unwrap());
+        let handle = host.authority().world().handle_for(id).unwrap();
+        let authority = CounterView::from(&host.authority().world().get(handle).unwrap().state);
+        assert_eq!(replica.count, authority.count);
+        total += replica.count;
+    }
+    assert_eq!(total, expected);
+    println!(
+        "sustained objects={objects} peers={peers} actions/tick={} setup_ns={setup_ns} ticks={MEASURED} ns[p50/p95/p99/max]={}/{}/{}/{} allocator_requests={} requested_bytes={} live_delta={} peak_extra={} pool_end={} pool_max={} live_checkpoints={live_checkpoints:?} pool_checkpoints={pool_checkpoints:?}",
+        peers * actions_per_peer,
+        percentile(&mut samples, 50),
+        percentile(&mut samples, 95),
+        percentile(&mut samples, 99),
+        samples.last().unwrap(),
+        after.requests - before.requests,
+        after.requested_bytes - before.requested_bytes,
+        after.live_bytes as isize - before.live_bytes as isize,
+        after.peak_bytes - before.live_bytes,
+        pool.used_bytes(),
+        max_pool_bytes,
+    );
+    drop(host);
+    assert_eq!(pool.used_bytes(), 0);
+}
+
 fn print_sample(name: &str, sample: RunSample) {
     println!(
         "{name}: admission requests={} bytes={}; callback requests={} bytes={}; rust_peak_extra={}B; pool before={} admitted={} callback={}B",
@@ -549,8 +805,16 @@ fn main() {
             print_sample("typed_two_peer", run_typed(true));
             return;
         }
+        Some("sustained_local") => {
+            run_sustained(64, 1, 1);
+            return;
+        }
+        Some("sustained_match") => {
+            run_sustained(4_096, 2, 8);
+            return;
+        }
         None => {}
-        Some(_) => panic!("choose typed_two_peer or omit the mode"),
+        Some(_) => panic!("choose typed_two_peer, sustained_local, sustained_match or omit mode"),
     }
     let local = run(false, false);
     let match_clean = run(true, false);
