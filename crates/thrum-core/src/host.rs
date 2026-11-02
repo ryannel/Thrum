@@ -821,6 +821,12 @@ impl<G: GameRules> HeadlessHost<G> {
         self.clock.state()
     }
 
+    /// Delay from the last callback until another local update becomes due.
+    /// A stopped clock with no backlog has no scheduled world work.
+    pub fn next_due_in(&self) -> Option<Duration> {
+        self.clock.next_due_in()
+    }
+
     /// Admit input only while this host is active.
     pub fn submit(
         &mut self,

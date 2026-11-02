@@ -44,6 +44,62 @@ fn a_game_can_select_a_higher_world_update_rate() {
 }
 
 #[test]
+fn next_due_delay_tracks_fractional_time_rate_and_stopped_backlog() {
+    let mut clock = TickClock::new(ClockConfig::default(), Duration::ZERO).unwrap();
+    assert_eq!(clock.next_due_in(), Some(Duration::from_nanos(16_666_667)));
+    clock
+        .advance(Duration::from_millis(10), 4, || Ok::<_, ()>(()))
+        .unwrap();
+    assert_eq!(clock.next_due_in(), Some(Duration::from_nanos(6_666_667)));
+    clock
+        .advance(Duration::from_millis(34), 0, || Ok::<_, ()>(()))
+        .unwrap();
+    assert_eq!(clock.queued_ticks(), 2);
+    assert_eq!(clock.next_due_in(), Some(Duration::ZERO));
+    clock.pause();
+    assert_eq!(clock.next_due_in(), Some(Duration::ZERO));
+    clock
+        .advance(Duration::from_secs(1), 4, || Ok::<_, ()>(()))
+        .unwrap();
+    assert_eq!(clock.next_due_in(), None);
+    clock.resume(Duration::from_secs(1)).unwrap();
+    assert_eq!(clock.next_due_in(), Some(Duration::from_nanos(16_666_667)));
+
+    let custom = TickClock::new(
+        ClockConfig {
+            tick_hz: NonZeroU32::new(240).unwrap(),
+            ..ClockConfig::default()
+        },
+        Duration::ZERO,
+    )
+    .unwrap();
+    assert_eq!(custom.next_due_in(), Some(Duration::from_nanos(4_166_667)));
+}
+
+#[test]
+fn deadline_driven_callbacks_do_one_update_each_without_idle_polling() {
+    for hz in [60_u32, 240] {
+        let mut clock = TickClock::new(
+            ClockConfig {
+                tick_hz: NonZeroU32::new(hz).unwrap(),
+                ..ClockConfig::default()
+            },
+            Duration::ZERO,
+        )
+        .unwrap();
+        let mut now = Duration::ZERO;
+        for _ in 0..hz {
+            now += clock.next_due_in().unwrap();
+            let report = clock.advance(now, 4, || Ok::<_, ()>(())).unwrap();
+            assert_eq!(report.completed, 1);
+            assert_eq!(report.queued, 0);
+            assert_eq!(report.state, ClockState::Active);
+        }
+        assert_eq!(now, Duration::from_secs(1));
+    }
+}
+
+#[test]
 fn failed_step_is_retained_and_retry_runs_once() {
     let mut clock = TickClock::new(ClockConfig::default(), Duration::ZERO).unwrap();
     let mut attempts = 0;

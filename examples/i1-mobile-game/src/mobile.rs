@@ -446,13 +446,31 @@ impl ApplicationHandler for MobileApp {
             window.request_redraw();
             self.redraw_pending = true;
         }
-        if self.host.is_some()
-            && !self.faulted
+        let mut wake_at = None;
+        if !self.faulted
+            && let Some(host) = &self.host
             && (self.gate.ready_for_play() || self.queued_world_ticks != 0)
+            && let Some(delay) = host.next_due_in()
         {
-            event_loop.set_control_flow(ControlFlow::WaitUntil(now + Duration::from_millis(8)));
-        } else {
-            event_loop.set_control_flow(ControlFlow::Wait);
+            // Ready backlog may be blocked by another reader. Retry it at a
+            // bounded pace; idle active play wakes at the exact tick deadline.
+            let delay = if delay.is_zero() {
+                Duration::from_millis(8)
+            } else {
+                delay
+            };
+            wake_at = Some(now + delay);
         }
+        if self.gate.ready_for_play()
+            && self.presented_color_key != Some(color_key)
+            && !self.redraw_pending
+            && now < self.redraw_retry_at
+        {
+            wake_at = Some(wake_at.map_or(self.redraw_retry_at, |at| at.min(self.redraw_retry_at)));
+        }
+        event_loop.set_control_flow(match wake_at {
+            Some(at) => ControlFlow::WaitUntil(at),
+            None => ControlFlow::Wait,
+        });
     }
 }

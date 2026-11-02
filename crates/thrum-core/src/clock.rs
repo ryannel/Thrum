@@ -106,6 +106,22 @@ impl TickClock {
         self.queued
     }
 
+    /// Delay from the last host callback until the next world update is due.
+    /// Pending work is ready now; a stopped clock with no pending work has no
+    /// deadline. The host may choose a later bounded retry for backpressure.
+    pub fn next_due_in(&self) -> Option<Duration> {
+        if self.queued != 0 {
+            return Some(Duration::ZERO);
+        }
+        if self.state != ClockState::Active {
+            return None;
+        }
+        let remaining = NANOS_PER_SECOND - self.fractional_tick;
+        let hz = u128::from(self.config.tick_hz.get());
+        let nanos = remaining.div_ceil(hz);
+        Some(Duration::from_nanos(nanos as u64))
+    }
+
     pub(crate) fn report_cpu_overload(&mut self) {
         self.state = ClockState::Overloaded;
         self.fractional_tick = 0;
