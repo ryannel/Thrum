@@ -101,6 +101,13 @@ compilation. Cargo metadata unions workspace feature use: this walk includes
 `foldhash`, while the selected compile transcript does not. It is deliberately
 an overapproximation and cannot be used alone to prune the cache to exact
 build units or define the final build identity.
+The candidate manifest also records the SHA-256 and byte lengths of the
+selected Cargo and Rustc executable files and rechecks them after metadata;
+the A/B fixture compares those recorded digests to the installed files and
+checks them again after both compiles. Hashing is cold preparation work, not
+per-tick or per-edit work. These two files do not constitute the toolchain:
+Rustc loads libraries and standard crates, and native linking uses system SDK
+inputs. The trusted adapter must bind their exact release closure as well.
 
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,

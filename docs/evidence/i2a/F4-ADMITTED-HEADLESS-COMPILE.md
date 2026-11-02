@@ -90,8 +90,8 @@ proc-macro events, and a sorted Cargo-ID or admitted-relative-path/version,
 target, kind and feature digest. The observed unit digest is
 `47042cc82aa994ad4383eba23b10891b66c296a9b1a87acd2a12c0bf5834b4c1`. This is
 an observed selected graph, not a complete file-read trace or compiler
-invocation attestation. The latest run used 53 admitted files (1,221,172 B),
-1,357 ms for A's debug build and a 2,345,736 B executable; these are one
+invocation attestation. The latest run used 53 admitted files (1,222,780 B),
+1,976 ms for A's debug build and a 2,345,736 B executable; these are one
 warm-cache local observation, not a performance guarantee.
 
 The sandboxed run improves the process boundary; it does not make a trusted

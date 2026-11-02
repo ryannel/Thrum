@@ -98,3 +98,15 @@ artifacts from the first four packages, with no `foldhash` artifact. Metadata
 has unioned a `hashbrown` feature used by other workspace targets. The
 possible-package record is a conservative preflight, not a selected-unit
 graph; no additional archive or extracted-source pruning follows from it.
+
+The candidate manifest now includes the exact Cargo and Rustc executable
+lengths and SHA-256 digests. The preparer hashes both files before metadata
+and again after the two private resolutions; the admitted A/B qualification
+compares the manifest with the selected files and rehashes them after B's
+failed compile. On this macOS ARM64 host the executable digests were Cargo
+`6d576d8058f8ca643e8fce55b64ee3c614ba64c9da2e536bae843e6a2e1f3951`
+and Rustc
+`1ba7bb8e273bd64125f4048d2ecce530e0a6470e565ab1b3aecf0b82b532f7b1`.
+The latest private-cache preparation took 1,573 ms, including these new
+streaming hashes. This observation does not bind Rustc's loaded libraries,
+standard crates, system linker or SDK, so it is not a release toolchain root.
