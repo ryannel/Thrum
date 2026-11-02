@@ -4,6 +4,8 @@
 //! validation and the native durable root transaction are separate gates.
 
 use std::collections::HashSet;
+use std::convert::Infallible;
+use std::io::{self, Write};
 
 use sha2::{Digest, Sha256};
 
@@ -149,47 +151,90 @@ impl TreeManifest {
     /// SHA-256. A separate JCS library checks the emitted form in tests.
     pub fn revision(&self) -> SourceRevision {
         let mut digest = Sha256::new();
-        digest.update(b"{\"dependencyRoots\":[");
+        self.emit_jcs(&mut digest)
+            .expect("SHA-256 sink is infallible");
+        SourceRevision(digest.finalize().into())
+    }
+
+    /// Stream the same canonical manifest bytes used by `revision` to a writer.
+    ///
+    /// This avoids constructing a second whole-manifest byte vector when a
+    /// native store writes the manifest in bounded chunks. A failed writer
+    /// returns its I/O error; it does not create an admitted source root.
+    pub fn write_jcs(&self, writer: &mut impl Write) -> io::Result<()> {
+        self.emit_jcs(&mut IoSink(writer))
+    }
+
+    fn emit_jcs<S: ManifestSink>(&self, sink: &mut S) -> Result<(), S::Error> {
+        sink.emit(b"{\"dependencyRoots\":[")?;
         for (index, root) in self.dependency_roots.iter().enumerate() {
             if index != 0 {
-                digest.update(b",");
+                sink.emit(b",")?;
             }
-            write_jcs_string(&mut digest, root);
+            emit_jcs_string(sink, root)?;
         }
-        digest.update(b"],\"files\":[");
+        sink.emit(b"],\"files\":[")?;
         for (index, file) in self.files.iter().enumerate() {
             if index != 0 {
-                digest.update(b",");
+                sink.emit(b",")?;
             }
-            digest.update(b"{\"hash\":\"");
-            write_hex(&mut digest, &file.sha256);
-            digest.update(b"\",\"kind\":\"file\",\"length\":");
-            write_decimal(&mut digest, file.length);
-            digest.update(b",\"path\":");
-            write_jcs_string(&mut digest, file.path.as_str());
-            digest.update(b",\"recordId\":");
+            sink.emit(b"{\"hash\":\"")?;
+            emit_hex(sink, &file.sha256)?;
+            sink.emit(b"\",\"kind\":\"file\",\"length\":")?;
+            emit_decimal(sink, file.length)?;
+            sink.emit(b",\"path\":")?;
+            emit_jcs_string(sink, file.path.as_str())?;
+            sink.emit(b",\"recordId\":")?;
             if let Some(record) = &file.record {
-                write_jcs_string(&mut digest, &record.id);
+                emit_jcs_string(sink, &record.id)?;
             } else {
-                digest.update(b"null");
+                sink.emit(b"null")?;
             }
-            digest.update(b",\"recordType\":");
+            sink.emit(b",\"recordType\":")?;
             if let Some(record) = &file.record {
-                write_jcs_string(&mut digest, &record.record_type);
+                emit_jcs_string(sink, &record.record_type)?;
             } else {
-                digest.update(b"null");
+                sink.emit(b"null")?;
             }
-            digest.update(b"}");
+            sink.emit(b"}")?;
         }
-        digest.update(b"],\"format\":1,\"projectId\":");
-        write_jcs_string(&mut digest, &self.project_id);
-        digest.update(b"}");
-        SourceRevision(digest.finalize().into())
+        sink.emit(b"],\"format\":1,\"projectId\":")?;
+        emit_jcs_string(sink, &self.project_id)?;
+        sink.emit(b"}")
+    }
+}
+
+trait ManifestSink {
+    type Error;
+
+    fn emit(&mut self, bytes: &[u8]) -> Result<(), Self::Error>;
+}
+
+impl ManifestSink for Sha256 {
+    type Error = Infallible;
+
+    fn emit(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.update(bytes);
+        Ok(())
+    }
+}
+
+struct IoSink<'a, W: Write>(&'a mut W);
+
+impl<W: Write> ManifestSink for IoSink<'_, W> {
+    type Error = io::Error;
+
+    fn emit(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.0.write_all(bytes)
     }
 }
 
 pub(crate) fn write_jcs_string(digest: &mut Sha256, value: &str) {
-    digest.update(b"\"");
+    emit_jcs_string(digest, value).expect("SHA-256 sink is infallible");
+}
+
+fn emit_jcs_string<S: ManifestSink>(sink: &mut S, value: &str) -> Result<(), S::Error> {
+    sink.emit(b"\"")?;
     let bytes = value.as_bytes();
     let mut segment_start = 0;
     for (index, byte) in bytes.iter().copied().enumerate() {
@@ -204,20 +249,24 @@ pub(crate) fn write_jcs_string(digest: &mut Sha256, value: &str) {
             0..=0x1f => b"",
             _ => continue,
         };
-        digest.update(&bytes[segment_start..index]);
+        sink.emit(&bytes[segment_start..index])?;
         if escape.is_empty() {
-            digest.update(b"\\u00");
-            digest.update([HEX[usize::from(byte >> 4)], HEX[usize::from(byte & 0x0f)]]);
+            sink.emit(b"\\u00")?;
+            sink.emit(&[HEX[usize::from(byte >> 4)], HEX[usize::from(byte & 0x0f)]])?;
         } else {
-            digest.update(escape);
+            sink.emit(escape)?;
         }
         segment_start = index + 1;
     }
-    digest.update(&bytes[segment_start..]);
-    digest.update(b"\"");
+    sink.emit(&bytes[segment_start..])?;
+    sink.emit(b"\"")
 }
 
-pub(crate) fn write_decimal(digest: &mut Sha256, mut value: u64) {
+pub(crate) fn write_decimal(digest: &mut Sha256, value: u64) {
+    emit_decimal(digest, value).expect("SHA-256 sink is infallible");
+}
+
+fn emit_decimal<S: ManifestSink>(sink: &mut S, mut value: u64) -> Result<(), S::Error> {
     let mut digits = [0_u8; 20];
     let mut start = digits.len();
     loop {
@@ -228,16 +277,20 @@ pub(crate) fn write_decimal(digest: &mut Sha256, mut value: u64) {
             break;
         }
     }
-    digest.update(&digits[start..]);
+    sink.emit(&digits[start..])
 }
 
 pub(crate) fn write_hex(digest: &mut Sha256, bytes: &[u8; 32]) {
+    emit_hex(digest, bytes).expect("SHA-256 sink is infallible");
+}
+
+fn emit_hex<S: ManifestSink>(sink: &mut S, bytes: &[u8; 32]) -> Result<(), S::Error> {
     let mut encoded = [0_u8; 64];
     for (index, byte) in bytes.iter().copied().enumerate() {
         encoded[index * 2] = HEX[usize::from(byte >> 4)];
         encoded[index * 2 + 1] = HEX[usize::from(byte & 0x0f)];
     }
-    digest.update(encoded);
+    sink.emit(&encoded)
 }
 
 #[cfg(test)]
@@ -321,13 +374,45 @@ mod tests {
             "projectId": PROJECT_ID
         });
         let oracle_bytes = serde_json_canonicalizer::to_vec(&oracle).unwrap();
+        let mut written = Vec::new();
+        manifest.write_jcs(&mut written).unwrap();
+        assert_eq!(written, oracle_bytes);
         assert_eq!(
             manifest.revision().0.as_slice(),
-            Sha256::digest(oracle_bytes).as_slice()
+            Sha256::digest(&written).as_slice()
         );
         assert_eq!(
             hex(manifest.revision().as_bytes()),
             "3c0f7abb9265d184f2a9fa1f2f5565d8a4b43acd10b0ea002386f9f31653d1ff"
+        );
+    }
+
+    #[test]
+    fn canonical_manifest_writer_propagates_output_failure() {
+        struct FailingWriter {
+            remaining: usize,
+        }
+
+        impl Write for FailingWriter {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                if self.remaining == 0 {
+                    return Err(io::Error::new(io::ErrorKind::OutOfMemory, "writer refused"));
+                }
+                let count = bytes.len().min(self.remaining);
+                self.remaining -= count;
+                Ok(count)
+            }
+
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), vec![file("a", b"x")]).unwrap();
+        let mut writer = FailingWriter { remaining: 17 };
+        assert_eq!(
+            manifest.write_jcs(&mut writer).unwrap_err().kind(),
+            io::ErrorKind::OutOfMemory
         );
     }
 
@@ -403,6 +488,45 @@ mod tests {
             validated - generated,
             hashed - validated,
             std::mem::size_of::<ManifestEntry>() * MAX_ENTRIES
+        );
+    }
+
+    #[test]
+    #[ignore = "local 100k-entry canonical manifest writer cost probe"]
+    fn measure_maximum_manifest_writer() {
+        struct HashingWriter {
+            digest: Sha256,
+            length: usize,
+        }
+
+        impl Write for HashingWriter {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                self.digest.update(bytes);
+                self.length += bytes.len();
+                Ok(bytes.len())
+            }
+
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let files = (0..MAX_ENTRIES)
+            .map(|index| file(&format!("scenes/{index:06}.scene.json"), b"{}"))
+            .collect();
+        let manifest = TreeManifest::new(PROJECT_ID, vec!["game-code".to_owned()], files).unwrap();
+        let revision = manifest.revision();
+        let mut writer = HashingWriter {
+            digest: Sha256::new(),
+            length: 0,
+        };
+        let start = std::time::Instant::now();
+        manifest.write_jcs(&mut writer).unwrap();
+        let elapsed = start.elapsed();
+        assert_eq!(writer.digest.finalize().as_slice(), revision.as_bytes());
+        eprintln!(
+            "entries={MAX_ENTRIES} jcs_bytes={} write_elapsed={elapsed:?}",
+            writer.length
         );
     }
 }
