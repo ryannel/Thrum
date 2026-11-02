@@ -387,6 +387,10 @@
       "i2a_staged_candidate_lineage": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-CANDIDATE-LINEAGE.md",
         "scope": "A test-only validated one-scene candidate supplies history only after its staged file is reread and rehashed; a same-length post-validation mutation refuses. Complete-blob reuse verifies supplied bytes with one lazily sized reusable scratch buffer. Local 1,000-file new/batch/reuse helper timing and RSS are recorded. Full candidate file staging, GC pins, physical reservation, kill recovery and production admission remain open."
+      },
+      "i2a_candidate_root_proof": {
+        "evidence": "../evidence/i2a/SOURCE-CANDIDATE-ROOT-PROOF.md",
+        "scope": "A test-only three-file validated candidate passes staged-byte verification, current-root lineage, complete file/manifest blobs and atomic root/outcome generation commit. A/B edit, drift/lineage/stale/token refusal, reopened retry and concurrent same-token winner pass; local edit-to-root timing/RSS is recorded. Physical disk/WAL reservation, GC pins, process-kill recovery, game-schema breadth and production admission remain open."
       }
     },
     {
