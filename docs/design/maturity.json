@@ -1274,6 +1274,14 @@
           "correctness": "CPU_bounded_controls_held_wind_integral_reset_motion_validation_and_final_GPU_finite_transport_reaction_no_phantom_birth_age_pass",
           "experienced_quality": "actual1x16x_growth_breakup_clips_sampled_frames_asymmetric_fed_cap_concentric_disk_resolved_600s_components2_to7_zero_faces_but_active_soft_tiers_not_accepted_720s_chart_exit",
           "performance": "M3_Max_fullref1x42_55_submitted_image_Hz_CPU_p95_0_140ms_16x157_75source_seconds_per10s_slight_lag_63_4MiB_with_observers_whole_GPU_M2_fullsky_unqualified"
+        },
+        "runtime_cirrus_correction": {
+          "record": "../evidence/cloud-cirrus-2026-11-02/README.md",
+          "build": "62167671ff19b5a3",
+          "implementation": "standalone_finite_seeded_ice_filaments_localized_heads_anisotropic_upper_wind_fall_reuses_source_buffers",
+          "correctness": "CPU_control_replay_support_and_GPU_ice_only_finite_seed_zero_lift_transport_phase_regressions_pass",
+          "experienced_quality": "native0_180_and1x16x_sampled_frames_repeated_comb_removed_tails_remain_elongated_default_faces_zero_60s_supplyoff_ice_loss_observed_full_Ci_family_unqualified",
+          "performance": "no_new_GPU_resources_1024byte_CPU_table_logical30_8MiB_after_observers_no_new_quiet_or_target_fullsky_admission"
         }
       }
     },
