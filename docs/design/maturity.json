@@ -351,6 +351,10 @@
       "i2a_sqlite_transaction_proof": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-TXN.md",
         "scope": "Test-only native SQLite file store verifies selected page, incremental-vacuum, WAL, FULL synchronous and main-page-count settings, then tests one atomic generation/retry-outcome transaction across reopen, same/different token, stale generation and injected outcome failure. It stores supplied digest bytes only; no verified blob closure, authenticated predecessor, physical reserve, crash/process-kill proof or accepted-source API exists."
+      },
+      "i2a_sqlite_blob_proof": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-BLOB.md",
+        "scope": "Test-only SQLite 4 MiB chunk storage verifies stored exact length, hash and chunk layout before complete-state publication; a root refuses missing/incomplete blobs. Partial-input retry, complete-hash reuse, final verification/reset exclusion and stale-writer rejection are tested across two connections. Arbitrary test bytes are not a semantic source closure, and production disk/WAL budget, old roots, authenticated lineage, crash recovery and accepted-source API remain open."
       }
     },
     {
