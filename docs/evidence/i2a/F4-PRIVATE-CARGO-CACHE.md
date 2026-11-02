@@ -130,3 +130,8 @@ with this guard: A preparation took 1,420 ms, A compile 1,049 ms, and the
 private root remained 2,923 files with the same SHA-256 above. This verifies
 candidate cache selection for one local profile; it does not authenticate the
 registry index or close all compiler reads.
+In a later paired local A/B run, the verifier took 42 and 44 ms respectively,
+including Python startup and rehashing both selected executables. Cache
+preparation took 1,386 ms; A compilation took 1,449 ms in that run. These
+single warm-host timings are observations, not latency guarantees or a claim
+that full dependency-root revalidation has been measured.

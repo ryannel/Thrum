@@ -1120,6 +1120,7 @@ mod tests {
         fn assert_reusable_source(&self, checkout: &Path, input: &Path) {
             let cargo = Path::new(env!("CARGO"));
             let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            let started = Instant::now();
             let result =
                 Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
                     .arg(checkout.join("scripts/prepare_headless_cargo_home.py"))
@@ -1139,6 +1140,10 @@ mod tests {
                 result.status.success(),
                 "{}",
                 String::from_utf8_lossy(&result.stderr)
+            );
+            eprintln!(
+                "verified-private-cargo-reuse ms={}",
+                started.elapsed().as_millis()
             );
         }
 
