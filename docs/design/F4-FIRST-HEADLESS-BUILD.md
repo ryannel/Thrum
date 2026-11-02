@@ -61,6 +61,20 @@ and closure checks succeed. A failed compile, missing input, corrupt output,
 stale source selection or interrupted publication leaves the prior ready build
 identifiable and the newly accepted source separately available.
 
+The first compiler profile should prepare one private Cargo dependency root
+from release-verified registry index records and lockfile-checksummed archives,
+then reuse that immutable root across edits with the same lock/toolchain key.
+Cargo's resolver may need index records for lockfile packages outside the
+selected host compile; a package list from filtered workspace metadata is not
+the selected build-unit graph. The [local private-cache experiment](../evidence/i2a/F4-PRIVATE-CARGO-CACHE.md)
+found 212 distinct registry index names and 37 cached archives (8.7 MB of
+archive bytes) sufficient for this workspace's host build, while only one
+registry crate compiled. This is a fixture observation, not a general minimum.
+T2 must verify the exact cache root, selected units and paths the compiler
+actually reads before calling any build ready. Per-edit work should reuse an
+unchanged verified dependency root; copying the entire shared registry for
+each edit is outside the selected cost model.
+
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,
 authority and replica path handles local and multiplayer actions; the server
