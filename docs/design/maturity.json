@@ -438,7 +438,11 @@
       },
       "i2a_two_descriptor_dispatch": {
         "evidence": "../evidence/i2a/SOURCE-TWO-DESCRIPTOR-DISPATCH.md",
-        "scope": "A provisional seven-file staged candidate dispatches two game record types through sorted source-carried descriptors by a bounded top-level JSON type pass, then performs full descriptor validation and local required-reference closure. One-descriptor candidates retain a direct parse path. Unknown type/version, nested type spoofing, duplicate/unsupported envelope keys and deep/dense invalid fields refuse; older staged bytes survive source edits. The two-descriptor edit cost, 256-descriptor combined peak, external roots, consumer reconciliation and durable admission remain open."
+        "scope": "A provisional seven-file staged candidate dispatches two game record types through sorted source-carried descriptors by a bounded top-level JSON type pass, then performs full descriptor validation and local required-reference closure. One-descriptor candidates retain a direct parse path. Unknown type/version, nested type spoofing, duplicate/unsupported envelope keys and deep/dense invalid fields refuse; older staged bytes survive source edits. The two-descriptor edit cost, full 256-type game distribution and combined peak, external roots, consumer reconciliation and durable admission remain open."
+      },
+      "i2a_256_descriptor_candidate_cost": {
+        "evidence": "../evidence/i2a/SOURCE-256-CANDIDATE-COST.md",
+        "scope": "An ignored release fixture validates a full provisional candidate with 256 descriptors, 4,096 declared scene/game records, 100,000 field-history entries, 1,024 version entries and one large opaque game value, then derives its canonical manifest revision. One local elapsed sample and an isolated whole-process RSS sample are recorded. Only one game record and one required edge are live; all-type game distribution, 65,536-edge overlap, authenticated prior root, editor/source-store peak, target/device performance and production admission remain open."
       }
     },
     {
