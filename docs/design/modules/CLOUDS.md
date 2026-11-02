@@ -1,6 +1,7 @@
 # Clouds and atmosphere — governing module design
 
-2 November2026. **Selected production direction; source/representation POCs and runtime qualification remain open.**
+2 November 2026. **Production mechanisms selected; implementation/content/device qualification remain open.**
+[The production baseline](CLOUD-PRODUCTION-BASELINE.md) fixes the authoring, source, rendering and lighting path.
 The [migration build plan](CLOUD-MIGRATION.md) is the single checked execution queue. Its
 [technique/source map](../research/ATMOSPHERICS-TECHNIQUES.md), [capability ledger](CLOUD-CAPABILITIES.md),
 [POC acceptance contract](CLOUD-PROOF-ACCEPTANCE.md) and [performance execution contract](CLOUD-PERFORMANCE.md)
@@ -29,16 +30,16 @@ Standalone proof admission and actual engine/platform admission are separate.
 
 | ID | Current selected direction | Evidence / unfinished gate |
 | --- | --- | --- |
-| CD01 Source | Weather-owned persistent events/layers with class-specific prepared evolving optical masters; qualified layer/filament products where appropriate. | Actual source/cook/tool selection and local lifecycle proof P1/P5; controlled implicit/2.5D challenger can win equal-cue comparison. |
-| CD02 Detail | Final optical frames contain structural change. Bounded added detail preserves material coordinates/support and declared optical meaning. | No scrolling-noise/global-fade lifecycle substitute; optical interpolation checked against master and watched motion. |
-| CD03 Residency | Share immutable endpoint products by master/knot/LOD/optical layout; per-event phase/pose data. | Two independently aged events can share endpoints. Per-age blended current field is only a measured total-consumer specialization; CPU/GPU/peak copies counted. |
-| CD04 Optics | Complete clear-air four-LUT family plus joint spatial air/fog/cloud integration, shared ordinary/filtered Sun depth and bounded cloud scattering. | RGB aerial extinction is our qualified extension. Cloud light closure/filtered cache selected by P3b/P4b comparisons, not inherited from K48 or the fitted liquid bank. |
-| CD05 Consumers | Main, attenuation, reflected/environment and optional CPU semantics bind independently. | Retained offscreen/hidden causes survive; no-optical-consumer GPU work retires. |
-| CD06 Reuse | Retain Beer/phase semantics, oracles, prepared comparison master, reflection boundary, controls and provenance where qualified. | Replace viewer-shaped ownership, one-box source assumptions, fixed external sky and private final display. |
-| CD07 Far sky | Same world events/group identity feed conservative bounds and qualified far products to curved horizon. | P3a compares resolved traversal and coverage-conditioned transfer with depth-correlation/terminal tests; no independent horizon painting or mean-density shortcut. |
-| CD08 Weather | Authored spatial fronts and admitted continuation/wind tracks preserve existing identities. | Midlife control/shear continuity before source format freeze; no preset crossfade, camera reseed or held phase. |
-| CD09 View cost | Spatial reference and production reconstruction designed together; compare mixed-resolution rays and selective lighting-rate reduction. | Independent histories, current fresh growth/disocclusion, cuts/64x and fog/geometry joins qualify net quality/cost. |
-| CD10 Progression | Small source/air/seam POCs -> early spatial coupled and scaling screen -> production choices -> families -> weather -> full skies -> engine binding. | Active checkboxes and definitions of done live only in CLOUD-MIGRATION; old queues are historical. |
+| CD01 Source | Houdini FX22.0.459 SOP/sparse Pyro -> evolving VDB -> one Thrum optical cook for all five families. | Licensed installation prerequisite and accepted local content remain unrun; no required implicit/2.5D challenger. |
+| CD02 Detail | Optical frames contain structural birth, mature renewal and loss; stable coordinates and fixed optical calibration. | Watched source/reference motion and intermediate-frame comparison. |
+| CD03 Residency | Immutable density endpoints with bounded page/frame-window IO; complete episode-context ambient stream. | Density shares only where identical; all-cloud AO cannot share by master/frame alone. Actual1x/16x/64x bytes and latency qualify. |
+| CD04 Optics | Hillaire four-LUT air + RGB aerial T; two-lobe HG/one extra MS octave; baked ambient accessibility; full-column BSM receiver shadows and complete secondary Sun rays inside cloud domains. | Complete equations/paths fixed in baseline; numerical, image, source and cost POCs qualify implementation/settings. |
+| CD05 Consumers | Main, attenuation, reflected/environment and optional CPU semantics bind independently. | Retained offscreen causes survive; no-optical-consumer GPU work retires. |
+| CD06 Reuse | Retain Beer/phase semantics, oracles, comparison inputs, reflection boundary, controls and provenance where qualified. | Replace viewer-shaped ownership, one-box assumptions, fixed sky and private final display. |
+| CD07 Far sky | Same3D source query at ordinary footprint mips and conservative occupancy to curved horizon. | Direct resolved thin-gap/terminal tests qualify LOD; no required far-transfer codec or painted horizon. |
+| CD08 Weather | Finite authored world episodes with persistent event IDs and offline shared height-wind/pose tracks. | Runtime adds no wind; different ages are authored birth times. Actual local development, survivor and matched-boundary QA, not live edit/branch controls. |
+| CD09 View cost | Disjoint near-prefix/far-tail integration, independent temporal histories and current spatial/fresh fallback. | Fixed formats/lifetime proposal in baseline; motion/cut/64x and fog/geometry joins qualify quality/cost. |
+| CD10 Progression | Small source/air/seam pilots -> early coupled cost screen -> all source regimes -> complete path -> families/weather/skies -> engine binding. | One active checkbox queue in CLOUD-MIGRATION. Optional research does not gate required implementation. |
 
 ## Responsibility and public composition
 
@@ -70,10 +71,12 @@ multiple parts or quality levels representing one condensate use a partition sum
 not add. Prepared coefficients use a fixed optical calibration; liquid/ice scattering channels remain meaningful
 through interpolation/LOD. They are authored optical proxies, not conserved meteorological water by assertion.
 
-Shared wind acts once at material height. Wind-free master admission, bounded inverse/support deformation, internal
-source motion, authoring controls and out-of-domain handling are fixed before P1b/P3b format selection. Local fixture
-wind may use the admitted affine height-shear regime in the migration; broader chart/planet wind requires its own
-mapping and error proof. No rigid base drift or baked-plus-runtime double wind may stand in for height shear.
+Shared wind acts once during Houdini episode authoring, at material height. Density exports in a moving event-local
+frame with exact fixed-scale rigid pose; internal shear/advection is baked. Runtime samples pose plus adjacent optical
+frames at the same inverse-pose coordinate and adds no wind. All consumers use the same episode/world clock and wind
+metadata. Whole-episode synchronization preserves the all-cloud ambient bake; independent phase/cloning/live wind
+edits are optional recook/retarget work, not baseline controls. P1b validates Cu/Cb, Sc/St and Ci regimes before format
+or library freeze. See baseline for pose interpolation, AO keys, episode boundaries and admission rules.
 
 V3 integrates summed local extinction/source over overlapping air/fog/cloud intervals with one prefix throughput.
 Disjoint affine operators compose front A/rear B as `(S_A+T_A*S_B,T_A*T_B)`. Clear-air LUTs replace only disjoint,
@@ -101,8 +104,8 @@ aerosol albedo/phase/height and ozone choice are pinned assets; the old bounded 
 
 Use stable radial-height/shell-root formulas, conservative tangent predicates and split GPU origins. A camera rebase
 cannot reseed clouds. Fixed spherical chart IDs/cell adjacency deduplicate face edges and preserve source identities;
-wind vectors/metres transform through the chart Jacobian, never arbitrary angular texture scroll. Shared spherical
-wind fixtures use the admitted common tangent rotation/height profile; source mapping must conform or reject admission.
+wind/pose export uses the declared spherical world mapping, never arbitrary angular texture scroll. Offline source
+mapping must match its shared world wind profile or reject admission; runtime does not impose an affine warp.
 
 World-source demand covers main, independent reflection/environment, direct-light and ambient paths to their actual
 finite planet/top/source terminals, including sources far outside the main frustum. Test cross-chart edges, horizon,
@@ -128,18 +131,18 @@ populations are not allocated as one dense current field per virtual cell. Shell
 support skip clear air; resident near/mid fields and on-demand filtered source queries refer to the same latent events.
 A far-mode shortcut must preserve canonical coverage/transmittance within its admitted footprint; otherwise resolve it.
 
-Required views:1280×720main,640×360joint media, independent mirror320×180media; an orthographic receiver/diagnostic view
+Required views:1280×720main output,320×180far/640×360near joint media, independent mirror320×180media; an orthographic receiver/diagnostic view
 and an independent paused/skipped camera witness;1920×1080native target separately. Ground camera2m, low hillside and
 0–1536m admitted routes; pitches15/60/90degrees and yaw sweep. Close/oblique routes reveal low-layer thickness and tower/
 anvil structure. Sun elevations75/30/15/5degrees, front/back relative wind, source-off and all-light-off; optional admitted
 Moon path uses the same contract. A Sun2degree stress case remains separate until its full source/air domain is admitted.
 Two bounded fog volumes test overlap. Derived environment capture/filtering is counted, not a free omitted consumer.
-These internal image sizes are reference-fixture comparisons, not a ban on a qualified per-pixel/selective-light or
-other production resolution. Preserve output size, retained consumers and accepted cues when comparing candidates.
+These are selected initial internal sizes; ordinary sampling tuning preserves output size, retained consumers and
+accepted cues. Per-pixel selective-light sharing is an optional later optimization.
 
 ### Cost and profile admission
 
-The [migration cost account](CLOUD-MIGRATION.md#budget-account-and-reductions) and
+The [selected baseline account](CLOUD-PRODUCTION-BASELINE.md#ownership-schedule-and-allowed-tuning) and
 [performance contract](CLOUD-PERFORMANCE.md) own current work/copy/lifetime accounting and optimization priorities.
 The earlier per-age field, K48/A0 and probe ceilings in the Git-linked candidate are not production budgets.
 

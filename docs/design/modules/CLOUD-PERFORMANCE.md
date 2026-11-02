@@ -14,9 +14,9 @@ The old234.9M Sun/402.7M ambient endpoint ceilings are historical candidate limi
 | --- | --- | --- |
 | CPU data/layout, P0/P3a | Stable numeric IDs/revisions, packed event/region arrays, reusable typed scratch and bounded dirty sets. Tiny direct scan is the oracle; compare packed cell-to-event ranges/adjacency at regional size. | Count actual node/candidate/index visits, allocations/bytes, GC and p50/p95/p99 CPU preparation. An index loses if total critical path/peak gets worse despite a faster GPU helper. |
 | Submission/observation, P0 | Helpers encode into the owner graph; bounded asynchronous timestamp/counter ring. No per-frame GPU completion/map/readback wait in input/world/update path. Capture/probe mode is separate from quiet timing. | Old `cu-preview.js::renderFrame` maps/awaits completion/reads counters each frame; do not copy this cadence. Compare observer-off/on overhead; unavailable timings are not queue-time substitutes. |
-| Source sharing, P1a/P3a | Compare shared immutable endpoint fetches with a blended current field across **all** actual readers, same optical time/quality. Include cache locality, two-fetch loads, LOD/extra channels and decode misses. | No per-age rebuild by default; no presumed compression/sharing gain. Reject content that only fits by holding phase or silently evicting a retained source. |
+| Source sharing, P1a/P3a | Measure selected immutable endpoint fetches across **all** actual readers, same optical time/quality. Include cache locality, two-fetch loads, LOD/extra channels and decode misses. | No per-age rebuild by default; no presumed compression/sharing gain. Reject content that only fits by holding phase or silently evicting a retained source. |
 | Index/dirty propagation, P3a | Compare at least two meaningful tile/column granularities, direct scan versus packed index, old/new swept support and low-Sun influence. | Measure dependency edges, dirty unique regions, exact reused regions, metadata/hash bytes and CPU discovery + GPU rebuild work. If influence is global, charge the global rebuild. |
-| Light/sample economy, P3b/P4b | Attribute density vs lighting. Compare mixed-resolution whole rays against per-pixel integration with selectively reduced light rate when lighting dominates. | Preserve per-pixel depth/fog/opacity and fresh silhouette cues; subgroup/workgroup paths need feature/occupancy qualification. Smolder console numbers and async-overlap claims do not certify WebGPU. |
+| Light/sample economy, P3b/P4b | Attribute density vs lighting. Measure selected disjoint mixed-resolution rays, direct-interior Sun rays, BSM receiver lookups and one MS octave. Selective lighting-rate sharing is optional after a measured deficit. | Preserve per-pixel depth/fog/opacity and fresh silhouette cues; subgroup/workgroup paths need feature/occupancy qualification. Smolder console numbers and async-overlap claims do not certify WebGPU. |
 | Bandwidth/format, P3b | Portable packing, anisotropic fields, guards/mips and conservative empty skipping; format/filter capability queries, physical layout and decoded precision. | Count actual texture reads/bytes/occupancy. Quantized occupancy must not skip thin cloud; lower bytes that increase traversal/cook cost need total-graph comparison. |
 | Pipelines/cold work, P0/P2b/P3b | Finite shader-demand manifest by admitted optical layout/quality/view, not event/time. Bounded required prewarm; record first useful frame and pipeline creation. | First new genus/storm, quality/resize/device recovery cannot hide compile stalls behind a warm GPU score. Never compile per event or weather tick. |
 | Per-view work, P4b/P7 | Independent main/reflection/environment ray budget, histories and fresh masks; measured net reconstruction/cadence. | No main image reused as reflected world; no fog/surface shift or stale birth accepted for fewer ray pixels. Proxy versus real rough-water consumers stay separate. |
@@ -45,9 +45,9 @@ or qualify a named age/error approximation against a current reference. A smalle
 
 ## Residency and allocation ledger
 
-The migration's184MiB reservation is a **single simultaneous-lifetime proposal**: encoded64MiB counts CPU+GPU encoded
-copies **combined**; source48MiB counts physical decoded endpoint/current atlas, guards and mips; bounds/index8MiB;
-light/shadow8MiB; views/history32MiB; staging16MiB counts concurrent CPU/GPU upload/readback slots; air/env8MiB.
+The baseline's200MiB reservation is a **single simultaneous-lifetime proposal**: encoded48MiB counts CPU+GPU encoded
+copies **combined**; source64MiB counts physical decoded endpoint/current atlas, guards and mips; bounds/index8MiB;
+light/shadow8MiB; views/history48MiB; staging16MiB counts concurrent CPU/GPU upload/readback slots; air/env8MiB.
 Any decoded CPU mirror must be charged explicitly to a named pool; there is no free recovery duplicate. Required
 recoverable masters can remain in admitted durable source storage rather than an unbounded live CPU cache.
 
@@ -55,7 +55,7 @@ Inventory each allocation: owner, format/physical dimensions, bytes, multiplicit
 last-reader/reclaim events and old/new overlap. Include source revisions, flow/phase fields if used, endpoint cache,
 index metadata, compiled pipelines where visible, binding/descriptor objects, browser JS/Wasm heaps and driver scope.
 Track cold load, seek/cache thrash, quality switch, failed allocation and device recovery, not merely warm logical voxels.
-The328MiB arithmetic remainder is not available process headroom. P7 measures the fixture browser process peak and names
+The312MiB arithmetic remainder is not available process headroom. P7 measures the fixture browser process peak and names
 unobservable driver components; P8 repeats with actual engine scene/consumers. Unknown memory scope stays unqualified.
 
 Steady hot paths reuse storage; record and justify remaining required per-frame objects such as swapchain views.
@@ -69,9 +69,14 @@ with explicit ownership/transfer bytes and cancellation; moving it off-thread do
 
 P3a counts `index_visits + candidate_tests + coefficient_fetches + local_light_steps + cache_fetches + Sun/ambient/env
 endpoints + dispatches + upload/readback bytes`, not only pixels*steps. Run1/2/16/64 and regional unique source groups,
-shared/independent ages, sparse/full coverage, low Sun, offscreen blockers and1x/16x/64x. Record distributions per region
-and whole graph, including the worst region. Compare16/64-subray far transfer to direct resolved demand with correlated
-gaps/terminals; include the joint depth storage/traversal cost needed for valid averaging.
+shared immutable density products/authored independent birth times, sparse/full coverage, low Sun, offscreen blockers and1x/16x/64x. Record distributions per region
+and whole graph, including the worst region. Compare selected ordinary footprint mips to direct resolved demand with correlated gaps/terminals. No special
+far-transfer summary is a prerequisite. Report actual interior Sun-ray work, cloud-shadowed air/fog and native fresh
+work in the5ms cloud account; unshadowed clear air/composition is separate.
+
+Three prefetched frame pairs are a queue limit, not a throughput promise. Manifest actual unique requested bytes per
+presentation at1x/16x/64x, IO/decode/upload latency, coarse current-time fallback fraction and seek/miss peaks. Complete
+episode AO keys include all cloud occluders and event poses. Do not assume independently retimed clones can share it.
 
 Before P3b chooses expensive products, fill FAIR/BROKEN/OVERCAST/STORM steady/burst worksheets with measured count-to-time
 ranges and byte/lifetime terms. Explicitly multiply actual endpoint fetch/decode, index visits, light/ray/view counts
