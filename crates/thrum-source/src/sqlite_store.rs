@@ -7,7 +7,9 @@ use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
@@ -2386,6 +2388,94 @@ fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
     writer
         .stage_blob(&mut third.as_slice(), 1, third_hash)
         .unwrap();
+}
+
+struct KillChildOnDrop(Child);
+
+impl Drop for KillChildOnDrop {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
+#[test]
+fn process_kill_partial_blob_child() {
+    let Some(database) = std::env::var_os("THRUM_TEST_PARTIAL_BLOB_DB") else {
+        return;
+    };
+    let database = PathBuf::from(database);
+    let marker = PathBuf::from(std::env::var_os("THRUM_TEST_PARTIAL_BLOB_MARKER").unwrap());
+    let mut store = RootTransactionProof::open(&database).unwrap();
+    let bytes = vec![0x42_u8; CHUNK_BYTES * 2 + 1];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    store
+        .stage_blob_with(&mut bytes.as_slice(), bytes.len() as u64, hash, |index| {
+            if index == 0 {
+                fs::write(&marker, b"first chunk committed").unwrap();
+                loop {
+                    std::thread::sleep(Duration::from_secs(1));
+                }
+            }
+        })
+        .unwrap();
+}
+
+#[test]
+fn process_kill_after_chunk_recovers_old_root_and_restages() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let old = [0x41_u8];
+    let old_hash: [u8; 32] = Sha256::digest(old).into();
+    store.stage_blob(&mut old.as_slice(), 1, old_hash).unwrap();
+    store.commit_probe(0, 1, 1, [1; 32], old_hash).unwrap();
+    drop(store);
+
+    let marker = fixture.0.join("first-chunk.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::process_kill_partial_blob_child")
+        .arg("--nocapture")
+        .env("THRUM_TEST_PARTIAL_BLOB_DB", fixture.database())
+        .env("THRUM_TEST_PARTIAL_BLOB_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let mut child = KillChildOnDrop(child);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !marker.exists() {
+        assert!(Instant::now() < deadline, "child did not commit a chunk");
+        assert!(child.0.try_wait().unwrap().is_none(), "child exited early");
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    child.0.kill().unwrap();
+    assert!(!child.0.wait().unwrap().success());
+
+    let bytes = vec![0x42_u8; CHUNK_BYTES * 2 + 1];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (1, Some(old_hash.to_vec())));
+    let (state, chunks): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1) FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, chunks), (0, 1));
+    assert!(matches!(
+        store.commit_probe(1, 1, 2, [2; 32], hash),
+        Err(ProofError::MissingCompleteBlob)
+    ));
+    store
+        .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
+        .unwrap();
+    assert_eq!(store.commit_probe(1, 1, 2, [2; 32], hash).unwrap(), 2);
+    drop(store);
+    let store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (2, Some(hash.to_vec())));
 }
 
 #[test]
