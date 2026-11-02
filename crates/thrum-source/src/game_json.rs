@@ -112,6 +112,88 @@ pub fn parse_game_record(
     Ok(record)
 }
 
+/// Read only the top-level type discriminator before descriptor-bound parsing.
+///
+/// This does not validate game semantics; the selected descriptor must parse
+/// the entire record afterward. Non-type values are traversed without a JSON
+/// tree, so field order cannot change which descriptor is selected.
+pub(crate) fn game_record_type(bytes: &[u8]) -> Result<String, GameRecordError> {
+    if bytes.len() > MAX_RECORD_BYTES {
+        return Err(GameRecordError::TooLarge);
+    }
+    let mut deserializer = serde_json::Deserializer::from_slice(bytes);
+    let nodes = Cell::new(0);
+    let record_type = RecordTypeSeed { nodes: &nodes }
+        .deserialize(&mut deserializer)
+        .map_err(GameRecordError::Invalid)?;
+    deserializer.end().map_err(GameRecordError::Invalid)?;
+    Ok(record_type)
+}
+
+struct RecordTypeSeed<'a> {
+    nodes: &'a Cell<usize>,
+}
+
+impl<'de> DeserializeSeed<'de> for RecordTypeSeed<'_> {
+    type Value = String;
+
+    fn deserialize<D: serde::Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> Result<Self::Value, D::Error> {
+        deserializer.deserialize_map(RecordTypeVisitor { nodes: self.nodes })
+    }
+}
+
+struct RecordTypeVisitor<'a> {
+    nodes: &'a Cell<usize>,
+}
+
+impl<'de> Visitor<'de> for RecordTypeVisitor<'_> {
+    type Value = String;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a game record with one type discriminator")
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        let mut record_type = None;
+        let mut id_seen = false;
+        let mut schema_seen = false;
+        let mut fields_seen = false;
+        let mut documentation_seen = false;
+        while let Some(key) = map.next_key::<String>()? {
+            match key.as_str() {
+                "type" if record_type.is_none() => {
+                    record_type = Some(map.next_value::<String>()?);
+                }
+                "id" if !id_seen => {
+                    let _: String = map.next_value()?;
+                    id_seen = true;
+                }
+                "schema" if !schema_seen => {
+                    let _: u64 = map.next_value()?;
+                    schema_seen = true;
+                }
+                "fields" if !fields_seen => {
+                    map.next_value_seed(OpaqueSeed {
+                        depth: 1,
+                        nodes: self.nodes,
+                        node_limit: MAX_OPAQUE_NODES + MAX_RECORD_FIELDS + 2,
+                    })?;
+                    fields_seen = true;
+                }
+                "documentation" if !documentation_seen => {
+                    let _: String = map.next_value()?;
+                    documentation_seen = true;
+                }
+                _ => return Err(A::Error::custom("duplicate or unsupported game record key")),
+            }
+        }
+        record_type.ok_or_else(|| A::Error::custom("missing game record type"))
+    }
+}
+
 struct GameRecordSeed<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
@@ -282,6 +364,7 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
                     map.next_value_seed(OpaqueSeed {
                         depth: OPAQUE_START_DEPTH,
                         nodes: self.nodes,
+                        node_limit: MAX_OPAQUE_NODES,
                     })?;
                 }
             }
@@ -388,6 +471,7 @@ impl Visitor<'_> for ReferenceVisitor {
 struct OpaqueSeed<'a> {
     depth: u8,
     nodes: &'a Cell<usize>,
+    node_limit: usize,
 }
 
 impl<'de> DeserializeSeed<'de> for OpaqueSeed<'_> {
@@ -398,13 +482,14 @@ impl<'de> DeserializeSeed<'de> for OpaqueSeed<'_> {
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
         let count = self.nodes.get();
-        if count >= MAX_OPAQUE_NODES {
+        if count >= self.node_limit {
             return Err(D::Error::custom("opaque node count limit"));
         }
         self.nodes.set(count + 1);
         deserializer.deserialize_any(OpaqueVisitor {
             depth: self.depth,
             nodes: self.nodes,
+            node_limit: self.node_limit,
         })
     }
 }
@@ -412,6 +497,7 @@ impl<'de> DeserializeSeed<'de> for OpaqueSeed<'_> {
 struct OpaqueVisitor<'a> {
     depth: u8,
     nodes: &'a Cell<usize>,
+    node_limit: usize,
 }
 
 impl<'de> Visitor<'de> for OpaqueVisitor<'_> {
@@ -467,6 +553,7 @@ impl<'de> Visitor<'de> for OpaqueVisitor<'_> {
             .next_element_seed(OpaqueSeed {
                 depth: self.depth + 1,
                 nodes: self.nodes,
+                node_limit: self.node_limit,
             })?
             .is_some()
         {}
@@ -495,6 +582,7 @@ impl<'de> Visitor<'de> for OpaqueVisitor<'_> {
             map.next_value_seed(OpaqueSeed {
                 depth: self.depth + 1,
                 nodes: self.nodes,
+                node_limit: self.node_limit,
             })?;
         }
         Ok(())
@@ -544,6 +632,35 @@ mod tests {
         format!(
             "{{\"id\":\"{RECORD_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.caption\":\"hello\",\"marker.scene\":\"{SCENE_ID}\",\"x.game.marker.note\":{{\"a\":[1,true,null]}}}}}}"
         )
+    }
+
+    #[test]
+    fn type_discriminator_uses_only_top_level_key_and_rejects_duplicates() {
+        let bytes =
+            br#"{"fields":{"nested":{"type":"game.fake"}},"schema":1,"type":"game.marker"}"#;
+        assert_eq!(game_record_type(bytes).unwrap(), "game.marker");
+        assert!(game_record_type(br#"{"type":"game.marker","type":"game.fake"}"#).is_err());
+        assert!(game_record_type(br#"{"fields":{"type":"game.fake"}}"#).is_err());
+        assert!(game_record_type(br#"{"type":"game.marker","fields":[]"#).is_err());
+        let unknown = game_record_type(br#"{"unknown":[null],"type":"game.marker"}"#).unwrap_err();
+        assert!(format!("{unknown:?}").contains("unsupported game record key"));
+    }
+
+    #[test]
+    fn type_discriminator_bounds_deep_and_dense_fields_before_dispatch() {
+        let deep = format!(
+            "{{\"fields\":{}0{},\"type\":\"game.marker\"}}",
+            "[".repeat(65),
+            "]".repeat(65)
+        );
+        let error = game_record_type(deep.as_bytes()).unwrap_err();
+        assert!(format!("{error:?}").contains("opaque depth limit"));
+        let dense = format!(
+            "{{\"fields\":[{}],\"type\":\"game.marker\"}}",
+            "null,".repeat(MAX_OPAQUE_NODES + MAX_RECORD_FIELDS + 2)
+        );
+        let error = game_record_type(dense.as_bytes()).unwrap_err();
+        assert!(format!("{error:?}").contains("opaque node count limit"));
     }
 
     #[test]
