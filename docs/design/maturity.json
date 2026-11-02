@@ -415,6 +415,10 @@
       "i2a_game_candidate_root": {
         "evidence": "../evidence/i2a/SOURCE-GAME-CANDIDATE-ROOT.md",
         "scope": "One five-file test candidate carries a game-owned descriptor, its immutable history, a game record with optional exact JSON bytes and a required local scene reference through validated staging and SQLite root/outcome publication. A/B caption edit, reopened exact game bytes, same-token retry and invalid-reference refusal pass. Local tiny edit-to-root timing is recorded; editor application, multi-schema/external dependency closure, GC pins, physical bound, cook/run consumer and production acceptance remain open."
+      },
+      "i2a_root_read_pin": {
+        "evidence": "../evidence/i2a/SOURCE-ROOT-READ-PIN.md",
+        "scope": "A test-only current-root reader registers one durable revision pin in a short transaction before out-of-transaction manifest/history decode, retains it across root advance/reopen, and releases it after success or validation refusal. Failed release under writer contention retains an in-process ID for next-read or explicit retry; non-reused IDs avoid stale cleanup. Local 100,000-entry read cost is recorded. No collector enforces transitive closure, abandoned-pin recovery, staged pin or production admission yet."
       }
     },
     {
