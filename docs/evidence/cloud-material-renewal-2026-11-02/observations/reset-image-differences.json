@@ -1,0 +1,20 @@
+{
+  "scope": "Full native canvas RGB code-value differences across alpha0,.5,1 at currentq192s; not an optical-error or visual-acceptance bound",
+  "files": [
+    "cloud-1-19175-e3-v1280x720-f107-7ae24ff549ef3793-87d3883d.png",
+    "cloud-1-19188-e3-v1280x720-f109-7ae24ff549ef3793-87d3883d.png",
+    "cloud-1-19200-e3-v1280x720-f111-7ae24ff549ef3793-87d3883d.png"
+  ],
+  "pairs": [
+    {
+      "meanAbsoluteCodeDifference": 0.012856264467592592,
+      "maxAbsoluteCodeDifference": 2.0,
+      "p99AbsoluteCodeDifference": 1.0
+    },
+    {
+      "meanAbsoluteCodeDifference": 0.012715205439814815,
+      "maxAbsoluteCodeDifference": 2.0,
+      "p99AbsoluteCodeDifference": 1.0
+    }
+  ]
+}

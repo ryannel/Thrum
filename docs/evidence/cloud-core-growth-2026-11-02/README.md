@@ -25,7 +25,7 @@ An independently verified expanding interior with unequal vertical/radial growth
 
 ## Populated-source checkpoint
 
-[Exact instrument](instrument/README.md), [identity](core-identity.json). Run `python3 docs/evidence/cloud-core-growth-2026-11-02/instrument/serve.py --port 8147`, open loopback8147, pause, select Cb, expand Proof controls, enable full resolution, Grow from clear, Inspect billows, advance180s. Default core/mixing/structure checked. Source inputs moist.85/lift1/dry.08/wind8, Sun32deg. No physics/water-mass claim.
+[Exact instrument](instrument/README.md), [identity](core-identity.json). Run `python3 docs/evidence/cloud-core-growth-2026-11-02/instrument/serve.py --port 8147`, open loopback8147, pause, select Cb, expand Proof controls, enable full resolution, Grow from clear, Inspect billows, advance180s. Default core/mixing/structure checked. Source inputs moist.85/lift1/dry.08/wind3, Sun32deg. No physics/water-mass claim.
 
 ![Native populated interior](observations/core-sections.png)
 

@@ -1,0 +1,123 @@
+--- a/index.html
++++ b/index.html
+@@ -182,7 +182,6 @@
+           <label><input type="checkbox" id="material-structure" checked />Cb three-dimensional material structure</label>
+           <label><input type="checkbox" id="material-core" checked />Expanding material cores · resets source</label>
+           <label><input type="checkbox" id="neck-mix" checked />Conservative neck mixing · resets source</label>
+-          <label>Paused presentation fraction<select id="presentation-alpha"><option value="1">1 · current source</option><option value="0">0 · previous source</option><option value="0.25">0.25</option><option value="0.5">0.5</option><option value="0.75">0.75</option></select></label>
+           <label
+             >Advance source seconds<input
+               id="advance-seconds"
+--- a/src/bench.js
++++ b/src/bench.js
+@@ -45,7 +45,7 @@
+     fog: $("fog").checked,
+     mirror: $("mirror").checked,
+     main: $("main").checked,
+-    alpha: Number($("presentation-alpha").value),
++    alpha: 1,
+     emptyWork: $("empty-work").checked,
+     resolved: $("resolved").checked,
+     extinctionScale: Number($("extinction").value),
+@@ -432,7 +432,7 @@
+   busy = true;
+   try {
+     await scene.gpu.device.queue.onSubmittedWorkDone();
+-    const ui = options();
++    const ui = { ...options(), alpha: 1 };
+     if (!scene.render(weather, ui, 0, clock.time))
+       throw Error("Capture graph was not submitted");
+     const submittedFrame = structuredClone(scene.lastSubmission);
+@@ -729,7 +729,7 @@
+         now - lastPresentedWall >= (Number($("rate").value) >= 64 ? 200 : 50));
+     const ui = {
+       ...options(),
+-      alpha: playing ? Math.min(1, residual / 0.25) : Number($("presentation-alpha").value),
++      alpha: playing ? Math.min(1, residual / 0.25) : 1,
+       sourceOnly: !needsPresentation,
+     };
+     if (ticks > 0 || needsPresentation) {
+--- a/src/core-reference.js
++++ b/src/core-reference.js
+@@ -64,24 +64,7 @@
+   upload(merge);e=d.createCommandEncoder();for(let step=0;step<160;step++)scene.compute(e,mix,groups[step%2],[8,8,8]);const merged=await download(a,e);
+   const values=new Float32Array(N);for(let i=0;i<N;i++)values[i]=merged[i*4];
+   const components=analyzeDensity(values,[8,8,8],[[0,0,0],[1500,1450,1500]]).substantialComponents;
+-  // Execute the actual joint carrier producer with distinguishable constant old charts.
+-  // Interior cells must retain the non-reset chart and spatially seed only the reset chart.
+-  const ca=g.texture('carrier oracle old A',[8,8,8]),cb=g.texture('carrier oracle old B',[8,8,8]);
+-  for(const [t,v] of [[ca,2],[cb,3]]){const raw=Uint16Array.from({length:N*4},(_,i)=>floatToHalf(i%4===3?1:v));d.queue.writeTexture({texture:t},raw,{bytesPerRow:64,rowsPerImage:8},[8,8,8]);}
+-  const carriers=await g.compute('actual joint carrier reset oracle',scene.codes.source.replace('fn main(','fn sourceStep(')+scene.codes.carriers);
+-  const cg=g.group(carriers,[[0,uniform],[6,scene.clamp],[7,ca.createView()],[9,scene.curl.createView()],[10,scene.repeat],[13,heads],[14,bands],[15,cb.createView()],[16,a.createView()],[17,b.createView()]]);
+-  params[22]=0;params[24]=0;params[26]=0;params[30]=0;params[39]=4;params[42]=256;
+-  let carrierError=0;const resetCases=[];
+-  for(const tick of [127,128,129,255,256,257]){
+-    params[40]=tick;d.queue.writeBuffer(uniform,0,params);e=d.createCommandEncoder();scene.compute(e,carriers,cg,[8,8,8]);const av=await download(a,e);e=d.createCommandEncoder();const bv=await download(b,e);
+-    const i=((4*8+4)*8+4)*4;
+-    const seed=[(4.5*187.5)/4800+.41,(4.5*181.25)/3200+.17,(4.5*187.5)/4200+.29];
+-    const expectedA=tick%256===0?seed:[2,2,2],expectedB=(tick+128)%256===0?seed:[3,3,3];
+-    for(let c=0;c<3;c++){carrierError=Math.max(carrierError,Math.abs(av[i+c]-expectedA[c]),Math.abs(bv[i+c]-expectedB[c]));}
+-    resetCases.push({tick,a:Array.from(av.slice(i,i+3)),b:Array.from(bv.slice(i,i+3)),expectedA,expectedB});
+-  }
+   return {
+-    renewedCarrierReset:{maxError:carrierError,tolerance:.001,resetCases,scope:'Actual joint GPU producer, staggered reset and neighboring ticks; interior constant donor charts'},
+     assembledCoreAffine:{maxError:affineError,tolerance:2e-5,actual,expected},
+     mixCpuReference:{maxError:referenceError,tolerance:1,scope:'Each channel normalized by its declared half-float/age tolerance'},
+     mixPhaseConservation:{maxError:massError,tolerance:.05},
+--- a/src/gpu-reference.js
++++ b/src/gpu-reference.js
+@@ -352,16 +352,16 @@
+   const code =
+     scene.codes.optics +
+     scene.codes.view +
+-    `@group(0) @binding(15) var<storage,read_write> result:array<vec4f>; @compute @workgroup_size(1) fn main(){let tau=tauRay(vec3f(-2,0,0),vec3f(1,0,0),32u,1.);result[0]=vec4f(tau,exp(-tau),0,0);result[1]=vec4f(airRayT(vec3f(0,1000,0),vec3f(sqrt(.75),.5,0)),0);var integral=0.;for(var i=0u;i<2048u;i++){integral+=phase(-1.+(f32(i)+.5)*2./2048.,0.,1.)*2./2048.*2.*PI;}result[2]=vec4f(integral,0,0,0);let j=vec3f(.2,.1,.03);let sigma=vec3f(.4,.2,.1);let full=beer(j,sigma,2.);let part=beer(j,sigma,1.);let split=join(part,part);result[3]=vec4f(full.s,0.);result[4]=vec4f(full.t,0.);result[5]=vec4f(max(max(abs(full.s-split.s).x,abs(full.s-split.s).y),abs(full.s-split.s).z),max(max(abs(full.t-split.t).x,abs(full.t-split.t).y),abs(full.t-split.t).z),0,0);result[6]=vec4f(beer(j,vec3f(0.,1e-9,1e-6),2.).s,0);result[7]=vec4f(analyticShadowT(vec3f(0)),analyticShadowT(vec3f(800,600,0)),analyticShadowT(vec3f(0,2300,0)),0);let mixture=shapeMatter(vec2f(.2,.2),.6,.5,1.);let liquid=shapeMatter(vec2f(.4,0),.6,.5,1.);let ice=shapeMatter(vec2f(0,.4),.6,.5,1.);result[8]=vec4f(mixture,liquid.x,ice.y);result[9]=vec4f(chartWeight(0.),chartWeight(128.),chartWeight(256.),chartWeight(64.));}`;
++    `@group(0) @binding(15) var<storage,read_write> result:array<vec4f>; @compute @workgroup_size(1) fn main(){let tau=tauRay(vec3f(-2,0,0),vec3f(1,0,0),32u,1.);result[0]=vec4f(tau,exp(-tau),0,0);result[1]=vec4f(airRayT(vec3f(0,1000,0),vec3f(sqrt(.75),.5,0)),0);var integral=0.;for(var i=0u;i<2048u;i++){integral+=phase(-1.+(f32(i)+.5)*2./2048.,0.,1.)*2./2048.*2.*PI;}result[2]=vec4f(integral,0,0,0);let j=vec3f(.2,.1,.03);let sigma=vec3f(.4,.2,.1);let full=beer(j,sigma,2.);let part=beer(j,sigma,1.);let split=join(part,part);result[3]=vec4f(full.s,0.);result[4]=vec4f(full.t,0.);result[5]=vec4f(max(max(abs(full.s-split.s).x,abs(full.s-split.s).y),abs(full.s-split.s).z),max(max(abs(full.t-split.t).x,abs(full.t-split.t).y),abs(full.t-split.t).z),0,0);result[6]=vec4f(beer(j,vec3f(0.,1e-9,1e-6),2.).s,0);result[7]=vec4f(analyticShadowT(vec3f(0)),analyticShadowT(vec3f(800,600,0)),analyticShadowT(vec3f(0,2300,0)),0);let mixture=shapeMatter(vec2f(.2,.2),.6,.5,1.);let liquid=shapeMatter(vec2f(.4,0),.6,.5,1.);let ice=shapeMatter(vec2f(0,.4),.6,.5,1.);result[8]=vec4f(mixture,liquid.x,ice.y);}`;
+   const pipeline = await g.compute("independent optical probes", code),
+     result = g.buffer(
+       "oracle optical result",
+-      160,
++      144,
+       GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+     ),
+     mapped = g.buffer(
+       "oracle optical readback",
+-      160,
++      144,
+       GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+     );
+   const bg = g.group(pipeline, [
+@@ -379,7 +379,7 @@
+   ]);
+   const e = g.device.createCommandEncoder();
+   scene.compute(e, pipeline, bg, [1, 1, 1]);
+-  e.copyBufferToBuffer(result, 0, mapped, 0, 160);
++  e.copyBufferToBuffer(result, 0, mapped, 0, 144);
+   g.submit(e);
+   await mapped.mapAsync(GPUMapMode.READ);
+   const optical = Array.from(
+@@ -390,7 +390,7 @@
+   g.device.queue.writeBuffer(uniform, 0, params);
+   const cbEncoder = g.device.createCommandEncoder();
+   scene.compute(cbEncoder, pipeline, bg, [1, 1, 1]);
+-  cbEncoder.copyBufferToBuffer(result, 0, mapped, 0, 160);
++  cbEncoder.copyBufferToBuffer(result, 0, mapped, 0, 144);
+   g.submit(cbEncoder);
+   await mapped.mapAsync(GPUMapMode.READ);
+   const cbMorphology = Array.from(
+@@ -398,7 +398,7 @@
+   ).slice(32, 36);
+   mapped.unmap();
+   params[27]=17;g.device.queue.writeBuffer(uniform,0,params);
+-  const shellEncoder=g.device.createCommandEncoder();scene.compute(shellEncoder,pipeline,bg,[1,1,1]);shellEncoder.copyBufferToBuffer(result,0,mapped,0,160);g.submit(shellEncoder);
++  const shellEncoder=g.device.createCommandEncoder();scene.compute(shellEncoder,pipeline,bg,[1,1,1]);shellEncoder.copyBufferToBuffer(result,0,mapped,0,144);g.submit(shellEncoder);
+   await mapped.mapAsync(GPUMapMode.READ);const shell=Array.from(new Float32Array(mapped.getMappedRange().slice(0))).slice(32,36);mapped.unmap();
+   const shellPhaseError=Math.max(Math.abs(shell[0]+shell[1]-shell[2]),Math.abs(shell[2]-shell[3]),Math.max(0,-shell[0],-shell[1],shell[2]-.4));
+   const referenceAir = airTransmittance(1000, 0.5);
+@@ -406,7 +406,6 @@
+     Math.max(...values.map((v) => Math.abs(v - expected)));
+   const checks = {
+     ...await runCoreReference(scene),
+-    renewedCarrierWeights:{maxError:Math.max(...[0,1,0,.5].map((v,i)=>Math.abs(optical[36+i]-v))),tolerance:1e-6,actual:optical.slice(36,40)},
+     structuredCbPhaseCoherence:{maxError:shellPhaseError,tolerance:1e-6,actual:shell},
+     cirrusFiniteIceSeed: {maxError: Math.max(cirrusLiquid,cirrusOutsideIce,cirrusNoLift,cirrusIcePeak>.03&&cirrusIcePeak<.281?0:1),tolerance:1e-7,icePeak:cirrusIcePeak},
+     rollingAndEvaporation: {

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Thrum · Live cloud proof</title>
+  <link rel="stylesheet" href="style.css" />
+  <body>
+    <header>
+      <div><b>THRUM</b><span>Atmosphere / live cloud proof</span></div>
+      <output id="status">Starting WebGPU…</output>
+    </header>
+    <main>
+      <section class="viewport">
+        <canvas
+          id="view"
+          width="1280"
+          height="720"
+          aria-label="Live cloud scene"
+        ></canvas>
+        <div id="caption">
+          Live 3D source · shared light · independent reflected rays
+        </div>
+        <div id="progress" hidden></div>
+      </section>
+      <aside>
+        <label
+          >Cloud family<select id="family">
+            <option value="0">Cumulus · fair weather</option>
+            <option value="1">Cumulonimbus · developing storm</option>
+            <option value="2">Stratocumulus · broken banks</option>
+            <option value="3">Stratus · overcast layer</option>
+            <option value="4">Cirrus · high ice</option>
+          </select></label
+        >
+        <div class="buttons">
+          <button id="play">Pause</button
+          ><button id="clear">Grow from clear</button
+          ><button id="reset">Seeded start</button>
+        </div>
+        <label
+          >Time rate<select id="rate">
+            <option selected>1</option>
+            <option>16</option>
+            <option>64</option>
+          </select></label
+        >
+        <label
+          >Moistening<input
+            id="moist"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.85" /></label
+        ><label
+          >Lift<input
+            id="lift"
+            type="range"
+            min="0"
+            max="2"
+            step="0.01"
+            value="1" /></label
+        ><label
+          >Drying<input
+            id="dry"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.08"
+        /></label>
+        <label
+          >Wind X · m/s<input
+            id="wind"
+            type="range"
+            min="-12"
+            max="12"
+            step="0.1"
+            value="3"
+        /></label>
+        <div class="buttons">
+          <button id="front">Send dry front</button
+          ><button id="storm">Develop storm</button>
+        </div>
+        <label
+          >Sun elevation<input
+            id="sun"
+            type="range"
+            min="3"
+            max="85"
+            step="1"
+            value="32" /></label
+        ><label
+          >View<select id="mode">
+            <option value="0">Beauty + ground / reflection</option>
+            <option value="1">Optical density slice</option>
+            <option value="2">Cloud direct light</option>
+            <option value="3">Ambient accessibility</option>
+            <option value="4">Source age</option>
+            <option value="5">Cloud opacity · no lighting</option>
+            <option value="6">Raw source opacity · no material detail</option>
+          </select></label
+        >
+        <label
+          >Provider<select id="provider">
+            <option value="0">Live 3D volume</option>
+            <option value="1">Shadow only · analytic</option>
+            <option value="2">Clear air</option>
+          </select></label
+        >
+        <div class="checks">
+          <label
+            ><input type="checkbox" id="optical" checked />Optical
+            pipeline</label
+          ><label><input type="checkbox" id="fog" />Local fog</label
+          ><label
+            ><input type="checkbox" id="mirror" checked />Reflective
+            receiver</label
+          ><label
+            ><input type="checkbox" id="main" checked />Main optical view</label
+          >
+        </div>
+        <div class="buttons">
+          <button id="probe">Source probe</button
+          ><button id="capture">Save image</button
+          ><button id="bench">Measure 10s</button>
+          <button id="motion">Record 12s motion</button>
+        </div>
+        <details>
+          <summary>Proof controls</summary>
+          <div class="buttons">
+            <button id="frame-cell">Frame cell</button
+            ><button id="inspect-billows">Inspect billows</button>
+          </div>
+          <label
+            >Optical density scale<select id="extinction">
+              <option value="1" selected>1 · baseline</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select></label
+          >
+          <label
+            ><input type="checkbox" id="source-only" />Source-only diagnostic
+            (no new images)</label
+          >
+          <label
+            ><input type="checkbox" id="cached-velocity" />Experimental velocity
+            cache</label
+          >
+          <label
+            ><input type="checkbox" id="empty-work" checked />Skip empty source
+            work</label
+          >
+          <label
+            ><input type="checkbox" id="resolved" />Full resolution
+            reference</label
+          >
+          <label
+            >View ray steps<select id="view-steps">
+              <option value="96">96 · pilot</option>
+              <option value="192">192</option>
+              <option value="384">384 · reference</option>
+            </select></label
+          >
+          <label
+            >Material coordinates<select id="material-space">
+              <option value="advected">Advected</option>
+              <option value="world">Wind-following world · reference</option>
+            </select></label
+          >
+          <label
+            ><input type="checkbox" id="material-filter" checked />Cb
+            world-space detail filter</label
+          >
+          <label
+            ><input type="checkbox" id="thermals" checked />Rolling thermals + local
+            breakup · resets source</label
+          >
+          <label><input type="checkbox" id="dual-rest" checked />Cb renewed material maps · resets source</label>
+          <label><input type="checkbox" id="material-structure" checked />Cb three-dimensional material structure</label>
+          <label><input type="checkbox" id="material-core" checked />Expanding material cores · resets source</label>
+          <label><input type="checkbox" id="neck-mix" checked />Conservative neck mixing · resets source</label>
+          <label><input type="checkbox" id="pause-after-proof" checked />Pause after motion / timing proof</label>
+          <label>Paused presentation fraction<select id="presentation-alpha"><option value="1">1 · current source</option><option value="0">0 · previous source</option><option value="0.25">0.25</option><option value="0.5">0.5</option><option value="0.75">0.75</option></select></label>
+          <label
+            >Advance source seconds<input
+              id="advance-seconds"
+              type="number"
+              value="60"
+              min="0.25"
+              max="600" /></label
+          ><button id="advance">Advance deterministically</button
+          ><button id="tests">GPU reference checks</button
+          ><button id="mask-tests">Compare source work mask</button
+          ><button id="recover">Recreate optical epoch</button>
+        </details>
+        <pre id="stats">Waiting for first frame.</pre>
+        <details>
+          <summary>Latest receipt</summary>
+          <pre id="receipt"></pre>
+        </details>
+        <p class="help">
+          Drag to orbit · two-finger scroll to orbit · Shift-scroll to pan ·
+          pinch to zoom. Tests and source probes run separately from quiet
+          timing.
+        </p>
+      </aside>
+    </main>
+    <script type="module" src="src/bench.js"></script>
+  </body>
+</html>

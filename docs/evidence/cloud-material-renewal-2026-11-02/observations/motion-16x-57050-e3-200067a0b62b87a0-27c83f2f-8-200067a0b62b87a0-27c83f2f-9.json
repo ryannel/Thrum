@@ -1,0 +1,242 @@
+{
+  "name": "motion-16x-57050-e3-200067a0b62b87a0-27c83f2f-8-200067a0b62b87a0-27c83f2f-9",
+  "build": "200067a0b62b87a0",
+  "identity": {
+    "files": {
+      "index.html": "dcf332394664ead71f9afd9de0482355463af1b454784aa02e198f51405d51ef",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/carriers.wgsl": "dbf25de354a0ebc0a99204a68144aea9b11a326f09b53ae66098111126e36c16",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/mix.wgsl": "509b4acfc1e7e7767c0064afb1f034d79cf448c9962a7e4563163d953b8251b2",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "f8946bb2f4d049ee8d7b1061154af46f99748f7662a3a620ae95f533eaedc933",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "7c42b9b250aa6cb72aebb3fea847ee51cfa022bbf2202c6f3707b94bcf9112a4",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench.js": "33a88feb55ef5add7507428c0f15c709b538a424d7015038888e74728f7d0092",
+      "src/cirrus.js": "91097d67c46ae156bf4d67b23b5ec9ffac106b839d7fbc430cf9961e42abc7dc",
+      "src/core-reference.js": "8ecf1f696c24bd53cbbc2132c810fece9b52b9926f4eefbc93ed9672e5b3b1a0",
+      "src/gpu-reference.js": "03065833d54ca46aaad2a10917802eb23290e53ac2405cca7fb5513cda5d1809",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/morphology.js": "adbbb3e84fa56fd7e59997760c58f182db70b30a4ceeb74d801baa2d16d6c7e9",
+      "src/motion.js": "a1dae42eaf1f33a7ce754446a3801c6f3880c18750dc29b03aa121af35c20c3b",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "18613d97ec62fa4fb7eec25158828d448be08653d6748a760fb10040c415aa42",
+      "src/source-mask-reference.js": "46267962e4899bbe46fc0a0e38dddbbb2dc4dae58c38dc6d242ddc166c08327a",
+      "src/source-slices.js": "7c63f8bae8af77af718f565502fa8d62ab59827553ac1de37a82c9dbd6ad03e8",
+      "src/source.js": "8ba7b3939b1684d366c32048b2f92f5c3e54a3fa1512c5f5a9af62f1ce35a772",
+      "src/thermals.js": "fbd5c53f859f8393aea1084ba260324a7ffd96ce6aa2c4bb73bec05a7ea283ca",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "200067a0b62b87a0"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 762.6485500000078,
+    "epoch": 3,
+    "weather": {
+      "time": 762.6485500000078,
+      "weatherTick": 762,
+      "revision": 1,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 1708.5624349925624,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:754",
+      "moist": 6.305959557639522e-08,
+      "dry": 0.9999999317472612,
+      "lift": 7.418775950164154e-08,
+      "wind": 1.2249490380543945e-21,
+      "storm": 1,
+      "inputTick": 762
+    }
+  },
+  "scope": "Actual canvas stream, not displayed-FPS or whole-GPU timing; start/end source times are queued snapshot metadata",
+  "capture": "motion-16x-57050-e3-200067a0b62b87a0-27c83f2f-8.webm",
+  "outcome": "fixed-fixture",
+  "start": {
+    "revision": 37,
+    "fault": null,
+    "gpuErrors": 0,
+    "rate": 16,
+    "imageFrame": 1685,
+    "epoch": 3,
+    "sourceTime": 570.5,
+    "worldTime": 570.5764700000019,
+    "settings": {
+      "family": 1,
+      "sun": 32,
+      "mode": 0,
+      "provider": 0,
+      "fog": false,
+      "mirror": true,
+      "main": true,
+      "alpha": 1,
+      "emptyWork": true,
+      "resolved": true,
+      "extinctionScale": 1,
+      "cachedVelocity": false,
+      "sourceDiagnostic": false,
+      "viewSteps": 96,
+      "materialSpace": "advected",
+      "materialFilter": true,
+      "thermals": true,
+      "materialCore": true,
+      "materialStructure": true,
+      "dualRest": true,
+      "neckMix": true
+    },
+    "weatherTargets": {
+      "moist": 0,
+      "dry": 1,
+      "lift": 0,
+      "wind": 0
+    },
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.18,
+      "distance": 25000,
+      "panX": 0,
+      "panY": 0
+    },
+    "playing": true,
+    "submittedFrame": {
+      "frame": 1686,
+      "time": 570.5,
+      "committedSourceTime": 570.5,
+      "sourceSteps": 2282,
+      "sourceInputRange": [
+        {
+          "time": 570.25,
+          "tick": 570,
+          "revision": 1
+        }
+      ],
+      "worldTime": 570.5764700000019,
+      "epoch": 3,
+      "presented": false,
+      "weatherInput": {
+        "time": 570.25,
+        "weatherTick": 570,
+        "revision": 1,
+        "frontX": 1000000,
+        "frontActive": false,
+        "seed": 71,
+        "windIntegral": 1704.8916109077347,
+        "rainFlux": 0.002,
+        "latestLightning": "lightning:71:559",
+        "moist": 0.5603545356703772,
+        "dry": 0.39349862021559173,
+        "lift": 0.6592406302004438,
+        "wind": 0.8595143905805703,
+        "storm": 1,
+        "inputTick": 570
+      }
+    }
+  },
+  "end": {
+    "revision": 37,
+    "fault": null,
+    "gpuErrors": 0,
+    "rate": 16,
+    "imageFrame": 2076,
+    "epoch": 3,
+    "sourceTime": 762.25,
+    "worldTime": 762.6485500000078,
+    "settings": {
+      "family": 1,
+      "sun": 32,
+      "mode": 0,
+      "provider": 0,
+      "fog": false,
+      "mirror": true,
+      "main": true,
+      "alpha": 1,
+      "emptyWork": true,
+      "resolved": true,
+      "extinctionScale": 1,
+      "cachedVelocity": false,
+      "sourceDiagnostic": false,
+      "viewSteps": 96,
+      "materialSpace": "advected",
+      "materialFilter": true,
+      "thermals": true,
+      "materialCore": true,
+      "materialStructure": true,
+      "dualRest": true,
+      "neckMix": true
+    },
+    "weatherTargets": {
+      "moist": 0,
+      "dry": 1,
+      "lift": 0,
+      "wind": 0
+    },
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.18,
+      "distance": 25000,
+      "panX": 0,
+      "panY": 0
+    },
+    "playing": true,
+    "submittedFrame": {
+      "frame": 2078,
+      "time": 762.25,
+      "committedSourceTime": 762.25,
+      "sourceSteps": 3049,
+      "sourceInputRange": [
+        {
+          "time": 762,
+          "tick": 762,
+          "revision": 1
+        }
+      ],
+      "worldTime": 762.4093500000082,
+      "epoch": 3,
+      "presented": false,
+      "weatherInput": {
+        "time": 762,
+        "weatherTick": 762,
+        "revision": 1,
+        "frontX": 1000000,
+        "frontActive": false,
+        "seed": 71,
+        "windIntegral": 1708.5624349925624,
+        "rainFlux": 0.002,
+        "latestLightning": "lightning:71:754",
+        "moist": 6.305959557639522e-08,
+        "dry": 0.9999999317472612,
+        "lift": 7.418775950164154e-08,
+        "wind": 1.2249490380543945e-21,
+        "storm": 1,
+        "inputTick": 762
+      }
+    }
+  },
+  "elapsedMs": 12001.079999923706,
+  "requestedFps": 15,
+  "mimeType": "video/webm;codecs=vp9",
+  "bytes": 568406
+}
