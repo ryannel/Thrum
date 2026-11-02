@@ -322,7 +322,7 @@
       },
       "i2a_carried_lineage": {
         "evidence": "../evidence/i2a/SOURCE-CARRIED-LINEAGE.md",
-        "scope": "Pure monotonic comparison directly over two parsed source-carried history vectors without copying entries, with local 100,000-field/two-buffer cost and process RSS samples; current admitted predecessor authentication, full parser/graph reservation and durable admission remain unbuilt."
+        "scope": "Pure monotonic comparison directly over two parsed source-carried history vectors without copying entries, with local 100,000-field/two-buffer cost and process RSS samples; current admitted predecessor authentication, full combined parser/graph allocation qualification and durable admission remain unbuilt."
       },
       "i2a_project_v2_declaration": {
         "evidence": "../evidence/i2a/SOURCE-PROJECT-V2.md",
@@ -334,7 +334,7 @@
       },
       "i2a_staged_registry": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-REGISTRY.md",
-        "scope": "Provisional staged core.project schema 2, declared core.schema and source-carried history records are rehashed and joined for reserved path membership, unique registry record IDs and active field/version consistency. Project and descriptor inputs reuse one byte buffer; a local small-tree repeated validation cost is recorded. Scene/game record semantics, references, authenticated predecessor, combined memory reservation and durable admission remain open."
+        "scope": "Provisional staged core.project schema 2, declared core.schema and source-carried history records are rehashed and joined for reserved path membership, unique registry record IDs and active field/version consistency. Project and descriptor inputs reuse one byte buffer; a local small-tree repeated validation cost is recorded. Scene/game record semantics, references, authenticated predecessor, combined allocation/RSS qualification and durable admission remain open."
       },
       "i2a_staged_records": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-RECORDS.md",
@@ -346,11 +346,11 @@
       },
       "i2a_opaque_text_edit": {
         "evidence": "../evidence/i2a/SOURCE-OPAQUE-EDIT.md",
-        "scope": "One descriptor-validated game text edit carries untouched optional JSON values with exact raw spelling, revalidates stable identity and required references, and changes a fresh provisional candidate revision while the old stage remains unchanged. A local 4 MiB optional-value edit cost probe passes; no coordinated file application, general editor, combined memory reservation, authenticated prior root or durable admission."
+        "scope": "One descriptor-validated game text edit carries untouched optional JSON values with exact raw spelling, revalidates stable identity and required references, and changes a fresh provisional candidate revision while the old stage remains unchanged. A local 4 MiB optional-value edit cost probe passes; no coordinated file application, general editor, combined allocation/RSS qualification, authenticated prior root or durable admission."
       },
       "i2a_dense_candidate_cost": {
         "evidence": "../evidence/i2a/SOURCE-CANDIDATE-MEMORY.md",
-        "scope": "Isolated local macOS arm64 runs measure a 4,096-record one-descriptor candidate with full 100,000-field/1,024-version carried history and 8.3 MiB opaque game record, plus a separate 256-descriptor staged registry and direct game parse. Peak process RSS and validation elapsed are reported; this does not prove a physical allocation reservation, authenticated prior, 65,536-edge peak or multi-schema game dispatch."
+        "scope": "Isolated local macOS arm64 runs measure a 4,096-record one-descriptor candidate with full 100,000-field/1,024-version carried history and 8.3 MiB opaque game record, plus a separate 256-descriptor staged registry and direct game parse. Peak process RSS and validation elapsed are reported; this does not qualify the full combined allocation/RSS peak, authenticated prior, 65,536-edge case or multi-schema game dispatch."
       },
       "i2a_sqlite_transaction_proof": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-TXN.md",
@@ -431,6 +431,10 @@
       "i2a_sustained_blocked_wal": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-SUSTAINED-WAL.md",
         "scope": "A test-only SQLite reader holds a WAL snapshot while repeated 4 MiB blob writes approach an injected 40 MiB stop. The guard spaces PASSIVE work, defers a chunk, leaves the selected root unchanged, and retries the same hash after the reader drains. One local release run records completed writes, WAL length and elapsed time before deferral. It does not qualify a hard 2 GiB cap, multiwriter coordination, process/power loss, a production admission path or the 8 GiB free floor."
+      },
+      "i2a_one_descriptor_profile_audit": {
+        "evidence": "../evidence/i2a/SOURCE-PROFILE-STATUS.md",
+        "scope": "The checked provisional staged-candidate subset uses one active game descriptor, finite record/optional-value work bounds, rehashed local scene/game reference closure, canonical revision and exact opaque-value preservation during a known-field edit. Registry parsing separately accepts up to 256 descriptors, but a game candidate with multiple active descriptors refuses. Dense one-descriptor validation and separate 256-descriptor registry RSS/cost probes are observations, not a process-memory gate. Multi-schema dispatch, external roots, general editor application, consumer reconciliation, full combined peak-allocation qualification and production admission remain open."
       }
     },
     {
