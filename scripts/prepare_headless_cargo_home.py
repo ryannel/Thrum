@@ -20,7 +20,7 @@ import threading
 import tomllib
 
 REGISTRY_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
-REUSE_DOMAIN = b"thrum.headless-cargo-reuse.v1\0"
+REUSE_DOMAIN = b"thrum.headless-cargo-reuse.v2\0"
 CHUNK = 1024 * 1024
 MAX_METADATA_BYTES = 32 * 1024 * 1024
 MAX_DIAGNOSTIC_BYTES = 1024 * 1024
@@ -355,6 +355,11 @@ def cargo_reuse_key(source, target, tool_executables):
     lockfile = source / "Cargo.lock"
     if lockfile.is_symlink() or not lockfile.is_file():
         raise ValueError("Cargo lockfile is missing or aliased")
+    portable_tools = {
+        name: {"sha256": tool_executables[name]["sha256"],
+               "bytes": tool_executables[name]["bytes"]}
+        for name in sorted(tool_executables)
+    }
     inputs = {
         "cargoManifests": manifests,
         "lockSha256": sha256_file(lockfile),
@@ -366,7 +371,7 @@ def cargo_reuse_key(source, target, tool_executables):
             "profile": "dev", "features": [], "incremental": False,
             "locked": True, "offline": True, "rustflags": "",
         },
-        "toolExecutables": tool_executables,
+        "toolExecutables": portable_tools,
     }
     encoded = json.dumps(inputs, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return {"sha256": hashlib.sha256(REUSE_DOMAIN + encoded).hexdigest(), "inputs": inputs}
@@ -497,7 +502,7 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
         (destination / ".global-cache").unlink(missing_ok=True)
         inventory = root_inventory(destination)
         manifest = {
-            "format": 1,
+            "format": 2,
             "target": target,
             "lockSha256": hashlib.sha256(lock_bytes).hexdigest(),
             "registryIndexRecords": copied_index,
@@ -519,6 +524,32 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
         raise
 
 
+def verify_reuse(source, candidate, private_home, cargo, rustc, target):
+    """Check a selected local cache; this does not authenticate its origin."""
+    if not source.is_absolute():
+        raise ValueError("admitted source must be absolute for reuse verification")
+    if candidate["format"] != 2:
+        raise ValueError("unsupported private Cargo candidate format")
+    if target != candidate["target"]:
+        raise ValueError("private Cargo cache target differs from selected target")
+    selected_tools = {}
+    for name, path in (("cargo", cargo), ("rustc", rustc)):
+        if not path.is_absolute() or path.is_symlink() or not path.is_file():
+            raise ValueError(f"selected {name} is not an ordinary absolute executable")
+        selected_tools[name] = {
+            "path": str(path.resolve()), "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+    if selected_tools != candidate["toolExecutables"]:
+        raise ValueError("private Cargo cache tool executables differ from selected tools")
+    actual = cargo_reuse_key(source, target, selected_tools)
+    if actual != candidate["reuseKey"]:
+        raise ValueError("private Cargo cache cannot be reused for this source")
+    if root_inventory(private_home) != candidate["privateRoot"]:
+        raise ValueError("private Cargo cache bytes changed since preparation")
+    return actual
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True)
@@ -528,32 +559,14 @@ def main():
         parser.add_argument(f"--{name}")
     args = parser.parse_args()
     if args.verify_reuse is not None:
-        if not Path(args.source).is_absolute():
-            raise ValueError("admitted source must be absolute for reuse verification")
         for name in ("cargo", "rustc", "target", "private_home"):
             if getattr(args, name) is None:
                 parser.error(f"--{name.replace('_', '-')} is required for reuse verification")
         candidate = json.loads(args.verify_reuse.read_text(encoding="utf-8"))
-        if candidate["format"] != 1:
-            raise ValueError("unsupported private Cargo candidate format")
-        if args.target != candidate["target"]:
-            raise ValueError("private Cargo cache target differs from selected target")
-        selected_tools = {}
-        for name in ("cargo", "rustc"):
-            path = Path(getattr(args, name))
-            if not path.is_absolute() or path.is_symlink() or not path.is_file():
-                raise ValueError(f"selected {name} is not an ordinary absolute executable")
-            selected_tools[name] = {
-                "path": str(path.resolve()), "sha256": sha256_file(path),
-                "bytes": path.stat().st_size,
-            }
-        if selected_tools != candidate["toolExecutables"]:
-            raise ValueError("private Cargo cache tool executables differ from selected tools")
-        actual = cargo_reuse_key(Path(args.source), args.target, selected_tools)
-        if actual != candidate["reuseKey"]:
-            raise ValueError("private Cargo cache cannot be reused for this source")
-        if root_inventory(args.private_home) != candidate["privateRoot"]:
-            raise ValueError("private Cargo cache bytes changed since preparation")
+        actual = verify_reuse(
+            Path(args.source), candidate, args.private_home,
+            Path(args.cargo), Path(args.rustc), args.target,
+        )
         print(json.dumps({"reuseKey": actual["sha256"]}, sort_keys=True))
         return
     for name in ("shared_home", "destination", "cargo", "rustc", "target"):
