@@ -188,7 +188,7 @@ impl TreeManifest {
     }
 }
 
-fn write_jcs_string(digest: &mut Sha256, value: &str) {
+pub(crate) fn write_jcs_string(digest: &mut Sha256, value: &str) {
     digest.update(b"\"");
     let bytes = value.as_bytes();
     let mut segment_start = 0;
@@ -217,7 +217,7 @@ fn write_jcs_string(digest: &mut Sha256, value: &str) {
     digest.update(b"\"");
 }
 
-fn write_decimal(digest: &mut Sha256, mut value: u64) {
+pub(crate) fn write_decimal(digest: &mut Sha256, mut value: u64) {
     let mut digits = [0_u8; 20];
     let mut start = digits.len();
     loop {
@@ -231,7 +231,7 @@ fn write_decimal(digest: &mut Sha256, mut value: u64) {
     digest.update(&digits[start..]);
 }
 
-fn write_hex(digest: &mut Sha256, bytes: &[u8; 32]) {
+pub(crate) fn write_hex(digest: &mut Sha256, bytes: &[u8; 32]) {
     let mut encoded = [0_u8; 64];
     for (index, byte) in bytes.iter().copied().enumerate() {
         encoded[index * 2] = HEX[usize::from(byte >> 4)];

@@ -5,6 +5,7 @@
 
 mod bootstrap_json;
 mod budget;
+pub mod definition;
 mod inventory;
 mod json;
 mod manifest;
