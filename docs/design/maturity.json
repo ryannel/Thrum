@@ -302,7 +302,11 @@
       },
       "i2a_definition_hashes": {
         "evidence": "../evidence/i2a/SOURCE-DEFINITION-HASHES.md",
-        "scope": "Pure first-profile JCS/SHA-256 field and type-version definition hashes with independent oracle and local 32,768-field/256-version cost sample; source descriptor parsing, active-history consistency, authenticated predecessor and durable admission remain unbuilt."
+        "scope": "Pure first-profile JCS/SHA-256 field and type-version definition hashes with independent oracle and local 32,768-field/256-version cost sample; staged-tree registry/history consistency, authenticated predecessor and durable admission remain unbuilt."
+      },
+      "i2a_schema_record": {
+        "evidence": "../evidence/i2a/SOURCE-SCHEMA-RECORD.md",
+        "scope": "Direct bounded one-record core.schema decoding with strict known keys, sorted at-most-128 fields and canonical first-profile hashes, plus local 256 maximum-descriptor parse sample; no staged declaration/path verification, registry/history consistency, game-record validation or durable admission."
       }
     },
     {
