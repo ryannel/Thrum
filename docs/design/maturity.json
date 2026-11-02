@@ -545,6 +545,15 @@
         "evidence": "../evidence/i2a/F4-BUILD-DECLARATION.md",
         "scope": "F4 reads a fixed 64 KiB first-profile build declaration from verified accepted bytes, checks strict syntax/key set, portable Cargo/lock/toolchain/rule-source membership, package spelling and entry-scene/product/root identity. A production-store fixture proves dirty-checkout isolation, acceptance of source with duplicate-key build refusal, cross-root product refusal, missing named toolchain refusal and retention of the earlier declaration. This is only a metadata handoff; Cargo/toolchain semantics, full dependency closure, compiler isolation, binary/product publication, BuildRevision, new-world activation, save and platform qualification remain unimplemented."
       },
+      "i2a_rustc_invocation_receipts": {
+        "design": "F4-FIRST-HEADLESS-BUILD.md",
+        "evidence": "../evidence/i2a/F4-RUSTC-RECEIPTS.md",
+        "implementation": "candidate_observer_and_post_build_verifier_only",
+        "functional_validation": "six Rust wrapper tests, six Python verifier fixtures and one opt-in sandboxed A/B build passed locally",
+        "experienced_quality": "not_applicable_to_headless_compiler_observer",
+        "platform_performance": "one macOS ARM64 fresh-output A compile took 1426 ms; wrapper overhead was not isolated; Windows, browser and mobile not measured",
+        "scope": "The macOS candidate records bounded exact rustc invocation arguments, working directory, child environment and completion through Cargo's stable wrapper hook. A strict verifier matches five successful compiles and three probes to the fresh Cargo artifact transcript and source paths; B fails without invalidating A. It reports buildReady false. Implicit compiler/linker/system reads, failed-B receipt audit, release-selected wrapper identity, reviewed manifest and durable target-ready output remain open."
+      },
       "i2a_admitted_headless_compile": {
         "design": "F4-FIRST-HEADLESS-BUILD.md",
         "evidence": "../evidence/i2a/F4-ADMITTED-HEADLESS-COMPILE.md",
