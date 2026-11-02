@@ -41,6 +41,16 @@ impl From<RecordEnvelope<'_>> for RecordDescriptor {
     }
 }
 
+impl RecordDescriptor {
+    pub(crate) fn checked_parts(id: &str, record_type: &'static str) -> Self {
+        debug_assert!(canonical_uuid(id));
+        Self {
+            id: id.to_owned(),
+            record_type: record_type.to_owned(),
+        }
+    }
+}
+
 /// One file's exact-byte metadata; a capture adapter must verify the bytes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManifestEntry {

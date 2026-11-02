@@ -10,8 +10,9 @@ use sha2::{Digest, Sha256};
 
 use crate::record::canonical_uuid;
 use crate::{
-    JsonError, MAX_RECORD_BYTES, RecordError, SourcePath, StageError, StagedFile, StagedTree,
-    parse_record_json, validate_record_envelope,
+    JsonError, MAX_RECORD_BYTES, ManifestEntry, ManifestError, RecordDescriptor, RecordError,
+    SourcePath, StageError, StagedFile, StagedTree, TreeManifest, parse_record_json,
+    validate_record_envelope,
 };
 
 /// A provisional source tree failed the deliberately narrow core schema proof.
@@ -63,6 +64,8 @@ pub enum BootstrapError {
     DuplicateRecordId(String),
     /// An entry scene ID does not resolve to a staged core scene.
     UnresolvedEntryScene(String),
+    /// The pure exact-byte metadata manifest could not be constructed.
+    Manifest(ManifestError),
 }
 
 /// Identity of one schema-checked `core.scene` source record.
@@ -85,13 +88,14 @@ impl BootstrapScene {
 }
 
 /// Narrow project/empty-scene proof; not a validated candidate or root.
-pub struct BootstrapProfile {
+pub struct BootstrapProfile<'a> {
+    stage: &'a StagedTree,
     project_id: String,
     scenes: Vec<BootstrapScene>,
     entry_scenes: Vec<String>,
 }
 
-impl BootstrapProfile {
+impl BootstrapProfile<'_> {
     /// Stable ID read from `project.json` exact staged bytes.
     pub fn project_id(&self) -> &str {
         &self.project_id
@@ -106,6 +110,40 @@ impl BootstrapProfile {
     pub fn entry_scenes(&self) -> &[String] {
         &self.entry_scenes
     }
+
+    /// Derive a provisional JCS manifest from captured hashes and checked IDs.
+    ///
+    /// This does not reread binary staged files. Durable admission must stream
+    /// and verify every stage hash again before publishing a source root.
+    pub fn provisional_manifest(&self) -> Result<TreeManifest, BootstrapError> {
+        let project_path = SourcePath::parse("project.json").expect("fixed portable project path");
+        let mut scene_index = 0;
+        let mut entries = Vec::with_capacity(self.stage.files().len());
+        for file in self.stage.files() {
+            let record = if file.path() == &project_path {
+                Some(RecordDescriptor::checked_parts(
+                    &self.project_id,
+                    "core.project",
+                ))
+            } else if self
+                .scenes
+                .get(scene_index)
+                .is_some_and(|scene| scene.path() == file.path())
+            {
+                let scene = &self.scenes[scene_index];
+                scene_index += 1;
+                Some(RecordDescriptor::checked_parts(scene.id(), "core.scene"))
+            } else {
+                None
+            };
+            entries.push(
+                ManifestEntry::new(file.path().clone(), file.length(), *file.sha256(), record)
+                    .map_err(BootstrapError::Manifest)?,
+            );
+        }
+        debug_assert_eq!(scene_index, self.scenes.len());
+        TreeManifest::new(&self.project_id, Vec::new(), entries).map_err(BootstrapError::Manifest)
+    }
 }
 
 /// Check the selected first `core.project`/empty-`core.scene` interaction.
@@ -113,10 +151,10 @@ impl BootstrapProfile {
 /// Every parsed byte is read from the provisional stage and rehashed. This
 /// proof refuses nonempty dependency roots because their closure cannot yet
 /// be resolved. It does not construct a manifest or authorize admission.
-pub fn validate_bootstrap_profile(
-    stage: &StagedTree,
+pub fn validate_bootstrap_profile<'a>(
+    stage: &'a StagedTree,
     dependency_roots: &[String],
-) -> Result<BootstrapProfile, BootstrapError> {
+) -> Result<BootstrapProfile<'a>, BootstrapError> {
     if !dependency_roots.is_empty() {
         return Err(BootstrapError::UnsupportedDependencyRoots);
     }
@@ -248,6 +286,7 @@ pub fn validate_bootstrap_profile(
         }
     }
     Ok(BootstrapProfile {
+        stage,
         project_id,
         scenes,
         entry_scenes,
@@ -342,6 +381,7 @@ mod tests {
 
     const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    const SECOND_SCENE_ID: &str = "4a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
     struct Fixture(PathBuf);
@@ -415,11 +455,14 @@ mod tests {
         assert_eq!(first_profile.project_id(), PROJECT_ID);
         assert_eq!(first_profile.scenes()[0].id(), SCENE_ID);
         assert_eq!(first_profile.entry_scenes(), &[SCENE_ID]);
+        let first_revision = first_profile.provisional_manifest().unwrap().revision();
 
         fixture.write("scenes/main.scene.json", &scene(SCENE_ID, "second"));
         let second = fixture.stage(&paths);
         let second_profile = validate_bootstrap_profile(&second, &[]).unwrap();
         assert_eq!(second_profile.scenes()[0].id(), SCENE_ID);
+        let second_revision = second_profile.provisional_manifest().unwrap().revision();
+        assert_ne!(first_revision, second_revision);
         let scene_path = SourcePath::parse("scenes/main.scene.json").unwrap();
         let first_file = first
             .files()
@@ -432,6 +475,54 @@ mod tests {
             .find(|file| file.path() == &scene_path)
             .unwrap();
         assert_ne!(first_file.sha256(), second_file.sha256());
+    }
+
+    #[test]
+    fn manifest_pairs_each_record_identity_with_its_staged_path() {
+        let fixture = Fixture::new();
+        fixture.write("scenes/a.scene.json", &scene(SCENE_ID, "a"));
+        fixture.write("scenes/b.txt", "ordinary file");
+        fixture.write("scenes/c.scene.json", &scene(SECOND_SCENE_ID, "c"));
+        fixture.write(
+            "project.json",
+            &format!(
+                "{{\"id\":\"{PROJECT_ID}\",\"type\":\"core.project\",\"schema\":1,\"fields\":{{\"project.format\":1,\"project.records\":[\"scenes/a.scene.json\",\"scenes/c.scene.json\"],\"project.entryScenes\":[\"{SCENE_ID}\",\"{SECOND_SCENE_ID}\"]}}}}"
+            ),
+        );
+        let stage = fixture.stage(&[
+            "project.json",
+            "scenes/a.scene.json",
+            "scenes/b.txt",
+            "scenes/c.scene.json",
+        ]);
+        let proof = validate_bootstrap_profile(&stage, &[]).unwrap();
+        let actual = proof.provisional_manifest().unwrap().revision();
+        let expected_entries = stage
+            .files()
+            .iter()
+            .map(|file| {
+                let record = match file.path().as_str() {
+                    "project.json" => {
+                        Some(RecordDescriptor::checked_parts(PROJECT_ID, "core.project"))
+                    }
+                    "scenes/a.scene.json" => {
+                        Some(RecordDescriptor::checked_parts(SCENE_ID, "core.scene"))
+                    }
+                    "scenes/c.scene.json" => Some(RecordDescriptor::checked_parts(
+                        SECOND_SCENE_ID,
+                        "core.scene",
+                    )),
+                    "scenes/b.txt" => None,
+                    _ => panic!("unexpected fixture file"),
+                };
+                ManifestEntry::new(file.path().clone(), file.length(), *file.sha256(), record)
+                    .unwrap()
+            })
+            .collect();
+        let expected = TreeManifest::new(PROJECT_ID, Vec::new(), expected_entries)
+            .unwrap()
+            .revision();
+        assert_eq!(actual, expected);
     }
 
     #[test]
@@ -602,7 +693,12 @@ mod tests {
         let proof = validate_bootstrap_profile(&stage, &[]).unwrap();
         let elapsed = start.elapsed();
         assert_eq!(proof.scenes().len(), 1000);
-        eprintln!("staged_scene_records=1000 validation_elapsed={elapsed:?}");
-        std::hint::black_box(proof);
+        let manifest_start = std::time::Instant::now();
+        let revision = proof.provisional_manifest().unwrap().revision();
+        let manifest_elapsed = manifest_start.elapsed();
+        eprintln!(
+            "staged_scene_records=1000 validation_elapsed={elapsed:?} manifest_elapsed={manifest_elapsed:?}"
+        );
+        std::hint::black_box(revision);
     }
 }
