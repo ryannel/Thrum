@@ -323,6 +323,10 @@
       "i2a_project_v2_declaration": {
         "evidence": "../evidence/i2a/SOURCE-PROJECT-V2.md",
         "scope": "Direct bounded core.project schema 2 decoding of sorted scene/game record, schema, history and entry-scene declarations, with a local 4,096-record/256-schema cost sample; no staged membership/ID closure, game-record validation or durable admission."
+      },
+      "i2a_game_record": {
+        "evidence": "../evidence/i2a/SOURCE-GAME-RECORD.md",
+        "scope": "Direct first-profile descriptor-fed game-record validation with bounded strict optional opaque JSON, typed reference summary and descriptor hash provenance, plus local dense/deep/wide parser cost/RSS probes; no staged source verification, target resolution, source-editor round-trip or durable admission."
       }
     },
     {
