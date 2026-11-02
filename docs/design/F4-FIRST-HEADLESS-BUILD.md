@@ -127,7 +127,8 @@ read by rustc. A trusted adapter must close those inputs before publication.
 The first macOS invocation candidate uses Cargo's stable `RUSTC_WRAPPER` hook
 to write bounded receipts for the selected rustc path, raw ordered arguments,
 working directory, child environment and exit. A strict verifier reconciles
-successful compile receipts with the fresh Cargo artifact transcript and
+successful compile receipts with the fresh Cargo artifact transcript, checks
+each named `--extern` against an artifact reported for that dependency, and
 refuses unsupported paths and hooks. This remains an observed graph after
 execution. The wrapper does not observe rustc's implicit file reads, loaded
 libraries, linker subprocess reads or the full macOS system boundary, and its

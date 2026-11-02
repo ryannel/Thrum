@@ -26,8 +26,9 @@ source/cache/output roots, known fixed environment values, successful probes
 and compiles, dep-info emission, one source file under a selected root per
 compile, output and `--extern` paths under the fresh output root, dependency
 library search under its `debug/deps`, and no executable Cargo hooks. It
-compares each receipt's crate and source to Cargo's structured target and its
-artifact paths. Cargo's macOS `DYLD_FALLBACK_LIBRARY_PATH` is retained exactly;
+compares each receipt's crate and source to Cargo's structured target and
+requires each `--extern` path to be an artifact Cargo reported from the named
+dependency unit. Cargo's macOS `DYLD_FALLBACK_LIBRARY_PATH` is retained exactly;
 other `DYLD_` overrides refuse. Its library resolution remains an open read
 boundary. The report includes per-unit receipt hashes, a receipt-set digest,
 artifact paths and `buildReady:false`.
@@ -35,8 +36,12 @@ artifact paths and `buildReady:false`.
 The wrapper allocates and writes once per rustc invocation, including probes;
 it does no source-tree walk or per-frame work. The existing private-cache
 integrity check remains the major warm per-edit scan (67.8 MB in the measured
-fixture). This run is a single observation, not a statistically controlled
-wrapper-overhead comparison.
+fixture). In a separate warm, unsandboxed direct-checkout cost probe, three
+alternating fresh-output pairs took 1,162/1,231/1,110 ms without the wrapper
+and 1,196/1,154/1,151 ms with it, with eight receipts per wrapped build.
+Medians were 1,162 and 1,154 ms, respectively. The variation exceeds the
+observed median difference, so this probe detects no wrapper penalty at its
+resolution; it is not a cross-host or full-adapter latency guarantee.
 
 ## Qualification
 
@@ -57,21 +62,23 @@ THRUM_PYTHON=python3.11 THRUM_TEST_NATIVE_SANDBOX=1 \
   -- --ignored --nocapture
 ```
 
-The final local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,426
+The final local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,335
 ms for Cargo build, and yielded five successful compile receipts plus three
 probes. The verifier matched all five compiles to distinct Cargo targets and
 their selected source paths. It reported receipt-set digest
-`ef3f880c3d76bd1151101feb43bcbd9d3fe8fffab63c426bf5a65ab6523bd5cb`.
+`3a614501d0c3296f53841361fe04bc65954c851ed48959cfa48855a509826c20`.
 The A binary was 2,345,736 bytes and ran successfully. The separately
 admitted invalid-code B build failed; A's hash and execution still matched.
 The source and private cache inventories were unchanged after both builds.
 The receipt digest contains temporary absolute paths and is an observation,
 not a portable BuildRevision input.
 
-Five Python refusal fixtures cover incomplete or malformed receipts, wrong
+Python refusal fixtures cover incomplete or malformed receipts, wrong
 compiler/source, duplicate unit, altered fixed environment, escaped artifact
-or library path, and proc-macro input. A sixth fixture refuses a source file
-inside the allowed root when Cargo's target names a different source. Six Rust
+or library path, proc-macro input, and an `--extern` path not reported by Cargo.
+Another fixture refuses a source file inside the allowed root when Cargo's
+target names a different source; a two-unit fixture accepts a valid dependency
+and refuses the wrong extern name. Six Rust
 wrapper tests cover byte preservation, limits, probe classification,
 exclusive receipt creation, process outcomes and exact child environment.
 `./dev check` passes; its normal test suite omits the expensive A/B fixture.
