@@ -193,6 +193,7 @@ struct RootTransactionProof {
     path: PathBuf,
     wal_guard: WalGuard,
     pending_pin_releases: Vec<i64>,
+    active_free_floor: Option<u64>,
 }
 
 #[derive(Clone, Copy)]
@@ -537,6 +538,7 @@ impl RootTransactionProof {
             path: path.to_owned(),
             wal_guard: WalGuard::V1,
             pending_pin_releases: Vec::new(),
+            active_free_floor: None,
         })
     }
 
@@ -544,13 +546,16 @@ impl RootTransactionProof {
         if incoming_allowance >= self.wal_guard.stop_at {
             return Err(ProofError::WalBackpressure);
         }
+        // A checkpoint can grow the main file before the next write starts.
+        self.check_active_free(incoming_allowance)?;
         let wal_path = self.path.with_extension("sqlite-wal");
         let current = match fs::metadata(&wal_path) {
             Ok(metadata) => metadata.len(),
             Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
             Err(source) => return Err(physical_io(&wal_path, source)),
         };
-        if current >= self.wal_guard.next_passive_at {
+        let checkpointed = current >= self.wal_guard.next_passive_at;
+        if checkpointed {
             let _: (i64, i64, i64) =
                 self.conn
                     .query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |row| {
@@ -563,7 +568,11 @@ impl RootTransactionProof {
             .ok_or(ProofError::Budget(BudgetError::Overflow))?
             < self.wal_guard.stop_at
         {
-            return Ok(());
+            return if checkpointed {
+                self.check_active_free(incoming_allowance)
+            } else {
+                Ok(())
+            };
         }
         let (busy, _, _): (i64, i64, i64) =
             self.conn
@@ -582,6 +591,33 @@ impl RootTransactionProof {
             return Err(ProofError::WalBackpressure);
         }
         self.wal_guard.next_passive_at = self.wal_guard.passive_at;
+        self.check_active_free(incoming_allowance)
+    }
+
+    fn check_active_free(&self, incoming_allowance: u64) -> Result<(), ProofError> {
+        let Some(floor) = self.active_free_floor else {
+            return Ok(());
+        };
+        let pages: i64 = self
+            .conn
+            .query_row("PRAGMA page_count", [], |row| row.get(0))?;
+        let logical_main = u64::try_from(pages)
+            .map_err(|_| ProofError::Budget(BudgetError::Overflow))?
+            .checked_mul(SQLITE_PAGE_BYTES)
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        let physical_main = fs::metadata(&self.path)
+            .map_err(|source| physical_io(&self.path, source))?
+            .len();
+        let required = floor
+            .checked_add(incoming_allowance)
+            .and_then(|value| value.checked_add(logical_main.saturating_sub(physical_main)))
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        let volume = self.path.parent().ok_or(ProofError::InputIo)?;
+        let available =
+            fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
+        if available < required {
+            return Err(ProofError::Budget(BudgetError::FreeSpace));
+        }
         Ok(())
     }
 
@@ -917,6 +953,7 @@ impl RootTransactionProof {
             candidate,
             limits,
             after_initial_lookup,
+            |_| {},
         )
     }
 
@@ -929,6 +966,7 @@ impl RootTransactionProof {
         candidate: &StagedCandidate<'_>,
         limits: Limits,
         after_initial_lookup: impl FnOnce(),
+        after_preflight: impl FnOnce(&mut Self),
     ) -> Result<(i64, [u8; 32]), ProofError> {
         let manifest = candidate
             .provisional_manifest()
@@ -940,6 +978,8 @@ impl RootTransactionProof {
         after_initial_lookup();
         let attempted = (|| {
             self.preflight_candidate_space(&manifest, revision, limits)?;
+            self.active_free_floor = Some(limits.free_floor);
+            after_preflight(self);
             if expected_generation > 0 {
                 self.compare_staged_candidate_with_current_root(expected_generation, candidate)?;
             }
@@ -957,6 +997,7 @@ impl RootTransactionProof {
             )?;
             Ok((generation, revision))
         })();
+        self.active_free_floor = None;
         match attempted {
             Ok(value) => Ok(value),
             Err(error) => {
@@ -2931,6 +2972,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
                 ..limits
             },
             || {},
+            |_| {},
         ),
         Err(ProofError::Budget(BudgetError::MainLimit))
     ));
@@ -2943,6 +2985,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             &candidate,
             Limits { wal: 1, ..limits },
             || {},
+            |_| {},
         ),
         Err(ProofError::Budget(BudgetError::WalLimit))
     ));
@@ -2959,6 +3002,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
                 ..limits
             },
             || {},
+            |_| {},
         ),
         Err(ProofError::Budget(BudgetError::FreeSpace))
     ));
@@ -3025,6 +3069,64 @@ fn candidate_space_preflight_reserves_existing_checkpoint_debt() {
         required_free_bytes(u64::MAX, 1, debt, 0),
         Err(ProofError::Budget(BudgetError::Overflow))
     ));
+}
+
+#[test]
+fn active_candidate_free_floor_refuses_before_blob_header_write() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let stage = minimal_source_stage(&fixture, "live free floor");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    assert!(matches!(
+        store.admit_staged_candidate_probe_with_limits(
+            0,
+            1,
+            1,
+            [1; 32],
+            &candidate,
+            Limits {
+                free_floor: 0,
+                ..Limits::V1
+            },
+            || {},
+            |store| {
+                store.active_free_floor = Some(1 << 60);
+            },
+        ),
+        Err(ProofError::Budget(BudgetError::FreeSpace))
+    ));
+    let headers: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM blob_header", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(headers, 0);
+    assert_eq!(store.root().unwrap(), (0, None));
+    assert!(store.active_free_floor.is_none());
+    store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &candidate)
+        .unwrap();
+}
+
+#[test]
+fn live_free_floor_refuses_before_checkpoint_can_grow_main_file() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let bytes = b"WAL bytes awaiting checkpoint";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
+        .unwrap();
+    let wal_path = fixture.database().with_extension("sqlite-wal");
+    let before = fs::metadata(&wal_path).unwrap().len();
+    assert!(before > 0);
+    store.wal_guard.stop_at = before + MIB;
+    store.wal_guard.next_passive_at = 0;
+    store.active_free_floor = Some(1 << 60);
+    assert!(matches!(
+        store.ensure_wal_room(MIB),
+        Err(ProofError::Budget(BudgetError::FreeSpace))
+    ));
+    assert_eq!(fs::metadata(&wal_path).unwrap().len(), before);
 }
 
 #[test]

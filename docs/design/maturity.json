@@ -423,6 +423,10 @@
       "i2a_gc_mark_probe": {
         "evidence": "../evidence/i2a/SOURCE-GC-MARK-PROOF.md",
         "scope": "A test-only mark snapshots the selected root and durable read pins, decodes each verified canonical manifest outside a long SQLite read transaction, and records unreachable complete-blob candidates only if a root/pin epoch still matches. Tests cover root advance, release, publication and pin races, plus a 128-candidate refusal limit that preserves old marks. A partial covering index keeps incomplete headers out of the at-most-4,096-complete-blob inventory scan; an 8 MiB WAL allowance remains heuristic. No deleting state or chunk removal, staged/save/build/release owner pins, abandoned-pin recovery, scalable batching or production GC exists."
+      },
+      "i2a_live_free_floor": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-LIVE-FLOOR.md",
+        "scope": "The test-only candidate path activates a live volume-free check after initial preflight and runs it before every guarded write and checkpoint. It charges the configured free floor, incoming heuristic transaction allowance and uncheckpointed logical-to-physical main debt. Injected post-preflight shortage refuses before a blob header, and a checkpoint-boundary shortage leaves WAL length unchanged; local tiny-edit smoke cost is recorded. This is not a certified upper bound on SQLite/VFS growth, concurrent actors, the 2 GiB WAL cap or the 8 GiB production floor."
       }
     },
     {
