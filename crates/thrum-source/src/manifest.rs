@@ -42,7 +42,7 @@ impl From<RecordEnvelope<'_>> for RecordDescriptor {
 }
 
 impl RecordDescriptor {
-    pub(crate) fn checked_parts(id: &str, record_type: &'static str) -> Self {
+    pub(crate) fn checked_parts(id: &str, record_type: &str) -> Self {
         debug_assert!(canonical_uuid(id));
         Self {
             id: id.to_owned(),

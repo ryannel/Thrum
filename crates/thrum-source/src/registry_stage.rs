@@ -15,7 +15,10 @@ use crate::history_json::{HistoryError, parse_registry_history};
 use crate::project_v2_json::{ProjectV2, ProjectV2Error, parse_project_v2};
 use crate::registry::{RegistryConsistencyError, validate_active_registry_with};
 use crate::schema_json::{SchemaDescriptor, SchemaError, parse_schema_descriptor};
-use crate::{MAX_RECORD_BYTES, SourcePath, StageError, StagedFile, StagedTree};
+use crate::{
+    MAX_RECORD_BYTES, ManifestEntry, ManifestError, RecordDescriptor, SourcePath, StageError,
+    StagedFile, StagedTree, TreeManifest,
+};
 
 /// A declared first-profile registry does not agree with its staged source.
 #[derive(Debug)]
@@ -94,6 +97,94 @@ pub enum StagedRecordError {
     },
     /// Required-edge summaries exceed this first profile's 65,536-edge cap.
     TooManyRequiredEdges,
+}
+
+/// A first-profile staged candidate failed before deriving a manifest.
+#[derive(Debug)]
+pub enum StagedCandidateError {
+    /// Project, schema or carried history validation refused.
+    Registry(StagedRegistryError),
+    /// Scene/game identity or required reference closure refused.
+    Records(StagedRecordError),
+}
+
+/// Registry and records checked together against one provisional stage.
+pub struct StagedCandidate<'a> {
+    registry: StagedRegistry<'a>,
+    records: StagedRecords,
+}
+
+impl StagedCandidate<'_> {
+    /// Candidate registry and its source-carried meanings.
+    pub fn registry(&self) -> &StagedRegistry<'_> {
+        &self.registry
+    }
+
+    /// Checked scene/game identities and local required edges.
+    pub fn records(&self) -> &StagedRecords {
+        &self.records
+    }
+
+    /// Derive exact-byte metadata and its reproducible provisional revision.
+    ///
+    /// This uses hashes recorded by staging. Durable admission must rehash
+    /// every staged file, compare authenticated prior history and commit the
+    /// root/outcome transaction before calling this revision accepted.
+    pub fn provisional_manifest(&self) -> Result<TreeManifest, ManifestError> {
+        let project_path = fixed_path("project.json");
+        let history_path = fixed_path(self.registry.project.history_path());
+        let mut labels = Vec::with_capacity(
+            2 + self.registry.schemas.len() + self.records.scenes.len() + self.records.games.len(),
+        );
+        labels.push((&project_path, self.registry.project.id(), "core.project"));
+        labels.push((
+            &history_path,
+            self.registry.history_id.as_str(),
+            "core.registry-history",
+        ));
+        labels.extend(
+            self.registry
+                .schemas
+                .iter()
+                .map(|item| (&item.path, item.descriptor.record_id(), "core.schema")),
+        );
+        labels.extend(
+            self.records
+                .scenes
+                .iter()
+                .map(|item| (&item.path, item.id.as_str(), "core.scene")),
+        );
+        labels.extend(
+            self.records
+                .games
+                .iter()
+                .map(|item| (&item.path, item.summary.id(), item.summary.record_type())),
+        );
+        labels.sort_unstable_by(|left, right| left.0.cmp(right.0));
+
+        let mut label_index = 0;
+        let mut entries = Vec::with_capacity(self.registry.stage.files().len());
+        for file in self.registry.stage.files() {
+            let record = if labels
+                .get(label_index)
+                .is_some_and(|(path, _, _)| *path == file.path())
+            {
+                let (_, id, record_type) = labels[label_index];
+                label_index += 1;
+                Some(RecordDescriptor::checked_parts(id, record_type))
+            } else {
+                None
+            };
+            entries.push(ManifestEntry::new(
+                file.path().clone(),
+                file.length(),
+                *file.sha256(),
+                record,
+            )?);
+        }
+        debug_assert_eq!(label_index, labels.len());
+        TreeManifest::new(self.registry.project.id(), Vec::new(), entries)
+    }
 }
 
 /// One checked scene identity paired with its staged source path.
@@ -400,6 +491,20 @@ pub fn validate_staged_records(
         games,
         required_edges,
     })
+}
+
+/// Check one narrow staged registry and its declared record closure together.
+///
+/// This does not perform authenticated prior-root lineage, maximum physical
+/// parser/graph reservation, editor round-trip or durable source admission.
+pub fn validate_staged_candidate<'a>(
+    stage: &'a StagedTree,
+    dependency_roots: &[String],
+) -> Result<StagedCandidate<'a>, StagedCandidateError> {
+    let registry = validate_staged_registry(stage, dependency_roots)
+        .map_err(StagedCandidateError::Registry)?;
+    let records = validate_staged_records(&registry).map_err(StagedCandidateError::Records)?;
+    Ok(StagedCandidate { registry, records })
 }
 
 fn fixed_path(text: &str) -> SourcePath {
@@ -765,6 +870,63 @@ mod tests {
     }
 
     #[test]
+    fn checked_candidate_revision_matches_independent_manifest_and_changes_on_edit() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        fixture.write("assets/note.txt", b"candidate note");
+        let mut paths = vec!["assets/note.txt"];
+        paths.extend_from_slice(PATHS);
+        let old = fixture.stage(&paths);
+        let candidate = validate_staged_candidate(&old, &[]).unwrap();
+        let revision = candidate.provisional_manifest().unwrap().revision();
+        let files: Vec<_> = old
+            .files()
+            .iter()
+            .map(|file| {
+                let (id, record_type) = match file.path().as_str() {
+                    "project.json" => (Some(PROJECT_ID), Some("core.project")),
+                    "records/marker.record.json" => (Some(GAME_ID), Some("game.marker")),
+                    "scenes/main.scene.json" => (Some(SCENE_ID), Some("core.scene")),
+                    "schemas/history.registry.json" => {
+                        (Some(HISTORY_ID), Some("core.registry-history"))
+                    }
+                    "schemas/marker.schema.json" => (Some(SCHEMA_ID), Some("core.schema")),
+                    _ => (None, None),
+                };
+                json!({
+                    "hash":hex(file.sha256()), "kind":"file", "length":file.length(),
+                    "path":file.path().as_str(), "recordId":id, "recordType":record_type
+                })
+            })
+            .collect();
+        let oracle = json!({
+            "dependencyRoots":[], "files":files, "format":1, "projectId":PROJECT_ID
+        });
+        let oracle_bytes = serde_json_canonicalizer::to_vec(&oracle).unwrap();
+        assert_eq!(
+            revision.as_bytes().as_slice(),
+            Sha256::digest(oracle_bytes).as_slice()
+        );
+
+        let path = "records/marker.record.json";
+        let game = fs::read_to_string(fixture.0.join(path)).unwrap();
+        fixture.write(
+            path,
+            game.replace("first marker", "second marker").as_bytes(),
+        );
+        assert_eq!(
+            candidate.provisional_manifest().unwrap().revision(),
+            revision
+        );
+        let new = fixture.stage(&paths);
+        let candidate = validate_staged_candidate(&new, &[]).unwrap();
+        assert_ne!(
+            candidate.provisional_manifest().unwrap().revision(),
+            revision
+        );
+    }
+
+    #[test]
     #[ignore = "local small staged-registry validation cost probe"]
     fn measure_small_staged_registry() {
         let fixture = Fixture::new();
@@ -787,6 +949,20 @@ mod tests {
         let start = std::time::Instant::now();
         for _ in 0..1_000 {
             std::hint::black_box(validate_staged_records(&registry).unwrap());
+        }
+        eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
+    }
+
+    #[test]
+    #[ignore = "local small provisional candidate revision cost probe"]
+    fn measure_small_candidate_revision() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let stage = fixture.stage(PATHS);
+        let start = std::time::Instant::now();
+        for _ in 0..1_000 {
+            let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+            std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
         }
         eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
     }
