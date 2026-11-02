@@ -44,13 +44,20 @@ class VerifyRustcReceipts(unittest.TestCase):
         directory = output / "rustc-receipts"
         directory.mkdir()
         (output / "rustc-receipt-wrapper").write_bytes(b"wrapper")
-        rustc = root / "rustc"
+        rustc = root / "toolchain/bin/rustc"
+        rustc.parent.mkdir(parents=True)
         rustc.write_bytes(b"compiler")
         environment = sorted((
             (b"CARGO_HOME", os.fsencode(cache)),
             (b"CARGO_INCREMENTAL", b"0"),
             (b"CARGO_NET_OFFLINE", b"true"),
             (b"CARGO_TARGET_DIR", os.fsencode(output)),
+            (b"DYLD_FALLBACK_LIBRARY_PATH", b":".join((
+                os.fsencode(output / "debug/deps"),
+                os.fsencode(rustc.parent.parent / "lib"),
+                os.fsencode(root / "lib"), b"/usr/local/lib", b"/usr/lib",
+            ))),
+            (b"HOME", os.fsencode(root)),
             (b"RUSTC", os.fsencode(rustc)),
             (b"RUSTC_WRAPPER", os.fsencode(output / "rustc-receipt-wrapper")),
         ))
@@ -75,6 +82,12 @@ class VerifyRustcReceipts(unittest.TestCase):
     def test_complete_receipts_match_cargo_artifacts(self):
         with tempfile.TemporaryDirectory() as directory:
             args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            probe_environment = [(name, value) for name, value in environment
+                                 if name != b"DYLD_FALLBACK_LIBRARY_PATH"]
+            (receipts / "101.receipt").write_bytes(receipt(
+                rustc, source, [b"-vV"], probe_environment, kind=0,
+            ))
             report = inspect(*args[:6])
             self.assertEqual((report["probes"], report["compiles"]), (1, 1))
             self.assertEqual(report["units"][0]["artifacts"], ["debug/headless"])
@@ -194,6 +207,22 @@ class VerifyRustcReceipts(unittest.TestCase):
                 b"--crate-type", b"proc-macro",
             ], environment))
             with self.assertRaisesRegex(ValueError, "refuses proc macros"):
+                inspect(*args[:6])
+
+    def test_macos_dynamic_search_refuses_unselected_or_empty_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            for replacement in (b"/outside/lib", b"", b"/usr/lib::/usr/local/lib"):
+                changed = [(name, replacement if name == b"DYLD_FALLBACK_LIBRARY_PATH" else value)
+                           for name, value in environment]
+                path.write_bytes(receipt(rustc, source, arguments, changed))
+                with self.assertRaisesRegex(ValueError, "dynamic library path"):
+                    inspect(*args[:6])
+            changed = [(name, b"/other-home" if name == b"HOME" else value)
+                       for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, changed))
+            with self.assertRaisesRegex(ValueError, "HOME differs"):
                 inspect(*args[:6])
 
 

@@ -174,7 +174,8 @@ uses Cargo's stable wrapper hook to record exact rustc invocation bytes and
 completion, then reconciles them with the fresh Cargo artifact stream. The
 selected rustc environment contains Cargo's macOS
 `DYLD_FALLBACK_LIBRARY_PATH`; only that `DYLD_` name is accepted in this narrow
-candidate, with its exact value retained in the receipt. Its resolution and
+candidate, with its exact value retained in the receipt and its entries
+restricted to selected output/toolchain and fixed fallback locations. Its resolution and
 loaded-library reads are not yet closed. The verifier reports `buildReady:false`
 until compiler/system reads, release review and output publication are proven.
 

@@ -28,9 +28,11 @@ compile, output and `--extern` paths under the fresh output root, dependency
 library search under its `debug/deps`, and no executable Cargo hooks. It
 compares each receipt's crate and source to Cargo's structured target and
 requires each `--extern` path to be an artifact Cargo reported from the named
-dependency unit. Cargo's macOS `DYLD_FALLBACK_LIBRARY_PATH` is retained exactly;
-other `DYLD_` overrides refuse. Its library resolution remains an open read
-boundary. The report includes per-unit receipt hashes, a receipt-set digest,
+dependency unit. Cargo's macOS `DYLD_FALLBACK_LIBRARY_PATH` is retained exactly
+and checked against the selected output, Rust toolchain and fixed fallback
+locations; empty/duplicate/outside entries and other `DYLD_` overrides refuse.
+An information-only probe may omit the variable. Its library resolution
+remains an open read boundary. The report includes per-unit receipt hashes, a receipt-set digest,
 artifact paths and `buildReady:false`.
 
 The wrapper allocates and writes once per rustc invocation, including probes;
@@ -62,11 +64,11 @@ THRUM_PYTHON=python3.11 THRUM_TEST_NATIVE_SANDBOX=1 \
   -- --ignored --nocapture
 ```
 
-The final local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,335
+The final local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,314
 ms for Cargo build, and yielded five successful compile receipts plus three
 probes. The verifier matched all five compiles to distinct Cargo targets and
 their selected source paths. It reported receipt-set digest
-`3a614501d0c3296f53841361fe04bc65954c851ed48959cfa48855a509826c20`.
+`c716c580adb12066600efbed5ecb7292e6cf91b808c71ada28cf8f5e815e9584`.
 The A binary was 2,345,736 bytes and ran successfully. The separately
 admitted invalid-code B build failed; A's hash and execution still matched.
 The source and private cache inventories were unchanged after both builds.
@@ -78,7 +80,8 @@ compiler/source, duplicate unit, altered fixed environment, escaped artifact
 or library path, proc-macro input, and an `--extern` path not reported by Cargo.
 Another fixture refuses a source file inside the allowed root when Cargo's
 target names a different source; a two-unit fixture accepts a valid dependency
-and refuses the wrong extern name. Six Rust
+and refuses the wrong extern name. The macOS dynamic-library search fixture
+refuses an outside or empty entry and wrong private home. Six Rust
 wrapper tests cover byte preservation, limits, probe classification,
 exclusive receipt creation, process outcomes and exact child environment.
 `./dev check` passes; its normal test suite omits the expensive A/B fixture.
