@@ -175,6 +175,14 @@ extra bounded control storage; one pass plus copy adds100MiB logical texture tra
 before cache reuse. Measure the complete graph, preserve the optional velocity-cache comparison and reject capacity
 or quality regressions. The legacy rolling profile remains a diagnostic; Ci and other families remain unchanged.
 
+After native volume is populated, test a separate shared3D material-structure profile against the retained weak
+positive Cb multiplier at identical q. The original profile could only modulate q between.572q andq, leaving the new
+filled volume smooth. Candidate structure uses the existing advected low/fine3D fields: threshold=.25+.30(1-q),
+amount=q*(.12+.88*smoothstep(threshold-.16,threshold+.16,low))*(1-.35(1-fine)*detail). It adds no texture read,
+never creates density outside q, stays within[.078q,q], and partitions that single amount by phase. Every light,
+shadow and reflected ray reads the same function/profile. Keep raw-q/material A/B exposed; this is derived morphology,
+not proof that native growth/merge dynamics work. Thin-ice visibility, mip error and light-cache error must still pass.
+
 This candidate requires isolated strain/thickness and overlap tests, positive/mass/age/birth mixing checks, native
 sections and1x/16x growth/merge/loss images, fed-cap continuity and coupled consumers/cost. It is not yet accepted art.
 
