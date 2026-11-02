@@ -12,6 +12,8 @@ pub mod history_json;
 mod inventory;
 mod json;
 mod manifest;
+#[cfg(test)]
+mod manifest_json;
 mod meaning;
 mod path;
 pub mod project_v2_json;

@@ -1,20 +1,28 @@
 //! Isolated SQLite transaction proof for the later native source store.
 //!
-//! Test-only: the complete blob in this fixture is not a parsed manifest or a
-//! full source closure, so this is not an accepted-source admission API.
+//! Test-only: the fixtures do not bind a fully validated candidate, physical
+//! reservation or GC pins, so this is not an accepted-source admission API.
 
+use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
+use crate::history_json::{
+    CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
+};
+use crate::manifest_json::{ManifestDecodeError, decode_manifest_jcs};
 use crate::{ManifestEntry, SourcePath, TreeManifest};
 
 const MAX_PAGE_COUNT: i64 = 13_631_488;
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
+const FIRST_PROFILE_MANIFEST_BYTES: usize = 64 * 1024 * 1024;
+const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
 const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
@@ -58,6 +66,26 @@ enum ProofError {
     StaleBlobWriter,
     StaleGeneration,
     TokenConflict,
+    MissingRootHistory,
+    AmbiguousRootHistory,
+    DifferentProject,
+    UnsupportedDependencyRoots,
+    CorruptRootBlob,
+    Manifest(ManifestDecodeError),
+    History(HistoryError),
+    Lineage(CarriedHistoryError),
+}
+
+impl fmt::Display for ProofError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Sql(error) => write!(formatter, "SQLite: {error}"),
+            Self::Manifest(error) => write!(formatter, "manifest: {error}"),
+            Self::History(error) => write!(formatter, "history: {error:?}"),
+            Self::Lineage(error) => write!(formatter, "lineage: {error:?}"),
+            other => write!(formatter, "{other:?}"),
+        }
+    }
 }
 
 impl From<rusqlite::Error> for ProofError {
@@ -72,6 +100,79 @@ struct RootTransactionProof {
 
 fn blob_chunk_count(length: u64) -> Result<i64, ProofError> {
     i64::try_from(length.div_ceil(CHUNK_BYTES as u64)).map_err(|_| ProofError::InputLength)
+}
+
+fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), ProofError> {
+    let (generation, revision) = tx.query_row(
+        "SELECT generation, revision FROM root WHERE id=1",
+        [],
+        |row| {
+            let revision = match row.get_ref(1)? {
+                ValueRef::Null => Some(None),
+                ValueRef::Blob(bytes) => bytes.try_into().ok().map(Some),
+                _ => None,
+            };
+            Ok((row.get(0)?, revision))
+        },
+    )?;
+    Ok((generation, revision.ok_or(ProofError::CorruptRootBlob)?))
+}
+
+fn read_complete_blob(
+    tx: &Transaction<'_>,
+    hash: [u8; 32],
+    maximum_bytes: usize,
+) -> Result<Vec<u8>, ProofError> {
+    let (stored_length, stored_chunks, state): (i64, i64, i64) = tx
+        .query_row(
+            "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .optional()?
+        .ok_or(ProofError::MissingCompleteBlob)?;
+    let length = usize::try_from(stored_length).map_err(|_| ProofError::CorruptRootBlob)?;
+    if state != 1 || length > maximum_bytes || stored_chunks != blob_chunk_count(length as u64)? {
+        return Err(ProofError::CorruptRootBlob);
+    }
+    let actual_chunks: i64 = tx.query_row(
+        "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+        params![hash.as_slice()],
+        |row| row.get(0),
+    )?;
+    if actual_chunks != stored_chunks {
+        return Err(ProofError::CorruptRootBlob);
+    }
+    let mut bytes = Vec::with_capacity(length);
+    let mut digest = Sha256::new();
+    for index in 0..stored_chunks {
+        let expected = (length - bytes.len()).min(CHUNK_BYTES);
+        let actual: i64 = tx
+            .query_row(
+                "SELECT length(bytes) FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
+                params![hash.as_slice(), index],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or(ProofError::CorruptRootBlob)?;
+        if actual != expected as i64 {
+            return Err(ProofError::CorruptRootBlob);
+        }
+        let chunk: Vec<u8> = tx
+            .query_row(
+                "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
+                params![hash.as_slice(), index],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or(ProofError::CorruptRootBlob)?;
+        digest.update(&chunk);
+        bytes.extend_from_slice(&chunk);
+    }
+    if bytes.len() != length || digest.finalize().as_slice() != hash {
+        return Err(ProofError::CorruptRootBlob);
+    }
+    Ok(bytes)
 }
 
 struct HashCountWriter {
@@ -236,6 +337,64 @@ impl RootTransactionProof {
         )
     }
 
+    fn compare_history_with_current_root(
+        &mut self,
+        expected_generation: i64,
+        candidate_project_id: &str,
+        candidate_history_bytes: &[u8],
+    ) -> Result<(), ProofError> {
+        let (revision, manifest_bytes) = {
+            let tx = self
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Deferred)?;
+            let (generation, revision) = root_identity(&tx)?;
+            if generation != expected_generation {
+                return Err(ProofError::StaleGeneration);
+            }
+            let revision = revision.ok_or(ProofError::MissingRootHistory)?;
+            let bytes = read_complete_blob(&tx, revision, FIRST_PROFILE_MANIFEST_BYTES)?;
+            tx.commit()?;
+            (revision, bytes)
+        };
+        let manifest = decode_manifest_jcs(&manifest_bytes, FIRST_PROFILE_MANIFEST_BYTES)
+            .map_err(ProofError::Manifest)?;
+        if manifest.project_id() != candidate_project_id {
+            return Err(ProofError::DifferentProject);
+        }
+        let mut histories = manifest.files().iter().filter_map(|file| {
+            file.record_identity()
+                .filter(|(_, record_type)| *record_type == "core.registry-history")
+                .map(|(id, _)| (id, file.blob_identity()))
+        });
+        let (history_id, (history_length, history_hash)) =
+            histories.next().ok_or(ProofError::MissingRootHistory)?;
+        if histories.next().is_some() {
+            return Err(ProofError::AmbiguousRootHistory);
+        }
+        let prior_bytes = {
+            let tx = self
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Deferred)?;
+            let (generation, current_revision) = root_identity(&tx)?;
+            if generation != expected_generation || current_revision != Some(revision) {
+                return Err(ProofError::StaleGeneration);
+            }
+            let bytes = read_complete_blob(&tx, history_hash, MAX_HISTORY_BYTES)?;
+            tx.commit()?;
+            bytes
+        };
+        if prior_bytes.len() as u64 != history_length {
+            return Err(ProofError::CorruptRootBlob);
+        }
+        let prior = parse_registry_history(&prior_bytes).map_err(ProofError::History)?;
+        if prior.record_id() != history_id {
+            return Err(ProofError::CorruptRootBlob);
+        }
+        let candidate =
+            parse_registry_history(candidate_history_bytes).map_err(ProofError::History)?;
+        compare_carried_histories(&prior, &candidate).map_err(ProofError::Lineage)
+    }
+
     fn stage_blob(
         &mut self,
         input: &mut impl Read,
@@ -323,6 +482,9 @@ impl RootTransactionProof {
     }
 
     fn stage_manifest_chunked(&mut self, manifest: &TreeManifest) -> Result<[u8; 32], ProofError> {
+        if !manifest.dependency_roots().is_empty() {
+            return Err(ProofError::UnsupportedDependencyRoots);
+        }
         let mut count = HashCountWriter {
             digest: Sha256::new(),
             length: 0,
@@ -331,6 +493,9 @@ impl RootTransactionProof {
             .write_jcs(&mut count)
             .map_err(|_| ProofError::OutputIo)?;
         let length = count.length;
+        if length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
+            return Err(ProofError::InputLength);
+        }
         let hash: [u8; 32] = count.digest.finalize().into();
         let chunk_count = blob_chunk_count(length)?;
         if self.begin_blob(length, hash, chunk_count)? {
@@ -482,9 +647,30 @@ impl RootTransactionProof {
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let actual_chunks: i64 = tx.query_row(
+            "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+            params![expected_hash.as_slice()],
+            |row| row.get(0),
+        )?;
+        if actual_chunks != chunk_count {
+            return Err(ProofError::InvalidChunkLayout);
+        }
         let mut stored = Sha256::new();
         let mut stored_length = 0_u64;
         for index in 0..chunk_count {
+            let expected_count = usize::try_from((length - stored_length).min(CHUNK_BYTES as u64))
+                .map_err(|_| ProofError::InputLength)?;
+            let actual: i64 = tx
+                .query_row(
+                    "SELECT length(bytes) FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
+                    params![expected_hash.as_slice(), index],
+                    |row| row.get(0),
+                )
+                .optional()?
+                .ok_or(ProofError::MissingChunk)?;
+            if actual != expected_count as i64 {
+                return Err(ProofError::InvalidChunkLayout);
+            }
             let bytes: Vec<u8> = tx
                 .query_row(
                     "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
@@ -493,11 +679,6 @@ impl RootTransactionProof {
                 )
                 .optional()?
                 .ok_or(ProofError::MissingChunk)?;
-            let expected_count = usize::try_from((length - stored_length).min(CHUNK_BYTES as u64))
-                .map_err(|_| ProofError::InputLength)?;
-            if bytes.len() != expected_count {
-                return Err(ProofError::InvalidChunkLayout);
-            }
             stored_length = stored_length
                 .checked_add(bytes.len() as u64)
                 .ok_or(ProofError::InputLength)?;
@@ -544,7 +725,20 @@ impl RootTransactionProof {
         request_hash: [u8; 32],
         manifest: &TreeManifest,
     ) -> Result<i64, ProofError> {
-        let revision = *manifest.revision().as_bytes();
+        if !manifest.dependency_roots().is_empty() {
+            return Err(ProofError::UnsupportedDependencyRoots);
+        }
+        let mut count = HashCountWriter {
+            digest: Sha256::new(),
+            length: 0,
+        };
+        manifest
+            .write_jcs(&mut count)
+            .map_err(|_| ProofError::OutputIo)?;
+        if count.length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
+            return Err(ProofError::InputLength);
+        }
+        let revision: [u8; 32] = count.digest.finalize().into();
         self.commit_with_closure(
             expected_generation,
             epoch,
@@ -796,6 +990,38 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
 }
 
 #[test]
+fn extra_stored_chunk_cannot_become_complete() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let bytes = b"one expected chunk";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 0)",
+            params![hash.as_slice(), bytes.len() as i64],
+        )
+        .unwrap();
+    for index in 0..2 {
+        store
+            .conn
+            .execute(
+                "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, ?2, ?3)",
+                params![hash.as_slice(), index, bytes.as_slice()],
+            )
+            .unwrap();
+    }
+    assert!(matches!(
+        store.verify_and_complete_blob(bytes.len() as u64, hash, 1, || {}),
+        Err(ProofError::InvalidChunkLayout)
+    ));
+    assert!(matches!(
+        store.commit_probe(0, 1, 1, [1; 32], hash),
+        Err(ProofError::MissingCompleteBlob)
+    ));
+}
+
+#[test]
 fn completion_transaction_excludes_same_hash_retry_reset() {
     let fixture = Fixture::new();
     let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
@@ -913,6 +1139,27 @@ fn canonical_manifest_bytes_reopen_from_complete_blob() {
         )
         .unwrap();
     assert_eq!(stored, canonical);
+}
+
+#[test]
+fn first_store_profile_refuses_unresolved_dependency_roots() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let manifest = TreeManifest::new(
+        "2a5ef644-7225-4770-9f4d-e1d9c0a7d515",
+        vec!["external-root".to_owned()],
+        Vec::new(),
+    )
+    .unwrap();
+    assert!(matches!(
+        store.stage_manifest_chunked(&manifest),
+        Err(ProofError::UnsupportedDependencyRoots)
+    ));
+    assert!(matches!(
+        store.commit_manifest_probe(0, 1, 1, [1; 32], &manifest),
+        Err(ProofError::UnsupportedDependencyRoots)
+    ));
+    assert_eq!(store.root().unwrap(), (0, None));
 }
 
 #[test]
@@ -1138,6 +1385,235 @@ fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
         )
         .unwrap();
     assert_eq!(stored, second);
+}
+
+const LINEAGE_PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+const LINEAGE_HISTORY_ID: &str = "82b0ec04-6866-4271-a2cf-1f1576ad604a";
+
+fn lineage_history(extra: bool) -> Vec<u8> {
+    let mut fields = vec![serde_json::json!({
+        "typeId":"game.marker", "fieldId":"marker.caption",
+        "signature":"00".repeat(32), "retired":false
+    })];
+    let mut versions = vec![serde_json::json!({
+        "typeId":"game.marker", "targetVersion":1,
+        "definitionHash":"11".repeat(32)
+    })];
+    if extra {
+        fields.push(serde_json::json!({
+            "typeId":"game.marker", "fieldId":"marker.extra",
+            "signature":"22".repeat(32), "retired":false
+        }));
+        versions.push(serde_json::json!({
+            "typeId":"game.marker", "targetVersion":2,
+            "definitionHash":"33".repeat(32)
+        }));
+    }
+    serde_json::to_vec(&serde_json::json!({
+        "id":LINEAGE_HISTORY_ID,
+        "type":"core.registry-history",
+        "schema":1,
+        "fields":{"registry.fields":fields,"registry.versions":versions}
+    }))
+    .unwrap()
+}
+
+fn lineage_manifest(history_bytes: &[u8]) -> TreeManifest {
+    TreeManifest::new(
+        LINEAGE_PROJECT_ID,
+        Vec::new(),
+        vec![
+            ManifestEntry::new(
+                SourcePath::parse("schemas/history.registry.json").unwrap(),
+                history_bytes.len() as u64,
+                Sha256::digest(history_bytes).into(),
+                Some(crate::RecordDescriptor::checked_parts(
+                    LINEAGE_HISTORY_ID,
+                    "core.registry-history",
+                )),
+            )
+            .unwrap(),
+        ],
+    )
+    .unwrap()
+}
+
+#[test]
+fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage() {
+    let fixture = Fixture::new();
+    let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
+    let base = lineage_history(false);
+    let candidate = lineage_history(true);
+    let base_manifest = lineage_manifest(&base);
+    let candidate_manifest = lineage_manifest(&candidate);
+    first
+        .stage_blob(
+            &mut base.as_slice(),
+            base.len() as u64,
+            Sha256::digest(&base).into(),
+        )
+        .unwrap();
+    first.stage_manifest_chunked(&base_manifest).unwrap();
+    assert_eq!(
+        first
+            .commit_manifest_probe(0, 1, 1, [1; 32], &base_manifest)
+            .unwrap(),
+        1
+    );
+    drop(first);
+
+    let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert!(
+        first
+            .compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &candidate)
+            .is_ok()
+    );
+    assert!(matches!(
+        first.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &[]),
+        Err(ProofError::History(_))
+    ));
+    assert!(matches!(
+        first.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &lineage_history(false)),
+        Ok(())
+    ));
+    assert!(matches!(
+        first.compare_history_with_current_root(
+            1,
+            "f2b577f6-d755-4d6b-8df0-609c63914c1b",
+            &candidate
+        ),
+        Err(ProofError::DifferentProject)
+    ));
+    let mut second = RootTransactionProof::open(&fixture.database()).unwrap();
+    second
+        .stage_blob(
+            &mut candidate.as_slice(),
+            candidate.len() as u64,
+            Sha256::digest(&candidate).into(),
+        )
+        .unwrap();
+    second.stage_manifest_chunked(&candidate_manifest).unwrap();
+    assert_eq!(
+        second
+            .commit_manifest_probe(1, 1, 2, [2; 32], &candidate_manifest)
+            .unwrap(),
+        2
+    );
+    assert!(matches!(
+        first.commit_manifest_probe(1, 1, 3, [3; 32], &candidate_manifest),
+        Err(ProofError::StaleGeneration)
+    ));
+    assert!(matches!(
+        first.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &candidate),
+        Err(ProofError::StaleGeneration)
+    ));
+    assert!(matches!(
+        first.compare_history_with_current_root(2, LINEAGE_PROJECT_ID, &base),
+        Err(ProofError::Lineage(_))
+    ));
+}
+
+#[test]
+fn current_root_history_refuses_corrupt_stored_bytes() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let base = lineage_history(false);
+    let base_hash: [u8; 32] = Sha256::digest(&base).into();
+    let manifest = lineage_manifest(&base);
+    store
+        .stage_blob(&mut base.as_slice(), base.len() as u64, base_hash)
+        .unwrap();
+    let revision = store.stage_manifest_chunked(&manifest).unwrap();
+    store
+        .commit_manifest_probe(0, 1, 1, [1; 32], &manifest)
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "UPDATE blob_chunks SET bytes=zeroblob(4194305) WHERE hash=?1 AND chunk_index=0",
+            params![base_hash.as_slice()],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &base),
+        Err(ProofError::CorruptRootBlob)
+    ));
+    store
+        .conn
+        .execute(
+            "UPDATE blob_chunks SET bytes=x'00' WHERE hash=?1 AND chunk_index=0",
+            params![revision.as_slice()],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &base),
+        Err(ProofError::CorruptRootBlob)
+    ));
+    store
+        .conn
+        .execute("UPDATE root SET revision=zeroblob(4194305) WHERE id=1", [])
+        .unwrap();
+    assert!(matches!(
+        store.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &base),
+        Err(ProofError::CorruptRootBlob)
+    ));
+}
+
+#[test]
+#[ignore = "local maximum-manifest current-root history resolution cost probe"]
+fn measure_maximum_root_history_resolution() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let history_bytes = lineage_history(false);
+    let history_hash: [u8; 32] = Sha256::digest(&history_bytes).into();
+    let ordinary_bytes = [9_u8];
+    let ordinary_hash: [u8; 32] = Sha256::digest(ordinary_bytes).into();
+    let mut files = Vec::with_capacity(100_000);
+    files.push(
+        ManifestEntry::new(
+            SourcePath::parse("schemas/history.registry.json").unwrap(),
+            history_bytes.len() as u64,
+            history_hash,
+            Some(crate::RecordDescriptor::checked_parts(
+                LINEAGE_HISTORY_ID,
+                "core.registry-history",
+            )),
+        )
+        .unwrap(),
+    );
+    files.extend((0_u32..99_999).map(|index| {
+        ManifestEntry::new(
+            SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
+            1,
+            ordinary_hash,
+            None,
+        )
+        .unwrap()
+    }));
+    let manifest = TreeManifest::new(LINEAGE_PROJECT_ID, Vec::new(), files).unwrap();
+    store
+        .stage_blob(
+            &mut history_bytes.as_slice(),
+            history_bytes.len() as u64,
+            history_hash,
+        )
+        .unwrap();
+    store
+        .stage_blob(&mut ordinary_bytes.as_slice(), 1, ordinary_hash)
+        .unwrap();
+    store.stage_manifest_chunked(&manifest).unwrap();
+    store
+        .commit_manifest_probe(0, 1, 1, [1; 32], &manifest)
+        .unwrap();
+    let start = std::time::Instant::now();
+    store
+        .compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &history_bytes)
+        .unwrap();
+    let elapsed = start.elapsed();
+    eprintln!(
+        "maximum_root_history_resolution files=100000 elapsed_ms={:.3}",
+        elapsed.as_secs_f64() * 1000.0
+    );
 }
 
 #[test]

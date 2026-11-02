@@ -12,7 +12,7 @@ use sha2::{Digest, Sha256};
 use crate::path::{PathError, SourcePath, validate_path_refs};
 use crate::record::{RecordEnvelope, canonical_uuid};
 
-const MAX_ENTRIES: usize = 100_000;
+pub(crate) const MAX_ENTRIES: usize = 100_000;
 const MAX_BLOB_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 const HEX: &[u8; 16] = b"0123456789abcdef";
 
@@ -51,6 +51,12 @@ impl RecordDescriptor {
             record_type: record_type.to_owned(),
         }
     }
+
+    #[cfg(test)]
+    pub(crate) fn checked_owned_parts(id: String, record_type: String) -> Self {
+        debug_assert!(canonical_uuid(&id));
+        Self { id, record_type }
+    }
 }
 
 /// One file's exact-byte metadata; a capture adapter must verify the bytes.
@@ -85,6 +91,13 @@ impl ManifestEntry {
     pub(crate) fn blob_identity(&self) -> (u64, [u8; 32]) {
         (self.length, self.sha256)
     }
+
+    #[cfg(test)]
+    pub(crate) fn record_identity(&self) -> Option<(&str, &str)> {
+        self.record
+            .as_ref()
+            .map(|record| (record.id.as_str(), record.record_type.as_str()))
+    }
 }
 
 /// A tree description cannot have a portable v1 identity.
@@ -115,6 +128,16 @@ impl TreeManifest {
     #[cfg(test)]
     pub(crate) fn files(&self) -> &[ManifestEntry] {
         &self.files
+    }
+
+    #[cfg(test)]
+    pub(crate) fn project_id(&self) -> &str {
+        &self.project_id
+    }
+
+    #[cfg(test)]
+    pub(crate) fn dependency_roots(&self) -> &[String] {
+        &self.dependency_roots
     }
 
     /// Validate identity and sort paths and roots by UTF-8 bytes without
