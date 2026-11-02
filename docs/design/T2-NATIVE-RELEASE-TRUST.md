@@ -117,6 +117,15 @@ the release preparation job and complete tool/SDK/dependency closure. The
 [local Cargo/Rustc/host-standard-library component proof](../evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
 is one host's partial origin candidate.
 
+The cold [crates.io archive comparator](../../scripts/verify_crates_io_archive_origin.py)
+streams each archive listed by a selected private-cache candidate from its
+official HTTPS CDN URL, refuses redirects, and compares fetched bytes with the
+candidate, private cache and selected lockfile checksum. The complete private
+cache is inventoried before and after. Its [37-archive local proof](../evidence/i2a/T2-CRATES-ORIGIN-CANDIDATE.md)
+is still an origin candidate: cached sparse-index records, extracted source,
+selected build-unit closure and the release preparation environment are not
+authenticated by archive matching. It also reports `buildReady:false`.
+
 ## Considered stronger alternative
 
 Require cryptographic publisher signatures or a project-signed mirror for
