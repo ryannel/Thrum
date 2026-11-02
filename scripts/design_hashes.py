@@ -48,11 +48,11 @@ def check_hashes(root, ledger):
 
 def main():
     path = ROOT / "docs/design/maturity.json"
-    ledger = json.loads(path.read_text())
+    ledger = json.loads(path.read_text(encoding="utf-8"))
     if sys.argv[1:] == ["--write"]:
         for obj, key, name in current_slots(ledger):
             obj[key] = digest(ROOT / "docs/design" / name)
-        path.write_text(json.dumps(ledger, indent=2) + "\n")
+        path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
         print("Refreshed current design hashes; review history and maturity unchanged.")
     elif not sys.argv[1:]:
         errors = check_hashes(ROOT, ledger)
