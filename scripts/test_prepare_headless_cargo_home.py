@@ -84,6 +84,12 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
                        "--source", str(source), "--verify-reuse", str(candidate),
                        "--target", target, "--cargo", str(cargo), "--rustc", str(rustc)]
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
+            relative_source = command.copy()
+            relative_source[relative_source.index("--source") + 1] = "source"
+            self.assertIn(
+                b"must be absolute",
+                subprocess.run(relative_source, cwd=directory, capture_output=True).stderr,
+            )
             wrong_target = command.copy()
             wrong_target[wrong_target.index("--target") + 1] = "x86_64-apple-darwin"
             self.assertIn(b"target differs", subprocess.run(wrong_target, capture_output=True).stderr)

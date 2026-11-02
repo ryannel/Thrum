@@ -266,6 +266,9 @@ def possible_headless_packages(metadata, source):
 
 def cargo_reuse_key(source, target, tool_executables):
     """Bind the pruned cache to dependency-selection inputs, not code edits."""
+    if not source.is_absolute() or source.is_symlink() or not source.is_dir():
+        raise ValueError("admitted source must be an ordinary absolute directory")
+    source = source.resolve(strict=True)
     for ancestor in (source, *source.parents):
         for name in ("config", "config.toml"):
             config = ancestor / ".cargo" / name
@@ -464,6 +467,8 @@ def main():
         parser.add_argument(f"--{name}")
     args = parser.parse_args()
     if args.verify_reuse is not None:
+        if not Path(args.source).is_absolute():
+            raise ValueError("admitted source must be absolute for reuse verification")
         for name in ("cargo", "rustc", "target"):
             if getattr(args, name) is None:
                 parser.error(f"--{name} is required for reuse verification")
