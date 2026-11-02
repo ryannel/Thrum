@@ -94,6 +94,22 @@ invocation attestation. The latest run used 53 admitted files (1,225,519 B),
 1,103 ms for A's debug build and a 2,345,736 B executable; these are one
 warm-cache local observation, not a performance guarantee.
 
+The subsequent opt-in A build audits all five rustc `.d` files in the fresh
+`debug/deps` output. It bounds each file to 1 MiB, parses the first dependency
+rule including escaped spaces, requires its target to be the `.d` file, and
+requires every reported source to be a regular file under the admitted input
+or private Cargo root after canonicalization. The local run passed with 53
+admitted files (1,232,354 B) and a 1,745 ms fresh-output build. The normalized
+diagnostic digest was
+`5d5280794e73179b41cac152647f99ed928af85894311aca88f2f74c09a60be8`.
+An independent small macOS fixture supplies five dep-info rules, then proves
+that an outside-root source, malformed first rule and missing unit each refuse.
+The [Cargo dep-info reference](https://doc.rust-lang.org/cargo/reference/build-cache.html#dep-info-files)
+describes these as source dependencies for rebuilds. This audit is after
+execution and covers reported source paths only; it does not attest every
+compiler file read, binary dependency, environment input or the trustworthiness
+of the compiler that wrote the `.d` files.
+
 The sandboxed run improves the process boundary; it does not make a trusted
 builder. The prepared cache's index records were copied from mutable host
 state and its tree digest is diagnostic rather than a release-verified root.

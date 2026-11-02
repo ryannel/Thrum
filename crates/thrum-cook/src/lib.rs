@@ -1028,6 +1028,9 @@ mod tests {
         let selected_units = private_cargo_home.as_deref().map(|home| {
             inspect_headless_cargo_units(&built_a.stdout, a_materialized.path(), home, &a_output)
         });
+        let dep_info = private_cargo_home
+            .as_deref()
+            .map(|home| inspect_headless_dep_info(a_materialized.path(), home, &a_output));
         assert_eq!(tree_hashes(a_materialized.path()), a_files);
         let binary_name = format!("headless{}", std::env::consts::EXE_SUFFIX);
         let binary_a = a_output.join("debug").join(&binary_name);
@@ -1040,13 +1043,14 @@ mod tests {
             b"thrum-headless-v1 taps=1 results=1 events=1\n"
         );
         eprintln!(
-            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={:02x?} selected_units={:02x?}",
+            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={:02x?} selected_units={:02x?} dep_info={:02x?}",
             a_materialized.file_count(),
             a_materialized.copied_bytes(),
             build_elapsed.as_millis(),
             binary_a_bytes.len(),
             binary_a_hash,
-            selected_units
+            selected_units,
+            dep_info
         );
         a_pin.close().unwrap();
         a_materialized.close().unwrap();
@@ -1405,6 +1409,152 @@ mod tests {
         Sha256::digest(units.join("\n").as_bytes()).into()
     }
 
+    fn inspect_headless_dep_info(input: &Path, cargo_home: &Path, output: &Path) -> [u8; 32] {
+        let input = fs::canonicalize(input).unwrap();
+        let cargo_home = fs::canonicalize(cargo_home).unwrap();
+        let output = fs::canonicalize(output).unwrap();
+        let mut units = Vec::new();
+        for entry in fs::read_dir(output.join("debug/deps")).unwrap() {
+            let entry = entry.unwrap();
+            if entry
+                .path()
+                .extension()
+                .is_none_or(|extension| extension != "d")
+            {
+                continue;
+            }
+            assert!(entry.file_type().unwrap().is_file());
+            assert!(entry.metadata().unwrap().len() <= 1024 * 1024);
+            let bytes = fs::read(entry.path()).unwrap();
+            let text = std::str::from_utf8(&bytes).unwrap();
+            let first = text.lines().next().unwrap();
+            let (target, dependencies) = first.split_once(": ").unwrap();
+            let target = parse_dep_info_words(target);
+            assert_eq!(target.len(), 1);
+            assert_eq!(fs::canonicalize(&target[0]).unwrap(), entry.path());
+            let dependencies = parse_dep_info_words(dependencies);
+            assert!(!dependencies.is_empty());
+            let mut sources = Vec::with_capacity(dependencies.len());
+            for dependency in dependencies {
+                let path = Path::new(&dependency);
+                let path = if path.is_absolute() {
+                    path.to_path_buf()
+                } else {
+                    input.join(path)
+                };
+                assert!(path.is_file() && !path.is_symlink());
+                let path = fs::canonicalize(path).unwrap();
+                let selected = if let Ok(relative) = path.strip_prefix(&input) {
+                    format!("source:{}", relative.display())
+                } else if let Ok(relative) = path.strip_prefix(&cargo_home) {
+                    format!("dependency:{}", relative.display())
+                } else {
+                    panic!("dep-info source escapes selected roots: {}", path.display());
+                };
+                sources.push(selected);
+            }
+            sources.sort_unstable();
+            sources.dedup();
+            assert!(!sources.is_empty());
+            units.push((entry.file_name(), sources));
+        }
+        assert_eq!(units.len(), 5, "unexpected rustc dep-info unit count");
+        units.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+        let mut digest = Sha256::new();
+        for (name, sources) in units {
+            digest.update(name.as_encoded_bytes());
+            digest.update([0]);
+            for source in sources {
+                digest.update(source.as_bytes());
+                digest.update([0]);
+            }
+        }
+        digest.finalize().into()
+    }
+
+    fn parse_dep_info_words(line: &str) -> Vec<String> {
+        let mut words = Vec::new();
+        let mut word = String::new();
+        let mut chars = line.chars();
+        while let Some(character) = chars.next() {
+            match character {
+                '\\' => {
+                    assert_eq!(chars.next(), Some(' '), "unsupported dep-info escape");
+                    word.push(' ');
+                }
+                ' ' | '\t' => {
+                    if !word.is_empty() {
+                        words.push(std::mem::take(&mut word));
+                    }
+                }
+                _ => word.push(character),
+            }
+        }
+        if !word.is_empty() {
+            words.push(word);
+        }
+        words
+    }
+
+    #[test]
+    fn dep_info_words_keep_escaped_spaces_and_refuse_other_escapes() {
+        assert_eq!(
+            parse_dep_info_words("src/my\\ file.rs  /tmp/pkg/src/lib.rs"),
+            ["src/my file.rs", "/tmp/pkg/src/lib.rs"]
+        );
+        assert!(std::panic::catch_unwind(|| parse_dep_info_words("src/bad\\#file.rs")).is_err());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn dep_info_audit_refuses_source_escape_malformed_rule_and_missing_unit() {
+        let fixture = Fixture::new();
+        let input = fixture.root().join(".engine/input");
+        let cargo_home = fixture.root().join(".engine/cargo-home");
+        let output = fixture.root().join(".engine/output");
+        let deps = output.join("debug/deps");
+        fs::create_dir_all(&input).unwrap();
+        fs::create_dir_all(&cargo_home).unwrap();
+        fs::create_dir_all(&deps).unwrap();
+        let source = input.join("source.rs");
+        let dependency = cargo_home.join("dependency.rs");
+        let outside = fixture.root().join("outside.rs");
+        for path in [&source, &dependency, &outside] {
+            fs::write(path, b"source").unwrap();
+        }
+        let depfiles = (0..5)
+            .map(|index| deps.join(format!("unit-{index}.d")))
+            .collect::<Vec<_>>();
+        let rule = |depfile: &Path, path: &Path| {
+            format!(
+                "{}: {}\n",
+                depfile.display().to_string().replace(' ', "\\ "),
+                path.display().to_string().replace(' ', "\\ ")
+            )
+        };
+        for depfile in &depfiles {
+            fs::write(depfile, rule(depfile, &source)).unwrap();
+        }
+        fs::write(&depfiles[4], rule(&depfiles[4], &dependency)).unwrap();
+        inspect_headless_dep_info(&input, &cargo_home, &output);
+
+        fs::write(&depfiles[4], rule(&depfiles[4], &outside)).unwrap();
+        assert!(
+            std::panic::catch_unwind(|| inspect_headless_dep_info(&input, &cargo_home, &output))
+                .is_err()
+        );
+        fs::write(&depfiles[4], b"not a dependency rule\n").unwrap();
+        assert!(
+            std::panic::catch_unwind(|| inspect_headless_dep_info(&input, &cargo_home, &output))
+                .is_err()
+        );
+        fs::remove_file(&depfiles[4]).unwrap();
+        assert!(
+            std::panic::catch_unwind(|| inspect_headless_dep_info(&input, &cargo_home, &output))
+                .is_err()
+        );
+    }
+
     fn cargo_file_uri_path(uri: &str) -> PathBuf {
         fn hex_digit(byte: u8) -> u8 {
             match byte {
@@ -1568,7 +1718,10 @@ mod tests {
             "{}",
             String::from_utf8_lossy(&allowed_system.stderr)
         );
-        assert_eq!(allowed_system.stdout, fs::read(readable_system_file).unwrap());
+        assert_eq!(
+            allowed_system.stdout,
+            fs::read(readable_system_file).unwrap()
+        );
         let mut system_read_probes = 0;
         for denied in [
             Path::new("/usr/share/misc/ascii"),
