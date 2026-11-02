@@ -139,7 +139,8 @@ lighting or opacity to hide that failed cue. Regional exchange remains necessary
 - [ ] Diagnose remaining active soft tiers in3D q/head and source/material bandwidth; prove local split/replacement at1x without losing finite breakup/fed cap.
 - [ ] Recover optics after a long host/background gap as an explicit new optical epoch, with current-time chart/seed alignment; preserve CPU weather and declare lost q continuity.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
-- [ ] Sc/St connected3D cells/sheet closes/opens actual holes; Ci sources/advects/loses high strands/tails under shared shear.
+- [x] Correct Ci repeated sine-comb source with [finite filament/head and anisotropic transport proof](../../evidence/cloud-cirrus-2026-11-02/README.md): actual1x/16x images, ice-only GPU regressions and bounded supply-off response; full Ci acceptance remains open.
+- [ ] Sc/St connected3D cells/sheet closes/opens actual holes; Ci completes fine high strands/tails and full wind/lighting/region qualification.
 - [ ] Dense deck at admitted extent/pitch, thin ice and tall mixed-phase Cb qualify source/halo/material/occupancy bytes and resolution.
 - [ ] Two source regions exchange transported support across a boundary without clipping, duplicate material or camera-dependent placement.
 - [ ] Same-point/time source, shadow, point-light-cache, ambient and reflection respond to independent runtime forcing.
