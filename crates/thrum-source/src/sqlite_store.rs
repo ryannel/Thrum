@@ -26,7 +26,6 @@ use crate::schema_json::parse_schema_descriptor;
 use crate::stage::stage_declared_tree_with;
 use crate::{ManifestEntry, ManifestError, SourcePath, StageError, TreeManifest};
 
-const MAX_PAGE_COUNT: i64 = 13_631_488;
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
 const FIRST_PROFILE_MANIFEST_BYTES: usize = 64 * 1024 * 1024;
 const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
@@ -470,7 +469,6 @@ impl RootTransactionProof {
              PRAGMA synchronous=FULL;
              PRAGMA foreign_keys=ON;
              PRAGMA busy_timeout=0;
-             PRAGMA max_page_count=13631488;
              CREATE TABLE IF NOT EXISTS root (
                id INTEGER PRIMARY KEY CHECK (id=1),
                generation INTEGER NOT NULL,
@@ -524,14 +522,12 @@ impl RootTransactionProof {
         let synchronous: i64 = conn.query_row("PRAGMA synchronous", [], |row| row.get(0))?;
         let foreign_keys: i64 = conn.query_row("PRAGMA foreign_keys", [], |row| row.get(0))?;
         let busy_timeout: i64 = conn.query_row("PRAGMA busy_timeout", [], |row| row.get(0))?;
-        let max_page_count: i64 = conn.query_row("PRAGMA max_page_count", [], |row| row.get(0))?;
         assert_eq!(page_size, 4096);
         assert_eq!(auto_vacuum, 2);
         assert_eq!(journal_mode, "wal");
         assert_eq!(synchronous, 2);
         assert_eq!(foreign_keys, 1);
         assert_eq!(busy_timeout, 0);
-        assert_eq!(max_page_count, MAX_PAGE_COUNT);
         Ok(Self {
             conn,
             scratch: Vec::new(),
@@ -1747,6 +1743,54 @@ fn root_and_outcome_commit_together_and_retry_survives_reopen() {
     drop(reopened);
     let final_store = RootTransactionProof::open(&fixture.database()).unwrap();
     assert_eq!(final_store.root().unwrap(), (2, Some(revision2.to_vec())));
+}
+
+#[test]
+fn sqlite_full_inside_root_outcome_transaction_rolls_back_both() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let bytes = b"verified manifest blob for a space-fault transaction";
+    let revision: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, revision)
+        .unwrap();
+    store
+        .conn
+        .execute_batch(
+            "CREATE TABLE fault_payload (bytes BLOB NOT NULL);
+             CREATE TRIGGER fill_on_outcome BEFORE INSERT ON outcome
+             BEGIN INSERT INTO fault_payload (bytes) VALUES (zeroblob(1048576)); END;",
+        )
+        .unwrap();
+    let current_pages: i64 = store
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    store
+        .conn
+        .pragma_update(None, "max_page_count", current_pages)
+        .unwrap();
+    assert!(matches!(
+        store.commit_probe(0, 1, 1, [1; 32], revision),
+        Err(ProofError::Sql(rusqlite::Error::SqliteFailure(error, _)))
+            if error.code == rusqlite::ErrorCode::DiskFull
+    ));
+    assert_eq!(store.root().unwrap(), (0, None));
+    assert!(stored_outcome(&store.conn, 1, 1).unwrap().is_none());
+    drop(store);
+
+    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(reopened.root().unwrap(), (0, None));
+    assert!(stored_outcome(&reopened.conn, 1, 1).unwrap().is_none());
+    reopened
+        .conn
+        .execute_batch("DROP TRIGGER fill_on_outcome;")
+        .unwrap();
+    assert_eq!(
+        reopened.commit_probe(0, 1, 1, [1; 32], revision).unwrap(),
+        1
+    );
+    assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
 }
 
 #[test]
@@ -3049,6 +3093,78 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             },
         )
         .unwrap();
+}
+
+#[test]
+fn sqlite_full_during_candidate_blob_keeps_prior_root_and_retry_recovers() {
+    let fixture = Fixture::new();
+    let first_stage = minimal_source_stage(&fixture, "before space fault");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let (_, first_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+
+    let root = fixture.source_root();
+    fs::write(root.join("master.bin"), vec![7_u8; MIB as usize]).unwrap();
+    let mut declared: Vec<_> = first_stage
+        .files()
+        .iter()
+        .map(|file| file.path().clone())
+        .collect();
+    declared.push(SourcePath::parse("master.bin").unwrap());
+    declared.sort_unstable();
+    let second_stage = stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            main: 2 * GIB,
+            wal: 4 * MIB,
+            temporary: 64 * MIB,
+            free_floor: 0,
+        },
+        |_| {},
+    )
+    .unwrap();
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let second_revision = *second.provisional_manifest().unwrap().revision().as_bytes();
+    assert_ne!(first_revision, second_revision);
+
+    let current_pages: i64 = store
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    let max_pages: i64 = store
+        .conn
+        .pragma_query_value(None, "max_page_count", |row| row.get(0))
+        .unwrap();
+    assert!(max_pages > current_pages);
+    store
+        .conn
+        .pragma_update(None, "max_page_count", current_pages)
+        .unwrap();
+    assert!(matches!(
+        store.admit_staged_candidate_probe(1, 1, 2, [2; 32], &second),
+        Err(ProofError::Sql(rusqlite::Error::SqliteFailure(error, _)))
+            if error.code == rusqlite::ErrorCode::DiskFull
+    ));
+    assert_eq!(store.root().unwrap(), (1, Some(first_revision.to_vec())));
+    assert!(stored_outcome(&store.conn, 1, 2).unwrap().is_none());
+    drop(store);
+
+    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(reopened.root().unwrap(), (1, Some(first_revision.to_vec())));
+    assert!(stored_outcome(&reopened.conn, 1, 2).unwrap().is_none());
+    assert_eq!(
+        reopened
+            .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+            .unwrap(),
+        (2, second_revision)
+    );
+    assert_eq!(
+        reopened.root().unwrap(),
+        (2, Some(second_revision.to_vec()))
+    );
 }
 
 #[test]

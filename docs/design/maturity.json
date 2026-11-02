@@ -394,7 +394,7 @@
       },
       "i2a_candidate_root_proof": {
         "evidence": "../evidence/i2a/SOURCE-CANDIDATE-ROOT-PROOF.md",
-        "scope": "A test-only three-file validated candidate passes staged-byte verification, current-root lineage, complete file/manifest blobs and atomic root/outcome generation commit. A/B edit, drift/lineage/stale/token refusal, reopened retry and concurrent same-token winner pass; local edit-to-root timing/RSS is recorded. Physical disk/WAL reservation, GC pins, process-kill recovery, game-schema breadth and production admission remain open."
+        "scope": "A test-only three-file validated candidate passes staged-byte verification, current-root lineage, complete file/manifest blobs and atomic root/outcome generation commit. A/B edit, drift/lineage/stale/token refusal, reopened retry and concurrent same-token winner pass; local edit-to-root timing/RSS is recorded. Configurable disk planning, actual-space-fault recovery, GC pins, process-kill recovery, game-schema breadth and production admission remain open."
       },
       "i2a_sqlite_physical_growth": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-PHYSICAL-GROWTH.md",
@@ -406,7 +406,7 @@
       },
       "i2a_wal_backpressure": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-WAL-BACKPRESSURE.md",
-        "scope": "A test-only guard checks WAL length before blob, batch, verification and root writes, with nonblocking PASSIVE/TRUNCATE attempts and bounded repeated PASSIVE work. A pinned-reader test proves blocked checkpoint defers a new blob before its header, matching retry/conflict and complete reuse remain available, and retry succeeds after drain. Per-transaction page-growth allowances are heuristic; a hard 2 GiB WAL cap, per-write free-space floor, production concurrency policy and crash recovery remain open."
+        "scope": "A test-only guard checks WAL length before blob, batch, verification and root writes, with nonblocking PASSIVE/TRUNCATE attempts and bounded repeated PASSIVE work. A pinned-reader test proves blocked checkpoint defers a new blob before its header, matching retry/conflict and complete reuse remain available, and retry succeeds after drain. Per-transaction page-growth allowances are heuristic; the earlier hard-cap policy was superseded by configurable planning targets. Production concurrency, observed high-water and actual-space-fault recovery remain open."
       },
       "i2a_chunk_kill_recovery": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-CHUNK-KILL.md",
@@ -430,11 +430,15 @@
       },
       "i2a_live_free_floor": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-LIVE-FLOOR.md",
-        "scope": "The test-only candidate path activates a live volume-free check after initial preflight and runs it before every guarded write and checkpoint. It charges the configured free floor, incoming heuristic transaction allowance and uncheckpointed logical-to-physical main debt. Injected post-preflight shortage refuses before a blob header, and a checkpoint-boundary shortage leaves WAL length unchanged; local tiny-edit smoke cost is recorded. This is not a certified upper bound on SQLite/VFS growth, concurrent actors, the 2 GiB WAL cap or the 8 GiB production floor."
+        "scope": "The test-only candidate path activates a live volume-free check after initial preflight and runs it before every guarded write and checkpoint. It charges the configured free floor, incoming heuristic transaction allowance and uncheckpointed logical-to-physical main debt. Injected post-preflight shortage refuses before a blob header, and a checkpoint-boundary shortage leaves WAL length unchanged; local tiny-edit smoke cost is recorded. This does not guarantee SQLite/VFS growth, concurrent actors or the configurable WAL/free-space planning targets."
       },
       "i2a_sustained_blocked_wal": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-SUSTAINED-WAL.md",
-        "scope": "A test-only SQLite reader holds a WAL snapshot while repeated 4 MiB blob writes approach an injected 40 MiB stop. The guard spaces PASSIVE work, defers a chunk, leaves the selected root unchanged, and retries the same hash after the reader drains. One local release run records completed writes, WAL length and elapsed time before deferral. It does not qualify a hard 2 GiB cap, multiwriter coordination, process/power loss, a production admission path or the 8 GiB free floor."
+        "scope": "A test-only SQLite reader holds a WAL snapshot while repeated 4 MiB blob writes approach an injected 40 MiB stop. The guard spaces PASSIVE work, defers a chunk, leaves the selected root unchanged, and retries the same hash after the reader drains. One local release run records completed writes, WAL length and elapsed time before deferral. It does not qualify multiwriter coordination, process/power loss, a production admission path or the configurable WAL/free-space planning targets."
+      },
+      "i2a_sqlite_full_recovery": {
+        "evidence": "../evidence/i2a/SOURCE-SQLITE-SPACE-FAULT.md",
+        "scope": "Two test-only SQLite faults use a low max_page_count to produce genuine SQLITE_FULL during a validated candidate blob write and inside a root/outcome transaction after its root-row update. Reopen retains the previous root and no new outcome; the same requests commit after removing the injection. Host-volume exhaustion, a full-candidate final-commit fault, power loss, collector pins, cross-platform high-water and production accepted source remain open."
       },
       "i2a_one_descriptor_profile_audit": {
         "evidence": "../evidence/i2a/SOURCE-PROFILE-STATUS.md",
