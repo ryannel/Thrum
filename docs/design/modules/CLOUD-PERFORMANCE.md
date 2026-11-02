@@ -1,8 +1,9 @@
 # Cloud performance execution contract
 
 2 November2026. Supports [the active build queue](CLOUD-MIGRATION.md); this is not a second queue or a benchmark result.
-The [governing design](CLOUDS.md#cost-and-profile-admission) owns proposed allocations. All new migration measurements
-are unrun. Historical local M3 timings are adverse scoped evidence, not a coefficient for predicting M2 full skies.
+The [governing design](CLOUDS.md#cost-and-profile-admission) owns proposed allocations. Scoped [standalone pilot](../../evidence/cloud-runtime-pilot-2026-11-02/README.md) and
+[source-work checkpoint](../../evidence/cloud-runtime-work-2026-11-02/README.md) receipts exist; integrated/target-device
+measurements remain unrun. Historical local M3 timings are adverse scoped evidence, not a coefficient for predicting M2 full skies.
 
 ## Cost ownership and first optimization priorities
 
@@ -117,3 +118,25 @@ Keep three decision ledgers: exact work removal; qualified representation substi
 states hypothesis, changed work/bytes, extra preparation/residency, cue risks, validity/lifecycle and measured whole-graph
 result. Rank by observed bottleneck (CPU/GC, bandwidth/residency, light, fill, reconstruction), not a universal ordering.
 Re-accept moving quality for any approximation. A microbenchmark alone never establishes integrated gain.
+
+## Retained velocity evaluation options
+
+The native source retains two private execution paths: evaluate prescribed velocity in each q pass, or prepare a
+same-time float32 vector field once per source tick and load it in those passes. This is GPU arithmetic reuse;
+no CPU speedup is presumed. At the dense pilot's614,400 cells, a vec4f field is9.375MiB. It is scratch for the
+ordered source work, not an allocation per view or three retained histories. Changed queue/lease concurrency must
+charge any additional copies.
+
+For N allocated cells, A active cells and effective bandwidth B, the first cost comparison is direct3*C_u*A versus
+cached C_u*A plus dispatch/barrier work and roughly(16*N+48*A)/B bytes of field writes/three reads per tick.
+The full-domain write is charged even where a mask stores zero. Actual cache reuse/pressure, source masks and
+half-resolution carrier work alter this simple account; measure the assembled graph. More elaborate motion can
+increase C_u and reverse a small-cell result, while a large field can exceed cache capacity and make reads dearer.
+
+**Keep both implementations and their whole-field differential oracle.** The single-cloud pilot provides no final
+selection for a full sky. The owning P7 checkbox in [the build queue](CLOUD-MIGRATION.md#p7--full-standalone-skies-and-fixture-admission)
+requires matched full-sky A/B measurements across family/layer mixtures and storm transitions, with identical source,
+accepted images/motion and lighting. Report CPU, source/full-graph GPU time, physical peak/residency, effective
+bandwidth, preparation and fence overlap; no memory-for-compute win follows from mathematical equivalence alone.
+Retain1x and accelerated results separately. Default selection may remain direct while this wider test is pending;
+that is not removal of the cached path.
