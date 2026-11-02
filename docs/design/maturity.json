@@ -307,6 +307,10 @@
       "i2a_schema_record": {
         "evidence": "../evidence/i2a/SOURCE-SCHEMA-RECORD.md",
         "scope": "Direct bounded one-record core.schema decoding with strict known keys, sorted at-most-128 fields and canonical first-profile hashes, plus local 256 maximum-descriptor parse sample; no staged declaration/path verification, registry/history consistency, game-record validation or durable admission."
+      },
+      "i2a_registry_history_record": {
+        "evidence": "../evidence/i2a/SOURCE-REGISTRY-HISTORY.md",
+        "scope": "Direct bounded one-record core.registry-history decoding with sorted at-most-100,000 field and 1,024 version entries, strict lowercase hashes and local dense parse/RSS probe; no staged declaration/path verification, active-descriptor consistency, authenticated predecessor or durable admission."
       }
     },
     {
