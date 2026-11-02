@@ -1,4 +1,4 @@
-// Bounded optical source fixture: vacuum + diffuse external terminal, no spherical-air claim.
+// Bounded cloud fixture: optional Sun-air factor and authored diffuse terminal; no joint-air source claim.
 struct Scene {
   lo:vec4f, extent:vec4f, camera:vec4f, lookAt:vec4f,
   sun:vec4f, U:vec4f, V:vec4f, W:vec4f,
@@ -69,6 +69,14 @@ fn bankAt(p:vec3f)->f32 {
   let c=vec2i(floor(u));let f=fract(u);
   return mix(mix(bankCell(c),bankCell(c+vec2i(1,0)),f.x),mix(bankCell(c+vec2i(0,1)),bankCell(c+vec2i(1,1)),f.x),f.y);
 }
+// Sun-only diagnostic: air attenuation is shared by every direct consumer.
+// Authored external sky stays a separate boundary until the full joint DAG.
+fn solarAir(p:vec3f)->vec3f {
+  if((scene.grid.w&128u)==0u){return vec3f(1.);}
+  let result=airSunTransmittance(p,scene.sun.xyz);
+  if(result.w!=1.||any(result.rgb<vec3f(0.))){atomicAdd(&errors[3],1u);return vec3f(-1.);}
+  return result.rgb;
+}
 fn cloudSource(p:vec3f,ray:vec3f,sigma:f32)->vec3f {
   let mu=dot(ray,scene.sun.xyz);let model=scene.grid.w&15u;
   var terms=vec2f(1.);if(scene.sun.w>0.){terms=cloudSunTerms(p);}
@@ -76,7 +84,9 @@ fn cloudSource(p:vec3f,ray:vec3f,sigma:f32)->vec3f {
   var directional=hg(mu,.86)*terms.x;
   if(model==0u){let tau=sunTau(p);directional=.7*hg(mu,.86)*exp(-tau)+.1*hg(mu,.43)*exp(-.5*tau)+.0175*hg(mu,.215)*exp(-.25*tau)+.00375*hg(mu,.1075)*exp(-.125*tau);}
   else if(model==2u&&scene.sun.w>0.){directional+=bankAt(p)/(4.*PI)*terms.y;}
-  return sigma*(scene.E.rgb*scene.sun.w*geometryVisibility(p,scene.sun.xyz)*directional+externalAmbient(p));
+  var irradiance=scene.E.rgb*scene.sun.w;
+  if(scene.sun.w>0.){let airT=solarAir(p);if(any(airT<vec3f(0.))){return vec3f(1e8,0.,1e8);}irradiance*=airT;}
+  return sigma*(irradiance*geometryVisibility(p,scene.sun.xyz)*directional+externalAmbient(p));
 }
 struct Pair {S:vec3f,T:f32}
 fn integrate(o:vec3f,d:vec3f,limit:f32,visible:bool)->Pair {
@@ -100,18 +110,23 @@ fn hitScene(o:vec3f,d:vec3f,mirror:bool)->Hit {
   var hit:Hit;hit.t=80000.;hit.kind=0u;hit.normal=vec3f(0.,1.,0.);
   if(d.y< -1e-7) {
     let t=-o.y/d.y;
-    if(t>0.) {hit.t=t;hit.kind=1u;let p=o+d*t;if(mirror&&((scene.switches.y==2u&&p.x> -1800.&&p.x<1800.&&p.z>400.&&p.z<1800.)||(scene.switches.y==1u&&abs(p.x)<10000.&&p.z>0.&&p.z<10000.))){hit.kind=3u;}}
+    if(t>0.&&t<hit.t) {hit.t=t;hit.kind=1u;let p=o+d*t;if(mirror&&((scene.switches.y==2u&&p.x> -1800.&&p.x<1800.&&p.z>400.&&p.z<1800.)||(scene.switches.y==1u&&abs(p.x)<10000.&&p.z>0.&&p.z<10000.))){hit.kind=3u;}}
   }
   let centre=vec3f(0.,80.,0.);let q=o-centre;let b=dot(q,d);let disc=b*b-dot(q,q)+6400.;
   if(disc>=0.) {let t=-b-sqrt(disc);if(t>0.&&t<hit.t){hit.t=t;hit.kind=2u;hit.normal=normalize(o+d*t-centre);}}
   return hit;
 }
-fn surface(p:vec3f,normal:vec3f,kind:u32)->vec3f {
+fn surface(point:vec3f,normal:vec3f,kind:u32)->vec3f {
+  // These declared fixture surfaces are the y=0 plane and a sphere entirely
+  // above it. Preserve that exact geometric boundary after ray-hit roundoff.
+  var p=point;p.y=max(0.,p.y);
   var albedo=vec3f(.38,.43,.34);
   if(kind==2u) {albedo=vec3f(.6,.18,.08);}else{let q=fract(p.xz/200.);if(q.x<.02||q.y<.02){albedo*=.65;}}
   // Constant diffuse receiver term is a fixture, not a qualified full-sky surface environment.
   var lightT=1.;if(scene.sun.w>0.){let terms=cloudSunTerms(p);if(any(terms<vec2f(0.))){return vec3f(1e8,0.,1e8);}lightT=terms.x;}
-  return albedo/PI*(scene.E.rgb*scene.sun.w*geometryVisibility(p+normal*.02,scene.sun.xyz)*lightT*max(0.,dot(normal,scene.sun.xyz))+scene.sky.rgb*PI*.5);
+  var irradiance=scene.E.rgb*scene.sun.w;
+  if(scene.sun.w>0.){let airT=solarAir(p);if(any(airT<vec3f(0.))){return vec3f(1e8,0.,1e8);}irradiance*=airT;}
+  return albedo/PI*(irradiance*geometryVisibility(p+normal*.02,scene.sun.xyz)*lightT*max(0.,dot(normal,scene.sun.xyz))+scene.sky.rgb*PI*.5);
 }
 fn terminal(o:vec3f,d:vec3f,hit:Hit)->vec3f {
   if(hit.kind==0u) {return scene.sky.rgb;}
@@ -168,7 +183,7 @@ struct Vertex { @builtin(position) position:vec4f,@location(0) uv:vec2f }
   let hit=hitScene(scene.camera.xyz,ray,scene.switches.y!=0u);
   var far=terminal(scene.camera.xyz,ray,hit);
   if(hit.kind==3u) {
-    let p=scene.camera.xyz+ray*hit.t;let reflected=vec3f(ray.x,-ray.y,ray.z);let start=p+reflected*.02;
+    var p=scene.camera.xyz+ray*hit.t;p.y=0.;let reflected=vec3f(ray.x,-ray.y,ray.z);let start=p+reflected*.02;
     let next=hitScene(start,reflected,false);let leg=integrate(start,reflected,next.t,true);
     far=leg.S+leg.T*terminal(start,reflected,next);
   }
