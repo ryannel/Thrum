@@ -186,18 +186,21 @@ def tar_members(stream):
             name_bytes = read_exact(stream, size)
             if not name_bytes.endswith(b"\0") or b"\0" in name_bytes[:-1]:
                 raise ValueError("malformed GNU long-name record")
-            pending_name = safe_relative(name_bytes[:-1].decode("utf-8"))
+            pending_name = name_bytes[:-1].decode("utf-8")
             padding = (-size) % 512
             if padding and read_exact(stream, padding) != bytes(padding):
                 raise ValueError("nonzero GNU long-name padding")
             continue
         if pending_name is not None:
-            path = pending_name
+            raw_name = pending_name
             pending_name = None
         else:
             name = header[:100].split(b"\0", 1)[0].decode("utf-8")
             prefix = header[345:500].split(b"\0", 1)[0].decode("utf-8")
-            path = safe_relative(f"{prefix}/{name}" if prefix else name)
+            raw_name = f"{prefix}/{name}" if prefix else name
+        if kind == b"5" and raw_name.endswith("/"):
+            raw_name = raw_name[:-1]
+        path = safe_relative(raw_name)
         if kind == b"5":
             if size:
                 raise ValueError("tar directory contains data")
