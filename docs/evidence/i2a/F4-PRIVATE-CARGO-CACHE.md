@@ -47,3 +47,43 @@ macOS sandbox. Its read grants excluded the shared `~/.cargo` data path, and
 the test verified the private cache stayed unchanged. This closes the earlier
 shared-cache-read ambiguity for that one A/B fixture; cache index provenance
 and general selected build-unit closure remain open.
+
+The first reusable preparation step is
+[`scripts/prepare_headless_cargo_home.py`](../../../scripts/prepare_headless_cargo_home.py).
+It requires a new destination outside the materialized source tree, a host
+registry cache and exact Cargo/Rustc paths. Python 3.11 `tomllib` decodes the
+version-four lockfile. The tool copies all lockfile crate-name index records
+and SHA-checks all 229 lockfile archives before invoking Cargo. It refuses
+ambient `.cargo` config and replacement sources, resolves the workspace
+offline only in the private home. On macOS both metadata passes run under a
+deny-network sandbox with read data limited to the materialized source,
+private cache, selected toolchain and named system roots. A local path
+dependency outside the source pin failed with `Operation not permitted`
+before its manifest could be read, and the partial private cache was removed.
+The preparer removes archives outside the host-filtered
+resolution, rechecks that resolution, removes Cargo's path-dependent
+`.global-cache` usage database, and records a path/length/content-hash tree
+digest in a separate candidate manifest. It cleans its newly created tree
+on a reported failure. Cargo metadata output is drained through bounded
+in-memory pipes with a 32 MiB JSON and 1 MiB diagnostic limit and a 120-second
+timeout. Five small Python 3.11 fixtures prove checksum-fault cleanup,
+source-config refusal, lock-version path-escape refusal, live output-limit
+termination and refusal when a descendant keeps metadata pipes open. This
+manifest is an observation of local cache bytes, not release authentication.
+
+Repeated local preparations produced identical private roots after omitting
+`.global-cache`: 2,923 files, 67,792,387 bytes, SHA-256
+`58c57419b000f0dbb2037792932f0191abecceae9e14e77e4b384fb06811225b`.
+The final all-lockfile-archive preparer took 1,058 ms in the admitted A/B
+fixture; this is one warm host-cache observation. It copied 53,177,502
+archive bytes before pruning to 37 host-filtered archives. The larger final
+root than the earlier manual 27 MB cache is expected: private metadata
+resolution extracts those archives. Physical peak disk use during preparation
+was not measured. The opt-in A/B qualification prepared
+this cache directly from A's accepted materialized source and compiled with
+it in the sandbox. A first placement inside F3's `.engine`
+directory made B's admission refuse its 64 MiB temporary planning target;
+placing the cache inside the project root left an undeclared manifest. The
+working fixture owns the cache beside the project, outside F3's inventory,
+and removes it after both builds. This separation is part of the selected
+builder layout, not a reason to weaken F3 admission checks.

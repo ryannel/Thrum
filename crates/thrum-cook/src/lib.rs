@@ -917,12 +917,17 @@ mod tests {
     #[test]
     #[ignore = "local native Cargo build from the full admitted workspace"]
     fn admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary() {
-        let private_cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME").map(PathBuf::from);
+        let mut private_cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME").map(PathBuf::from);
+        let prepare_cargo_home = std::env::var_os("THRUM_TEST_PREPARE_CARGO_HOME").is_some();
         assert!(
-            private_cargo_home.is_none() || std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some(),
+            (private_cargo_home.is_none() && !prepare_cargo_home)
+                || std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some(),
             "private Cargo home requires the native sandbox qualification"
         );
-        let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
+        assert!(
+            private_cargo_home.is_none() || !prepare_cargo_home,
+            "select an existing private home or prepare a new one"
+        );
         let fixture = Fixture::new();
         let mut paths = fixture.write("Admitted headless game", false, false);
         let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -993,9 +998,22 @@ mod tests {
             materialize_pinned_source(&mut a_pin, &a_input, Fixture::build_plan()).unwrap();
         assert_eq!(a_materialized.source_root(), a);
         let a_files = tree_hashes(a_materialized.path());
+        let mut owned_cache = None;
+        if prepare_cargo_home {
+            let prepared =
+                prepare_private_cargo_home(checkout, fixture.root(), a_materialized.path());
+            private_cargo_home = Some(prepared.path.clone());
+            owned_cache = Some(prepared);
+        }
+        let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
-        let built_a = cargo_build_headless(a_materialized.path(), &a_output, checkout);
+        let built_a = cargo_build_headless(
+            a_materialized.path(),
+            &a_output,
+            checkout,
+            private_cargo_home.as_deref(),
+        );
         let build_elapsed = started.elapsed();
         assert!(
             built_a.status.success(),
@@ -1034,7 +1052,12 @@ mod tests {
             materialize_pinned_source(&mut b_pin, &b_input, Fixture::build_plan()).unwrap();
         let b_files = tree_hashes(b_materialized.path());
         let b_output = fixture.root().join(".engine/output-b");
-        let built_b = cargo_build_headless(b_materialized.path(), &b_output, checkout);
+        let built_b = cargo_build_headless(
+            b_materialized.path(),
+            &b_output,
+            checkout,
+            private_cargo_home.as_deref(),
+        );
         assert!(!built_b.status.success());
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
         assert!(b_diagnostic.contains("game.rs") && b_diagnostic.contains("error"));
@@ -1048,6 +1071,7 @@ mod tests {
         if let (Some(path), Some(before)) = (&private_cargo_home, private_cache_before) {
             assert_eq!(tree_hashes(path), before);
         }
+        drop(owned_cache);
     }
 
     fn copy_build_input(from: &Path, to: &Path, relative: &str, paths: &mut Vec<SourcePath>) {
@@ -1067,6 +1091,75 @@ mod tests {
                 copy_build_input(from, to, &child, paths);
             }
         }
+    }
+
+    struct PreparedCacheHome {
+        path: PathBuf,
+    }
+
+    impl Drop for PreparedCacheHome {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.path);
+            let name = self.path.file_name().unwrap().to_string_lossy();
+            let _ = fs::remove_file(self.path.with_file_name(format!("{name}.manifest.json")));
+        }
+    }
+
+    fn prepare_private_cargo_home(
+        checkout: &Path,
+        fixture: &Path,
+        input: &Path,
+    ) -> PreparedCacheHome {
+        let cargo = Path::new(env!("CARGO"));
+        let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+        let version = Command::new(&rustc).arg("-vV").output().unwrap();
+        assert!(version.status.success());
+        let details = String::from_utf8(version.stdout).unwrap();
+        let target = details
+            .lines()
+            .find_map(|line| line.strip_prefix("host: "))
+            .unwrap();
+        let shared_home = std::env::var_os("CARGO_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo"));
+        let destination = fixture.with_extension("cargo-home");
+        let manifest_path = destination.with_file_name(format!(
+            "{}.manifest.json",
+            destination.file_name().unwrap().to_string_lossy()
+        ));
+        assert!(!destination.exists() && !manifest_path.exists());
+        let owner = PreparedCacheHome {
+            path: destination.clone(),
+        };
+        let started = Instant::now();
+        let result =
+            Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
+                .arg(checkout.join("scripts/prepare_headless_cargo_home.py"))
+                .arg("--source")
+                .arg(input)
+                .arg("--shared-home")
+                .arg(shared_home)
+                .arg("--destination")
+                .arg(&destination)
+                .arg("--cargo")
+                .arg(cargo)
+                .arg("--rustc")
+                .arg(rustc)
+                .arg("--target")
+                .arg(target)
+                .output()
+                .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        eprintln!(
+            "prepared-private-cargo-home prep_ms={} {}",
+            started.elapsed().as_millis(),
+            String::from_utf8_lossy(&result.stdout).trim()
+        );
+        owner
     }
 
     fn tree_hashes(root: &Path) -> Vec<(PathBuf, [u8; 32])> {
@@ -1094,10 +1187,15 @@ mod tests {
         output
     }
 
-    fn cargo_build_headless(input: &Path, output: &Path, checkout: &Path) -> std::process::Output {
+    fn cargo_build_headless(
+        input: &Path,
+        output: &Path,
+        checkout: &Path,
+        private_cargo_home: Option<&Path>,
+    ) -> std::process::Output {
         let sandbox = std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some();
         let mut command = if sandbox {
-            sandboxed_cargo_command(input, output, checkout)
+            sandboxed_cargo_command(input, output, checkout, private_cargo_home)
         } else {
             Command::new(env!("CARGO"))
         };
@@ -1121,15 +1219,25 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
-    fn sandboxed_cargo_command(input: &Path, output: &Path, checkout: &Path) -> Command {
+    fn sandboxed_cargo_command(
+        input: &Path,
+        output: &Path,
+        checkout: &Path,
+        private_cargo_home: Option<&Path>,
+    ) -> Command {
         fs::create_dir_all(output.join("tmp")).unwrap();
         let output = fs::canonicalize(output).unwrap();
         let checkout = fs::canonicalize(checkout).unwrap();
         let input = fs::canonicalize(input).unwrap();
-        let cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME")
-            .or_else(|| std::env::var_os("CARGO_HOME"))
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo"));
+        let cargo_home = private_cargo_home
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| {
+                std::env::var_os("CARGO_HOME")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| {
+                        PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo")
+                    })
+            });
         let cargo_home = fs::canonicalize(cargo_home).unwrap();
         let toolchain =
             fs::canonicalize(Path::new(env!("CARGO")).parent().unwrap().parent().unwrap()).unwrap();
@@ -1155,7 +1263,7 @@ mod tests {
             .output()
             .unwrap();
         assert!(!blocked_write.status.success());
-        if std::env::var_os("THRUM_TEST_CARGO_HOME").is_some() {
+        if private_cargo_home.is_some() {
             let shared_config =
                 PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo/config.toml");
             if shared_config.is_file() && !shared_config.starts_with(&cargo_home) {
@@ -1183,7 +1291,12 @@ mod tests {
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn sandboxed_cargo_command(_input: &Path, _output: &Path, _checkout: &Path) -> Command {
+    fn sandboxed_cargo_command(
+        _input: &Path,
+        _output: &Path,
+        _checkout: &Path,
+        _private_cargo_home: Option<&Path>,
+    ) -> Command {
         panic!("macOS sandbox qualification only");
     }
 

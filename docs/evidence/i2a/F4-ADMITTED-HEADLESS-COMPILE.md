@@ -38,6 +38,22 @@ cross-machine claim. Both A execution and B failure/retention assertions
 passed. `./dev check` also passed; its normal suite intentionally skips this
 native compile qualification.
 
+The complete local A/B qualification, including a new private Cargo home
+prepared from A's materialized pin, uses:
+
+```sh
+THRUM_PYTHON=python3.11 THRUM_TEST_NATIVE_SANDBOX=1 \
+  THRUM_TEST_PREPARE_CARGO_HOME=1 RUSTC_WRAPPER= \
+  CARGO_TARGET_DIR=/Users/ryannel/Workspace/thrum/target \
+  rustup run 1.99.1 cargo test --locked --offline -p thrum-cook \
+  admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary \
+  -- --ignored --nocapture
+```
+
+It needs a populated local Cargo registry and permission to apply the macOS
+sandbox. The private home is owned beside the test project and removed after
+the test.
+
 With `THRUM_TEST_NATIVE_SANDBOX=1`, the same ignored test wraps each Cargo
 build in a local macOS `sandbox-exec` profile. The profile defaults to deny,
 explicitly denies network, permits writes only in the separate output tree,
@@ -55,8 +71,8 @@ the exact installed Cargo/Rustc path, supplies only the Cargo home, target,
 PATH, temp directory and fixed flags, and uses a distinct output tree. With
 `THRUM_TEST_CARGO_HOME` pointing at the private cache prepared in the
 [cache experiment](F4-PRIVATE-CARGO-CACHE.md), the local A/B run passed: 53
-admitted files, 1,210,154 bytes, 1,444 ms for A's debug build and a
-2,345,752-byte executable. A checkout source read, shared Cargo config read
+admitted files, 1,213,846 bytes, 1,455 ms for A's debug build and a
+2,345,736-byte executable. A checkout source read, shared Cargo config read
 and materialized input write were refused. Exact source and private-cache
 path/hash inventories were unchanged after both builds, while admitted B's
 invalid Rust failed and A's binary still verified and ran. The private cache

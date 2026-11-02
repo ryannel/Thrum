@@ -75,6 +75,20 @@ actually reads before calling any build ready. Per-edit work should reuse an
 unchanged verified dependency root; copying the entire shared registry for
 each edit is outside the selected cost model.
 
+The first [native preparation tool](../../scripts/prepare_headless_cargo_home.py)
+now copies and SHA-checks every lockfile archive and exact index records from
+a local host cache before Cargo resolves in the private home. It prunes
+unselected archives, rechecks offline resolution and records a
+candidate tree digest. Its index origin is still the mutable host cache, so
+the digest identifies observed bytes but does not authenticate their release.
+On macOS, both metadata passes run in a deny-network sandbox with source,
+private cache, toolchain and required system read grants; an external path
+dependency refuses before its manifest can be read. Other build hosts need
+their own qualified metadata and compiler isolation adapter.
+The isolated compiler can reuse that root without granting the shared cache.
+Keep this cache outside the source project and F3's `.engine` temporary budget;
+source admission must see neither cache files nor an undeclared cache manifest.
+
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,
 authority and replica path handles local and multiplayer actions; the server
