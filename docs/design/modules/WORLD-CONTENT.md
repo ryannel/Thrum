@@ -101,6 +101,39 @@ tooling is only a development dependency of that example, leaving its phone
 runtime dependency closure unchanged. The [proof record](../../evidence/i2a/F4-LINKED-RULE-SOURCE.md)
 states the residual build and save obligations.
 
+### Temporary native build inputs from an accepted pin
+
+An external native compiler requires ordinary files. F4 can materialize the
+first-profile authenticated tree from one `PinnedSource` into a newly created
+absolute directory under a caller-owned private build parent. Relative paths
+refuse so CWD changes cannot redirect owner cleanup. It streams and verifies
+each file through F3's pinned copy API, creates no second whole-tree manifest,
+and never reads the working checkout. A caller-selected plan estimates file and
+directory allocation using the volume's allocation granularity, then checks
+the per-tree target and observed free headroom before creating the destination.
+This is early planning, not a physical reservation or aggregate managed-temp
+quota; real write faults still clean up or report a partial tree. The output owner retains the accepted
+root, count and copied-byte sum while a compiler uses the tree. An existing
+destination refuses before mutation; an error removes the partial new tree or
+reports its path if cleanup fails. Explicit close reports cleanup failure, and
+drop attempts cleanup for ordinary scope exit. No file is synced because this
+is temporary compiler input, not a durable accepted source or product.
+
+Cost is `O(total selected source bytes + file count × log(manifest entries) +
+total path bytes)` through the pinned path lookup and planning, plus metadata
+creation. Sorted manifest paths let the preflight count new directory prefixes
+against only the previous path, and the copy holds one portable-path clone at
+a time. The first
+implementation copies the complete admitted tree, not just Rust files, so a
+large game needs an explicitly selected build-input subset/closure before
+claiming efficient full-project compilation. A private parent limits exposure
+to ordinary concurrent writers; this is not a sandbox
+for untrusted build scripts. T2 must bind the exact target/toolchain/dependency
+closure, isolate compiler writes from the input tree and verify its binary
+artifact before publishing a `BuildRevision`. The [native materialization
+proof](../../evidence/i2a/F4-PINNED-MATERIALIZATION.md) measures the small
+fixture only.
+
 The [first-use review](../FIRST-USE-WALKTHROUGHS.md) makes reimport a concrete authoring obligation: F3/F4 preserve
 source-to-canonical identity correspondence, while T1 records game-owned overrides and exposes mapping conflicts.
 Imported node/material/skin/clip identities must be distinguished from mutable names and array positions. Where an
