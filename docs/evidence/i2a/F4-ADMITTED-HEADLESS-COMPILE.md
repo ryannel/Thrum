@@ -134,3 +134,11 @@ closed. A successful process exit and binary hash therefore do not form a
 trusted `BuildRevision`. The next T2 step is a closed, attested compiler
 adapter; F4 then publishes and reloads the verified target closure before a
 fresh world may start.
+
+The headless executable added a second Cargo target to the bundled game.
+The iOS and Android packaging scripts now request `--lib` explicitly, matching
+their use of only `libi1_mobile_game.a` and `libi1_mobile_game.so`. This keeps
+mobile builds from compiling or linking an unused desktop executable.
+The pinned Rust 1.99.1 iOS simulator `--lib` Cargo build completed locally in
+1.76 seconds with the script's selected Rustc on `PATH`; Android packaging was
+syntax checked but not cross-built in this worktree.

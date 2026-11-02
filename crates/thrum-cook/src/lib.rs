@@ -1009,6 +1009,7 @@ mod tests {
         let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
         if let Some(cache) = &owned_cache {
             cache.assert_tool_bytes();
+            cache.assert_reusable_source(checkout, a_materialized.path());
         }
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
@@ -1059,6 +1060,9 @@ mod tests {
         let b_materialized =
             materialize_pinned_source(&mut b_pin, &b_input, Fixture::build_plan()).unwrap();
         let b_files = tree_hashes(b_materialized.path());
+        if let Some(cache) = &owned_cache {
+            cache.assert_reusable_source(checkout, b_materialized.path());
+        }
         let b_output = fixture.root().join(".engine/output-b");
         let built_b = cargo_build_headless(
             b_materialized.path(),
@@ -1106,11 +1110,38 @@ mod tests {
 
     struct PreparedCacheHome {
         path: PathBuf,
+        manifest_path: PathBuf,
+        target: String,
         cargo_hash: String,
         rustc_hash: String,
     }
 
     impl PreparedCacheHome {
+        fn assert_reusable_source(&self, checkout: &Path, input: &Path) {
+            let cargo = Path::new(env!("CARGO"));
+            let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            let result =
+                Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
+                    .arg(checkout.join("scripts/prepare_headless_cargo_home.py"))
+                    .arg("--source")
+                    .arg(input)
+                    .arg("--verify-reuse")
+                    .arg(&self.manifest_path)
+                    .arg("--target")
+                    .arg(&self.target)
+                    .arg("--cargo")
+                    .arg(cargo)
+                    .arg("--rustc")
+                    .arg(&rustc)
+                    .output()
+                    .unwrap();
+            assert!(
+                result.status.success(),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+
         fn assert_tool_bytes(&self) {
             let cargo = Path::new(env!("CARGO"));
             let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
@@ -1122,8 +1153,7 @@ mod tests {
     impl Drop for PreparedCacheHome {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.path);
-            let name = self.path.file_name().unwrap().to_string_lossy();
-            let _ = fs::remove_file(self.path.with_file_name(format!("{name}.manifest.json")));
+            let _ = fs::remove_file(&self.manifest_path);
         }
     }
 
@@ -1152,6 +1182,8 @@ mod tests {
         assert!(!destination.exists() && !manifest_path.exists());
         let mut owner = PreparedCacheHome {
             path: destination.clone(),
+            manifest_path: manifest_path.clone(),
+            target: target.to_owned(),
             cargo_hash: String::new(),
             rustc_hash: String::new(),
         };

@@ -1,16 +1,130 @@
 """Failure-boundary checks for first-profile private Cargo cache preparation."""
 
 from pathlib import Path
+import hashlib
+import json
 import os
+import signal
+import subprocess
 import sys
 import tempfile
 import time
 import unittest
 
-from prepare_headless_cargo_home import collect_bounded, possible_headless_packages, prepare
+from prepare_headless_cargo_home import (
+    cargo_reuse_key, collect_bounded, possible_headless_packages, prepare,
+)
 
 
 class PrepareHeadlessCargoHome(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "process groups require POSIX")
+    def test_interruption_reaps_metadata_child_before_cleanup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pidfile = Path(directory) / "child.pid"
+            child_code = (
+                "import os,pathlib,time;"
+                f"pathlib.Path({str(pidfile)!r}).write_text(str(os.getpid()));"
+                "time.sleep(10)"
+            )
+            runner = (
+                "import os,sys;"
+                f"sys.path.insert(0,{str(Path(__file__).parent)!r});"
+                "from prepare_headless_cargo_home import collect_bounded;"
+                f"collect_bounded([sys.executable,'-c',{child_code!r}],"
+                f"{directory!r},os.environ.copy())"
+            )
+            wrapper = subprocess.Popen([sys.executable, "-c", runner],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            child_pid = None
+            try:
+                deadline = time.monotonic() + 3
+                while not pidfile.exists() and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertTrue(pidfile.exists(), "metadata child did not start")
+                child_pid = int(pidfile.read_text())
+                os.kill(wrapper.pid, signal.SIGINT)
+                wrapper.communicate(timeout=4)
+                self.assertNotEqual(wrapper.returncode, 0)
+                with self.assertRaises(ProcessLookupError):
+                    os.kill(child_pid, 0)
+            finally:
+                if wrapper.poll() is None:
+                    wrapper.kill()
+                    wrapper.communicate()
+                if child_pid is not None:
+                    try:
+                        os.kill(child_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    def test_verify_reuse_refuses_dependency_selection_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            source.mkdir()
+            (source / "Cargo.toml").write_text("[workspace]\n")
+            (source / "Cargo.lock").write_text("version = 4\n")
+            (source / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.99.1"\n')
+            (source / "game.rs").write_text("fn a() {}\n")
+            cargo = Path(directory) / "cargo"
+            rustc = Path(directory) / "rustc"
+            cargo.write_bytes(b"cargo")
+            rustc.write_bytes(b"rustc")
+            tools = {
+                name: {"path": str(path.resolve()), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                       "bytes": path.stat().st_size}
+                for name, path in (("cargo", cargo), ("rustc", rustc))
+            }
+            target = "aarch64-apple-darwin"
+            candidate = Path(directory) / "candidate.json"
+            candidate.write_text(json.dumps({
+                "format": 1, "target": target, "toolExecutables": tools,
+                "reuseKey": cargo_reuse_key(source, target, tools),
+            }))
+            command = [sys.executable, str(Path(__file__).with_name("prepare_headless_cargo_home.py")),
+                       "--source", str(source), "--verify-reuse", str(candidate),
+                       "--target", target, "--cargo", str(cargo), "--rustc", str(rustc)]
+            self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
+            wrong_target = command.copy()
+            wrong_target[wrong_target.index("--target") + 1] = "x86_64-apple-darwin"
+            self.assertIn(b"target differs", subprocess.run(wrong_target, capture_output=True).stderr)
+            rustc.write_bytes(b"changed")
+            self.assertIn(b"tool executables differ", subprocess.run(command, capture_output=True).stderr)
+            rustc.write_bytes(b"rustc")
+            (source / "game.rs").write_text("fn b() {}\n")
+            self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
+            (source / "Cargo.toml").write_text("[workspace]\nresolver = '3'\n")
+            self.assertIn(b"cannot be reused", subprocess.run(command, capture_output=True).stderr)
+            (source / "Cargo.toml").write_text("[workspace]\n")
+            (source / "build.rs").write_text("fn main() {}\n")
+            self.assertIn(b"implicit build scripts", subprocess.run(command, capture_output=True).stderr)
+            (source / "build.rs").unlink()
+            (source / ".cargo").mkdir()
+            (source / ".cargo/config.toml").write_text("[build]\n")
+            self.assertIn(b"ambient Cargo configuration", subprocess.run(command, capture_output=True).stderr)
+
+    def test_cache_reuse_key_tracks_manifests_without_charging_code_edits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            (source / "Cargo.toml").write_text("[workspace]\n")
+            (source / "Cargo.lock").write_text("version = 4\n")
+            (source / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.99.1"\n')
+            (source / "game.rs").write_text("fn a() {}\n")
+            tools = {"cargo": {"sha256": "a" * 64, "bytes": 1},
+                     "rustc": {"sha256": "b" * 64, "bytes": 1}}
+            first = cargo_reuse_key(source, "aarch64-apple-darwin", tools)
+            (source / "App").mkdir()
+            (source / "App/Cargo.toml").write_text("[package]\nname = 'app'\n")
+            with_child = cargo_reuse_key(source, "aarch64-apple-darwin", tools)
+            self.assertNotEqual(first["sha256"], with_child["sha256"])
+            (source / "App/Cargo.toml").unlink()
+            (source / "App").rmdir()
+            (source / "game.rs").write_text("fn b() {}\n")
+            self.assertEqual(first, cargo_reuse_key(source, "aarch64-apple-darwin", tools))
+            (source / "Cargo.toml").write_text("[workspace]\nresolver = '3'\n")
+            self.assertNotEqual(first["sha256"], cargo_reuse_key(source, "aarch64-apple-darwin", tools)["sha256"])
+            (source / "Cargo.toml").write_text("[workspace]\n")
+            self.assertNotEqual(first["sha256"], cargo_reuse_key(source, "x86_64-apple-darwin", tools)["sha256"])
+
     def test_selected_package_walk_ignores_dev_and_refuses_build_hooks(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
@@ -70,6 +184,8 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
     def fixture(self, root):
         source = root / "accepted-input"
         source.mkdir()
+        (source / "Cargo.toml").write_text("[workspace]\n")
+        (source / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.99.1"\n')
         shared = root / "shared-home"
         shared.mkdir()
         tools = root / "tools"

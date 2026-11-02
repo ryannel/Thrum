@@ -110,3 +110,23 @@ and Rustc
 The latest private-cache preparation took 1,573 ms, including these new
 streaming hashes. This observation does not bind Rustc's loaded libraries,
 standard crates, system linker or SDK, so it is not a release toolchain root.
+
+The pruned cache now carries a separate reuse key. It hashes the complete
+admitted `Cargo.toml` path/content set, `Cargo.lock`, pinned toolchain and
+headless build declarations, host target, fixed offline/locked build recipe,
+and the selected Cargo/Rustc executable paths, lengths and hashes. This corrects a reuse
+hole: an already locked crate can become a headless dependency after a manifest
+edit without changing the lockfile, while the old pruned cache lacks its
+archive. The verification command requires the caller's target and exact
+Cargo/Rustc files, checks their current bytes, then checks the key before reuse for
+B. It also refuses ambient Cargo configuration and implicit `build.rs` files
+that could change execution without a manifest edit. Nine Python 3.11 checks
+cover code-only reuse, manifest/target key changes, command-line refusal on
+manifest edits, a wrong caller target or changed tool bytes, and new
+config/build-script refusal alongside the prior
+failure boundaries, including a SIGINT probe that confirms the metadata child
+is reaped before candidate cleanup. The opt-in admitted A/B macOS sandbox qualification passed
+with this guard: A preparation took 1,420 ms, A compile 1,049 ms, and the
+private root remained 2,923 files with the same SHA-256 above. This verifies
+candidate cache selection for one local profile; it does not authenticate the
+registry index or close all compiler reads.

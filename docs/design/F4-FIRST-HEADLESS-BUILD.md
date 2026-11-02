@@ -63,7 +63,11 @@ identifiable and the newly accepted source separately available.
 
 The first compiler profile should prepare one private Cargo dependency root
 from release-verified registry index records and lockfile-checksummed archives,
-then reuse that immutable root across edits with the same lock/toolchain key.
+then reuse that immutable root only when the admitted Cargo manifest set,
+lockfile, target, fixed build recipe and selected tool executables match.
+An already locked package can become a headless dependency after a manifest
+edit without changing `Cargo.lock`; a cache pruned for the old graph is then
+insufficient. Ordinary Rust code edits leave this selection identity intact.
 Cargo's resolver may need index records for lockfile packages outside the
 selected host compile; a package list from filtered workspace metadata is not
 the selected build-unit graph. The [local private-cache experiment](../evidence/i2a/F4-PRIVATE-CARGO-CACHE.md)
@@ -81,6 +85,13 @@ a local host cache before Cargo resolves in the private home. It prunes
 unselected archives, rechecks offline resolution and records a
 candidate tree digest. Its index origin is still the mutable host cache, so
 the digest identifies observed bytes but does not authenticate their release.
+The candidate manifest binds a separate cache reuse key to those selection
+inputs, the pinned toolchain/build declarations, and the exact Cargo/Rustc
+executable paths, lengths and hashes. A verifier checks the caller-selected
+target and executable files against that candidate before a later admitted-source
+build reuses the pruned cache; it refuses new ambient Cargo config or implicit
+`build.rs` files. This is a candidate-selection guard, not a complete compiler
+input attestation or a substitute for source immutability during compilation.
 On macOS, both metadata passes run in a deny-network sandbox with source,
 private cache, toolchain and required system read grants; an external path
 dependency refuses before its manifest can be read. Other build hosts need
