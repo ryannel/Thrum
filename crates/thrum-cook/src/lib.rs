@@ -400,6 +400,8 @@ fn read_record(pin: &mut PinnedSource<'_>, path: &SourcePath) -> Result<Vec<u8>,
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_os = "macos")]
+    use std::ffi::OsString;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::process::Command;
@@ -987,7 +989,7 @@ mod tests {
         let a_files = tree_hashes(a_materialized.path());
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
-        let built_a = cargo_build_headless(a_materialized.path(), &a_output);
+        let built_a = cargo_build_headless(a_materialized.path(), &a_output, checkout);
         let build_elapsed = started.elapsed();
         assert!(
             built_a.status.success(),
@@ -1026,7 +1028,7 @@ mod tests {
             materialize_pinned_source(&mut b_pin, &b_input, Fixture::build_plan()).unwrap();
         let b_files = tree_hashes(b_materialized.path());
         let b_output = fixture.root().join(".engine/output-b");
-        let built_b = cargo_build_headless(b_materialized.path(), &b_output);
+        let built_b = cargo_build_headless(b_materialized.path(), &b_output, checkout);
         assert!(!built_b.status.success());
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
         assert!(b_diagnostic.contains("game.rs") && b_diagnostic.contains("error"));
@@ -1078,8 +1080,14 @@ mod tests {
         output
     }
 
-    fn cargo_build_headless(input: &Path, output: &Path) -> std::process::Output {
-        Command::new(env!("CARGO"))
+    fn cargo_build_headless(input: &Path, output: &Path, checkout: &Path) -> std::process::Output {
+        let sandbox = std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some();
+        let mut command = if sandbox {
+            sandboxed_cargo_command(input, output, checkout)
+        } else {
+            Command::new(env!("CARGO"))
+        };
+        command
             .current_dir(input)
             .args([
                 "build",
@@ -1093,8 +1101,58 @@ mod tests {
             .env("CARGO_TARGET_DIR", output)
             .env("CARGO_INCREMENTAL", "0")
             .env("RUSTC_WRAPPER", "")
+            .env("CARGO_NET_OFFLINE", "true")
             .output()
             .unwrap()
+    }
+
+    #[cfg(target_os = "macos")]
+    fn sandboxed_cargo_command(input: &Path, output: &Path, checkout: &Path) -> Command {
+        fs::create_dir_all(output.join("tmp")).unwrap();
+        let output = fs::canonicalize(output).unwrap();
+        let checkout = fs::canonicalize(checkout).unwrap();
+        let profile = output.join("build.sb");
+        fs::write(
+            &profile,
+            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read*)\n(deny file-read* (subpath (param \"CHECKOUT\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
+        )
+        .unwrap();
+        let blocked_read = sandbox_command(&profile, &checkout, &output, "/bin/cat")
+            .arg(checkout.join("Cargo.toml"))
+            .output()
+            .unwrap();
+        assert!(!blocked_read.status.success());
+        let blocked_write = sandbox_command(&profile, &checkout, &output, "/usr/bin/touch")
+            .arg(input.join("should-not-exist"))
+            .output()
+            .unwrap();
+        assert!(!blocked_write.status.success());
+        let mut command = sandbox_command(&profile, &checkout, &output, env!("CARGO"));
+        command.env("TMPDIR", output.join("tmp"));
+        command
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn sandboxed_cargo_command(_input: &Path, _output: &Path, _checkout: &Path) -> Command {
+        panic!("macOS sandbox qualification only");
+    }
+
+    #[cfg(target_os = "macos")]
+    fn sandbox_command(profile: &Path, checkout: &Path, output: &Path, program: &str) -> Command {
+        let mut checkout_param = OsString::from("CHECKOUT=");
+        checkout_param.push(checkout.as_os_str());
+        let mut output_param = OsString::from("OUTPUT=");
+        output_param.push(output.as_os_str());
+        let mut command = Command::new("/usr/bin/sandbox-exec");
+        command
+            .arg("-D")
+            .arg(checkout_param)
+            .arg("-D")
+            .arg(output_param)
+            .arg("-f")
+            .arg(profile)
+            .arg(program);
+        command
     }
 
     #[test]
