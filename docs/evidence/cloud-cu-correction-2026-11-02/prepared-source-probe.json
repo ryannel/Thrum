@@ -1,0 +1,2888 @@
+{
+  "identity": {
+    "build_id": "e18bdc2707002525fa7292ac8f59848fc00525005b10ec40809b487007a71355",
+    "files": {
+      "scripts/cloud_sky_proof/test_convective.mjs": "97c5a2a459b81c5e367bd728fb22e64f1515539a684863c283a1543a8072a9f7",
+      "scripts/cloud_sky_proof/scatter-fit.js": "de3cb5d0a49febe58167ab6bf4bbf3393505bd9b653b28aa866ad48d39691808",
+      "scripts/cloud_sky_proof/clock.js": "e4189fe1afd035c3647efd49124f03bf186812aade37f4908bef0d99c350e582",
+      "scripts/cloud_sky_proof/convective.js": "6852d010498d444a10a430c5349b5cb3a655a19e7aacf56681ace4bdacbf3a0f",
+      "scripts/cloud_sky_proof/prepared-cu.js": "373c025ee3882c24e512c121aa17356d2ecb95ef901da562db7b31d60a27e0c7",
+      "scripts/cloud_sky_proof/test_scatter_profile.py": "19e47463eb291bda7faf479e08135c09076ea7b9ee187f5ee8f690bcb251fb09",
+      "scripts/cloud_sky_proof/scatter-fit.wgsl": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01",
+      "scripts/cloud_sky_proof/cu-preview.wgsl": "37f5d96dd200b5b7744b00340d608b2fc44603e0cb1b7e2b0effd058f7b24294",
+      "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+      "scripts/cloud_sky_proof/cook_scatter_profile.py": "04fa89c76e435bbeb4af266d692a7ee4d089b3be9ea98ea5f7a6b4ea5d97d347",
+      "scripts/cloud_sky_proof/fit-probes.js": "56e2096f9bbd1cfc90204537d41aeb7eb9c8b45fccc343217363c3fadabaad77",
+      "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+      "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+      "scripts/cloud_sky_proof/cu.html": "f26649128ac24f563c4acb6667a819e0d2a9af91e533100c83076be2d63daa2b",
+      "scripts/cloud_sky_proof/serve.py": "1058597db63bb94927f293ab4c771c368e2180178a1c3e5175e79134738a93b1",
+      "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+      "scripts/cloud_sky_proof/packing-proof.js": "b030f8cd951bf9495c2e982a44849b88cb09db660e5b0cc8f856c2d8d64cca35",
+      "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "scripts/cloud_sky_proof/test_clock.mjs": "245cfa5e849f49686a8d2621db22419b41c8af41621330c52489fe124cd0e808",
+      "scripts/cloud_sky_proof/test_resource_lifecycle.mjs": "91ab81d7f1a15b1b842058af73daf975463c61dbe77ffc27dda6acbf079300b9",
+      "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+      "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+      "scripts/cloud_sky_proof/cu-preview.js": "9de0706df94efe2c998a04baac028e5a8aa29bb6079fceb1e1cdd4a155e3d753",
+      "scripts/cloud_sky_proof/convective-hierarchy.js": "d3d124cb3cfd42ed93405826f1abded8042c696bb4fd276340f140d4f3d39e3c",
+      "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+      "scripts/cloud_sky_proof/scalar-field.js": "16d8430d170213ec50f0dae56b44a8bc19d2566b14d1ca759f6a1cc8959170c8",
+      "scripts/cloud_sky_proof/cu-source.js": "8e6bdddd6c4ad1a09acfd6de32cf85dcafe31e64d8329280b6b50fe1478f2722",
+      "scripts/cloud_sky_proof/test_hierarchy.mjs": "d9d4924fd86624b95c18128741f63d43c4ae63a05bff1872a704d05e36f16a39",
+      "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+      "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/A.f32": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/profile.json": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/axes.f32": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+      "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/cloudclip.json": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/density.bin": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd"
+    },
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "host": {
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "dpr": 2,
+      "canvas": [
+        1280,
+        720
+      ],
+      "visibility": "visible"
+    }
+  },
+  "scene": {
+    "source_time_s": 90,
+    "source_model": "prepared",
+    "max_level": 0,
+    "inspection_view": "0",
+    "camera_route": "local",
+    "variant": 0,
+    "seed": 0,
+    "shift_m": [
+      0,
+      0,
+      0
+    ],
+    "lo_m": [
+      0,
+      0,
+      0
+    ],
+    "extent_m": [
+      512,
+      512,
+      512
+    ],
+    "camera_m": [
+      607.6271801180363,
+      180,
+      931.4127080550365
+    ],
+    "target_m": [
+      256,
+      80,
+      256
+    ],
+    "sun_direction": [
+      -0.7794228619673722,
+      0.49999999907712306,
+      0.37749172595630187
+    ],
+    "sun_elevation_deg": 30,
+    "light_model": "2",
+    "fit_identity": {
+      "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+    },
+    "main_cloud": true,
+    "mirror": true,
+    "requested_source_time_s": 90,
+    "source_updated": false,
+    "light_updated": false,
+    "source_stats": {
+      "profile": "retained Q1 static geometry comparator",
+      "encoded_source_bytes": 6491440
+    },
+    "cpu_encode_ms": 0.09999990463256836,
+    "queue_complete_ms": 11.5,
+    "gpu_bracket_ms": 7.995392,
+    "gpu_raw_timestamps_ns": [
+      "2094966217048064",
+      "2094966225043456"
+    ],
+    "gpu_timing_scope": "first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency",
+    "invalid_view_paths": 0,
+    "source_field_bytes": 5316544,
+    "scatter_fit_bytes": {
+      "table": 262144,
+      "axes": 2048,
+      "profile": 32,
+      "sharedGPU": 264224,
+      "cpuRecoveryPayload": 292941,
+      "products": {
+        "body": 65536,
+        "bank": 65536,
+        "total": 131072
+      }
+    },
+    "scope": "requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame"
+  },
+  "source_recipe": {
+    "id": "retained-q1-comparator",
+    "variant": 0,
+    "seed": 0,
+    "name": "retained Q1 detailed master",
+    "duration_s": 240,
+    "reference_time_s": 90,
+    "bounds": {
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "extent": [
+        512,
+        512,
+        512
+      ]
+    },
+    "inspection_centre_m": [
+      256,
+      144,
+      256
+    ],
+    "manifest_sha256": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+    "density_sha256": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+    "scope": "Static detailed master with retained authored finite lifecycle; no mature replacement or new family acceptance"
+  },
+  "source_shader_sha256": "c1b09d57abc4cc3f16fb232889774aa1c4f675212f0e1eaf062f875969799266",
+  "scope": "bounded canonical CPU/WGSL/index and selected actual field-store comparisons; no ray/appearance qualification",
+  "max_absolute_sigma_error_per_m": 8.744018504744377e-8,
+  "pass": true,
+  "rows": [
+    {
+      "point": [
+        337.74734115600586,
+        213.90450274944305,
+        105.30581879615784
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        64.89847671985626,
+        425.82892084121704,
+        445.3300288915634
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        239.20753169059753,
+        509.5540939569473,
+        273.1104898452759
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        190.9765099287033,
+        368.05587697029114,
+        121.48077595233917
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        165.45886945724487,
+        113.55012261867523,
+        290.71865248680115
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        489.8973947763443,
+        53.90689659118652,
+        473.9152468442917
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        377.12029671669006,
+        458.7591506242752,
+        452.05967378616333
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        365.3757156133652,
+        493.8981387615204,
+        320.2888218164444
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        168.0008192062378,
+        84.45606505870819,
+        24.558648347854614
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        13.008014798164368,
+        318.6987166404724,
+        438.18278443813324
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        304.13368582725525,
+        292.2684141397476,
+        138.9127655029297
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        83.86556613445282,
+        164.3367521762848,
+        97.28303253650665
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        432.5996308326721,
+        317.37855565547943,
+        501.21923899650574
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        362.65746080875397,
+        434.8194932937622,
+        229.94160163402557
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        113.32667851448059,
+        74.42111790180206,
+        92.14229917526245
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        97.40150582790375,
+        2.3549935817718506,
+        194.55850088596344
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        441.55401039123535,
+        274.01327311992645,
+        176.30674767494202
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        486.0404349565506,
+        15.862854480743408,
+        398.7213615179062
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        259.1473948955536,
+        510.35532343387604,
+        179.60557460784912
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        265.94093215465546,
+        490.96152997016907,
+        325.54039776325226
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        171.453679561615,
+        256.83909928798676,
+        342.60913825035095
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        124.71296751499176,
+        133.11969375610352,
+        379.1161803007126
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        288.88184571266174,
+        231.10167038440704,
+        324.7634072303772
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        163.28694570064545,
+        124.15916895866394,
+        433.5777221918106
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        214.89812564849854,
+        255.46186912059784,
+        132.56476521492004
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        334.68616688251495,
+        236.79692029953003,
+        18.628377318382263
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        288.62268233299255,
+        463.1771265268326,
+        427.3988780975342
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        430.4321001768112,
+        472.41360878944397,
+        447.037051320076
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        20.715351581573486,
+        189.4581207036972,
+        203.2311236858368
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        399.0199695825577,
+        147.73620891571045,
+        206.01222503185272
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        107.73794674873352,
+        18.67873775959015,
+        146.83608388900757
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        37.40215241909027,
+        298.62218832969666,
+        282.8962904214859
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        132.68062591552734,
+        163.71884524822235,
+        183.7535994052887
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        436.91689026355743,
+        71.63275003433228,
+        64.11769902706146
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        257.83982157707214,
+        21.87737810611725,
+        75.65888690948486
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        101.5998123884201,
+        412.5826370716095,
+        442.83842289447784
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        98.73523283004761,
+        504.2932370901108,
+        181.33421874046326
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        197.31577169895172,
+        419.753999710083,
+        75.23422801494598
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        318.2533800601959,
+        28.31149971485138,
+        327.92966508865356
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        462.6484931707382,
+        119.96182513237,
+        89.84526026248932
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        234.70522212982178,
+        446.7324436903,
+        385.700398683548
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        12.98553478717804,
+        276.15842962265015,
+        154.9344438314438
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        23.98533606529236,
+        88.38088285923004,
+        373.9080619812012
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        429.7360609769821,
+        41.76451325416565,
+        373.2911921739578
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        194.52015924453735,
+        108.93331563472748,
+        108.07369685173035
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        291.1189285516739,
+        135.4142770767212,
+        250.41793143749237
+      ],
+      "expected": 0.06274509803921567,
+      "actual": 0.0627450942993164,
+      "valid": 1,
+      "field_stored": 0.062744140625,
+      "field_expected": 0.062744140625,
+      "field_store_error": 0,
+      "error": 3.739899265275959e-9
+    },
+    {
+      "point": [
+        148.19279408454895,
+        395.44038593769073,
+        497.2697367668152
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        397.4585851430893,
+        96.30210280418396,
+        418.53693640232086
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        226.93187522888184,
+        268.48215663433075,
+        278.6385614871979
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        140.42628014087677,
+        326.81829500198364,
+        415.35497891902924
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        419.1519992351532,
+        14.39369547367096,
+        258.8251142501831
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        130.16408812999725,
+        507.6613857746124,
+        149.02328884601593
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        374.7332167625427,
+        224.4984735250473,
+        242.51108145713806
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        470.7292448282242,
+        493.114501953125,
+        1.2303274869918823
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        31.727087259292603,
+        410.7870761156082,
+        230.73813486099243
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        394.7962955236435,
+        8.67329478263855,
+        172.86487352848053
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        168.47679615020752,
+        295.97872626781464,
+        302.2077362537384
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        133.05455601215363,
+        499.71293210983276,
+        341.1869214773178
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        297.33883452415466,
+        172.40312063694,
+        81.24500465393066
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        414.2383860349655,
+        382.38165307044983,
+        357.94389259815216
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        470.6937413215637,
+        276.64007794857025,
+        78.6141459941864
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        420.2277752161026,
+        206.40838527679443,
+        70.36965835094452
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        400.4334080219269,
+        211.35449993610382,
+        41.8729453086853
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        125.15674149990082,
+        502.01192450523376,
+        383.5038763284683
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        38.61244583129883,
+        142.26414477825165,
+        298.45382142066956
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        95.9670420885086,
+        269.5991768836975,
+        2.7691386938095093
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        397.45111536979675,
+        462.67771303653717,
+        117.15894412994385
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        480.3446968793869,
+        21.439963579177856,
+        52.243433117866516
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        493.37731885910034,
+        218.54074609279633,
+        384.25691390037537
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        112.47682440280914,
+        127.00588798522949,
+        308.5654162168503
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        122.29515480995178,
+        455.42683708667755,
+        228.8685040473938
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        283.56629025936127,
+        228.1607654094696,
+        346.90999948978424
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        231.76753520965576,
+        193.41165435314178,
+        222.82896542549133
+      ],
+      "expected": 0.06274509803921569,
+      "actual": 0.062745101749897,
+      "valid": 1,
+      "field_stored": 0.062744140625,
+      "field_expected": 0.062744140625,
+      "field_store_error": 0,
+      "error": 3.7106813177700815e-9
+    },
+    {
+      "point": [
+        440.5416680574417,
+        196.89011526107788,
+        511.97174775600433
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        198.30036520957947,
+        388.26727735996246,
+        6.714393615722656
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        460.9000128507614,
+        450.7572157382965,
+        199.393590092659
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        440.4157853126526,
+        69.91434514522552,
+        280.21965861320496
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        236.1199470758438,
+        91.77322101593018,
+        157.57834327220917
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        220.7019760608673,
+        493.5695172548294,
+        137.57539701461792
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        176.58255898952484,
+        316.86884093284607,
+        452.3205476999283
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        420.5270252227783,
+        139.52574717998505,
+        503.19156670570374
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        407.43761360645294,
+        134.65508317947388,
+        169.19611585140228
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        53.60435748100281,
+        186.00286829471588,
+        145.2150640487671
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        49.35257613658905,
+        365.6605579853058,
+        509.1472932100296
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        7.097226619720459,
+        256.00599229335785,
+        111.18890357017517
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        94.5819479227066,
+        281.7328453063965,
+        445.2004317045212
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        73.44977021217346,
+        155.6292201280594,
+        400.50046014785767
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        205.29441487789154,
+        302.79142451286316,
+        432.75407564640045
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        370.6321268081665,
+        353.74216544628143,
+        510.80627369880676
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        205.5953084230423,
+        411.6196665763855,
+        114.37486016750336
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        414.9871156215668,
+        453.4967905282974,
+        418.12091636657715
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        487.1818789243698,
+        457.8833887577057,
+        388.53872215747833
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        249.36597871780396,
+        186.5920547246933,
+        380.757422208786
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        145.06888163089752,
+        437.0634717941284,
+        348.2549237012863
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        427.74068570137024,
+        33.73387539386749,
+        471.80677938461304
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        28.321975111961365,
+        356.4900395870209,
+        208.01038801670074
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        147.9803009033203,
+        487.22790133953094,
+        263.3439848423004
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        111.23643219470978,
+        359.16570138931274,
+        25.971847891807556
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        190.97891306877136,
+        272.1425987482071,
+        376.04816150665283
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        182.8986634016037,
+        222.56535649299622,
+        440.8833066225052
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        30.822627544403076,
+        194.98014962673187,
+        334.4242379665375
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        473.56805288791656,
+        0.10006141662597656,
+        275.5963114500046
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        431.18312096595764,
+        261.2926627397537,
+        162.31369066238403
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        84.81660687923431,
+        91.43245959281921,
+        247.67053949832916
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        229.62525844573975,
+        400.1811970472336,
+        239.8818485736847
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        110.86391460895538,
+        326.3312735557556,
+        251.98219621181488
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        386.0162732601166,
+        482.1150976419449,
+        337.76926040649414
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        347.0449217557907,
+        45.25235962867737,
+        412.77772629261017
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        53.72400903701782,
+        181.00914418697357,
+        286.59462428092957
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        325.84801638126373,
+        210.33382511138916,
+        431.11033713817596
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        454.79172444343567,
+        347.9960118532181,
+        54.496779918670654
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        333.4609273672104,
+        90.99270796775818,
+        430.0968347787857
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        494.7769603729248,
+        356.83154475688934,
+        331.9032633304596
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        88.26193535327911,
+        14.810719013214111,
+        132.93227231502533
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        219.44196963310242,
+        333.3703418970108,
+        349.2129240036011
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        163.19389617443085,
+        376.89654660224915,
+        245.09991085529327
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        137.9832091331482,
+        78.0491555929184,
+        11.58010458946228
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        230.45857679843903,
+        471.41222381591797,
+        176.71399295330048
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        467.9873945713043,
+        70.81560242176056,
+        285.4878830909729
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        303.4688037633896,
+        11.451058149337769,
+        469.4328285455704
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        143.8016176223755,
+        484.43968665599823,
+        490.2978775501251
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        43.49592411518097,
+        301.95462369918823,
+        196.8796933889389
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        60.50502562522888,
+        312.64563620090485,
+        70.46411323547363
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        438.9500788450241,
+        44.85631585121155,
+        132.0090399980545
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        500.1695637702942,
+        96.00155103206635,
+        366.5984523296356
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        57.730788826942444,
+        254.1389684677124,
+        243.3555210828781
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        109.5972797870636,
+        397.00436413288116,
+        258.07508611679077
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        457.5853532552719,
+        428.994033575058,
+        374.60332548618317
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        81.2216911315918,
+        8.297614932060242,
+        508.3615896701813
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        343.91256058216095,
+        359.769823551178,
+        34.4133266210556
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        427.360714673996,
+        394.459535241127,
+        102.76403903961182
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        376.9492119550705,
+        355.8963158130646,
+        99.94554340839386
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        376.5086588859558,
+        228.29894769191742,
+        466.7736909389496
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        182.776957154274,
+        391.47402000427246,
+        110.01441371440887
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        454.8547785282135,
+        343.0964766740799,
+        303.70272493362427
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        259.08694303035736,
+        238.71440768241882,
+        428.3143802881241
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        82.71589183807373,
+        358.7285717725754,
+        476.79654812812805
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        471.13977444171906,
+        309.91940450668335,
+        45.65328919887543
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        122.07056021690369,
+        372.1118437051773,
+        147.51016235351562
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        265.85828769207,
+        143.18744492530823,
+        130.63110077381134
+      ],
+      "expected": 0.013663845963947274,
+      "actual": 0.013663758523762226,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 8.744018504744377e-8
+    },
+    {
+      "point": [
+        133.88233041763306,
+        46.90521275997162,
+        140.13609385490417
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        120.49063646793365,
+        181.53358936309814,
+        278.70141303539276
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        310.399539232254,
+        9.90736973285675,
+        177.4713854789734
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        110.78119027614594,
+        357.6112039089203,
+        174.05329763889313
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        474.1191806793213,
+        374.08704936504364,
+        374.71115136146545
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        360.0867453813553,
+        198.72270250320435,
+        403.2509483098984
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        157.60233569145203,
+        220.68361628055573,
+        141.25619411468506
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        363.37554824352264,
+        189.3068516254425,
+        316.06864178180695
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        212.82866430282593,
+        321.31546342372894,
+        494.6221845149994
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        264.54663145542145,
+        26.590137481689453,
+        229.45851123332977
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        349.2774603366852,
+        65.53372299671173,
+        17.137903690338135
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        510.00696218013763,
+        419.5896956920624,
+        507.0886322259903
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        130.42276859283447,
+        495.758789896965,
+        332.6200478076935
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        233.94390308856964,
+        412.15530347824097,
+        303.38892114162445
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        164.830064535141,
+        492.03715765476227,
+        270.7120952606201
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        67.2304857969284,
+        129.2379343509674,
+        21.542346119880676
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        486.5419964790344,
+        317.5560668706894,
+        37.07473635673523
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        74.40099680423737,
+        392.0723752975464,
+        247.3589504957199
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        237.94069027900696,
+        236.35346615314484,
+        182.1153655052185
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        467.63437592983246,
+        238.4614064693451,
+        165.4701887369156
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        10.774116516113281,
+        83.16078555583954,
+        31.444135904312134
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        471.1829272508621,
+        458.8490433692932,
+        64.78107488155365
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        79.53402018547058,
+        181.81602251529694,
+        379.7440767288208
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        446.1838425397873,
+        121.37034153938293,
+        152.61764347553253
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        35.872912883758545,
+        505.18464028835297,
+        168.2427728176117
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        390.2910372018814,
+        157.56526374816895,
+        465.50722301006317
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        19.24762749671936,
+        390.02577888965607,
+        484.4731068611145
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        311.0647987127304,
+        406.94410967826843,
+        445.029021859169
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        453.4769353866577,
+        136.74127852916718,
+        309.5105640888214
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        480.5567475557327,
+        217.09200811386108,
+        443.672526717186
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        453.4007260799408,
+        260.44501554965973,
+        304.3745994567871
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        403.0276106595993,
+        118.49997162818909,
+        334.1412135362625
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        412.3282494544983,
+        432.29005086421967,
+        85.78156733512878
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        148.23530733585358,
+        503.81001377105713,
+        196.03907096385956
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        119.46292042732239,
+        114.49109089374542,
+        347.9367136955261
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        167.23084771633148,
+        495.6618287563324,
+        218.37743628025055
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        422.9911861419678,
+        164.97976100444794,
+        321.5527307987213
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        168.09954369068146,
+        61.82853364944458,
+        188.83964383602142
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        365.02295565605164,
+        68.13019144535065,
+        111.78237438201904
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        293.58503234386444,
+        322.82897305488586,
+        217.24098598957062
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        101.07109212875366,
+        472.4924157857895,
+        39.2526433467865
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        295.03361189365387,
+        511.70408630371094,
+        109.12148654460907
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        491.25746750831604,
+        376.9710818529129,
+        406.88802194595337
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        269.5963901281357,
+        484.144837141037,
+        201.90898668766022
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        244.93307971954346,
+        459.3869751691818,
+        489.71028447151184
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        412.1267453432083,
+        383.6592059135437,
+        28.590043425559998
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        98.8997323513031,
+        397.8588548898697,
+        243.3023624420166
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        201.7105997800827,
+        264.96574425697327,
+        306.32614052295685
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        151.92077684402466,
+        275.94310224056244,
+        137.12377429008484
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        55.26700556278229,
+        345.30119228363037,
+        91.9527119398117
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        428.7084171772003,
+        94.96868145465851,
+        425.36511754989624
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        17.156543135643005,
+        303.8296582698822,
+        86.79847776889801
+      ],
+      "expected": 0,
+      "actual": 0,
+      "valid": 1,
+      "field_stored": 0,
+      "field_expected": 0,
+      "field_store_error": 0,
+      "error": 0
+    },
+    {
+      "point": [
+        256,
+        120,
+        256
+      ],
+      "expected": 0.06274509803921569,
+      "actual": 0.062745101749897,
+      "valid": 1,
+      "field_stored": 0.062744140625,
+      "field_expected": 0.062744140625,
+      "field_store_error": 0,
+      "error": 3.7106813177700815e-9
+    },
+    {
+      "point": [
+        256,
+        180,
+        256
+      ],
+      "expected": 0.06274509803921569,
+      "actual": 0.062745101749897,
+      "valid": 1,
+      "field_stored": 0.062744140625,
+      "field_expected": 0.062744140625,
+      "field_store_error": 0,
+      "error": 3.7106813177700815e-9
+    }
+  ]
+}

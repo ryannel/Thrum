@@ -1,0 +1,245 @@
+import {checkScatterFit} from './fit-probes.js';
+import {ScatterFit} from './scatter-fit.js';
+import {PreparedCu} from './prepared-cu.js';
+import {CuSourceField} from './cu-source.js';
+import {ScalarField,FIELD_PARAMETERS_WGSL,FIELD_DISPATCH_WGSL,PACKED_LOAD_WGSL} from './scalar-field.js';
+import {compileShader,hash,readBuffer} from './gpu.js';
+import {BEER_WGSL} from './transport.js';
+import {PreviewClock} from './clock.js';
+
+const $=id=>document.getElementById(id),canvas=document.querySelector('canvas');
+const norm=v=>{const length=Math.hypot(...v);return v.map(x=>x/length);};
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+let device,context,sourceObject,field,recipe,sceneBuffer,errors,prefix,ambient,fit,fitProducts,imageLayout;
+let prefixPipeline,ambientPipeline,imagePipeline,prefixInput,ambientInput,imageInput,prefixOutput,ambientOutput;
+let age=650,busy=false,pending=false,exclusive=false;
+const clock=new PreviewClock(1800,650);
+let yaw=.48,pitch=.11,distanceScale=3.2,pan=[0,0,0],lastFrame,identity,shaderCommon,shaderCache;
+let querySet,queryResolve,queryRead,sentinelPipeline,sentinelGroup,endSentinelPipeline,markerBuffer,lightCacheKey=null;
+
+async function save(name,body) {
+  const response=await fetch('/capture',{method:'POST',headers:{'X-Capture-Name':name},body});
+  if(!response.ok)throw Error('Capture '+response.status);
+}
+function resetCamera(){
+  const route=$('route').value;
+  if(route==='local'){yaw=.48;pitch=Math.asin(100/(Math.max(...recipe.bounds.extent)*1.5));distanceScale=1.5;pan=[0,0,0];return;}
+  if(route!=='coupled'){yaw=route==='side'?Math.PI*.5:0;pitch=route==='top'?1.15:0;distanceScale=1.1;pan=[0,0,0];return;}
+  yaw=.48;distanceScale=3.2;pan=[0,0,0];
+  if(recipe){const radius=Math.max(recipe.bounds.extent[0],recipe.bounds.extent[2])*distanceScale;
+    pitch=Math.asin(Math.max(-.95,Math.min(.95,120/radius)));}
+  else pitch=-.3;
+}
+function currentAge(){return clock.sample(performance.now());}
+function pause(){age=clock.pause(performance.now());$('play').textContent='Play';}
+function requestFrame(){pending=true;if(!busy&&!exclusive)void drain();}
+async function drain(){
+  if(busy||exclusive)return;
+  busy=true;
+  try {
+    do {pending=false;await renderFrame(currentAge());} while(pending&&!clock.playing);
+  } catch(error){pause();$('status').textContent=error.stack;}
+  finally{busy=false;if(clock.playing)requestAnimationFrame(()=>requestFrame());}
+}
+async function idle(){while(busy)await new Promise(resolve=>setTimeout(resolve,5));}
+function scene(time){
+  const originTime=recipe.reference_time_s??650;
+  const shift=[3*(time-originTime),$('route').value==='local'?0:900,time-originTime];
+  const lo=recipe.bounds.min.map((v,i)=>v+shift[i]),extent=recipe.bounds.extent;
+  const centre=lo.map((v,i)=>v+extent[i]*.5);
+  const width=Math.max(extent[0],extent[2]),radius=$('route').value==='coupled'?Math.max(3500,width*distanceScale):width*distanceScale;
+  const target=centre.map((v,i)=>($('route').value==='coupled'?(i===1?0:v):$('route').value==='local'?(i===1?80:v):(recipe.inspection_centre_m?recipe.inspection_centre_m[i]+shift[i]:v))+pan[i]);
+  const camera=[target[0]+radius*Math.sin(yaw)*Math.cos(pitch),target[1]+radius*Math.sin(pitch),target[2]+radius*Math.cos(yaw)*Math.cos(pitch)];
+  camera[1]=Math.max(2,camera[1]);
+  const lightMode=$('sun').value,elevation=lightMode==='sky'?30:Number(lightMode),angle=elevation*Math.PI/180;
+  const sun=norm([-.9*Math.cos(angle),Math.sin(angle),.4358899*Math.cos(angle)]);
+  const W=sun.map(x=>-x),U=norm(cross([0,1,0],sun)),V=cross(W,U);
+  const projected=basis=>extent.reduce((sum,v,i)=>sum+Math.abs(basis[i])*v*.5,0)+Math.max(...extent)/64;
+  const data=new ArrayBuffer(192),f=new Float32Array(data),u=new Uint32Array(data);
+  const put=(i,v)=>f.set(v,i*4);
+  put(0,[...lo,time]);put(1,[...extent,recipe.duration_s]);put(2,[...camera,canvas.width/canvas.height]);put(3,[...target,.47]);
+  put(4,[...sun,lightMode!=='sky'&&elevation>0?1:0]);put(5,[...U,projected(U)]);put(6,[...V,projected(V)]);put(7,[...W,projected(W)]);
+  put(8,[90000,85000,75000,.00006]);put(9,(lightMode!=='0'?[6000,9000,15000]:[0,0,0]).concat([sourceObject.sigmaMax]));
+  u.set([...field.levels[0].dimensions,Number($('light-model').value)],40);u.set([$('main').checked?1:0,$('reflection').checked?($('route').value==='local'?2:1):0,$('transmittance').checked?1:0,Number($('view').value)],44);
+  return {source_time_s:time,source_model:sourceObject.kind,max_level:sourceObject.maxLevel,inspection_view:$('view').value,camera_route:$('route').value,variant:recipe.variant,seed:recipe.seed,shift_m:shift,lo_m:lo,extent_m:extent,camera_m:camera,target_m:target,sun_direction:sun,sun_elevation_deg:elevation,light_model:$('light-model').value,fit_identity:fit.identity,main_cloud:$('main').checked,mirror:$('reflection').checked,data};
+}
+async function renderFrame(time){
+  age=time;$('exact').value=time.toFixed(2);$('seek').value=time;
+  if(time>=recipe.duration_s)pause();
+  const start=performance.now(),sourceFrame=sourceObject.prepare(time),state=scene(sourceFrame.sourceParams[0]);
+  device.queue.writeBuffer(sceneBuffer,0,state.data);device.queue.writeBuffer(errors,0,new Uint32Array(4));
+  const sourceUpdated=sourceObject.needsBuild;
+  const wantedLightKey=JSON.stringify([sourceObject.kind,recipe.variant,recipe.seed,sourceObject.maxLevel,field.levels[0].dimensions,state.source_time_s,state.lo_m,$('sun').value,$('light-model').value,fit.identity]);
+  const lightUpdated=$('view').value!=='1'&&lightCacheKey!==wantedLightKey;
+  const encoder=device.createCommandEncoder();
+  const beginStamp=querySet?{timestampWrites:{querySet,beginningOfPassWriteIndex:0}}:{};
+  if(querySet&&!sourceUpdated&&!lightUpdated){const marker=encoder.beginComputePass(beginStamp);marker.setPipeline(sentinelPipeline);marker.setBindGroup(0,sentinelGroup);marker.dispatchWorkgroups(1);marker.end();}
+  if(sourceUpdated){const sourcePass=encoder.beginComputePass(beginStamp);sourceObject.encode(sourcePass);sourcePass.end();}
+  if(lightUpdated) {
+    const caches=encoder.beginComputePass(sourceUpdated?{}:beginStamp);
+    if($('light-model').value==='2'&&new Float32Array(state.data)[19]>0)fitProducts.encode(caches);
+    caches.setPipeline(prefixPipeline);caches.setBindGroup(0,prefixInput);caches.setBindGroup(1,prefixOutput);caches.dispatchWorkgroups(9,9);
+    caches.setPipeline(ambientPipeline);caches.setBindGroup(0,ambientInput);caches.setBindGroup(1,ambientOutput);caches.dispatchWorkgroups(2,2,2);caches.end();
+  }
+  const renderedTexture=context.getCurrentTexture();
+  const draw=encoder.beginRenderPass({colorAttachments:[{view:renderedTexture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});
+  draw.setPipeline(imagePipeline);draw.setBindGroup(0,imageInput);draw.draw(3);draw.end();
+  if(querySet){const marker=encoder.beginComputePass({timestampWrites:{querySet,endOfPassWriteIndex:1}});marker.setPipeline(endSentinelPipeline);marker.setBindGroup(0,device.createBindGroup({layout:endSentinelPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:markerBuffer}},{binding:1,resource:renderedTexture.createView()}]}));marker.dispatchWorkgroups(1);marker.end();encoder.resolveQuerySet(querySet,0,2,queryResolve,0);encoder.copyBufferToBuffer(queryResolve,0,queryRead,0,16);}
+  const encoded=performance.now();device.queue.submit([encoder.finish()]);sourceObject.markSubmitted();if(lightUpdated)lightCacheKey=wantedLightKey;
+  let gpu=null,rawStamps=null;
+  if(querySet){await queryRead.mapAsync(GPUMapMode.READ);const stamps=new BigUint64Array(queryRead.getMappedRange());rawStamps=Array.from(stamps,String);if(stamps[1]>stamps[0]&&stamps[0]>0n)gpu=Number(stamps[1]-stamps[0])/1e6;queryRead.unmap();}
+  await device.queue.onSubmittedWorkDone();
+  const counters=new Uint32Array((await readBuffer(device,errors,16)).buffer);
+  const end=performance.now();
+  lastFrame={...state,data:undefined,requested_source_time_s:time,source_updated:sourceUpdated,light_updated:lightUpdated,source_stats:sourceFrame.stats,cpu_encode_ms:encoded-start,queue_complete_ms:end-encoded,gpu_bracket_ms:gpu,gpu_raw_timestamps_ns:rawStamps,gpu_timing_scope:'first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency',invalid_view_paths:counters[0],source_field_bytes:field.levels.reduce((n,l)=>n+l.bytes,0),scatter_fit_bytes:{...fit.bytes,products:fitProducts.bytes},scope:'requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame'};
+  $('status').textContent=`Candidate ${recipe.name} · ${time.toFixed(2)} s · ${gpu===null?'GPU query unavailable':gpu.toFixed(2)+' ms GPU bracket'} · ${(end-encoded).toFixed(2)} ms queue · not accepted`;
+}
+async function chooseRecipe(){
+  const selectors=['variant','model','levels','resolution'];selectors.forEach(id=>$(id).disabled=true);
+  pause();await idle();exclusive=true;
+  let next,nextProducts;
+  try {
+    const kind=$('model').value,side=Number($('resolution').value),maxLevel=Number($('levels').value);
+    next=kind==='prepared'?await PreparedCu.create(device,side):await CuSourceField.create(device,kind,Number($('variant').value),side,maxLevel);
+    const nextAge=Math.min(next.recipe.duration_s,kind==='prepared'&&recipe?.id!==next.recipe.id?90:age);
+    next.prepare(nextAge);
+    nextProducts=fit.createProducts(next.field.levels[0].dimensions);nextProducts.configure(next.field.levels[0].texture,sceneBuffer);
+    const commonEntries=()=>[{binding:0,resource:next.field.levels[0].texture.createView()},{binding:1,resource:device.createSampler({minFilter:'linear',magFilter:'linear'})},{binding:2,resource:prefix.createView()},{binding:3,resource:ambient.createView()},{binding:4,resource:{buffer:sceneBuffer}},{binding:5,resource:{buffer:errors}},{binding:7,resource:nextProducts.bankView}];
+    const cacheEntries=()=>commonEntries().filter(row=>[0,1,4].includes(row.binding));
+    const newPrefix=device.createBindGroup({layout:prefixPipeline.getBindGroupLayout(0),entries:cacheEntries()});
+    const newAmbient=device.createBindGroup({layout:ambientPipeline.getBindGroupLayout(0),entries:cacheEntries()});
+    const newImage=device.createBindGroup({layout:imagePipeline.getBindGroupLayout(0),entries:commonEntries()});
+    await device.queue.onSubmittedWorkDone();const previous=sourceObject,previousProducts=fitProducts;
+    sourceObject=next;next=null;fitProducts=nextProducts;nextProducts=null;field=sourceObject.field;recipe=sourceObject.recipe;
+    clock.duration=recipe.duration_s;age=clock.seek(nextAge,performance.now());$('exact').max=clock.duration;$('seek').max=clock.duration;
+    prefixInput=newPrefix;ambientInput=newAmbient;imageInput=newImage;lightCacheKey=null;previous?.destroy();previousProducts?.destroy();
+    const names=kind==='prepared'?['Retained Q1 master (one geometry)','Unavailable','Unavailable','Unavailable']:kind==='hierarchy'?['Broad uneven heads','Compact double crown','Long shallow bank','Offset rising crown']:['Broad shallow','Clustered turrets','Narrow rising','Wide asymmetric banks'];
+    [...$('variant').options].forEach((option,i)=>option.textContent=names[i]);
+    $('identity').textContent=JSON.stringify({identity,recipe,known_limits:['unaccepted source correction','shape view is geometry-only','64cube point-tau interpolation, not qualified deep curves','8cube/five-axis external ambient','constant receiver diffuse fixture','vacuum/external sky, not SKY-G air','native1280x720; no history; one frame in flight']},null,2);
+    resetCamera();
+  } catch(error){if(sourceObject){$('model').value=sourceObject.kind;$('variant').value=sourceObject.recipe.variant;$('levels').value=sourceObject.maxLevel;$('resolution').value=sourceObject.field.levels[0].dimensions[0];}throw error;} finally {next?.destroy();nextProducts?.destroy();exclusive=false;selectors.forEach(id=>$(id).disabled=false);if(sourceObject?.kind==='prepared'){$('variant').disabled=true;$('levels').disabled=true;$('variant').value='0';$('levels').value='0';}}
+  requestFrame();
+}
+async function checkSource(){
+  pause();await idle();exclusive=true;$('checks').textContent='Checking canonical source against CPU…';
+  try {
+    await renderFrame(age);
+    const points=[];let random=1093;
+    for(let i=0;i<192;i++)points.push(recipe.bounds.min.map((v,k)=>{random=(Math.imul(random,1664525)+1013904223)>>>0;return v+random/4294967296*recipe.bounds.extent[k];}));
+    if(sourceObject.kind==='prepared')points.push([256,120,256],[256,180,256]);
+    else if(sourceObject.kind==='coarse')for(const node of recipe.cohorts)points.push(node.end_m,node.start_m);
+    else for(let index=0;index<sourceObject.frame.nodes.length;index+=16){const n=sourceObject.frame.nodes;const c=Array.from(n.slice(index,index+3));points.push(c,[c[0]+n[index+3]*.9,c[1],c[2]]);}
+    const validity=sourceObject.kind==='hierarchy'?'hierarchyInputsValid(q.w)':'true';
+    const code=FIELD_PARAMETERS_WGSL+sourceObject.shader+PACKED_LOAD_WGSL+`
+@group(0) @binding(10) var<storage,read> inputs:array<vec4f>;
+@group(0) @binding(11) var<storage,read_write> outputs:array<vec4f>;
+@group(1) @binding(0) var actualField:texture_3d<f32>;
+@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u) {
+ if(id.x<arrayLength(&inputs)){
+   let q=inputs[id.x];let valid=${validity};
+   let cell=vec3i(floor((q.xyz-field.lo.xyz)/field.extent.xyz*vec3f(field.grid.xyz)));
+   let centre=field.lo.xyz+(vec3f(cell)+.5)/vec3f(field.grid.xyz)*field.extent.xyz;
+   let stored=loadPackedCell(actualField,cell,field.grid.xyz);
+   outputs[id.x]=vec4f(canonicalSigma(q.xyz,q.w),select(0.,1.,valid),stored,roundHalf(canonicalSigma(centre,q.w)));
+ }
+}`;
+    const input=device.createBuffer({size:points.length*16,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST}),output=device.createBuffer({size:points.length*16,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
+    device.queue.writeBuffer(input,0,new Float32Array(points.flatMap(p=>[...p,age])));
+    const pipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:await compileShader(device,code),entryPoint:'main'}});
+    const group=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[...sourceObject.probeEntries(),{binding:10,resource:{buffer:input}},{binding:11,resource:{buffer:output}}]});
+    const fieldGroup=device.createBindGroup({layout:pipeline.getBindGroupLayout(1),entries:[{binding:0,resource:field.levels[0].texture.createView()}]});
+    const encoder=device.createCommandEncoder(),pass=encoder.beginComputePass();pass.setPipeline(pipeline);pass.setBindGroup(0,group);pass.setBindGroup(1,fieldGroup);pass.dispatchWorkgroups(Math.ceil(points.length/64));pass.end();device.queue.submit([encoder.finish()]);
+    const values=new Float32Array((await readBuffer(device,output,points.length*16)).buffer);input.destroy();output.destroy();
+    const rows=points.map((point,index)=>{const expected=sourceObject.sample(point,age),actual=values[index*4];return {point,expected,actual,valid:values[index*4+1],field_stored:values[index*4+2],field_expected:values[index*4+3],field_store_error:Math.abs(values[index*4+2]-values[index*4+3]),error:Math.abs(expected-actual)};});
+    const max=Math.max(...rows.map(x=>x.error));const report={identity,scene:lastFrame,source_recipe:recipe,source_shader_sha256:await hash(new TextEncoder().encode(code)),scope:'bounded canonical CPU/WGSL/index and selected actual field-store comparisons; no ray/appearance qualification',max_absolute_sigma_error_per_m:max,pass:max<2e-6&&rows.every(row=>row.valid===1&&row.field_store_error<=1.6e-5),rows};
+    await save(`cu-source-${Date.now()}.json`,JSON.stringify(report,null,2));$('checks').textContent=JSON.stringify({pass:report.pass,samples:rows.length,max_absolute_sigma_error_per_m:max,scope:report.scope},null,2);
+  } catch(error){$('checks').textContent=error.stack;}finally{exclusive=false;}
+}
+async function load(){
+  identity=await(await fetch('/identity')).json();if(identity.build_id!==document.querySelector('meta[name="proof-build"]').content)throw Error('Build changed; reload');
+  const adapter=await navigator.gpu?.requestAdapter({powerPreference:'high-performance'});if(!adapter)throw Error('WebGPU unavailable');
+  device=await adapter.requestDevice({requiredFeatures:adapter.features.has('timestamp-query')?['timestamp-query']:[]});
+  identity.adapter={vendor:adapter.info.vendor,architecture:adapter.info.architecture,device:adapter.info.device,description:adapter.info.description};
+  identity.host={user_agent:navigator.userAgent,dpr:devicePixelRatio,canvas:[canvas.width,canvas.height],visibility:document.visibilityState};
+  device.addEventListener('uncapturederror',event=>{pause();$('status').textContent='GPU validation: '+event.error.message;});
+  device.lost.then(info=>{pause();$('status').textContent='Device lost: '+info.message;});
+  context=canvas.getContext('webgpu');const format=navigator.gpu.getPreferredCanvasFormat();context.configure({device,format,alphaMode:'opaque',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
+  shaderCommon=PACKED_LOAD_WGSL+BEER_WGSL+await(await fetch('cu-preview.wgsl')).text();shaderCache=await(await fetch('cu-caches.wgsl')).text();
+  const code=await compileShader(device,shaderCommon),cache=await compileShader(device,shaderCommon+shaderCache);
+  prefixPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:cache,entryPoint:'buildPrefix'}});
+  ambientPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:cache,entryPoint:'buildAmbient'}});
+  imageLayout=device.createBindGroupLayout({entries:[
+    ...[0,2,3].map(binding=>({binding,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float',viewDimension:'3d'}})),
+    {binding:1,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'filtering'}},
+    {binding:4,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'uniform',minBindingSize:192}},
+    {binding:5,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'storage'}},
+    {binding:7,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'unfilterable-float',viewDimension:'2d'}}
+  ]});
+  imagePipeline=await device.createRenderPipelineAsync({layout:device.createPipelineLayout({bindGroupLayouts:[imageLayout]}),vertex:{module:code,entryPoint:'triangle'},fragment:{module:code,entryPoint:'image',targets:[{format}]},primitive:{topology:'triangle-list'}});
+  sceneBuffer=device.createBuffer({size:192,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});errors=device.createBuffer({size:16,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+  const usage=GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.COPY_SRC;
+  prefix=device.createTexture({size:[66,66,66],dimension:'3d',format:'rgba16float',usage});ambient=device.createTexture({size:[8,8,8],dimension:'3d',format:'rgba16float',usage});
+  prefixOutput=device.createBindGroup({layout:prefixPipeline.getBindGroupLayout(1),entries:[{binding:0,resource:prefix.createView()}]});
+  ambientOutput=device.createBindGroup({layout:ambientPipeline.getBindGroupLayout(1),entries:[{binding:1,resource:ambient.createView()}]});
+  if(device.features.has('timestamp-query')) {
+    querySet=device.createQuerySet({type:'timestamp',count:2});queryResolve=device.createBuffer({size:256,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC});queryRead=device.createBuffer({size:16,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    const marker=markerBuffer=device.createBuffer({size:4,usage:GPUBufferUsage.STORAGE});
+    sentinelPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:await compileShader(device,'@group(0) @binding(0) var<storage,read_write> marker:atomic<u32>; @compute @workgroup_size(1) fn main(){atomicAdd(&marker,1u);}'),entryPoint:'main'}});
+    endSentinelPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:await compileShader(device,'@group(0) @binding(0) var<storage,read_write> marker:atomic<u32>; @group(0) @binding(1) var rendered:texture_2d<f32>; @compute @workgroup_size(1) fn main(){atomicAdd(&marker,bitcast<u32>(textureLoad(rendered,vec2i(textureDimensions(rendered)/2u),0).x));}'),entryPoint:'main'}});
+    sentinelGroup=device.createBindGroup({layout:sentinelPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:marker}}]});
+  }
+  fit=await ScatterFit.create(device,compileShader);
+  await chooseRecipe();
+}
+$('play').onclick=()=>{if(clock.playing){pause();}else{clock.play(performance.now());$('play').textContent='Pause';requestFrame();}};
+$('rate').onchange=()=>{age=clock.setRate(Number($('rate').value),performance.now());requestFrame();};
+for(const id of ['exact','seek'])$(id).oninput=()=>{pause();age=clock.seek(Number($(id).value),performance.now());requestFrame();};
+for(const id of ['sun','main','reflection','transmittance','view','light-model'])$(id).onchange=requestFrame;
+for(const id of ['variant','model','levels','resolution'])$(id).onchange=()=>void chooseRecipe().catch(error=>{$('status').textContent=error.stack;});
+$('route').onchange=()=>{resetCamera();requestFrame();};
+$('reset').onclick=()=>{resetCamera();requestFrame();};$('probes').onclick=()=>void checkSource();
+$('capture').onclick=async()=>{pause();await idle();exclusive=true;try{await renderFrame(age);const name=`cu-${Date.now()}`;const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));await save(name+'.png',blob);await save(name+'.json',JSON.stringify({identity,recipe,frame:lastFrame},null,2));$('checks').textContent='Saved '+name;}catch(error){$('checks').textContent=error.stack;}finally{exclusive=false;}};
+canvas.addEventListener('wheel',event=>{event.preventDefault();const scale=event.deltaMode===1?16:1,dx=Math.max(-300,Math.min(300,event.deltaX*scale)),dy=Math.max(-300,Math.min(300,event.deltaY*scale));if(event.ctrlKey){distanceScale=Math.max(.35,Math.min(12,distanceScale*Math.exp(dy*.005)));}else if(event.shiftKey){pan[0]+=dx*2;pan[1]-=dy*2;}else{yaw+=dx*.004;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*.004));}requestFrame();},{passive:false});
+let drag=null;canvas.addEventListener('contextmenu',event=>event.preventDefault());canvas.addEventListener('pointerdown',event=>{drag={x:event.clientX,y:event.clientY,pan:event.button===2||event.shiftKey};canvas.setPointerCapture(event.pointerId);});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);canvas.addEventListener('pointermove',event=>{if(!drag)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;drag.x=event.clientX;drag.y=event.clientY;if(drag.pan){pan[0]-=dx*2;pan[1]+=dy*2;}else{yaw-=dx*.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*.006));}requestFrame();});
+load().catch(error=>{$('status').textContent=error.stack;});
+
+// Bounded actual-canvas records; never advance source time by a fixed amount per callback.
+let sequenceCancel=false;
+async function runSequence(record=true){
+  if(exclusive)return;pause();await idle();exclusive=true;sequenceCancel=false;
+  const controls=[...document.querySelectorAll('button,input,select')],disabledBefore=controls.map(control=>control.disabled);controls.forEach(control=>control.disabled=true);$('stop').disabled=false;
+  let recorder,stream,chunks=[],samples=[],snapshots=[];
+  const preset=$('motion').value,prepared=sourceObject.kind==='prepared';
+  const settings=record?(preset==='growth'?[prepared?40:210,prepared?60:230,1]:preset==='breakup'?[prepared?200:1470,prepared?220:1490,1]:[0,recipe.duration_s,preset==='full16'?16:64]):[prepared?90:650,Infinity,1];
+  const [start,end,rate]=settings,name=`${record?'motion':'cost'}-${Date.now()}-${preset}`,identityStart={identity,recipe,scene:lastFrame,source_kind:sourceObject.kind,rate,start_source_s:start,end_source_s:Number.isFinite(end)?end:null};
+  try{
+    await renderFrame(start);let snapshotIndex=0;
+    if(record){stream=canvas.captureStream(30);recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9',videoBitsPerSecond:5000000});recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};recorder.start(500);}
+    const began=performance.now();let index=0;
+    while(!sequenceCancel){
+      const wall=(performance.now()-began)/1000,target=Math.min(end,start+wall*rate);
+      await renderFrame(target);samples.push({...lastFrame,wall_source_request_s:wall,wall_complete_s:(performance.now()-began)/1000,warmup:!record&&index<30});index++;
+      if(record&&snapshots.length<9&&(performance.now()-began)/1000>=snapshotIndex*(end-start)/rate/8){
+        const filename=`${name}-${snapshotIndex}.png`;await save(filename,await new Promise(resolve=>canvas.toBlob(resolve,'image/png')));snapshots.push({file:filename,frame:lastFrame});snapshotIndex++;
+      }
+      $('checks').textContent=`${record?'Recording actual canvas':'Measuring fresh-source fixture'}: ${samples.length} frames, source ${target.toFixed(2)} s`;
+      if(target>=end||(!record&&index>=330))break;
+      await new Promise(resolve=>requestAnimationFrame(resolve));
+    }
+    if(recorder){await new Promise(resolve=>{recorder.onstop=resolve;recorder.stop();});await save(name+'.webm',new Blob(chunks,{type:'video/webm'}));}
+    await save(name+'.json',JSON.stringify({...identityStart,cancelled:sequenceCancel,samples,snapshots,scope:record?'Actual canvas with sampled native PNGs; recorder/readback observer cost included, not a quiet benchmark':'330 actual sequential rendered frames, first30 warmup; source time follows wall; paused camera; no recorder/PNGs; standalone fixture only'},null,2));
+    $('checks').textContent='Saved '+name+` (${samples.length} frames)`;
+  }catch(error){$('checks').textContent=error.stack;}
+  finally{stream?.getTracks().forEach(track=>track.stop());clock.seek(age,performance.now());controls.forEach((control,index)=>control.disabled=disabledBefore[index]);$('stop').disabled=true;exclusive=false;}
+}
+$('record').onclick=()=>void runSequence(true);$('measure').onclick=()=>void runSequence(false);$('stop').onclick=()=>{sequenceCancel=true;};
+
+$('fit-probes').onclick=async()=>{
+  pause();await idle();exclusive=true;
+  try{
+    if($('light-model').value!=='2'||$('view').value!=='0'||new Set(['0','sky']).has($('sun').value))throw Error('Use lit fitted model with Sun enabled for matching fit products');
+    await renderFrame(age);const receipt=await checkScatterFit(device,fit,fitProducts,sourceObject,lastFrame);
+    const name=`fit-probe-${Date.now()}`;await save(name+'.json',JSON.stringify({identity,scene:lastFrame,...receipt},null,2));
+    $('checks').textContent=JSON.stringify({saved:name,implementation_checks_pass:receipt.implementation_checks_pass,lut:receipt.lut,storage:receipt.storage,body_quality:receipt.body_quality,bank_interpolation:receipt.bank_interpolation},null,2);
+  }catch(error){$('checks').textContent=error.stack;}finally{exclusive=false;}
+};

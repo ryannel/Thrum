@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Thrum · Cu lifecycle candidate</title>
+<style>body{background:#111c24;color:#e0e8ee;font:14px system-ui;margin:16px}canvas{display:block;width:min(100%,1280px);height:auto;touch-action:none;border:1px solid #405768}button,select,input{font:inherit;padding:6px;margin:4px}input[type=range]{width:45%}pre{white-space:pre-wrap}a{color:#a7d7ff}</style>
+<h1>Cumulus lifecycle candidate</h1><p>Unaccepted F1 source · shape diagnostic isolates geometry · lit view uses a local vacuum/constant-sky fixture with independent mirror and receiver shadows.</p>
+<canvas width="1280" height="720" aria-label="Cumulus candidate scene"></canvas>
+<div><button id="play">Play</button><select id="rate" aria-label="Preview speed"><option value="1">1×</option><option value="16">16×</option><option value="64">64×</option></select>
+<label>Source <input id="exact" aria-label="Exact source age" type="number" value="650" min="0" max="1800" step="1"> s</label><input id="seek" aria-label="Source age" type="range" value="650" min="0" max="1800" step="1"></div>
+<div><select id="model" aria-label="Source model"><option value="hierarchy">Surface hierarchy candidate</option><option value="prepared" selected>Retained detailed master (comparator)</option><option value="coarse">Earlier coarse graph (rejected)</option></select>
+<select id="levels" aria-label="Surface detail"><option value="0">Body only</option><option value="1">Body + medium</option><option value="2" selected>Body + medium + fine</option></select>
+<select id="resolution" aria-label="Source field resolution"><option value="128" selected>128 source field</option><option value="256">256 source field</option></select>
+<select id="view" aria-label="Inspection view"><option value="1">Shape diagnostic</option><option value="0" selected>Lit cloud</option><option value="2">Optical depth</option></select>
+<select id="variant" aria-label="Morphology"><option value="0">Broad shallow</option><option value="1">Clustered turrets</option><option value="2">Narrow rising</option><option value="3">Wide asymmetric banks</option></select>
+<select id="light-model" aria-label="Cloud scattering"><option value="0">Earlier passive mixture</option><option value="1">Exact primary only</option><option value="2" selected>Fitted liquid redistribution</option></select>
+<select id="sun" aria-label="Lighting"><option value="30">Sun 30°</option><option value="75">Sun 75°</option><option value="15">Sun 15°</option><option value="5">Sun 5°</option><option value="sky">Sun off, sky retained</option><option value="0">All illumination off</option></select>
+<label><input id="main" type="checkbox" checked>Main cloud</label><label><input id="reflection" type="checkbox" checked>Mirror</label><label><input id="transmittance" type="checkbox">Transmittance</label>
+<select id="route" aria-label="Camera route"><option value="coupled">Ground coupling</option><option value="local" selected>Local coupling diagnostic (low altitude)</option><option value="front">Close front diagnostic</option><option value="side">Close side diagnostic</option><option value="top">High diagnostic</option></select>
+<button id="reset">Reset camera</button><button id="capture">Capture scene</button><button id="probes">Check source on GPU</button></div>
+<div><select id="motion" aria-label="Motion witness"><option value="growth">Normal growth</option><option value="breakup">Normal breakup</option><option value="full16">Complete life 16×</option><option value="full64">Complete life 64×</option></select><button id="record">Record motion witness</button><button id="measure">Measure 330 frames</button><button id="stop" disabled>Stop sequence</button></div>
+<p>Trackpad: two-finger orbit · pinch zoom · Shift + two-finger pan. Drag or right-drag also works. One GPU frame in flight; paused scenes do no background work.</p>
+<p id="status">Loading candidate…</p><details><summary>Candidate identity / limits</summary><pre id="identity"></pre></details><pre id="checks"></pre>
+<script type="module" src="cu-preview.js"></script></html>

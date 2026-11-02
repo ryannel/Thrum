@@ -1,0 +1,145 @@
+{
+  "schema": "thrum.cloud-correction-summary.v1",
+  "scope": "One retained Q1 source,128 field,native1280x720,local low-altitude coupling fixture. Not full SKY-G,full-sky or engine/device acceptance. Timing scope is actual first compute through actual rendered-texture consuming end marker; queue/cadence include measurement readbacks.",
+  "cost_input_sha256": "9a858212fa48165ab6c72b7dac4599a7598043cfd953b2354ecac4b702b56b8f",
+  "cost_build": "e0425a51c36f46855c9dedfd79465915805c4ad910c0e556679de4cb7c9db748",
+  "numpy": "2.4.6",
+  "warmup_frames": 30,
+  "measured_frames": 300,
+  "fresh_source_frames": 300,
+  "fresh_light_frames": 300,
+  "invalid_view_paths": 0,
+  "timing_ms": {
+    "gpu_bracket_ms": {
+      "p50": 11.96032,
+      "p95": 15.07328,
+      "p99": 17.89198336,
+      "max": 19.00544
+    },
+    "queue_complete_ms": {
+      "p50": 19.700000047683716,
+      "p95": 28.104999899864197,
+      "p99": 30.399999856948853,
+      "max": 32.09999990463257
+    },
+    "cpu_encode_ms": {
+      "p50": 0.10000014305114746,
+      "p95": 0.39999985694885254,
+      "p99": 0.40000009536743164,
+      "max": 0.5
+    },
+    "callback_complete_cadence_ms": {
+      "p50": 24.09999990463252,
+      "p95": 32.89999988079071,
+      "p99": 34.50399999618484,
+      "max": 40.99999999999948
+    }
+  },
+  "cloud_GPU_5ms_gate": "FAIL",
+  "complete_engine_browser_GPU_16ms_gate": "UNRUN; standalone fixture p99 already exceeds16ms",
+  "CPU_0_5ms_gate": "UNQUALIFIED: encode only, not complete CPU work",
+  "logical_GPU_allocations_bytes": {
+    "source_field_with_guards_mips": 5316544,
+    "encoded_source": 6491440,
+    "prefix": 2299968,
+    "ambient": 4096,
+    "shared_fit": 264224,
+    "body_and_bank": 131072,
+    "scene_errors_queries_marker_minimum": 484,
+    "field_and_prepared_uniforms": 288,
+    "one_visible_1280x720_BGRA_texture": 3686400
+  },
+  "logical_GPU_sum_bytes": 18194516,
+  "transient_error_readback_bytes": 16,
+  "memory_scope": "Known logical subtotal of declared resources plus one canvas texture; driver/browser/swapchain multiplicity/residency/process peak unmeasured. Replacement has new+old overlap. CPU encoded source6491440B,metadata73104B,fit recovery292941B before parsed-object/compiler overhead.",
+  "motions": [
+    {
+      "receipt": "motion-1793579723098-growth.json",
+      "sha256": "286f84ead645a05471ac1e8c843b31d05c775923dae9b5df4aa535024705ca61",
+      "frames": 829,
+      "rate": 1,
+      "source_start_s": 40,
+      "source_end_s": 60,
+      "wall_complete_s": 20.057200000047683,
+      "invalid_view_paths": 0,
+      "native_snapshots": 9
+    },
+    {
+      "receipt": "motion-1793579800488-breakup.json",
+      "sha256": "18d5bc89018707580aadb1855c9e416e2c7f7ca84599892dd0c8a0f874faf97c",
+      "frames": 780,
+      "rate": 1,
+      "source_start_s": 200,
+      "source_end_s": 220,
+      "wall_complete_s": 20.042799999952315,
+      "invalid_view_paths": 0,
+      "native_snapshots": 9
+    },
+    {
+      "receipt": "motion-1793579885974-full16.json",
+      "sha256": "eab7c259392e514ed429edcf2b48e3bdccb6585bfcb37da26b27254faae80b85",
+      "frames": 631,
+      "rate": 16,
+      "source_start_s": 0,
+      "source_end_s": 240,
+      "wall_complete_s": 15.049100000143051,
+      "invalid_view_paths": 0,
+      "native_snapshots": 9
+    },
+    {
+      "receipt": "motion-1793579938289-full64.json",
+      "sha256": "c4d91ccc7f0c8234d72d0cdadf6ba502abc4e364c6e677eb6a58e35a6287114e",
+      "frames": 158,
+      "rate": 64,
+      "source_start_s": 0,
+      "source_end_s": 240,
+      "wall_complete_s": 3.7857999999523164,
+      "invalid_view_paths": 0,
+      "native_snapshots": 9
+    }
+  ],
+  "fit_probes": [
+    {
+      "receipt": "fit-sun30-probe.json",
+      "sha256": "2cd0683dbbaa5a73d82130afabf4cf338d7c0f06b0b93b34d0cc37e6e1f538a2",
+      "implementation_checks_pass": true,
+      "LUT_error_max": 2.2607141447750223e-07,
+      "centre_A_storage_error_max": 1.3805254983623172e-07,
+      "canonical_column_T_error_max": 0.000577500287234578,
+      "A_vs_canonical_column_error_max": 1.598831862459349e-06,
+      "sampled_Amap_nonlinearity_error_max": 0.025742644712635876
+    },
+    {
+      "receipt": "fit-sun5-probe.json",
+      "sha256": "23d443a2cb831b4debdf00bf083de2178ef3358e3f4a7666acf14fa4d2dc5b22",
+      "implementation_checks_pass": true,
+      "LUT_error_max": 2.2607141447750223e-07,
+      "centre_A_storage_error_max": 3.7710917610844774e-08,
+      "canonical_column_T_error_max": 0.000577500287234578,
+      "A_vs_canonical_column_error_max": 4.7112860734888073e-07,
+      "sampled_Amap_nonlinearity_error_max": 0.0036396952838646524
+    },
+    {
+      "receipt": "fit-sun75-probe.json",
+      "sha256": "99a308ab2e1affc57044303c2f852cc75675838dc66147e9a9ad21b65820e894",
+      "implementation_checks_pass": true,
+      "LUT_error_max": 2.2607141447750223e-07,
+      "centre_A_storage_error_max": 1.1497511920310899e-07,
+      "canonical_column_T_error_max": 0.000577500287234578,
+      "A_vs_canonical_column_error_max": 3.965616460988031e-06,
+      "sampled_Amap_nonlinearity_error_max": 0.020215017994061668
+    }
+  ],
+  "image_checks": {
+    "all_off_max_RGB8": 0,
+    "main_hidden_shadow_patch_xyxy": [
+      750,
+      390,
+      1100,
+      440
+    ],
+    "shadow_patch_max_RGB8_difference": 0,
+    "passive_vs_fit_receiver_patch_max_RGB8_difference": 0,
+    "scope": "Selected receiver pixels only, not a global optical/radiance certificate"
+  }
+}
