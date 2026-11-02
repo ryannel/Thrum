@@ -549,10 +549,10 @@
         "design": "F4-FIRST-HEADLESS-BUILD.md",
         "evidence": "../evidence/i2a/F4-RUSTC-RECEIPTS.md",
         "implementation": "candidate_observer_and_post_build_verifier_only",
-        "functional_validation": "six Rust wrapper tests, eleven Python verifier fixtures and one opt-in sandboxed A/B build passed locally",
+        "functional_validation": "six Rust wrapper tests, twelve Python verifier fixtures and one opt-in sandboxed A/B build passed locally",
         "experienced_quality": "not_applicable_to_headless_compiler_observer",
         "platform_performance": "one sandboxed macOS ARM64 fresh-output A compile took 1297 ms; later correctness runs took 1598 and 4293 ms under uncontrolled conditions, with no tail conclusion; three alternating warm unsandboxed pairs gave medians 1162 ms plain and 1154 ms wrapped, a difference below run variation; Windows, browser and mobile not measured",
-        "scope": "The macOS candidate records bounded exact rustc invocation arguments, working directory, child environment and completion through Cargo's stable wrapper hook. A strict verifier matches five successful compiles and three exact-profile probes to the fresh Cargo artifact transcript, source/package manifest identity and named dependency artifacts, and restricts Cargo's dynamic-library search variable and observed codegen/linker options to selected locations; B fails without invalidating A. It reports buildReady false. Implicit compiler/linker/system reads, failed-B receipt audit, release-selected wrapper identity, reviewed manifest and durable target-ready output remain open."
+        "scope": "The macOS candidate records bounded exact rustc invocation arguments, working directory, child environment and completion through Cargo's stable wrapper hook. A strict verifier matches five successful compiles and three exact-profile probes to the fresh Cargo artifact transcript, source/package manifest identity, named dependency artifacts, exact emission sets and crate types, and restricts Cargo's dynamic-library search variable and observed codegen/linker options to selected locations; B fails without invalidating A. It reports buildReady false. Implicit compiler/linker/system reads, failed-B receipt audit, release-selected wrapper identity, reviewed manifest and durable target-ready output remain open."
       },
       "i2a_admitted_headless_compile": {
         "design": "F4-FIRST-HEADLESS-BUILD.md",

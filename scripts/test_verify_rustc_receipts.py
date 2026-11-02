@@ -76,6 +76,7 @@ class VerifyRustcReceipts(unittest.TestCase):
         arguments = [
             b"--crate-name", b"headless", b"src/main.rs", b"--emit=dep-info,link",
             b"--out-dir", os.fsencode(output / "debug/deps"),
+            b"--crate-type", b"bin",
             b"-C", b"embed-bitcode=no", b"-C", b"debuginfo=2",
             b"-C", b"split-debuginfo=unpacked", b"-C", b"metadata=0123456789abcdef",
             b"-C", b"linker=" + os.fsencode(linker),
@@ -90,7 +91,8 @@ class VerifyRustcReceipts(unittest.TestCase):
             {"reason": "compiler-artifact", "fresh": False,
              "manifest_path": str(source / "Cargo.toml"),
              "target": {"name": "headless", "src_path": str(source / "src/main.rs"),
-                        "kind": ["bin"]}, "filenames": [str(artifact)]},
+                        "kind": ["bin"], "crate_types": ["bin"]},
+             "filenames": [str(artifact)]},
             {"reason": "build-finished", "success": True},
         )) + "\n")
         return directory, rustc, source, cache, output, transcript, compile_path, arguments, environment
@@ -158,13 +160,14 @@ class VerifyRustcReceipts(unittest.TestCase):
             (receipts / "100.receipt").write_bytes(receipt(rustc, source, [
                 b"--crate-name", b"dep", b"src/dep.rs", b"--emit=dep-info,link",
                 b"--out-dir", os.fsencode(output / "debug/deps"),
-                *arguments[6:],
+                b"--crate-type", b"lib", *arguments[8:],
             ], dep_environment))
             entries = [json.loads(line) for line in transcript.read_text().splitlines()]
             entries.insert(0, {
                 "reason": "compiler-artifact", "fresh": False,
                 "manifest_path": str(source / "Cargo.toml"),
-                "target": {"name": "dep", "src_path": str(dependency_source), "kind": ["lib"]},
+                "target": {"name": "dep", "src_path": str(dependency_source),
+                           "kind": ["lib"], "crate_types": ["lib"]},
                 "filenames": [str(undeclared)],
             })
             transcript.write_text("\n".join(json.dumps(entry) for entry in entries) + "\n")
@@ -318,6 +321,22 @@ class VerifyRustcReceipts(unittest.TestCase):
                        for name, value in environment]
             path.write_bytes(receipt(rustc, source, arguments, changed))
             with self.assertRaisesRegex(ValueError, "not ordinary and absolute"):
+                inspect(*args[:6])
+
+    def test_emit_and_crate_types_match_selected_cargo_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            changed = [b"--emit=dep-info,link,llvm-ir=/outside" if item ==
+                       b"--emit=dep-info,link" else item for item in arguments]
+            path.write_bytes(receipt(rustc, source, changed, environment))
+            with self.assertRaisesRegex(ValueError, "unexpected rustc emission"):
+                inspect(*args[:6])
+            path.write_bytes(receipt(rustc, source, arguments, environment))
+            records = [json.loads(line) for line in transcript.read_text().splitlines()]
+            records[0]["target"]["crate_types"] = ["lib"]
+            transcript.write_text("\n".join(json.dumps(record) for record in records) + "\n")
+            with self.assertRaisesRegex(ValueError, "crate types differ"):
                 inspect(*args[:6])
 
 
