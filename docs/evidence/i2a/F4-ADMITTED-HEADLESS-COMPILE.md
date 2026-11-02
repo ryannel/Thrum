@@ -128,6 +128,21 @@ were included in those candidate digests. The whole developer tree would
 cover roughly 117,000 files and took 26.5 seconds to inventory. These are
 one-host cold observations, not verified release roots or edit-time costs.
 
+The local macOS data-read profile now names `/System/Library`,
+`/System/Cryptexes`, `/usr/lib`, `/usr/bin`, `/Library/Preferences`,
+`/private/etc` and `/dev` instead of granting all of `/System`, `/usr` and
+`/Library`. The opt-in admitted A/B test passed with this profile on 2 November:
+private cache preparation took 1,308 ms, pre-A reuse verification 159 ms,
+and A's fresh-output build 1,095 ms for 53 admitted files (1,228,273 bytes).
+The same sandbox command successfully read `/private/etc/hosts`, checking
+that the denial probes were not merely failing to launch. Denial probes then
+used existing files at `/usr/share/misc/ascii` and
+`/System/Applications/Calculator.app/Contents/Info.plist` and confirmed the
+sandbox refused those reads. The test requires at least one
+such existing system-file probe on the host. This is a narrower local data-read
+boundary; global metadata reads and the named system roots remain broad, and
+there is no complete compiler file-read trace or release root authentication.
+
 Broad system reads remain; general selected-unit and build-script/proc-macro
 inputs, exact compiler/dependency identities and the output manifest are not
 closed. A successful process exit and binary hash therefore do not form a

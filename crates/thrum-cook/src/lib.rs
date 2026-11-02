@@ -1536,7 +1536,7 @@ mod tests {
         let profile = output.join("build.sb");
         fs::write(
             &profile,
-            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System\") (subpath \"/usr\") (subpath \"/Library\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
+            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") (subpath \"/Library/Preferences\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         )
         .unwrap();
         let paths = SandboxPaths {
@@ -1557,6 +1557,33 @@ mod tests {
             .output()
             .unwrap();
         assert!(!blocked_project.status.success());
+        let readable_system_file = Path::new("/private/etc/hosts");
+        assert!(readable_system_file.is_file());
+        let allowed_system = sandbox_command(&profile, paths, "/bin/cat")
+            .arg(readable_system_file)
+            .output()
+            .unwrap();
+        assert!(
+            allowed_system.status.success(),
+            "{}",
+            String::from_utf8_lossy(&allowed_system.stderr)
+        );
+        assert_eq!(allowed_system.stdout, fs::read(readable_system_file).unwrap());
+        let mut system_read_probes = 0;
+        for denied in [
+            Path::new("/usr/share/misc/ascii"),
+            Path::new("/System/Applications/Calculator.app/Contents/Info.plist"),
+        ] {
+            if denied.is_file() {
+                let blocked_system = sandbox_command(&profile, paths, "/bin/cat")
+                    .arg(denied)
+                    .output()
+                    .unwrap();
+                assert!(!blocked_system.status.success(), "{}", denied.display());
+                system_read_probes += 1;
+            }
+        }
+        assert!(system_read_probes > 0, "no system read boundary was probed");
         let blocked_write = sandbox_command(&profile, paths, "/usr/bin/touch")
             .arg(input.join("should-not-exist"))
             .output()
