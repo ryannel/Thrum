@@ -78,6 +78,13 @@ T2 must verify the exact cache root, selected units and paths the compiler
 actually reads before calling any build ready. Per-edit work should reuse an
 unchanged verified dependency root; copying the entire shared registry for
 each edit is outside the selected cost model.
+An [offline full-workspace vendor experiment](../evidence/i2a/F4-VENDOR-FEASIBILITY.md)
+produced 229 package directories and 425 MB of local disk use. Cargo's
+vendored checksums protect against accidental changes, but do not themselves
+establish release provenance. The first profile therefore keeps the smaller
+private-cache candidate while a reviewed release manifest or equivalent trust
+root for exact dependency and toolchain bytes remains an explicit readiness
+gate.
 
 The first [native preparation tool](../../scripts/prepare_headless_cargo_home.py)
 now copies and SHA-checks every lockfile archive and exact index records from
