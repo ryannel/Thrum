@@ -30,6 +30,8 @@ const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 const SMALL_BATCH_FILE_BYTES: u64 = 4 * 1024;
 const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
+const MIB: u64 = 1024 * 1024;
+const GIB: u64 = 1024 * MIB;
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
 struct Fixture(PathBuf);
@@ -88,6 +90,7 @@ enum ProofError {
     CandidateManifest(ManifestError),
     CandidateFile(StageError),
     Budget(BudgetError),
+    WalBackpressure,
 }
 
 impl fmt::Display for ProofError {
@@ -179,6 +182,22 @@ struct RootTransactionProof {
     conn: Connection,
     scratch: Vec<u8>,
     path: PathBuf,
+    wal_guard: WalGuard,
+}
+
+#[derive(Clone, Copy)]
+struct WalGuard {
+    passive_at: u64,
+    next_passive_at: u64,
+    stop_at: u64,
+}
+
+impl WalGuard {
+    const V1: Self = Self {
+        passive_at: GIB,
+        next_passive_at: GIB,
+        stop_at: 2 * GIB,
+    };
 }
 
 struct OutcomeRow {
@@ -433,6 +452,7 @@ impl RootTransactionProof {
              PRAGMA journal_mode=WAL;
              PRAGMA synchronous=FULL;
              PRAGMA foreign_keys=ON;
+             PRAGMA busy_timeout=0;
              PRAGMA max_page_count=13631488;
              CREATE TABLE IF NOT EXISTS root (
                id INTEGER PRIMARY KEY CHECK (id=1),
@@ -467,18 +487,66 @@ impl RootTransactionProof {
         let journal_mode: String = conn.query_row("PRAGMA journal_mode", [], |row| row.get(0))?;
         let synchronous: i64 = conn.query_row("PRAGMA synchronous", [], |row| row.get(0))?;
         let foreign_keys: i64 = conn.query_row("PRAGMA foreign_keys", [], |row| row.get(0))?;
+        let busy_timeout: i64 = conn.query_row("PRAGMA busy_timeout", [], |row| row.get(0))?;
         let max_page_count: i64 = conn.query_row("PRAGMA max_page_count", [], |row| row.get(0))?;
         assert_eq!(page_size, 4096);
         assert_eq!(auto_vacuum, 2);
         assert_eq!(journal_mode, "wal");
         assert_eq!(synchronous, 2);
         assert_eq!(foreign_keys, 1);
+        assert_eq!(busy_timeout, 0);
         assert_eq!(max_page_count, MAX_PAGE_COUNT);
         Ok(Self {
             conn,
             scratch: Vec::new(),
             path: path.to_owned(),
+            wal_guard: WalGuard::V1,
         })
+    }
+
+    fn ensure_wal_room(&mut self, incoming_allowance: u64) -> Result<(), ProofError> {
+        if incoming_allowance >= self.wal_guard.stop_at {
+            return Err(ProofError::WalBackpressure);
+        }
+        let wal_path = self.path.with_extension("sqlite-wal");
+        let current = match fs::metadata(&wal_path) {
+            Ok(metadata) => metadata.len(),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
+            Err(source) => return Err(physical_io(&wal_path, source)),
+        };
+        if current >= self.wal_guard.next_passive_at {
+            let _: (i64, i64, i64) =
+                self.conn
+                    .query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |row| {
+                        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                    })?;
+            self.wal_guard.next_passive_at = current.saturating_add(64 * MIB);
+        }
+        if current
+            .checked_add(incoming_allowance)
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?
+            < self.wal_guard.stop_at
+        {
+            return Ok(());
+        }
+        let (busy, _, _): (i64, i64, i64) =
+            self.conn
+                .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+                    Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                })?;
+        let after = fs::metadata(&wal_path)
+            .map_err(|source| physical_io(&wal_path, source))?
+            .len();
+        if busy != 0
+            || after
+                .checked_add(incoming_allowance)
+                .ok_or(ProofError::Budget(BudgetError::Overflow))?
+                >= self.wal_guard.stop_at
+        {
+            return Err(ProofError::WalBackpressure);
+        }
+        self.wal_guard.next_passive_at = self.wal_guard.passive_at;
+        Ok(())
     }
 
     fn root(&self) -> rusqlite::Result<(i64, Option<Vec<u8>>)> {
@@ -850,6 +918,7 @@ impl RootTransactionProof {
         &mut self,
         files: impl IntoIterator<Item = ([u8; 32], &'a [u8])>,
     ) -> Result<(), ProofError> {
+        self.ensure_wal_room(5 * MIB)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -1021,6 +1090,21 @@ impl RootTransactionProof {
         chunk_count: i64,
     ) -> Result<bool, ProofError> {
         let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+        let complete: Option<(i64, i64)> = self
+            .conn
+            .query_row(
+                "SELECT length, chunk_count FROM blob_header WHERE hash=?1 AND state=1",
+                params![expected_hash.as_slice()],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
+        if let Some((prior_length, prior_chunks)) = complete {
+            if prior_length != sql_length || prior_chunks != chunk_count {
+                return Err(ProofError::BlobMetadataMismatch);
+            }
+            return Ok(true);
+        }
+        self.ensure_wal_room(MIB)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -1069,6 +1153,15 @@ impl RootTransactionProof {
         index: i64,
         bytes: &[u8],
     ) -> Result<(), ProofError> {
+        let rounded = (bytes.len() as u64)
+            .div_ceil(SQLITE_PAGE_BYTES)
+            .checked_mul(SQLITE_PAGE_BYTES)
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        let allowance = rounded
+            .checked_mul(2)
+            .and_then(|value| value.checked_add(MIB))
+            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        self.ensure_wal_room(allowance)?;
         let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
         let tx = self
             .conn
@@ -1102,6 +1195,7 @@ impl RootTransactionProof {
         chunk_count: i64,
         after_verify: impl FnOnce(),
     ) -> Result<(), ProofError> {
+        self.ensure_wal_room(MIB)?;
         let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
         let tx = self
             .conn
@@ -1231,6 +1325,14 @@ impl RootTransactionProof {
         revision: [u8; 32],
         mut check_closure: impl FnMut(&Transaction<'_>) -> Result<(), ProofError>,
     ) -> Result<i64, ProofError> {
+        if let Some(outcome) = stored_outcome(&self.conn, epoch, key)? {
+            return if outcome.request_hash == request_hash && outcome.revision == revision {
+                Ok(outcome.generation)
+            } else {
+                Err(ProofError::TokenConflict)
+            };
+        }
+        self.ensure_wal_room(MIB)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -2185,6 +2287,105 @@ fn candidate_space_preflight_reserves_existing_checkpoint_debt() {
         required_free_bytes(u64::MAX, 1, debt, 0),
         Err(ProofError::Budget(BudgetError::Overflow))
     ));
+}
+
+#[test]
+fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
+    let fixture = Fixture::new();
+    let mut writer = RootTransactionProof::open(&fixture.database()).unwrap();
+    writer
+        .conn
+        .execute_batch("PRAGMA wal_autocheckpoint=0; PRAGMA busy_timeout=0;")
+        .unwrap();
+    let first = [0x41_u8];
+    let first_hash: [u8; 32] = Sha256::digest(first).into();
+    writer
+        .stage_blob(&mut first.as_slice(), 1, first_hash)
+        .unwrap();
+    writer.commit_probe(0, 1, 1, [1; 32], first_hash).unwrap();
+    let baseline: (i64, i64, i64) = writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(baseline, (0, 0, 0));
+    let reader = Connection::open(fixture.database()).unwrap();
+    reader.execute_batch("BEGIN").unwrap();
+    let _: i64 = reader
+        .query_row("SELECT generation FROM root WHERE id=1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+
+    let second = [0x42_u8];
+    let second_hash: [u8; 32] = Sha256::digest(second).into();
+    writer
+        .stage_blob(&mut second.as_slice(), 1, second_hash)
+        .unwrap();
+    let wal_path = fixture.database().with_extension("sqlite-wal");
+    let before = fs::metadata(&wal_path).unwrap().len();
+    assert!(before > 0);
+    let passive: (i64, i64, i64) = writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert!(passive.1 > passive.2);
+    writer.wal_guard = WalGuard {
+        passive_at: 0,
+        next_passive_at: 0,
+        stop_at: before + MIB - 1,
+    };
+    let third = [0x43_u8];
+    let third_hash: [u8; 32] = Sha256::digest(third).into();
+    assert!(matches!(
+        writer.stage_blob(&mut third.as_slice(), 1, third_hash),
+        Err(ProofError::WalBackpressure)
+    ));
+    assert!(writer.wal_guard.next_passive_at > before);
+    let staged_third: bool = writer
+        .conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM blob_header WHERE hash=?1)",
+            params![third_hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(!staged_third);
+    writer
+        .stage_blob(&mut second.as_slice(), 1, second_hash)
+        .unwrap();
+    assert_eq!(
+        writer.commit_probe(0, 1, 1, [1; 32], first_hash).unwrap(),
+        1
+    );
+    assert!(matches!(
+        writer.commit_probe(0, 1, 1, [2; 32], first_hash),
+        Err(ProofError::TokenConflict)
+    ));
+    assert_eq!(writer.root().unwrap().0, 1);
+    let blocked: (i64, i64, i64) = writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(blocked.0, 1);
+    assert_eq!(fs::metadata(&wal_path).unwrap().len(), before);
+    reader.execute_batch("COMMIT").unwrap();
+    let drained: (i64, i64, i64) = writer
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(drained, (0, 0, 0));
+    assert_eq!(fs::metadata(&wal_path).unwrap().len(), 0);
+    writer
+        .stage_blob(&mut third.as_slice(), 1, third_hash)
+        .unwrap();
 }
 
 #[test]
