@@ -200,6 +200,60 @@ def root_inventory(root):
     return {"sha256": digest.hexdigest(), "files": count, "bytes": total}
 
 
+def possible_headless_packages(metadata, source):
+    """Walk normal/build edges; workspace feature union can overstate build units."""
+    packages = {package["id"]: package for package in metadata["packages"]}
+    nodes = {node["id"]: node for node in metadata["resolve"]["nodes"]}
+    root_manifest = (source / "examples/i1-mobile-game/Cargo.toml").resolve()
+    roots = [
+        package["id"] for package in packages.values()
+        if package["name"] == "i1-mobile-game"
+        and package["source"] is None
+        and Path(package["manifest_path"]).resolve() == root_manifest
+    ]
+    if len(roots) != 1:
+        raise ValueError("expected one admitted headless package")
+    selected = set()
+    pending = roots
+    while pending:
+        package_id = pending.pop()
+        if package_id in selected:
+            continue
+        selected.add(package_id)
+        if package_id not in packages or package_id not in nodes:
+            raise ValueError(f"selected package missing from metadata: {package_id}")
+        for dependency in nodes[package_id]["deps"]:
+            if any(
+                kind["kind"] in (None, "build")
+                for kind in dependency["dep_kinds"]
+            ):
+                pending.append(dependency["pkg"])
+    records = []
+    for package_id in selected:
+        package = packages[package_id]
+        if any(
+            kind in ("custom-build", "proc-macro")
+            for target in package["targets"] for kind in target["kind"]
+        ):
+            raise ValueError(f"first headless profile refuses executable dependency hooks: {package_id}")
+        manifest = Path(package["manifest_path"]).resolve()
+        if package["source"] is None:
+            relative = manifest.parent.relative_to(source.resolve()).as_posix()
+            origin = f"path:{relative}"
+        elif package["source"] == REGISTRY_SOURCE:
+            origin = package["source"]
+        else:
+            raise ValueError(f"unsupported selected dependency source: {package_id}")
+        records.append({
+            "origin": origin,
+            "name": package["name"],
+            "version": package["version"],
+            "features": sorted(nodes[package_id]["features"]),
+        })
+    records.sort(key=lambda record: (record["origin"], record["name"], record["version"]))
+    return records
+
+
 def prepare(source, shared_home, destination, cargo, rustc, target):
     for label, path in (
         ("source", source), ("shared Cargo home", shared_home),
@@ -282,6 +336,7 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
             key = Path(".cache") / index_key(name)
             if sha256_file(private_index / key) != identity["sha256"]:
                 raise ValueError(f"private index changed during Cargo resolution: {name}")
+        possible_packages = possible_headless_packages(metadata, source)
         selected = set()
         for package in metadata["packages"]:
             package_source = package["source"]
@@ -323,6 +378,7 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
             "registryIndexRecords": copied_index,
             "registryArchives": copied_archives,
             "verifiedLockArchives": len(verified_archives),
+            "possibleBuildPackages": possible_packages,
             "privateRoot": inventory,
         }
         with manifest_path.open("x", encoding="utf-8") as output:

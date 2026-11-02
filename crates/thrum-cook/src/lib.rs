@@ -1158,6 +1158,25 @@ mod tests {
             "{}",
             String::from_utf8_lossy(&result.stderr)
         );
+        let candidate: serde_json::Value =
+            serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+        let mut packages = candidate["possibleBuildPackages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|package| package["name"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        packages.sort_unstable();
+        assert_eq!(
+            packages,
+            [
+                "foldhash",
+                "hashbrown",
+                "i1-mobile-game",
+                "thrum-core",
+                "thrum-mobile-shell"
+            ]
+        );
         eprintln!(
             "prepared-private-cargo-home prep_ms={} {}",
             started.elapsed().as_millis(),
