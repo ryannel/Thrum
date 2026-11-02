@@ -11,7 +11,9 @@ use sha2::{Digest, Sha256};
 
 use crate::bootstrap_json::parse_scene;
 use crate::game_json::{GameRecordError, GameRecordSummary, parse_game_record};
-use crate::history_json::{HistoryError, parse_registry_history};
+use crate::history_json::{
+    CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
+};
 use crate::project_v2_json::{ProjectV2, ProjectV2Error, parse_project_v2};
 use crate::registry::{RegistryConsistencyError, validate_active_registry_with};
 use crate::schema_json::{SchemaDescriptor, SchemaError, parse_schema_descriptor};
@@ -106,6 +108,19 @@ pub enum StagedCandidateError {
     Registry(StagedRegistryError),
     /// Scene/game identity or required reference closure refused.
     Records(StagedRecordError),
+}
+
+/// Two rehashed staged histories cannot form one monotonic source lineage.
+#[derive(Debug)]
+pub enum StagedLineageError {
+    /// The two project declarations name different durable projects.
+    DifferentProject,
+    /// One history file could not be reread or its staged hash changed.
+    Stage(StagedRegistryError),
+    /// One source-carried history record failed its fixed grammar.
+    History(HistoryError),
+    /// A permanent field meaning or type-version definition was lost or changed.
+    Conflict(CarriedHistoryError),
 }
 
 /// Registry and records checked together against one provisional stage.
@@ -508,6 +523,36 @@ pub fn validate_staged_candidate<'a>(
     Ok(StagedCandidate { registry, records })
 }
 
+/// Compare source-carried histories from two already checked staged registries.
+///
+/// Both history inputs are reread and rehashed, and their parsed vectors borrow
+/// their input buffers through one linear comparison. This proves only the
+/// staged-byte lineage relationship. A later durable store must authenticate
+/// `prior` as the current admitted root under a generation precondition.
+pub fn compare_staged_histories(
+    prior: &StagedRegistry<'_>,
+    candidate: &StagedRegistry<'_>,
+) -> Result<(), StagedLineageError> {
+    if prior.project().id() != candidate.project().id() {
+        return Err(StagedLineageError::DifferentProject);
+    }
+    let prior_path = fixed_path(prior.project().history_path());
+    let candidate_path = fixed_path(candidate.project().history_path());
+    let prior_file = find_file(prior.stage(), &prior_path).expect("checked prior history path");
+    let candidate_file =
+        find_file(candidate.stage(), &candidate_path).expect("checked candidate history path");
+    let prior_bytes =
+        read_record_bytes(prior.stage(), prior_file).map_err(StagedLineageError::Stage)?;
+    let candidate_bytes =
+        read_record_bytes(candidate.stage(), candidate_file).map_err(StagedLineageError::Stage)?;
+    let prior_history =
+        parse_registry_history(&prior_bytes).map_err(StagedLineageError::History)?;
+    let candidate_history =
+        parse_registry_history(&candidate_bytes).map_err(StagedLineageError::History)?;
+    compare_carried_histories(&prior_history, &candidate_history)
+        .map_err(StagedLineageError::Conflict)
+}
+
 fn fixed_path(text: &str) -> SourcePath {
     SourcePath::parse(text).expect("fixed portable source path")
 }
@@ -722,6 +767,58 @@ mod tests {
             Err(StagedRegistryError::Registry(
                 RegistryConsistencyError::ChangedFieldMeaning(0)
             ))
+        ));
+    }
+
+    #[test]
+    fn staged_history_lineage_preserves_retired_fields_and_old_versions() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let history_path = "schemas/history.registry.json";
+        let base_bytes = fs::read(fixture.0.join(history_path)).unwrap();
+        let base_stage = fixture.stage(PATHS);
+        let base = validate_staged_registry(&base_stage, &[]).unwrap();
+
+        let mut extended: serde_json::Value = serde_json::from_slice(&base_bytes).unwrap();
+        extended["fields"]["registry.fields"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.zzz", "fieldId":"old.value",
+                "signature":"00".repeat(32), "retired":true
+            }));
+        extended["fields"]["registry.versions"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.zzz", "targetVersion":1,
+                "definitionHash":"00".repeat(32)
+            }));
+        fixture.write(history_path, &serde_json::to_vec(&extended).unwrap());
+        let extended_stage = fixture.stage(PATHS);
+        let extended_registry = validate_staged_registry(&extended_stage, &[]).unwrap();
+        assert!(compare_staged_histories(&base, &extended_registry).is_ok());
+        assert!(matches!(
+            compare_staged_histories(&extended_registry, &base),
+            Err(StagedLineageError::Conflict(CarriedHistoryError::Field(_)))
+        ));
+
+        let mut version_only: serde_json::Value = serde_json::from_slice(&base_bytes).unwrap();
+        version_only["fields"]["registry.versions"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.zzz", "targetVersion":1,
+                "definitionHash":"00".repeat(32)
+            }));
+        fixture.write(history_path, &serde_json::to_vec(&version_only).unwrap());
+        let version_stage = fixture.stage(PATHS);
+        let version_registry = validate_staged_registry(&version_stage, &[]).unwrap();
+        assert!(matches!(
+            compare_staged_histories(&version_registry, &base),
+            Err(StagedLineageError::Conflict(CarriedHistoryError::Version(
+                _
+            )))
         ));
     }
 
@@ -1233,6 +1330,39 @@ mod tests {
             "files={} copied_bytes={} elapsed={:?}",
             stage.files().len(),
             stage.copied_bytes(),
+            start.elapsed()
+        );
+    }
+
+    #[test]
+    #[ignore = "local two-buffer maximum history lineage cost probe"]
+    fn measure_dense_staged_history_lineage() {
+        let (fixture, prior_stage) = dense_fixture(1);
+        let declared: Vec<_> = prior_stage
+            .files()
+            .iter()
+            .map(|file| file.path().clone())
+            .collect();
+        let candidate_stage = stage_declared_tree_with(
+            &fixture.0,
+            &declared,
+            Limits {
+                main: 2 * 1024 * 1024 * 1024,
+                wal: 4 * 1024 * 1024,
+                temporary: 256 * 1024 * 1024,
+                free_floor: 0,
+            },
+            |_| {},
+        )
+        .unwrap();
+        let prior = validate_staged_registry(&prior_stage, &[]).unwrap();
+        let candidate = validate_staged_registry(&candidate_stage, &[]).unwrap();
+        let start = std::time::Instant::now();
+        compare_staged_histories(&prior, &candidate).unwrap();
+        eprintln!(
+            "files_per_stage={} bytes_per_stage={} elapsed={:?}",
+            prior_stage.files().len(),
+            prior_stage.copied_bytes(),
             start.elapsed()
         );
     }
