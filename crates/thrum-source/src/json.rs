@@ -2,9 +2,12 @@
 
 use serde::de::{DeserializeSeed, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Value};
+use std::cell::Cell;
 
 /// Maximum exact bytes in one editable JSON source record.
 pub const MAX_RECORD_BYTES: usize = 16 * 1024 * 1024;
+/// Maximum JSON values in one v1 source record, including containers.
+pub const MAX_RECORD_NODES: usize = 1_000_000;
 const MAX_CONTAINER_DEPTH: u8 = 64;
 
 /// A source JSON record exceeded its byte bound or failed strict syntax.
@@ -20,37 +23,59 @@ pub enum JsonError {
 /// Schema identity, field units and dependency closure are checked by the
 /// later F3 validator before a candidate revision can be returned.
 pub fn parse_record_json(bytes: &[u8]) -> Result<Value, JsonError> {
+    parse_record_json_with_limit(bytes, MAX_RECORD_NODES)
+}
+
+fn parse_record_json_with_limit(bytes: &[u8], node_limit: usize) -> Result<Value, JsonError> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(JsonError::TooLarge);
     }
+    let nodes = Cell::new(0);
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
-    let value = StrictSeed { depth: 0 }
-        .deserialize(&mut deserializer)
-        .map_err(JsonError::Invalid)?;
+    let value = StrictSeed {
+        depth: 0,
+        nodes: &nodes,
+        node_limit,
+    }
+    .deserialize(&mut deserializer)
+    .map_err(JsonError::Invalid)?;
     deserializer.end().map_err(JsonError::Invalid)?;
     Ok(value)
 }
 
-struct StrictSeed {
+struct StrictSeed<'a> {
     depth: u8,
+    nodes: &'a Cell<usize>,
+    node_limit: usize,
 }
 
-impl<'de> DeserializeSeed<'de> for StrictSeed {
+impl<'de> DeserializeSeed<'de> for StrictSeed<'_> {
     type Value = Value;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_any(StrictVisitor { depth: self.depth })
+        let count = self.nodes.get();
+        if count >= self.node_limit {
+            return Err(serde::de::Error::custom("source JSON value count limit"));
+        }
+        self.nodes.set(count + 1);
+        deserializer.deserialize_any(StrictVisitor {
+            depth: self.depth,
+            nodes: self.nodes,
+            node_limit: self.node_limit,
+        })
     }
 }
 
-struct StrictVisitor {
+struct StrictVisitor<'a> {
     depth: u8,
+    nodes: &'a Cell<usize>,
+    node_limit: usize,
 }
 
-impl<'de> Visitor<'de> for StrictVisitor {
+impl<'de> Visitor<'de> for StrictVisitor<'_> {
     type Value = Value;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -98,6 +123,8 @@ impl<'de> Visitor<'de> for StrictVisitor {
         let mut values = Vec::new();
         while let Some(value) = sequence.next_element_seed(StrictSeed {
             depth: self.depth + 1,
+            nodes: self.nodes,
+            node_limit: self.node_limit,
         })? {
             values.push(value);
         }
@@ -112,6 +139,8 @@ impl<'de> Visitor<'de> for StrictVisitor {
         while let Some(key) = map.next_key::<String>()? {
             let value = map.next_value_seed(StrictSeed {
                 depth: self.depth + 1,
+                nodes: self.nodes,
+                node_limit: self.node_limit,
             })?;
             if values.insert(key, value).is_some() {
                 return Err(serde::de::Error::custom("duplicate source JSON key"));
@@ -141,5 +170,61 @@ mod tests {
         assert_eq!(valid["fields"]["x"], 1);
         let precise = parse_record_json(br#"{"value":51.248178375505404}"#).unwrap();
         assert_eq!(precise["value"].as_f64(), Some(51.248178375505404));
+        assert!(parse_record_json_with_limit(br#"[0,1]"#, 2).is_err());
+        assert!(parse_record_json_with_limit(br#"{"a":0,"b":1}"#, 2).is_err());
+        assert!(parse_record_json_with_limit(br#"[0,1]"#, 3).is_ok());
+    }
+
+    #[test]
+    #[ignore = "local dense-array parser time and process-memory probe"]
+    fn measure_dense_array_at_value_limit() {
+        let mut bytes = Vec::with_capacity(2 * MAX_RECORD_NODES);
+        bytes.push(b'[');
+        for index in 0..MAX_RECORD_NODES - 1 {
+            if index != 0 {
+                bytes.push(b',');
+            }
+            bytes.push(b'0');
+        }
+        bytes.push(b']');
+        let start = std::time::Instant::now();
+        let value = parse_record_json(&bytes).unwrap();
+        let elapsed = start.elapsed();
+        assert_eq!(value.as_array().unwrap().len(), MAX_RECORD_NODES - 1);
+        eprintln!(
+            "dense_array_values={} input_bytes={} elapsed={elapsed:?} value_size={}",
+            MAX_RECORD_NODES,
+            bytes.len(),
+            std::mem::size_of::<Value>()
+        );
+        std::hint::black_box(value);
+    }
+
+    #[test]
+    #[ignore = "local dense-map parser time and process-memory probe"]
+    fn measure_dense_map_at_value_limit() {
+        let mut bytes = Vec::with_capacity(14 * MAX_RECORD_NODES);
+        bytes.push(b'{');
+        for index in 0..MAX_RECORD_NODES - 1 {
+            if index != 0 {
+                bytes.push(b',');
+            }
+            bytes.push(b'"');
+            bytes.push(b'k');
+            bytes.extend_from_slice(index.to_string().as_bytes());
+            bytes.extend_from_slice(b"\":0");
+        }
+        bytes.push(b'}');
+        let start = std::time::Instant::now();
+        let value = parse_record_json(&bytes).unwrap();
+        let elapsed = start.elapsed();
+        assert_eq!(value.as_object().unwrap().len(), MAX_RECORD_NODES - 1);
+        eprintln!(
+            "dense_map_values={} input_bytes={} elapsed={elapsed:?} value_size={}",
+            MAX_RECORD_NODES,
+            bytes.len(),
+            std::mem::size_of::<Value>()
+        );
+        std::hint::black_box(value);
     }
 }
