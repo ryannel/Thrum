@@ -144,12 +144,15 @@ run this raised verifier time to 195 and 232 ms, including the tool hashes and
 Python startup, over 2,923 files and 67,792,387 logical bytes. Preparation
 took 1,408 ms and A compilation 1,011 ms. This catches candidate cache drift
 before the compiler starts, but the local host cache's original index records
-remain unauthenticated and the simple inventory is not a hostile concurrent
-filesystem proof. A production adapter must use a verified immutable root or
-race-resistant reads with the same integrity semantics.
-The local inventory now opens each regular cache file with no-follow,
-nonblocking flags and compares file identity before and after hashing. It
-rejects special entries; a FIFO replacement test returns promptly instead of
-waiting for a writer. Ten Python fixtures pass. The private-root digest stayed
-unchanged, and a repeated A/B qualification measured 190 and 227 ms for the
-reuse checks. Directory replacement races remain outside this candidate proof.
+remain unauthenticated. A production adapter must use a verified immutable
+root or race-resistant reads with the same integrity semantics.
+
+The inventory now walks directories through no-follow file descriptors,
+opens regular files with no-follow/nonblocking flags, checks file and directory
+identities around reads, and sorts records by path components to preserve the
+existing digest. A FIFO replacement refuses promptly; a controlled parent
+directory swap to a symlink refuses before reading the outside tree. Eleven
+Python fixtures pass. The private-root digest stayed unchanged, and the latest
+paired A/B qualification measured 150 and 186 ms for the reuse checks. This
+remains local candidate evidence, not a general hostile-filesystem or
+release-authentication proof.

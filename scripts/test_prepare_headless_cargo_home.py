@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 from prepare_headless_cargo_home import (
     cargo_reuse_key, collect_bounded, possible_headless_packages, prepare,
@@ -18,6 +19,37 @@ from prepare_headless_cargo_home import (
 
 
 class PrepareHeadlessCargoHome(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "private inventory requires POSIX")
+    def test_private_inventory_preserves_digest_order_and_refuses_parent_swap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "cache"
+            root.mkdir()
+            (root / "a").mkdir()
+            (root / "a/x").write_bytes(b"x")
+            (root / "a.b").write_bytes(b"y")
+            self.assertEqual(root_inventory(root), {
+                "sha256": "c80e10e25120c20ba77311c33856b5781d599e7ae4f9af0f1664e9b24b31e1d3",
+                "files": 2, "bytes": 2,
+            })
+            outside = Path(directory) / "outside"
+            outside.mkdir()
+            (outside / "x").write_bytes(b"outside")
+            real_open = os.open
+            swapped = False
+
+            def swap_parent(path, flags, *args, **kwargs):
+                nonlocal swapped
+                if path == "a" and kwargs.get("dir_fd") is not None and not swapped:
+                    swapped = True
+                    (root / "a").rename(root / "old")
+                    (root / "a").symlink_to(outside, target_is_directory=True)
+                return real_open(path, flags, *args, **kwargs)
+
+            with mock.patch("prepare_headless_cargo_home.os.open", side_effect=swap_parent):
+                with self.assertRaises(OSError):
+                    root_inventory(root)
+            self.assertTrue(swapped)
+
     @unittest.skipUnless(os.name == "posix", "private inventory requires POSIX")
     def test_private_inventory_refuses_fifo_without_blocking(self):
         with tempfile.TemporaryDirectory() as directory:
