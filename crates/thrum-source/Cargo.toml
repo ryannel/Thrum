@@ -1,0 +1,15 @@
+[package]
+name = "thrum-source"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = "=1.0.229"
+serde_json = "=1.0.154"
+unicase = "=2.9.0"
+unicode-normalization = "=0.1.26"
+
+[lints]
+workspace = true

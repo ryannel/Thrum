@@ -1,8 +1,7 @@
 # Contributing to Thrum
 
 Use Rust 1.99.1 and Python 3.11+. `./dev` selects the pinned Rust toolchain even if a standalone
-Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. The bootstrap has no external
-crate dependencies; checks use locked offline Cargo commands.
+Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. Run `rustup run 1.99.1 cargo fetch --locked` once on a clean copy; checks then use locked offline Cargo commands.
 
 | Command | What it does |
 | --- | --- |

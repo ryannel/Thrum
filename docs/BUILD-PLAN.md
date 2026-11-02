@@ -83,6 +83,12 @@ The small game above proves an important path, but the full foundation is still 
 These are the next major pieces, in dependency order. Some work can overlap once the shared rules are settled.
 
 - [ ] **Editable game and save:** Change a source file, build it into game content, run the game, save, restart, and restore. Recover cleanly if a build fails.
+  - [ ] Capture an explicitly declared working-file tree into an immutable, exact-byte candidate with a reproducible source revision. Reject path aliases, unsafe entries, invalid source records and drift; this candidate is not accepted until the durable root transaction below.
+    - [x] Establish the native source-tooling boundary and validate portable path identity, strict bounded JSON syntax and the common record identity envelope. The [validation record](evidence/i2a/SOURCE-VALIDATION.md) covers local rejection fixtures; F3 semantic registry validation and capture remain open.
+    - [ ] Stage and hash a declared complete tree within the first adapter's remaining 2 GiB temporary bucket and a preflighted physical peak, reread for ordinary drift, validate F3 schema/dependency closure, then derive its canonical manifest revision. Preserve the prior staged candidate on rejection; select a separate larger-source path before claiming that profile.
+  - [ ] Durably admit verified candidate bytes and the root/outcome together, with stale-generation refusal, crash recovery and retained old roots under the selected SQLite policy.
+  - [ ] Cook and start one bounded game only from a pinned admitted revision; an edit builds a new revision and restarts a disposable run, while a failed build leaves the previous run and source identity intact.
+  - [ ] Save and restore a private authoritative checkpoint against its exact source/build closure, including restart, corrupt or incompatible data refusal and final owner release.
 - [ ] **Small rendered game:** Add one camera and basic visuals, then hand a working development build to someone starting from a clean copy.
 - [ ] **Real multiplayer:** Run that same game over a secure network connection. Test four players joining, reconnecting, delayed messages, and faults. This work starts alongside the rendered game, before broader integration.
 - [ ] **More content and creation tools:** Add a larger authored scene, two world regions, reimporting, and spatial editing.
