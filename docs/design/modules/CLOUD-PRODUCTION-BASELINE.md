@@ -183,6 +183,31 @@ never creates density outside q, stays within[.078q,q], and partitions that sing
 shadow and reflected ray reads the same function/profile. Keep raw-q/material A/B exposed; this is derived morphology,
 not proof that native growth/merge dynamics work. Thin-ice visibility, mip error and light-cache error must still pass.
 
+Held-source tests now isolate a second failure: one indefinitely advected material map streaks even when q is filled;
+isotropic mip filtering removes those streaks and most structure. Use two staggered renewed air-coordinate maps for
+Cb, following the established [dual-rest treatment](https://www.sidefx.com/docs/houdini/nodes/dop/pyrosolver.html)
+and [rest boundary discussion](https://www.sidefx.com/docs/houdini/nodes/dop/gasrest.html). This is a native implementation;
+no Houdini software/licence/cache is involved. Initial candidate period64source-seconds, offset32, relative to each
+optical epoch's integer.25s ticks. A resets at256n ticks, B at128+256n. Weights sin²(pi*t/64),cos²(pi*t/64) are exactly
+zero with zero derivative at their own resets. Seed both at epoch initialization from the same wind-following world
+recipe; newly appearing q inherits bounded air-chart history, not exact q lineage through diffusion.
+
+Advect both maps with the identical full velocity, sharing backtrace evaluations. Blend complete shaped amounts or
+extinction, never A/B coordinates. On an interval with no reset, previous/current coordinates within each chart may
+retain the existing interpolation; on a reset-crossing interval, evaluate the complete previous/current snapshot
+materials with their own weights/q/maps and interpolate extinction. Endpoints agree across tick boundaries; never
+interpolate coordinates across a reset. All optical readers use that same query and positive phase partition. No q
+source/birth is introduced by map renewal. C1 reset weights prevent a coordinate jump from directly popping material;
+actual motion, synchronized brightness and retained structure remain visual gates. Future histories need renewal
+reactivity in addition to q correspondence.
+
+Two additional half-resolution64x40x64 RGBA16F ping-pong maps cost2.5MiB. One joint carrier dispatch shares seven
+velocity/backtraces, doubles carrier samples/writes, and costs four basis reads per ordinary material query instead
+of two; fractional presentation in a reset-crossing source interval costs eight, alpha1 four. No CPU voxel work.
+This is a measured candidate, not free detail.64s bounds age but not strain: a maximum-weight32s map under.03/s
+strain can stretch2.6x. Inspect weighted distortion/LOD,1x/16x renewal boundaries and complete graph cost; retain old
+lifelong and world-coordinate comparators. Reject renewal if it merely exchanges streaks for obvious pulsing.
+
 This candidate requires isolated strain/thickness and overlap tests, positive/mass/age/birth mixing checks, native
 sections and1x/16x growth/merge/loss images, fed-cap continuity and coupled consumers/cost. It is not yet accepted art.
 
