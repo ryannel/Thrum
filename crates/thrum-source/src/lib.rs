@@ -12,6 +12,7 @@ mod json;
 mod manifest;
 mod meaning;
 mod path;
+pub mod project_v2_json;
 mod record;
 pub mod registry;
 pub mod schema_json;
