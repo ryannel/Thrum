@@ -80,6 +80,11 @@ impl ManifestEntry {
             record,
         })
     }
+
+    #[cfg(test)]
+    pub(crate) fn blob_identity(&self) -> (u64, [u8; 32]) {
+        (self.length, self.sha256)
+    }
 }
 
 /// A tree description cannot have a portable v1 identity.
@@ -107,6 +112,11 @@ pub struct TreeManifest {
 }
 
 impl TreeManifest {
+    #[cfg(test)]
+    pub(crate) fn files(&self) -> &[ManifestEntry] {
+        &self.files
+    }
+
     /// Validate identity and sort paths and roots by UTF-8 bytes without
     /// reading mutable files. The byte-order rule is part of v1 revision
     /// identity and is independent of a target's locale or string collation.

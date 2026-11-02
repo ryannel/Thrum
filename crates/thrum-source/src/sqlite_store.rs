@@ -8,7 +8,7 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
+use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
 use crate::{ManifestEntry, SourcePath, TreeManifest};
@@ -51,6 +51,7 @@ enum ProofError {
     MissingChunk,
     InvalidChunkLayout,
     MissingCompleteBlob,
+    MissingCompleteFile,
     BlobMetadataMismatch,
     StaleBlobWriter,
     StaleGeneration,
@@ -446,6 +447,58 @@ impl RootTransactionProof {
         request_hash: [u8; 32],
         revision: [u8; 32],
     ) -> Result<i64, ProofError> {
+        self.commit_with_closure(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            revision,
+            |_| Ok(()),
+        )
+    }
+
+    fn commit_manifest_probe(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        manifest: &TreeManifest,
+    ) -> Result<i64, ProofError> {
+        let revision = *manifest.revision().as_bytes();
+        self.commit_with_closure(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            revision,
+            |tx| {
+                let mut lookup =
+                    tx.prepare("SELECT length FROM blob_header WHERE hash=?1 AND state=1")?;
+                for file in manifest.files() {
+                    let (length, hash) = file.blob_identity();
+                    let stored_length: Option<i64> = lookup
+                        .query_row(params![hash.as_slice()], |row| row.get(0))
+                        .optional()?;
+                    let length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+                    if stored_length != Some(length) {
+                        return Err(ProofError::MissingCompleteFile);
+                    }
+                }
+                Ok(())
+            },
+        )
+    }
+
+    fn commit_with_closure(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        revision: [u8; 32],
+        mut check_closure: impl FnMut(&Transaction<'_>) -> Result<(), ProofError>,
+    ) -> Result<i64, ProofError> {
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -478,6 +531,7 @@ impl RootTransactionProof {
         if !complete {
             return Err(ProofError::MissingCompleteBlob);
         }
+        check_closure(&tx)?;
         let next = generation
             .checked_add(1)
             .ok_or(ProofError::StaleGeneration)?;
@@ -833,6 +887,98 @@ fn large_manifest_streams_directly_to_verified_sqlite_chunks() {
     assert_eq!(stored_length, length);
     assert_eq!(stored.finalize().as_slice(), revision);
     assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
+}
+
+#[test]
+fn manifest_root_requires_each_direct_file_blob_complete() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let first = b"one source file";
+    let second = b"another source file";
+    let first_hash: [u8; 32] = Sha256::digest(first).into();
+    let second_hash: [u8; 32] = Sha256::digest(second).into();
+    let manifest = TreeManifest::new(
+        PROJECT_ID,
+        Vec::new(),
+        vec![
+            ManifestEntry::new(
+                SourcePath::parse("src/first.rs").unwrap(),
+                first.len() as u64,
+                first_hash,
+                None,
+            )
+            .unwrap(),
+            ManifestEntry::new(
+                SourcePath::parse("src/second.rs").unwrap(),
+                second.len() as u64,
+                second_hash,
+                None,
+            )
+            .unwrap(),
+        ],
+    )
+    .unwrap();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let revision = store.stage_manifest_chunked(&manifest).unwrap();
+    store
+        .stage_blob(&mut first.as_slice(), first.len() as u64, first_hash)
+        .unwrap();
+    assert!(matches!(
+        store.commit_manifest_probe(0, 1, 1, [1; 32], &manifest),
+        Err(ProofError::MissingCompleteFile)
+    ));
+    assert_eq!(store.root().unwrap(), (0, None));
+    store
+        .stage_blob(&mut second.as_slice(), second.len() as u64, second_hash)
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "UPDATE blob_header SET length=0 WHERE hash=?1",
+            params![second_hash.as_slice()],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.commit_manifest_probe(0, 1, 1, [1; 32], &manifest),
+        Err(ProofError::MissingCompleteFile)
+    ));
+    assert_eq!(store.root().unwrap(), (0, None));
+    store
+        .conn
+        .execute(
+            "UPDATE blob_header SET length=?2 WHERE hash=?1",
+            params![second_hash.as_slice(), second.len() as i64],
+        )
+        .unwrap();
+    assert_eq!(
+        store
+            .commit_manifest_probe(0, 1, 1, [1; 32], &manifest)
+            .unwrap(),
+        1
+    );
+    drop(store);
+
+    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
+    assert_eq!(
+        reopened
+            .commit_manifest_probe(0, 1, 1, [1; 32], &manifest)
+            .unwrap(),
+        1
+    );
+    reopened
+        .conn
+        .execute(
+            "UPDATE blob_header SET length=0 WHERE hash=?1",
+            params![second_hash.as_slice()],
+        )
+        .unwrap();
+    assert_eq!(
+        reopened
+            .commit_manifest_probe(0, 1, 1, [1; 32], &manifest)
+            .unwrap(),
+        1
+    );
 }
 
 #[test]
