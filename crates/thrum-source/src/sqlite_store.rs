@@ -20,7 +20,7 @@ use crate::history_json::{
 use crate::manifest_json::{ManifestDecodeError, decode_manifest_jcs};
 use crate::registry_stage::{StagedCandidate, StagedRegistryError, validate_staged_candidate};
 use crate::stage::stage_declared_tree_with;
-use crate::{ManifestEntry, SourcePath, TreeManifest};
+use crate::{ManifestEntry, ManifestError, SourcePath, StageError, TreeManifest};
 
 const MAX_PAGE_COUNT: i64 = 13_631_488;
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
@@ -78,10 +78,13 @@ enum ProofError {
     DifferentProject,
     UnsupportedDependencyRoots,
     CorruptRootBlob,
+    CorruptOutcome,
     Manifest(ManifestDecodeError),
     History(HistoryError),
     Lineage(CarriedHistoryError),
     CandidateStage(StagedRegistryError),
+    CandidateManifest(ManifestError),
+    CandidateFile(StageError),
 }
 
 impl fmt::Display for ProofError {
@@ -92,6 +95,8 @@ impl fmt::Display for ProofError {
             Self::History(error) => write!(formatter, "history: {error:?}"),
             Self::Lineage(error) => write!(formatter, "lineage: {error:?}"),
             Self::CandidateStage(error) => write!(formatter, "candidate stage: {error:?}"),
+            Self::CandidateManifest(error) => write!(formatter, "candidate manifest: {error:?}"),
+            Self::CandidateFile(error) => write!(formatter, "candidate file: {error:?}"),
             other => write!(formatter, "{other:?}"),
         }
     }
@@ -106,6 +111,12 @@ impl From<rusqlite::Error> for ProofError {
 struct RootTransactionProof {
     conn: Connection,
     scratch: Vec<u8>,
+}
+
+struct OutcomeRow {
+    request_hash: [u8; 32],
+    generation: i64,
+    revision: [u8; 32],
 }
 
 fn blob_chunk_count(length: u64) -> Result<i64, ProofError> {
@@ -152,6 +163,39 @@ fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), ProofE
         },
     )?;
     Ok((generation, revision.ok_or(ProofError::CorruptRootBlob)?))
+}
+
+fn stored_outcome(
+    conn: &Connection,
+    epoch: i64,
+    key: i64,
+) -> Result<Option<OutcomeRow>, ProofError> {
+    let raw = conn
+        .query_row(
+            "SELECT request_hash, generation, revision FROM outcome WHERE epoch=?1 AND key=?2",
+            params![epoch, key],
+            |row| {
+                let request = match row.get_ref(0)? {
+                    ValueRef::Blob(bytes) => bytes.try_into().ok(),
+                    _ => None,
+                };
+                let revision = match row.get_ref(2)? {
+                    ValueRef::Blob(bytes) => bytes.try_into().ok(),
+                    _ => None,
+                };
+                Ok((request, row.get(1)?, revision))
+            },
+        )
+        .optional()?;
+    match raw {
+        None => Ok(None),
+        Some((Some(request_hash), generation, Some(revision))) => Ok(Some(OutcomeRow {
+            request_hash,
+            generation,
+            revision,
+        })),
+        Some(_) => Err(ProofError::CorruptOutcome),
+    }
 }
 
 fn read_complete_blob(
@@ -447,6 +491,98 @@ impl RootTransactionProof {
             candidate.registry().project().id(),
             &bytes,
         )
+    }
+
+    fn admit_staged_candidate_probe(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        candidate: &StagedCandidate<'_>,
+    ) -> Result<(i64, [u8; 32]), ProofError> {
+        self.admit_staged_candidate_probe_with(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            candidate,
+            || {},
+        )
+    }
+
+    fn matching_outcome(
+        &self,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        revision: [u8; 32],
+    ) -> Result<Option<i64>, ProofError> {
+        match stored_outcome(&self.conn, epoch, key)? {
+            None => Ok(None),
+            Some(outcome)
+                if outcome.request_hash == request_hash && outcome.revision == revision =>
+            {
+                Ok(Some(outcome.generation))
+            }
+            Some(_) => Err(ProofError::TokenConflict),
+        }
+    }
+
+    fn admit_staged_candidate_probe_with(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        candidate: &StagedCandidate<'_>,
+        after_initial_lookup: impl FnOnce(),
+    ) -> Result<(i64, [u8; 32]), ProofError> {
+        let manifest = candidate
+            .provisional_manifest()
+            .map_err(ProofError::CandidateManifest)?;
+        let revision = *manifest.revision().as_bytes();
+        if let Some(generation) = self.matching_outcome(epoch, key, request_hash, revision)? {
+            return Ok((generation, revision));
+        }
+        after_initial_lookup();
+        let attempted = (|| {
+            if expected_generation > 0 {
+                self.compare_staged_candidate_with_current_root(expected_generation, candidate)?;
+            }
+            for file in candidate.registry().stage().files() {
+                let mut reader = candidate
+                    .registry()
+                    .stage()
+                    .open(file.path())
+                    .map_err(ProofError::CandidateFile)?;
+                self.stage_blob(&mut reader, file.length(), *file.sha256())?;
+            }
+            let stored_revision = self.stage_manifest_chunked(&manifest)?;
+            if stored_revision != revision {
+                return Err(ProofError::HashMismatch);
+            }
+            let generation = self.commit_manifest_probe(
+                expected_generation,
+                epoch,
+                key,
+                request_hash,
+                &manifest,
+            )?;
+            Ok((generation, revision))
+        })();
+        match attempted {
+            Ok(value) => Ok(value),
+            Err(error) => {
+                if let Some(generation) =
+                    self.matching_outcome(epoch, key, request_hash, revision)?
+                {
+                    Ok((generation, revision))
+                } else {
+                    Err(error)
+                }
+            }
+        }
     }
 
     fn stage_blob(
@@ -846,16 +982,10 @@ impl RootTransactionProof {
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let existing: Option<(Vec<u8>, i64, Vec<u8>)> = tx
-            .query_row(
-                "SELECT request_hash, generation, revision FROM outcome WHERE epoch=?1 AND key=?2",
-                params![epoch, key],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-            )
-            .optional()?;
-        if let Some((prior_request, generation, prior_revision)) = existing {
-            return if prior_request == request_hash && prior_revision == revision {
-                Ok(generation)
+        let existing = stored_outcome(&tx, epoch, key)?;
+        if let Some(outcome) = existing {
+            return if outcome.request_hash == request_hash && outcome.revision == revision {
+                Ok(outcome.generation)
             } else {
                 Err(ProofError::TokenConflict)
             };
@@ -1515,7 +1645,7 @@ fn lineage_manifest(history_bytes: &[u8]) -> TreeManifest {
     .unwrap()
 }
 
-fn minimal_source_stage(fixture: &Fixture) -> crate::StagedTree {
+fn minimal_source_stage(fixture: &Fixture, label: &str) -> crate::StagedTree {
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     let root = fixture.source_root();
     fs::create_dir_all(root.join("scenes")).unwrap();
@@ -1538,7 +1668,8 @@ fn minimal_source_stage(fixture: &Fixture) -> crate::StagedTree {
     fs::write(
         root.join("scenes/main.scene.json"),
         serde_json::to_vec(&serde_json::json!({
-            "id":SCENE_ID,"type":"core.scene","schema":1,"fields":{}
+            "id":SCENE_ID,"type":"core.scene","schema":1,
+            "fields":{"scene.label":label}
         }))
         .unwrap(),
     )
@@ -1575,7 +1706,7 @@ fn minimal_source_stage(fixture: &Fixture) -> crate::StagedTree {
 #[test]
 fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
     let fixture = Fixture::new();
-    let stage = minimal_source_stage(&fixture);
+    let stage = minimal_source_stage(&fixture, "first");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let manifest = candidate.provisional_manifest().unwrap();
     let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
@@ -1595,7 +1726,7 @@ fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
             .is_ok()
     );
 
-    let second_stage = minimal_source_stage(&fixture);
+    let second_stage = minimal_source_stage(&fixture, "first");
     let second_candidate = validate_staged_candidate(&second_stage, &[]).unwrap();
     let history_path = SourcePath::parse("schemas/history.registry.json").unwrap();
     let history_file = second_stage
@@ -1623,6 +1754,151 @@ fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
         Err(ProofError::HashMismatch)
     ));
     assert_eq!(store.root().unwrap().0, 1);
+}
+
+#[test]
+fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "first scene");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let (first_generation, first_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+    assert_eq!(first_generation, 1);
+
+    let second_stage = minimal_source_stage(&fixture, "second scene");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let (second_generation, second_revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    assert_eq!(second_generation, 2);
+    assert_ne!(first_revision, second_revision);
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    drop(store);
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(
+        store
+            .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+            .unwrap(),
+        (2, second_revision)
+    );
+    assert!(matches!(
+        store.admit_staged_candidate_probe(1, 1, 2, [3; 32], &second),
+        Err(ProofError::TokenConflict)
+    ));
+    assert!(matches!(
+        store.admit_staged_candidate_probe(1, 1, 3, [3; 32], &first),
+        Err(ProofError::StaleGeneration)
+    ));
+
+    let third_stage = minimal_source_stage(&fixture, "third scene!");
+    let third = validate_staged_candidate(&third_stage, &[]).unwrap();
+    let scene_path = third_stage.test_directory().join("scenes/main.scene.json");
+    let mut changed = fs::read(&scene_path).unwrap();
+    let last = changed.len() - 1;
+    changed[last] = b' ';
+    fs::write(scene_path, changed).unwrap();
+    assert!(matches!(
+        store.admit_staged_candidate_probe(2, 1, 4, [4; 32], &third),
+        Err(ProofError::HashMismatch)
+    ));
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    let first_complete: bool = store
+        .conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM blob_header WHERE hash=?1 AND state=1)",
+            params![first_revision.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(first_complete);
+}
+
+#[test]
+fn concurrent_same_token_winner_is_recovered_after_stale_preflight() {
+    let fixture = Fixture::new();
+    let mut first_store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let base_stage = minimal_source_stage(&fixture, "base scene");
+    let base = validate_staged_candidate(&base_stage, &[]).unwrap();
+    first_store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &base)
+        .unwrap();
+
+    let next_stage = minimal_source_stage(&fixture, "next scene");
+    let next = validate_staged_candidate(&next_stage, &[]).unwrap();
+    let mut winner = RootTransactionProof::open(&fixture.database()).unwrap();
+    let recovered = first_store
+        .admit_staged_candidate_probe_with(1, 1, 2, [2; 32], &next, || {
+            assert_eq!(
+                winner
+                    .admit_staged_candidate_probe(1, 1, 2, [2; 32], &next)
+                    .unwrap()
+                    .0,
+                2
+            );
+        })
+        .unwrap();
+    assert_eq!(recovered.0, 2);
+    assert_eq!(first_store.root().unwrap(), (2, Some(recovered.1.to_vec())));
+    assert!(matches!(
+        first_store.admit_staged_candidate_probe(1, 1, 2, [3; 32], &next),
+        Err(ProofError::TokenConflict)
+    ));
+}
+
+#[test]
+fn assembled_candidate_refuses_to_drop_current_root_history() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let prior_bytes = lineage_history(false);
+    let prior_hash: [u8; 32] = Sha256::digest(&prior_bytes).into();
+    let prior_manifest = lineage_manifest(&prior_bytes);
+    store
+        .stage_blob(
+            &mut prior_bytes.as_slice(),
+            prior_bytes.len() as u64,
+            prior_hash,
+        )
+        .unwrap();
+    let prior_revision = store.stage_manifest_chunked(&prior_manifest).unwrap();
+    store
+        .commit_manifest_probe(0, 1, 1, [1; 32], &prior_manifest)
+        .unwrap();
+
+    let candidate_stage = minimal_source_stage(&fixture, "empty history candidate");
+    let candidate = validate_staged_candidate(&candidate_stage, &[]).unwrap();
+    assert!(matches!(
+        store.admit_staged_candidate_probe(1, 1, 2, [2; 32], &candidate),
+        Err(ProofError::Lineage(_))
+    ));
+    assert_eq!(store.root().unwrap(), (1, Some(prior_revision.to_vec())));
+}
+
+#[test]
+#[ignore = "local small candidate edit-to-root cost probe"]
+fn measure_small_candidate_edit_to_root() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "first scene");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+
+    let start = std::time::Instant::now();
+    let second_stage = minimal_source_stage(&fixture, "second scene");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let (generation, revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    let elapsed = start.elapsed();
+    assert_eq!(generation, 2);
+    assert_eq!(store.root().unwrap(), (2, Some(revision.to_vec())));
+    eprintln!(
+        "small_candidate_edit_to_root files=3 elapsed_ms={:.3}",
+        elapsed.as_secs_f64() * 1000.0
+    );
 }
 
 #[test]
