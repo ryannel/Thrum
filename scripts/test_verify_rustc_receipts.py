@@ -110,6 +110,39 @@ class VerifyRustcReceipts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "target source differs"):
                 inspect(*args[:6])
 
+    def test_rustc_extern_must_be_an_artifact_of_the_named_cargo_unit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            undeclared = output / "debug/deps/libdep.rlib"
+            undeclared.write_bytes(b"library")
+            path.write_bytes(receipt(rustc, source, arguments + [
+                b"--extern", b"dep=" + os.fsencode(undeclared),
+            ], environment))
+            with self.assertRaisesRegex(ValueError, "Cargo dependency artifact"):
+                inspect(*args[:6])
+
+            dependency_source = source / "src/dep.rs"
+            dependency_source.write_text("pub fn value() {}\n")
+            (receipts / "100.receipt").write_bytes(receipt(rustc, source, [
+                b"--crate-name", b"dep", b"src/dep.rs", b"--emit=dep-info,link",
+                b"--out-dir", os.fsencode(output / "debug/deps"),
+            ], environment))
+            entries = [json.loads(line) for line in transcript.read_text().splitlines()]
+            entries.insert(0, {
+                "reason": "compiler-artifact", "fresh": False,
+                "target": {"name": "dep", "src_path": str(dependency_source), "kind": ["lib"]},
+                "filenames": [str(undeclared)],
+            })
+            transcript.write_text("\n".join(json.dumps(entry) for entry in entries) + "\n")
+            self.assertEqual(inspect(*args[:6])["compiles"], 2)
+
+            path.write_bytes(receipt(rustc, source, arguments + [
+                b"--extern", b"wrong_name=" + os.fsencode(undeclared),
+            ], environment))
+            with self.assertRaisesRegex(ValueError, "Cargo dependency artifact"):
+                inspect(*args[:6])
+
     def test_wrong_compiler_control_environment_and_artifact_refuse(self):
         with tempfile.TemporaryDirectory() as directory:
             args = self.fixture(Path(directory).resolve())

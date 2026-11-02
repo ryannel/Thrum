@@ -178,6 +178,7 @@ def compile_identity(receipt, roots):
                                          "rustc source"))
     if len(sources) != 1:
         raise ValueError("compile receipt needs one selected source entry")
+    externs = []
     for index, argument in enumerate(arguments):
         if argument == b"--extern":
             if index + 1 == len(arguments):
@@ -187,16 +188,20 @@ def compile_identity(receipt, roots):
             extern = argument[len(b"--extern="):]
         else:
             continue
-        _, separator, path = extern.partition(b"=")
-        if not separator:
+        name, separator, path = extern.partition(b"=")
+        if not separator or not re.fullmatch(rb"[A-Za-z_][A-Za-z0-9_]*", name):
             raise ValueError("rustc extern lacks selected artifact path")
-        selected_file(Path(os.fsdecode(path)), {"output": roots["output"]}, "rustc extern")
+        _, relative = selected_file(Path(os.fsdecode(path)),
+                                    {"output": roots["output"]}, "rustc extern")
+        externs.append((name.decode("ascii"), relative))
+    if len({name for name, _ in externs}) != len(externs):
+        raise ValueError("first profile refuses duplicate rustc extern names")
     for value in flag_values(arguments, b"-L"):
         kind, separator, path = value.partition(b"=")
         if not separator or kind != b"dependency":
             raise ValueError("first profile refuses other rustc library search paths")
         selected_directory(Path(os.fsdecode(path)), roots["output"], "rustc library path")
-    return crate, sources[0]
+    return crate, sources[0], sorted(externs)
 
 
 def strict_pairs(pairs):
@@ -261,10 +266,11 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
                 raise ValueError("rustc emission misclassified as probe")
             probes += 1
             continue
-        crate, source_identity = compile_identity(receipt, roots)
+        crate, source_identity, externs = compile_identity(receipt, roots)
         if crate in compiles:
             raise ValueError("first profile has duplicate crate-name invocations")
-        compiles[crate] = {"source": source_identity, "receiptSha256": receipt["sha256"]}
+        compiles[crate] = {"source": source_identity, "externs": externs,
+                           "receiptSha256": receipt["sha256"]}
     raw_transcript = ordinary_bytes(transcript, MAX_TRANSCRIPT)
     artifacts = {}
     finished = False
@@ -311,6 +317,16 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
             raise ValueError(f"unexpected Cargo build message: {reason}")
     if not finished or set(compiles) != set(artifacts):
         raise ValueError("rustc compile receipts differ from Cargo artifact units")
+    artifact_owners = {}
+    for crate, paths in artifacts.items():
+        for path in paths:
+            if path in artifact_owners:
+                raise ValueError("duplicate Cargo artifact path")
+            artifact_owners[path] = crate
+    for crate, compile in compiles.items():
+        for name, path in compile["externs"]:
+            if artifact_owners.get(path) != name or name == crate:
+                raise ValueError("rustc extern differs from a Cargo dependency artifact")
     return {
         "format": 1, "probes": probes, "compiles": len(compiles),
         "units": [{"crate": name, **compiles[name], "artifacts": artifacts[name]}
