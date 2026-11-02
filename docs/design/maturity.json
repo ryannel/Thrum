@@ -434,7 +434,11 @@
       },
       "i2a_one_descriptor_profile_audit": {
         "evidence": "../evidence/i2a/SOURCE-PROFILE-STATUS.md",
-        "scope": "The checked provisional staged-candidate subset uses one active game descriptor, finite record/optional-value work bounds, rehashed local scene/game reference closure, canonical revision and exact opaque-value preservation during a known-field edit. Registry parsing separately accepts up to 256 descriptors, but a game candidate with multiple active descriptors refuses. Dense one-descriptor validation and separate 256-descriptor registry RSS/cost probes are observations, not a process-memory gate. Multi-schema dispatch, external roots, general editor application, consumer reconciliation, full combined peak-allocation qualification and production admission remain open."
+        "scope": "The first checked provisional staged-candidate subset used one active game descriptor, finite record/optional-value work bounds, rehashed local scene/game reference closure, canonical revision and exact opaque-value preservation during a known-field edit. Registry parsing separately accepts up to 256 descriptors; a follow-on two-descriptor dispatch proof is recorded separately. Dense one-descriptor validation and separate 256-descriptor registry RSS/cost probes are observations, not a process-memory gate. Full 256-descriptor game dispatch, external roots, general editor application, consumer reconciliation, full combined peak-allocation qualification and production admission remain open."
+      },
+      "i2a_two_descriptor_dispatch": {
+        "evidence": "../evidence/i2a/SOURCE-TWO-DESCRIPTOR-DISPATCH.md",
+        "scope": "A provisional seven-file staged candidate dispatches two game record types through sorted source-carried descriptors by a bounded top-level JSON type pass, then performs full descriptor validation and local required-reference closure. One-descriptor candidates retain a direct parse path. Unknown type/version, nested type spoofing, duplicate/unsupported envelope keys and deep/dense invalid fields refuse; older staged bytes survive source edits. The two-descriptor edit cost, 256-descriptor combined peak, external roots, consumer reconciliation and durable admission remain open."
       }
     },
     {

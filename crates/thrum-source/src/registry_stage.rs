@@ -10,7 +10,7 @@ use std::io::Read;
 use sha2::{Digest, Sha256};
 
 use crate::bootstrap_json::parse_scene;
-use crate::game_json::{GameRecordError, GameRecordSummary, parse_game_record};
+use crate::game_json::{GameRecordError, GameRecordSummary, game_record_type, parse_game_record};
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
@@ -68,8 +68,15 @@ pub enum StagedRegistryError {
 /// A registry's declared scene/game records failed the first closure profile.
 #[derive(Debug)]
 pub enum StagedRecordError {
-    /// The game-record profile needs one unambiguous active descriptor.
+    /// A game record has no available game descriptor.
     GameSchemaCount(usize),
+    /// No checked descriptor owns this game record's source type.
+    UnknownGameType {
+        /// Declared game record path.
+        path: SourcePath,
+        /// Type ID found in its exact staged bytes.
+        record_type: String,
+    },
     /// Stage bytes changed or could not be reread.
     Stage(StagedRegistryError),
     /// A declared `core.scene` record failed its fixed schema.
@@ -421,11 +428,10 @@ pub fn validate_staged_registry<'a>(
 
 /// Rehash declared scene/game bytes and resolve required local scene IDs.
 ///
-/// The first closure profile accepts one active game descriptor when game
-/// records exist. This avoids a second full parse or an order-dependent JSON
-/// envelope probe on the source-edit path. A later multi-schema profile must
-/// select its dispatch and physical peak separately. This result is not a
-/// manifest, an authenticated lineage comparison or an admitted source root.
+/// Game records select a sorted checked descriptor by their top-level type,
+/// independent of JSON key order. Descriptor-bound validation then parses the
+/// exact staged bytes. This result is not an authenticated lineage comparison
+/// or an admitted source root.
 pub fn validate_staged_records(
     registry: &StagedRegistry<'_>,
 ) -> Result<StagedRecords, StagedRecordError> {
@@ -437,7 +443,7 @@ pub fn validate_staged_records(
         .filter(|path| path.as_str().starts_with("scenes/"))
         .count();
     let game_count = paths.len() - scene_count;
-    if game_count != 0 && registry.schemas.len() != 1 {
+    if game_count != 0 && registry.schemas.is_empty() {
         return Err(StagedRecordError::GameSchemaCount(registry.schemas.len()));
     }
     let mut scenes = Vec::with_capacity(scene_count);
@@ -458,7 +464,23 @@ pub fn validate_staged_records(
                 id: scene.id,
             });
         } else {
-            let descriptor = &registry.schemas[0].descriptor;
+            let descriptor = if registry.schemas.len() == 1 {
+                &registry.schemas[0].descriptor
+            } else {
+                let record_type =
+                    game_record_type(&bytes).map_err(|source| StagedRecordError::Game {
+                        path: path.clone(),
+                        source,
+                    })?;
+                let index = registry
+                    .schemas
+                    .binary_search_by(|item| item.descriptor.target_type().cmp(&record_type))
+                    .map_err(|_| StagedRecordError::UnknownGameType {
+                        path: path.clone(),
+                        record_type,
+                    })?;
+                &registry.schemas[index].descriptor
+            };
             let summary = parse_game_record(&bytes, descriptor).map_err(|source| {
                 StagedRecordError::Game {
                     path: path.clone(),
@@ -518,8 +540,8 @@ pub fn validate_staged_records(
 
 /// Check one narrow staged registry and its declared record closure together.
 ///
-/// This does not perform authenticated prior-root lineage, maximum physical
-/// parser/graph reservation, editor round-trip or durable source admission.
+/// This does not perform authenticated prior-root lineage, full combined
+/// allocation/RSS qualification, editor round-trip or durable source admission.
 pub fn validate_staged_candidate<'a>(
     stage: &'a StagedTree,
     dependency_roots: &[String],
@@ -748,6 +770,112 @@ mod tests {
             }))
             .unwrap(),
         );
+    }
+
+    #[test]
+    fn two_game_descriptors_dispatch_by_type_and_preserve_staged_rejection() {
+        const SIGNAL_ID: &str = "7a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+        const SIGNAL_SCHEMA_ID: &str = "8a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+        const SIGNAL_PATH: &str = "records/signal.record.json";
+        const SIGNAL_SCHEMA_PATH: &str = "schemas/signal.schema.json";
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let mut project: serde_json::Value =
+            serde_json::from_slice(&fs::read(fixture.0.join("project.json")).unwrap()).unwrap();
+        project["fields"]["project.records"]
+            .as_array_mut()
+            .unwrap()
+            .insert(1, json!(SIGNAL_PATH));
+        project["fields"]["project.schemas"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!(SIGNAL_SCHEMA_PATH));
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        let schema_bytes = serde_json::to_vec(&json!({
+            "id":SIGNAL_SCHEMA_ID, "type":"core.schema", "schema":1,
+            "fields":{
+                "schema.targetType":"game.signal", "schema.targetVersion":1,
+                "schema.fields":[
+                    {"id":"signal.note", "kind":"text", "presence":"optional", "maxUtf8Bytes":64}
+                ],
+                "schema.optionalExtensionPrefix":null
+            }
+        }))
+        .unwrap();
+        fixture.write(SIGNAL_SCHEMA_PATH, &schema_bytes);
+        let signal_descriptor = parse_schema_descriptor(&schema_bytes).unwrap();
+        let mut history: serde_json::Value = serde_json::from_slice(
+            &fs::read(fixture.0.join("schemas/history.registry.json")).unwrap(),
+        )
+        .unwrap();
+        history["fields"]["registry.fields"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.signal", "fieldId":"signal.note",
+                "signature":hex(signal_descriptor.fields()[0].signature()), "retired":false
+            }));
+        history["fields"]["registry.versions"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "typeId":"game.signal", "targetVersion":1,
+                "definitionHash":hex(signal_descriptor.definition_hash())
+            }));
+        fixture.write(
+            "schemas/history.registry.json",
+            &serde_json::to_vec(&history).unwrap(),
+        );
+        let signal = serde_json::to_vec(&json!({
+            "fields":{"signal.note":"nearby"},
+            "id":SIGNAL_ID, "schema":1, "type":"game.signal"
+        }))
+        .unwrap();
+        fixture.write(SIGNAL_PATH, &signal);
+        let paths = [
+            "project.json",
+            "records/marker.record.json",
+            SIGNAL_PATH,
+            "scenes/main.scene.json",
+            "schemas/history.registry.json",
+            "schemas/marker.schema.json",
+            SIGNAL_SCHEMA_PATH,
+        ];
+        let old = fixture.stage(&paths);
+        let candidate = validate_staged_candidate(&old, &[]).unwrap();
+        assert_eq!(candidate.registry().schemas().len(), 2);
+        assert_eq!(candidate.records().required_edges(), 1);
+        let types: Vec<_> = candidate
+            .records()
+            .games()
+            .iter()
+            .map(|game| game.summary().record_type())
+            .collect();
+        assert_eq!(types, ["game.marker", "game.signal"]);
+        assert_eq!(candidate.provisional_manifest().unwrap().files().len(), 7);
+
+        let wrong_type = String::from_utf8(signal.clone())
+            .unwrap()
+            .replace("game.signal", "game.unknown");
+        fixture.write(SIGNAL_PATH, wrong_type.as_bytes());
+        assert_eq!(candidate.records().games().len(), 2);
+        let changed = fixture.stage(&paths);
+        assert!(matches!(
+            validate_staged_candidate(&changed, &[]),
+            Err(StagedCandidateError::Records(StagedRecordError::UnknownGameType { record_type, .. }))
+                if record_type == "game.unknown"
+        ));
+        let wrong_version = String::from_utf8(signal)
+            .unwrap()
+            .replace("\"schema\":1", "\"schema\":2");
+        fixture.write(SIGNAL_PATH, wrong_version.as_bytes());
+        let changed = fixture.stage(&paths);
+        assert!(matches!(
+            validate_staged_candidate(&changed, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::Game { .. }
+            ))
+        ));
     }
 
     #[test]
