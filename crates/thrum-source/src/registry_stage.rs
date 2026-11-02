@@ -565,6 +565,7 @@ mod tests {
     use serde_json::json;
 
     use crate::budget::Limits;
+    use crate::game_edit::replace_game_text_field;
     use crate::stage::stage_declared_tree_with;
 
     const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
@@ -925,6 +926,42 @@ mod tests {
             candidate.provisional_manifest().unwrap().revision(),
             revision
         );
+    }
+
+    #[test]
+    fn text_edit_changes_candidate_revision_without_rewriting_opaque_value() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let path = "records/marker.record.json";
+        let source = format!(
+            "{{\"id\":\"{GAME_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.caption\":\"before\",\"marker.scene\":\"{SCENE_ID}\",\"x.game.marker.notes\":{{\"escaped\":\"\\u0061\", \"list\":[1,  2]}}}}}}"
+        );
+        fixture.write(path, source.as_bytes());
+        let old = fixture.stage(PATHS);
+        let old_candidate = validate_staged_candidate(&old, &[]).unwrap();
+        let old_revision = old_candidate.provisional_manifest().unwrap().revision();
+        let edited = replace_game_text_field(
+            source.as_bytes(),
+            old_candidate.registry().schemas()[0].descriptor(),
+            "marker.caption",
+            "after",
+        )
+        .unwrap();
+        fixture.write(path, &edited);
+        let new = fixture.stage(PATHS);
+        let new_candidate = validate_staged_candidate(&new, &[]).unwrap();
+        assert_ne!(
+            new_candidate.provisional_manifest().unwrap().revision(),
+            old_revision
+        );
+        assert_eq!(
+            old_candidate.provisional_manifest().unwrap().revision(),
+            old_revision
+        );
+        let edited_text = std::str::from_utf8(&edited).unwrap();
+        assert!(edited_text.contains(r#"{"escaped":"\u0061", "list":[1,  2]}"#));
+        assert_eq!(new_candidate.records().games()[0].summary().id(), GAME_ID);
+        assert_eq!(new_candidate.records().required_edges(), 1);
     }
 
     #[test]

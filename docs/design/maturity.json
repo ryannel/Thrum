@@ -339,6 +339,10 @@
       "i2a_provisional_candidate": {
         "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-CANDIDATE.md",
         "scope": "One provisional staged registry and scene/game closure derive a JCS/SHA-256 manifest with checked record identity labels and captured exact-byte metadata. An independent small-tree oracle, A/B revision test, local small-tree release probe and a 4,096 declared-record count probe pass. Ordinary bytes need durable rehash; maximum parser/graph memory, editor opaque round-trip, authenticated prior lineage, multi-schema dispatch, durable admission and cook/run remain open."
+      },
+      "i2a_opaque_text_edit": {
+        "evidence": "../evidence/i2a/SOURCE-OPAQUE-EDIT.md",
+        "scope": "One descriptor-validated game text edit carries untouched optional JSON values with exact raw spelling, revalidates stable identity and required references, and changes a fresh provisional candidate revision while the old stage remains unchanged. A local 4 MiB optional-value edit cost probe passes; no coordinated file application, general editor, combined memory reservation, authenticated prior root or durable admission."
       }
     },
     {

@@ -6,6 +6,7 @@
 mod bootstrap_json;
 mod budget;
 pub mod definition;
+pub mod game_edit;
 pub mod game_json;
 pub mod history_json;
 mod inventory;
