@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "5bf615013f78f8acc5265b0a7b7af2b761a8773096f2fb171e6082c8aed8c63b",
+    "design_sha256": "005919aaf62f657b0eb83908f7be69b5bef6c3c33052ddabba2ecd676d37c233",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2895,6 +2895,14 @@
       "platform_performance": "not_run",
       "scope": "A separate example binary counts successful Rust global-allocator requests around selected closed-value protected host admission and callback. A private 257-byte allocation in each of 16 game decisions adds 16 requests and 4112 requested bytes without changing pool charges. API-boundary live bytes exclude allocator-internal overlap, C/OS/GPU and compiler-elided allocations; process RSS spans all modes. This does not constrain arbitrary native rules, remote queues or device memory and does not promote the general process cap.",
       "evidence": "../evidence/i1-headless/PROCESS-ALLOCATION-AUDIT.md"
+    },
+    "borrowed_typed_projection": {
+      "implementation": "one_closed_counter_action_view_fixture_only",
+      "functional_validation": "passed_local_standalone_and_two_peer_delayed_maximum_due_batch_context_output_old_reader_competing_pool_acknowledgement_fresh_baseline_and_final_release",
+      "performance_measurement": "three_serial_local_macos_arm64_allocator_request_windows_and_isolated_whole_process_rss_observations_only",
+      "platform_performance": "not_run",
+      "scope": "A borrowed typed view decodes one inline counter and borrows its charged payload; it creates no parallel owner in source. The protected two-peer host handles 16 delayed actions and context-created payloads under full competing pool use. Allocator counters cover one idle and one due callback, not view cost alone; RSS covers the isolated fixture process. A fresh charged baseline builds a replica after result acknowledgement, but successful reconnect, arbitrary private rule allocation, remote queues, allocator metadata and named devices remain unqualified.",
+      "evidence": "../evidence/i1-headless/TYPED-PROJECTION.md"
     },
     "mobile_core_portability": {
       "implementation": "portable_core_only_no_app_shell",
