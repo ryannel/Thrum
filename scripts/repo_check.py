@@ -133,8 +133,11 @@ def check_manifest_inventory(root, metadata):
             names[:] = [n for n in names if n not in {"target", "tmp", ".git"}]
             if "Cargo.toml" in files:
                 discovered.add((Path(directory) / "Cargo.toml").resolve())
-    return [f"unregistered package manifest: {path.relative_to(root.resolve()) if path.is_relative_to(root.resolve()) else path}"
-            for path in sorted(discovered - registered)]
+    errors = []
+    for path in sorted(discovered - registered):
+        display = path.relative_to(root.resolve()).as_posix() if path.is_relative_to(root.resolve()) else str(path)
+        errors.append(f"unregistered package manifest: {display}")
+    return errors
 
 
 def check_skills(root):
