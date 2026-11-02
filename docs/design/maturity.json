@@ -343,6 +343,10 @@
       "i2a_opaque_text_edit": {
         "evidence": "../evidence/i2a/SOURCE-OPAQUE-EDIT.md",
         "scope": "One descriptor-validated game text edit carries untouched optional JSON values with exact raw spelling, revalidates stable identity and required references, and changes a fresh provisional candidate revision while the old stage remains unchanged. A local 4 MiB optional-value edit cost probe passes; no coordinated file application, general editor, combined memory reservation, authenticated prior root or durable admission."
+      },
+      "i2a_dense_candidate_cost": {
+        "evidence": "../evidence/i2a/SOURCE-CANDIDATE-MEMORY.md",
+        "scope": "Isolated local macOS arm64 runs measure a 4,096-record one-descriptor candidate with full 100,000-field/1,024-version carried history and 8.3 MiB opaque game record, plus a separate 256-descriptor staged registry and direct game parse. Peak process RSS and validation elapsed are reported; this does not prove a physical allocation reservation, authenticated prior, 65,536-edge peak or multi-schema game dispatch."
       }
     },
     {

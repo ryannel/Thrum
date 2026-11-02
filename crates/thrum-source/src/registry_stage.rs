@@ -559,6 +559,7 @@ fn read_record_bytes_into(
 mod tests {
     use super::*;
     use std::fs;
+    use std::io::{BufWriter, Write};
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -1049,5 +1050,190 @@ mod tests {
         let candidate = validate_staged_candidate(&stage, &[]).unwrap();
         std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
         eprintln!("records=4096 elapsed={:?}", start.elapsed());
+    }
+
+    fn dense_fixture(schema_count: usize) -> (Fixture, StagedTree) {
+        assert!((1..=256).contains(&schema_count));
+        let fixture = Fixture::new();
+        basic(&fixture);
+
+        let schema_path = "schemas/marker.schema.json";
+        let mut schema: serde_json::Value =
+            serde_json::from_slice(&fs::read(fixture.0.join(schema_path)).unwrap()).unwrap();
+        let fields = schema["fields"]["schema.fields"].as_array_mut().unwrap();
+        for index in 0..126 {
+            fields.push(json!({
+                "id":format!("marker.extra{index:03}"), "kind":"text",
+                "presence":"optional", "maxUtf8Bytes":64
+            }));
+        }
+        fields.sort_unstable_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
+        let schema_bytes = serde_json::to_vec(&schema).unwrap();
+        let descriptor = parse_schema_descriptor(&schema_bytes).unwrap();
+        fixture.write(schema_path, &schema_bytes);
+        let mut descriptors = vec![descriptor];
+        let mut schema_paths = vec![schema_path.to_owned()];
+        for index in 1..schema_count {
+            let path = format!("schemas/type{index:03}.schema.json");
+            let type_id = format!("game.type{index:03}");
+            let record_id = format!("8a5ef644-7225-4770-9f4d-{index:012x}");
+            let fields: Vec<_> = (0..128)
+                .map(|field| {
+                    json!({
+                        "id":format!("value.f{field:03}"), "kind":"text",
+                        "presence":"optional", "maxUtf8Bytes":64
+                    })
+                })
+                .collect();
+            let bytes = serde_json::to_vec(&json!({
+                "id":record_id, "type":"core.schema", "schema":1,
+                "fields":{
+                    "schema.targetType":type_id, "schema.targetVersion":1,
+                    "schema.fields":fields, "schema.optionalExtensionPrefix":null
+                }
+            }))
+            .unwrap();
+            descriptors.push(parse_schema_descriptor(&bytes).unwrap());
+            fixture.write(&path, &bytes);
+            schema_paths.push(path);
+        }
+
+        let history_path = fixture.0.join("schemas/history.registry.json");
+        let mut history = BufWriter::new(fs::File::create(history_path).unwrap());
+        write!(history, "{{\"id\":\"{HISTORY_ID}\",\"type\":\"core.registry-history\",\"schema\":1,\"fields\":{{\"registry.fields\":[").unwrap();
+        let mut first = true;
+        let mut active_fields = 0;
+        for descriptor in &descriptors {
+            for field in descriptor.fields() {
+                if !first {
+                    history.write_all(b",").unwrap();
+                }
+                first = false;
+                active_fields += 1;
+                write!(history, "{{\"typeId\":\"{}\",\"fieldId\":\"{}\",\"signature\":\"{}\",\"retired\":false}}", descriptor.target_type(), field.id(), hex(field.signature())).unwrap();
+            }
+        }
+        for index in 0..(100_000 - active_fields) {
+            write!(history, ",{{\"typeId\":\"game.zzz\",\"fieldId\":\"old.f{index:05}\",\"signature\":\"{}\",\"retired\":true}}", "00".repeat(32)).unwrap();
+        }
+        history.write_all(b"],\"registry.versions\":[").unwrap();
+        for (index, descriptor) in descriptors.iter().enumerate() {
+            if index != 0 {
+                history.write_all(b",").unwrap();
+            }
+            write!(
+                history,
+                "{{\"typeId\":\"{}\",\"targetVersion\":1,\"definitionHash\":\"{}\"}}",
+                descriptor.target_type(),
+                hex(descriptor.definition_hash())
+            )
+            .unwrap();
+        }
+        for version in 1..=(1024 - descriptors.len()) {
+            write!(history, ",{{\"typeId\":\"game.zzz\",\"targetVersion\":{version},\"definitionHash\":\"{}\"}}", "00".repeat(32)).unwrap();
+        }
+        history.write_all(b"]}}").unwrap();
+        history.flush().unwrap();
+        drop(history);
+
+        let game_path = fixture.0.join("records/marker.record.json");
+        let mut game = BufWriter::new(fs::File::create(game_path).unwrap());
+        write!(game, "{{\"id\":\"{GAME_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.scene\":\"{SCENE_ID}\"").unwrap();
+        let large_value = "v".repeat(65_000);
+        for index in 0..128 {
+            write!(game, ",\"x.game.marker.note{index:03}\":\"{large_value}\"").unwrap();
+        }
+        game.write_all(b"}}").unwrap();
+        game.flush().unwrap();
+        drop(game);
+
+        let mut record_paths = vec![
+            "records/marker.record.json".to_owned(),
+            "scenes/main.scene.json".to_owned(),
+        ];
+        let mut staged_paths: Vec<String> = PATHS.iter().map(|path| (*path).to_owned()).collect();
+        staged_paths.extend(schema_paths.iter().skip(1).cloned());
+        for index in 1..4_095_u32 {
+            let path = format!("scenes/scene-{index:04}.scene.json");
+            let id = format!("7a5ef644-7225-4770-9f4d-{index:012x}");
+            fixture.write(
+                &path,
+                &serde_json::to_vec(&json!({
+                    "id":id, "type":"core.scene", "schema":1, "fields":{}
+                }))
+                .unwrap(),
+            );
+            record_paths.push(path.clone());
+            staged_paths.push(path);
+        }
+        record_paths.sort_unstable();
+        fixture.write(
+            "project.json",
+            &serde_json::to_vec(&json!({
+                "id":PROJECT_ID, "type":"core.project", "schema":2,
+                "fields":{
+                    "project.format":1,
+                    "project.records":record_paths,
+                    "project.schemas":schema_paths,
+                    "project.registryHistory":"schemas/history.registry.json",
+                    "project.entryScenes":[SCENE_ID]
+                }
+            }))
+            .unwrap(),
+        );
+        let staged_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
+        drop(descriptors);
+        let declared: Vec<_> = staged_refs
+            .iter()
+            .map(|path| SourcePath::parse(path).unwrap())
+            .collect();
+        let stage = stage_declared_tree_with(
+            &fixture.0,
+            &declared,
+            Limits {
+                main: 2 * 1024 * 1024 * 1024,
+                wal: 4 * 1024 * 1024,
+                temporary: 256 * 1024 * 1024,
+                free_floor: 0,
+            },
+            |_| {},
+        )
+        .unwrap();
+        (fixture, stage)
+    }
+
+    #[test]
+    #[ignore = "local one-schema dense candidate cost probe"]
+    fn measure_dense_combined_candidate() {
+        let (_fixture, stage) = dense_fixture(1);
+        let start = std::time::Instant::now();
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
+        eprintln!(
+            "files={} copied_bytes={} elapsed={:?}",
+            stage.files().len(),
+            stage.copied_bytes(),
+            start.elapsed()
+        );
+    }
+
+    #[test]
+    #[ignore = "local 256-schema dense registry and game parse cost probe"]
+    fn measure_dense_registry_and_game_parse() {
+        let (_fixture, stage) = dense_fixture(256);
+        let start = std::time::Instant::now();
+        let registry = validate_staged_registry(&stage, &[]).unwrap();
+        let game_path = fixed_path("records/marker.record.json");
+        let game_file = find_file(&stage, &game_path).unwrap();
+        let bytes = read_record_bytes(&stage, game_file).unwrap();
+        std::hint::black_box(
+            parse_game_record(&bytes, registry.schemas()[0].descriptor()).unwrap(),
+        );
+        eprintln!(
+            "files={} copied_bytes={} elapsed={:?}",
+            stage.files().len(),
+            stage.copied_bytes(),
+            start.elapsed()
+        );
     }
 }
