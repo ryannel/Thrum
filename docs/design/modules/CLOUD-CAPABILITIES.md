@@ -13,7 +13,9 @@ Independent requirements discovery preceded comparison with those designs and co
 **Fail** names contradicted acceptance. **Unproven** means no adequate evidence. Design/review, implementation,
 experienced quality, user acceptance and per-platform admission remain separate. Nothing below is passed by prose.
 
-The [migration plan](CLOUD-MIGRATION.md) now owns the active checked build queue. Mechanism labels in the table below
+The [migration plan](CLOUD-MIGRATION.md) owns the active checked build queue; its
+[POC acceptance/status contract](CLOUD-PROOF-ACCEPTANCE.md) and [performance contract](CLOUD-PERFORMANCE.md) now define
+per-stage done, observed motion and fixture-versus-engine cost scope. Mechanism labels in the table below
 are earlier candidates under reassessment; its observable outcomes and evidence status remain authoritative. New
 acceptance needs watched continuous motion, not only sampled frames. No capability is promoted by this plan.
 
