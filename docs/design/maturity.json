@@ -379,6 +379,10 @@
       "i2a_small_blob_batch": {
         "evidence": "../evidence/i2a/SOURCE-SMALL-BLOB-BATCH.md",
         "scope": "Test-only small immutable blobs stage in groups of at most 128 files and 1 MiB input bytes; input and stored hashes are checked before one SQLite transaction commits. Rollback, reuse, reopen and manifest-root closure pass. Local 1,000-file release helper timings are recorded, including a one-file storage tail; physical WAL peak, process-kill recovery and full source admission remain open."
+      },
+      "i2a_stored_root_lineage": {
+        "evidence": "../evidence/i2a/SOURCE-STORED-ROOT-LINEAGE.md",
+        "scope": "Test-only recovery verifies the current root revision, exact canonical manifest bytes and one complete history blob, then compares source-carried fields and type versions under a generation precondition; a changed root loses final CAS. Corrupt chunk/layout/hash, wrong project and stale lineage refuse. A 100,000-entry local decode/root-read cost and RSS probe passes. Candidate staged-byte provenance, GC pins, physical reservation, kill recovery and production admission remain open."
       }
     },
     {
