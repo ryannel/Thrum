@@ -159,7 +159,7 @@
       "i1_headless": {
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
-        "scope": "Fixed-tick headless coordinator, bounded pending/results and eight-bundle count backpressure, plus locally tested clock and native headless authority/replica callback. A process-shared byte reservation substrate is tested but not connected to authority/replica allocations; no general F1 registry, platform adapter or mobile shell exists.",
+        "scope": "The original I1 fixture proved fixed-tick coordination, bounded pending/results, count backpressure and a native authority/replica callback. Later selected fixed-slot and bounded structural hosts charge engine-owned storage through the shared pool; see FOUNDATION-STATUS-2026-11-02.md. A general F1 registry, real transport and named-device/visible phone qualification remain open.",
         "clock_evidence": "../evidence/i1-headless/CLOCK.md",
         "host_evidence": "../evidence/i1-headless/HOST.md"
       }
@@ -871,7 +871,7 @@
       "i1_headless": {
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
-        "scope": "Game-owned collect/open rule via read-only decision and exclusive infallible commit; broader gameplay system registration remains unbuilt."
+        "scope": "Game-owned collect/open rule via read-only decision/preparation and authority-validated application of prepared edits; invalid protected callbacks terminally fault before partial world commit. Broader gameplay system registration remains unbuilt."
       }
     },
     {
@@ -2857,7 +2857,7 @@
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
-      "MATURITY.md": "d28915c62be122613a65afb8531d3af62523d843a55c16f0228bab215f860ee5",
+      "MATURITY.md": "9ed4aff909e59d256c8cef5f1eee7a056e84140a43a4ff1eda66f1d018abbdbc",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
