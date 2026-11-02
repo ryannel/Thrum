@@ -40,3 +40,10 @@ independently authenticated. It does not prove arbitrary build-script,
 proc-macro, target, toolchain or cross-platform closure. The next T2 adapter
 must use a verified dependency-root manifest, controlled environment and a
 materialized accepted source, and must retain precise artifact provenance.
+
+The later [admitted-source compile qualification](F4-ADMITTED-HEADLESS-COMPILE.md)
+used this private cache as the only permitted Cargo home within a narrowed
+macOS sandbox. Its read grants excluded the shared `~/.cargo` data path, and
+the test verified the private cache stayed unchanged. This closes the earlier
+shared-cache-read ambiguity for that one A/B fixture; cache index provenance
+and general selected build-unit closure remain open.

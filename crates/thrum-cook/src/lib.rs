@@ -917,6 +917,12 @@ mod tests {
     #[test]
     #[ignore = "local native Cargo build from the full admitted workspace"]
     fn admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary() {
+        let private_cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME").map(PathBuf::from);
+        assert!(
+            private_cargo_home.is_none() || std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some(),
+            "private Cargo home requires the native sandbox qualification"
+        );
+        let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
         let fixture = Fixture::new();
         let mut paths = fixture.write("Admitted headless game", false, false);
         let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -1039,6 +1045,9 @@ mod tests {
         b_pin.close().unwrap();
         b_materialized.close().unwrap();
         assert_eq!(store.current_root().unwrap().unwrap(), b);
+        if let (Some(path), Some(before)) = (&private_cargo_home, private_cache_before) {
+            assert_eq!(tree_hashes(path), before);
+        }
     }
 
     fn copy_build_input(from: &Path, to: &Path, relative: &str, paths: &mut Vec<SourcePath>) {
@@ -1064,7 +1073,12 @@ mod tests {
         fn visit(root: &Path, current: &Path, output: &mut Vec<(PathBuf, [u8; 32])>) {
             for entry in fs::read_dir(current).unwrap() {
                 let entry = entry.unwrap();
-                if entry.file_type().unwrap().is_dir() {
+                let file_type = entry.file_type().unwrap();
+                assert!(
+                    !file_type.is_symlink(),
+                    "build input/cache must not alias another tree"
+                );
+                if file_type.is_dir() {
                     visit(root, &entry.path(), output);
                 } else {
                     output.push((
@@ -1111,24 +1125,60 @@ mod tests {
         fs::create_dir_all(output.join("tmp")).unwrap();
         let output = fs::canonicalize(output).unwrap();
         let checkout = fs::canonicalize(checkout).unwrap();
+        let input = fs::canonicalize(input).unwrap();
+        let cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME")
+            .or_else(|| std::env::var_os("CARGO_HOME"))
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo"));
+        let cargo_home = fs::canonicalize(cargo_home).unwrap();
+        let toolchain =
+            fs::canonicalize(Path::new(env!("CARGO")).parent().unwrap().parent().unwrap()).unwrap();
         let profile = output.join("build.sb");
         fs::write(
             &profile,
-            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read*)\n(deny file-read* (subpath (param \"CHECKOUT\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
+            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System\") (subpath \"/usr\") (subpath \"/Library\") (subpath \"/Applications\") (subpath \"/opt\") (subpath \"/private/etc\") (subpath \"/private/var\") (subpath \"/var\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         )
         .unwrap();
-        let blocked_read = sandbox_command(&profile, &checkout, &output, "/bin/cat")
+        let paths = SandboxPaths {
+            input: &input,
+            output: &output,
+            cargo_home: &cargo_home,
+            toolchain: &toolchain,
+        };
+        let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
             .output()
             .unwrap();
         assert!(!blocked_read.status.success());
-        let blocked_write = sandbox_command(&profile, &checkout, &output, "/usr/bin/touch")
+        let blocked_write = sandbox_command(&profile, paths, "/usr/bin/touch")
             .arg(input.join("should-not-exist"))
             .output()
             .unwrap();
         assert!(!blocked_write.status.success());
-        let mut command = sandbox_command(&profile, &checkout, &output, env!("CARGO"));
-        command.env("TMPDIR", output.join("tmp"));
+        if std::env::var_os("THRUM_TEST_CARGO_HOME").is_some() {
+            let shared_config =
+                PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo/config.toml");
+            if shared_config.is_file() && !shared_config.starts_with(&cargo_home) {
+                let blocked_shared = sandbox_command(&profile, paths, "/bin/cat")
+                    .arg(shared_config)
+                    .output()
+                    .unwrap();
+                assert!(!blocked_shared.status.success());
+            }
+        }
+        let mut command = sandbox_command(&profile, paths, env!("CARGO"));
+        command
+            .env_clear()
+            .env("HOME", cargo_home.parent().unwrap())
+            .env("CARGO_HOME", &cargo_home)
+            .env("RUSTC", toolchain.join("bin/rustc"))
+            .env(
+                "PATH",
+                format!("{}:/usr/bin:/bin", toolchain.join("bin").display()),
+            )
+            .env("RUSTFLAGS", "")
+            .env("LC_ALL", "C")
+            .env("TMPDIR", output.join("tmp"));
         command
     }
 
@@ -1138,17 +1188,33 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
-    fn sandbox_command(profile: &Path, checkout: &Path, output: &Path, program: &str) -> Command {
-        let mut checkout_param = OsString::from("CHECKOUT=");
-        checkout_param.push(checkout.as_os_str());
-        let mut output_param = OsString::from("OUTPUT=");
-        output_param.push(output.as_os_str());
+    #[cfg(target_os = "macos")]
+    #[derive(Clone, Copy)]
+    struct SandboxPaths<'a> {
+        input: &'a Path,
+        output: &'a Path,
+        cargo_home: &'a Path,
+        toolchain: &'a Path,
+    }
+
+    #[cfg(target_os = "macos")]
+    fn sandbox_command(profile: &Path, paths: SandboxPaths<'_>, program: &str) -> Command {
+        fn parameter(name: &str, path: &Path) -> OsString {
+            let mut value = OsString::from(name);
+            value.push("=");
+            value.push(path.as_os_str());
+            value
+        }
         let mut command = Command::new("/usr/bin/sandbox-exec");
         command
             .arg("-D")
-            .arg(checkout_param)
+            .arg(parameter("INPUT", paths.input))
             .arg("-D")
-            .arg(output_param)
+            .arg(parameter("OUTPUT", paths.output))
+            .arg("-D")
+            .arg(parameter("CARGO_HOME", paths.cargo_home))
+            .arg("-D")
+            .arg(parameter("TOOLCHAIN", paths.toolchain))
             .arg("-f")
             .arg(profile)
             .arg(program);

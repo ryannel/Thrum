@@ -48,12 +48,28 @@ are refused. The local sandboxed A/B run passed: 53 files, 1,207,105 bytes,
 1,056 ms for A's separate debug build and the same 2,306,184-byte binary
 size. These are process-level observations for one host and fixture.
 
+The later sandbox profile grants read data for the materialized input,
+configured Cargo home, installed toolchain and named macOS system roots;
+metadata reads are broader. The test clears the child environment, selects
+the exact installed Cargo/Rustc path, supplies only the Cargo home, target,
+PATH, temp directory and fixed flags, and uses a distinct output tree. With
+`THRUM_TEST_CARGO_HOME` pointing at the private cache prepared in the
+[cache experiment](F4-PRIVATE-CARGO-CACHE.md), the local A/B run passed: 53
+admitted files, 1,210,154 bytes, 1,444 ms for A's debug build and a
+2,345,752-byte executable. A checkout source read, shared Cargo config read
+and materialized input write were refused. Exact source and private-cache
+path/hash inventories were unchanged after both builds, while admitted B's
+invalid Rust failed and A's binary still verified and ran. The private cache
+had 318 files, 28,523,480 bytes and local canonical path/length/file-hash
+tree digest `1f5efe1d26eaf48c6e07c83e4b3745497452242daff8c7eeed83909842c8238d`.
+This is one host observation, not a build-time target or a general cache size.
+
 The sandboxed run improves the process boundary; it does not make a trusted
-builder. Broad read permission, inherited Cargo environment/configuration and
-the external registry cache can still affect compilation. The test has not
-closed the selected dependency graph against every admitted file and verified
-external dependency root, recorded compiler/target/flags identities, or
-published a durable binary/product manifest. A successful process exit and
-binary hash therefore do not form a trusted `BuildRevision`. The next T2 step
-is a closed, attested compiler adapter; F4 then publishes and reloads the
-verified target closure before a fresh world may start.
+builder. The prepared cache's index records were copied from mutable host
+state and its tree digest is diagnostic rather than a release-verified root.
+Broad system reads remain; selected Cargo build units, build-script/proc-macro
+inputs, exact compiler/dependency identities and the output manifest are not
+closed. A successful process exit and binary hash therefore do not form a
+trusted `BuildRevision`. The next T2 step is a closed, attested compiler
+adapter; F4 then publishes and reloads the verified target closure before a
+fresh world may start.
