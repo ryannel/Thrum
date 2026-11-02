@@ -13,6 +13,21 @@
     <key>CFBundleVersion</key><string>1</string>
     <key>LSRequiresIPhoneOS</key><true/>
     <key>MinimumOSVersion</key><string>18.0</string>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key><false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key><string>Thrum I1</string>
+                    <key>UISceneDelegateClassName</key><string>ThrumSceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
+    <key>UILaunchScreen</key><dict/>
     <key>UIDeviceFamily</key><array><integer>1</integer><integer>2</integer></array>
     <key>UISupportedInterfaceOrientations</key>
     <array>

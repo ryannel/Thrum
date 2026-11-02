@@ -10,16 +10,18 @@ On macOS with Xcode, the pinned Rust iOS simulator target and offline Cargo cach
 bash examples/i1-mobile-game/ios/build-simulator.sh
 ```
 
-The unsigned app is written under `target/i1-mobile-ios-sim/ThrumI1.app`. Signing, installation and running on a simulator or iPhone are separate checks.
+The unsigned app is written under `target/i1-mobile-ios-sim/ThrumI1.app`. The Xcode 27.2 simulator starts it after the UIKit scene manifest is present, but the scene remains black; input and lifecycle are not qualified. Signing and running on an iPhone are separate checks.
 
 ## Android debug package
 
-With Android SDK, NDK 28.2.13676358, Gradle 8.13, JDK 17, the pinned Rust Android target and offline Cargo cache:
+With Android SDK API 37.2 and Build Tools 36, NDK 28.2.13676358, Gradle 9.6.0, JDK 17, the pinned Rust Android target and offline Cargo cache:
 
 ```sh
 bash examples/i1-mobile-game/android/build-debug.sh
 ```
 
-Set `ANDROID_HOME`; `ANDROID_NDK_HOME` may override the selected SDK NDK path. The script selects the NDK LLVM toolchain and API 28 Rust target linker, builds `libi1_mobile_game.so`, places it under the ignored Gradle build directory, and assembles a debug APK. The Java Activity uses the `android-activity` 0.6.1 matching GameActivity 4.4.0 dependency and forwards foreground transitions through JNI. This package has not been assembled or run locally yet.
+Set `ANDROID_HOME`; `ANDROID_NDK_HOME` may override the selected SDK NDK path. Put Gradle 9.6.0 on `PATH`. The script selects the NDK LLVM toolchain and API 28 Rust target linker, builds `libi1_mobile_game.so`, places it under the ignored Gradle build directory, and assembles a debug APK. The Java Activity uses the `android-activity` 0.6.1 matching GameActivity 4.4.0 dependency and forwards foreground transitions through JNI.
+
+The APK assembles locally and contains the ARM64 Rust library. Android runtime input, lifecycle and graphics are still untested.
 
 The I1 shell is local play only. Later multiplayer clients must leave the remote authority running independently of the phone surface.
