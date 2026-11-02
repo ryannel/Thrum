@@ -38,7 +38,7 @@ def check_links(root, files):
     errors = []
     count = 0
     for path in files:
-        for match in LINK.finditer(prose(path.read_text())):
+        for match in LINK.finditer(prose(path.read_text(encoding="utf-8"))):
             value = match[1].strip()
             if value.startswith("<"):
                 value = value[1:value.index(">")]
@@ -52,7 +52,7 @@ def check_links(root, files):
             label = f"{path.relative_to(root)}: {value}"
             if not dest.is_relative_to(root) or not dest.exists():
                 errors.append(f"missing/outside local link: {label}")
-            elif url.fragment and dest.suffix == ".md" and unquote(url.fragment) not in anchors(dest.read_text()):
+            elif url.fragment and dest.suffix == ".md" and unquote(url.fragment) not in anchors(dest.read_text(encoding="utf-8")):
                 errors.append(f"missing anchor: {label}")
     return errors, count
 
@@ -78,7 +78,7 @@ def check_packages(root, metadata, policy):
             errors.append(f"workspace manifest outside repository: {name}")
         if manifest_path != (root / entry["manifest"]).resolve():
             errors.append(f"unexpected manifest path: {name}")
-        manifest = tomllib.loads(manifest_path.read_text())
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("lints") != {"workspace": True}:
             errors.append(f"{name} must inherit workspace lints")
         for key in ("version", "edition", "rust-version", "publish"):
@@ -140,7 +140,7 @@ def check_manifest_inventory(root, metadata):
 def check_skills(root):
     errors = []
     for path in (root / ".agents/skills").glob("*/SKILL.md"):
-        match = re.match(r"---\n(.*?)\n---", path.read_text(), re.S)
+        match = re.match(r"---\n(.*?)\n---", path.read_text(encoding="utf-8"), re.S)
         if not match:
             errors.append(f"missing skill metadata: {path.name}")
             continue
@@ -177,13 +177,13 @@ def main():
     files = markdown_files(ROOT)
     errors, links = check_links(ROOT, files)
     errors += check_skills(ROOT)
-    ledger = json.loads((ROOT / "docs/design/maturity.json").read_text())
+    ledger = json.loads((ROOT / "docs/design/maturity.json").read_text(encoding="utf-8"))
     errors += check_maturity(ledger)
     errors += check_hashes(ROOT, ledger)
-    policy = tomllib.loads((ROOT / ".config/architecture.toml").read_text())
+    policy = tomllib.loads((ROOT / ".config/architecture.toml").read_text(encoding="utf-8"))
     # Explicit rustup avoids silently using an unrelated standalone Cargo installation.
-    channel = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
-    output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, text=True)
+    channel = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
+    output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, encoding="utf-8")
     metadata = json.loads(output)
     errors += check_packages(ROOT, metadata, policy)
     errors += check_manifest_inventory(ROOT, metadata)

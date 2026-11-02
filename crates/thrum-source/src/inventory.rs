@@ -80,6 +80,8 @@ pub enum InventoryError {
     NonUtf8Name,
     /// A declared or observed path is not portable.
     Path(PathError),
+    /// A top-level name aliases an excluded generated or private root.
+    ReservedRootAlias(String),
     /// A symlink, device, socket or other nonregular entry is in the source tree.
     UnsupportedEntry(PathBuf),
     /// A file was found that the complete declaration omitted.
@@ -103,9 +105,9 @@ pub enum InventoryError {
 
 /// Scan one complete declared tree without creating a stage or source revision.
 ///
-/// The v1 policy excludes only exact top-level `.git`, `.engine` and `target`
-/// roots. All other regular files must be declared, including code and binary
-/// masters. This cannot prove a single filesystem instant against a writer;
+/// The v1 policy excludes exact top-level `.git`, `.engine` and `target`
+/// roots and rejects case-fold aliases of those names. All other regular files
+/// must be declared, including code and binary masters. This cannot prove a single filesystem instant against a writer;
 /// staging must reread the tree and every file before returning a candidate.
 pub fn scan_declared_tree(
     project_root: &Path,
@@ -155,7 +157,7 @@ fn scan_declared_tree_with_hook(
                 path: directory.clone(),
                 source,
             })?;
-            if directory == project_root && excluded_top_level(&entry.file_name()) {
+            if directory == project_root && excluded_top_level(&entry.file_name())? {
                 continue;
             }
             entry_count += 1;
@@ -242,9 +244,20 @@ fn scan_declared_tree_with_hook(
     })
 }
 
-fn excluded_top_level(name: &std::ffi::OsStr) -> bool {
-    name.to_str()
-        .is_some_and(|name| EXCLUDED_TOP_LEVEL.contains(&name))
+fn excluded_top_level(name: &std::ffi::OsStr) -> Result<bool, InventoryError> {
+    let Some(name) = name.to_str() else {
+        return Ok(false);
+    };
+    if EXCLUDED_TOP_LEVEL.contains(&name) {
+        return Ok(true);
+    }
+    if EXCLUDED_TOP_LEVEL
+        .iter()
+        .any(|reserved| unicase::eq(name, reserved))
+    {
+        return Err(InventoryError::ReservedRootAlias(name.to_owned()));
+    }
+    Ok(false)
 }
 
 #[cfg(test)]
@@ -318,6 +331,20 @@ mod tests {
             ),
             Err(InventoryError::MissingFile(_))
         ));
+    }
+
+    #[test]
+    fn generated_root_case_aliases_refuse_inventory() {
+        for root in [".GIT", ".ENGINE", "TARGET"] {
+            let fixture = Fixture::new();
+            let path = format!("{root}/source.json");
+            fixture.write(&path, b"{}");
+            let declared = [SourcePath::parse(&path).unwrap()];
+            assert!(matches!(
+                scan_declared_tree(&fixture.0, &declared),
+                Err(InventoryError::ReservedRootAlias(name)) if name == root
+            ));
+        }
     }
 
     #[cfg(unix)]
