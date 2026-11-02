@@ -1,6 +1,7 @@
 # Selected runtime cloud and atmosphere baseline
 
-2 November 2026. **Runtime design selected; implementation, visual quality and device qualification unrun.**
+2 November 2026. **Runtime design selected; first dense pilot implemented, appearance and device qualification open.**
+[The first implementation checkpoint](../../evidence/cloud-runtime-pilot-2026-11-02/README.md) records its exact scope and failures.
 The [governing design](CLOUDS.md), [whole-atmosphere coverage](ATMOSPHERE-SYSTEM.md),
 [replaceable provider contract](CLOUD-PROVIDERS.md) and single [build queue](CLOUD-MIGRATION.md) describe one system.
 The preceding Houdini/baked-world-episode choice at13a19ad is superseded: it restricted the requested live weather.
@@ -45,10 +46,13 @@ profile or failed target; do not rename an inferior image an equal-quality optim
 2. E1's weather provider owns regional authored-control fields (coverage/moistening, drying, lift, cloud base/top/cap,
    ice supply, storm activity) and world wind W(x,h,t) in m/s. Controls are normalized art parameters where not physical;
    no claimed humidity, water conservation or forecast. Front positions/strengths change at runtime. Initial fixed
-   weather step1s; smooth controls/trajectories between committed ticks. Controls use bounded advection plus exact relaxation toward spatial front/region targets:
+   weather step1s. Controls relax at barriers and are held on causal half-open intervals; front trajectories and
+   wind integrals advance inside each interval. Never interpolate past source inputs toward a later committed
+   frame: delayed GPU work must receive the same forcing as timely work. A future smoother may evaluate an
+   analytic trajectory from already committed targets, never from future frames. Controls use bounded advection plus exact relaxation toward spatial front/region targets:
    `c_next=c_adv*exp(-dt/tau)+c_target*(1-exp(-dt/tau))`, tau>0. Fronts advance by their specified trajectory/velocity;
    c_target is the clamped sum/priority blend of identified front kernels and baseline regional recipe, not a sky image.
-   Wind changes interpolate the shared vector profile under a declared slew limit. External changes enter the next world step.
+   Wind changes relax the shared vector profile with4s time constant at the weather barrier. External changes enter the next world step.
 3. The source provider owns sparse world-domain3D optical proxies q_l,q_i, stable region/cell IDs and recipe state.
    At initial fixed source step dt=.25s, backward-trace through prescribed velocity u and apply positive source/loss:
    use bounded MacCormack semi-Lagrangian advection: forward trace, reverse trace and corrected forward value, limited

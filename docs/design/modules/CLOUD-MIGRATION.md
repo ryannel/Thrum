@@ -1,6 +1,6 @@
 # Cloud and atmospherics migration build plan
 
-2 November 2026. **Selected production-derived baseline; construction not started.**
+2 November 2026. **Selected production-derived baseline; P0/P1a construction active.**
 [The production baseline](CLOUD-PRODUCTION-BASELINE.md) locks authoring, data, renderer, light and consumer path.
 [CLOUDS](CLOUDS.md) owns scope/contracts; [capabilities](CLOUD-CAPABILITIES.md) own actual outcomes;
 [POC DoD](CLOUD-PROOF-ACCEPTANCE.md) and [CPU/GPU/memory discipline](CLOUD-PERFORMANCE.md) govern evidence.
@@ -28,10 +28,10 @@ readouts, usable controls, native beauty and its diagnostic views.
 | D0/D1 | Original commission | Historical research/first review retained; no implementation pass |
 | D1R2 | D1 | [Second review](../../evidence/atmospherics-migration-round2-2026-11-02/REVIEW.md) retained; previous experimental gate choices superseded |
 | D2 Runtime revision | Current user direction | Native runtime3D default and provider/scope contracts selected; [independent review closed](../../evidence/cloud-dynamic-revision-2026-11-02/REVIEW.md). Previous baked selection/review retained as superseded history |
-| P0 Thin observable bench | D2 | Old proof preserved in a124167; new harness unbuilt |
-| P1a Live source/control pilot | P0 | Unbuilt; no paid authoring dependency |
-| P2a Air reference | P0 | Unbuilt |
-| P3a Same-source consumers and ordinary LOD | P1a/P2a minimums | Unbuilt |
+| P0 Thin observable bench | D2 | [First runtime checkpoint](../../evidence/cloud-runtime-pilot-2026-11-02/README.md): visible bench, causal CPU clock, bounded GPU jobs and finite checks; whole P0 incomplete |
+| P1a Live source/control pilot | P0 | Dense native3D Cu growth/renewal/dry-front pilot runs; soft morphology fails visual target; source/motion gate remains open |
+| P2a Air reference | P0 | Small GPU/CPU air-transmittance check passes; complete P2a appearance unqualified |
+| P3a Same-source consumers and ordinary LOD | P1a/P2a minimums | Main/receiver/independent mirror wired to one source; environment/occupancy/LOD and accuracy unbuilt/unqualified |
 | P4a Small spatial coupled/cost sentinel | P1a/P2a/P3a minimums | Unbuilt; before library expansion |
 | P1b Cb/Sc/St/Ci live source regimes | P4a | Unbuilt |
 | P2b Complete four-LUT air | P4a | Unbuilt |
@@ -83,6 +83,10 @@ roles onto the actual engine API; no prototype coordinator, browser loader or pr
 
 ## P0 — thin comparison bench
 
+[Checkpoint source, actual images, finite checks and scoped review](../../evidence/cloud-runtime-pilot-2026-11-02/README.md)
+are retained. All-stage checkboxes remain open where their complete contract is not yet proved.
+
+- [x] Preserve [first running bench checkpoint](../../evidence/cloud-runtime-pilot-2026-11-02/README.md), finite CPU/GPU checks, independent code review and actual growth/front images; complete P0 remains open.
 - [ ] Implement only the selected source/light/view seams with an existing tiny comparison source; no general SDK/editor.
 - [ ] Load recipe/weather controls and one world clock; play/pause/replay1x/16x/64x, camera/Sun/consumer toggles.
 - [ ] Prove full versus independent analytic shadow-only provider configuration and reject incompatible full-sky selection.
@@ -93,6 +97,8 @@ roles onto the actual engine API; no prototype coordinator, browser loader or pr
 - [ ] Done: runnable visible bench plus scoped correctness/observer/control receipts, not family or budget acceptance.
 
 ## P1a — live native3D source/control pilot
+
+- [x] Retain first dense Cu reference with empty-field birth, transported growth, simultaneous young/old support and spatial dry-front loss; soft morphology and64x throughput fail acceptance.
 
 - [ ] Generate pinned native3D base/erosion/strand ingredients; no paid tool, clip library or bulk asset prerequisite.
 - [ ] Implement bounded source advection/local reaction with small independent CPU oracle, halos, source birth/support and immutable snapshot.

@@ -1,0 +1,11 @@
+# Final bounded source-time review
+
+2 November 2026. Read-only delta review of `src/weather.js`, `src/scene.js` and `tests/weather.test.mjs` after the non-causal fractional sampling finding in `source-code-closure.md`. No runtime code was changed and no visual/GPU/device qualification is claimed.
+
+**Finding closed at code and CPU-test level.** `Weather.sample(t)` now selects the last committed frame with `frame.time <= t`, so each half-open interval `[tick,tick+1)` uses that tick's held controls. Only its already active front position and wind integral are evaluated analytically within the interval. A command queued for tick 1 cannot alter `sample(.75)` after tick 1 commits. `Weather.step` integrates the preceding wind/front interval before committing commands; at exact tick 1, `sample(1)` selects the new frame. `Scene.render` samples source controls at `this.time`, the start of each 0.25 s source interval, while it advances the source to `nextTime`. This gives a consistent boundary rule for the source step `[.75,1)` versus `[1,1.25)` and does not depend on when GPU work is submitted.
+
+I checked the previously failing case: the new test samples `[0,.25,.5,.75]` before and after a queued wind/front command commits at tick 1 and asserts equality. It also checks `sample(1).frontX=3800` and the preceding wind integral of 3. The delayed 20-tick test compares every quarter-tick frame against a later read of the same Weather history, including a tick-5 wind/dry command. The bounded history rejects samples older than its retained range; it does not fabricate values from dropped frames.
+
+`node tmp/cloud-production-proof/tests/weather.test.mjs` and `node tmp/cloud-production-proof/tests/reference.test.mjs` both passed in this review. These tests support the CPU sampling rule, not GPU field equivalence, front appearance, cloud morphology, shadow/reflection coherence, recovery or M2 cost. The new policy deliberately holds most controls within each one-second interval; any visual stepping at the boundary remains a quality observation, not a replay-causality defect.
+
+**Verdict:** no new source-time defect found in this bounded delta. The prior deterministic replay finding is closed at code/CPU-test level. GPU oracle receipts and personally inspected native motion remain separate gates.

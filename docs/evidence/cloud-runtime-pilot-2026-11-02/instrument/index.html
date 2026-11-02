@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Thrum · Live cloud proof</title>
+  <link rel="stylesheet" href="style.css" />
+  <body>
+    <header>
+      <div><b>THRUM</b><span>Atmosphere / live cloud proof</span></div>
+      <output id="status">Starting WebGPU…</output>
+    </header>
+    <main>
+      <section class="viewport">
+        <canvas
+          id="view"
+          width="1280"
+          height="720"
+          aria-label="Live cloud scene"
+        ></canvas>
+        <div id="caption">
+          Live 3D source · shared light · independent reflected rays
+        </div>
+        <div id="progress" hidden></div>
+      </section>
+      <aside>
+        <label
+          >Cloud family<select id="family">
+            <option value="0">Cumulus · fair weather</option>
+            <option value="1">Cumulonimbus · developing storm</option>
+            <option value="2">Stratocumulus · broken banks</option>
+            <option value="3">Stratus · overcast layer</option>
+            <option value="4">Cirrus · high ice</option>
+          </select></label
+        >
+        <div class="buttons">
+          <button id="play">Pause</button
+          ><button id="clear">Grow from clear</button
+          ><button id="reset">Seeded start</button>
+        </div>
+        <label
+          >Time rate<select id="rate">
+            <option selected>1</option>
+            <option>16</option>
+            <option>64</option>
+          </select></label
+        >
+        <label
+          >Moistening<input
+            id="moist"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.85" /></label
+        ><label
+          >Lift<input
+            id="lift"
+            type="range"
+            min="0"
+            max="2"
+            step="0.01"
+            value="1" /></label
+        ><label
+          >Drying<input
+            id="dry"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.08"
+        /></label>
+        <label
+          >Wind X · m/s<input
+            id="wind"
+            type="range"
+            min="-12"
+            max="12"
+            step="0.1"
+            value="3"
+        /></label>
+        <div class="buttons">
+          <button id="front">Send dry front</button
+          ><button id="storm">Develop storm</button>
+        </div>
+        <label
+          >Sun elevation<input
+            id="sun"
+            type="range"
+            min="3"
+            max="85"
+            step="1"
+            value="32" /></label
+        ><label
+          >View<select id="mode">
+            <option value="0">Beauty + ground / reflection</option>
+            <option value="1">Optical density slice</option>
+            <option value="2">Cloud direct light</option>
+            <option value="3">Ambient accessibility</option>
+            <option value="4">Source age</option>
+          </select></label
+        >
+        <label
+          >Provider<select id="provider">
+            <option value="0">Live 3D volume</option>
+            <option value="1">Shadow only · analytic</option>
+            <option value="2">Clear air</option>
+          </select></label
+        >
+        <div class="checks">
+          <label
+            ><input type="checkbox" id="optical" checked />Optical
+            pipeline</label
+          ><label><input type="checkbox" id="fog" />Local fog</label
+          ><label
+            ><input type="checkbox" id="mirror" checked />Reflective
+            receiver</label
+          ><label
+            ><input type="checkbox" id="main" checked />Main optical view</label
+          >
+        </div>
+        <div class="buttons">
+          <button id="probe">Source probe</button
+          ><button id="capture">Save image</button
+          ><button id="bench">Measure 10s</button>
+        </div>
+        <details>
+          <summary>Proof controls</summary>
+          <label
+            >Advance source seconds<input
+              id="advance-seconds"
+              type="number"
+              value="60"
+              min="0.25"
+              max="600" /></label
+          ><button id="advance">Advance deterministically</button
+          ><button id="tests">GPU reference checks</button
+          ><button id="recover">Recreate optical epoch</button>
+        </details>
+        <pre id="stats">Waiting for first frame.</pre>
+        <details>
+          <summary>Latest receipt</summary>
+          <pre id="receipt"></pre>
+        </details>
+        <p class="help">
+          Drag to orbit · two-finger scroll to orbit · Shift-scroll to pan ·
+          pinch to zoom. Tests and source probes run separately from quiet
+          timing.
+        </p>
+      </aside>
+    </main>
+    <script type="module" src="src/bench.js"></script>
+  </body>
+</html>

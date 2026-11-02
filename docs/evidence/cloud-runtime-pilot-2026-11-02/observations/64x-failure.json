@@ -1,0 +1,11 @@
+{
+  "kind": "manual_UI_observation_not_completed_benchmark",
+  "build": "0ab4062170f6d491",
+  "requestedRate": 64,
+  "result": "Source is outside bounded committed weather history",
+  "worldTimeAtLaterPausedInspection": 9141.28,
+  "sourceTimeAtInspection": 881.75,
+  "worldEpoch": 3,
+  "opticalEpoch": 3,
+  "scope": "64x unavailable before10s quiet measurement finished; world continued afterward; failure instant not timestamped; no full GPU-time or completed64x throughput claimed"
+}
