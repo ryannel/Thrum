@@ -1487,10 +1487,17 @@ mod tests {
         };
         let linker = xcrun_path(&["--sdk", "macosx", "--find", "clang"]);
         let sdk = xcrun_path(&["--sdk", "macosx", "--show-sdk-path"]);
+        let linker_root = linker
+            .ancestors()
+            .find(|path| {
+                path.extension()
+                    .is_some_and(|extension| extension == "xctoolchain")
+            })
+            .unwrap_or(&developer);
         let profile = output.join("build.sb");
         fs::write(
             &profile,
-            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System\") (subpath \"/usr\") (subpath \"/Library\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"DEVELOPER\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
+            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System\") (subpath \"/usr\") (subpath \"/Library\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         )
         .unwrap();
         let paths = SandboxPaths {
@@ -1498,7 +1505,8 @@ mod tests {
             output: &output,
             cargo_home: &cargo_home,
             toolchain: &toolchain,
-            developer: &developer,
+            linker_root,
+            sdk: &sdk,
         };
         let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
@@ -1576,7 +1584,8 @@ mod tests {
         output: &'a Path,
         cargo_home: &'a Path,
         toolchain: &'a Path,
-        developer: &'a Path,
+        linker_root: &'a Path,
+        sdk: &'a Path,
     }
 
     #[cfg(target_os = "macos")]
@@ -1598,7 +1607,9 @@ mod tests {
             .arg("-D")
             .arg(parameter("TOOLCHAIN", paths.toolchain))
             .arg("-D")
-            .arg(parameter("DEVELOPER", paths.developer))
+            .arg(parameter("LINKER_ROOT", paths.linker_root))
+            .arg("-D")
+            .arg(parameter("SDK", paths.sdk))
             .arg("-f")
             .arg(profile)
             .arg(program);
