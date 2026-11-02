@@ -136,7 +136,7 @@ are retained. [Thermal/asymmetric-cap/local-breakup proof](../../evidence/cloud-
 lighting or opacity to hide that failed cue. Regional exchange remains necessary after the long-run chart-edge failure.
 
 - [x] Preserve bounded clear-start Cb cap-arrival/phase/filter pilot and [asymmetric thermal/local-breakup proof](../../evidence/cloud-billowing-2026-11-02/README.md): final GPU/CPU checks, real growth/breakup clips and available-host cost screens. CF02 active billowing art, same-ID Cu→Cb transfer and complete P1b remain open.
-- [ ] Diagnose remaining active soft tiers in3D q/head and source/material bandwidth; prove local split/replacement at1x without losing finite breakup/fed cap.
+- [ ] Prove the [expanding convective-core correction](CLOUD-PRODUCTION-BASELINE.md#convective-interior-correction--under-proof): old moving-frame axial compression is analytically identified; native/raw-material diagnostics, populated thickness, actual merge/split, cap handoff and1x/16x/cost are required before acceptance.
 - [ ] Recover optics after a long host/background gap as an explicit new optical epoch, with current-time chart/seed alignment; preserve CPU weather and declare lost q continuity.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
 - [x] Correct Ci repeated sine-comb source with [finite filament/head and anisotropic transport proof](../../evidence/cloud-cirrus-2026-11-02/README.md): actual1x/16x images, ice-only GPU regressions and bounded supply-off response; full Ci acceptance remains open.

@@ -133,6 +133,51 @@ fixed update semantics and report work/backlog; never skip required state update
 preview can miss presentation deadlines, explicitly reported; the primary5ms admission is normal1x, with preview
 throughput/controls separately measured. No unlimited catch-up loop may block input.
 
+## Convective interior correction — under proof
+
+The existing Stokes/Gaussian head has an upper moving-frame stagnation with strain(a,-2a,a). At default forcing its
+axial thickness e-fold is about20s, so it produces thin mushroom tiers even at infinite source resolution. Cb's bounded
+positive material multiplier(.572–1) cannot repair that missing volume. Raw-q/material-opacity comparisons and native
+head-plane observers isolate this from lighting. Do not increase resolution or sharpen the image as the source repair.
+
+The next bounded Cb proof uses a kinematic expanding material core plus rolling shoulders. This is an explicit optical
+VFX approximation derived from the required volume motion, not a claim about proprietary engine microphysics. Inside
+a fully active isolated core, u=W(y)+U e_y+diag(gammaR,gammaH,gammaR)(x-h); R=R0+.08rise,
+H=.55R0+.14rise, gammaR=.08U/R,gammaH=.14U/H. Nonnegative fractional growth avoids the old internal stagnation
+and the unequal growth can thicken the initial feed relative to width. The actual initially populated volume must be
+measured; a larger control ellipsoid does not constitute density. q is an optical concentration proxy: expansion
+grows occupied optical volume without a water-mass conservation claim. Reaction/birth counters measure local source
+addition, not integrated-q changes caused by velocity divergence.
+
+Core plateau c_i=life_i*(1-smoothstep(.65,1.25,rho_i))*release_i. For s=sum(c_i),Z=max(1,s),r=max(1-s,0),
+use internal velocity (sum(c_i*t_i)+r*environment)/Z; t_i contains the affine target and environment contains ALL
+background uplift/curl/asymmetric rolls. Shared W is added once. No other head's roll may bypass that partition.
+Inside a fully active isolated plateau, the internal Jacobian matches the prescribed diagonal; shared wind shear
+still deforms it. Overlap tapers can compress necks (a reviewed two-head case gives -3.75gamma), so positive strain
+everywhere is not claimed. Record whole occupied-core thickness and assembled trajectories, including merging.
+
+Separate head lifetime/activation from the old buoyancy-height window in one added16-byte control vector per head.
+Claim head-following only below8400m. Core release is smooth over head10300–11000m; world-space vertical ascent/growth
+fades through the existing9000–10300m cap. New-profile cap spreading uses the same arriving heads and lifetime,
+remaining available after buoyancy fades. Only transported q reaches paired liquid-to-ice transfer9050–10150m.
+Cap arrival must pass independently; controls continuing upward do not prove matter reached the cap.
+
+After bounded transport/reaction/evaporation/freeze, add conservative six-neighbour mixing kappa1000m²/s,dt.25s.
+At current Cb pitch the stencil centre is.95634, with positive axis weights; clamp donors to self on this bounded
+proof's faces for no-flux mixing. Mix liquid/ice concentrations and reaction-birth proxy linearly; mix age through
+its q-weighted moment. Existing age advection remains approximate. Mixing permits adjacent supplied supports to
+form bridges, while finite local evaporation severs thin necks. Test actual merge followed by split, not only an
+authored neck disappearing. Future sparse admission needs its one-cell halo.
+
+A dedicated mix pipeline uses the immutable final-reaction uniform, consumes next q into now-retired reverse
+scratch and copies back before publication. Old q remains intact for all optical readers. No new volume, about18KiB
+extra bounded control storage; one pass plus copy adds100MiB logical texture traffic/tick(400MiB/s1x,6.25GiB/s16x),
+before cache reuse. Measure the complete graph, preserve the optional velocity-cache comparison and reject capacity
+or quality regressions. The legacy rolling profile remains a diagnostic; Ci and other families remain unchanged.
+
+This candidate requires isolated strain/thickness and overlap tests, positive/mass/age/birth mixing checks, native
+sections and1x/16x growth/merge/loss images, fed-cap continuity and coupled consumers/cost. It is not yet accepted art.
+
 ## Source representation and cost
 
 Use sparse8³ interior RG16F liquid/ice optical-proxy bricks with guards and32-bit pages, plus max occupancy/mips.
