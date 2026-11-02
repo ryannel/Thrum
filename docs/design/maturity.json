@@ -371,6 +371,10 @@
       "i2a_manifest_chunk_writer": {
         "evidence": "../evidence/i2a/SOURCE-MANIFEST-CHUNKS.md",
         "scope": "A test-only bounded writer emits canonical 100,000-entry manifest bytes directly to four verified 4 MiB SQLite chunks. A smaller two-chunk fixture checks root/outcome and reopened stored digest. Local Rust 1.99.1 release cost/RSS is recorded, but referenced file closure, prior-root authority, physical disk/WAL reservation, process-kill recovery and production admission remain open."
+      },
+      "i2a_direct_file_closure": {
+        "evidence": "../evidence/i2a/SOURCE-DIRECT-FILE-CLOSURE.md",
+        "scope": "A test-only manifest root transaction checks every direct file entry against a completed SQLite blob hash and exact length. Missing or mismatched files refuse before root/outcome advancement, while matching retries recover the persisted outcome. No authenticated prior history, dependency closure, disk/WAL reservation, pins, process-kill recovery or production admission API exists."
       }
     },
     {
