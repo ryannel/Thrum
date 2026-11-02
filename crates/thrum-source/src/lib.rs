@@ -16,6 +16,7 @@ mod path;
 pub mod project_v2_json;
 mod record;
 pub mod registry;
+pub mod registry_stage;
 pub mod schema_json;
 mod semantic;
 mod stage;

@@ -34,15 +34,27 @@ pub fn validate_active_registry(
     descriptors: &[SchemaDescriptor],
     history: &RegistryHistory<'_>,
 ) -> Result<(), RegistryConsistencyError> {
+    validate_active_registry_with(descriptors, history, |descriptor| descriptor)
+}
+
+pub(crate) fn validate_active_registry_with<T, F>(
+    descriptors: &[T],
+    history: &RegistryHistory<'_>,
+    select: F,
+) -> Result<(), RegistryConsistencyError>
+where
+    F: Fn(&T) -> &SchemaDescriptor,
+{
     for (index, pair) in descriptors.windows(2).enumerate() {
-        if pair[0].target_type() >= pair[1].target_type() {
+        if select(&pair[0]).target_type() >= select(&pair[1]).target_type() {
             return Err(RegistryConsistencyError::DescriptorOrder(index + 1));
         }
     }
 
     let history_fields = history.fields();
     let mut history_index = 0;
-    for (descriptor_index, descriptor) in descriptors.iter().enumerate() {
+    for (descriptor_index, item) in descriptors.iter().enumerate() {
+        let descriptor = select(item);
         for (field_index, field) in descriptor.fields().iter().enumerate() {
             let active_key = (descriptor.target_type(), field.id());
             while let Some(entry) = history_fields.get(history_index) {
@@ -84,7 +96,8 @@ pub fn validate_active_registry(
 
     let history_versions = history.versions();
     let mut version_index = 0;
-    for (descriptor_index, descriptor) in descriptors.iter().enumerate() {
+    for (descriptor_index, item) in descriptors.iter().enumerate() {
+        let descriptor = select(item);
         let active_key = (descriptor.target_type(), descriptor.target_version());
         while history_versions
             .get(version_index)
