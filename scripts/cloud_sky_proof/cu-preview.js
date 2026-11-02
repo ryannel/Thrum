@@ -1,3 +1,4 @@
+import {AirSun} from './air.js';
 import {DeepSun} from './deep-sun.js';
 import {checkScatterFit} from './fit-probes.js';
 import {ScatterFit} from './scatter-fit.js';
@@ -13,7 +14,7 @@ const proofParameters=new URLSearchParams(location.search);
 const preparedOptions={crop:proofParameters.get('source_crop')!=='0',specialize128:proofParameters.get('source_fast')!=='0'};
 const norm=v=>{const length=Math.hypot(...v);return v.map(x=>x/length);};
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-let device,context,sourceObject,field,recipe,sceneBuffer,errors,prefix,ambient,fit,fitProducts,imageLayout,deep,deepInput;
+let device,context,sourceObject,field,recipe,sceneBuffer,errors,prefix,ambient,fit,fitProducts,imageLayout,deep,deepInput,air;
 let prefixPipeline,ambientPipeline,imagePipeline,prefixInput,ambientInput,imageInput,prefixOutput,ambientOutput;
 let age=650,busy=false,pending=false,exclusive=false;
 const clock=new PreviewClock(1800,650);
@@ -68,8 +69,8 @@ function scene(time){
   put(4,[...sun,lightMode!=='sky'&&elevation>0?1:0]);put(5,[...U,projected(U)]);put(6,[...V,projected(V)]);put(7,[...W,projected(W)]);
   put(8,[90000,85000,75000,.00006]);put(9,(lightMode!=='0'?[6000,9000,15000]:[0,0,0]).concat([sourceObject.sigmaMax]));
   const referencePoint=masterLo.map((v,i)=>v+masterExtent[i]*[.3467439115,.2991746366,.4495654702][i]);put(12,[...referencePoint,1]);
-  u.set([...field.levels[0].dimensions,(Number($('light-model').value)|($('depth-model').value==='deep'?16:0)|($('reference-light').checked?32:0))],40);u.set([$('main').checked?1:0,$('reflection').checked?($('route').value==='local'?2:1):0,$('transmittance').checked?1:0,Number($('view').value)],44);
-  return {source_time_s:time,source_model:sourceObject.kind,max_level:sourceObject.maxLevel,inspection_view:$('view').value,camera_route:$('route').value,variant:recipe.variant,seed:recipe.seed,shift_m:shift,lo_m:lo,extent_m:extent,master_lo_m:masterLo,master_extent_m:masterExtent,reference_point_m:referencePoint,allocation_profile:sourceObject.allocationProfile,camera_m:camera,target_m:target,sun_direction:sun,sun_elevation_deg:elevation,light_model:$('light-model').value,depth_model:$('depth-model').value,depth_query:'binary',sun_reference_patches:$('reference-light').checked,deep_identity:deep.identity,fit_identity:fit.identity,main_cloud:$('main').checked,mirror:$('reflection').checked,data};
+  u.set([...field.levels[0].dimensions,(Number($('light-model').value)|($('depth-model').value==='deep'?16:0)|($('reference-light').checked?32:0)|($('air-mode').value==='sun'?128:0))],40);u.set([$('main').checked?1:0,$('reflection').checked?($('route').value==='local'?2:1):0,$('transmittance').checked?1:0,Number($('view').value)],44);
+  return {source_time_s:time,source_model:sourceObject.kind,max_level:sourceObject.maxLevel,inspection_view:$('view').value,camera_route:$('route').value,variant:recipe.variant,seed:recipe.seed,shift_m:shift,lo_m:lo,extent_m:extent,master_lo_m:masterLo,master_extent_m:masterExtent,reference_point_m:referencePoint,allocation_profile:sourceObject.allocationProfile,camera_m:camera,target_m:target,sun_direction:sun,sun_elevation_deg:elevation,light_model:$('light-model').value,depth_model:$('depth-model').value,depth_query:'binary',air_mode:$('air-mode').value,air_identity:air.identity,air_bytes:air.bytes,solar_input:'authored top-of-atmosphere RGB irradiance',sun_reference_patches:$('reference-light').checked,deep_identity:deep.identity,fit_identity:fit.identity,main_cloud:$('main').checked,mirror:$('reflection').checked,data};
 }
 async function renderFrame(time){
   age=time;$('exact').value=time.toFixed(2);$('seek').value=time;
@@ -103,8 +104,8 @@ async function renderFrame(time){
   await device.queue.onSubmittedWorkDone();
   const counters=new Uint32Array((await readBuffer(device,errors,16)).buffer);
   const end=performance.now();
-  lastFrame={...state,data:undefined,requested_source_time_s:time,source_updated:sourceUpdated,light_updated:lightUpdated,source_stats:sourceFrame.stats,cpu_encode_ms:encoded-start,queue_complete_ms:end-encoded,gpu_bracket_ms:gpu,gpu_raw_timestamps_ns:rawStamps,gpu_timing_scope:'first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency',invalid_view_paths:counters[0],source_field_bytes:field.levels.reduce((n,l)=>n+l.bytes,0),sun_depth_fallbacks:counters[1],sun_depth_invalid_footprints:counters[2],sun_depth_unsupported:counters[3],deep_bytes:deep.bytes,scatter_fit_bytes:{...fit.bytes,products:fitProducts.bytes},scope:'requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame'};
-  if(counters[0]||counters[3]){clock.seek(time,performance.now());pause();throw Error(`Stopped invalid graph: view step caps ${counters[0]}, Sun-depth unsupported ${counters[3]}, fallback requests ${counters[1]}`);}
+  lastFrame={...state,data:undefined,requested_source_time_s:time,source_updated:sourceUpdated,light_updated:lightUpdated,source_stats:sourceFrame.stats,cpu_encode_ms:encoded-start,queue_complete_ms:end-encoded,gpu_bracket_ms:gpu,gpu_raw_timestamps_ns:rawStamps,gpu_timing_scope:'first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency',invalid_view_paths:counters[0],source_field_bytes:field.levels.reduce((n,l)=>n+l.bytes,0),sun_depth_fallbacks:counters[1],sun_depth_invalid_footprints:counters[2],unsupported_graph_queries:counters[3],unsupported_counter_scope:'shared Sun-depth/air input or cap failure',deep_bytes:deep.bytes,scatter_fit_bytes:{...fit.bytes,products:fitProducts.bytes},scope:'requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame'};
+  if(counters[0]||counters[3]){clock.seek(time,performance.now());pause();throw Error(`Stopped invalid graph: view step caps ${counters[0]}, lighting/air unsupported ${counters[3]}, fallback requests ${counters[1]}`);}
   $('status').textContent=`Candidate ${recipe.name} · ${time.toFixed(2)} s · ${gpu===null?'GPU query unavailable':gpu.toFixed(2)+' ms GPU bracket'} · ${(end-encoded).toFixed(2)} ms queue · not accepted`;
 }
 async function chooseRecipe(){
@@ -118,7 +119,7 @@ async function chooseRecipe(){
     next.prepare(nextAge);
     const newDeepInput=deep.createInputGroup(next.field.levels[0].texture,sceneBuffer);
     nextProducts=fit.createProducts(next.field.levels[0].dimensions);nextProducts.configure(next.field.levels[0].texture,sceneBuffer);
-    const commonEntries=()=>[{binding:0,resource:next.field.levels[0].texture.createView()},{binding:1,resource:device.createSampler({minFilter:'linear',magFilter:'linear'})},{binding:2,resource:prefix.createView()},{binding:3,resource:ambient.createView()},{binding:4,resource:{buffer:sceneBuffer}},{binding:5,resource:{buffer:errors}},{binding:7,resource:nextProducts.bankView},...deep.bindings()];
+    const commonEntries=()=>[{binding:0,resource:next.field.levels[0].texture.createView()},{binding:1,resource:device.createSampler({minFilter:'linear',magFilter:'linear'})},{binding:2,resource:prefix.createView()},{binding:3,resource:ambient.createView()},{binding:4,resource:{buffer:sceneBuffer}},{binding:5,resource:{buffer:errors}},{binding:7,resource:nextProducts.bankView},...deep.bindings(),...air.bindings()];
     const cacheEntries=()=>commonEntries().filter(row=>[0,1,4].includes(row.binding));
     const newPrefix=device.createBindGroup({layout:prefixPipeline.getBindGroupLayout(0),entries:cacheEntries()});
     const newAmbient=device.createBindGroup({layout:ambientPipeline.getBindGroupLayout(0),entries:cacheEntries()});
@@ -129,7 +130,7 @@ async function chooseRecipe(){
     prefixInput=newPrefix;ambientInput=newAmbient;imageInput=newImage;lightCacheKey=null;previous?.destroy();previousProducts?.destroy();
     const names=kind==='prepared'?['Retained Q1 master (one geometry)','Unavailable','Unavailable','Unavailable']:kind==='hierarchy'?['Broad uneven heads','Compact double crown','Long shallow bank','Offset rising crown']:['Broad shallow','Clustered turrets','Narrow rising','Wide asymmetric banks'];
     [...$('variant').options].forEach((option,i)=>option.textContent=names[i]);
-    $('identity').textContent=JSON.stringify({identity,recipe,known_limits:['retained Q1 source is one static geometry with finite authored lifecycle; hierarchy source rejected','shape view is geometry-only','legacy point-tau or bounded64x64 deep curves; filtered visibility, point-quality admission failed','8cube/five-axis external ambient','constant receiver diffuse fixture','vacuum/external sky, not SKY-G air','native1280x720; no history; one frame in flight']},null,2);
+    $('identity').textContent=JSON.stringify({identity,recipe,known_limits:['retained Q1 source is one static geometry with finite authored lifecycle; hierarchy source rejected','shape view is geometry-only','legacy point-tau or bounded64x64 deep curves; filtered visibility, point-quality admission failed','8cube/five-axis external ambient','constant receiver diffuse fixture','vacuum or Sun-air-only with authored external sky; no joint SKY-G air/fog/A0/environment','native1280x720; no history; one frame in flight']},null,2);
     resetCamera();
   } catch(error){if(sourceObject){$('model').value=sourceObject.kind;$('variant').value=sourceObject.recipe.variant;$('levels').value=sourceObject.maxLevel;$('resolution').value=sourceObject.nominalSide??sourceObject.field.levels[0].dimensions[0];}throw error;} finally {next?.destroy();nextProducts?.destroy();exclusive=false;selectors.forEach(id=>$(id).disabled=false);if(sourceObject?.kind==='prepared'){$('variant').disabled=true;$('levels').disabled=true;$('variant').value='0';$('levels').value='0';}}
   requestFrame();
@@ -179,7 +180,8 @@ async function load(){
   device.lost.then(info=>{pause();$('status').textContent='Device lost: '+info.message;});
   context=canvas.getContext('webgpu');const format=navigator.gpu.getPreferredCanvasFormat();context.configure({device,format,alphaMode:'opaque',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
   deep=await DeepSun.create(device,compileShader);
-  shaderCommon=PACKED_LOAD_WGSL+BEER_WGSL+await(await fetch('cu-preview.wgsl')).text()+deep.queryWGSL;shaderCache=await(await fetch('cu-caches.wgsl')).text();
+  air=await AirSun.create(device);
+  shaderCommon=PACKED_LOAD_WGSL+BEER_WGSL+await(await fetch('cu-preview.wgsl')).text()+deep.queryWGSL+air.queryWGSL;shaderCache=await(await fetch('cu-caches.wgsl')).text();
   const code=await compileShader(device,shaderCommon),cache=await compileShader(device,shaderCommon+shaderCache);
   prefixPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:cache,entryPoint:'buildPrefix'}});
   ambientPipeline=await device.createComputePipelineAsync({layout:'auto',compute:{module:cache,entryPoint:'buildAmbient'}});
@@ -189,7 +191,7 @@ async function load(){
     {binding:4,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'uniform',minBindingSize:208}},
     {binding:5,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'storage'}},
     {binding:7,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'unfilterable-float',viewDimension:'2d'}},
-    ...deep.layoutEntries(GPUShaderStage.FRAGMENT)
+    ...deep.layoutEntries(GPUShaderStage.FRAGMENT),...air.layoutEntries(GPUShaderStage.FRAGMENT)
   ]});
   imagePipeline=await device.createRenderPipelineAsync({layout:device.createPipelineLayout({bindGroupLayouts:[imageLayout]}),vertex:{module:code,entryPoint:'triangle'},fragment:{module:code,entryPoint:'image',targets:[{format}]},primitive:{topology:'triangle-list'}});
   sceneBuffer=device.createBuffer({size:208,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});errors=device.createBuffer({size:16,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
@@ -296,6 +298,25 @@ $('prepared-probes').onclick=async()=>{
     const receipt=await capturePreparedFieldComparison(device,sourceObject.nominalSide,Math.fround(age));
     const name=`prepared-field-${Date.now()}`;await save(name+'.json',JSON.stringify({identity,...receipt},null,2));
     $('checks').textContent='Saved '+name+' (actual field/mip/producer comparisons; inspect receipt for result)';
+  }catch(error){$('checks').textContent=error.stack;}
+  finally{controls.forEach((control,index)=>control.disabled=disabled[index]);exclusive=false;}
+};
+
+// The Sun-only factor is evaluated directly. Existing cloud-depth, body and
+// authored-ambient products do not depend on this switch. Full A0 will.
+$('air-mode').onchange=()=>requestFrame();
+$('air-probes').onclick=async()=>{
+  if(exclusive)return;pause();await idle();exclusive=true;
+  const controls=[...document.querySelectorAll('button,input,select')],disabled=controls.map(control=>control.disabled);controls.forEach(control=>control.disabled=true);
+  try{
+    const {checkAirSun}=await import('./air-probes.js');
+    const result=await checkAirSun(device,air),name=`air-probe-${Date.now()}`;
+    for(const [key,bytes] of Object.entries(result.binaries)){
+      const filename=name+'-'+result.receipt.binaries[key].filename;
+      result.receipt.binaries[key].filename=filename;await save(filename,bytes);
+    }
+    await save(name+'.json',JSON.stringify({...result.receipt,build_identity:identity,diagnostic_scene:lastFrame},null,2));
+    $('checks').textContent='Saved '+name+' (Sun-air lookup only; full sky unproven)\n'+JSON.stringify(result.receipt.summary??result.receipt.checks??{},null,2);
   }catch(error){$('checks').textContent=error.stack;}
   finally{controls.forEach((control,index)=>control.disabled=disabled[index]);exclusive=false;}
 };

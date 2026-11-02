@@ -10,7 +10,7 @@ from urllib.parse import urlsplit, unquote
 ROOT = Path(__file__).resolve().parents[2]
 CAPTURES = ROOT / 'tmp/cloud-sky-2026-11-01/captures'
 OWNED = ROOT / 'scripts/cloud_sky_proof'
-SOURCES = [p for p in OWNED.rglob('*') if p.is_file() and p.suffix in {'.html', '.js', '.wgsl', '.json', '.py', '.mjs', '.f32'}]
+SOURCES = [p for p in OWNED.rglob('*') if p.is_file() and p.suffix in {'.html', '.js', '.wgsl', '.json', '.py', '.mjs', '.f32', '.rgba16f'}]
 SOURCES += [ROOT/'scripts/cloud_coupled_proof/source.js', ROOT/'scripts/cloud_source_proof/source.js']
 SOURCES += [ROOT/'docs/evidence/cloud-source-2026-11-01/selected-clip'/name for name in ['cloudclip.json','density.bin']]
 SNAPSHOT = {p.relative_to(ROOT).as_posix(): p.read_bytes() for p in SOURCES}

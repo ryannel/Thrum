@@ -1,0 +1,7156 @@
+{
+  "schema": "thrum.air-sun-probe.v1",
+  "scope": "Finite actual table-upload, medium-knot filtering and Sun-only height/mu/world/invalid/ambiguous query checks; no physical sky, view ratios, A0, cloud appearance or performance pass",
+  "identity": {
+    "profile": "e925609eed47278bd8982b29a1320289957ba1652b674b5bb8f838b8dde561b2",
+    "table": "e4bcb732eb12a664e207456c5d6c8d9d2c9f8f9e5331d1c20c416323e0a2bda9",
+    "oracle": "be7e2cb2537ca7d261529558643e4a5aaf98b12b0bfdbdf1acd43e97da1371b7",
+    "mapping": "rho-local-height.top-distance.sun-only.v1",
+    "cooker": "208de2b56488ebf9288904aae22a079882dd4a7901e7574b4b83f5a07b8af0ba",
+    "shader": "43b729054e9a89efd7dcae4ef9623170067da823cd1f3c96f08180cddbb0a5f8",
+    "probe_shader": "21cb168ad6662218dd3d37779b60662b722eea23ecc6033bded326c5198c4fe2"
+  },
+  "source_reference_hashes": {
+    "air_reference": "00e8923e88d30e6f45fc0dbdc394e1352319d53657ecf9e3079e9cfe8ed9b64e",
+    "cooker": "208de2b56488ebf9288904aae22a079882dd4a7901e7574b4b83f5a07b8af0ba",
+    "optical_reference": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0"
+  },
+  "generation_valid": true,
+  "gpu_scopes": {
+    "validation": null,
+    "out_of_memory": null,
+    "pop_failures": [],
+    "queue_failure": null,
+    "device_lost": null,
+    "device_lost_promise_failure": null,
+    "pass": true
+  },
+  "profile_id": "earth-authored.sun-air.256x64.midpoint512.v1",
+  "uniform_u32": [
+    1254255984,
+    1203982336,
+    1174011904,
+    1150681088,
+    918728397,
+    929265451,
+    940233947,
+    0,
+    914756961,
+    915645366,
+    1061997773,
+    0
+  ],
+  "acceptance": {
+    "total_absolute_T_tolerance": 0.0015,
+    "exact_uploaded_half_bytes_required": true,
+    "set_before_gpu": true,
+    "component_allocations_enforced": true,
+    "experimental_component_allocations": {
+      "hardware_filtering": 0.0005,
+      "mapping_numerics": 0.0005,
+      "table_quadrature_storage": 0.0005
+    }
+  },
+  "exact_uploaded_half_bytes": true,
+  "query_count": 17677,
+  "oracle_query_count": 1293,
+  "groups": {
+    "medium-table-knot": {
+      "count": 16384,
+      "status_failures": 0,
+      "failed": 0,
+      "total_error": {
+        "measured": 16384,
+        "max_absolute_rgb": [
+          0.00026415330073981114,
+          0.00025994336578372135,
+          0.0002555213055195349
+        ]
+      },
+      "failing_components": {
+        "status": 0,
+        "total_T": 0,
+        "table_quadrature_storage": 0,
+        "hardware_filtering": 0,
+        "mapping_numerics": 0
+      }
+    },
+    "height_mu": {
+      "count": 1222,
+      "status_failures": 0,
+      "failed": 0,
+      "total_error": {
+        "measured": 1171,
+        "max_absolute_rgb": [
+          0.0005974646352823187,
+          0.0004971443029850309,
+          0.0005914764629346703
+        ]
+      },
+      "failing_components": {
+        "status": 0,
+        "total_T": 0,
+        "table_quadrature_storage": 0,
+        "hardware_filtering": 0,
+        "mapping_numerics": 0
+      }
+    },
+    "world": {
+      "count": 71,
+      "status_failures": 0,
+      "failed": 0,
+      "total_error": {
+        "measured": 63,
+        "max_absolute_rgb": [
+          0.0005974599593149277,
+          0.0005554395990298167,
+          0.00041780986083916893
+        ]
+      },
+      "failing_components": {
+        "status": 0,
+        "total_T": 0,
+        "table_quadrature_storage": 0,
+        "hardware_filtering": 0,
+        "mapping_numerics": 0
+      }
+    }
+  },
+  "total_error": {
+    "measured": 17618,
+    "max_absolute_rgb": [
+      0.0005974646352823187,
+      0.0005554395990298167,
+      0.0005914764629346703
+    ]
+  },
+  "table_quadrature_storage_error": {
+    "measured": 17579,
+    "max_absolute_rgb": [
+      0.0004616736285066869,
+      0.00039928955676460376,
+      0.0004185025040110979
+    ]
+  },
+  "hardware_filter_error": {
+    "measured": 17579,
+    "max_absolute_rgb": [
+      0.00026240124134346843,
+      0.000289030431304127,
+      0.0002864241480518004
+    ]
+  },
+  "mapping_error": {
+    "measured": 17579,
+    "max_absolute_rgb": [
+      0.0000010179199297910557,
+      6.413933680837758e-7,
+      8.694117377139321e-7
+    ]
+  },
+  "component_gate_summary": {
+    "table_quadrature_storage": {
+      "allocation": 0.0005,
+      "applicable": 17579,
+      "measured": 17579,
+      "missing_measurements": 0,
+      "failed": 0
+    },
+    "hardware_filtering": {
+      "allocation": 0.0005,
+      "applicable": 17579,
+      "measured": 17579,
+      "missing_measurements": 0,
+      "failed": 0
+    },
+    "mapping_numerics": {
+      "allocation": 0.0005,
+      "applicable": 17579,
+      "measured": 17579,
+      "missing_measurements": 0,
+      "failed": 0
+    }
+  },
+  "failing_components": {
+    "status": 0,
+    "total_T": 0,
+    "table_quadrature_storage": 0,
+    "hardware_filtering": 0,
+    "mapping_numerics": 0
+  },
+  "status_failures": 0,
+  "failed_queries": 0,
+  "sampled_rows": [
+    {
+      "index": 16416,
+      "id": "query-32",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        981668463,
+        3080025999,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        -0.000017817857951740734
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16417,
+      "id": "query-33",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        981668463,
+        3079971023,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        -0.000017717857190291397
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16418,
+      "id": "query-34",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        981668463,
+        3079970473,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        -0.000017716856746119447
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16419,
+      "id": "query-35",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        981668463,
+        3079916047,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        -0.00001761785642884206
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16435,
+      "id": "query-51",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121800957,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.0005603877943940461
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16436,
+      "id": "query-52",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121799239,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.0005602877936325967
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16437,
+      "id": "query-53",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121799221,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.0005602867458947003
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16438,
+      "id": "query-54",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121797521,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.0005601877928711474
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16454,
+      "id": "query-70",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1112014848,
+        3145847529,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50,
+        -0.003961910028010607
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16455,
+      "id": "query-71",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1112014848,
+        3145847314,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50,
+        -0.003961809910833836
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16456,
+      "id": "query-72",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1112014848,
+        3145847312,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50,
+        -0.003961808979511261
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16457,
+      "id": "query-73",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1112014848,
+        3145847099,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50,
+        -0.0039617097936570644
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16473,
+      "id": "query-89",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139773,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.01680695451796055
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16474,
+      "id": "query-90",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139719,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.01680685393512249
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16475,
+      "id": "query-91",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139719,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.01680685393512249
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16476,
+      "id": "query-92",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139666,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.01680675521492958
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16492,
+      "id": "query-108",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961730,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501174509525299
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16493,
+      "id": "query-109",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961717,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501164823770523
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16494,
+      "id": "query-110",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961717,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501164823770523
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16495,
+      "id": "query-111",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961703,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501154392957687
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16511,
+      "id": "query-127",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1195593728,
+        3187610957,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50000,
+        -0.12455234676599503
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16512,
+      "id": "query-128",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1195593728,
+        3187610943,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50000,
+        -0.12455224245786667
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16513,
+      "id": "query-129",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1195593728,
+        3187610943,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50000,
+        -0.12455224245786667
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16514,
+      "id": "query-130",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1195593728,
+        3187610930,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        50000,
+        -0.12455214560031891
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16530,
+      "id": "query-146",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982208,
+        3191034734,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        99999,
+        -0.1751229465007782
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16531,
+      "id": "query-147",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982208,
+        3191034727,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        99999,
+        -0.17512284219264984
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16532,
+      "id": "query-148",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982208,
+        3191034727,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        99999,
+        -0.17512284219264984
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16533,
+      "id": "query-149",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982208,
+        3191034721,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        99999,
+        -0.17512275278568268
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16549,
+      "id": "query-165",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034792,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.17512381076812744
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16550,
+      "id": "query-166",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034785,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.17512370645999908
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16551,
+      "id": "query-167",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034785,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.17512370645999908
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16552,
+      "id": "query-168",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034778,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.17512360215187073
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17580,
+      "id": "query-1196",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121807829,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.0005607877974398434
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17581,
+      "id": "query-1197",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121799239,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.0005602877936325967
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17582,
+      "id": "query-1198",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3121790649,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -0.00055978778982535
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17585,
+      "id": "query-1201",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139988,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.016807354986667633
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17586,
+      "id": "query-1202",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139719,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.01680685393512249
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17587,
+      "id": "query-1203",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1147207680,
+        3163139451,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        900,
+        -0.016806354746222496
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17590,
+      "id": "query-1206",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961784,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501214742660522
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17591,
+      "id": "query-1207",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961717,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501164823770523
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17592,
+      "id": "query-1208",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1183621120,
+        3180961650,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        18000,
+        -0.07501114904880524
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17595,
+      "id": "query-1211",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034818,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.17512419819831848
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17596,
+      "id": "query-1212",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034785,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.17512370645999908
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17597,
+      "id": "query-1213",
+      "kind": "explicit-ambiguity-band",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        3191034751,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100000,
+        -0.1751231998205185
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17599,
+      "id": "query-1215",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        3129152111,
+        1065353216,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -0.0010000000474974513,
+        1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17600,
+      "id": "query-1216",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982464,
+        1065353216,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        100001,
+        1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17601,
+      "id": "query-1217",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        3212837703,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        -1.000100016593933
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17602,
+      "id": "query-1218",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        1065354055,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        1.000100016593933
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17603,
+      "id": "query-1219",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        2143289344,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        null,
+        0
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17604,
+      "id": "query-1220",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1065353216,
+        2139095040,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        1,
+        null
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17605,
+      "id": "query-1221",
+      "kind": "unsupported-primitive",
+      "mode": "height_mu",
+      "expected_status": "unsupported",
+      "input_u32": [
+        2139095040,
+        1065353216,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        null,
+        1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17669,
+      "id": "query-1285",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982464,
+        0,
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17670,
+      "id": "query-1286",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        0,
+        3129152111,
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17671,
+      "id": "query-1287",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        0,
+        1184645632,
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17672,
+      "id": "query-1288",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        1073741824,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17673,
+      "id": "query-1289",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17674,
+      "id": "query-1290",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        2143289344,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17675,
+      "id": "query-1291",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        0,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        2139095040,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17676,
+      "id": "query-1292",
+      "kind": "unsupported-world",
+      "mode": "world",
+      "expected_status": "unsupported",
+      "input_u32": [
+        1203982336,
+        0,
+        3351466112,
+        1065353216,
+        0,
+        1065353216,
+        0,
+        0
+      ],
+      "expected_rgb": null,
+      "gpu_rgb": [
+        -1,
+        -1,
+        -1
+      ],
+      "gpu_valid_word": 0,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": null,
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17606,
+      "id": "query-1222",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        1063618036,
+        3182591670,
+        1054757773,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        -0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17607,
+      "id": "query-1223",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        1063675494,
+        0,
+        1054813430,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17608,
+      "id": "query-1224",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        1063618036,
+        1035108022,
+        1054757773,
+        0
+      ],
+      "expected_rgb": [
+        0.5886943525196737,
+        0.3137950100072488,
+        0.06429563396882046
+      ],
+      "gpu_rgb": [
+        0.5888671875,
+        0.313720703125,
+        0.06427001953125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        0.5871739983558655,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0001728349803262752,
+        0.000074306882248798,
+        0.000025614437570459225
+      ],
+      "table_error": [
+        0.00012124671406810172,
+        0.0000062440277419084644,
+        0.0000018563796062021076
+      ],
+      "hardware_filter_error": [
+        0.000051556184189394116,
+        0.00008058757521212101,
+        0.000023775817680871114
+      ],
+      "mapping_error": [
+        3.208206877935993e-8,
+        3.6665221414544646e-8,
+        1.7759716613996446e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17609,
+      "id": "query-1225",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        1063160992,
+        1048871918,
+        1054315060,
+        0
+      ],
+      "expected_rgb": [
+        0.8214290205303201,
+        0.6489058512178301,
+        0.35826487500154697
+      ],
+      "gpu_rgb": [
+        0.8212890625,
+        0.64892578125,
+        0.3583984375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0.258819043636322
+      ],
+      "gpu_coordinates": [
+        0.24376221001148224,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00013995803032007537,
+        0.00001993003216993472,
+        0.00013356249845303259
+      ],
+      "table_error": [
+        0.000037075381515983,
+        0.00011428439415805958,
+        0.00004895879827260252
+      ],
+      "hardware_filter_error": [
+        0.00017702431068755686,
+        0.00013423262862488627,
+        0.00008462759069516324
+      ],
+      "mapping_error": [
+        9.101148501500234e-9,
+        1.8202296891978165e-8,
+        2.3890514733171386e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17610,
+      "id": "query-1226",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        1061652546,
+        1056964608,
+        1052853912,
+        0
+      ],
+      "expected_rgb": [
+        0.9020898423049138,
+        0.7971789279978135,
+        0.5838060275619379
+      ],
+      "gpu_rgb": [
+        0.90234375,
+        0.796875,
+        0.583984375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0.5
+      ],
+      "gpu_coordinates": [
+        0.09249331057071686,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00025390769508615296,
+        0.00030392799781353563,
+        0.00017834743806210973
+      ],
+      "table_error": [
+        0.00008634440472510274,
+        0.00015077332853585812,
+        0.00008015717179810089
+      ],
+      "hardware_filter_error": [
+        0.0001675667881499976,
+        0.00015314767370000482,
+        0.00009820250852499157
+      ],
+      "mapping_error": [
+        3.49778894737085e-9,
+        6.995577672697095e-9,
+        1.2242260982731068e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17611,
+      "id": "query-1227",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        1047430931,
+        1064781546,
+        1038552165,
+        0
+      ],
+      "expected_rgb": [
+        0.9478916562263143,
+        0.8889219172825491,
+        0.7560999661576455
+      ],
+      "gpu_rgb": [
+        0.9482421875,
+        0.888671875,
+        0.755859375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0.9659258723258972
+      ],
+      "gpu_coordinates": [
+        0.0033586511854082346,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0003505312736856725,
+        0.0002500422825491011,
+        0.00024059115764551997
+      ],
+      "table_error": [
+        0.00014260696549339702,
+        0.00010752041348172092,
+        0.00002563665496269074
+      ],
+      "hardware_filter_error": [
+        0.00020792197710761684,
+        0.0001425271140078621,
+        0.00021496440979262843
+      ],
+      "mapping_error": [
+        2.3310846586355183e-9,
+        5.244940481929916e-9,
+        9.907109799200953e-9
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17612,
+      "id": "query-1228",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1065353216,
+        612246873,
+        1065353216,
+        603336012,
+        0
+      ],
+      "expected_rgb": [
+        0.9496176709508113,
+        0.8924867639090738,
+        0.7633191796766031
+      ],
+      "gpu_rgb": [
+        0.94970703125,
+        0.892578125,
+        0.76318359375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        1
+      ],
+      "gpu_coordinates": [
+        0,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00008936029918871213,
+        0.00009136109092622302,
+        0.0001355859266031212
+      ],
+      "table_error": [
+        0.00008936029918871213,
+        0.00009136109092622302,
+        0.0001355859266031212
+      ],
+      "hardware_filter_error": [
+        0,
+        0,
+        0
+      ],
+      "mapping_error": [
+        0,
+        0,
+        0
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17613,
+      "id": "query-1229",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        1063618036,
+        3182591670,
+        1054757773,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        -0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17614,
+      "id": "query-1230",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        1063675494,
+        0,
+        1054813430,
+        0
+      ],
+      "expected_rgb": [
+        0.11947416818726474,
+        0.013296667302845159,
+        0.00005262931548485613
+      ],
+      "gpu_rgb": [
+        0.11944580078125,
+        0.01329803466796875,
+        0.00005269050598144531
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        0
+      ],
+      "gpu_coordinates": [
+        0.9998908638954163,
+        0.00009960990428226069
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.000028367406014737084,
+        0.0000013673651235914658,
+        6.119049658918403e-8
+      ],
+      "table_error": [
+        0.000014214542343904402,
+        0.000005986138700444718,
+        7.643962274160929e-8
+      ],
+      "hardware_filter_error": [
+        0.000014015077045320679,
+        0.000004591493308050629,
+        1.5015058650506114e-8
+      ],
+      "mapping_error": [
+        1.3778662551200416e-7,
+        2.7280268802623575e-8,
+        2.340675019191457e-10
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17615,
+      "id": "query-1231",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        1063618036,
+        1035108022,
+        1054757773,
+        0
+      ],
+      "expected_rgb": [
+        0.5886944161867554,
+        0.3137950686197776,
+        0.06429565871737931
+      ],
+      "gpu_rgb": [
+        0.5888671875,
+        0.313720703125,
+        0.06427001953125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        0.5871098637580872,
+        0.00009960990428226069
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0001727713132445574,
+        0.00007436549477757293,
+        0.000025639186129314262
+      ],
+      "table_error": [
+        0.00013112951712390686,
+        0.000016458462676061103,
+        0.000002913143790098105
+      ],
+      "hardware_filter_error": [
+        0.00004162019908804382,
+        0.00009084863966357659,
+        0.00002856428292534463
+      ],
+      "mapping_error": [
+        2.1597032606734956e-8,
+        2.4682209942561428e-8,
+        1.1953005932263672e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17616,
+      "id": "query-1232",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        1063160992,
+        1048871918,
+        1054315060,
+        0
+      ],
+      "expected_rgb": [
+        0.8214290525668632,
+        0.6489058956485607,
+        0.3582649261334167
+      ],
+      "gpu_rgb": [
+        0.8212890625,
+        0.64892578125,
+        0.3583984375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        0.258819043636322
+      ],
+      "gpu_coordinates": [
+        0.24373558163642883,
+        0.00009960990428226069
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0001399900668631604,
+        0.000019885601439284528,
+        0.00013351136658329432
+      ],
+      "table_error": [
+        0.00004064664373815141,
+        0.00010618723782362949,
+        0.000057678392210880336
+      ],
+      "hardware_filter_error": [
+        0.00018062646322303255,
+        0.00012609330182300482,
+        0.00007585983168034716
+      ],
+      "mapping_error": [
+        1.0247378279260033e-8,
+        2.0462560090805937e-8,
+        2.6857307933170205e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17617,
+      "id": "query-1233",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        1061652546,
+        1056964608,
+        1052853912,
+        0
+      ],
+      "expected_rgb": [
+        0.9020898606677751,
+        0.7971789565450036,
+        0.583806071200869
+      ],
+      "gpu_rgb": [
+        0.90234375,
+        0.796875,
+        0.583984375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        0.5
+      ],
+      "gpu_coordinates": [
+        0.09248320013284683,
+        0.00009960990428226069
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0002538893322249214,
+        0.0003039565450035919,
+        0.00017830379913097438
+      ],
+      "table_error": [
+        0.00008829454200820486,
+        0.00014558777677387003,
+        0.00008547119760060617
+      ],
+      "hardware_filter_error": [
+        0.000165595488024195,
+        0.00015836737165242365,
+        0.00009283504401480513
+      ],
+      "mapping_error": [
+        6.978074784669275e-10,
+        1.3965772982516e-9,
+        2.4424844369264065e-9
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17618,
+      "id": "query-1234",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        1047430931,
+        1064781546,
+        1038552165,
+        0
+      ],
+      "expected_rgb": [
+        0.9478916662372676,
+        0.8889219338077538,
+        0.7560999955092294
+      ],
+      "gpu_rgb": [
+        0.9482421875,
+        0.888671875,
+        0.755859375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        0.9659258723258972
+      ],
+      "gpu_coordinates": [
+        0.003358284244313836,
+        0.00009960990428226069
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00035052126273238393,
+        0.0002500588077537502,
+        0.00024062050922935008
+      ],
+      "table_error": [
+        0.00014277970350418112,
+        0.0001040615819731805,
+        0.00002138502557536004
+      ],
+      "hardware_filter_error": [
+        0.0002077392232422426,
+        0.0001460024820651995,
+        0.00021924541562046151
+      ],
+      "mapping_error": [
+        2.335985960222331e-9,
+        5.2562846297732335e-9,
+        9.931966471476983e-9
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17619,
+      "id": "query-1235",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        0,
+        981668463,
+        0,
+        1065353216,
+        612246873,
+        1065353216,
+        603336012,
+        0
+      ],
+      "expected_rgb": [
+        0.9496176806388091,
+        0.8924867799363496,
+        0.7633192083010715
+      ],
+      "gpu_rgb": [
+        0.94970703125,
+        0.892578125,
+        0.76318359375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        1
+      ],
+      "gpu_coordinates": [
+        0,
+        0.00009960990428226069
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00008935061119086374,
+        0.0000913450636503832,
+        0.00013561455107147236
+      ],
+      "table_error": [
+        0.00008935061119086374,
+        0.00009440923519410394,
+        0.00012948620798403088
+      ],
+      "hardware_filter_error": [
+        0,
+        0.000003064171860245324,
+        0.000006128343720490648
+      ],
+      "mapping_error": [
+        0,
+        3.1652458432063213e-13,
+        6.330491686412643e-13
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17620,
+      "id": "query-1236",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        1140850688,
+        1148846080,
+        1140850688,
+        1065353216,
+        1063618036,
+        3182591670,
+        1054757773,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        1000.0411376953125,
+        -0.08704881370067596
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17621,
+      "id": "query-1237",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        1140850688,
+        1148846080,
+        1140850688,
+        1065353216,
+        1063675494,
+        0,
+        1054813430,
+        0
+      ],
+      "expected_rgb": [
+        0.19121850926648137,
+        0.02767000353559751,
+        0.00021220456873835713
+      ],
+      "gpu_rgb": [
+        0.19140625,
+        0.0277252197265625,
+        0.00021386146545410156
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        1000.0411376953125,
+        0.00010734079842222854
+      ],
+      "gpu_coordinates": [
+        0.8960801959037781,
+        0.09961584955453873
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00018774073351862652,
+        0.00005521619096499064,
+        0.0000016568967157444363
+      ],
+      "table_error": [
+        0.00017878456831851852,
+        0.00005267605089533112,
+        0.000001713162339812656
+      ],
+      "hardware_filter_error": [
+        0.000008892520349329525,
+        0.0000025219457570127557,
+        5.6580259728193465e-8
+      ],
+      "mapping_error": [
+        6.364485077847704e-8,
+        1.819431264676874e-8,
+        3.1463565997383314e-10
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16384,
+      "id": "query-0",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        3196355566,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        -0.258819043636322
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16385,
+      "id": "query-1",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        3182591670,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        -0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16386,
+      "id": "query-2",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        3163486297,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        -0.017452405765652657
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16387,
+      "id": "query-3",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        3135554433,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        -0.0017453284235671163
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16388,
+      "id": "query-4",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16397,
+      "id": "query-13",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        3017195413,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        -1.0000000116860974e-7
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16398,
+      "id": "query-14",
+      "kind": "horizon-reference-population",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0,
+        0
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16403,
+      "id": "query-19",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "planet-blocked",
+      "input_u32": [
+        981668463,
+        3196355566,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_rgb": [
+        0,
+        0,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        0.0010000000474974513,
+        -0.258819043636322
+      ],
+      "gpu_coordinates": [
+        -1,
+        -1
+      ],
+      "status_pass": true,
+      "total_error": [
+        0,
+        0,
+        0
+      ],
+      "table_error": null,
+      "hardware_filter_error": null,
+      "mapping_error": null,
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "hardware_filtering": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        },
+        "mapping_numerics": {
+          "applicable": false,
+          "measured": false,
+          "allocation": 0.0005,
+          "pass": null
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16430,
+      "id": "query-46",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1065353216,
+        1035108022,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.5887580041147177,
+        0.31385361347576074,
+        0.06432038201604065
+      ],
+      "gpu_rgb": [
+        0.58935546875,
+        0.314208984375,
+        0.064453125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        1,
+        0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        0.5851479172706604,
+        0.0031499413307756186
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0005974646352823187,
+        0.00035537089923926013,
+        0.0001327429839593497
+      ],
+      "table_error": [
+        0.00037004257746275915,
+        0.00027011707826912756,
+        0.0001177884495360687
+      ],
+      "hardware_filter_error": [
+        0.00022740570591395226,
+        0.0000852351315074884,
+        0.000014945538891170118
+      ],
+      "mapping_error": [
+        1.6351905607336903e-8,
+        1.868946264416138e-8,
+        8.99553211086701e-9
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17630,
+      "id": "query-1246",
+      "kind": "world-named-Sun",
+      "mode": "world",
+      "expected_status": "visible",
+      "input_u32": [
+        1203982336,
+        0,
+        0,
+        1065353216,
+        1063160992,
+        1048871918,
+        1054315060,
+        0
+      ],
+      "expected_rgb": [
+        0.850265954849222,
+        0.6937804979009702,
+        0.41558437563668
+      ],
+      "gpu_rgb": [
+        0.85009765625,
+        0.6943359375,
+        0.415771484375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        784.7578125,
+        0.2724306583404541
+      ],
+      "gpu_coordinates": [
+        0.20769597589969635,
+        0.08824369311332703
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.000168298599221961,
+        0.0005554395990298167,
+        0.00018710873832000763
+      ],
+      "table_error": [
+        0.00006002292205353754,
+        0.00034631076931213034,
+        0.0002655955562462231
+      ],
+      "hardware_filter_error": [
+        0.00010830308747244999,
+        0.00020908504666294903,
+        0.00007854964133002795
+      ],
+      "mapping_error": [
+        2.7410304026531662e-8,
+        4.378305473728972e-8,
+        6.282340381247309e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16870,
+      "id": "query-486",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1192827942,
+        3174167949,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.9545019389105158,
+        0.896897590064273,
+        0.7667047577129347
+      ],
+      "gpu_rgb": [
+        0.95458984375,
+        0.896484375,
+        0.76611328125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        39196.1484375,
+        -0.043447066098451614
+      ],
+      "gpu_coordinates": [
+        0.6434546113014221,
+        0.6245843768119812
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00008790483948417638,
+        0.00041321506427305366,
+        0.0005914764629346703
+      ],
+      "table_error": [
+        0.00011024406749304827,
+        0.00032428415703855684,
+        0.0004185025040110979
+      ],
+      "hardware_filter_error": [
+        0.00019814673578366637,
+        0.00008893580426294623,
+        0.00017298429156653583
+      ],
+      "mapping_error": [
+        2.1711935582757746e-9,
+        4.897028449413199e-9,
+        1.0332642963462035e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16449,
+      "id": "query-65",
+      "kind": "named-Sun",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1112014848,
+        1035108022,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.5918509048136579,
+        0.3167165213690015,
+        0.06553829316313527
+      ],
+      "gpu_rgb": [
+        0.59228515625,
+        0.317138671875,
+        0.06573486328125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        50,
+        0.08715574443340302
+      ],
+      "gpu_coordinates": [
+        0.5729513764381409,
+        0.02227349393069744
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0004342514363421257,
+        0.00042215050599847537,
+        0.00019657011811473335
+      ],
+      "table_error": [
+        0.0004616736285066869,
+        0.0003443522730034454,
+        0.00017074594347796235
+      ],
+      "hardware_filter_error": [
+        0.000027320369554217905,
+        0.00007791471944074146,
+        0.000025882062496637714
+      ],
+      "mapping_error": [
+        1.0182261034330509e-7,
+        1.1648644571149447e-7,
+        5.788785986671208e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17522,
+      "id": "query-1138",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1141677667,
+        1043864324,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.7782079771427669,
+        0.5703282753177192,
+        0.26064706847547287
+      ],
+      "gpu_rgb": [
+        0.7783203125,
+        0.57080078125,
+        0.260986328125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        562.4747924804688,
+        0.17979055643081665
+      ],
+      "gpu_coordinates": [
+        0.32558417320251465,
+        0.07470739632844925
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0001123353572330954,
+        0.00047250593228076454,
+        0.00033925964952713494
+      ],
+      "table_error": [
+        0.0002291867053422214,
+        0.00039928955676460376,
+        0.00023682027753219037
+      ],
+      "hardware_filter_error": [
+        0.00011683246339089237,
+        0.000073250885179732,
+        0.00010247400678053964
+      ],
+      "mapping_error": [
+        1.8884718233636022e-8,
+        3.450966357121388e-8,
+        3.463478559506683e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17000,
+      "id": "query-616",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1181737216,
+        3159750936,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.7170304801315549,
+        0.4596477804514474,
+        0.1499199664420066
+      ],
+      "gpu_rgb": [
+        0.716796875,
+        0.459716796875,
+        0.150146484375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        15352.25,
+        -0.01305987685918808
+      ],
+      "gpu_coordinates": [
+        0.7010273933410645,
+        0.3905259966850281
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0002336051315549037,
+        0.00006901642355261473,
+        0.0002265179329933864
+      ],
+      "table_error": [
+        0.000028858825452560133,
+        0.00012168166169984618,
+        0.0002664954172004186
+      ],
+      "hardware_filter_error": [
+        0.00026240124134346843,
+        0.00005257104930933565,
+        0.00003990127747038885
+      ],
+      "mapping_error": [
+        6.271566399540518e-8,
+        9.418883789580335e-8,
+        7.6206736643325e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16933,
+      "id": "query-549",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1191578363,
+        3178531821,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.8355452150082016,
+        0.6571445718917126,
+        0.3587931357763211
+      ],
+      "gpu_rgb": [
+        0.83544921875,
+        0.65673828125,
+        0.358642578125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        34314.98046875,
+        -0.059703756123781204
+      ],
+      "gpu_coordinates": [
+        0.7589539289474487,
+        0.5842899084091187
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00009599625820155833,
+        0.0004062906417126033,
+        0.00015055765132110377
+      ],
+      "table_error": [
+        0.00004470206107931585,
+        0.00011746176516902462,
+        0.000031788920137332255
+      ],
+      "hardware_filter_error": [
+        0.00014080852270126343,
+        0.000289030431304127,
+        0.00018261098962218947
+      ],
+      "mapping_error": [
+        1.1020342038925435e-7,
+        2.015547605482837e-7,
+        2.6441816375344374e-7
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17508,
+      "id": "query-1124",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1189124488,
+        3164001003,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.9301304852781899,
+        0.8442944836730168,
+        0.6615231564681285
+      ],
+      "gpu_rgb": [
+        0.93017578125,
+        0.84423828125,
+        0.6611328125
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        28748.765625,
+        -0.018411120399832726
+      ],
+      "gpu_coordinates": [
+        0.6064086556434631,
+        0.5346892476081848
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00004529597181013312,
+        0.00005620242301684897,
+        0.000390343968128537
+      ],
+      "table_error": [
+        0.000051958658352169174,
+        0.0001920621278633794,
+        0.00010384255398265818
+      ],
+      "hardware_filter_error": [
+        0.00009727635188028216,
+        0.00013589912008793448,
+        0.0002864241480518004
+      ],
+      "mapping_error": [
+        2.1721717979872324e-8,
+        3.9415241404050505e-8,
+        7.726609407843199e-8
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16948,
+      "id": "query-564",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1195305560,
+        3186682185,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.14298019425090153,
+        0.011005112046419931,
+        0.000017201459793388168
+      ],
+      "gpu_rgb": [
+        0.1429443359375,
+        0.01105499267578125,
+        0.000017762184143066406
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        48874.34375,
+        -0.11763245612382889
+      ],
+      "gpu_coordinates": [
+        0.9679958820343018,
+        0.6977088451385498
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.000035858313401526676,
+        0.00004988062936131868,
+        5.607243496782385e-7
+      ],
+      "table_error": [
+        0.000028481214783465658,
+        0.00004909889869525105,
+        5.955051958076493e-7
+      ],
+      "hardware_filter_error": [
+        0.00006332160825520128,
+        9.67025856488113e-7,
+        3.39748192314681e-8
+      ],
+      "mapping_error": [
+        0.0000010179199297910557,
+        1.8529519042048692e-7,
+        8.060268979427003e-10
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16999,
+      "id": "query-615",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1196768144,
+        3185620810,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.6334808464912867,
+        0.34410880001443916,
+        0.07394475397669764
+      ],
+      "gpu_rgb": [
+        0.63330078125,
+        0.343994140625,
+        0.07415771484375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        54587.5625,
+        -0.10972459614276886
+      ],
+      "gpu_coordinates": [
+        0.8838585019111633,
+        0.7375264763832092
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00018006524128666435,
+        0.00011465938943916454,
+        0.00021296086705235862
+      ],
+      "table_error": [
+        0.000019607262811804915,
+        0.00004588588469939259,
+        0.00021764097066494237
+      ],
+      "hardware_filter_error": [
+        0.0001599466777406633,
+        0.00006813211137168818,
+        0.000004345683565165626
+      ],
+      "mapping_error": [
+        5.113007341961406e-7,
+        6.413933680837758e-7,
+        3.344200474181269e-7
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17171,
+      "id": "query-787",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1202078998,
+        3188524990,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.8418982710512043,
+        0.6688798907350352,
+        0.3746376372850776
+      ],
+      "gpu_rgb": [
+        0.841796875,
+        0.66845703125,
+        0.374755859375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        85130.171875,
+        -0.1377248466014862
+      ],
+      "gpu_coordinates": [
+        0.8624129891395569,
+        0.9221258759498596
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0001013960512042944,
+        0.00042285948503517634,
+        0.00011822208992240402
+      ],
+      "table_error": [
+        0.00007699183511133967,
+        0.0002404840530509933,
+        0.00002846011700124995
+      ],
+      "hardware_filter_error": [
+        0.0001787177170626819,
+        0.00018300383817404509,
+        0.00008889256118344013
+      ],
+      "mapping_error": [
+        3.2983074704784343e-7,
+        6.284061898620408e-7,
+        8.694117377139321e-7
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 0,
+      "id": "knot-0",
+      "kind": "medium-table-knot",
+      "mode": "table_coordinate",
+      "expected_status": "medium-knot",
+      "input_u32": [
+        0,
+        0,
+        0,
+        1073741824,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.9496176709508113,
+        0.8924867639090738,
+        0.7633191796766031
+      ],
+      "gpu_rgb": [
+        0.94970703125,
+        0.892578125,
+        0.76318359375
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        0,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00008936029918871213,
+        0.00009136109092622302,
+        0.0001355859266031212
+      ],
+      "table_error": [
+        0.00008936029918871213,
+        0.00009136109092622302,
+        0.0001355859266031212
+      ],
+      "hardware_filter_error": [
+        0,
+        0,
+        0
+      ],
+      "mapping_error": [
+        0,
+        0,
+        0
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 255,
+      "id": "knot-255",
+      "kind": "medium-table-knot",
+      "mode": "table_coordinate",
+      "expected_status": "medium-knot",
+      "input_u32": [
+        1065353216,
+        0,
+        0,
+        1073741824,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.11947409566862735,
+        0.013296655585051756,
+        0.000052629232734559774
+      ],
+      "gpu_rgb": [
+        0.11944580078125,
+        0.01329803466796875,
+        0.00005263090133666992
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        1,
+        0
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00002829488737735031,
+        0.0000013790829169937208,
+        1.6686021101478985e-9
+      ],
+      "table_error": [
+        0.00002829488737735031,
+        0.0000013790829169937208,
+        1.6686021101478985e-9
+      ],
+      "hardware_filter_error": [
+        0,
+        0,
+        0
+      ],
+      "mapping_error": [
+        0,
+        0,
+        0
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 256,
+      "id": "knot-256",
+      "kind": "medium-table-knot",
+      "mode": "table_coordinate",
+      "expected_status": "medium-knot",
+      "input_u32": [
+        0,
+        1015154721,
+        0,
+        1073741824,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.9498623728201232,
+        0.8928923010471168,
+        0.7640444705007452
+      ],
+      "gpu_rgb": [
+        0.94970703125,
+        0.89306640625,
+        0.76416015625
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        0,
+        0.01587301678955555
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.00015534157012320193,
+        0.0001741052028831902,
+        0.00011568574925480135
+      ],
+      "table_error": [
+        0.00015534157012320193,
+        0.0001741052028831902,
+        0.00011568574925480135
+      ],
+      "hardware_filter_error": [
+        5.638867150992155e-11,
+        5.638867150992155e-11,
+        1.127773430198431e-10
+      ],
+      "mapping_error": [
+        5.638867150992155e-11,
+        5.638867150992155e-11,
+        1.127773430198431e-10
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 16383,
+      "id": "knot-16383",
+      "kind": "medium-table-knot",
+      "mode": "table_coordinate",
+      "expected_status": "medium-knot",
+      "input_u32": [
+        1065353216,
+        1065353216,
+        0,
+        1073741824,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.014274059535836766,
+        0.00017680104974749622,
+        2.769836138228754e-9
+      ],
+      "gpu_rgb": [
+        0.01427459716796875,
+        0.0001767873764038086,
+        0
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        -1,
+        -1
+      ],
+      "gpu_coordinates": [
+        1,
+        1
+      ],
+      "status_pass": true,
+      "total_error": [
+        5.376321319840172e-7,
+        1.3673343687625522e-8,
+        2.769836138228754e-9
+      ],
+      "table_error": [
+        5.376321319840172e-7,
+        1.3673343687625522e-8,
+        2.769836138228754e-9
+      ],
+      "hardware_filter_error": [
+        0,
+        0,
+        0
+      ],
+      "mapping_error": [
+        0,
+        0,
+        0
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    },
+    {
+      "index": 17146,
+      "id": "query-762",
+      "kind": "seeded-offgrid",
+      "mode": "height_mu",
+      "expected_status": "visible",
+      "input_u32": [
+        1083541001,
+        1029677394,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_rgb": [
+        0.46994798132997356,
+        0.193452119396945,
+        0.02066942001657969
+      ],
+      "gpu_rgb": [
+        0.470458984375,
+        0.1937255859375,
+        0.0207672119140625
+      ],
+      "gpu_valid_word": 1,
+      "gpu_height_mu": [
+        4.672611713409424,
+        0.05459720641374588
+      ],
+      "gpu_coordinates": [
+        0.7085365056991577,
+        0.006808985490351915
+      ],
+      "status_pass": true,
+      "total_error": [
+        0.0005110030450264369,
+        0.00027346654055498965,
+        0.00009779189748281014
+      ],
+      "table_error": [
+        0.000407776482025779,
+        0.0003144617176289999,
+        0.0000948836990258134
+      ],
+      "hardware_filter_error": [
+        0.00010320927863738394,
+        0.00004101065794376302,
+        0.000002904300383493874
+      ],
+      "mapping_error": [
+        1.7284363273972758e-8,
+        1.5480869752781956e-8,
+        3.898073502872634e-9
+      ],
+      "pass": true,
+      "total_pass": true,
+      "component_checks": {
+        "table_quadrature_storage": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "hardware_filtering": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        },
+        "mapping_numerics": {
+          "applicable": true,
+          "measured": true,
+          "allocation": 0.0005,
+          "pass": true
+        }
+      },
+      "failing_components": []
+    }
+  ],
+  "case_order": "First 16384 medium-only knots height-major/mu-minor, then queries.json queries in order. Knots include grazing LIMIT; height/mu and world APIs retain separate opaque/unsupported branches.",
+  "binaries": {
+    "table": {
+      "filename": "air-probe-1793595564215-table.rgba16f",
+      "bytes": 131072,
+      "sha256": "e4bcb732eb12a664e207456c5d6c8d9d2c9f8f9e5331d1c20c416323e0a2bda9",
+      "shape": [
+        64,
+        256,
+        4
+      ],
+      "format": "little-endian binary16 RGBA"
+    },
+    "inputs": {
+      "filename": "air-probe-1793595564215-inputs.u32",
+      "bytes": 565664,
+      "sha256": "eb8ab0ef792d7a7fd77cb18c36952c97b0e53ea71184fecf53b8947614669eda",
+      "shape": [
+        17677,
+        8
+      ],
+      "format": "little-endian uint32 exact float32 input bits"
+    },
+    "outputs": {
+      "filename": "air-probe-1793595564215-outputs.f32",
+      "bytes": 565664,
+      "sha256": "165f7f21dd0ac3e497b7e1036c83ecd3619455b40bd9fe88ccb2b015fc7ad5e4",
+      "shape": [
+        17677,
+        8
+      ],
+      "format": "little-endian float32 [RGB,valid,height,mu,x_mu,x_height]"
+    }
+  },
+  "bytes": {
+    "gpu_product": {
+      "table": 131072,
+      "uniform": 48,
+      "totalGPU": 131120,
+      "cpuRecoveryPayload": 133529,
+      "cpuUniformSnapshot": 48,
+      "shaderSourceUTF8": 4253,
+      "normalStartupFetchedPayload": 137782,
+      "normalStartupOracleBytes": 0,
+      "uploadBytesPerRow": 2048,
+      "uploadRows": 64
+    },
+    "probe_input": 565664,
+    "probe_output": 565664,
+    "output_readback": 565664,
+    "table_readback": 131072,
+    "lazy_oracle": 1253488,
+    "retained_binaries": 1262400
+  },
+  "implementation_checks_pass": true,
+  "uniform_certificate": false,
+  "limits": [
+    "Total target is finite probe acceptance, not a uniform/backend or atmosphere-model certificate",
+    "The manual half lookup isolates table/filter/mapping errors; the independent Gauss fixture supplies the total reference",
+    "Opaque planet centre-direction visibility is not finite solar-disk coverage",
+    "Normal startup does not fetch the oracle; no Scene/source/cloud clock is modified"
+  ],
+  "build_identity": {
+    "build_id": "1a7e7fa5b0259f1e87c641adb372b09a2aad9f0525460fe13f880a58f854081d",
+    "files": {
+      "scripts/cloud_sky_proof/test_convective.mjs": "97c5a2a459b81c5e367bd728fb22e64f1515539a684863c283a1543a8072a9f7",
+      "scripts/cloud_sky_proof/scatter-fit.js": "de3cb5d0a49febe58167ab6bf4bbf3393505bd9b653b28aa866ad48d39691808",
+      "scripts/cloud_sky_proof/validate_deep_sun.py": "9e8a37db2701e772151dc572d3c5311bdd71a637512f54fa51a0d45382195aa0",
+      "scripts/cloud_sky_proof/dense_light_reference.py": "2a4543fac62525327dbe43a74140fa0cea842d576fcbbd5d0f772e76500b2dd6",
+      "scripts/cloud_sky_proof/clock.js": "e4189fe1afd035c3647efd49124f03bf186812aade37f4908bef0d99c350e582",
+      "scripts/cloud_sky_proof/convective.js": "6852d010498d444a10a430c5349b5cb3a655a19e7aacf56681ace4bdacbf3a0f",
+      "scripts/cloud_sky_proof/prepared-cu.js": "40a62b37fe55f31086416322f9665703441c4ca97619bfff6e74cc4c043aef78",
+      "scripts/cloud_sky_proof/test_scatter_profile.py": "19e47463eb291bda7faf479e08135c09076ea7b9ee187f5ee8f690bcb251fb09",
+      "scripts/cloud_sky_proof/test_deep_light_reference.py": "eb4adfc6235f66413d221bf4a9c74dafd4475c580bef0da92795c519a1deac45",
+      "scripts/cloud_sky_proof/scatter-fit.wgsl": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01",
+      "scripts/cloud_sky_proof/prepared_support.py": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+      "scripts/cloud_sky_proof/deep-probes.js": "9534c54cc0ba7bdc1c87796e0c2a2fcd848a04aba1a351beae5c217a1842cc3c",
+      "scripts/cloud_sky_proof/cu-preview.wgsl": "d7ae0b1eb2afe5fbc94d1077111a35df51f05ec3d23917e5cfb80914b3f08bb1",
+      "scripts/cloud_sky_proof/test_reference_packing.py": "03ca80a5badd28699c54e33a36108922a5ba9cc605c9420e8264b3de0343cd6e",
+      "scripts/cloud_sky_proof/cook_air_profile.py": "208de2b56488ebf9288904aae22a079882dd4a7901e7574b4b83f5a07b8af0ba",
+      "scripts/cloud_sky_proof/cook_scatter_profile.py": "04fa89c76e435bbeb4af266d692a7ee4d089b3be9ea98ea5f7a6b4ea5d97d347",
+      "scripts/cloud_sky_proof/fit-probes.js": "0f87c580079fefe00455118614adba8d49fb1b256a3270b4f2fe4a6119842776",
+      "scripts/cloud_sky_proof/packing.html": "ad6ca50a89465c60f76a23a161617be7c673e6a134701edf91c27259b6565a11",
+      "scripts/cloud_sky_proof/deep-sun.js": "cf711ac8f0a7d562839c8cf1d51930700c096cea21c99d0bdae966a008a0457f",
+      "scripts/cloud_sky_proof/transport.js": "032bb334e2ab09dd43985f13b7eacae70f556a92db2f7eb2d73e913c8747e610",
+      "scripts/cloud_sky_proof/cu.html": "0072de5ae1d3f61e6313ce2e750119dd26fae24acf7e15a48b4f46853a01df21",
+      "scripts/cloud_sky_proof/serve.py": "6446eecc30086b205b9753f6f94c7165b8446a20635789352535d3ba3ba55390",
+      "scripts/cloud_sky_proof/deep-sun.wgsl": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "scripts/cloud_sky_proof/test_optical_reference.py": "a3f0203859094e2f6c47063262e0b3644b3de3409b38a7493ddd52e32d496cab",
+      "scripts/cloud_sky_proof/packing-proof.js": "b030f8cd951bf9495c2e982a44849b88cb09db660e5b0cc8f856c2d8d64cca35",
+      "scripts/cloud_sky_proof/test_validate_deep_sun.py": "8e76a79f90e694404779a8741b8657b15ae6aac9ee4b4d4b6964781eeab5e659",
+      "scripts/cloud_sky_proof/test_air.mjs": "ec141eab088343f44c30f7fe28533b052410914be57fae62e84577f2ae2f0ee2",
+      "scripts/cloud_sky_proof/deep_light_reference.py": "7cf11972b80f75a6b455f1a095c87a1c6fa4e980e632de061df246ae94fe9ee2",
+      "scripts/cloud_sky_proof/test_validate_deep_index.py": "f36712c9c2aa0103f96126421bcb0fefb004f2c431ae34bf96d7b77cb3c93ab1",
+      "scripts/cloud_sky_proof/gpu.js": "b6042156ccf0e7fa7fc702d1191075cf9db72c65b2da431f69a557115da67c55",
+      "scripts/cloud_sky_proof/air-probes.js": "63c6840509a6908bbbacb2043387113b95e9beece3a69413deb415819aade08e",
+      "scripts/cloud_sky_proof/test_clock.mjs": "245cfa5e849f49686a8d2621db22419b41c8af41621330c52489fe124cd0e808",
+      "scripts/cloud_sky_proof/test_resource_lifecycle.mjs": "91ab81d7f1a15b1b842058af73daf975463c61dbe77ffc27dda6acbf079300b9",
+      "scripts/cloud_sky_proof/air.wgsl": "43b729054e9a89efd7dcae4ef9623170067da823cd1f3c96f08180cddbb0a5f8",
+      "scripts/cloud_sky_proof/reference_packing.py": "c7a6f2ea0e1a31a4af4882eed3c265df9b54ff05976b2a9fc12797b2b3560185",
+      "scripts/cloud_sky_proof/cu-caches.wgsl": "fbbf392507c7cf0a7e3cf399cedcc6540458be7203f864eafb6649ab9e085037",
+      "scripts/cloud_sky_proof/prepared-field-probes.js": "58b8ac0edafd18bee91a9a585245327336fd5f9b36e76d2797c2f31e7eee3277",
+      "scripts/cloud_sky_proof/test_air_reference.py": "3e4b35a52b5603a0a7139a4f45a08697fff2c35145c1ad54c4200c1e6b9e2250",
+      "scripts/cloud_sky_proof/cu-preview.js": "9928e8771b7bbe3d23581575b85148f4d73e08b2c5cb16638906f0bb404c11da",
+      "scripts/cloud_sky_proof/validate_deep_index.py": "2897c7c00e67507d0f179478f206f8564f0d703ca1abbfa65f889550fb68f14a",
+      "scripts/cloud_sky_proof/convective-hierarchy.js": "d3d124cb3cfd42ed93405826f1abded8042c696bb4fd276340f140d4f3d39e3c",
+      "scripts/cloud_sky_proof/air.js": "0f1e5473afae41894d76edeed3c0f1d0d598a32c76dd0241084dda766d90ec0d",
+      "scripts/cloud_sky_proof/optical_reference.py": "95b370e7b8e3b7f17fe1ba10a177c1e72bcf147870b0a6120bbb1da3bcf176a0",
+      "scripts/cloud_sky_proof/scalar-field.js": "013b09879461b36002800897a4a50d549e229fb32cffe3c7df5ef21715a60bf1",
+      "scripts/cloud_sky_proof/air_reference.py": "00e8923e88d30e6f45fc0dbdc394e1352319d53657ecf9e3079e9cfe8ed9b64e",
+      "scripts/cloud_sky_proof/analyse_checkpoint.py": "7bcaf89bb37af883fc616ffd6f0b44c3d7a67c2fd93cedc734d6689f808fdd6e",
+      "scripts/cloud_sky_proof/test_cook_air_profile.py": "a793ec08599ea91110cef8e2c314609f1edb2cb432d8800f8c035f5f73dcb37a",
+      "scripts/cloud_sky_proof/cu-source.js": "8e6bdddd6c4ad1a09acfd6de32cf85dcafe31e64d8329280b6b50fe1478f2722",
+      "scripts/cloud_sky_proof/test_prepared_support.py": "a0cd295057d0dd934e313405e1acb1d7105fb013593e9386b3a64b2e1b2a454e",
+      "scripts/cloud_sky_proof/test_hierarchy.mjs": "d9d4924fd86624b95c18128741f63d43c4ae63a05bff1872a704d05e36f16a39",
+      "scripts/cloud_sky_proof/fixtures/packing.json": "e115614d546d1de12b4328127d17f62fa308d5d0247be1c84dbd13e1dd09b1c9",
+      "scripts/cloud_sky_proof/fixtures/optics.json": "1896b7fcb043c8648e7eb9f8776f810fe64af9e2e27efbccfbc2d688a5c703d6",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/A.f32": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/profile.json": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "scripts/cloud_sky_proof/fixtures/scatter-liquid/axes.f32": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "scripts/cloud_sky_proof/fixtures/air-sun/transmittance.rgba16f": "e4bcb732eb12a664e207456c5d6c8d9d2c9f8f9e5331d1c20c416323e0a2bda9",
+      "scripts/cloud_sky_proof/fixtures/air-sun/queries.json": "be7e2cb2537ca7d261529558643e4a5aaf98b12b0bfdbdf1acd43e97da1371b7",
+      "scripts/cloud_sky_proof/fixtures/air-sun/profile.json": "e925609eed47278bd8982b29a1320289957ba1652b674b5bb8f838b8dde561b2",
+      "scripts/cloud_coupled_proof/source.js": "2f9ee80c4431800b88fd470984c5d98187d3d366dce273c4683b0dcfadbfbca1",
+      "scripts/cloud_source_proof/source.js": "8dc9c7636ca21fe6f588b2fd373def6c891a6f186b3e008cdfec16c2b6499865",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/cloudclip.json": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+      "docs/evidence/cloud-source-2026-11-01/selected-clip/density.bin": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd"
+    },
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "host": {
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "dpr": 2,
+      "canvas": [
+        1280,
+        720
+      ],
+      "url": "http://localhost:8143/scripts/cloud_sky_proof/cu.html",
+      "prepared_options": {
+        "crop": true,
+        "specialize128": true
+      },
+      "visibility": "visible"
+    }
+  },
+  "diagnostic_scene": {
+    "source_time_s": 90,
+    "source_model": "prepared",
+    "max_level": 0,
+    "inspection_view": "0",
+    "camera_route": "local",
+    "variant": 0,
+    "seed": 0,
+    "shift_m": [
+      0,
+      0,
+      0
+    ],
+    "lo_m": [
+      128,
+      48,
+      112
+    ],
+    "extent_m": [
+      256,
+      192,
+      304
+    ],
+    "master_lo_m": [
+      0,
+      0,
+      0
+    ],
+    "master_extent_m": [
+      512,
+      512,
+      512
+    ],
+    "reference_point_m": [
+      177.532882688,
+      153.1774139392,
+      230.1775207424
+    ],
+    "allocation_profile": {
+      "nominalSide": 128,
+      "crop": true,
+      "specialize128": true,
+      "appliedSpecialization": true,
+      "aligned": true,
+      "alignmentCells": 4,
+      "logicalMin": [
+        32,
+        12,
+        28
+      ],
+      "logicalMaxExclusive": [
+        96,
+        60,
+        104
+      ],
+      "dimensions": [
+        64,
+        48,
+        76
+      ],
+      "fieldBounds": {
+        "min": [
+          128,
+          48,
+          112
+        ],
+        "extent": [
+          256,
+          192,
+          304
+        ]
+      },
+      "gridProducer": "exact-source-centres",
+      "mipPhasePreserved": true,
+      "supportIdentity": {
+        "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+        "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+        "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+        "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+        "sourceKnots": 162,
+        "uniqueChunks": 154,
+        "calibrationOnly": true
+      }
+    },
+    "camera_m": [
+      607.6271801180363,
+      180,
+      931.4127080550365
+    ],
+    "target_m": [
+      256,
+      80,
+      256
+    ],
+    "sun_direction": [
+      -0.7794228619673722,
+      0.49999999907712306,
+      0.37749172595630187
+    ],
+    "sun_elevation_deg": 30,
+    "light_model": "2",
+    "depth_model": "deep",
+    "depth_query": "binary",
+    "air_mode": "vacuum",
+    "air_identity": {
+      "profile": "e925609eed47278bd8982b29a1320289957ba1652b674b5bb8f838b8dde561b2",
+      "table": "e4bcb732eb12a664e207456c5d6c8d9d2c9f8f9e5331d1c20c416323e0a2bda9",
+      "oracle": "be7e2cb2537ca7d261529558643e4a5aaf98b12b0bfdbdf1acd43e97da1371b7",
+      "mapping": "rho-local-height.top-distance.sun-only.v1",
+      "cooker": "208de2b56488ebf9288904aae22a079882dd4a7901e7574b4b83f5a07b8af0ba",
+      "shader": "43b729054e9a89efd7dcae4ef9623170067da823cd1f3c96f08180cddbb0a5f8"
+    },
+    "air_bytes": {
+      "table": 131072,
+      "uniform": 48,
+      "totalGPU": 131120,
+      "cpuRecoveryPayload": 133529,
+      "cpuUniformSnapshot": 48,
+      "shaderSourceUTF8": 4253,
+      "normalStartupFetchedPayload": 137782,
+      "normalStartupOracleBytes": 0,
+      "uploadBytesPerRow": 2048,
+      "uploadRows": 64
+    },
+    "solar_input": "authored top-of-atmosphere RGB irradiance",
+    "sun_reference_patches": false,
+    "deep_identity": {
+      "shader": "28a2d350315c2b6860135e679f36669e510984e35ad0fc946bf02cf54c95c666",
+      "profile": "thrum.deep-sun.tau-tube.k48.64x64.512.v1"
+    },
+    "fit_identity": {
+      "profile": "8de788d28c53935f803f3e78085aaf46eec4f8fcb346c857da64522693ea8604",
+      "A": "35aab6271d4119719c7ca536f1c22fc2cce492e7e7c8abab88f9fe71909a4ed4",
+      "axes": "efb148cbf3b059d8526aee2fe47eab3dc76d0bc0c82956f89fd33f33b16a21e8",
+      "shader": "2889371121a5179dca85518e2c8767ae243b6026cbfcd7baa2bcbd85615ced01"
+    },
+    "main_cloud": true,
+    "mirror": true,
+    "requested_source_time_s": 90,
+    "source_updated": true,
+    "light_updated": true,
+    "source_stats": {
+      "profile": "retained Q1 static geometry comparator",
+      "encoded_source_bytes": 6491440,
+      "allocation_profile": {
+        "nominalSide": 128,
+        "crop": true,
+        "specialize128": true,
+        "appliedSpecialization": true,
+        "aligned": true,
+        "alignmentCells": 4,
+        "logicalMin": [
+          32,
+          12,
+          28
+        ],
+        "logicalMaxExclusive": [
+          96,
+          60,
+          104
+        ],
+        "dimensions": [
+          64,
+          48,
+          76
+        ],
+        "fieldBounds": {
+          "min": [
+            128,
+            48,
+            112
+          ],
+          "extent": [
+            256,
+            192,
+            304
+          ]
+        },
+        "gridProducer": "exact-source-centres",
+        "mipPhasePreserved": true,
+        "supportIdentity": {
+          "manifest": "2fca53ff92a9787a0bb54bd9db0c470f5cfe2a5d755534c134eec38568acb739",
+          "density": "999cd89480371d02dca2f7553b938e5b93e23f0b31ca9b306ae60beb62e325bd",
+          "supportReceipt": "2bd62f15d4fa41fffd44519531e15d172a3e04d1f13bf239a2a48ef4a957bac4",
+          "supportTool": "100523813ac7fb222e019f6c4e4bdf8e15d1e7f0806a7a38a3a4ea6f15138e86",
+          "sourceKnots": 162,
+          "uniqueChunks": 154,
+          "calibrationOnly": true
+        }
+      }
+    },
+    "cpu_encode_ms": 0.2999999523162842,
+    "queue_complete_ms": 27.899999856948853,
+    "gpu_bracket_ms": 15.07328,
+    "gpu_raw_timestamps_ns": [
+      "2110266017644544",
+      "2110266032717824"
+    ],
+    "gpu_timing_scope": "first actual compute pass (or reuse marker) through compute consuming actual rendered canvas; no present latency",
+    "invalid_view_paths": 0,
+    "source_field_bytes": 653376,
+    "sun_depth_fallbacks": 0,
+    "sun_depth_invalid_footprints": 0,
+    "unsupported_graph_queries": 0,
+    "unsupported_counter_scope": "shared Sun-depth/air input or cap failure",
+    "deep_bytes": {
+      "nodes": 1672704,
+      "metadata": 139392,
+      "metadataStride": 32,
+      "totalGPU": 1812096,
+      "privateState": "O(1) scalar/vector state; compiler allocation/spills unmeasured"
+    },
+    "scatter_fit_bytes": {
+      "table": 262144,
+      "axes": 2048,
+      "profile": 32,
+      "sharedGPU": 264224,
+      "cpuRecoveryPayload": 292941,
+      "products": {
+        "body": 19456,
+        "bank": 19456,
+        "total": 38912
+      }
+    },
+    "scope": "requested graph with explicit source/light reuse flags; geometry view omits light products; local fixture, not full SKY-G or Thrum frame"
+  }
+}
