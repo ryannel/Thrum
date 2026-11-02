@@ -40,6 +40,36 @@ pub enum MeaningHistoryError {
     RevivedRetired(usize),
 }
 
+/// One immutable definition retained for a `(type ID, target schema version)`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TypeVersionEntry<'a> {
+    /// Stable registered type ID.
+    pub type_id: &'a str,
+    /// Positive target schema version, checked by the descriptor parser.
+    pub version: u64,
+    /// Digest of the canonical field set and optional-extension policy.
+    pub definition_hash: [u8; 32],
+}
+
+impl TypeVersionEntry<'_> {
+    fn key(&self) -> (&str, u64) {
+        (self.type_id, self.version)
+    }
+}
+
+/// A candidate type-version history cannot extend its pinned predecessor.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TypeVersionHistoryError {
+    /// Prior entries are not strictly sorted by `(type ID, version)`.
+    PriorOrder(usize),
+    /// Candidate entries are not strictly sorted by `(type ID, version)`.
+    CandidateOrder(usize),
+    /// A previously admitted type version vanished from candidate history.
+    MissingPrior(usize),
+    /// A previously admitted type version now has a different definition.
+    ChangedDefinition(usize),
+}
+
 /// Compare a candidate history with one authority's pinned admitted history.
 ///
 /// Both inputs must be strictly sorted and duplicate-free. Every prior key and
@@ -70,6 +100,48 @@ pub fn compare_meaning_histories(
         }
         if old.retired && !new.retired {
             return Err(MeaningHistoryError::RevivedRetired(prior_index));
+        }
+        candidate_index += 1;
+    }
+    Ok(())
+}
+
+/// Require an immutable definition for every previously admitted type version.
+///
+/// Both slices must be strictly sorted and duplicate-free. New version keys are
+/// allowed. This pure, allocation-free O(prior + candidate) check does not
+/// derive definition hashes or authenticate the prior admitted root.
+pub fn compare_type_version_histories(
+    prior: &[TypeVersionEntry<'_>],
+    candidate: &[TypeVersionEntry<'_>],
+) -> Result<(), TypeVersionHistoryError> {
+    for (index, pair) in prior.windows(2).enumerate() {
+        if pair[0].key() >= pair[1].key() {
+            return Err(TypeVersionHistoryError::PriorOrder(index + 1));
+        }
+    }
+    for (index, pair) in candidate.windows(2).enumerate() {
+        if pair[0].key() >= pair[1].key() {
+            return Err(TypeVersionHistoryError::CandidateOrder(index + 1));
+        }
+    }
+
+    let mut candidate_index = 0;
+    for (prior_index, old) in prior.iter().enumerate() {
+        while let Some(new) = candidate.get(candidate_index) {
+            match new.key().cmp(&old.key()) {
+                Ordering::Less => candidate_index += 1,
+                Ordering::Equal => break,
+                Ordering::Greater => {
+                    return Err(TypeVersionHistoryError::MissingPrior(prior_index));
+                }
+            }
+        }
+        let Some(new) = candidate.get(candidate_index) else {
+            return Err(TypeVersionHistoryError::MissingPrior(prior_index));
+        };
+        if new.definition_hash != old.definition_hash {
+            return Err(TypeVersionHistoryError::ChangedDefinition(prior_index));
         }
         candidate_index += 1;
     }
@@ -166,6 +238,53 @@ mod tests {
         assert_eq!(
             compare_meaning_histories(&backwards, &merged_branch),
             Err(MeaningHistoryError::PriorOrder(1))
+        );
+    }
+
+    #[test]
+    fn type_versions_are_immutable_and_branch_union_is_explicit() {
+        let v1 = TypeVersionEntry {
+            type_id: "game.marker",
+            version: 1,
+            definition_hash: [1; 32],
+        };
+        let v2 = TypeVersionEntry {
+            type_id: "game.marker",
+            version: 2,
+            definition_hash: [2; 32],
+        };
+        let other = TypeVersionEntry {
+            type_id: "game.other",
+            version: 1,
+            definition_hash: [3; 32],
+        };
+        assert_eq!(
+            compare_type_version_histories(&[v1], &[v1, v2, other]),
+            Ok(())
+        );
+        assert_eq!(
+            compare_type_version_histories(&[v1, v2], &[v1, other]),
+            Err(TypeVersionHistoryError::MissingPrior(1))
+        );
+        let redefined = TypeVersionEntry {
+            definition_hash: [9; 32],
+            ..v1
+        };
+        assert_eq!(
+            compare_type_version_histories(&[v1], &[redefined]),
+            Err(TypeVersionHistoryError::ChangedDefinition(0))
+        );
+        assert_eq!(
+            compare_type_version_histories(&[v1], &[v1, v1]),
+            Err(TypeVersionHistoryError::CandidateOrder(1))
+        );
+        assert_eq!(
+            compare_type_version_histories(&[v2, v1], &[v1, v2]),
+            Err(TypeVersionHistoryError::PriorOrder(1))
+        );
+        assert_eq!(
+            compare_type_version_histories(&[v1, v2], &[v1, v2, other]),
+            Ok(())
         );
     }
 

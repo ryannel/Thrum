@@ -298,7 +298,7 @@
       },
       "i2a_meaning_lineage": {
         "evidence": "../evidence/i2a/SOURCE-MEANING-HISTORY.md",
-        "scope": "Pure allocation-free linear comparison of sorted field meaning histories with local 100,000-entry cost sample and missing/changed/revived/stale-branch rejection fixtures; no descriptor grammar, canonical signature derivation, authenticated prior root or durable admission."
+        "scope": "Pure allocation-free linear comparisons of sorted field-meaning and type-version histories, with local 100,000-field cost sample and missing/changed/revived/stale-branch/duplicate rejection fixtures; no descriptor grammar, canonical hash derivation, authenticated prior root or durable admission."
       }
     },
     {
