@@ -37,6 +37,7 @@ pub use record::{RecordEnvelope, RecordError, validate_record_envelope};
 pub use semantic::{BootstrapError, BootstrapProfile, BootstrapScene, validate_bootstrap_profile};
 pub use sqlite_store::{
     AcceptedSourceRoot, NativeSourceStore, PinnedSource, SourceStoreError, SourceStoreErrorKind,
+    SourceStoreUsage,
 };
 pub use stage::{
     StageError, StagedFile, StagedLease, StagedTree, stage_declared_tree,

@@ -1826,6 +1826,22 @@ pub struct AcceptedSourceRoot {
     pub revision: SourceRevision,
 }
 
+/// One non-atomic observation of the native SQLite store and its volume.
+/// Apparent file lengths do not report allocated blocks or a reserved peak.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SourceStoreUsage {
+    /// Current SQLite main-file length on the filesystem.
+    pub main_file_bytes: u64,
+    /// Current WAL-file length, zero when no WAL file is present.
+    pub wal_file_bytes: u64,
+    /// Page count times page size, including pages not yet checkpointed to main.
+    pub logical_main_bytes: u64,
+    /// Reusable pages within SQLite, not bytes returned to the volume.
+    pub reusable_freelist_bytes: u64,
+    /// Observed available bytes on the containing volume.
+    pub volume_available_bytes: u64,
+}
+
 /// Broad failure category for source admission and verified reads.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SourceStoreErrorKind {
@@ -1953,6 +1969,47 @@ impl NativeSourceStore {
         };
         store.current_root()?;
         Ok(store)
+    }
+
+    /// Observe main/WAL lengths, logical pages and volume headroom.
+    /// This optional tooling query samples several changing values, so it is
+    /// neither an atomic snapshot nor a hard reservation.
+    pub fn space_usage(&self) -> Result<SourceStoreUsage, SourceStoreError> {
+        let pages: i64 = self
+            .inner
+            .conn
+            .query_row("PRAGMA page_count", [], |row| row.get(0))?;
+        let freelist: i64 = self
+            .inner
+            .conn
+            .query_row("PRAGMA freelist_count", [], |row| row.get(0))?;
+        let logical_main_bytes = u64::try_from(pages)
+            .ok()
+            .and_then(|value| value.checked_mul(SQLITE_PAGE_BYTES))
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+        let reusable_freelist_bytes = u64::try_from(freelist)
+            .ok()
+            .and_then(|value| value.checked_mul(SQLITE_PAGE_BYTES))
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+        let main_file_bytes = fs::metadata(&self.inner.path)
+            .map_err(|source| physical_io(&self.inner.path, source))?
+            .len();
+        let wal = wal_path(&self.inner.path);
+        let wal_file_bytes = match fs::metadata(&wal) {
+            Ok(metadata) => metadata.len(),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
+            Err(source) => return Err(physical_io(&wal, source).into()),
+        };
+        let volume = self.inner.path.parent().ok_or(StoreError::InputIo)?;
+        let volume_available_bytes =
+            fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
+        Ok(SourceStoreUsage {
+            main_file_bytes,
+            wal_file_bytes,
+            logical_main_bytes,
+            reusable_freelist_bytes,
+            volume_available_bytes,
+        })
     }
 
     /// Read the selected root and verify its matching durable outcome.
@@ -2312,6 +2369,10 @@ fn native_store_admits_reopens_and_streams_pinned_source() {
     let accepted = store.admit(0, 3, 7, [7; 32], &candidate).unwrap();
     assert_eq!(accepted.generation, 1);
     assert_eq!(store.current_root().unwrap(), Some(accepted));
+    let usage = store.space_usage().unwrap();
+    assert!(usage.logical_main_bytes > 0);
+    assert!(usage.reusable_freelist_bytes <= usage.logical_main_bytes);
+    assert!(usage.volume_available_bytes > 0);
     let source_path = SourcePath::parse("scenes/main.scene.json").unwrap();
     {
         let mut pinned = store.pin_current(1).unwrap();
@@ -2633,6 +2694,197 @@ fn native_store_multichunk_pin_survives_other_connection_root_advance() {
 }
 
 #[test]
+fn native_store_sqlite_full_during_blob_preserves_root_and_retries() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before sqlite full");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let root = fixture.source_root();
+    fs::write(root.join("master.bin"), vec![7_u8; MIB as usize]).unwrap();
+    let mut declared: Vec<_> = first_stage
+        .files()
+        .iter()
+        .map(|file| file.path().clone())
+        .collect();
+    declared.push(SourcePath::parse("master.bin").unwrap());
+    declared.sort_unstable();
+    let stage = stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            temporary: 64 * MIB,
+            free_floor: 0,
+            ..plan.into()
+        },
+        |_| {},
+    )
+    .unwrap();
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let current_pages: i64 = store
+        .inner
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    store
+        .inner
+        .conn
+        .pragma_update(None, "max_page_count", current_pages)
+        .unwrap();
+    assert_eq!(
+        store
+            .admit(1, 1, 2, [2; 32], &candidate)
+            .unwrap_err()
+            .kind(),
+        SourceStoreErrorKind::SpacePressure
+    );
+    assert_eq!(store.current_root().unwrap(), Some(old));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    drop(store);
+    let mut reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(old));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
+    let next = reopened.admit(1, 1, 2, [2; 32], &candidate).unwrap();
+    assert_eq!(next.generation, 2);
+}
+
+#[test]
+fn native_store_sqlite_full_in_final_transaction_rolls_back_outcome() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "old root");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let second_stage = minimal_source_stage(&fixture, "new root");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let manifest = second.provisional_manifest().unwrap();
+    store.inner.stage_candidate_files(&second).unwrap();
+    store.inner.stage_manifest_chunked(&manifest).unwrap();
+    store
+        .inner
+        .conn
+        .execute_batch(
+            "CREATE TABLE injected_outcome_payload (bytes BLOB NOT NULL);
+             CREATE TRIGGER fill_on_native_outcome BEFORE INSERT ON outcome
+             BEGIN INSERT INTO injected_outcome_payload (bytes) VALUES (zeroblob(1048576)); END;",
+        )
+        .unwrap();
+    let current_pages: i64 = store
+        .inner
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    store
+        .inner
+        .conn
+        .pragma_update(None, "max_page_count", current_pages)
+        .unwrap();
+    assert_eq!(
+        store.admit(1, 1, 2, [2; 32], &second).unwrap_err().kind(),
+        SourceStoreErrorKind::SpacePressure
+    );
+    assert_eq!(store.current_root().unwrap(), Some(old));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    drop(store);
+    let mut reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(old));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
+    reopened
+        .inner
+        .conn
+        .execute_batch("DROP TRIGGER fill_on_native_outcome")
+        .unwrap();
+    let next = reopened.admit(1, 1, 2, [2; 32], &second).unwrap();
+    assert_eq!(next.generation, 2);
+}
+
+#[test]
+fn native_store_reader_blocked_wal_defers_and_recovers_admission() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 12 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before blocked reader");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    store
+        .inner
+        .conn
+        .execute_batch("PRAGMA wal_autocheckpoint=0")
+        .unwrap();
+    let checkpoint: (i64, i64, i64) = store
+        .inner
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(checkpoint.0, 0);
+    let reader = Connection::open(fixture.database()).unwrap();
+    reader.execute_batch("BEGIN").unwrap();
+    let _: i64 = reader
+        .query_row("SELECT generation FROM root WHERE id=1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+
+    let root = fixture.source_root();
+    fs::write(root.join("master.bin"), vec![0x52_u8; 3 * CHUNK_BYTES]).unwrap();
+    let mut declared: Vec<_> = first_stage
+        .files()
+        .iter()
+        .map(|file| file.path().clone())
+        .collect();
+    declared.push(SourcePath::parse("master.bin").unwrap());
+    declared.sort_unstable();
+    let stage = stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            temporary: 64 * MIB,
+            free_floor: 0,
+            ..plan.into()
+        },
+        |_| {},
+    )
+    .unwrap();
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    assert_eq!(
+        store
+            .admit(1, 1, 2, [2; 32], &candidate)
+            .unwrap_err()
+            .kind(),
+        SourceStoreErrorKind::SpacePressure
+    );
+    assert_eq!(store.current_root().unwrap(), Some(old));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let blocked_usage = store.space_usage().unwrap();
+    assert!(blocked_usage.wal_file_bytes > 0);
+    reader.execute_batch("COMMIT").unwrap();
+    let next = store.admit(1, 1, 2, [2; 32], &candidate).unwrap();
+    assert_eq!(next.generation, 2);
+    assert_eq!(store.current_root().unwrap(), Some(next));
+    let recovered_usage = store.space_usage().unwrap();
+    eprintln!(
+        "native_blocked_reader blocked_wal_bytes={} recovered_main_bytes={} recovered_wal_bytes={}",
+        blocked_usage.wal_file_bytes,
+        recovered_usage.main_file_bytes,
+        recovered_usage.wal_file_bytes
+    );
+}
+
+#[test]
 #[ignore = "local release native admission and pinned-read cost probe"]
 fn measure_native_store_small_admission_and_read() {
     let fixture = Fixture::new();
@@ -2644,6 +2896,10 @@ fn measure_native_store_small_admission_and_read() {
     let scene_path = SourcePath::parse("scenes/main.scene.json").unwrap();
     let mut admission_ms = Vec::new();
     let mut pinned_read_ms = Vec::new();
+    let mut max_main = 0;
+    let mut max_wal = 0;
+    let mut max_logical = 0;
+    let mut min_available = u64::MAX;
     for index in 0..10 {
         let stage = minimal_source_stage(&fixture, &format!("edit {index}"));
         let candidate = validate_staged_candidate(&stage, &[]).unwrap();
@@ -2652,6 +2908,11 @@ fn measure_native_store_small_admission_and_read() {
             .admit(index, 1, index + 1, [index as u8; 32], &candidate)
             .unwrap();
         admission_ms.push(start.elapsed().as_secs_f64() * 1000.0);
+        let usage = store.space_usage().unwrap();
+        max_main = max_main.max(usage.main_file_bytes);
+        max_wal = max_wal.max(usage.wal_file_bytes);
+        max_logical = max_logical.max(usage.logical_main_bytes);
+        min_available = min_available.min(usage.volume_available_bytes);
         let start = Instant::now();
         let mut pinned = store.pin_current(accepted.generation).unwrap();
         pinned.copy_file_to(&scene_path, &mut io::sink()).unwrap();
@@ -2667,6 +2928,9 @@ fn measure_native_store_small_admission_and_read() {
     eprintln!(
         "native_small_pin_copy n=10 min_ms={:.3} median_ms={:.3} max_ms={:.3}",
         pinned_read_ms[0], pinned_read_ms[5], pinned_read_ms[9]
+    );
+    eprintln!(
+        "native_small_space sampled_after_admit=10 max_main_bytes={max_main} max_wal_bytes={max_wal} max_logical_bytes={max_logical} min_available_bytes={min_available}"
     );
 }
 
