@@ -5,6 +5,10 @@
 
 use sha2::{Digest, Sha256};
 use std::io;
+mod native_worktree;
+pub use native_worktree::{
+    BuildScratchPlan, MaterializeError, MaterializedSource, materialize_pinned_source,
+};
 use thrum_source::{
     AcceptedSourceRoot, MAX_RECORD_BYTES, PinnedSource, SourcePath, SourceStoreError, parse_scene,
     project_v2_json::parse_project_v2,
@@ -437,6 +441,13 @@ mod tests {
             }
         }
 
+        fn build_plan() -> BuildScratchPlan {
+            BuildScratchPlan {
+                temporary_target_bytes: 64 * 1024 * 1024,
+                free_headroom_bytes: 0,
+            }
+        }
+
         fn write(&self, caption: &str, second_entry: bool, other_file: bool) -> Vec<SourcePath> {
             let scenes = if second_entry {
                 vec!["scenes/main.scene.json", "scenes/other.scene.json"]
@@ -723,6 +734,81 @@ mod tests {
     }
 
     #[test]
+    fn materialized_build_inputs_are_exact_pinned_bytes_and_owned_temporary_files() {
+        let fixture = Fixture::new();
+        let paths = fixture.write("admitted caption", false, false);
+        let original_scene = fs::read(fixture.root().join("scenes/main.scene.json")).unwrap();
+        let mut store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let root = fixture.admit(&mut store, 0, 1, &paths);
+        fs::write(
+            fixture.root().join("scenes/main.scene.json"),
+            b"dirty checkout",
+        )
+        .unwrap();
+        let mut pin = store.pin_current(root.generation).unwrap();
+        let destination = fixture.root().join(".engine/build-inputs");
+        let materialized =
+            materialize_pinned_source(&mut pin, &destination, Fixture::build_plan()).unwrap();
+        assert_eq!(materialized.source_root(), root);
+        assert_eq!(materialized.file_count(), paths.len());
+        assert_eq!(
+            materialized.copied_bytes(),
+            pin.manifest()
+                .files()
+                .iter()
+                .map(|file| file.content_identity().0)
+                .sum::<u64>()
+        );
+        assert_eq!(
+            fs::read(materialized.path().join("scenes/main.scene.json")).unwrap(),
+            original_scene
+        );
+        assert!(!materialized.path().join(".engine").exists());
+        materialized.close().unwrap();
+        assert!(!destination.exists());
+
+        let dropped =
+            materialize_pinned_source(&mut pin, &destination, Fixture::build_plan()).unwrap();
+        drop(dropped);
+        assert!(!destination.exists());
+
+        assert!(matches!(
+            materialize_pinned_source(
+                &mut pin,
+                std::path::Path::new("relative-build-inputs"),
+                Fixture::build_plan()
+            ),
+            Err(MaterializeError::InvalidDestination)
+        ));
+
+        assert!(matches!(
+            materialize_pinned_source(
+                &mut pin,
+                &destination,
+                BuildScratchPlan {
+                    temporary_target_bytes: 1,
+                    free_headroom_bytes: 0,
+                }
+            ),
+            Err(MaterializeError::SpacePressure)
+        ));
+        assert!(!destination.exists());
+
+        fs::create_dir(&destination).unwrap();
+        fs::write(destination.join("sentinel"), b"keep").unwrap();
+        assert!(matches!(
+            materialize_pinned_source(&mut pin, &destination, Fixture::build_plan()),
+            Err(MaterializeError::Destination(_))
+        ));
+        assert_eq!(fs::read(destination.join("sentinel")).unwrap(), b"keep");
+        pin.close().unwrap();
+    }
+
+    #[test]
     #[ignore = "local release-only pinned scene cook cost probe"]
     fn measure_pinned_small_scene_cook() {
         let fixture = Fixture::new();
@@ -747,6 +833,38 @@ mod tests {
         eprintln!(
             "pinned small-scene cook: 1000 samples, p50={}us p95={}us p99={}us max={}us",
             times[500], times[950], times[990], times[999]
+        );
+        pin.close().unwrap();
+    }
+
+    #[test]
+    #[ignore = "local release-only pinned source materialization cost probe"]
+    fn measure_small_pinned_source_materialization() {
+        let fixture = Fixture::new();
+        let paths = fixture.write("Small build input", false, false);
+        let mut store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let root = fixture.admit(&mut store, 0, 1, &paths);
+        let mut pin = store.pin_current(root.generation).unwrap();
+        let mut times = Vec::with_capacity(200);
+        for index in 0..220 {
+            let destination = fixture.root().join(format!(".engine/materialize-{index}"));
+            let started = Instant::now();
+            let output =
+                materialize_pinned_source(&mut pin, &destination, Fixture::build_plan()).unwrap();
+            let elapsed = started.elapsed().as_micros();
+            output.close().unwrap();
+            if index >= 20 {
+                times.push(elapsed);
+            }
+        }
+        times.sort_unstable();
+        eprintln!(
+            "pinned 3-file materialization: 200 samples, p50={}us p95={}us p99={}us max={}us",
+            times[100], times[190], times[198], times[199]
         );
         pin.close().unwrap();
     }
