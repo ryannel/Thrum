@@ -1,30 +1,38 @@
-//! Isolated SQLite transaction proof for the later native source store.
+//! Append-only native SQLite source store and its transaction proofs.
 //!
-//! Test-only: the fixtures do not bind a physical reservation or complete GC
-//! retention/deletion protocol, so this is not an accepted-source admission API.
+//! The first profile retains all verified blobs. Collection and physical disk
+//! limits require separate qualification; planning targets are advisory.
 
+#[cfg(test)]
 use std::collections::HashSet;
 use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+#[cfg(test)]
 use std::process::{Child, Command, Stdio};
+#[cfg(test)]
 use std::sync::atomic::{AtomicU64, Ordering};
+#[cfg(test)]
 use std::time::{Duration, Instant};
 
 use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
-use crate::budget::{BudgetError, Limits};
+use crate::budget::{BudgetError, Limits, SourceSpacePlan};
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
 use crate::manifest_json::{ManifestDecodeError, decode_manifest_jcs};
-use crate::registry_stage::{StagedCandidate, StagedRegistryError, validate_staged_candidate};
+#[cfg(test)]
+use crate::registry_stage::validate_staged_candidate;
+use crate::registry_stage::{StagedCandidate, StagedRegistryError};
+#[cfg(test)]
 use crate::schema_json::parse_schema_descriptor;
+#[cfg(test)]
 use crate::stage::stage_declared_tree_with;
-use crate::{ManifestEntry, ManifestError, SourcePath, StageError, TreeManifest};
+use crate::{ManifestEntry, ManifestError, SourcePath, SourceRevision, StageError, TreeManifest};
 
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
 const FIRST_PROFILE_MANIFEST_BYTES: usize = 64 * 1024 * 1024;
@@ -32,15 +40,22 @@ const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
 const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 const SMALL_BATCH_FILE_BYTES: u64 = 4 * 1024;
+#[cfg(test)]
 const GC_MARK_SCAN_BLOBS: usize = 4096;
+#[cfg(test)]
 const GC_MARK_CANDIDATES: usize = 128;
 const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
+const SOURCE_STORE_FORMAT: i64 = 1;
 const MIB: u64 = 1024 * 1024;
+#[cfg(test)]
 const GIB: u64 = 1024 * MIB;
+#[cfg(test)]
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
+#[cfg(test)]
 struct Fixture(PathBuf);
 
+#[cfg(test)]
 impl Fixture {
     fn new() -> Self {
         let path = std::env::temp_dir().join(format!(
@@ -61,6 +76,7 @@ impl Fixture {
     }
 }
 
+#[cfg(test)]
 impl Drop for Fixture {
     fn drop(&mut self) {
         fs::remove_dir_all(&self.0).unwrap();
@@ -68,7 +84,7 @@ impl Drop for Fixture {
 }
 
 #[derive(Debug)]
-enum ProofError {
+enum StoreError {
     Sql(rusqlite::Error),
     InputIo,
     OutputIo,
@@ -89,7 +105,9 @@ enum ProofError {
     CorruptRootBlob,
     CorruptOutcome,
     MissingRootPin,
+    #[cfg(test)]
     StaleGcEpoch,
+    #[cfg(test)]
     GcMarkLimit,
     Manifest(ManifestDecodeError),
     History(HistoryError),
@@ -99,9 +117,15 @@ enum ProofError {
     CandidateFile(StageError),
     Budget(BudgetError),
     WalBackpressure,
+    InvalidPlan,
+    CorruptRootOutcome,
+    MissingFile,
+    MissingAcceptedRoot,
+    UnsupportedStoreMode,
+    ConsumerWrite(io::Error),
 }
 
-impl fmt::Display for ProofError {
+impl fmt::Display for StoreError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Sql(error) => write!(formatter, "SQLite: {error}"),
@@ -112,36 +136,43 @@ impl fmt::Display for ProofError {
             Self::CandidateManifest(error) => write!(formatter, "candidate manifest: {error:?}"),
             Self::CandidateFile(error) => write!(formatter, "candidate file: {error:?}"),
             Self::Budget(error) => write!(formatter, "physical preflight: {error:?}"),
+            Self::ConsumerWrite(error) => write!(formatter, "consumer output: {error}"),
             other => write!(formatter, "{other:?}"),
         }
     }
 }
 
-impl From<rusqlite::Error> for ProofError {
+impl From<rusqlite::Error> for StoreError {
     fn from(value: rusqlite::Error) -> Self {
         Self::Sql(value)
     }
 }
 
-fn physical_io(path: &Path, source: io::Error) -> ProofError {
-    ProofError::Budget(BudgetError::Io {
+fn physical_io(path: &Path, source: io::Error) -> StoreError {
+    StoreError::Budget(BudgetError::Io {
         path: path.to_owned(),
         source,
     })
 }
 
+fn wal_path(path: &Path) -> PathBuf {
+    let mut name = path.as_os_str().to_os_string();
+    name.push("-wal");
+    PathBuf::from(name)
+}
+
 fn next_stored_blob(
     rows: &mut rusqlite::Rows<'_>,
-) -> Result<Option<([u8; 32], i64, i64)>, ProofError> {
+) -> Result<Option<([u8; 32], i64, i64)>, StoreError> {
     let Some(row) = rows.next()? else {
         return Ok(None);
     };
     let ValueRef::Blob(bytes) = row.get_ref(0)? else {
-        return Err(ProofError::BlobMetadataMismatch);
+        return Err(StoreError::BlobMetadataMismatch);
     };
     let hash: [u8; 32] = bytes
         .try_into()
-        .map_err(|_| ProofError::BlobMetadataMismatch)?;
+        .map_err(|_| StoreError::BlobMetadataMismatch)?;
     Ok(Some((hash, row.get(1)?, row.get(2)?)))
 }
 
@@ -149,27 +180,27 @@ fn charge_projected_blob(
     projected_main: &mut u64,
     length: u64,
     stored: Option<(i64, i64)>,
-) -> Result<(), ProofError> {
+) -> Result<(), StoreError> {
     if let Some((stored_length, 1)) = stored {
-        if stored_length != i64::try_from(length).map_err(|_| ProofError::InputLength)? {
-            return Err(ProofError::BlobMetadataMismatch);
+        if stored_length != i64::try_from(length).map_err(|_| StoreError::InputLength)? {
+            return Err(StoreError::BlobMetadataMismatch);
         }
         return Ok(());
     }
     let rounded = length
         .div_ceil(SQLITE_PAGE_BYTES)
         .checked_mul(SQLITE_PAGE_BYTES)
-        .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        .ok_or(StoreError::Budget(BudgetError::Overflow))?;
     let chunks = length.div_ceil(CHUNK_BYTES as u64);
     *projected_main = projected_main
         .checked_add(
             rounded
                 .checked_mul(2)
-                .ok_or(ProofError::Budget(BudgetError::Overflow))?,
+                .ok_or(StoreError::Budget(BudgetError::Overflow))?,
         )
         .and_then(|value| value.checked_add(16 * 1024))
         .and_then(|value| value.checked_add(chunks.checked_mul(SQLITE_PAGE_BYTES)?))
-        .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+        .ok_or(StoreError::Budget(BudgetError::Overflow))?;
     Ok(())
 }
 
@@ -178,15 +209,15 @@ fn required_free_bytes(
     remaining_wal: u64,
     checkpoint_debt: u64,
     free_floor: u64,
-) -> Result<u64, ProofError> {
+) -> Result<u64, StoreError> {
     projected_main
         .checked_add(remaining_wal)
         .and_then(|value| value.checked_add(checkpoint_debt))
         .and_then(|value| value.checked_add(free_floor))
-        .ok_or(ProofError::Budget(BudgetError::Overflow))
+        .ok_or(StoreError::Budget(BudgetError::Overflow))
 }
 
-struct RootTransactionProof {
+struct SqliteStoreCore {
     conn: Connection,
     scratch: Vec<u8>,
     path: PathBuf,
@@ -203,11 +234,20 @@ struct WalGuard {
 }
 
 impl WalGuard {
-    const V1: Self = Self {
-        passive_at: GIB,
-        next_passive_at: GIB,
-        stop_at: 2 * GIB,
-    };
+    fn for_plan(plan: SourceSpacePlan) -> Result<Self, StoreError> {
+        if plan.main_target_bytes == 0
+            || plan.wal_stop_bytes <= 2 * CHUNK_BYTES as u64 + MIB
+            || plan.temporary_target_bytes == 0
+        {
+            return Err(StoreError::InvalidPlan);
+        }
+        let passive_at = plan.wal_stop_bytes / 2;
+        Ok(Self {
+            passive_at,
+            next_passive_at: passive_at,
+            stop_at: plan.wal_stop_bytes,
+        })
+    }
 }
 
 struct OutcomeRow {
@@ -222,8 +262,8 @@ struct RootReadPin {
     revision: [u8; 32],
 }
 
-fn blob_chunk_count(length: u64) -> Result<i64, ProofError> {
-    i64::try_from(length.div_ceil(CHUNK_BYTES as u64)).map_err(|_| ProofError::InputLength)
+fn blob_chunk_count(length: u64) -> Result<i64, StoreError> {
+    i64::try_from(length.div_ceil(CHUNK_BYTES as u64)).map_err(|_| StoreError::InputLength)
 }
 
 fn verify_supplied_blob(
@@ -231,28 +271,28 @@ fn verify_supplied_blob(
     length: u64,
     expected_hash: [u8; 32],
     buffer: &mut [u8],
-) -> Result<(), ProofError> {
+) -> Result<(), StoreError> {
     let mut digest = Sha256::new();
     let mut remaining = length;
     while remaining > 0 {
         let count = remaining.min(buffer.len() as u64) as usize;
         input
             .read_exact(&mut buffer[..count])
-            .map_err(|_| ProofError::InputIo)?;
+            .map_err(|_| StoreError::InputIo)?;
         digest.update(&buffer[..count]);
         remaining -= count as u64;
     }
     let mut extra = [0_u8; 1];
-    if input.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
-        return Err(ProofError::InputLength);
+    if input.read(&mut extra).map_err(|_| StoreError::InputIo)? != 0 {
+        return Err(StoreError::InputLength);
     }
     if digest.finalize().as_slice() != expected_hash {
-        return Err(ProofError::HashMismatch);
+        return Err(StoreError::HashMismatch);
     }
     Ok(())
 }
 
-fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), ProofError> {
+fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), StoreError> {
     let (generation, revision) = tx.query_row(
         "SELECT generation, revision FROM root WHERE id=1",
         [],
@@ -265,14 +305,14 @@ fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), ProofE
             Ok((row.get(0)?, revision))
         },
     )?;
-    Ok((generation, revision.ok_or(ProofError::CorruptRootBlob)?))
+    Ok((generation, revision.ok_or(StoreError::CorruptRootBlob)?))
 }
 
 fn stored_outcome(
     conn: &Connection,
     epoch: i64,
     key: i64,
-) -> Result<Option<OutcomeRow>, ProofError> {
+) -> Result<Option<OutcomeRow>, StoreError> {
     let raw = conn
         .query_row(
             "SELECT request_hash, generation, revision FROM outcome WHERE epoch=?1 AND key=?2",
@@ -297,7 +337,7 @@ fn stored_outcome(
             generation,
             revision,
         })),
-        Some(_) => Err(ProofError::CorruptOutcome),
+        Some(_) => Err(StoreError::CorruptOutcome),
     }
 }
 
@@ -305,7 +345,7 @@ fn read_complete_blob(
     tx: &Transaction<'_>,
     hash: [u8; 32],
     maximum_bytes: usize,
-) -> Result<Vec<u8>, ProofError> {
+) -> Result<Vec<u8>, StoreError> {
     let (stored_length, stored_chunks, state): (i64, i64, i64) = tx
         .query_row(
             "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
@@ -313,10 +353,10 @@ fn read_complete_blob(
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )
         .optional()?
-        .ok_or(ProofError::MissingCompleteBlob)?;
-    let length = usize::try_from(stored_length).map_err(|_| ProofError::CorruptRootBlob)?;
+        .ok_or(StoreError::MissingCompleteBlob)?;
+    let length = usize::try_from(stored_length).map_err(|_| StoreError::CorruptRootBlob)?;
     if state != 1 || length > maximum_bytes || stored_chunks != blob_chunk_count(length as u64)? {
-        return Err(ProofError::CorruptRootBlob);
+        return Err(StoreError::CorruptRootBlob);
     }
     let actual_chunks: i64 = tx.query_row(
         "SELECT count(*) FROM blob_chunks WHERE hash=?1",
@@ -324,7 +364,7 @@ fn read_complete_blob(
         |row| row.get(0),
     )?;
     if actual_chunks != stored_chunks {
-        return Err(ProofError::CorruptRootBlob);
+        return Err(StoreError::CorruptRootBlob);
     }
     let mut bytes = Vec::with_capacity(length);
     let mut digest = Sha256::new();
@@ -337,9 +377,9 @@ fn read_complete_blob(
                 |row| row.get(0),
             )
             .optional()?
-            .ok_or(ProofError::CorruptRootBlob)?;
+            .ok_or(StoreError::CorruptRootBlob)?;
         if actual != expected as i64 {
-            return Err(ProofError::CorruptRootBlob);
+            return Err(StoreError::CorruptRootBlob);
         }
         let chunk: Vec<u8> = tx
             .query_row(
@@ -348,12 +388,12 @@ fn read_complete_blob(
                 |row| row.get(0),
             )
             .optional()?
-            .ok_or(ProofError::CorruptRootBlob)?;
+            .ok_or(StoreError::CorruptRootBlob)?;
         digest.update(&chunk);
         bytes.extend_from_slice(&chunk);
     }
     if bytes.len() != length || digest.finalize().as_slice() != hash {
-        return Err(ProofError::CorruptRootBlob);
+        return Err(StoreError::CorruptRootBlob);
     }
     Ok(bytes)
 }
@@ -379,7 +419,7 @@ impl Write for HashCountWriter {
 }
 
 struct ManifestBlobWriter<'a> {
-    store: &'a mut RootTransactionProof,
+    store: &'a mut SqliteStoreCore,
     buffer: Vec<u8>,
     digest: Sha256,
     length: u64,
@@ -387,7 +427,7 @@ struct ManifestBlobWriter<'a> {
     hash: [u8; 32],
     chunk_count: i64,
     next_chunk: i64,
-    failure: Option<ProofError>,
+    failure: Option<StoreError>,
 }
 
 impl ManifestBlobWriter<'_> {
@@ -407,22 +447,22 @@ impl ManifestBlobWriter<'_> {
         Ok(())
     }
 
-    fn finish(mut self) -> Result<(), ProofError> {
+    fn finish(mut self) -> Result<(), StoreError> {
         if let Some(error) = self.failure.take() {
             return Err(error);
         }
         if self.written != self.length {
-            return Err(ProofError::InputLength);
+            return Err(StoreError::InputLength);
         }
         if !self.buffer.is_empty() {
             self.append_full_chunk()
-                .map_err(|_| self.failure.take().unwrap_or(ProofError::OutputIo))?;
+                .map_err(|_| self.failure.take().unwrap_or(StoreError::OutputIo))?;
         }
         if self.next_chunk != self.chunk_count {
-            return Err(ProofError::InvalidChunkLayout);
+            return Err(StoreError::InvalidChunkLayout);
         }
         if self.digest.finalize().as_slice() != self.hash {
-            return Err(ProofError::HashMismatch);
+            return Err(StoreError::HashMismatch);
         }
         self.store
             .verify_and_complete_blob(self.length, self.hash, self.chunk_count, || {})
@@ -459,22 +499,84 @@ impl Write for ManifestBlobWriter<'_> {
     }
 }
 
-impl RootTransactionProof {
-    fn open(path: &Path) -> Result<Self, ProofError> {
+impl SqliteStoreCore {
+    #[cfg(test)]
+    fn open(path: &Path) -> Result<Self, StoreError> {
+        Self::open_with_plan(path, SourceSpacePlan::DEFAULT)
+    }
+
+    fn open_with_plan(path: &Path, plan: SourceSpacePlan) -> Result<Self, StoreError> {
+        let wal_guard = WalGuard::for_plan(plan)?;
+        let mut existing = match fs::symlink_metadata(path) {
+            Ok(metadata) if !metadata.file_type().is_file() => {
+                return Err(StoreError::Budget(BudgetError::UnsafeStore(
+                    path.to_owned(),
+                )));
+            }
+            Ok(metadata) => metadata.len() > 0,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => false,
+            Err(source) => return Err(physical_io(path, source)),
+        };
         let conn = Connection::open(path)?;
+        if existing {
+            let format: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+            if format == 0 {
+                let user_tables: i64 = conn.query_row(
+                    "SELECT count(*) FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+                    [],
+                    |row| row.get(0),
+                )?;
+                if user_tables == 0 {
+                    let pages: i64 = conn.query_row("PRAGMA page_count", [], |row| row.get(0))?;
+                    let page_size: i64 =
+                        conn.query_row("PRAGMA page_size", [], |row| row.get(0))?;
+                    let auto_vacuum: i64 =
+                        conn.query_row("PRAGMA auto_vacuum", [], |row| row.get(0))?;
+                    let journal_mode: String =
+                        conn.query_row("PRAGMA journal_mode", [], |row| row.get(0))?;
+                    if pages == 0
+                        || (page_size == SQLITE_PAGE_BYTES as i64
+                            && auto_vacuum == 2
+                            && journal_mode == "wal")
+                    {
+                        existing = false;
+                    }
+                }
+            }
+        }
+        if existing {
+            let page_size: i64 = conn.query_row("PRAGMA page_size", [], |row| row.get(0))?;
+            let auto_vacuum: i64 = conn.query_row("PRAGMA auto_vacuum", [], |row| row.get(0))?;
+            let journal_mode: String =
+                conn.query_row("PRAGMA journal_mode", [], |row| row.get(0))?;
+            let format: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+            if page_size != SQLITE_PAGE_BYTES as i64
+                || auto_vacuum != 2
+                || journal_mode != "wal"
+                || format != SOURCE_STORE_FORMAT
+            {
+                return Err(StoreError::UnsupportedStoreMode);
+            }
+        }
+        #[cfg(target_os = "macos")]
+        conn.execute_batch("PRAGMA fullfsync=ON; PRAGMA checkpoint_fullfsync=ON;")?;
         conn.execute_batch(
             "PRAGMA page_size=4096;
              PRAGMA auto_vacuum=INCREMENTAL;
              PRAGMA journal_mode=WAL;
              PRAGMA synchronous=FULL;
              PRAGMA foreign_keys=ON;
-             PRAGMA busy_timeout=0;
-             CREATE TABLE IF NOT EXISTS root (
+             PRAGMA busy_timeout=0;",
+        )?;
+        if !existing {
+            conn.execute_batch(
+                "BEGIN IMMEDIATE;
+             CREATE TABLE root (
                id INTEGER PRIMARY KEY CHECK (id=1),
                generation INTEGER NOT NULL,
                revision BLOB
              );
-             CREATE TABLE IF NOT EXISTS outcome (
+             CREATE TABLE outcome (
                epoch INTEGER NOT NULL,
                key INTEGER NOT NULL,
                request_hash BLOB NOT NULL,
@@ -482,69 +584,84 @@ impl RootTransactionProof {
                revision BLOB NOT NULL,
                PRIMARY KEY (epoch, key)
              );
-             CREATE TABLE IF NOT EXISTS read_pin (
+             CREATE INDEX outcome_generation ON outcome (generation);
+             CREATE TABLE read_pin (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                generation INTEGER NOT NULL,
                revision BLOB NOT NULL
              );
-             CREATE TABLE IF NOT EXISTS gc_epoch (
+             CREATE TABLE gc_epoch (
                id INTEGER PRIMARY KEY CHECK (id=1),
                generation INTEGER NOT NULL
              );
-             CREATE TABLE IF NOT EXISTS gc_mark (
+             CREATE TABLE gc_mark (
                hash BLOB PRIMARY KEY,
                epoch INTEGER NOT NULL
              );
-             CREATE TABLE IF NOT EXISTS blob_header (
+             CREATE TABLE blob_header (
                hash BLOB PRIMARY KEY,
                length INTEGER NOT NULL,
                chunk_count INTEGER NOT NULL,
                state INTEGER NOT NULL CHECK (state IN (0, 1))
              );
-             CREATE INDEX IF NOT EXISTS complete_blob_hash
+             CREATE INDEX complete_blob_hash
                ON blob_header (hash) WHERE state=1;
-             CREATE TABLE IF NOT EXISTS blob_chunks (
+             CREATE TABLE blob_chunks (
                hash BLOB NOT NULL,
                chunk_index INTEGER NOT NULL,
                bytes BLOB NOT NULL,
                PRIMARY KEY (hash, chunk_index),
                FOREIGN KEY (hash) REFERENCES blob_header(hash)
              );
-             INSERT OR IGNORE INTO root (id, generation, revision) VALUES (1, 0, NULL);",
-        )?;
-        conn.execute(
-            "INSERT OR IGNORE INTO gc_epoch (id, generation) VALUES (1, 0)",
-            [],
-        )?;
+             INSERT INTO root (id, generation, revision) VALUES (1, 0, NULL);
+             INSERT INTO gc_epoch (id, generation) VALUES (1, 0);
+             PRAGMA user_version=1;
+             COMMIT;",
+            )?;
+        }
         let page_size: i64 = conn.query_row("PRAGMA page_size", [], |row| row.get(0))?;
         let auto_vacuum: i64 = conn.query_row("PRAGMA auto_vacuum", [], |row| row.get(0))?;
         let journal_mode: String = conn.query_row("PRAGMA journal_mode", [], |row| row.get(0))?;
         let synchronous: i64 = conn.query_row("PRAGMA synchronous", [], |row| row.get(0))?;
         let foreign_keys: i64 = conn.query_row("PRAGMA foreign_keys", [], |row| row.get(0))?;
         let busy_timeout: i64 = conn.query_row("PRAGMA busy_timeout", [], |row| row.get(0))?;
-        assert_eq!(page_size, 4096);
-        assert_eq!(auto_vacuum, 2);
-        assert_eq!(journal_mode, "wal");
-        assert_eq!(synchronous, 2);
-        assert_eq!(foreign_keys, 1);
-        assert_eq!(busy_timeout, 0);
+        let format: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+        if page_size != 4096
+            || auto_vacuum != 2
+            || journal_mode != "wal"
+            || synchronous != 2
+            || foreign_keys != 1
+            || busy_timeout != 0
+            || format != SOURCE_STORE_FORMAT
+        {
+            return Err(StoreError::UnsupportedStoreMode);
+        }
+        #[cfg(target_os = "macos")]
+        {
+            let fullfsync: i64 = conn.query_row("PRAGMA fullfsync", [], |row| row.get(0))?;
+            let checkpoint_fullfsync: i64 =
+                conn.query_row("PRAGMA checkpoint_fullfsync", [], |row| row.get(0))?;
+            if fullfsync != 1 || checkpoint_fullfsync != 1 {
+                return Err(StoreError::UnsupportedStoreMode);
+            }
+        }
         Ok(Self {
             conn,
             scratch: Vec::new(),
             path: path.to_owned(),
-            wal_guard: WalGuard::V1,
+            wal_guard,
             pending_pin_releases: Vec::new(),
             active_free_floor: None,
         })
     }
 
-    fn ensure_wal_room(&mut self, incoming_allowance: u64) -> Result<(), ProofError> {
+    fn ensure_wal_room(&mut self, incoming_allowance: u64) -> Result<(), StoreError> {
         if incoming_allowance >= self.wal_guard.stop_at {
-            return Err(ProofError::WalBackpressure);
+            return Err(StoreError::WalBackpressure);
         }
         // A checkpoint can grow the main file before the next write starts.
         self.check_active_free(incoming_allowance)?;
-        let wal_path = self.path.with_extension("sqlite-wal");
+        let wal_path = wal_path(&self.path);
         let current = match fs::metadata(&wal_path) {
             Ok(metadata) => metadata.len(),
             Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
@@ -561,7 +678,7 @@ impl RootTransactionProof {
         }
         if current
             .checked_add(incoming_allowance)
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?
             < self.wal_guard.stop_at
         {
             return if checkpointed {
@@ -581,16 +698,16 @@ impl RootTransactionProof {
         if busy != 0
             || after
                 .checked_add(incoming_allowance)
-                .ok_or(ProofError::Budget(BudgetError::Overflow))?
+                .ok_or(StoreError::Budget(BudgetError::Overflow))?
                 >= self.wal_guard.stop_at
         {
-            return Err(ProofError::WalBackpressure);
+            return Err(StoreError::WalBackpressure);
         }
         self.wal_guard.next_passive_at = self.wal_guard.passive_at;
         self.check_active_free(incoming_allowance)
     }
 
-    fn check_active_free(&self, incoming_allowance: u64) -> Result<(), ProofError> {
+    fn check_active_free(&self, incoming_allowance: u64) -> Result<(), StoreError> {
         let Some(floor) = self.active_free_floor else {
             return Ok(());
         };
@@ -598,25 +715,26 @@ impl RootTransactionProof {
             .conn
             .query_row("PRAGMA page_count", [], |row| row.get(0))?;
         let logical_main = u64::try_from(pages)
-            .map_err(|_| ProofError::Budget(BudgetError::Overflow))?
+            .map_err(|_| StoreError::Budget(BudgetError::Overflow))?
             .checked_mul(SQLITE_PAGE_BYTES)
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
         let physical_main = fs::metadata(&self.path)
             .map_err(|source| physical_io(&self.path, source))?
             .len();
         let required = floor
             .checked_add(incoming_allowance)
             .and_then(|value| value.checked_add(logical_main.saturating_sub(physical_main)))
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
-        let volume = self.path.parent().ok_or(ProofError::InputIo)?;
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+        let volume = self.path.parent().ok_or(StoreError::InputIo)?;
         let available =
             fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
         if available < required {
-            return Err(ProofError::Budget(BudgetError::FreeSpace));
+            return Err(StoreError::Budget(BudgetError::FreeSpace));
         }
         Ok(())
     }
 
+    #[cfg(test)]
     fn root(&self) -> rusqlite::Result<(i64, Option<Vec<u8>>)> {
         self.conn.query_row(
             "SELECT generation, revision FROM root WHERE id=1",
@@ -625,16 +743,16 @@ impl RootTransactionProof {
         )
     }
 
-    fn pin_current_root(&mut self, expected_generation: i64) -> Result<RootReadPin, ProofError> {
+    fn pin_current_root(&mut self, expected_generation: i64) -> Result<RootReadPin, StoreError> {
         self.ensure_wal_room(MIB)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let (generation, revision) = root_identity(&tx)?;
         if generation != expected_generation {
-            return Err(ProofError::StaleGeneration);
+            return Err(StoreError::StaleGeneration);
         }
-        let revision = revision.ok_or(ProofError::MissingRootHistory)?;
+        let revision = revision.ok_or(StoreError::MissingRootHistory)?;
         tx.execute(
             "INSERT INTO read_pin (generation, revision) VALUES (?1, ?2)",
             params![generation, revision.as_slice()],
@@ -649,10 +767,37 @@ impl RootTransactionProof {
         })
     }
 
-    fn release_root_pin(&mut self, id: i64) -> Result<(), ProofError> {
+    fn pin_accepted_root(&mut self, root: AcceptedSourceRoot) -> Result<RootReadPin, StoreError> {
+        self.ensure_wal_room(MIB)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let accepted: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM outcome WHERE generation=?1 AND revision=?2)",
+            params![root.generation, root.revision.as_bytes().as_slice()],
+            |row| row.get(0),
+        )?;
+        if !accepted {
+            return Err(StoreError::MissingAcceptedRoot);
+        }
+        tx.execute(
+            "INSERT INTO read_pin (generation, revision) VALUES (?1, ?2)",
+            params![root.generation, root.revision.as_bytes().as_slice()],
+        )?;
+        tx.execute("UPDATE gc_epoch SET generation=generation+1 WHERE id=1", [])?;
+        let id = tx.last_insert_rowid();
+        tx.commit()?;
+        Ok(RootReadPin {
+            id,
+            generation: root.generation,
+            revision: *root.revision.as_bytes(),
+        })
+    }
+
+    fn release_root_pin(&mut self, id: i64) -> Result<(), StoreError> {
         let released = self.release_root_pin_now(id);
         match &released {
-            Ok(()) | Err(ProofError::MissingRootPin) => {
+            Ok(()) | Err(StoreError::MissingRootPin) => {
                 self.pending_pin_releases.retain(|pending| *pending != id);
             }
             Err(_) if !self.pending_pin_releases.contains(&id) => {
@@ -663,23 +808,23 @@ impl RootTransactionProof {
         released
     }
 
-    fn release_root_pin_now(&mut self, id: i64) -> Result<(), ProofError> {
+    fn release_root_pin_now(&mut self, id: i64) -> Result<(), StoreError> {
         self.ensure_wal_room(MIB)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         if tx.execute("DELETE FROM read_pin WHERE id=?1", params![id])? != 1 {
-            return Err(ProofError::MissingRootPin);
+            return Err(StoreError::MissingRootPin);
         }
         tx.execute("UPDATE gc_epoch SET generation=generation+1 WHERE id=1", [])?;
         tx.commit()?;
         Ok(())
     }
 
-    fn retry_pending_pin_releases(&mut self) -> Result<(), ProofError> {
+    fn retry_pending_pin_releases(&mut self) -> Result<(), StoreError> {
         while let Some(&id) = self.pending_pin_releases.last() {
             match self.release_root_pin_now(id) {
-                Ok(()) | Err(ProofError::MissingRootPin) => {
+                Ok(()) | Err(StoreError::MissingRootPin) => {
                     self.pending_pin_releases.pop();
                 }
                 Err(error) => return Err(error),
@@ -688,14 +833,16 @@ impl RootTransactionProof {
         Ok(())
     }
 
-    fn mark_unreachable_probe(&mut self) -> Result<usize, ProofError> {
+    #[cfg(test)]
+    fn mark_unreachable_probe(&mut self) -> Result<usize, StoreError> {
         self.mark_unreachable_probe_with(|| {})
     }
 
+    #[cfg(test)]
     fn mark_unreachable_probe_with(
         &mut self,
         after_snapshot: impl FnOnce(),
-    ) -> Result<usize, ProofError> {
+    ) -> Result<usize, StoreError> {
         let (epoch, roots) = {
             let tx = self
                 .conn
@@ -713,9 +860,9 @@ impl RootTransactionProof {
                 let mut rows = statement.query([])?;
                 while let Some(row) = rows.next()? {
                     let ValueRef::Blob(bytes) = row.get_ref(0)? else {
-                        return Err(ProofError::CorruptRootBlob);
+                        return Err(StoreError::CorruptRootBlob);
                     };
-                    roots.push(bytes.try_into().map_err(|_| ProofError::CorruptRootBlob)?);
+                    roots.push(bytes.try_into().map_err(|_| StoreError::CorruptRootBlob)?);
                 }
             }
             tx.commit()?;
@@ -735,9 +882,9 @@ impl RootTransactionProof {
                 bytes
             };
             let manifest = decode_manifest_jcs(&bytes, FIRST_PROFILE_MANIFEST_BYTES)
-                .map_err(ProofError::Manifest)?;
+                .map_err(StoreError::Manifest)?;
             if !manifest.dependency_roots().is_empty() {
-                return Err(ProofError::UnsupportedDependencyRoots);
+                return Err(StoreError::UnsupportedDependencyRoots);
             }
             for file in manifest.files() {
                 reachable.insert(file.blob_identity().1);
@@ -759,18 +906,18 @@ impl RootTransactionProof {
                 while let Some(row) = rows.next()? {
                     scanned += 1;
                     if scanned > GC_MARK_SCAN_BLOBS {
-                        return Err(ProofError::GcMarkLimit);
+                        return Err(StoreError::GcMarkLimit);
                     }
                     let ValueRef::Blob(bytes) = row.get_ref(0)? else {
-                        return Err(ProofError::BlobMetadataMismatch);
+                        return Err(StoreError::BlobMetadataMismatch);
                     };
                     let hash: [u8; 32] = bytes
                         .try_into()
-                        .map_err(|_| ProofError::BlobMetadataMismatch)?;
+                        .map_err(|_| StoreError::BlobMetadataMismatch)?;
                     if !reachable.contains(&hash) {
                         candidates.push(hash);
                         if candidates.len() > GC_MARK_CANDIDATES {
-                            return Err(ProofError::GcMarkLimit);
+                            return Err(StoreError::GcMarkLimit);
                         }
                     }
                 }
@@ -788,7 +935,7 @@ impl RootTransactionProof {
                 row.get(0)
             })?;
         if current_epoch != epoch {
-            return Err(ProofError::StaleGcEpoch);
+            return Err(StoreError::StaleGcEpoch);
         }
         tx.execute("DELETE FROM gc_mark", [])?;
         if !candidates.is_empty() {
@@ -806,7 +953,7 @@ impl RootTransactionProof {
         expected_generation: i64,
         candidate_project_id: &str,
         candidate_history_bytes: &[u8],
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         self.retry_pending_pin_releases()?;
         let pin = self.pin_current_root(expected_generation)?;
         let compared = self.compare_history_with_pinned_root(
@@ -823,23 +970,23 @@ impl RootTransactionProof {
         pin: &RootReadPin,
         candidate_project_id: &str,
         candidate_history_bytes: &[u8],
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         let manifest_bytes = {
             let tx = self
                 .conn
                 .transaction_with_behavior(TransactionBehavior::Deferred)?;
             let (generation, revision) = root_identity(&tx)?;
             if generation != pin.generation || revision != Some(pin.revision) {
-                return Err(ProofError::StaleGeneration);
+                return Err(StoreError::StaleGeneration);
             }
             let bytes = read_complete_blob(&tx, pin.revision, FIRST_PROFILE_MANIFEST_BYTES)?;
             tx.commit()?;
             bytes
         };
         let manifest = decode_manifest_jcs(&manifest_bytes, FIRST_PROFILE_MANIFEST_BYTES)
-            .map_err(ProofError::Manifest)?;
+            .map_err(StoreError::Manifest)?;
         if manifest.project_id() != candidate_project_id {
-            return Err(ProofError::DifferentProject);
+            return Err(StoreError::DifferentProject);
         }
         let mut histories = manifest.files().iter().filter_map(|file| {
             file.record_identity()
@@ -847,9 +994,9 @@ impl RootTransactionProof {
                 .map(|(id, _)| (id, file.blob_identity()))
         });
         let (history_id, (history_length, history_hash)) =
-            histories.next().ok_or(ProofError::MissingRootHistory)?;
+            histories.next().ok_or(StoreError::MissingRootHistory)?;
         if histories.next().is_some() {
-            return Err(ProofError::AmbiguousRootHistory);
+            return Err(StoreError::AmbiguousRootHistory);
         }
         let prior_bytes = {
             let tx = self
@@ -857,32 +1004,32 @@ impl RootTransactionProof {
                 .transaction_with_behavior(TransactionBehavior::Deferred)?;
             let (generation, current_revision) = root_identity(&tx)?;
             if generation != pin.generation || current_revision != Some(pin.revision) {
-                return Err(ProofError::StaleGeneration);
+                return Err(StoreError::StaleGeneration);
             }
             let bytes = read_complete_blob(&tx, history_hash, MAX_HISTORY_BYTES)?;
             tx.commit()?;
             bytes
         };
         if prior_bytes.len() as u64 != history_length {
-            return Err(ProofError::CorruptRootBlob);
+            return Err(StoreError::CorruptRootBlob);
         }
-        let prior = parse_registry_history(&prior_bytes).map_err(ProofError::History)?;
+        let prior = parse_registry_history(&prior_bytes).map_err(StoreError::History)?;
         if prior.record_id() != history_id {
-            return Err(ProofError::CorruptRootBlob);
+            return Err(StoreError::CorruptRootBlob);
         }
         let candidate =
-            parse_registry_history(candidate_history_bytes).map_err(ProofError::History)?;
-        compare_carried_histories(&prior, &candidate).map_err(ProofError::Lineage)
+            parse_registry_history(candidate_history_bytes).map_err(StoreError::History)?;
+        compare_carried_histories(&prior, &candidate).map_err(StoreError::Lineage)
     }
 
     fn compare_staged_candidate_with_current_root(
         &mut self,
         expected_generation: i64,
         candidate: &StagedCandidate<'_>,
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         let bytes = candidate
             .rehashed_history_bytes()
-            .map_err(ProofError::CandidateStage)?;
+            .map_err(StoreError::CandidateStage)?;
         self.compare_history_with_current_root(
             expected_generation,
             candidate.registry().project().id(),
@@ -890,6 +1037,7 @@ impl RootTransactionProof {
         )
     }
 
+    #[cfg(test)]
     fn admit_staged_candidate_probe(
         &mut self,
         expected_generation: i64,
@@ -897,7 +1045,7 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         candidate: &StagedCandidate<'_>,
-    ) -> Result<(i64, [u8; 32]), ProofError> {
+    ) -> Result<(i64, [u8; 32]), StoreError> {
         self.admit_staged_candidate_probe_with(
             expected_generation,
             epoch,
@@ -914,7 +1062,7 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         revision: [u8; 32],
-    ) -> Result<Option<i64>, ProofError> {
+    ) -> Result<Option<i64>, StoreError> {
         match stored_outcome(&self.conn, epoch, key)? {
             None => Ok(None),
             Some(outcome)
@@ -922,10 +1070,11 @@ impl RootTransactionProof {
             {
                 Ok(Some(outcome.generation))
             }
-            Some(_) => Err(ProofError::TokenConflict),
+            Some(_) => Err(StoreError::TokenConflict),
         }
     }
 
+    #[cfg(test)]
     fn admit_staged_candidate_probe_with(
         &mut self,
         expected_generation: i64,
@@ -934,7 +1083,7 @@ impl RootTransactionProof {
         request_hash: [u8; 32],
         candidate: &StagedCandidate<'_>,
         after_initial_lookup: impl FnOnce(),
-    ) -> Result<(i64, [u8; 32]), ProofError> {
+    ) -> Result<(i64, [u8; 32]), StoreError> {
         // Test fixtures use the selected main/WAL ceilings without assuming
         // CI has the production 8 GiB free-floor headroom.
         let limits = Limits {
@@ -963,18 +1112,21 @@ impl RootTransactionProof {
         limits: Limits,
         after_initial_lookup: impl FnOnce(),
         after_preflight: impl FnOnce(&mut Self),
-    ) -> Result<(i64, [u8; 32]), ProofError> {
+    ) -> Result<(i64, [u8; 32]), StoreError> {
         let manifest = candidate
             .provisional_manifest()
-            .map_err(ProofError::CandidateManifest)?;
+            .map_err(StoreError::CandidateManifest)?;
         let revision = *manifest.revision().as_bytes();
         if let Some(generation) = self.matching_outcome(epoch, key, request_hash, revision)? {
             return Ok((generation, revision));
         }
         after_initial_lookup();
         let attempted = (|| {
-            self.preflight_candidate_space(&manifest, revision, limits)?;
             self.active_free_floor = Some(limits.free_floor);
+            // An earlier bounded transaction may have crossed the planning
+            // watermark. Drain it before the preflight's WAL-length refusal.
+            self.ensure_wal_room(0)?;
+            self.preflight_candidate_space(&manifest, revision, limits)?;
             after_preflight(self);
             if expected_generation > 0 {
                 self.compare_staged_candidate_with_current_root(expected_generation, candidate)?;
@@ -982,7 +1134,7 @@ impl RootTransactionProof {
             self.stage_candidate_files(candidate)?;
             let stored_revision = self.stage_manifest_chunked(&manifest)?;
             if stored_revision != revision {
-                return Err(ProofError::HashMismatch);
+                return Err(StoreError::HashMismatch);
             }
             let generation = self.commit_manifest_probe(
                 expected_generation,
@@ -1013,16 +1165,16 @@ impl RootTransactionProof {
         manifest: &TreeManifest,
         revision: [u8; 32],
         limits: Limits,
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         let mut count = HashCountWriter {
             digest: Sha256::new(),
             length: 0,
         };
         manifest
             .write_jcs(&mut count)
-            .map_err(|_| ProofError::OutputIo)?;
+            .map_err(|_| StoreError::OutputIo)?;
         if count.length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(ProofError::InputLength);
+            return Err(StoreError::InputLength);
         }
         let mut blobs: Vec<_> = manifest
             .files()
@@ -1035,11 +1187,11 @@ impl RootTransactionProof {
             .windows(2)
             .any(|pair| pair[0].1 == pair[1].1 && pair[0].0 != pair[1].0)
         {
-            return Err(ProofError::BlobMetadataMismatch);
+            return Err(StoreError::BlobMetadataMismatch);
         }
         blobs.dedup_by_key(|(_, hash)| *hash);
         let count_limit = i64::try_from(blobs.len() + 1)
-            .map_err(|_| ProofError::Budget(BudgetError::Overflow))?;
+            .map_err(|_| StoreError::Budget(BudgetError::Overflow))?;
         let stored_count: i64 = self.conn.query_row(
             "SELECT count(*) FROM (SELECT 1 FROM blob_header LIMIT ?1)",
             params![count_limit],
@@ -1085,28 +1237,28 @@ impl RootTransactionProof {
             .conn
             .query_row("PRAGMA page_count", [], |row| row.get(0))?;
         let logical_main = u64::try_from(pages)
-            .map_err(|_| ProofError::Budget(BudgetError::Overflow))?
+            .map_err(|_| StoreError::Budget(BudgetError::Overflow))?
             .checked_mul(SQLITE_PAGE_BYTES)
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
         let physical_main = fs::metadata(&self.path)
             .map_err(|source| physical_io(&self.path, source))?
             .len();
         let main = physical_main.max(logical_main);
         if main
             .checked_add(projected_main)
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?
             > limits.main
         {
-            return Err(ProofError::Budget(BudgetError::MainLimit));
+            return Err(StoreError::Budget(BudgetError::MainLimit));
         }
-        let wal_path = self.path.with_extension("sqlite-wal");
+        let wal_path = wal_path(&self.path);
         let wal = match fs::metadata(&wal_path) {
             Ok(metadata) => metadata.len(),
             Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
             Err(source) => return Err(physical_io(&wal_path, source)),
         };
         if wal >= limits.wal {
-            return Err(ProofError::Budget(BudgetError::WalLimit));
+            return Err(StoreError::Budget(BudgetError::WalLimit));
         }
         let required = required_free_bytes(
             projected_main,
@@ -1114,39 +1266,39 @@ impl RootTransactionProof {
             logical_main.saturating_sub(physical_main),
             limits.free_floor,
         )?;
-        let volume = self.path.parent().ok_or(ProofError::InputIo)?;
+        let volume = self.path.parent().ok_or(StoreError::InputIo)?;
         let available =
             fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
         if available < required {
-            return Err(ProofError::Budget(BudgetError::FreeSpace));
+            return Err(StoreError::Budget(BudgetError::FreeSpace));
         }
         Ok(())
     }
 
-    fn stage_candidate_files(&mut self, candidate: &StagedCandidate<'_>) -> Result<(), ProofError> {
+    fn stage_candidate_files(&mut self, candidate: &StagedCandidate<'_>) -> Result<(), StoreError> {
         let stage = candidate.registry().stage();
         let mut entries: Vec<([u8; 32], std::ops::Range<usize>)> = Vec::new();
         let mut bytes = Vec::new();
         for file in stage.files() {
             if file.length() <= SMALL_BATCH_FILE_BYTES {
-                let length = usize::try_from(file.length()).map_err(|_| ProofError::InputLength)?;
+                let length = usize::try_from(file.length()).map_err(|_| StoreError::InputLength)?;
                 if entries.len() == SMALL_BATCH_FILES || bytes.len() + length > SMALL_BATCH_BYTES {
                     self.flush_candidate_batch(&mut entries, &mut bytes)?;
                 }
-                let mut reader = stage.open(file.path()).map_err(ProofError::CandidateFile)?;
+                let mut reader = stage.open(file.path()).map_err(StoreError::CandidateFile)?;
                 let start = bytes.len();
                 bytes.resize(start + length, 0);
                 reader
                     .read_exact(&mut bytes[start..])
-                    .map_err(|_| ProofError::InputIo)?;
+                    .map_err(|_| StoreError::InputIo)?;
                 let mut extra = [0_u8; 1];
-                if reader.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
-                    return Err(ProofError::InputLength);
+                if reader.read(&mut extra).map_err(|_| StoreError::InputIo)? != 0 {
+                    return Err(StoreError::InputLength);
                 }
                 entries.push((*file.sha256(), start..bytes.len()));
             } else {
                 self.flush_candidate_batch(&mut entries, &mut bytes)?;
-                let mut reader = stage.open(file.path()).map_err(ProofError::CandidateFile)?;
+                let mut reader = stage.open(file.path()).map_err(StoreError::CandidateFile)?;
                 self.stage_blob(&mut reader, file.length(), *file.sha256())?;
             }
         }
@@ -1157,7 +1309,7 @@ impl RootTransactionProof {
         &mut self,
         entries: &mut Vec<([u8; 32], std::ops::Range<usize>)>,
         bytes: &mut Vec<u8>,
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         if !entries.is_empty() {
             self.stage_small_blob_batch(
                 entries
@@ -1175,14 +1327,14 @@ impl RootTransactionProof {
         input: &mut impl Read,
         length: u64,
         expected_hash: [u8; 32],
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         self.stage_blob_with(input, length, expected_hash, |_| {})
     }
 
     fn stage_small_blob_batch<'a>(
         &mut self,
         files: impl IntoIterator<Item = ([u8; 32], &'a [u8])>,
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         self.ensure_wal_room(5 * MIB)?;
         let tx = self
             .conn
@@ -1193,14 +1345,14 @@ impl RootTransactionProof {
             count += 1;
             total_bytes = total_bytes
                 .checked_add(bytes.len())
-                .ok_or(ProofError::InputLength)?;
+                .ok_or(StoreError::InputLength)?;
             if count > SMALL_BATCH_FILES || total_bytes > SMALL_BATCH_BYTES {
-                return Err(ProofError::InputLength);
+                return Err(StoreError::InputLength);
             }
             if Sha256::digest(bytes).as_slice() != hash {
-                return Err(ProofError::HashMismatch);
+                return Err(StoreError::HashMismatch);
             }
-            let length = i64::try_from(bytes.len()).map_err(|_| ProofError::InputLength)?;
+            let length = i64::try_from(bytes.len()).map_err(|_| StoreError::InputLength)?;
             let chunk_count = i64::from(!bytes.is_empty());
             let existing: Option<(i64, i64, i64)> = tx
                 .query_row(
@@ -1212,7 +1364,7 @@ impl RootTransactionProof {
             match existing {
                 Some((old_length, old_chunks, 1)) => {
                     if old_length != length || old_chunks != chunk_count {
-                        return Err(ProofError::BlobMetadataMismatch);
+                        return Err(StoreError::BlobMetadataMismatch);
                     }
                     continue;
                 }
@@ -1232,7 +1384,7 @@ impl RootTransactionProof {
                         params![hash.as_slice(), length, chunk_count],
                     )?;
                 }
-                Some(_) => return Err(ProofError::BlobMetadataMismatch),
+                Some(_) => return Err(StoreError::BlobMetadataMismatch),
             }
             if !bytes.is_empty() {
                 tx.execute(
@@ -1245,7 +1397,7 @@ impl RootTransactionProof {
                     |row| row.get(0),
                 )?;
                 if stored.len() != bytes.len() || Sha256::digest(&stored).as_slice() != hash {
-                    return Err(ProofError::HashMismatch);
+                    return Err(StoreError::HashMismatch);
                 }
             }
             tx.execute(
@@ -1257,9 +1409,9 @@ impl RootTransactionProof {
         Ok(())
     }
 
-    fn stage_manifest_chunked(&mut self, manifest: &TreeManifest) -> Result<[u8; 32], ProofError> {
+    fn stage_manifest_chunked(&mut self, manifest: &TreeManifest) -> Result<[u8; 32], StoreError> {
         if !manifest.dependency_roots().is_empty() {
-            return Err(ProofError::UnsupportedDependencyRoots);
+            return Err(StoreError::UnsupportedDependencyRoots);
         }
         let mut count = HashCountWriter {
             digest: Sha256::new(),
@@ -1267,10 +1419,10 @@ impl RootTransactionProof {
         };
         manifest
             .write_jcs(&mut count)
-            .map_err(|_| ProofError::OutputIo)?;
+            .map_err(|_| StoreError::OutputIo)?;
         let length = count.length;
         if length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(ProofError::InputLength);
+            return Err(StoreError::InputLength);
         }
         let hash: [u8; 32] = count.digest.finalize().into();
         let chunk_count = blob_chunk_count(length)?;
@@ -1289,7 +1441,7 @@ impl RootTransactionProof {
             failure: None,
         };
         if manifest.write_jcs(&mut writer).is_err() {
-            return Err(writer.failure.take().unwrap_or(ProofError::OutputIo));
+            return Err(writer.failure.take().unwrap_or(StoreError::OutputIo));
         }
         writer.finish()?;
         Ok(hash)
@@ -1301,7 +1453,7 @@ impl RootTransactionProof {
         length: u64,
         expected_hash: [u8; 32],
         after_chunk: impl FnMut(i64),
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         let mut scratch = std::mem::take(&mut self.scratch);
         let result =
             self.stage_blob_with_scratch(input, length, expected_hash, &mut scratch, after_chunk);
@@ -1316,7 +1468,7 @@ impl RootTransactionProof {
         expected_hash: [u8; 32],
         scratch: &mut Vec<u8>,
         mut after_chunk: impl FnMut(i64),
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         let chunk_count = blob_chunk_count(length)?;
         let scratch_len = length.min(CHUNK_BYTES as u64).max(1) as usize;
         scratch.resize(scratch_len, 0);
@@ -1328,21 +1480,21 @@ impl RootTransactionProof {
         let mut remaining = length;
         for index in 0..chunk_count {
             let count = usize::try_from(remaining.min(CHUNK_BYTES as u64))
-                .map_err(|_| ProofError::InputLength)?;
+                .map_err(|_| StoreError::InputLength)?;
             input
                 .read_exact(&mut scratch[..count])
-                .map_err(|_| ProofError::InputIo)?;
+                .map_err(|_| StoreError::InputIo)?;
             digest.update(&scratch[..count]);
             self.append_blob_chunk(length, expected_hash, chunk_count, index, &scratch[..count])?;
             remaining -= count as u64;
             after_chunk(index);
         }
         let mut extra = [0_u8; 1];
-        if input.read(&mut extra).map_err(|_| ProofError::InputIo)? != 0 {
-            return Err(ProofError::InputLength);
+        if input.read(&mut extra).map_err(|_| StoreError::InputIo)? != 0 {
+            return Err(StoreError::InputLength);
         }
         if digest.finalize().as_slice() != expected_hash {
-            return Err(ProofError::HashMismatch);
+            return Err(StoreError::HashMismatch);
         }
 
         self.verify_and_complete_blob(length, expected_hash, chunk_count, || {})
@@ -1353,8 +1505,8 @@ impl RootTransactionProof {
         length: u64,
         expected_hash: [u8; 32],
         chunk_count: i64,
-    ) -> Result<bool, ProofError> {
-        let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+    ) -> Result<bool, StoreError> {
+        let sql_length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
         let complete: Option<(i64, i64)> = self
             .conn
             .query_row(
@@ -1365,7 +1517,7 @@ impl RootTransactionProof {
             .optional()?;
         if let Some((prior_length, prior_chunks)) = complete {
             if prior_length != sql_length || prior_chunks != chunk_count {
-                return Err(ProofError::BlobMetadataMismatch);
+                return Err(StoreError::BlobMetadataMismatch);
             }
             return Ok(true);
         }
@@ -1383,7 +1535,7 @@ impl RootTransactionProof {
         match existing {
             Some((prior_length, prior_chunks, 1)) => {
                 if prior_length != sql_length || prior_chunks != chunk_count {
-                    return Err(ProofError::BlobMetadataMismatch);
+                    return Err(StoreError::BlobMetadataMismatch);
                 }
                 // The caller still verifies its candidate stage separately.
                 return Ok(true);
@@ -1404,7 +1556,7 @@ impl RootTransactionProof {
                     params![expected_hash.as_slice(), sql_length, chunk_count],
                 )?;
             }
-            Some(_) => return Err(ProofError::BlobMetadataMismatch),
+            Some(_) => return Err(StoreError::BlobMetadataMismatch),
         }
         tx.commit()?;
         Ok(false)
@@ -1417,17 +1569,17 @@ impl RootTransactionProof {
         chunk_count: i64,
         index: i64,
         bytes: &[u8],
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         let rounded = (bytes.len() as u64)
             .div_ceil(SQLITE_PAGE_BYTES)
             .checked_mul(SQLITE_PAGE_BYTES)
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
         let allowance = rounded
             .checked_mul(2)
             .and_then(|value| value.checked_add(MIB))
-            .ok_or(ProofError::Budget(BudgetError::Overflow))?;
+            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
         self.ensure_wal_room(allowance)?;
-        let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+        let sql_length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -1447,7 +1599,7 @@ impl RootTransactionProof {
             ],
         )?;
         if inserted != 1 {
-            return Err(ProofError::StaleBlobWriter);
+            return Err(StoreError::StaleBlobWriter);
         }
         tx.commit()?;
         Ok(())
@@ -1459,9 +1611,9 @@ impl RootTransactionProof {
         expected_hash: [u8; 32],
         chunk_count: i64,
         after_verify: impl FnOnce(),
-    ) -> Result<(), ProofError> {
+    ) -> Result<(), StoreError> {
         self.ensure_wal_room(MIB)?;
-        let sql_length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+        let sql_length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -1471,13 +1623,13 @@ impl RootTransactionProof {
             |row| row.get(0),
         )?;
         if actual_chunks != chunk_count {
-            return Err(ProofError::InvalidChunkLayout);
+            return Err(StoreError::InvalidChunkLayout);
         }
         let mut stored = Sha256::new();
         let mut stored_length = 0_u64;
         for index in 0..chunk_count {
             let expected_count = usize::try_from((length - stored_length).min(CHUNK_BYTES as u64))
-                .map_err(|_| ProofError::InputLength)?;
+                .map_err(|_| StoreError::InputLength)?;
             let actual: i64 = tx
                 .query_row(
                     "SELECT length(bytes) FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
@@ -1485,9 +1637,9 @@ impl RootTransactionProof {
                     |row| row.get(0),
                 )
                 .optional()?
-                .ok_or(ProofError::MissingChunk)?;
+                .ok_or(StoreError::MissingChunk)?;
             if actual != expected_count as i64 {
-                return Err(ProofError::InvalidChunkLayout);
+                return Err(StoreError::InvalidChunkLayout);
             }
             let bytes: Vec<u8> = tx
                 .query_row(
@@ -1496,14 +1648,14 @@ impl RootTransactionProof {
                     |row| row.get(0),
                 )
                 .optional()?
-                .ok_or(ProofError::MissingChunk)?;
+                .ok_or(StoreError::MissingChunk)?;
             stored_length = stored_length
                 .checked_add(bytes.len() as u64)
-                .ok_or(ProofError::InputLength)?;
+                .ok_or(StoreError::InputLength)?;
             stored.update(&bytes);
         }
         if stored_length != length || stored.finalize().as_slice() != expected_hash {
-            return Err(ProofError::HashMismatch);
+            return Err(StoreError::HashMismatch);
         }
         after_verify();
         let updated = tx.execute(
@@ -1511,12 +1663,13 @@ impl RootTransactionProof {
             params![expected_hash.as_slice(), sql_length, chunk_count],
         )?;
         if updated != 1 {
-            return Err(ProofError::BlobMetadataMismatch);
+            return Err(StoreError::BlobMetadataMismatch);
         }
         tx.commit()?;
         Ok(())
     }
 
+    #[cfg(test)]
     fn commit_probe(
         &mut self,
         expected_generation: i64,
@@ -1524,7 +1677,7 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         revision: [u8; 32],
-    ) -> Result<i64, ProofError> {
+    ) -> Result<i64, StoreError> {
         self.commit_with_closure(
             expected_generation,
             epoch,
@@ -1542,9 +1695,9 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         manifest: &TreeManifest,
-    ) -> Result<i64, ProofError> {
+    ) -> Result<i64, StoreError> {
         if !manifest.dependency_roots().is_empty() {
-            return Err(ProofError::UnsupportedDependencyRoots);
+            return Err(StoreError::UnsupportedDependencyRoots);
         }
         let mut count = HashCountWriter {
             digest: Sha256::new(),
@@ -1552,9 +1705,9 @@ impl RootTransactionProof {
         };
         manifest
             .write_jcs(&mut count)
-            .map_err(|_| ProofError::OutputIo)?;
+            .map_err(|_| StoreError::OutputIo)?;
         if count.length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(ProofError::InputLength);
+            return Err(StoreError::InputLength);
         }
         let revision: [u8; 32] = count.digest.finalize().into();
         self.commit_with_closure(
@@ -1571,9 +1724,9 @@ impl RootTransactionProof {
                     let stored_length: Option<i64> = lookup
                         .query_row(params![hash.as_slice()], |row| row.get(0))
                         .optional()?;
-                    let length = i64::try_from(length).map_err(|_| ProofError::InputLength)?;
+                    let length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
                     if stored_length != Some(length) {
-                        return Err(ProofError::MissingCompleteFile);
+                        return Err(StoreError::MissingCompleteFile);
                     }
                 }
                 Ok(())
@@ -1588,8 +1741,8 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         revision: [u8; 32],
-        check_closure: impl FnMut(&Transaction<'_>) -> Result<(), ProofError>,
-    ) -> Result<i64, ProofError> {
+        check_closure: impl FnMut(&Transaction<'_>) -> Result<(), StoreError>,
+    ) -> Result<i64, StoreError> {
         self.commit_with_closure_after_sql(
             expected_generation,
             epoch,
@@ -1608,14 +1761,14 @@ impl RootTransactionProof {
         key: i64,
         request_hash: [u8; 32],
         revision: [u8; 32],
-        mut check_closure: impl FnMut(&Transaction<'_>) -> Result<(), ProofError>,
+        mut check_closure: impl FnMut(&Transaction<'_>) -> Result<(), StoreError>,
         after_sql: impl FnOnce(),
-    ) -> Result<i64, ProofError> {
+    ) -> Result<i64, StoreError> {
         if let Some(outcome) = stored_outcome(&self.conn, epoch, key)? {
             return if outcome.request_hash == request_hash && outcome.revision == revision {
                 Ok(outcome.generation)
             } else {
-                Err(ProofError::TokenConflict)
+                Err(StoreError::TokenConflict)
             };
         }
         self.ensure_wal_room(MIB)?;
@@ -1627,7 +1780,7 @@ impl RootTransactionProof {
             return if outcome.request_hash == request_hash && outcome.revision == revision {
                 Ok(outcome.generation)
             } else {
-                Err(ProofError::TokenConflict)
+                Err(StoreError::TokenConflict)
             };
         }
         let generation: i64 =
@@ -1635,7 +1788,7 @@ impl RootTransactionProof {
                 row.get(0)
             })?;
         if generation != expected_generation {
-            return Err(ProofError::StaleGeneration);
+            return Err(StoreError::StaleGeneration);
         }
         let complete: bool = tx.query_row(
             "SELECT EXISTS(SELECT 1 FROM blob_header WHERE hash=?1 AND state=1)",
@@ -1643,12 +1796,12 @@ impl RootTransactionProof {
             |row| row.get(0),
         )?;
         if !complete {
-            return Err(ProofError::MissingCompleteBlob);
+            return Err(StoreError::MissingCompleteBlob);
         }
         check_closure(&tx)?;
         let next = generation
             .checked_add(1)
-            .ok_or(ProofError::StaleGeneration)?;
+            .ok_or(StoreError::StaleGeneration)?;
         tx.execute(
             "UPDATE root SET generation=?1, revision=?2 WHERE id=1",
             params![next, revision.as_slice()],
@@ -1664,10 +1817,409 @@ impl RootTransactionProof {
     }
 }
 
+/// One selected, durable authoring source root.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AcceptedSourceRoot {
+    /// Monotone root generation, starting at one for the first accepted tree.
+    pub generation: i64,
+    /// Digest of the authenticated canonical tree manifest.
+    pub revision: SourceRevision,
+}
+
+/// Broad failure category for source admission and verified reads.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceStoreErrorKind {
+    /// The selected planning target or observed free space deferred work.
+    SpacePressure,
+    /// Another root won the generation precondition.
+    StaleGeneration,
+    /// A retry key was already used for different work.
+    TokenConflict,
+    /// Candidate bytes or source-carried lineage failed validation.
+    Candidate,
+    /// Stored root, outcome, manifest or blob failed authentication.
+    CorruptStore,
+    /// The requested source path does not exist in the pinned tree.
+    MissingFile,
+    /// No durable admission outcome owns this root identity.
+    MissingAcceptedRoot,
+    /// The consumer's output writer refused bytes; discard its partial output.
+    Output,
+    /// The selected plan is unusable for bounded writes.
+    InvalidPlan,
+    /// SQLite or filesystem operation failed; retry only after inspecting it.
+    Storage,
+}
+
+/// Failure from the native admitted-source store.
+#[derive(Debug)]
+pub struct SourceStoreError(StoreError);
+
+impl SourceStoreError {
+    /// Stable handling category; the display text carries the detail.
+    pub fn kind(&self) -> SourceStoreErrorKind {
+        match &self.0 {
+            StoreError::Budget(
+                BudgetError::MainLimit
+                | BudgetError::WalLimit
+                | BudgetError::TemporaryLimit
+                | BudgetError::FreeSpace,
+            )
+            | StoreError::WalBackpressure
+            | StoreError::Sql(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error {
+                    code: rusqlite::ErrorCode::DiskFull,
+                    ..
+                },
+                _,
+            )) => SourceStoreErrorKind::SpacePressure,
+            StoreError::StaleGeneration => SourceStoreErrorKind::StaleGeneration,
+            StoreError::TokenConflict => SourceStoreErrorKind::TokenConflict,
+            StoreError::CandidateStage(_)
+            | StoreError::CandidateManifest(_)
+            | StoreError::CandidateFile(_)
+            | StoreError::Lineage(_)
+            | StoreError::History(_)
+            | StoreError::DifferentProject
+            | StoreError::InputLength
+            | StoreError::HashMismatch
+            | StoreError::InputIo => SourceStoreErrorKind::Candidate,
+            StoreError::InvalidPlan => SourceStoreErrorKind::InvalidPlan,
+            StoreError::MissingFile => SourceStoreErrorKind::MissingFile,
+            StoreError::MissingAcceptedRoot => SourceStoreErrorKind::MissingAcceptedRoot,
+            StoreError::ConsumerWrite(_) => SourceStoreErrorKind::Output,
+            StoreError::CorruptRootBlob
+            | StoreError::CorruptRootOutcome
+            | StoreError::UnsupportedStoreMode
+            | StoreError::CorruptOutcome
+            | StoreError::Manifest(_)
+            | StoreError::MissingCompleteBlob
+            | StoreError::MissingCompleteFile
+            | StoreError::BlobMetadataMismatch
+            | StoreError::InvalidChunkLayout
+            | StoreError::MissingChunk
+            | StoreError::MissingRootHistory
+            | StoreError::AmbiguousRootHistory
+            | StoreError::UnsupportedDependencyRoots => SourceStoreErrorKind::CorruptStore,
+            _ => SourceStoreErrorKind::Storage,
+        }
+    }
+}
+
+impl fmt::Display for SourceStoreError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
+
+impl std::error::Error for SourceStoreError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.0 {
+            StoreError::Sql(error) => Some(error),
+            StoreError::Budget(BudgetError::Io { source, .. })
+            | StoreError::ConsumerWrite(source) => Some(source),
+            _ => None,
+        }
+    }
+}
+
+impl From<StoreError> for SourceStoreError {
+    fn from(error: StoreError) -> Self {
+        Self(error)
+    }
+}
+
+impl From<rusqlite::Error> for SourceStoreError {
+    fn from(error: rusqlite::Error) -> Self {
+        Self(StoreError::Sql(error))
+    }
+}
+
+/// Native append-only source authority, outside world-update callbacks.
+///
+/// The path must be a trusted app-managed SQLite file. All accepted blobs are
+/// retained in this first profile; no collector deletion runs here.
+pub struct NativeSourceStore {
+    inner: SqliteStoreCore,
+    plan: SourceSpacePlan,
+}
+
+impl NativeSourceStore {
+    /// Open or create one native SQLite source store with a planning policy.
+    pub fn open(path: &Path, plan: SourceSpacePlan) -> Result<Self, SourceStoreError> {
+        let store = Self {
+            inner: SqliteStoreCore::open_with_plan(path, plan)?,
+            plan,
+        };
+        store.current_root()?;
+        Ok(store)
+    }
+
+    /// Read the selected root and verify its matching durable outcome.
+    pub fn current_root(&self) -> Result<Option<AcceptedSourceRoot>, SourceStoreError> {
+        let tx = self
+            .inner
+            .conn
+            .unchecked_transaction()
+            .map_err(StoreError::Sql)?;
+        let (generation, revision) = root_identity(&tx)?;
+        let selected = match (generation, revision) {
+            (0, None) => None,
+            (1.., Some(revision)) => {
+                let matched: bool = tx.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM outcome WHERE generation=?1 AND revision=?2)",
+                    params![generation, revision.as_slice()],
+                    |row| row.get(0),
+                )?;
+                if !matched {
+                    return Err(StoreError::CorruptRootOutcome.into());
+                }
+                Some(AcceptedSourceRoot {
+                    generation,
+                    revision: SourceRevision::from_bytes(revision),
+                })
+            }
+            _ => return Err(StoreError::CorruptRootOutcome.into()),
+        };
+        tx.commit()?;
+        Ok(selected)
+    }
+
+    /// Recover a committed admission after a lost response without reopening
+    /// or reconstructing its staged candidate. A reused key with a different
+    /// request hash is a conflict; an unknown key has no committed outcome.
+    pub fn outcome(
+        &self,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+    ) -> Result<Option<AcceptedSourceRoot>, SourceStoreError> {
+        let Some(row) = stored_outcome(&self.inner.conn, epoch, key)? else {
+            return Ok(None);
+        };
+        if row.request_hash != request_hash {
+            return Err(StoreError::TokenConflict.into());
+        }
+        Ok(Some(AcceptedSourceRoot {
+            generation: row.generation,
+            revision: SourceRevision::from_bytes(row.revision),
+        }))
+    }
+
+    /// Admit a validated staged candidate under a root CAS and retry token.
+    ///
+    /// Every staged file is rehashed, prior history is authenticated, all
+    /// referenced blobs are complete, and the root/outcome commit is atomic.
+    /// A failed call never turns provisional candidate bytes into authority.
+    pub fn admit(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        candidate: &StagedCandidate<'_>,
+    ) -> Result<AcceptedSourceRoot, SourceStoreError> {
+        let (generation, revision) = self.inner.admit_staged_candidate_probe_with_limits(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            candidate,
+            self.plan.into(),
+            || {},
+            |_| {},
+        )?;
+        Ok(AcceptedSourceRoot {
+            generation,
+            revision: SourceRevision::from_bytes(revision),
+        })
+    }
+
+    /// Pin and authenticate the current manifest for a build or cook read.
+    pub fn pin_current(
+        &mut self,
+        expected_generation: i64,
+    ) -> Result<PinnedSource<'_>, SourceStoreError> {
+        self.inner.retry_pending_pin_releases()?;
+        let pin = self.inner.pin_current_root(expected_generation)?;
+        self.load_pin(pin)
+    }
+
+    /// Pin an earlier accepted root for a retained build, match or save.
+    /// The supplied generation and revision must have a durable outcome.
+    pub fn pin_accepted(
+        &mut self,
+        root: AcceptedSourceRoot,
+    ) -> Result<PinnedSource<'_>, SourceStoreError> {
+        self.inner.retry_pending_pin_releases()?;
+        let pin = self.inner.pin_accepted_root(root)?;
+        self.load_pin(pin)
+    }
+
+    fn load_pin(&mut self, pin: RootReadPin) -> Result<PinnedSource<'_>, SourceStoreError> {
+        let loaded = (|| {
+            let tx = self
+                .inner
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Deferred)?;
+            let bytes = read_complete_blob(&tx, pin.revision, FIRST_PROFILE_MANIFEST_BYTES)?;
+            tx.commit()?;
+            let manifest = decode_manifest_jcs(&bytes, FIRST_PROFILE_MANIFEST_BYTES)
+                .map_err(StoreError::Manifest)?;
+            if !manifest.dependency_roots().is_empty() {
+                return Err(StoreError::UnsupportedDependencyRoots);
+            }
+            let tx = self
+                .inner
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Deferred)?;
+            let mut lookup =
+                tx.prepare("SELECT length FROM blob_header WHERE hash=?1 AND state=1")?;
+            for file in manifest.files() {
+                let (length, hash) = file.blob_identity();
+                let stored: Option<i64> = lookup
+                    .query_row(params![hash.as_slice()], |row| row.get(0))
+                    .optional()?;
+                if stored != Some(i64::try_from(length).map_err(|_| StoreError::CorruptRootBlob)?) {
+                    return Err(StoreError::MissingCompleteFile);
+                }
+            }
+            drop(lookup);
+            tx.commit()?;
+            Ok(manifest)
+        })();
+        match loaded {
+            Ok(manifest) => Ok(PinnedSource {
+                store: self,
+                root: AcceptedSourceRoot {
+                    generation: pin.generation,
+                    revision: SourceRevision::from_bytes(pin.revision),
+                },
+                manifest,
+                pin_id: Some(pin.id),
+                scratch: Vec::new(),
+            }),
+            Err(error) => {
+                let _ = self.inner.release_root_pin(pin.id);
+                Err(error.into())
+            }
+        }
+    }
+}
+
+/// One authenticated source manifest held by a durable read pin.
+pub struct PinnedSource<'a> {
+    store: &'a mut NativeSourceStore,
+    root: AcceptedSourceRoot,
+    manifest: TreeManifest,
+    pin_id: Option<i64>,
+    scratch: Vec<u8>,
+}
+
+impl PinnedSource<'_> {
+    /// Pinned root identity; it stays stable when another root is admitted.
+    pub fn root(&self) -> AcceptedSourceRoot {
+        self.root
+    }
+
+    /// Authenticated canonical manifest and its sorted file entries.
+    pub fn manifest(&self) -> &TreeManifest {
+        &self.manifest
+    }
+
+    /// Copy a file through bounded SQLite chunks, verifying length and SHA-256.
+    ///
+    /// On any error, the caller must discard all bytes already written to the
+    /// output. Only a successful return makes that output a verified product.
+    pub fn copy_file_to(
+        &mut self,
+        path: &SourcePath,
+        output: &mut impl Write,
+    ) -> Result<u64, SourceStoreError> {
+        let file = self
+            .manifest
+            .files()
+            .binary_search_by(|entry| entry.path().cmp(path))
+            .ok()
+            .map(|index| &self.manifest.files()[index])
+            .ok_or(StoreError::MissingFile)?;
+        let (length, hash) = file.blob_identity();
+        let chunks = blob_chunk_count(length)?;
+        let (stored_length, stored_chunks, state): (i64, i64, i64) = self
+            .store
+            .inner
+            .conn
+            .query_row(
+                "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+                params![hash.as_slice()],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .optional()?
+            .ok_or(StoreError::MissingCompleteBlob)?;
+        if stored_length != length as i64 || stored_chunks != chunks || state != 1 {
+            return Err(StoreError::CorruptRootBlob.into());
+        }
+        let actual_chunks: i64 = self.store.inner.conn.query_row(
+            "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| row.get(0),
+        )?;
+        if actual_chunks != chunks {
+            return Err(StoreError::InvalidChunkLayout.into());
+        }
+        let mut digest = Sha256::new();
+        let mut copied = 0_u64;
+        let mut statement = self
+            .store
+            .inner
+            .conn
+            .prepare("SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2")?;
+        for index in 0..chunks {
+            let mut rows = statement.query(params![hash.as_slice(), index])?;
+            let row = rows.next()?.ok_or(StoreError::MissingChunk)?;
+            let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+                return Err(StoreError::InvalidChunkLayout.into());
+            };
+            let expected = (length - copied).min(CHUNK_BYTES as u64) as usize;
+            if bytes.len() != expected {
+                return Err(StoreError::InvalidChunkLayout.into());
+            }
+            self.scratch.clear();
+            self.scratch.extend_from_slice(bytes);
+            drop(rows);
+            digest.update(&self.scratch);
+            output
+                .write_all(&self.scratch)
+                .map_err(StoreError::ConsumerWrite)?;
+            copied += self.scratch.len() as u64;
+        }
+        if copied != length || digest.finalize().as_slice() != hash {
+            return Err(StoreError::CorruptRootBlob.into());
+        }
+        Ok(copied)
+    }
+
+    /// Release the read pin and report a failed SQLite release to the caller.
+    pub fn close(mut self) -> Result<(), SourceStoreError> {
+        if let Some(id) = self.pin_id.take() {
+            self.store.inner.release_root_pin(id)?;
+        }
+        Ok(())
+    }
+}
+
+impl Drop for PinnedSource<'_> {
+    fn drop(&mut self) {
+        if let Some(id) = self.pin_id.take() {
+            let _ = self.store.inner.release_root_pin(id);
+        }
+    }
+}
+
 #[test]
 fn root_and_outcome_commit_together_and_retry_survives_reopen() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let sqlite_version: String = store
         .conn
         .query_row("SELECT sqlite_version()", [], |row| row.get(0))
@@ -1679,7 +2231,7 @@ fn root_and_outcome_commit_together_and_retry_survives_reopen() {
     let revision: [u8; 32] = Sha256::digest(first_manifest).into();
     assert!(matches!(
         store.commit_probe(0, 1, 1, request, revision),
-        Err(ProofError::MissingCompleteBlob)
+        Err(StoreError::MissingCompleteBlob)
     ));
     store
         .stage_blob(
@@ -1692,7 +2244,7 @@ fn root_and_outcome_commit_together_and_retry_survives_reopen() {
     assert_eq!(store.root().unwrap(), (1, Some(revision.to_vec())));
     drop(store);
 
-    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
 
     let second_manifest = b"manifest B, not yet a source closure";
@@ -1710,11 +2262,11 @@ fn root_and_outcome_commit_together_and_retry_survives_reopen() {
     );
     assert!(matches!(
         reopened.commit_probe(0, 1, 1, [33; 32], revision),
-        Err(ProofError::TokenConflict)
+        Err(StoreError::TokenConflict)
     ));
     assert!(matches!(
         reopened.commit_probe(0, 1, 2, request, revision2),
-        Err(ProofError::StaleGeneration)
+        Err(StoreError::StaleGeneration)
     ));
     assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
 
@@ -1726,7 +2278,7 @@ fn root_and_outcome_commit_together_and_retry_survives_reopen() {
         )
         .unwrap();
     match reopened.commit_probe(1, 1, 2, request, revision2) {
-        Err(ProofError::Sql(error)) => {
+        Err(StoreError::Sql(error)) => {
             assert!(error.to_string().contains("injected outcome failure"));
         }
         other => panic!("expected injected SQLite refusal, got {other:?}"),
@@ -1741,14 +2293,387 @@ fn root_and_outcome_commit_together_and_retry_survives_reopen() {
         2
     );
     drop(reopened);
-    let final_store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let final_store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(final_store.root().unwrap(), (2, Some(revision2.to_vec())));
+}
+
+#[test]
+fn native_store_admits_reopens_and_streams_pinned_source() {
+    let fixture = Fixture::new();
+    let path = fixture.0.join("authoring.db");
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&path, plan).unwrap();
+    assert_eq!(store.current_root().unwrap(), None);
+    let stage = minimal_source_stage(&fixture, "accepted source");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let accepted = store.admit(0, 3, 7, [7; 32], &candidate).unwrap();
+    assert_eq!(accepted.generation, 1);
+    assert_eq!(store.current_root().unwrap(), Some(accepted));
+    let source_path = SourcePath::parse("scenes/main.scene.json").unwrap();
+    {
+        let mut pinned = store.pin_current(1).unwrap();
+        assert_eq!(pinned.root(), accepted);
+        assert_eq!(pinned.manifest().revision(), accepted.revision);
+        let mut bytes = Vec::new();
+        let copied = pinned.copy_file_to(&source_path, &mut bytes).unwrap();
+        assert_eq!(copied as usize, bytes.len());
+        assert_eq!(
+            bytes,
+            fs::read(stage.test_directory().join(source_path.as_str())).unwrap()
+        );
+        assert_eq!(
+            pinned
+                .copy_file_to(&SourcePath::parse("missing.json").unwrap(), &mut Vec::new())
+                .unwrap_err()
+                .kind(),
+            SourceStoreErrorKind::MissingFile
+        );
+        pinned.close().unwrap();
+    }
+    drop(store);
+    let mut store = NativeSourceStore::open(&path, plan).unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(accepted));
+    assert_eq!(store.outcome(3, 7, [7; 32]).unwrap(), Some(accepted));
+    assert_eq!(store.outcome(3, 8, [8; 32]).unwrap(), None);
+    assert_eq!(
+        store.outcome(3, 7, [8; 32]).unwrap_err().kind(),
+        SourceStoreErrorKind::TokenConflict
+    );
+    assert_eq!(store.admit(0, 3, 7, [7; 32], &candidate).unwrap(), accepted);
+    assert_eq!(
+        store
+            .admit(0, 3, 7, [8; 32], &candidate)
+            .unwrap_err()
+            .kind(),
+        SourceStoreErrorKind::TokenConflict
+    );
+    assert_eq!(
+        store
+            .admit(0, 3, 8, [8; 32], &candidate)
+            .unwrap_err()
+            .kind(),
+        SourceStoreErrorKind::StaleGeneration
+    );
+    assert!(wal_path(&path).exists());
+}
+
+#[test]
+fn native_store_failed_final_outcome_preserves_old_root_and_retry() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "first accepted scene");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let second_stage = minimal_source_stage(&fixture, "next accepted scene");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    store
+        .inner
+        .conn
+        .execute_batch(
+            "CREATE TRIGGER abort_native_outcome BEFORE INSERT ON outcome
+             BEGIN SELECT RAISE(ABORT, 'injected native outcome failure'); END;",
+        )
+        .unwrap();
+    assert_eq!(
+        store.admit(1, 1, 2, [2; 32], &second).unwrap_err().kind(),
+        SourceStoreErrorKind::Storage
+    );
+    assert_eq!(store.current_root().unwrap(), Some(old));
+    drop(store);
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(old));
+    assert!(stored_outcome(&store.inner.conn, 1, 2).unwrap().is_none());
+    store
+        .inner
+        .conn
+        .execute_batch("DROP TRIGGER abort_native_outcome")
+        .unwrap();
+    let next = store.admit(1, 1, 2, [2; 32], &second).unwrap();
+    assert_eq!(next.generation, 2);
+    drop(store);
+    assert_eq!(
+        NativeSourceStore::open(&fixture.database(), plan)
+            .unwrap()
+            .current_root()
+            .unwrap(),
+        Some(next)
+    );
+}
+
+#[test]
+fn native_store_rejects_incompatible_database_before_schema_writes() {
+    let fixture = Fixture::new();
+    let path = fixture.database();
+    let incompatible = Connection::open(&path).unwrap();
+    incompatible
+        .execute_batch("CREATE TABLE unrelated (id INTEGER PRIMARY KEY)")
+        .unwrap();
+    drop(incompatible);
+    let refused = NativeSourceStore::open(&path, SourceSpacePlan::DEFAULT);
+    assert_eq!(
+        refused.err().unwrap().kind(),
+        SourceStoreErrorKind::CorruptStore
+    );
+    let check = Connection::open(&path).unwrap();
+    let tables: i64 = check
+        .query_row(
+            "SELECT count(*) FROM sqlite_schema WHERE type='table' AND name='root'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(tables, 0);
+
+    let empty_fixture = Fixture::new();
+    let empty_path = empty_fixture.database();
+    let initialized = Connection::open(&empty_path).unwrap();
+    initialized
+        .execute_batch("CREATE TABLE removed (id INTEGER); DROP TABLE removed;")
+        .unwrap();
+    drop(initialized);
+    let refused = NativeSourceStore::open(&empty_path, SourceSpacePlan::DEFAULT);
+    assert_eq!(
+        refused.err().unwrap().kind(),
+        SourceStoreErrorKind::CorruptStore
+    );
+    let check = Connection::open(&empty_path).unwrap();
+    let format: i64 = check
+        .query_row("PRAGMA user_version", [], |row| row.get(0))
+        .unwrap();
+    let auto_vacuum: i64 = check
+        .query_row("PRAGMA auto_vacuum", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!((format, auto_vacuum), (0, 0));
+}
+
+#[test]
+fn native_store_pinned_copy_refuses_corrupt_chunk() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage = minimal_source_stage(&fixture, "verified read");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
+    let path = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let hash = candidate
+        .provisional_manifest()
+        .unwrap()
+        .files()
+        .iter()
+        .find(|file| file.path() == &path)
+        .unwrap()
+        .blob_identity()
+        .1;
+    store
+        .inner
+        .conn
+        .execute(
+            "UPDATE blob_chunks SET bytes=zeroblob(length(bytes)) WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    let mut pinned = store.pin_current(1).unwrap();
+    let mut output = Vec::new();
+    assert_eq!(
+        pinned.copy_file_to(&path, &mut output).unwrap_err().kind(),
+        SourceStoreErrorKind::CorruptStore
+    );
+    pinned.close().unwrap();
+}
+
+#[test]
+fn native_store_pinned_copy_reports_consumer_output_failure() {
+    struct RefusingOutput;
+
+    impl Write for RefusingOutput {
+        fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+            Err(io::Error::other("consumer output refused"))
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage = minimal_source_stage(&fixture, "output refusal");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let root = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
+    let mut pinned = store.pin_current(root.generation).unwrap();
+    let path = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let error = pinned.copy_file_to(&path, &mut RefusingOutput).unwrap_err();
+    assert_eq!(error.kind(), SourceStoreErrorKind::Output);
+    assert!(std::error::Error::source(&error).is_some());
+    pinned.close().unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(root));
+}
+
+#[test]
+fn native_store_drains_wal_overrun_before_candidate_preflight() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 12 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let invalid = SourceSpacePlan {
+        wal_stop_bytes: 2 * CHUNK_BYTES as u64 + MIB,
+        ..plan
+    };
+    assert_eq!(
+        NativeSourceStore::open(&fixture.database(), invalid)
+            .err()
+            .unwrap()
+            .kind(),
+        SourceStoreErrorKind::InvalidPlan
+    );
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    store
+        .inner
+        .conn
+        .execute_batch(
+            "PRAGMA wal_autocheckpoint=0;
+             CREATE TABLE injected_wal_load (bytes BLOB);
+             INSERT INTO injected_wal_load VALUES (zeroblob(16000000));",
+        )
+        .unwrap();
+    assert!(fs::metadata(wal_path(&fixture.database())).unwrap().len() >= plan.wal_stop_bytes);
+    let stage = minimal_source_stage(&fixture, "after wal drain");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let accepted = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
+    assert_eq!(accepted.generation, 1);
+    assert!(fs::metadata(wal_path(&fixture.database())).unwrap().len() < plan.wal_stop_bytes);
+}
+
+#[test]
+fn native_store_multichunk_pin_survives_other_connection_root_advance() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let initial_stage = minimal_source_stage(&fixture, "before asset removal");
+    let root = fixture.source_root();
+    let asset = vec![0x5a_u8; CHUNK_BYTES + 17];
+    fs::write(root.join("master.bin"), &asset).unwrap();
+    let mut declared: Vec<_> = initial_stage
+        .files()
+        .iter()
+        .map(|file| file.path().clone())
+        .collect();
+    let asset_path = SourcePath::parse("master.bin").unwrap();
+    declared.push(asset_path.clone());
+    declared.sort_unstable();
+    let stage = stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            temporary: 64 * MIB,
+            free_floor: 0,
+            ..plan.into()
+        },
+        |_| {},
+    )
+    .unwrap();
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
+    let mut pinned = store.pin_current(first.generation).unwrap();
+
+    fs::remove_file(root.join("master.bin")).unwrap();
+    let next_stage = minimal_source_stage(&fixture, "after asset removal");
+    let next_candidate = validate_staged_candidate(&next_stage, &[]).unwrap();
+    let mut second_store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let second = second_store
+        .admit(first.generation, 1, 2, [2; 32], &next_candidate)
+        .unwrap();
+    assert_eq!(second.generation, 2);
+    let mut output = Vec::new();
+    assert_eq!(
+        pinned.copy_file_to(&asset_path, &mut output).unwrap(),
+        asset.len() as u64
+    );
+    assert_eq!(output, asset);
+    pinned.close().unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(second));
+    let mut historical = store.pin_accepted(first).unwrap();
+    let mut output = Vec::new();
+    assert_eq!(
+        historical.copy_file_to(&asset_path, &mut output).unwrap(),
+        asset.len() as u64
+    );
+    assert_eq!(output, asset);
+    historical.close().unwrap();
+    assert_eq!(
+        store
+            .pin_accepted(AcceptedSourceRoot {
+                generation: first.generation,
+                revision: second.revision,
+            })
+            .err()
+            .unwrap()
+            .kind(),
+        SourceStoreErrorKind::MissingAcceptedRoot
+    );
+}
+
+#[test]
+#[ignore = "local release native admission and pinned-read cost probe"]
+fn measure_native_store_small_admission_and_read() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let scene_path = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let mut admission_ms = Vec::new();
+    let mut pinned_read_ms = Vec::new();
+    for index in 0..10 {
+        let stage = minimal_source_stage(&fixture, &format!("edit {index}"));
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        let start = Instant::now();
+        let accepted = store
+            .admit(index, 1, index + 1, [index as u8; 32], &candidate)
+            .unwrap();
+        admission_ms.push(start.elapsed().as_secs_f64() * 1000.0);
+        let start = Instant::now();
+        let mut pinned = store.pin_current(accepted.generation).unwrap();
+        pinned.copy_file_to(&scene_path, &mut io::sink()).unwrap();
+        pinned.close().unwrap();
+        pinned_read_ms.push(start.elapsed().as_secs_f64() * 1000.0);
+    }
+    admission_ms.sort_by(f64::total_cmp);
+    pinned_read_ms.sort_by(f64::total_cmp);
+    eprintln!(
+        "native_small_admission n=10 min_ms={:.3} median_ms={:.3} max_ms={:.3}",
+        admission_ms[0], admission_ms[5], admission_ms[9]
+    );
+    eprintln!(
+        "native_small_pin_copy n=10 min_ms={:.3} median_ms={:.3} max_ms={:.3}",
+        pinned_read_ms[0], pinned_read_ms[5], pinned_read_ms[9]
+    );
 }
 
 #[test]
 fn sqlite_full_inside_root_outcome_transaction_rolls_back_both() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let bytes = b"verified manifest blob for a space-fault transaction";
     let revision: [u8; 32] = Sha256::digest(bytes).into();
     store
@@ -1772,14 +2697,14 @@ fn sqlite_full_inside_root_outcome_transaction_rolls_back_both() {
         .unwrap();
     assert!(matches!(
         store.commit_probe(0, 1, 1, [1; 32], revision),
-        Err(ProofError::Sql(rusqlite::Error::SqliteFailure(error, _)))
+        Err(StoreError::Sql(rusqlite::Error::SqliteFailure(error, _)))
             if error.code == rusqlite::ErrorCode::DiskFull
     ));
     assert_eq!(store.root().unwrap(), (0, None));
     assert!(stored_outcome(&store.conn, 1, 1).unwrap().is_none());
     drop(store);
 
-    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(reopened.root().unwrap(), (0, None));
     assert!(stored_outcome(&reopened.conn, 1, 1).unwrap().is_none());
     reopened
@@ -1796,7 +2721,7 @@ fn sqlite_full_inside_root_outcome_transaction_rolls_back_both() {
 #[test]
 fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let bytes = vec![7_u8; CHUNK_BYTES + 17];
     let hash: [u8; 32] = Sha256::digest(&bytes).into();
     store
@@ -1834,7 +2759,7 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
     changed_input[0] ^= 1;
     assert!(matches!(
         store.stage_blob(&mut changed_input.as_slice(), bytes.len() as u64, hash),
-        Err(ProofError::HashMismatch)
+        Err(StoreError::HashMismatch)
     ));
 
     let retry_bytes = vec![8_u8; CHUNK_BYTES + 17];
@@ -1842,11 +2767,11 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
     let mut partial = &retry_bytes[..CHUNK_BYTES];
     assert!(matches!(
         store.stage_blob(&mut partial, retry_bytes.len() as u64, retry_hash),
-        Err(ProofError::InputIo)
+        Err(StoreError::InputIo)
     ));
     assert!(matches!(
         store.commit_probe(1, 1, 2, [2; 32], retry_hash),
-        Err(ProofError::MissingCompleteBlob)
+        Err(StoreError::MissingCompleteBlob)
     ));
     store
         .stage_blob(
@@ -1868,11 +2793,11 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
     let bad_hash = [9_u8; 32];
     assert!(matches!(
         store.stage_blob(&mut b"wrong bytes".as_slice(), 11, bad_hash),
-        Err(ProofError::HashMismatch)
+        Err(StoreError::HashMismatch)
     ));
     assert!(matches!(
         store.commit_probe(1, 1, 2, [2; 32], bad_hash),
-        Err(ProofError::MissingCompleteBlob)
+        Err(StoreError::MissingCompleteBlob)
     ));
     let bad_state: i64 = store
         .conn
@@ -1889,7 +2814,7 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
 #[test]
 fn extra_stored_chunk_cannot_become_complete() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let bytes = b"one expected chunk";
     let hash: [u8; 32] = Sha256::digest(bytes).into();
     store
@@ -1910,19 +2835,19 @@ fn extra_stored_chunk_cannot_become_complete() {
     }
     assert!(matches!(
         store.verify_and_complete_blob(bytes.len() as u64, hash, 1, || {}),
-        Err(ProofError::InvalidChunkLayout)
+        Err(StoreError::InvalidChunkLayout)
     ));
     assert!(matches!(
         store.commit_probe(0, 1, 1, [1; 32], hash),
-        Err(ProofError::MissingCompleteBlob)
+        Err(StoreError::MissingCompleteBlob)
     ));
 }
 
 #[test]
 fn completion_transaction_excludes_same_hash_retry_reset() {
     let fixture = Fixture::new();
-    let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
-    let mut second = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut first = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let mut second = SqliteStoreCore::open(&fixture.database()).unwrap();
     second.conn.busy_timeout(std::time::Duration::ZERO).unwrap();
     let bytes = b"one verified chunk";
     let hash: [u8; 32] = Sha256::digest(bytes).into();
@@ -1946,7 +2871,7 @@ fn completion_transaction_excludes_same_hash_retry_reset() {
             let mut second_input = bytes.as_slice();
             assert!(matches!(
                 second.stage_blob(&mut second_input, bytes.len() as u64, hash),
-                Err(ProofError::Sql(_))
+                Err(StoreError::Sql(_))
             ));
         })
         .unwrap();
@@ -1961,8 +2886,8 @@ fn completion_transaction_excludes_same_hash_retry_reset() {
 #[test]
 fn stale_stream_cannot_append_after_same_hash_replacement_completes() {
     let fixture = Fixture::new();
-    let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
-    let mut second = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut first = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let mut second = SqliteStoreCore::open(&fixture.database()).unwrap();
     let complete_bytes = vec![5_u8; CHUNK_BYTES];
     let hash: [u8; 32] = Sha256::digest(&complete_bytes).into();
     let stale_bytes = vec![6_u8; CHUNK_BYTES + 17];
@@ -1985,7 +2910,7 @@ fn stale_stream_cannot_append_after_same_hash_replacement_completes() {
                 }
             }
         ),
-        Err(ProofError::StaleBlobWriter)
+        Err(StoreError::StaleBlobWriter)
     ));
     assert!(replaced);
     let count: i64 = first
@@ -2018,14 +2943,14 @@ fn canonical_manifest_bytes_reopen_from_complete_blob() {
     let revision = *manifest.revision().as_bytes();
     assert_eq!(Sha256::digest(&canonical).as_slice(), revision);
 
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     store
         .stage_blob(&mut canonical.as_slice(), canonical.len() as u64, revision)
         .unwrap();
     assert_eq!(store.commit_probe(0, 1, 1, [1; 32], revision).unwrap(), 1);
     drop(store);
 
-    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
     let stored: Vec<u8> = reopened
         .conn
@@ -2041,7 +2966,7 @@ fn canonical_manifest_bytes_reopen_from_complete_blob() {
 #[test]
 fn first_store_profile_refuses_unresolved_dependency_roots() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let manifest = TreeManifest::new(
         "2a5ef644-7225-4770-9f4d-e1d9c0a7d515",
         vec!["external-root".to_owned()],
@@ -2050,11 +2975,11 @@ fn first_store_profile_refuses_unresolved_dependency_roots() {
     .unwrap();
     assert!(matches!(
         store.stage_manifest_chunked(&manifest),
-        Err(ProofError::UnsupportedDependencyRoots)
+        Err(StoreError::UnsupportedDependencyRoots)
     ));
     assert!(matches!(
         store.commit_manifest_probe(0, 1, 1, [1; 32], &manifest),
-        Err(ProofError::UnsupportedDependencyRoots)
+        Err(StoreError::UnsupportedDependencyRoots)
     ));
     assert_eq!(store.root().unwrap(), (0, None));
 }
@@ -2076,7 +3001,7 @@ fn large_manifest_streams_directly_to_verified_sqlite_chunks() {
         .collect();
     let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
     let revision = *manifest.revision().as_bytes();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.stage_manifest_chunked(&manifest).unwrap(), revision);
     let (length, chunks, state): (i64, i64, i64) = store
         .conn
@@ -2092,7 +3017,7 @@ fn large_manifest_streams_directly_to_verified_sqlite_chunks() {
     assert_eq!(store.commit_probe(0, 1, 1, [8; 32], revision).unwrap(), 1);
     drop(store);
 
-    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     let mut stored = Sha256::new();
     let mut stored_length = 0;
     for index in 0..chunks {
@@ -2141,14 +3066,14 @@ fn manifest_root_requires_each_direct_file_blob_complete() {
         ],
     )
     .unwrap();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let revision = store.stage_manifest_chunked(&manifest).unwrap();
     store
         .stage_blob(&mut first.as_slice(), first.len() as u64, first_hash)
         .unwrap();
     assert!(matches!(
         store.commit_manifest_probe(0, 1, 1, [1; 32], &manifest),
-        Err(ProofError::MissingCompleteFile)
+        Err(StoreError::MissingCompleteFile)
     ));
     assert_eq!(store.root().unwrap(), (0, None));
     store
@@ -2163,7 +3088,7 @@ fn manifest_root_requires_each_direct_file_blob_complete() {
         .unwrap();
     assert!(matches!(
         store.commit_manifest_probe(0, 1, 1, [1; 32], &manifest),
-        Err(ProofError::MissingCompleteFile)
+        Err(StoreError::MissingCompleteFile)
     ));
     assert_eq!(store.root().unwrap(), (0, None));
     store
@@ -2181,7 +3106,7 @@ fn manifest_root_requires_each_direct_file_blob_complete() {
     );
     drop(store);
 
-    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
     assert_eq!(
         reopened
@@ -2207,7 +3132,7 @@ fn manifest_root_requires_each_direct_file_blob_complete() {
 #[test]
 fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first = b"first source";
     let second = b"second source";
     let first_hash: [u8; 32] = Sha256::digest(first).into();
@@ -2217,7 +3142,7 @@ fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
             (first_hash, first.as_slice()),
             (second_hash, b"wrong source".as_slice()),
         ]),
-        Err(ProofError::HashMismatch)
+        Err(StoreError::HashMismatch)
     ));
     let count: i64 = store
         .conn
@@ -2271,7 +3196,7 @@ fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
         1
     );
     drop(store);
-    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(reopened.root().unwrap(), (1, Some(revision.to_vec())));
     let stored: Vec<u8> = reopened
         .conn
@@ -2284,9 +3209,12 @@ fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
     assert_eq!(stored, second);
 }
 
+#[cfg(test)]
 const LINEAGE_PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+#[cfg(test)]
 const LINEAGE_HISTORY_ID: &str = "82b0ec04-6866-4271-a2cf-1f1576ad604a";
 
+#[cfg(test)]
 fn lineage_history(extra: bool) -> Vec<u8> {
     let mut fields = vec![serde_json::json!({
         "typeId":"game.marker", "fieldId":"marker.caption",
@@ -2315,6 +3243,7 @@ fn lineage_history(extra: bool) -> Vec<u8> {
     .unwrap()
 }
 
+#[cfg(test)]
 fn lineage_manifest(history_bytes: &[u8]) -> TreeManifest {
     TreeManifest::new(
         LINEAGE_PROJECT_ID,
@@ -2335,6 +3264,7 @@ fn lineage_manifest(history_bytes: &[u8]) -> TreeManifest {
     .unwrap()
 }
 
+#[cfg(test)]
 fn minimal_source_stage(fixture: &Fixture, label: &str) -> crate::StagedTree {
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     let root = fixture.source_root();
@@ -2393,6 +3323,7 @@ fn minimal_source_stage(fixture: &Fixture, label: &str) -> crate::StagedTree {
     .unwrap()
 }
 
+#[cfg(test)]
 fn game_source_stage(fixture: &Fixture, caption: &str, game_scene_id: &str) -> crate::StagedTree {
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const GAME_ID: &str = "4a5ef644-7225-4770-9f4d-e1d9c0a7d515";
@@ -2500,7 +3431,7 @@ fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
     let stage = minimal_source_stage(&fixture, "first");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let manifest = candidate.provisional_manifest().unwrap();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     for file in stage.files() {
         let mut reader = stage.open(file.path()).unwrap();
         store
@@ -2531,7 +3462,7 @@ fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
     fs::write(staged_history_path, changed).unwrap();
     assert!(matches!(
         store.compare_staged_candidate_with_current_root(1, &second_candidate),
-        Err(ProofError::CandidateStage(
+        Err(StoreError::CandidateStage(
             StagedRegistryError::StagedDrift(_)
         ))
     ));
@@ -2542,7 +3473,7 @@ fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
             history_file.length(),
             *history_file.sha256(),
         ),
-        Err(ProofError::HashMismatch)
+        Err(StoreError::HashMismatch)
     ));
     assert_eq!(store.root().unwrap().0, 1);
 }
@@ -2550,7 +3481,7 @@ fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
 #[test]
 fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = minimal_source_stage(&fixture, "first scene");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let (first_generation, first_revision) = store
@@ -2567,7 +3498,7 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
     assert_ne!(first_revision, second_revision);
     assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
     drop(store);
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(
         store
             .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
@@ -2576,11 +3507,11 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
     );
     assert!(matches!(
         store.admit_staged_candidate_probe(1, 1, 2, [3; 32], &second),
-        Err(ProofError::TokenConflict)
+        Err(StoreError::TokenConflict)
     ));
     assert!(matches!(
         store.admit_staged_candidate_probe(1, 1, 3, [3; 32], &first),
-        Err(ProofError::StaleGeneration)
+        Err(StoreError::StaleGeneration)
     ));
 
     let third_stage = minimal_source_stage(&fixture, "third scene!");
@@ -2592,7 +3523,7 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
     fs::write(scene_path, changed).unwrap();
     assert!(matches!(
         store.admit_staged_candidate_probe(2, 1, 4, [4; 32], &third),
-        Err(ProofError::HashMismatch)
+        Err(StoreError::HashMismatch)
     ));
     assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
     let first_complete: bool = store
@@ -2609,7 +3540,7 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
 #[test]
 fn current_root_read_pin_survives_root_advance_and_releases_after_validation_error() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = minimal_source_stage(&fixture, "old pinned scene");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let (_, first_revision) = store
@@ -2625,7 +3556,7 @@ fn current_root_read_pin_survives_root_advance_and_releases_after_validation_err
         .unwrap();
     assert_ne!(first_revision, second_revision);
     drop(store);
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
     let pinned_revision: Vec<u8> = store
         .conn
@@ -2655,7 +3586,7 @@ fn current_root_read_pin_survives_root_advance_and_releases_after_validation_err
     store.release_root_pin(pin.id).unwrap();
     assert!(matches!(
         store.compare_history_with_current_root(2, "wrong-project", &[]),
-        Err(ProofError::DifferentProject)
+        Err(StoreError::DifferentProject)
     ));
     let pin_count: i64 = store
         .conn
@@ -2667,7 +3598,7 @@ fn current_root_read_pin_survives_root_advance_and_releases_after_validation_err
 #[test]
 fn busy_pin_release_retains_id_until_next_bounded_read() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let stage = minimal_source_stage(&fixture, "pinned scene");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     store
@@ -2678,7 +3609,7 @@ fn busy_pin_release_retains_id_until_next_bounded_read() {
     blocker.execute_batch("BEGIN IMMEDIATE").unwrap();
     assert!(matches!(
         store.release_root_pin(pin.id),
-        Err(ProofError::Sql(_))
+        Err(StoreError::Sql(_))
     ));
     assert_eq!(store.pending_pin_releases, vec![pin.id]);
     blocker.execute_batch("COMMIT").unwrap();
@@ -2698,7 +3629,7 @@ fn busy_pin_release_retains_id_until_next_bounded_read() {
     blocker.execute_batch("BEGIN IMMEDIATE").unwrap();
     assert!(matches!(
         store.release_root_pin(pin.id),
-        Err(ProofError::Sql(_))
+        Err(StoreError::Sql(_))
     ));
     blocker.execute_batch("COMMIT").unwrap();
     store.release_root_pin(pin.id).unwrap();
@@ -2711,7 +3642,7 @@ fn busy_pin_release_retains_id_until_next_bounded_read() {
 #[test]
 fn gc_mark_keeps_selected_and_pinned_manifest_closures() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = minimal_source_stage(&fixture, "old scene for GC");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let old_manifest = first.provisional_manifest().unwrap();
@@ -2787,7 +3718,7 @@ fn gc_mark_keeps_selected_and_pinned_manifest_closures() {
 #[test]
 fn gc_mark_refuses_publication_or_pin_change_after_snapshot() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = minimal_source_stage(&fixture, "old selected scene");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     store
@@ -2803,12 +3734,12 @@ fn gc_mark_refuses_publication_or_pin_change_after_snapshot() {
     let second = validate_staged_candidate(&second_stage, &[]).unwrap();
     assert!(matches!(
         store.mark_unreachable_probe_with(|| {
-            let mut publisher = RootTransactionProof::open(&fixture.database()).unwrap();
+            let mut publisher = SqliteStoreCore::open(&fixture.database()).unwrap();
             publisher
                 .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
                 .unwrap();
         }),
-        Err(ProofError::StaleGcEpoch)
+        Err(StoreError::StaleGcEpoch)
     ));
     let marked: Vec<Vec<u8>> = {
         let mut scan = store.conn.prepare("SELECT hash FROM gc_mark").unwrap();
@@ -2820,12 +3751,12 @@ fn gc_mark_refuses_publication_or_pin_change_after_snapshot() {
     assert_eq!(marked, vec![orphan_hash.to_vec()]);
     assert!(matches!(
         store.mark_unreachable_probe_with(|| {
-            RootTransactionProof::open(&fixture.database())
+            SqliteStoreCore::open(&fixture.database())
                 .unwrap()
                 .pin_current_root(2)
                 .unwrap();
         }),
-        Err(ProofError::StaleGcEpoch)
+        Err(StoreError::StaleGcEpoch)
     ));
     assert_eq!(store.mark_unreachable_probe().unwrap(), 3);
 }
@@ -2833,7 +3764,7 @@ fn gc_mark_refuses_publication_or_pin_change_after_snapshot() {
 #[test]
 fn gc_mark_limits_writer_batch_and_keeps_previous_marks_on_refusal() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let blobs: Vec<[u8; 2]> = (0..=GC_MARK_CANDIDATES)
         .map(|index| (index as u16).to_le_bytes())
         .collect();
@@ -2851,7 +3782,7 @@ fn gc_mark_limits_writer_batch_and_keeps_previous_marks_on_refusal() {
         .unwrap();
     assert!(matches!(
         store.mark_unreachable_probe(),
-        Err(ProofError::GcMarkLimit)
+        Err(StoreError::GcMarkLimit)
     ));
     let marks: i64 = store
         .conn
@@ -2872,7 +3803,7 @@ fn gc_mark_limits_writer_batch_and_keeps_previous_marks_on_refusal() {
 #[test]
 fn gc_mark_uses_complete_only_index_with_many_incomplete_headers() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     {
         let tx = store.conn.transaction().unwrap();
         let mut insert = tx
@@ -2905,7 +3836,7 @@ fn game_schema_candidate_reaches_root_with_exact_optional_bytes() {
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const GAME_ID: &str = "4a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = game_source_stage(&fixture, "first marker", SCENE_ID);
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     assert_eq!(first.records().required_edges(), 1);
@@ -2929,7 +3860,7 @@ fn game_schema_candidate_reaches_root_with_exact_optional_bytes() {
     assert_eq!(generation, 2);
     assert_ne!(first_revision, second_revision);
     drop(store);
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
     let game_bytes = {
         let tx = store
@@ -2972,7 +3903,7 @@ fn game_schema_candidate_reaches_root_with_exact_optional_bytes() {
 fn measure_game_schema_candidate_edit_to_root() {
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = game_source_stage(&fixture, "first marker", SCENE_ID);
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     store
@@ -2999,7 +3930,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let manifest = candidate.provisional_manifest().unwrap();
     let revision = *manifest.revision().as_bytes();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let limits = Limits {
         free_floor: 0,
         ..Limits::V1
@@ -3018,7 +3949,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             || {},
             |_| {},
         ),
-        Err(ProofError::Budget(BudgetError::MainLimit))
+        Err(StoreError::Budget(BudgetError::MainLimit))
     ));
     assert!(matches!(
         store.admit_staged_candidate_probe_with_limits(
@@ -3031,7 +3962,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             || {},
             |_| {},
         ),
-        Err(ProofError::Budget(BudgetError::WalLimit))
+        Err(StoreError::Budget(BudgetError::WalLimit))
     ));
     let available = fs4::available_space(&fixture.0).unwrap();
     assert!(matches!(
@@ -3048,7 +3979,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             || {},
             |_| {},
         ),
-        Err(ProofError::Budget(BudgetError::FreeSpace))
+        Err(StoreError::Budget(BudgetError::FreeSpace))
     ));
     let rows: i64 = store
         .conn
@@ -3100,7 +4031,7 @@ fn sqlite_full_during_candidate_blob_keeps_prior_root_and_retry_recovers() {
     let fixture = Fixture::new();
     let first_stage = minimal_source_stage(&fixture, "before space fault");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let (_, first_revision) = store
         .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
         .unwrap();
@@ -3145,14 +4076,14 @@ fn sqlite_full_during_candidate_blob_keeps_prior_root_and_retry_recovers() {
         .unwrap();
     assert!(matches!(
         store.admit_staged_candidate_probe(1, 1, 2, [2; 32], &second),
-        Err(ProofError::Sql(rusqlite::Error::SqliteFailure(error, _)))
+        Err(StoreError::Sql(rusqlite::Error::SqliteFailure(error, _)))
             if error.code == rusqlite::ErrorCode::DiskFull
     ));
     assert_eq!(store.root().unwrap(), (1, Some(first_revision.to_vec())));
     assert!(stored_outcome(&store.conn, 1, 2).unwrap().is_none());
     drop(store);
 
-    let mut reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut reopened = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(reopened.root().unwrap(), (1, Some(first_revision.to_vec())));
     assert!(stored_outcome(&reopened.conn, 1, 2).unwrap().is_none());
     assert_eq!(
@@ -3170,7 +4101,7 @@ fn sqlite_full_during_candidate_blob_keeps_prior_root_and_retry_recovers() {
 #[test]
 fn candidate_space_preflight_reserves_existing_checkpoint_debt() {
     let fixture = Fixture::new();
-    let store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let logical_pages: i64 = store
         .conn
         .query_row("PRAGMA page_count", [], |row| row.get(0))
@@ -3183,14 +4114,14 @@ fn candidate_space_preflight_reserves_existing_checkpoint_debt() {
     assert_eq!(with_debt - without_debt, debt);
     assert!(matches!(
         required_free_bytes(u64::MAX, 1, debt, 0),
-        Err(ProofError::Budget(BudgetError::Overflow))
+        Err(StoreError::Budget(BudgetError::Overflow))
     ));
 }
 
 #[test]
 fn active_candidate_free_floor_refuses_before_blob_header_write() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let stage = minimal_source_stage(&fixture, "live free floor");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     assert!(matches!(
@@ -3209,7 +4140,7 @@ fn active_candidate_free_floor_refuses_before_blob_header_write() {
                 store.active_free_floor = Some(1 << 60);
             },
         ),
-        Err(ProofError::Budget(BudgetError::FreeSpace))
+        Err(StoreError::Budget(BudgetError::FreeSpace))
     ));
     let headers: i64 = store
         .conn
@@ -3226,7 +4157,7 @@ fn active_candidate_free_floor_refuses_before_blob_header_write() {
 #[test]
 fn live_free_floor_refuses_before_checkpoint_can_grow_main_file() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let bytes = b"WAL bytes awaiting checkpoint";
     let hash: [u8; 32] = Sha256::digest(bytes).into();
     store
@@ -3240,7 +4171,7 @@ fn live_free_floor_refuses_before_checkpoint_can_grow_main_file() {
     store.active_free_floor = Some(1 << 60);
     assert!(matches!(
         store.ensure_wal_room(MIB),
-        Err(ProofError::Budget(BudgetError::FreeSpace))
+        Err(StoreError::Budget(BudgetError::FreeSpace))
     ));
     assert_eq!(fs::metadata(&wal_path).unwrap().len(), before);
 }
@@ -3248,7 +4179,7 @@ fn live_free_floor_refuses_before_checkpoint_can_grow_main_file() {
 #[test]
 fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
     let fixture = Fixture::new();
-    let mut writer = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut writer = SqliteStoreCore::open(&fixture.database()).unwrap();
     writer
         .conn
         .execute_batch("PRAGMA wal_autocheckpoint=0; PRAGMA busy_timeout=0;")
@@ -3298,7 +4229,7 @@ fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
     let third_hash: [u8; 32] = Sha256::digest(third).into();
     assert!(matches!(
         writer.stage_blob(&mut third.as_slice(), 1, third_hash),
-        Err(ProofError::WalBackpressure)
+        Err(StoreError::WalBackpressure)
     ));
     assert!(writer.wal_guard.next_passive_at > before);
     let staged_third: bool = writer
@@ -3319,7 +4250,7 @@ fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
     );
     assert!(matches!(
         writer.commit_probe(0, 1, 1, [2; 32], first_hash),
-        Err(ProofError::TokenConflict)
+        Err(StoreError::TokenConflict)
     ));
     assert_eq!(writer.root().unwrap().0, 1);
     let blocked: (i64, i64, i64) = writer
@@ -3347,7 +4278,7 @@ fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
 #[test]
 fn sustained_blocked_reader_defers_chunk_staging_and_resumes_after_drain() {
     let fixture = Fixture::new();
-    let mut writer = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut writer = SqliteStoreCore::open(&fixture.database()).unwrap();
     writer
         .conn
         .execute_batch("PRAGMA wal_autocheckpoint=0")
@@ -3378,7 +4309,7 @@ fn sustained_blocked_reader_defers_chunk_staging_and_resumes_after_drain() {
         let hash: [u8; 32] = Sha256::digest(&bytes).into();
         match writer.stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash) {
             Ok(()) => completed += 1,
-            Err(ProofError::WalBackpressure) => {
+            Err(StoreError::WalBackpressure) => {
                 deferred = Some((bytes, hash));
                 break;
             }
@@ -3429,8 +4360,10 @@ fn sustained_blocked_reader_defers_chunk_staging_and_resumes_after_drain() {
     assert!(complete);
 }
 
+#[cfg(test)]
 struct KillChildOnDrop(Child);
 
+#[cfg(test)]
 impl Drop for KillChildOnDrop {
     fn drop(&mut self) {
         let _ = self.0.kill();
@@ -3438,6 +4371,7 @@ impl Drop for KillChildOnDrop {
     }
 }
 
+#[cfg(test)]
 fn signal_and_wait_for_kill(marker: &Path) -> ! {
     fs::write(marker, b"SQLite writes reached kill point").unwrap();
     loop {
@@ -3445,6 +4379,7 @@ fn signal_and_wait_for_kill(marker: &Path) -> ! {
     }
 }
 
+#[cfg(test)]
 fn kill_after_marker(child: Child, marker: &Path, before_kill: impl FnOnce()) {
     let mut child = KillChildOnDrop(child);
     let deadline = Instant::now() + Duration::from_secs(5);
@@ -3465,7 +4400,7 @@ fn process_kill_partial_blob_child() {
     };
     let database = PathBuf::from(database);
     let marker = PathBuf::from(std::env::var_os("THRUM_TEST_PARTIAL_BLOB_MARKER").unwrap());
-    let mut store = RootTransactionProof::open(&database).unwrap();
+    let mut store = SqliteStoreCore::open(&database).unwrap();
     let bytes = vec![0x42_u8; CHUNK_BYTES * 2 + 1];
     let hash: [u8; 32] = Sha256::digest(&bytes).into();
     store
@@ -3480,7 +4415,7 @@ fn process_kill_partial_blob_child() {
 #[test]
 fn process_kill_after_chunk_recovers_old_root_and_restages() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let old = [0x41_u8];
     let old_hash: [u8; 32] = Sha256::digest(old).into();
     store.stage_blob(&mut old.as_slice(), 1, old_hash).unwrap();
@@ -3502,7 +4437,7 @@ fn process_kill_after_chunk_recovers_old_root_and_restages() {
 
     let bytes = vec![0x42_u8; CHUNK_BYTES * 2 + 1];
     let hash: [u8; 32] = Sha256::digest(&bytes).into();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (1, Some(old_hash.to_vec())));
     let (state, chunks): (i64, i64) = store
         .conn
@@ -3515,14 +4450,14 @@ fn process_kill_after_chunk_recovers_old_root_and_restages() {
     assert_eq!((state, chunks), (0, 1));
     assert!(matches!(
         store.commit_probe(1, 1, 2, [2; 32], hash),
-        Err(ProofError::MissingCompleteBlob)
+        Err(StoreError::MissingCompleteBlob)
     ));
     store
         .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
         .unwrap();
     assert_eq!(store.commit_probe(1, 1, 2, [2; 32], hash).unwrap(), 2);
     drop(store);
-    let store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (2, Some(hash.to_vec())));
 }
 
@@ -3533,7 +4468,7 @@ fn process_kill_before_root_commit_child() {
     };
     let database = PathBuf::from(database);
     let marker = PathBuf::from(std::env::var_os("THRUM_TEST_ROOT_TXN_MARKER").unwrap());
-    let mut store = RootTransactionProof::open(&database).unwrap();
+    let mut store = SqliteStoreCore::open(&database).unwrap();
     let revision: [u8; 32] = Sha256::digest(b"complete new root blob").into();
     store
         .commit_with_closure_after_sql(
@@ -3553,7 +4488,7 @@ fn process_kill_before_root_commit_child() {
 #[test]
 fn process_kill_inside_root_transaction_rolls_back_root_and_outcome() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let old = b"complete old root blob";
     let old_hash: [u8; 32] = Sha256::digest(old).into();
     store
@@ -3596,7 +4531,7 @@ fn process_kill_inside_root_transaction_rolls_back_root_and_outcome() {
         assert!(!outcome);
     });
 
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (1, Some(old_hash.to_vec())));
     let outcome: bool = store
         .conn
@@ -3609,7 +4544,7 @@ fn process_kill_inside_root_transaction_rolls_back_root_and_outcome() {
     assert!(!outcome);
     assert_eq!(store.commit_probe(1, 1, 2, [2; 32], new_hash).unwrap(), 2);
     drop(store);
-    let store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let store = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert_eq!(store.root().unwrap(), (2, Some(new_hash.to_vec())));
     assert_eq!(
         stored_outcome(&store.conn, 1, 2)
@@ -3623,7 +4558,7 @@ fn process_kill_inside_root_transaction_rolls_back_root_and_outcome() {
 #[test]
 fn concurrent_same_token_winner_is_recovered_after_stale_preflight() {
     let fixture = Fixture::new();
-    let mut first_store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut first_store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let base_stage = minimal_source_stage(&fixture, "base scene");
     let base = validate_staged_candidate(&base_stage, &[]).unwrap();
     first_store
@@ -3632,7 +4567,7 @@ fn concurrent_same_token_winner_is_recovered_after_stale_preflight() {
 
     let next_stage = minimal_source_stage(&fixture, "next scene");
     let next = validate_staged_candidate(&next_stage, &[]).unwrap();
-    let mut winner = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut winner = SqliteStoreCore::open(&fixture.database()).unwrap();
     let recovered = first_store
         .admit_staged_candidate_probe_with(1, 1, 2, [2; 32], &next, || {
             assert_eq!(
@@ -3648,14 +4583,14 @@ fn concurrent_same_token_winner_is_recovered_after_stale_preflight() {
     assert_eq!(first_store.root().unwrap(), (2, Some(recovered.1.to_vec())));
     assert!(matches!(
         first_store.admit_staged_candidate_probe(1, 1, 2, [3; 32], &next),
-        Err(ProofError::TokenConflict)
+        Err(StoreError::TokenConflict)
     ));
 }
 
 #[test]
 fn assembled_candidate_refuses_to_drop_current_root_history() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let prior_bytes = lineage_history(false);
     let prior_hash: [u8; 32] = Sha256::digest(&prior_bytes).into();
     let prior_manifest = lineage_manifest(&prior_bytes);
@@ -3675,7 +4610,7 @@ fn assembled_candidate_refuses_to_drop_current_root_history() {
     let candidate = validate_staged_candidate(&candidate_stage, &[]).unwrap();
     assert!(matches!(
         store.admit_staged_candidate_probe(1, 1, 2, [2; 32], &candidate),
-        Err(ProofError::Lineage(_))
+        Err(StoreError::Lineage(_))
     ));
     assert_eq!(store.root().unwrap(), (1, Some(prior_revision.to_vec())));
 }
@@ -3684,7 +4619,7 @@ fn assembled_candidate_refuses_to_drop_current_root_history() {
 #[ignore = "local small candidate edit-to-root cost probe"]
 fn measure_small_candidate_edit_to_root() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let first_stage = minimal_source_stage(&fixture, "first scene");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     store
@@ -3709,7 +4644,7 @@ fn measure_small_candidate_edit_to_root() {
 #[test]
 fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage() {
     let fixture = Fixture::new();
-    let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut first = SqliteStoreCore::open(&fixture.database()).unwrap();
     let base = lineage_history(false);
     let candidate = lineage_history(true);
     let base_manifest = lineage_manifest(&base);
@@ -3730,7 +4665,7 @@ fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage()
     );
     drop(first);
 
-    let mut first = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut first = SqliteStoreCore::open(&fixture.database()).unwrap();
     assert!(
         first
             .compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &candidate)
@@ -3738,7 +4673,7 @@ fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage()
     );
     assert!(matches!(
         first.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &[]),
-        Err(ProofError::History(_))
+        Err(StoreError::History(_))
     ));
     assert!(matches!(
         first.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &lineage_history(false)),
@@ -3750,9 +4685,9 @@ fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage()
             "f2b577f6-d755-4d6b-8df0-609c63914c1b",
             &candidate
         ),
-        Err(ProofError::DifferentProject)
+        Err(StoreError::DifferentProject)
     ));
-    let mut second = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut second = SqliteStoreCore::open(&fixture.database()).unwrap();
     second
         .stage_blob(
             &mut candidate.as_slice(),
@@ -3769,22 +4704,22 @@ fn current_root_history_is_recovered_and_generation_cas_excludes_stale_lineage()
     );
     assert!(matches!(
         first.commit_manifest_probe(1, 1, 3, [3; 32], &candidate_manifest),
-        Err(ProofError::StaleGeneration)
+        Err(StoreError::StaleGeneration)
     ));
     assert!(matches!(
         first.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &candidate),
-        Err(ProofError::StaleGeneration)
+        Err(StoreError::StaleGeneration)
     ));
     assert!(matches!(
         first.compare_history_with_current_root(2, LINEAGE_PROJECT_ID, &base),
-        Err(ProofError::Lineage(_))
+        Err(StoreError::Lineage(_))
     ));
 }
 
 #[test]
 fn current_root_history_refuses_corrupt_stored_bytes() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let base = lineage_history(false);
     let base_hash: [u8; 32] = Sha256::digest(&base).into();
     let manifest = lineage_manifest(&base);
@@ -3804,7 +4739,7 @@ fn current_root_history_refuses_corrupt_stored_bytes() {
         .unwrap();
     assert!(matches!(
         store.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &base),
-        Err(ProofError::CorruptRootBlob)
+        Err(StoreError::CorruptRootBlob)
     ));
     store
         .conn
@@ -3815,7 +4750,7 @@ fn current_root_history_refuses_corrupt_stored_bytes() {
         .unwrap();
     assert!(matches!(
         store.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &base),
-        Err(ProofError::CorruptRootBlob)
+        Err(StoreError::CorruptRootBlob)
     ));
     store
         .conn
@@ -3823,7 +4758,7 @@ fn current_root_history_refuses_corrupt_stored_bytes() {
         .unwrap();
     assert!(matches!(
         store.compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &base),
-        Err(ProofError::CorruptRootBlob)
+        Err(StoreError::CorruptRootBlob)
     ));
 }
 
@@ -3831,7 +4766,7 @@ fn current_root_history_refuses_corrupt_stored_bytes() {
 #[ignore = "local maximum-manifest current-root history resolution cost probe"]
 fn measure_maximum_root_history_resolution() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let history_bytes = lineage_history(false);
     let history_hash: [u8; 32] = Sha256::digest(&history_bytes).into();
     let ordinary_bytes = [9_u8];
@@ -3902,7 +4837,7 @@ fn measure_maximum_manifest_sqlite_stream() {
         .collect();
     let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
     let revision = *manifest.revision().as_bytes();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let start = std::time::Instant::now();
     assert_eq!(store.stage_manifest_chunked(&manifest).unwrap(), revision);
     let elapsed = start.elapsed();
@@ -3925,7 +4860,7 @@ fn measure_maximum_manifest_sqlite_stream() {
 #[ignore = "local small-file SQLite transaction amplification probe"]
 fn measure_small_blob_transaction_cost() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let start = std::time::Instant::now();
     for index in 0_u64..1_000 {
         let bytes = index.to_le_bytes();
@@ -3945,7 +4880,7 @@ fn measure_small_blob_transaction_cost() {
 #[ignore = "local small-file batched SQLite cost probe"]
 fn measure_small_blob_batch_cost() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let files: Vec<_> = (0_u64..1_000)
         .map(|index| {
             let bytes = index.to_le_bytes();
@@ -3979,7 +4914,7 @@ fn measure_small_blob_batch_cost() {
 #[ignore = "local verified small-blob reuse cost probe"]
 fn measure_small_blob_reuse_cost() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let files: Vec<_> = (0_u64..1_000)
         .map(|index| {
             let bytes = index.to_le_bytes();
@@ -4010,12 +4945,12 @@ fn measure_small_blob_reuse_cost() {
 #[ignore = "local SQLite main/WAL growth probe"]
 fn measure_sqlite_physical_growth() {
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     store
         .conn
         .execute_batch("PRAGMA wal_autocheckpoint=0;")
         .unwrap();
-    let snapshot = |label: &str, store: &RootTransactionProof| {
+    let snapshot = |label: &str, store: &SqliteStoreCore| {
         let main = fs::metadata(fixture.database()).unwrap().len();
         let wal = fs::metadata(fixture.database().with_extension("sqlite-wal"))
             .map(|metadata| metadata.len())
@@ -4069,7 +5004,7 @@ fn measure_sqlite_physical_growth() {
     snapshot("after_truncate", &store);
 
     let batch_fixture = Fixture::new();
-    let mut batched = RootTransactionProof::open(&batch_fixture.database()).unwrap();
+    let mut batched = SqliteStoreCore::open(&batch_fixture.database()).unwrap();
     batched
         .conn
         .execute_batch("PRAGMA wal_autocheckpoint=0;")
@@ -4085,7 +5020,7 @@ fn measure_sqlite_physical_growth() {
     eprintln!("physical_growth batched_1000_tiny_wal={batched_wal}");
 
     let individual_fixture = Fixture::new();
-    let mut individual = RootTransactionProof::open(&individual_fixture.database()).unwrap();
+    let mut individual = SqliteStoreCore::open(&individual_fixture.database()).unwrap();
     individual
         .conn
         .execute_batch("PRAGMA wal_autocheckpoint=0;")
@@ -4106,7 +5041,7 @@ fn measure_sqlite_physical_growth() {
 fn measure_maximum_candidate_space_preflight() {
     const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     let fixture = Fixture::new();
-    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
     let files = (0_u64..100_000)
         .map(|index| {
             ManifestEntry::new(

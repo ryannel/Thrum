@@ -21,6 +21,9 @@ const HEX: &[u8; 16] = b"0123456789abcdef";
 pub struct SourceRevision([u8; 32]);
 
 impl SourceRevision {
+    pub(crate) const fn from_bytes(bytes: [u8; 32]) -> Self {
+        Self(bytes)
+    }
     /// Raw digest bytes for typed storage or transport adapters.
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
@@ -52,7 +55,6 @@ impl RecordDescriptor {
         }
     }
 
-    #[cfg(test)]
     pub(crate) fn checked_owned_parts(id: String, record_type: String) -> Self {
         debug_assert!(canonical_uuid(&id));
         Self { id, record_type }
@@ -69,6 +71,16 @@ pub struct ManifestEntry {
 }
 
 impl ManifestEntry {
+    /// Portable path in the admitted tree.
+    pub fn path(&self) -> &SourcePath {
+        &self.path
+    }
+
+    /// Exact byte length and SHA-256 of the admitted file.
+    pub fn content_identity(&self) -> (u64, [u8; 32]) {
+        (self.length, self.sha256)
+    }
+
     /// Describe one file whose bytes and optional F3 envelope were checked.
     pub fn new(
         path: SourcePath,
@@ -87,12 +99,10 @@ impl ManifestEntry {
         })
     }
 
-    #[cfg(test)]
     pub(crate) fn blob_identity(&self) -> (u64, [u8; 32]) {
         (self.length, self.sha256)
     }
 
-    #[cfg(test)]
     pub(crate) fn record_identity(&self) -> Option<(&str, &str)> {
         self.record
             .as_ref()
@@ -125,18 +135,18 @@ pub struct TreeManifest {
 }
 
 impl TreeManifest {
-    #[cfg(test)]
-    pub(crate) fn files(&self) -> &[ManifestEntry] {
+    /// Files in portable path order.
+    pub fn files(&self) -> &[ManifestEntry] {
         &self.files
     }
 
-    #[cfg(test)]
-    pub(crate) fn project_id(&self) -> &str {
+    /// Stable project identity carried by this revision.
+    pub fn project_id(&self) -> &str {
         &self.project_id
     }
 
-    #[cfg(test)]
-    pub(crate) fn dependency_roots(&self) -> &[String] {
+    /// Declared dependency roots (empty in the first native store profile).
+    pub fn dependency_roots(&self) -> &[String] {
         &self.dependency_roots
     }
 

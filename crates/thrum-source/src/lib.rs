@@ -12,7 +12,6 @@ pub mod history_json;
 mod inventory;
 mod json;
 mod manifest;
-#[cfg(test)]
 mod manifest_json;
 mod meaning;
 mod path;
@@ -22,7 +21,6 @@ pub mod registry;
 pub mod registry_stage;
 pub mod schema_json;
 mod semantic;
-#[cfg(test)]
 mod sqlite_store;
 mod stage;
 
@@ -37,6 +35,9 @@ pub use meaning::{
 pub use path::{PathError, SourcePath, validate_paths};
 pub use record::{RecordEnvelope, RecordError, validate_record_envelope};
 pub use semantic::{BootstrapError, BootstrapProfile, BootstrapScene, validate_bootstrap_profile};
+pub use sqlite_store::{
+    AcceptedSourceRoot, NativeSourceStore, PinnedSource, SourceStoreError, SourceStoreErrorKind,
+};
 pub use stage::{
     StageError, StagedFile, StagedLease, StagedTree, stage_declared_tree,
     stage_declared_tree_with_plan,
