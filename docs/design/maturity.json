@@ -363,6 +363,10 @@
       "i2a_staged_lineage": {
         "evidence": "../evidence/i2a/SOURCE-STAGED-LINEAGE.md",
         "scope": "Two checked provisional registries reread and rehash their source-carried history files, compare permanent fields and immutable type versions without copied entry vectors, and reject deletion from a supplied predecessor. A local two-buffer 100,000-field cost/RSS probe passes; current admitted-root authentication, physical reservation and durable source admission remain open."
+      },
+      "i2a_manifest_blob_bridge": {
+        "evidence": "../evidence/i2a/SOURCE-MANIFEST-BLOB.md",
+        "scope": "A small test-only canonical TreeManifest is written to bytes, verified as a complete SQLite blob, committed as root digest with outcome and recovered exactly after reopen. This fixture buffers the small manifest and does not check its referenced source file blob, authenticated prior lineage, physical budget, crash durability or general accepted-source closure."
       }
     },
     {
