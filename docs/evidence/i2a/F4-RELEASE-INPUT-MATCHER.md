@@ -40,3 +40,25 @@ three-root cold scan at 11.0 seconds over about 4.86 GB logical bytes. This
 matcher has not yet run against a reviewed full-size release manifest. The
 selected compiler unit/read closure, broad system libraries, retained binary
 and product manifest, atomic publication and reload remain unqualified.
+
+A full-size **unreviewed** local match then copied the six workspace package
+manifests and source trees plus root Cargo/lock/toolchain files from checkout
+`ec7f366` into isolated system scratch, added the fixed headless declaration,
+and prepared the private cache there. The first attempt under worktree scratch
+correctly refused the checkout's ancestor `.cargo/config.toml`; moving the
+owned source to system scratch matched the admitted build fixture's isolation.
+The cache root was again 2,923 files, 67,792,387 logical bytes and SHA-256
+`58c57419b000f0dbb2037792932f0191abecceae9e14e77e4b384fb06811225b`.
+An ephemeral candidate manifest used the previously inventoried installed
+Rust 1.99.1, Xcode 27.2 linker and macOS SDK root digests, with a synthetic
+origin record containing official URL/version labels. The cold matcher read
+those roots and returned `matchedInputRoots:true`, `buildReady:false`,
+manifest SHA-256
+`dd7dc25a0b39e054abd3ab903980ed432ec4e03ac0d03aa73aad7c95c699b3ab`
+and selection key
+`85aae01bd75251560ed2314627a79ebfa07e57162c1566f9c978b72abd7a96a5`
+in 15.417 seconds. This is one cold host observation, including the private
+cache rehash. The copied source was **not** admitted through F3, and the
+ephemeral origin record was **not** a reviewed acquisition record. Bulk scratch
+was removed after measurement. These limits prevent promoting the result to
+release-input verification or a ready build.
