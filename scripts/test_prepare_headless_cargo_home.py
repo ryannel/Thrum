@@ -13,10 +13,22 @@ import unittest
 
 from prepare_headless_cargo_home import (
     cargo_reuse_key, collect_bounded, possible_headless_packages, prepare,
+    root_inventory,
 )
 
 
 class PrepareHeadlessCargoHome(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "private inventory requires POSIX")
+    def test_private_inventory_refuses_fifo_without_blocking(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "cache"
+            root.mkdir()
+            os.mkfifo(root / "replacement.crate")
+            started = time.monotonic()
+            with self.assertRaisesRegex(ValueError, "non-file entry"):
+                root_inventory(root)
+            self.assertLess(time.monotonic() - started, 1)
+
     @unittest.skipUnless(os.name == "posix", "process groups require POSIX")
     def test_interruption_reaps_metadata_child_before_cleanup(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -57,6 +69,7 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
                     except ProcessLookupError:
                         pass
 
+    @unittest.skipUnless(os.name == "posix", "private inventory requires POSIX")
     def test_verify_reuse_refuses_dependency_selection_change(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "source"
@@ -75,13 +88,19 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
                 for name, path in (("cargo", cargo), ("rustc", rustc))
             }
             target = "aarch64-apple-darwin"
+            private_home = Path(directory) / "private-home"
+            private_home.mkdir()
+            cached = private_home / "cached.crate"
+            cached.write_bytes(b"accepted dependency")
             candidate = Path(directory) / "candidate.json"
             candidate.write_text(json.dumps({
                 "format": 1, "target": target, "toolExecutables": tools,
                 "reuseKey": cargo_reuse_key(source, target, tools),
+                "privateRoot": root_inventory(private_home),
             }))
             command = [sys.executable, str(Path(__file__).with_name("prepare_headless_cargo_home.py")),
                        "--source", str(source), "--verify-reuse", str(candidate),
+                       "--private-home", str(private_home),
                        "--target", target, "--cargo", str(cargo), "--rustc", str(rustc)]
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
             relative_source = command.copy()
@@ -98,6 +117,9 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
             rustc.write_bytes(b"rustc")
             (source / "game.rs").write_text("fn b() {}\n")
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
+            cached.write_bytes(b"changed dependency")
+            self.assertIn(b"cache bytes changed", subprocess.run(command, capture_output=True).stderr)
+            cached.write_bytes(b"accepted dependency")
             (source / "Cargo.toml").write_text("[workspace]\nresolver = '3'\n")
             self.assertIn(b"cannot be reused", subprocess.run(command, capture_output=True).stderr)
             (source / "Cargo.toml").write_text("[workspace]\n")

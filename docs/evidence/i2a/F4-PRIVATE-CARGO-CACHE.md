@@ -135,3 +135,21 @@ including Python startup and rehashing both selected executables. Cache
 preparation took 1,386 ms; A compilation took 1,449 ms in that run. These
 single warm-host timings are observations, not latency guarantees or a claim
 that full dependency-root revalidation has been measured.
+
+The verifier now streams the full private-cache tree again and compares its
+path/length/content digest with the preparation manifest before each build.
+A fixture changes one cached archive byte and confirms reuse refusal; code-only
+source edits still reuse the unchanged tree. In the local admitted A/B sandbox
+run this raised verifier time to 195 and 232 ms, including the tool hashes and
+Python startup, over 2,923 files and 67,792,387 logical bytes. Preparation
+took 1,408 ms and A compilation 1,011 ms. This catches candidate cache drift
+before the compiler starts, but the local host cache's original index records
+remain unauthenticated and the simple inventory is not a hostile concurrent
+filesystem proof. A production adapter must use a verified immutable root or
+race-resistant reads with the same integrity semantics.
+The local inventory now opens each regular cache file with no-follow,
+nonblocking flags and compares file identity before and after hashing. It
+rejects special entries; a FIFO replacement test returns promptly instead of
+waiting for a writer. Ten Python fixtures pass. The private-root digest stayed
+unchanged, and a repeated A/B qualification measured 190 and 227 ms for the
+reuse checks. Directory replacement races remain outside this candidate proof.
