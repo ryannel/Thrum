@@ -5,14 +5,12 @@
 
 use std::io::Read;
 
-use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::record::canonical_uuid;
+use crate::bootstrap_json::{parse_project, parse_scene};
 use crate::{
-    JsonError, MAX_RECORD_BYTES, ManifestEntry, ManifestError, RecordDescriptor, RecordError,
-    SourcePath, StageError, StagedFile, StagedTree, TreeManifest, parse_record_json,
-    validate_record_envelope,
+    MAX_RECORD_BYTES, ManifestEntry, ManifestError, RecordDescriptor, SourcePath, StageError,
+    StagedFile, StagedTree, TreeManifest,
 };
 
 /// A provisional source tree failed the deliberately narrow core schema proof.
@@ -39,26 +37,12 @@ pub enum BootstrapError {
         /// Underlying I/O error.
         source: std::io::Error,
     },
-    /// Strict JSON syntax failed.
-    Json {
-        /// Path of the malformed record.
-        path: SourcePath,
-        /// Bounded parser error.
-        source: JsonError,
-    },
-    /// The common stable identity envelope failed.
-    Envelope {
+    /// Strict syntax or fixed core schema decoding failed.
+    CoreRecord {
         /// Path of the record.
         path: SourcePath,
-        /// Envelope error.
-        source: RecordError,
-    },
-    /// A fixed v1 field, type, version or ordering rule failed.
-    Schema {
-        /// Path of the record.
-        path: SourcePath,
-        /// Stable narrow reason for the rejection.
-        reason: &'static str,
+        /// Parser or fixed-schema error with source location.
+        source: serde_json::Error,
     },
     /// Two records claim one durable ID.
     DuplicateRecordId(String),
@@ -165,79 +149,18 @@ pub fn validate_bootstrap_profile<'a>(
         .ok()
         .map(|index| &stage.files()[index])
         .ok_or(BootstrapError::MissingProject)?;
-    let project = read_record(stage, project_file)?;
-    let project_id = check_envelope(&project_path, &project, "core.project")?;
-    check_top_level(&project_path, &project)?;
-    let fields = project
-        .get("fields")
-        .and_then(Value::as_object)
-        .expect("validated envelope");
-    if fields.len() != 3 || fields.get("project.format").and_then(Value::as_u64) != Some(1) {
-        return Err(schema(
-            &project_path,
-            "unsupported project fields or format",
-        ));
-    }
-    let paths = fields
-        .get("project.records")
-        .and_then(Value::as_array)
-        .ok_or_else(|| schema(&project_path, "project.records must be an array"))?;
-    if paths.len() > stage.files().len().saturating_sub(1) {
-        return Err(schema(
-            &project_path,
-            "project.records exceeds staged file membership",
-        ));
-    }
-    let mut record_paths = Vec::with_capacity(paths.len());
-    for value in paths {
-        let text = value
-            .as_str()
-            .ok_or_else(|| schema(&project_path, "project.records path must be a string"))?;
-        let path = SourcePath::parse(text)
-            .map_err(|_| schema(&project_path, "project.records path is not portable"))?;
-        if !is_scene_path(&path) {
-            return Err(schema(&project_path, "unsupported engine record path"));
-        }
-        if record_paths
-            .last()
-            .is_some_and(|previous| previous >= &path)
-        {
-            return Err(schema(
-                &project_path,
-                "project.records is not strictly sorted",
-            ));
-        }
-        record_paths.push(path);
-    }
-    let entry_values = fields
-        .get("project.entryScenes")
-        .and_then(Value::as_array)
-        .filter(|values| !values.is_empty())
-        .ok_or_else(|| schema(&project_path, "project.entryScenes must be nonempty"))?;
-    if entry_values.len() > record_paths.len() {
-        return Err(schema(
-            &project_path,
-            "entry-scene count exceeds declared scene records",
-        ));
-    }
-    let mut entry_scenes: Vec<String> = Vec::with_capacity(entry_values.len());
-    for value in entry_values {
-        let id = value
-            .as_str()
-            .filter(|id| canonical_uuid(id))
-            .ok_or_else(|| schema(&project_path, "invalid entry-scene ID"))?;
-        if entry_scenes
-            .last()
-            .is_some_and(|previous| previous.as_str() >= id)
-        {
-            return Err(schema(
-                &project_path,
-                "project.entryScenes is not strictly sorted",
-            ));
-        }
-        entry_scenes.push(id.to_owned());
-    }
-    drop(project);
+    let project_bytes = read_record_bytes(stage, project_file)?;
+    let project =
+        parse_project(&project_bytes, stage.files().len().saturating_sub(1)).map_err(|source| {
+            BootstrapError::CoreRecord {
+                path: project_path,
+                source,
+            }
+        })?;
+    drop(project_bytes);
+    let project_id = project.id;
+    let record_paths = project.record_paths;
+    let entry_scenes = project.entry_scenes;
 
     for file in stage.files() {
         if is_reserved_record_path(file.path()) && record_paths.binary_search(file.path()).is_err()
@@ -254,22 +177,12 @@ pub fn validate_bootstrap_profile<'a>(
             .ok()
             .map(|index| &stage.files()[index])
             .ok_or_else(|| BootstrapError::MissingRecord(path.clone()))?;
-        let value = read_record(stage, file)?;
-        let id = check_envelope(&path, &value, "core.scene")?;
-        check_top_level(&path, &value)?;
-        let fields = value
-            .get("fields")
-            .and_then(Value::as_object)
-            .expect("validated envelope");
-        if fields.len() > 1
-            || fields
-                .get("scene.label")
-                .is_some_and(|label| !label.is_string())
-            || fields.keys().any(|field| field != "scene.label")
-        {
-            return Err(schema(&path, "unsupported scene fields"));
-        }
-        scenes.push(BootstrapScene { path, id });
+        let bytes = read_record_bytes(stage, file)?;
+        let scene = parse_scene(&bytes).map_err(|source| BootstrapError::CoreRecord {
+            path: path.clone(),
+            source,
+        })?;
+        scenes.push(BootstrapScene { path, id: scene.id });
     }
 
     let mut scene_ids: Vec<&str> = scenes.iter().map(|scene| scene.id.as_str()).collect();
@@ -293,7 +206,7 @@ pub fn validate_bootstrap_profile<'a>(
     })
 }
 
-fn read_record(stage: &StagedTree, file: &StagedFile) -> Result<Value, BootstrapError> {
+fn read_record_bytes(stage: &StagedTree, file: &StagedFile) -> Result<Vec<u8>, BootstrapError> {
     let path = file.path();
     if file.length() > MAX_RECORD_BYTES as u64 {
         return Err(BootstrapError::RecordTooLarge(path.clone()));
@@ -311,54 +224,7 @@ fn read_record(stage: &StagedTree, file: &StagedFile) -> Result<Value, Bootstrap
     if bytes.len() as u64 != file.length() || Sha256::digest(&bytes).as_slice() != file.sha256() {
         return Err(BootstrapError::StagedDrift(path.clone()));
     }
-    parse_record_json(&bytes).map_err(|source| BootstrapError::Json {
-        path: path.clone(),
-        source,
-    })
-}
-
-fn check_envelope(
-    path: &SourcePath,
-    value: &Value,
-    expected_type: &str,
-) -> Result<String, BootstrapError> {
-    let envelope = validate_record_envelope(value).map_err(|source| BootstrapError::Envelope {
-        path: path.clone(),
-        source,
-    })?;
-    if envelope.record_type() != expected_type || envelope.schema() != 1 {
-        return Err(schema(path, "unsupported record type or schema"));
-    }
-    Ok(envelope.id().to_owned())
-}
-
-fn check_top_level(path: &SourcePath, value: &Value) -> Result<(), BootstrapError> {
-    let object = value.as_object().expect("validated envelope");
-    if object.keys().any(|key| {
-        !matches!(
-            key.as_str(),
-            "id" | "type" | "schema" | "fields" | "documentation"
-        )
-    }) || object
-        .get("documentation")
-        .is_some_and(|documentation| !documentation.is_string())
-    {
-        return Err(schema(path, "unsupported top-level record field"));
-    }
-    Ok(())
-}
-
-fn schema(path: &SourcePath, reason: &'static str) -> BootstrapError {
-    BootstrapError::Schema {
-        path: path.clone(),
-        reason,
-    }
-}
-
-fn is_scene_path(path: &SourcePath) -> bool {
-    let text = path.as_str();
-    text.strip_prefix("scenes/")
-        .is_some_and(|name| !name.contains('/') && name.ends_with(".scene.json"))
+    Ok(bytes)
 }
 
 fn is_reserved_record_path(path: &SourcePath) -> bool {
@@ -565,7 +431,7 @@ mod tests {
         let objects = fixture.stage(&paths);
         assert!(matches!(
             validate_bootstrap_profile(&objects, &[]),
-            Err(BootstrapError::Schema { .. })
+            Err(BootstrapError::CoreRecord { .. })
         ));
         let scene_path = SourcePath::parse("scenes/main.scene.json").unwrap();
         let mut old_bytes = Vec::new();
@@ -618,7 +484,7 @@ mod tests {
         let too_many_paths = fixture.stage(&["project.json", "src/game.rs"]);
         assert!(matches!(
             validate_bootstrap_profile(&too_many_paths, &[]),
-            Err(BootstrapError::Schema { .. })
+            Err(BootstrapError::CoreRecord { .. })
         ));
         drop(too_many_paths);
 
@@ -632,7 +498,7 @@ mod tests {
             fixture.stage(&["project.json", "scenes/main.scene.json", "src/game.rs"]);
         assert!(matches!(
             validate_bootstrap_profile(&too_many_entries, &[]),
-            Err(BootstrapError::Schema { .. })
+            Err(BootstrapError::CoreRecord { .. })
         ));
     }
 

@@ -3,6 +3,7 @@
 //! Candidate bytes have no accepted-source authority until a separate durable
 //! root transaction commits them. This crate never reads a running world.
 
+mod bootstrap_json;
 mod budget;
 mod inventory;
 mod json;
