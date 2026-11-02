@@ -19,6 +19,7 @@ import threading
 import tomllib
 
 REGISTRY_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
+REUSE_DOMAIN = b"thrum.headless-cargo-reuse.v1\0"
 CHUNK = 1024 * 1024
 MAX_METADATA_BYTES = 32 * 1024 * 1024
 MAX_DIAGNOSTIC_BYTES = 1024 * 1024
@@ -149,36 +150,45 @@ def collect_bounded(
         threading.Thread(target=drain, args=(process.stdout, output, stdout_limit), daemon=True),
         threading.Thread(target=drain, args=(process.stderr, error, stderr_limit), daemon=True),
     ]
-    for reader in readers:
-        reader.start()
-    timed_out = False
     try:
-        status = process.wait(timeout=120)
-    except subprocess.TimeoutExpired:
-        timed_out = True
-        terminate_group()
-        process.wait()
-        status = process.returncode
-    for reader in readers:
-        reader.join(timeout=0.2)
-    held_pipes = any(reader.is_alive() for reader in readers)
-    if held_pipes:
-        terminate_group()
         for reader in readers:
-            reader.join(timeout=1)
-    if any(reader.is_alive() for reader in readers):
-        raise ValueError("Cargo metadata descendants retained output pipes")
-    try:
+            reader.start()
+        try:
+            status = process.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            terminate_group()
+            process.wait()
+            raise ValueError("locked offline Cargo metadata timed out")
+        for reader in readers:
+            reader.join(timeout=0.2)
+        held_pipes = any(reader.is_alive() for reader in readers)
+        if held_pipes:
+            terminate_group()
+            for reader in readers:
+                reader.join(timeout=1)
+        if any(reader.is_alive() for reader in readers):
+            raise ValueError("Cargo metadata descendants retained output pipes")
+        if held_pipes:
+            raise ValueError("Cargo metadata descendants retained output pipes")
+        if exceeded.is_set():
+            raise ValueError("Cargo metadata exceeds the first-profile output limit")
+        return status, bytes(output), bytes(error)
+    except BaseException:
+        # Ctrl-C also lands here. The child starts a new session, so terminal
+        # interruption alone does not stop it before the caller removes scratch.
+        terminate_group()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        for reader in readers:
+            if reader.ident is not None:
+                reader.join(timeout=1)
+        raise
+    finally:
         process.stdout.close()
         process.stderr.close()
-    finally:
-        if timed_out:
-            raise ValueError("locked offline Cargo metadata timed out")
-    if held_pipes:
-        raise ValueError("Cargo metadata descendants retained output pipes")
-    if exceeded.is_set():
-        raise ValueError("Cargo metadata exceeds the first-profile output limit")
-    return status, bytes(output), bytes(error)
 
 
 def root_inventory(root):
@@ -254,6 +264,51 @@ def possible_headless_packages(metadata, source):
     return records
 
 
+def cargo_reuse_key(source, target, tool_executables):
+    """Bind the pruned cache to dependency-selection inputs, not code edits."""
+    for ancestor in (source, *source.parents):
+        for name in ("config", "config.toml"):
+            config = ancestor / ".cargo" / name
+            if config.exists() or config.is_symlink():
+                raise ValueError(f"ambient Cargo configuration is unsupported: {config}")
+    for path in source.rglob("build.rs"):
+        raise ValueError(f"first headless profile refuses implicit build scripts: {path}")
+    manifests = []
+    for path in sorted(source.rglob("Cargo.toml")):
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"aliased or missing Cargo manifest: {path}")
+        manifests.append({
+            "path": path.relative_to(source).as_posix(),
+            "sha256": sha256_file(path),
+        })
+    if not any(manifest["path"] == "Cargo.toml" for manifest in manifests):
+        raise ValueError("root Cargo manifest is missing")
+    toolchain = source / "rust-toolchain.toml"
+    if toolchain.is_symlink() or not toolchain.is_file():
+        raise ValueError("pinned Rust toolchain declaration is missing or aliased")
+    declaration = source / "build/headless.json"
+    if declaration.is_symlink():
+        raise ValueError("headless build declaration is aliased")
+    lockfile = source / "Cargo.lock"
+    if lockfile.is_symlink() or not lockfile.is_file():
+        raise ValueError("Cargo lockfile is missing or aliased")
+    inputs = {
+        "cargoManifests": manifests,
+        "lockSha256": sha256_file(lockfile),
+        "toolchainDeclarationSha256": sha256_file(toolchain),
+        "buildDeclarationSha256": sha256_file(declaration) if declaration.is_file() else None,
+        "target": target,
+        "recipe": {
+            "package": "i1-mobile-game", "bin": "headless",
+            "profile": "dev", "features": [], "incremental": False,
+            "locked": True, "offline": True, "rustflags": "",
+        },
+        "toolExecutables": tool_executables,
+    }
+    encoded = json.dumps(inputs, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return {"sha256": hashlib.sha256(REUSE_DOMAIN + encoded).hexdigest(), "inputs": inputs}
+
+
 def prepare(source, shared_home, destination, cargo, rustc, target):
     for label, path in (
         ("source", source), ("shared Cargo home", shared_home),
@@ -269,13 +324,9 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
         raise ValueError("private Cargo home destination must be absent")
     if destination.parent.resolve().is_relative_to(source.resolve()):
         raise ValueError("private Cargo home must be outside the materialized source tree")
-    # Cargo searches these locations even when CARGO_HOME is explicit. The
-    # first profile refuses implicit replacement sources and executable hooks.
-    for ancestor in (source, *source.parents):
-        for name in ("config", "config.toml"):
-            config = ancestor / ".cargo" / name
-            if config.exists() or config.is_symlink():
-                raise ValueError(f"ambient Cargo configuration is unsupported: {config}")
+    # Cargo selection inputs are checked again after resolution and before reuse.
+    # Do the initial check before creating the private home as well.
+    cargo_reuse_key(source, target, {})
     lock_bytes = (source / "Cargo.lock").read_bytes()
     lock = tomllib.loads(lock_bytes.decode("utf-8"))
     if lock.get("version") != 4 or not isinstance(lock.get("package"), list):
@@ -312,9 +363,11 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
     manifest_created = False
     try:
         tool_executables = {
-            name: {"sha256": sha256_file(path), "bytes": path.stat().st_size}
+            name: {"path": str(path.resolve()), "sha256": sha256_file(path),
+                   "bytes": path.stat().st_size}
             for name, path in (("cargo", cargo), ("rustc", rustc))
         }
+        reuse_key = cargo_reuse_key(source, target, tool_executables)
         scratch = destination / "_prepare"
         (scratch / "tmp").mkdir(parents=True)
         private_index = destination / "registry/index" / index_root.name
@@ -373,6 +426,8 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
         for name, path in (("cargo", cargo), ("rustc", rustc)):
             if sha256_file(path) != tool_executables[name]["sha256"]:
                 raise ValueError(f"selected {name} executable changed during cache preparation")
+        if cargo_reuse_key(source, target, tool_executables) != reuse_key:
+            raise ValueError("Cargo dependency selection inputs changed during preparation")
         shutil.rmtree(scratch)
         # Cargo's usage database contains host/path-specific cache bookkeeping;
         # the locked offline compile can recreate or omit it. It is not input.
@@ -387,6 +442,7 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
             "verifiedLockArchives": len(verified_archives),
             "possibleBuildPackages": possible_packages,
             "toolExecutables": tool_executables,
+            "reuseKey": reuse_key,
             "privateRoot": inventory,
         }
         with manifest_path.open("x", encoding="utf-8") as output:
@@ -402,9 +458,39 @@ def prepare(source, shared_home, destination, cargo, rustc, target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("source", "shared-home", "destination", "cargo", "rustc", "target"):
-        parser.add_argument(f"--{name}", required=True)
+    parser.add_argument("--source", required=True)
+    parser.add_argument("--verify-reuse", type=Path)
+    for name in ("shared-home", "destination", "cargo", "rustc", "target"):
+        parser.add_argument(f"--{name}")
     args = parser.parse_args()
+    if args.verify_reuse is not None:
+        for name in ("cargo", "rustc", "target"):
+            if getattr(args, name) is None:
+                parser.error(f"--{name} is required for reuse verification")
+        candidate = json.loads(args.verify_reuse.read_text(encoding="utf-8"))
+        if candidate["format"] != 1:
+            raise ValueError("unsupported private Cargo candidate format")
+        if args.target != candidate["target"]:
+            raise ValueError("private Cargo cache target differs from selected target")
+        selected_tools = {}
+        for name in ("cargo", "rustc"):
+            path = Path(getattr(args, name))
+            if not path.is_absolute() or path.is_symlink() or not path.is_file():
+                raise ValueError(f"selected {name} is not an ordinary absolute executable")
+            selected_tools[name] = {
+                "path": str(path.resolve()), "sha256": sha256_file(path),
+                "bytes": path.stat().st_size,
+            }
+        if selected_tools != candidate["toolExecutables"]:
+            raise ValueError("private Cargo cache tool executables differ from selected tools")
+        actual = cargo_reuse_key(Path(args.source), args.target, selected_tools)
+        if actual != candidate["reuseKey"]:
+            raise ValueError("private Cargo cache cannot be reused for this source")
+        print(json.dumps({"reuseKey": actual["sha256"]}, sort_keys=True))
+        return
+    for name in ("shared_home", "destination", "cargo", "rustc", "target"):
+        if getattr(args, name) is None:
+            parser.error(f"--{name.replace('_', '-')} is required for preparation")
     manifest, inventory = prepare(
         Path(args.source), Path(args.shared_home), Path(args.destination),
         Path(args.cargo), Path(args.rustc), args.target,

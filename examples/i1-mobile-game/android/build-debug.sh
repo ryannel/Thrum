@@ -14,7 +14,7 @@ if (( ${#thrum_bins[@]} != 1 )); then
 fi
 export PATH="${thrum_bins[0]}:$PATH"
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${thrum_bins[0]}/aarch64-linux-android28-clang"
-rustup run 1.99.1 cargo build --locked --offline --release --package i1-mobile-game --target aarch64-linux-android
+rustup run 1.99.1 cargo build --locked --offline --release --package i1-mobile-game --lib --target aarch64-linux-android
 
 thrum_android="$PWD/examples/i1-mobile-game/android"
 thrum_jni="$thrum_android/app/build/generated/jniLibs/arm64-v8a"

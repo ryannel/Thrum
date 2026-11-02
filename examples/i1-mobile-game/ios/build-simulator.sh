@@ -4,7 +4,7 @@ cd -- "$(dirname -- "$0")/../../.."
 
 thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
 export PATH="$(dirname -- "$thrum_rustc"):$PATH"
-rustup run 1.99.1 cargo build --locked --offline --release --package i1-mobile-game --target aarch64-apple-ios-sim
+rustup run 1.99.1 cargo build --locked --offline --release --package i1-mobile-game --lib --target aarch64-apple-ios-sim
 
 thrum_out="$PWD/target/i1-mobile-ios-sim"
 thrum_app="$thrum_out/ThrumI1.app"
