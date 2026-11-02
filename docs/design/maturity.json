@@ -282,7 +282,7 @@
       },
       "i2a_source_validation": {
         "evidence": "../evidence/i2a/SOURCE-VALIDATION.md",
-        "scope": "Native source path, JSON byte/depth/value-count and common record envelope rejection fixtures, with local dense parser cost probes; semantic F3 registry, parser heap reservation and durable admission remain unbuilt."
+        "scope": "Native source path, JSON byte/depth/value-count and common record envelope rejection fixtures, with local dense parser cost probes. This slice alone does not qualify semantic F3 closure, combined allocation/RSS or durable admission."
       },
       "i2a_manifest_identity": {
         "evidence": "../evidence/i2a/SOURCE-MANIFEST.md",
@@ -2942,7 +2942,7 @@
     "capability_map": "AI-PERFORMANCE.md#capability-investment-map",
     "ambition": "Shocking performance with correctness, stability and required quality; user-selected Zed experience reference, not a benchmark claim.",
     "scope": "Engine-wide cost-conscious design and deep AI-assisted specialization across construction, including frequent cheap work and developer iteration.",
-    "next": "I1 local headless, native host callback and two-peer in-memory cost fixtures are recorded; whole-process admission, general host/device and real I2n paths remain to qualify.",
+    "next": "I1 local headless, native host callback and two-peer in-memory cost fixtures are recorded; representative process RSS and allocation behavior, integrated game/device cost and real I2n transport remain to qualify. There is no universal process-memory admission gate.",
     "module_account_status": "I1-scoped accounts for F1/W1/P6/N1 are modelled; other capabilities retain defaults. Headless timings are local evidence only.",
     "review_scope": "Coordinator reconciliation of policy, architecture, construction, contributor instructions and skills; no independent module or behavioral skill review claimed.",
     "implementation": "not_started_for_target",
