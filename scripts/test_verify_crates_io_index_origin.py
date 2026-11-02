@@ -27,6 +27,10 @@ class CratesIoIndexOrigin(unittest.TestCase):
         candidate = root / "candidate.json"
         candidate.write_text(json.dumps({
             "format": 2, "target": "aarch64-apple-darwin",
+            "lockSha256": "0" * 64,
+            "registryArchives": {"sample-1.0.0.crate": {
+                "sha256": "0" * 64, "bytes": 1,
+            }},
             "registryIndexRecords": {"sample": {
                 "sha256": hashlib.sha256(cached).hexdigest(), "bytes": len(cached),
             }},
@@ -45,6 +49,7 @@ class CratesIoIndexOrigin(unittest.TestCase):
             candidate, private, _, _, fetch = self.fixture(Path(directory).resolve())
             report = compare(candidate, private, fetch)
             self.assertEqual((report["indexNames"], report["cachedVersionsMatched"]), (1, 1))
+            self.assertEqual(report["format"], 2)
             self.assertFalse(report["buildReady"])
 
     def test_changed_official_record_and_private_cache_refuse(self):

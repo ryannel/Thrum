@@ -66,6 +66,7 @@ class CrateExtraction(unittest.TestCase):
             "registryArchives": {archive.name: {
                 "sha256": archive_hash, "bytes": archive.stat().st_size,
             }},
+            "registryIndexRecords": {"sample": {"sha256": "0" * 64, "bytes": 1}},
             "privateRoot": root_inventory(private),
         }))
         return candidate, private, lockfile, source
@@ -76,6 +77,7 @@ class CrateExtraction(unittest.TestCase):
             report = compare(candidate, private, lockfile)
             self.assertEqual(report["matchedFiles"], 1)
             self.assertEqual(report["matchedBytes"], len(b"pub fn sample() {}\n"))
+            self.assertEqual(report["format"], 2)
             self.assertFalse(report["buildReady"])
 
     def test_nested_empty_directory_parents_match(self):

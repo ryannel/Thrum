@@ -12,6 +12,7 @@ from unittest import mock
 
 from inventory_headless_tool_roots import inventory_roots
 from prepare_headless_cargo_home import cargo_reuse_key, root_inventory
+from release_cargo_selection import selection_sha256
 from verify_headless_release_inputs import (
     TARGET, PROFILE, bounded_regular_bytes, verify_release_inputs,
 )
@@ -21,17 +22,26 @@ def write_json(path, value):
     path.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n")
 
 
-def origin_record():
-    return {"format": 1, "sources": {
+def origin_record(proofs):
+    return {"format": 2, "sources": {
         "rustToolchain": {"url": "https://static.rust-lang.org/dist/", "version": "1.99.1"},
         "linkerToolchain": {"url": "https://developer.apple.com/download/", "version": "27.2"},
         "sdk": {"url": "https://developer.apple.com/download/", "version": "27.2"},
         "cargoRegistry": {"url": "https://index.crates.io/", "version": "lock fixture"},
-    }}
+    }, "proofs": proofs}
 
 
 @unittest.skipUnless(os.name == "posix", "first native verifier requires POSIX")
 class VerifyHeadlessReleaseInputs(unittest.TestCase):
+    def rebind_proof(self, args, manifest, evidence, name, report):
+        record = json.loads(evidence.read_text())
+        path = evidence.parent / record["proofs"][name]["file"]
+        write_json(path, report)
+        record["proofs"][name]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        write_json(evidence, record)
+        manifest["originEvidence"]["sha256"] = hashlib.sha256(evidence.read_bytes()).hexdigest()
+        write_json(args[0], manifest)
+
     def test_manifest_file_swap_cannot_read_outside_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -64,7 +74,12 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
         source = root / "source"
         source.mkdir()
         (source / "Cargo.toml").write_text("[workspace]\n")
-        (source / "Cargo.lock").write_text("version = 4\n")
+        archive_digest = hashlib.sha256(b"dependency").hexdigest()
+        (source / "Cargo.lock").write_text(
+            'version = 4\n[[package]]\nname = "sample"\nversion = "1.0.0"\n'
+            'source = "registry+https://github.com/rust-lang/crates.io-index"\n'
+            f'checksum = "{archive_digest}"\n'
+        )
         (source / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.99.1"\n')
         (source / "game.rs").write_text("fn a() {}\n")
         private_home = root / "private-home"
@@ -96,12 +111,50 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
             "lockSha256": hashlib.sha256((source / "Cargo.lock").read_bytes()).hexdigest(),
             "toolExecutables": tool_executables, "reuseKey": reuse_key,
             "privateRoot": root_inventory(private_home),
+            "registryArchives": {"sample-1.0.0.crate": {
+                "sha256": archive_digest, "bytes": len(b"dependency"),
+            }},
+            "registryIndexRecords": {"sample": {
+                "sha256": hashlib.sha256(b"index").hexdigest(), "bytes": len(b"index"),
+            }},
         }
         write_json(cache_manifest, candidate)
         release = root / "release"
         release.mkdir()
+        reports = {
+            "cargoArchives": {
+                "format": 2, "target": TARGET,
+                "lockSha256": candidate["lockSha256"],
+                "privateRootSha256": candidate["privateRoot"]["sha256"],
+                "selectionSha256": selection_sha256(candidate),
+                "archives": [{
+                    "url": "https://static.crates.io/crates/sample/sample-1.0.0.crate",
+                    "sha256": archive_digest, "bytes": len(b"dependency"),
+                }], "buildReady": False,
+            },
+            "cargoIndex": {
+                "format": 2, "target": TARGET,
+                "privateRootSha256": candidate["privateRoot"]["sha256"],
+                "selectionSha256": selection_sha256(candidate),
+                "indexNames": 1, "cachedVersionsMatched": 1, "buildReady": False,
+            },
+            "cargoExtraction": {
+                "format": 2, "target": TARGET,
+                "privateRootSha256": candidate["privateRoot"]["sha256"],
+                "selectionSha256": selection_sha256(candidate),
+                "packages": 1, "matchedFiles": 1,
+                "matchedBytes": len(b"dependency"), "buildReady": False,
+            },
+        }
+        proof_descriptors = {}
+        for name, report in reports.items():
+            path = release / f"{name}.json"
+            write_json(path, report)
+            proof_descriptors[name] = {
+                "file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
         evidence = release / "origin.json"
-        write_json(evidence, origin_record())
+        write_json(evidence, origin_record(proof_descriptors))
         manifest_path = release / "native.json"
         manifest = {
             "format": 1, "profile": PROFILE, "target": TARGET,
@@ -129,6 +182,7 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
             args, manifest, evidence = self.fixture(Path(directory).resolve())
             report = verify_release_inputs(*args)
             self.assertTrue(report["matchedInputRoots"])
+            self.assertTrue(report["matchedOriginProofs"])
             self.assertFalse(report["buildReady"])
             names = (
                 "manifest", "source", "cache-manifest", "private-home",
@@ -150,10 +204,11 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "cannot be reused"):
                 verify_release_inputs(*args)
             (args[1] / "Cargo.toml").write_text("[workspace]\n")
+            original_evidence = evidence.read_bytes()
             evidence.write_bytes(b"changed origin")
             with self.assertRaisesRegex(ValueError, "origin evidence bytes differ"):
                 verify_release_inputs(*args)
-            write_json(evidence, origin_record())
+            evidence.write_bytes(original_evidence)
             (args[6] / "header.h").write_bytes(b"changed SDK")
             with self.assertRaisesRegex(ValueError, "tool roots differ"):
                 verify_release_inputs(*args)
@@ -162,12 +217,56 @@ class VerifyHeadlessReleaseInputs(unittest.TestCase):
     def test_unofficial_origin_refuses_even_when_its_hash_is_selected(self):
         with tempfile.TemporaryDirectory() as directory:
             args, manifest, evidence = self.fixture(Path(directory).resolve())
-            record = origin_record()
+            record = json.loads(evidence.read_text())
             record["sources"]["rustToolchain"]["url"] = "https://untrusted.example/dist/"
             write_json(evidence, record)
             manifest["originEvidence"]["sha256"] = hashlib.sha256(evidence.read_bytes()).hexdigest()
             write_json(args[0], manifest)
             with self.assertRaisesRegex(ValueError, "not an official HTTPS origin"):
+                verify_release_inputs(*args)
+
+    def test_changed_or_rebound_origin_proof_refuses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, manifest, evidence = self.fixture(Path(directory).resolve())
+            descriptor = json.loads(evidence.read_text())["proofs"]["cargoArchives"]
+            proof = evidence.parent / descriptor["file"]
+            report = json.loads(proof.read_text())
+            changed = dict(report)
+            changed["archives"] = [dict(report["archives"][0], sha256="0" * 64)]
+            write_json(proof, changed)
+            with self.assertRaisesRegex(ValueError, "origin proof bytes differ"):
+                verify_release_inputs(*args)
+            report["privateRootSha256"] = "0" * 64
+            self.rebind_proof(args, manifest, evidence, "cargoArchives", report)
+            with self.assertRaisesRegex(ValueError, "origin proof selection differs"):
+                verify_release_inputs(*args)
+            report["privateRootSha256"] = manifest["dependencyRoot"]["sha256"]
+            report["archives"][0]["url"] = "https://static.crates.io/crates/other/other-1.0.0.crate"
+            self.rebind_proof(args, manifest, evidence, "cargoArchives", report)
+            with self.assertRaisesRegex(ValueError, "cargo archive proof differs"):
+                verify_release_inputs(*args)
+            report["format"] = True
+            self.rebind_proof(args, manifest, evidence, "cargoArchives", report)
+            with self.assertRaisesRegex(ValueError, "origin proof selection differs"):
+                verify_release_inputs(*args)
+
+    def test_same_count_different_selection_receipt_refuses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, manifest, evidence = self.fixture(Path(directory).resolve())
+            candidate = json.loads(args[2].read_text())
+            alternate = dict(candidate)
+            alternate["registryIndexRecords"] = {"other": {
+                "sha256": "0" * 64, "bytes": 5,
+            }}
+            self.assertEqual(len(alternate["registryIndexRecords"]),
+                             len(candidate["registryIndexRecords"]))
+            self.assertNotEqual(selection_sha256(alternate), selection_sha256(candidate))
+            record = json.loads(evidence.read_text())
+            proof = evidence.parent / record["proofs"]["cargoIndex"]["file"]
+            report = json.loads(proof.read_text())
+            report["selectionSha256"] = selection_sha256(alternate)
+            self.rebind_proof(args, manifest, evidence, "cargoIndex", report)
+            with self.assertRaisesRegex(ValueError, "origin proof selection differs"):
                 verify_release_inputs(*args)
 
     def test_manifest_syntax_and_selection_fail_closed(self):

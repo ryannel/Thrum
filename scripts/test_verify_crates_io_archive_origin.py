@@ -34,6 +34,7 @@ class CratesIoArchiveOrigin(unittest.TestCase):
             "lockSha256": hashlib.sha256(lockfile.read_bytes()).hexdigest(),
             "privateRoot": root_inventory(private),
             "registryArchives": {filename: {"sha256": digest, "bytes": len(content)}},
+            "registryIndexRecords": {"sample": {"sha256": "0" * 64, "bytes": 1}},
         }))
         return candidate, private, lockfile, content
 
@@ -49,6 +50,7 @@ class CratesIoArchiveOrigin(unittest.TestCase):
             report = compare(candidate, private, lockfile, fetch)
             self.assertEqual(urls, ["https://static.crates.io/crates/sample/sample-1.2.3.crate"])
             self.assertEqual(len(report["archives"]), 1)
+            self.assertEqual(report["format"], 2)
             self.assertFalse(report["buildReady"])
 
     def test_changed_official_or_private_bytes_refuse(self):

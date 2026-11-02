@@ -13,6 +13,7 @@ import stat
 import zlib
 
 from prepare_headless_cargo_home import root_inventory
+from release_cargo_selection import selection_sha256
 from verify_crates_io_archive_origin import locked_archives
 from verify_rust_component_archive import (
     file_identity, ordinary_file_beneath, sha256_stream,
@@ -184,8 +185,9 @@ def compare(candidate_path, private_home, lockfile_path):
         os.close(root_fd)
     if root_inventory(private_home) != candidate["privateRoot"]:
         raise ValueError("private Cargo home changed during extraction comparison")
-    return {"format": 1, "target": candidate["target"],
+    return {"format": 2, "target": candidate["target"],
             "privateRootSha256": candidate["privateRoot"]["sha256"],
+            "selectionSha256": selection_sha256(candidate),
             "packages": len(selected), "matchedFiles": matched_files,
             "matchedBytes": matched_bytes, "buildReady": False}
 
