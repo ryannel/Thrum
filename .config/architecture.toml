@@ -8,6 +8,10 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-mobile-shell/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core"]
 
+[packages.thrum-source]
+manifest = "crates/thrum-source/Cargo.toml"
+allowed_workspace_dependencies = []
+
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
@@ -44,3 +48,27 @@ requirement = "=0.4.0"
 license = "Apache-2.0/MIT"
 purpose = "Block first mobile adapter/device creation in the initial synchronous shell"
 target_cost = "Small single-purpose native dependency; startup blocking must be measured and replaced if it harms responsiveness"
+
+[external_dependencies.serde]
+requirement = "=1.0.229"
+license = "MIT OR Apache-2.0"
+purpose = "Strict bounded editable-source JSON decoding through DeserializeSeed"
+target_cost = "Native tooling only; selected parser feature set has no derive macros or simulation runtime dependency"
+
+[external_dependencies.serde_json]
+requirement = "=1.0.154"
+license = "MIT OR Apache-2.0"
+purpose = "Strict source JSON parsing and manifest representation in native tooling"
+target_cost = "Native tooling only; record parse memory is bounded separately from 4 MiB streaming scratch"
+
+[external_dependencies.unicase]
+requirement = "=2.9.0"
+license = "MIT OR Apache-2.0"
+purpose = "Full Unicode case-fold collision detection for cross-target source paths"
+target_cost = "Native tooling only; allocate folded metadata once per candidate path, not during simulation"
+
+[external_dependencies.unicode-normalization]
+requirement = "=0.1.26"
+license = "MIT OR Apache-2.0"
+purpose = "NFC validation of source paths before immutable capture"
+target_cost = "Native tooling only; Unicode tables add binary/build cost and path checks occur once per candidate"

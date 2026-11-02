@@ -279,6 +279,10 @@
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
         "scope": "Distinct local/match/world/actor/object/connection identities and checked slot generation; source/schema/transform admission remains unbuilt."
+      },
+      "i2a_source_validation": {
+        "evidence": "../evidence/i2a/SOURCE-VALIDATION.md",
+        "scope": "Native source path, bounded JSON syntax and common record envelope rejection fixtures only; semantic F3 registry, immutable capture and durable admission remain unbuilt."
       }
     },
     {
