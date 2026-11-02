@@ -86,6 +86,7 @@ enum ProofError {
     UnsupportedDependencyRoots,
     CorruptRootBlob,
     CorruptOutcome,
+    MissingRootPin,
     Manifest(ManifestDecodeError),
     History(HistoryError),
     Lineage(CarriedHistoryError),
@@ -186,6 +187,7 @@ struct RootTransactionProof {
     scratch: Vec<u8>,
     path: PathBuf,
     wal_guard: WalGuard,
+    pending_pin_releases: Vec<i64>,
 }
 
 #[derive(Clone, Copy)]
@@ -205,6 +207,12 @@ impl WalGuard {
 
 struct OutcomeRow {
     request_hash: [u8; 32],
+    generation: i64,
+    revision: [u8; 32],
+}
+
+struct RootReadPin {
+    id: i64,
     generation: i64,
     revision: [u8; 32],
 }
@@ -470,6 +478,11 @@ impl RootTransactionProof {
                revision BLOB NOT NULL,
                PRIMARY KEY (epoch, key)
              );
+             CREATE TABLE IF NOT EXISTS read_pin (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               generation INTEGER NOT NULL,
+               revision BLOB NOT NULL
+             );
              CREATE TABLE IF NOT EXISTS blob_header (
                hash BLOB PRIMARY KEY,
                length INTEGER NOT NULL,
@@ -504,6 +517,7 @@ impl RootTransactionProof {
             scratch: Vec::new(),
             path: path.to_owned(),
             wal_guard: WalGuard::V1,
+            pending_pin_releases: Vec::new(),
         })
     }
 
@@ -560,24 +574,101 @@ impl RootTransactionProof {
         )
     }
 
+    fn pin_current_root(&mut self, expected_generation: i64) -> Result<RootReadPin, ProofError> {
+        self.ensure_wal_room(MIB)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let (generation, revision) = root_identity(&tx)?;
+        if generation != expected_generation {
+            return Err(ProofError::StaleGeneration);
+        }
+        let revision = revision.ok_or(ProofError::MissingRootHistory)?;
+        tx.execute(
+            "INSERT INTO read_pin (generation, revision) VALUES (?1, ?2)",
+            params![generation, revision.as_slice()],
+        )?;
+        let id = tx.last_insert_rowid();
+        tx.commit()?;
+        Ok(RootReadPin {
+            id,
+            generation,
+            revision,
+        })
+    }
+
+    fn release_root_pin(&mut self, id: i64) -> Result<(), ProofError> {
+        let released = self.release_root_pin_now(id);
+        match &released {
+            Ok(()) | Err(ProofError::MissingRootPin) => {
+                self.pending_pin_releases.retain(|pending| *pending != id);
+            }
+            Err(_) if !self.pending_pin_releases.contains(&id) => {
+                self.pending_pin_releases.push(id);
+            }
+            Err(_) => {}
+        }
+        released
+    }
+
+    fn release_root_pin_now(&mut self, id: i64) -> Result<(), ProofError> {
+        self.ensure_wal_room(MIB)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        if tx.execute("DELETE FROM read_pin WHERE id=?1", params![id])? != 1 {
+            return Err(ProofError::MissingRootPin);
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    fn retry_pending_pin_releases(&mut self) -> Result<(), ProofError> {
+        while let Some(&id) = self.pending_pin_releases.last() {
+            match self.release_root_pin_now(id) {
+                Ok(()) | Err(ProofError::MissingRootPin) => {
+                    self.pending_pin_releases.pop();
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(())
+    }
+
     fn compare_history_with_current_root(
         &mut self,
         expected_generation: i64,
         candidate_project_id: &str,
         candidate_history_bytes: &[u8],
     ) -> Result<(), ProofError> {
-        let (revision, manifest_bytes) = {
+        self.retry_pending_pin_releases()?;
+        let pin = self.pin_current_root(expected_generation)?;
+        let compared = self.compare_history_with_pinned_root(
+            &pin,
+            candidate_project_id,
+            candidate_history_bytes,
+        );
+        self.release_root_pin(pin.id)?;
+        compared
+    }
+
+    fn compare_history_with_pinned_root(
+        &mut self,
+        pin: &RootReadPin,
+        candidate_project_id: &str,
+        candidate_history_bytes: &[u8],
+    ) -> Result<(), ProofError> {
+        let manifest_bytes = {
             let tx = self
                 .conn
                 .transaction_with_behavior(TransactionBehavior::Deferred)?;
             let (generation, revision) = root_identity(&tx)?;
-            if generation != expected_generation {
+            if generation != pin.generation || revision != Some(pin.revision) {
                 return Err(ProofError::StaleGeneration);
             }
-            let revision = revision.ok_or(ProofError::MissingRootHistory)?;
-            let bytes = read_complete_blob(&tx, revision, FIRST_PROFILE_MANIFEST_BYTES)?;
+            let bytes = read_complete_blob(&tx, pin.revision, FIRST_PROFILE_MANIFEST_BYTES)?;
             tx.commit()?;
-            (revision, bytes)
+            bytes
         };
         let manifest = decode_manifest_jcs(&manifest_bytes, FIRST_PROFILE_MANIFEST_BYTES)
             .map_err(ProofError::Manifest)?;
@@ -599,7 +690,7 @@ impl RootTransactionProof {
                 .conn
                 .transaction_with_behavior(TransactionBehavior::Deferred)?;
             let (generation, current_revision) = root_identity(&tx)?;
-            if generation != expected_generation || current_revision != Some(revision) {
+            if generation != pin.generation || current_revision != Some(pin.revision) {
                 return Err(ProofError::StaleGeneration);
             }
             let bytes = read_complete_blob(&tx, history_hash, MAX_HISTORY_BYTES)?;
@@ -2293,6 +2384,108 @@ fn staged_candidate_publication_keeps_prior_root_on_drift_and_recovers_retry() {
         )
         .unwrap();
     assert!(first_complete);
+}
+
+#[test]
+fn current_root_read_pin_survives_root_advance_and_releases_after_validation_error() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "old pinned scene");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let (_, first_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+    let pin = store.pin_current_root(1).unwrap();
+    assert_eq!((pin.generation, pin.revision), (1, first_revision));
+
+    let second_stage = minimal_source_stage(&fixture, "new selected scene");
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let (_, second_revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    assert_ne!(first_revision, second_revision);
+    drop(store);
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    let pinned_revision: Vec<u8> = store
+        .conn
+        .query_row(
+            "SELECT revision FROM read_pin WHERE id=?1",
+            params![pin.id],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(pinned_revision, first_revision);
+    let old_manifest = {
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .unwrap();
+        let bytes = read_complete_blob(&tx, first_revision, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+        tx.commit().unwrap();
+        bytes
+    };
+    assert_eq!(
+        *decode_manifest_jcs(&old_manifest, FIRST_PROFILE_MANIFEST_BYTES)
+            .unwrap()
+            .revision()
+            .as_bytes(),
+        first_revision
+    );
+    store.release_root_pin(pin.id).unwrap();
+    assert!(matches!(
+        store.compare_history_with_current_root(2, "wrong-project", &[]),
+        Err(ProofError::DifferentProject)
+    ));
+    let pin_count: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM read_pin", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(pin_count, 0);
+}
+
+#[test]
+fn busy_pin_release_retains_id_until_next_bounded_read() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let stage = minimal_source_stage(&fixture, "pinned scene");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &candidate)
+        .unwrap();
+    let pin = store.pin_current_root(1).unwrap();
+    let blocker = Connection::open(fixture.database()).unwrap();
+    blocker.execute_batch("BEGIN IMMEDIATE").unwrap();
+    assert!(matches!(
+        store.release_root_pin(pin.id),
+        Err(ProofError::Sql(_))
+    ));
+    assert_eq!(store.pending_pin_releases, vec![pin.id]);
+    blocker.execute_batch("COMMIT").unwrap();
+
+    let history = fs::read(fixture.source_root().join("schemas/history.registry.json")).unwrap();
+    store
+        .compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &history)
+        .unwrap();
+    assert!(store.pending_pin_releases.is_empty());
+    let pin_count: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM read_pin", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(pin_count, 0);
+
+    let pin = store.pin_current_root(1).unwrap();
+    blocker.execute_batch("BEGIN IMMEDIATE").unwrap();
+    assert!(matches!(
+        store.release_root_pin(pin.id),
+        Err(ProofError::Sql(_))
+    ));
+    blocker.execute_batch("COMMIT").unwrap();
+    store.release_root_pin(pin.id).unwrap();
+    assert!(store.pending_pin_releases.is_empty());
+    store
+        .compare_history_with_current_root(1, LINEAGE_PROJECT_ID, &history)
+        .unwrap();
 }
 
 #[test]
