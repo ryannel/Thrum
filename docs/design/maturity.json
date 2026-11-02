@@ -355,6 +355,10 @@
       "i2a_sqlite_blob_proof": {
         "evidence": "../evidence/i2a/SOURCE-SQLITE-BLOB.md",
         "scope": "Test-only SQLite 4 MiB chunk storage verifies stored exact length, hash and chunk layout before complete-state publication; a root refuses missing/incomplete blobs. Partial-input retry, complete-hash reuse, final verification/reset exclusion and stale-writer rejection are tested across two connections. Arbitrary test bytes are not a semantic source closure, and production disk/WAL budget, old roots, authenticated lineage, crash recovery and accepted-source API remain open."
+      },
+      "i2a_staged_lineage": {
+        "evidence": "../evidence/i2a/SOURCE-STAGED-LINEAGE.md",
+        "scope": "Two checked provisional registries reread and rehash their source-carried history files, compare permanent fields and immutable type versions without copied entry vectors, and reject deletion from a supplied predecessor. A local two-buffer 100,000-field cost/RSS probe passes; current admitted-root authentication, physical reservation and durable source admission remain open."
       }
     },
     {
