@@ -19,6 +19,12 @@ use crate::budget::{
 use crate::{InventoryError, SourcePath, scan_declared_tree};
 
 const COPY_CHUNK: usize = 4 * 1024 * 1024;
+const MAX_LFS_POINTER_BYTES: usize = 1024;
+const LFS_VERSION_LINES: [&str; 3] = [
+    "version https://git-lfs.github.com/spec/v1",
+    "version https://hawser.github.com/spec/v1",
+    "version http://git-media.io/v/2",
+];
 static NEXT_STAGE: AtomicU64 = AtomicU64::new(0);
 
 /// A provisional source copy failed before semantic or durable admission.
@@ -30,6 +36,8 @@ pub enum StageError {
     Budget(BudgetError),
     /// A source file changed, disappeared, grew, or became unsafe during copy.
     SourceDrift(SourcePath),
+    /// A declared file contains an unresolved Git LFS pointer, not asset bytes.
+    UnresolvedLfsPointer(SourcePath),
     /// A stage path or source file operation failed.
     Io {
         /// Path associated with the failed operation.
@@ -226,6 +234,8 @@ fn stage_declared_tree_with(
             })?;
         let mut hash = Sha256::new();
         let mut length = 0_u64;
+        let mut pointer_prefix = [0_u8; MAX_LFS_POINTER_BYTES];
+        let mut pointer_prefix_len = 0_usize;
         loop {
             let count = input.read(&mut buffer).map_err(|source| StageError::Io {
                 path: source_path.clone(),
@@ -239,6 +249,11 @@ fn stage_declared_tree_with(
                 .ok_or_else(|| StageError::SourceDrift(source_file.path().clone()))?;
             if length > source_file.length() {
                 return Err(StageError::SourceDrift(source_file.path().clone()));
+            }
+            if source_file.length() <= MAX_LFS_POINTER_BYTES as u64 {
+                pointer_prefix[pointer_prefix_len..pointer_prefix_len + count]
+                    .copy_from_slice(&buffer[..count]);
+                pointer_prefix_len += count;
             }
             budget
                 .before_write(project_root, count as u64)
@@ -257,6 +272,9 @@ fn stage_declared_tree_with(
         }
         if length != source_file.length() {
             return Err(StageError::SourceDrift(source_file.path().clone()));
+        }
+        if looks_like_lfs_pointer(&pointer_prefix[..pointer_prefix_len]) {
+            return Err(StageError::UnresolvedLfsPointer(source_file.path().clone()));
         }
         output.flush().map_err(|source| StageError::Io {
             path: staged_path.clone(),
@@ -318,6 +336,13 @@ fn stage_declared_tree_with(
         files,
         copied_bytes,
     })
+}
+
+fn looks_like_lfs_pointer(bytes: &[u8]) -> bool {
+    std::str::from_utf8(bytes)
+        .ok()
+        .and_then(|text| text.trim_start().lines().next())
+        .is_some_and(|line| LFS_VERSION_LINES.contains(&line))
 }
 
 fn open_regular(path: &Path, source_path: &SourcePath) -> Result<File, StageError> {
@@ -479,6 +504,54 @@ mod tests {
         prior.open(&scene).unwrap().read_to_end(&mut bytes).unwrap();
         assert_eq!(bytes, b"first");
         drop(prior);
+    }
+
+    #[test]
+    fn unresolved_lfs_pointer_refuses_without_replacing_old_stage() {
+        let fixture = Fixture::new();
+        fixture.write("project.json", b"{}");
+        fixture.write("scenes/main.scene.json", b"first");
+        fixture.write("src/game.rs", b"fn game() {}");
+        let old = stage_declared_tree_with(&fixture.0, &paths(), small_limits(), |_| {}).unwrap();
+        for version in [
+            "https://git-lfs.github.com/spec/v1",
+            "https://hawser.github.com/spec/v1",
+            "http://git-media.io/v/2",
+        ] {
+            fixture.write(
+                "scenes/main.scene.json",
+                format!(
+                    "version {version}\noid sha256:{}\nsize 12345\n",
+                    "a".repeat(64)
+                )
+                .as_bytes(),
+            );
+            assert!(matches!(
+                stage_declared_tree_with(&fixture.0, &paths(), small_limits(), |_| {}),
+                Err(StageError::UnresolvedLfsPointer(_))
+            ));
+        }
+        for prefix in [
+            "version https://git-lfs.github.com/spec/v1\r\n",
+            " \t\nversion https://git-lfs.github.com/spec/v1\r\n",
+        ] {
+            fixture.write(
+                "scenes/main.scene.json",
+                format!("{prefix}oid sha256:{}\r\nsize 12345\r\n", "a".repeat(64)).as_bytes(),
+            );
+            assert!(matches!(
+                stage_declared_tree_with(&fixture.0, &paths(), small_limits(), |_| {}),
+                Err(StageError::UnresolvedLfsPointer(_))
+            ));
+        }
+        let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+        let mut old_bytes = Vec::new();
+        old.open(&scene)
+            .unwrap()
+            .read_to_end(&mut old_bytes)
+            .unwrap();
+        assert_eq!(old_bytes, b"first");
+        drop(old);
     }
 
     #[test]
