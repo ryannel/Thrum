@@ -1,5 +1,6 @@
 """Small content and alias checks for cold native tool-root inventories."""
 
+import hashlib
 import os
 from pathlib import Path
 import tempfile
@@ -7,7 +8,9 @@ import time
 import unittest
 from unittest.mock import patch
 
-from inventory_headless_tool_roots import inventory_root, inventory_roots
+from inventory_headless_tool_roots import (
+    inventory_root, inventory_root_with_witness, inventory_roots,
+)
 
 
 @unittest.skipUnless(os.name == "posix", "tool-root inventory requires POSIX")
@@ -26,6 +29,21 @@ class InventoryHeadlessToolRoots(unittest.TestCase):
             self.assertNotEqual(first["sha256"], second["sha256"])
             (root / "empty").mkdir()
             self.assertNotEqual(second["sha256"], inventory_root(root)["sha256"])
+
+    def test_selected_file_witness_is_collected_in_complete_scan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "tool"
+            (root / "bin").mkdir(parents=True)
+            (root / "bin/compiler").write_bytes(b"tool A")
+            (root / "other").write_bytes(b"other")
+            descriptor, observed = inventory_root_with_witness(root, ["bin/compiler"])
+            self.assertEqual(descriptor, inventory_root(root))
+            self.assertEqual(observed, {"bin/compiler": {
+                "sha256": hashlib.sha256(b"tool A").hexdigest(),
+                "bytes": 6,
+            }})
+            with self.assertRaisesRegex(ValueError, "witness file is missing"):
+                inventory_root_with_witness(root, ["bin/missing"])
 
     def test_internal_symlink_is_recorded_and_escape_refuses(self):
         with tempfile.TemporaryDirectory() as directory:

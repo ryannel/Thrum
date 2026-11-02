@@ -269,9 +269,9 @@ def _compare_component(channel_path, sidecar_path, archive_path, root_fd, compon
     if sidecar != expected_sidecar:
         raise ValueError("official channel manifest sidecar mismatch")
     channel = tomllib.loads(channel_raw.decode("utf-8"))
-    installed_channel = tomllib.loads(small_bytes_beneath(
-        root_fd, Path("lib/rustlib/multirust-channel-manifest.toml"), 4 * 1024 * 1024,
-    ).decode("utf-8"))
+    channel_path = Path("lib/rustlib/multirust-channel-manifest.toml")
+    installed_channel_raw = small_bytes_beneath(root_fd, channel_path, 4 * 1024 * 1024)
+    installed_channel = tomllib.loads(installed_channel_raw.decode("utf-8"))
     selected = channel["pkg"][component]["target"][TARGET]
     installed_selected = installed_channel["pkg"][component]["target"][TARGET]
     url = selected["xz_url"]
@@ -282,13 +282,12 @@ def _compare_component(channel_path, sidecar_path, archive_path, root_fd, compon
         raise ValueError("unsupported official Rust component origin")
     if url != installed_selected["xz_url"] or expected_hash != installed_selected["xz_hash"]:
         raise ValueError("installed Rust component selection differs from channel")
-    if f"{component}-{TARGET}" not in small_bytes_beneath(
-        root_fd, Path("lib/rustlib/components"), 4096,
-    ).decode("utf-8").splitlines():
+    components_path = Path("lib/rustlib/components")
+    installed_components = small_bytes_beneath(root_fd, components_path, 4096)
+    if f"{component}-{TARGET}" not in installed_components.decode("utf-8").splitlines():
         raise ValueError("Rust component is not installed")
-    installed_manifest = small_bytes_beneath(
-        root_fd, Path("lib/rustlib") / f"manifest-{component}-{TARGET}", 1024 * 1024,
-    )
+    manifest_path = Path("lib/rustlib") / f"manifest-{component}-{TARGET}"
+    installed_manifest = small_bytes_beneath(root_fd, manifest_path, 1024 * 1024)
     records = component_manifest(installed_manifest)
 
     with ordinary_file(archive_path, 1024 * 1024 * 1024) as archive:
@@ -336,6 +335,7 @@ def _compare_component(channel_path, sidecar_path, archive_path, root_fd, compon
 
     matched_bytes = 0
     matched_files = 0
+    installed_files = []
     for relative, kind in records.items():
         if kind == "dir":
             handle = open_beneath(root_fd, Path(*relative.parts),
@@ -354,14 +354,30 @@ def _compare_component(channel_path, sidecar_path, archive_path, root_fd, compon
                 raise ValueError(f"installed component path changed: {relative}")
         matched_files += 1
         matched_bytes += info.st_size
+        installed_files.append({
+            "path": relative.as_posix(),
+            "sha256": hashes[prefix / relative],
+            "bytes": info.st_size,
+        })
+    installed_files.sort(key=lambda item: item["path"])
+    installed_metadata = sorted(({
+        "path": path.as_posix(), "sha256": hashlib.sha256(raw).hexdigest(),
+        "bytes": len(raw),
+    } for path, raw in (
+        (channel_path, installed_channel_raw),
+        (components_path, installed_components),
+        (manifest_path, installed_manifest),
+    )), key=lambda item: item["path"])
     return {
-        "format": 1,
+        "format": 3,
         "component": component,
         "target": TARGET,
         "channelSha256": hashlib.sha256(channel_raw).hexdigest(),
         "archiveSha256": expected_hash,
         "matchedFiles": matched_files,
         "matchedBytes": matched_bytes,
+        "installedFiles": installed_files,
+        "installedMetadata": installed_metadata,
         "buildReady": False,
     }
 

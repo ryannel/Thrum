@@ -66,6 +66,17 @@ class RustComponentArchive(unittest.TestCase):
             report = compare_component(*args)
             self.assertEqual(report["matchedFiles"], 1)
             self.assertEqual(report["matchedBytes"], len(b"selected cargo"))
+            self.assertEqual(report["format"], 3)
+            self.assertEqual(report["installedFiles"], [{
+                "path": "bin/cargo",
+                "sha256": hashlib.sha256(b"selected cargo").hexdigest(),
+                "bytes": len(b"selected cargo"),
+            }])
+            self.assertEqual([item["path"] for item in report["installedMetadata"]], [
+                "lib/rustlib/components",
+                "lib/rustlib/manifest-cargo-aarch64-apple-darwin",
+                "lib/rustlib/multirust-channel-manifest.toml",
+            ])
             self.assertFalse(report["buildReady"])
 
     def test_changed_installed_file_archive_and_sidecar_refuse(self):

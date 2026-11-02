@@ -16,7 +16,7 @@ CHUNK = 1024 * 1024
 DOMAIN = b"thrum.tool-root.v1\0"
 
 
-def inventory_root(root):
+def _inventory_root(root, witness_paths):
     if os.name != "posix":
         raise ValueError("this candidate inventory requires POSIX descriptor-relative reads")
     if not root.is_absolute() or root.is_symlink() or not root.is_dir():
@@ -25,6 +25,7 @@ def inventory_root(root):
     digest = hashlib.sha256(DOMAIN)
     files = links = directories = total_bytes = 0
     recorded_links = []
+    witnessed = {}
     nofollow = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
     directory_flags = nofollow | os.O_DIRECTORY
 
@@ -96,6 +97,10 @@ def inventory_root(root):
                 digest.update(b"f")
                 digest.update(length.to_bytes(8, "little"))
                 digest.update(content.digest())
+                if witness_paths is not None and relative_name in witness_paths:
+                    witnessed[relative_name] = {
+                        "sha256": content.hexdigest(), "bytes": length,
+                    }
             else:
                 raise ValueError(f"unsupported tool entry: {relative_name}")
             if identity(before) != identity(os.stat(name, dir_fd=directory_fd, follow_symlinks=False)):
@@ -126,13 +131,36 @@ def inventory_root(root):
         "symlinks": links,
         "directories": directories,
         "logicalBytes": total_bytes,
-    }
+    }, witnessed
 
 
-def inventory_roots(roots):
+def inventory_root(root):
+    return _inventory_root(root, None)[0]
+
+
+def inventory_root_with_witness(root, witness_paths):
+    """Collect selected file identities during the same complete root scan."""
+    if len(witness_paths) != len(set(witness_paths)):
+        raise ValueError("duplicate tool-root witness path")
+    descriptor, witnessed = _inventory_root(root, set(witness_paths))
+    if len(witnessed) != len(witness_paths):
+        raise ValueError("selected tool-root witness file is missing")
+    return descriptor, witnessed
+
+
+def inventory_roots(roots, witness_paths=None):
     if not roots or len(roots) != len({path.resolve() for path in roots.values()}):
         raise ValueError("select distinct named tool roots")
-    return {name: inventory_root(path) for name, path in sorted(roots.items())}
+    descriptors = {}
+    witnesses = {}
+    for name, path in sorted(roots.items()):
+        if witness_paths is not None and name in witness_paths:
+            descriptors[name], witnesses[name] = inventory_root_with_witness(
+                path, witness_paths[name],
+            )
+        else:
+            descriptors[name] = inventory_root(path)
+    return descriptors if witness_paths is None else (descriptors, witnesses)
 
 
 def main():
