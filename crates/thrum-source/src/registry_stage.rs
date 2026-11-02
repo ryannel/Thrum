@@ -1637,6 +1637,47 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "local two-candidate all-type maximum-edge overlap cost probe"]
+    fn measure_dense_all_type_candidate_overlap() {
+        let (fixture, prior_stage) = dense_fixture(256, DenseShape::MaxEdges);
+        let prior = validate_staged_candidate(&prior_stage, &[]).unwrap();
+        let prior_revision = prior.provisional_manifest().unwrap().revision();
+        let declared: Vec<_> = prior_stage
+            .files()
+            .iter()
+            .map(|file| file.path().clone())
+            .collect();
+        let restage_start = std::time::Instant::now();
+        let candidate_stage = stage_declared_tree_with(
+            &fixture.0,
+            &declared,
+            Limits {
+                main: 2 * 1024 * 1024 * 1024,
+                wal: 4 * 1024 * 1024,
+                temporary: 256 * 1024 * 1024,
+                free_floor: 0,
+            },
+            |_| {},
+        )
+        .unwrap();
+        let restage_elapsed = restage_start.elapsed();
+        let validate_start = std::time::Instant::now();
+        let candidate = validate_staged_candidate(&candidate_stage, &[]).unwrap();
+        compare_staged_histories(prior.registry(), candidate.registry()).unwrap();
+        let candidate_revision = candidate.provisional_manifest().unwrap().revision();
+        let validate_elapsed = validate_start.elapsed();
+        assert_eq!(prior_revision, candidate_revision);
+        assert_eq!(candidate.registry().schemas().len(), 256);
+        assert_eq!(candidate.records().games().len(), 512);
+        assert_eq!(candidate.records().required_edges(), 65_536);
+        eprintln!(
+            "all_type_candidate_overlap files_per_stage={} bytes_per_stage={} restage={restage_elapsed:?} validate_and_lineage={validate_elapsed:?}",
+            candidate_stage.files().len(),
+            candidate_stage.copied_bytes(),
+        );
+    }
+
+    #[test]
     #[ignore = "local two-buffer maximum history lineage cost probe"]
     fn measure_dense_staged_history_lineage() {
         let (fixture, prior_stage) = dense_fixture(1, DenseShape::OneGame);
