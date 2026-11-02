@@ -149,5 +149,7 @@ textures,2.5MiB carriers and149,796extra native-noise mip bytes; optional float3
 Six new backtraced carrier-neighbour evaluations add983,040 velocity/rest queries each per source tick, shared by all
 optical readers rather than repeated per ray. Account for filtered-noise bandwidth too. The10s available-host screens
 deliver1x/16x queued source progress, but whole-GPU timestamps are rejected and target devices/full skies/process peaks
-remain unqualified. The wider chart again reaches its edge on the1060s trace; no indefinite-source or region-exchange
+remain unqualified. A follow-up phase-age/source attribution correction has fresh1x/16x screens with the same limits;
+older birth/age telemetry is invalid for mixed Cb phases, while density/image observations remain historical.
+The wider chart again reaches its edge on the1060s trace; no indefinite-source or region-exchange
 admission follows. Organised source morphology must be accepted before optimizing an unacceptable visual workload.

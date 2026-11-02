@@ -135,7 +135,7 @@ Keep P1a/P4a gates open; this early Cb discrimination does not promote a family 
 are retained. Next source work must replace the steady column with organised fed rolling heads/billows; do not tune
 lighting or opacity to hide that failed cue. Regional exchange remains necessary after the long-run chart-edge failure.
 
-- [x] Preserve bounded clear-start Cb cap-arrival/phase/filter source pilot, finite checks, actual images and available-host cost screen; CF02 art and complete P1b remain open.
+- [x] Preserve bounded clear-start Cb cap-arrival/phase/filter source pilot, phase-corrected no-birth/age and shutdown observations, actual images and available-host1x/16x cost screens; CF02 art, same-ID Cu→Cb transfer, irregular breakup and complete P1b remain open.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
 - [ ] Sc/St connected3D cells/sheet closes/opens actual holes; Ci sources/advects/loses high strands/tails under shared shear.
 - [ ] Dense deck at admitted extent/pitch, thin ice and tall mixed-phase Cb qualify source/halo/material/occupancy bytes and resolution.
