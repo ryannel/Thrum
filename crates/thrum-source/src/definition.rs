@@ -198,7 +198,7 @@ pub fn type_version_definition_hash(
     Ok(digest.finalize().into())
 }
 
-fn valid_symbol(symbol: &str) -> bool {
+pub(crate) fn valid_symbol(symbol: &str) -> bool {
     if symbol.len() > MAX_SYMBOL_BYTES || !symbol.is_ascii() {
         return false;
     }
