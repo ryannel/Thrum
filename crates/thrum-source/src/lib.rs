@@ -20,6 +20,8 @@ pub mod registry;
 pub mod registry_stage;
 pub mod schema_json;
 mod semantic;
+#[cfg(test)]
+mod sqlite_store;
 mod stage;
 
 pub use inventory::{Inventory, InventoryError, InventoryFile, scan_declared_tree};
