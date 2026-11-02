@@ -35,6 +35,7 @@ class VerifyRustcReceipts(unittest.TestCase):
         source = root / "source"
         (source / "src").mkdir(parents=True)
         (source / "src/main.rs").write_text("fn main() {}\n")
+        (source / "Cargo.toml").write_text("[package]\nname='headless'\nversion='0.1.0'\n")
         cache = root / "cache"
         cache.mkdir()
         output = root / "output"
@@ -50,6 +51,9 @@ class VerifyRustcReceipts(unittest.TestCase):
         environment = sorted((
             (b"CARGO_HOME", os.fsencode(cache)),
             (b"CARGO_INCREMENTAL", b"0"),
+            (b"CARGO_CRATE_NAME", b"headless"),
+            (b"CARGO_MANIFEST_DIR", os.fsencode(source)),
+            (b"CARGO_MANIFEST_PATH", os.fsencode(source / "Cargo.toml")),
             (b"CARGO_NET_OFFLINE", b"true"),
             (b"CARGO_TARGET_DIR", os.fsencode(output)),
             (b"DYLD_FALLBACK_LIBRARY_PATH", b":".join((
@@ -73,6 +77,7 @@ class VerifyRustcReceipts(unittest.TestCase):
         transcript = root / "cargo.jsonl"
         transcript.write_text("\n".join(json.dumps(value, separators=(",", ":")) for value in (
             {"reason": "compiler-artifact", "fresh": False,
+             "manifest_path": str(source / "Cargo.toml"),
              "target": {"name": "headless", "src_path": str(source / "src/main.rs"),
                         "kind": ["bin"]}, "filenames": [str(artifact)]},
             {"reason": "build-finished", "success": True},
@@ -137,13 +142,16 @@ class VerifyRustcReceipts(unittest.TestCase):
 
             dependency_source = source / "src/dep.rs"
             dependency_source.write_text("pub fn value() {}\n")
+            dep_environment = [(name, b"dep" if name == b"CARGO_CRATE_NAME" else value)
+                               for name, value in environment]
             (receipts / "100.receipt").write_bytes(receipt(rustc, source, [
                 b"--crate-name", b"dep", b"src/dep.rs", b"--emit=dep-info,link",
                 b"--out-dir", os.fsencode(output / "debug/deps"),
-            ], environment))
+            ], dep_environment))
             entries = [json.loads(line) for line in transcript.read_text().splitlines()]
             entries.insert(0, {
                 "reason": "compiler-artifact", "fresh": False,
+                "manifest_path": str(source / "Cargo.toml"),
                 "target": {"name": "dep", "src_path": str(dependency_source), "kind": ["lib"]},
                 "filenames": [str(undeclared)],
             })
@@ -235,6 +243,46 @@ class VerifyRustcReceipts(unittest.TestCase):
                 inspect(*args[:6])
             probe.write_bytes(receipt(rustc, source, [b"--print=sysroot"], environment, kind=0))
             with self.assertRaisesRegex(ValueError, "unrecognized Cargo rustc probe"):
+                inspect(*args[:6])
+
+    def test_cargo_crate_and_manifest_environment_must_match_unit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            changed = [(name, b"other" if name == b"CARGO_CRATE_NAME" else value)
+                       for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, changed))
+            with self.assertRaisesRegex(ValueError, "crate name differs"):
+                inspect(*args[:6])
+            other_manifest = source / "Other.toml"
+            other_manifest.write_text("[package]\nname='other'\nversion='0.1.0'\n")
+            changed = [(name, os.fsencode(other_manifest)
+                        if name == b"CARGO_MANIFEST_PATH" else value)
+                       for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, changed))
+            with self.assertRaisesRegex(ValueError, "manifest differs"):
+                inspect(*args[:6])
+            other_dir = source / "other"
+            other_dir.mkdir()
+            changed = [(name, os.fsencode(other_dir)
+                        if name == b"CARGO_MANIFEST_DIR" else value)
+                       for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, changed))
+            with self.assertRaisesRegex(ValueError, "manifest differs"):
+                inspect(*args[:6])
+            nested = source / "nested"
+            nested.mkdir()
+            nested_manifest = nested / "Cargo.toml"
+            nested_manifest.write_text("[package]\nname='nested'\nversion='0.1.0'\n")
+            nested_environment = [(name, os.fsencode(nested_manifest)
+                                   if name == b"CARGO_MANIFEST_PATH" else
+                                   os.fsencode(nested) if name == b"CARGO_MANIFEST_DIR" else value)
+                                  for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, nested_environment))
+            records = [json.loads(line) for line in transcript.read_text().splitlines()]
+            records[0]["manifest_path"] = str(nested_manifest)
+            transcript.write_text("\n".join(json.dumps(record) for record in records) + "\n")
+            with self.assertRaisesRegex(ValueError, "outside its package"):
                 inspect(*args[:6])
 
 

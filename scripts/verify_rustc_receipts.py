@@ -301,9 +301,15 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
             probes += 1
             continue
         crate, source_identity, externs = compile_identity(receipt, roots)
+        if receipt["environment"].get(b"CARGO_CRATE_NAME") != crate.encode("ascii"):
+            raise ValueError("rustc child Cargo crate name differs from compile receipt")
         if crate in compiles:
             raise ValueError("first profile has duplicate crate-name invocations")
         compiles[crate] = {"source": source_identity, "externs": externs,
+                           "manifestEnvironment": {
+                               name: receipt["environment"].get(name)
+                               for name in (b"CARGO_MANIFEST_DIR", b"CARGO_MANIFEST_PATH")
+                           },
                            "receiptSha256": receipt["sha256"]}
     raw_transcript = ordinary_bytes(transcript, MAX_TRANSCRIPT)
     artifacts = {}
@@ -326,6 +332,32 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
             )
             if target not in compiles or compiles[target]["source"] != cargo_source:
                 raise ValueError("Cargo target source differs from rustc compile receipt")
+            cargo_manifest = selected_file(
+                Path(message["manifest_path"]),
+                {key: roots[key] for key in ("source", "cache")},
+                "Cargo manifest",
+            )
+            source_path = roots[cargo_source[0]] / cargo_source[1]
+            package_directory = (roots[cargo_manifest[0]] / cargo_manifest[1]).parent
+            if not source_path.is_relative_to(package_directory):
+                raise ValueError("Cargo target source is outside its package manifest directory")
+            child_manifest = compiles[target]["manifestEnvironment"]
+            manifest_path = child_manifest[b"CARGO_MANIFEST_PATH"]
+            manifest_dir = child_manifest[b"CARGO_MANIFEST_DIR"]
+            if not manifest_path or not manifest_dir:
+                raise ValueError("rustc child lacks Cargo manifest environment")
+            child_path = selected_file(
+                Path(os.fsdecode(manifest_path)),
+                {key: roots[key] for key in ("source", "cache")},
+                "rustc child Cargo manifest",
+            )
+            child_dir = Path(os.fsdecode(manifest_dir))
+            if not child_dir.is_absolute() or child_dir.is_symlink() or not child_dir.is_dir():
+                raise ValueError("rustc child manifest directory is not selected")
+            if (child_path != cargo_manifest or cargo_source[0] != cargo_manifest[0]
+                    or child_dir.resolve(strict=True)
+                    != Path(message["manifest_path"]).resolve(strict=True).parent):
+                raise ValueError("rustc child manifest differs from Cargo unit")
             if not isinstance(message["target"]["kind"], list) or any(
                 kind in ("custom-build", "proc-macro") for kind in message["target"]["kind"]
             ):
@@ -361,6 +393,7 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
         for name, path in compile["externs"]:
             if artifact_owners.get(path) != name or name == crate:
                 raise ValueError("rustc extern differs from a Cargo dependency artifact")
+        del compile["manifestEnvironment"]
     return {
         "format": 1, "probes": probes, "compiles": len(compiles),
         "units": [{"crate": name, **compiles[name], "artifacts": artifacts[name]}
