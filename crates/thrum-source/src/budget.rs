@@ -448,13 +448,17 @@ pub(crate) fn ensure_directory(path: &Path) -> Result<(), BudgetError> {
 }
 
 pub(crate) fn create_private_directory(path: &Path) -> std::io::Result<()> {
-    let mut builder = fs::DirBuilder::new();
     #[cfg(unix)]
     {
         use std::os::unix::fs::DirBuilderExt;
+        let mut builder = fs::DirBuilder::new();
         builder.mode(0o700);
+        builder.create(path)
     }
-    builder.create(path)
+    #[cfg(not(unix))]
+    {
+        fs::create_dir(path)
+    }
 }
 
 #[cfg(test)]
