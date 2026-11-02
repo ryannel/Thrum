@@ -28,7 +28,10 @@ compile, output and `--extern` paths under the fresh output root, dependency
 library search under its `debug/deps`, and no executable Cargo hooks. It
 compares each receipt's crate and source to Cargo's structured target and
 requires each `--extern` path to be an artifact Cargo reported from the named
-dependency unit. Cargo's macOS `DYLD_FALLBACK_LIBRARY_PATH` is retained exactly
+dependency unit. It also matches the child `CARGO_CRATE_NAME`,
+`CARGO_MANIFEST_DIR` and `CARGO_MANIFEST_PATH` to Cargo's reported unit,
+requiring the source to live beneath that package manifest. Cargo's macOS
+`DYLD_FALLBACK_LIBRARY_PATH` is retained exactly
 and checked against the selected output, Rust toolchain and fixed fallback
 locations; empty/duplicate/outside entries and other `DYLD_` overrides refuse.
 An information-only probe may omit the variable. The first profile also
@@ -67,7 +70,7 @@ THRUM_PYTHON=python3.11 THRUM_TEST_NATIVE_SANDBOX=1 \
   -- --ignored --nocapture
 ```
 
-The final local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,297
+One local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,297
 ms for Cargo build, and yielded five successful compile receipts plus three
 probes. The verifier matched all five compiles to distinct Cargo targets and
 their selected source paths. It reported receipt-set digest
@@ -76,7 +79,10 @@ The A binary was 2,345,736 bytes and ran successfully. The separately
 admitted invalid-code B build failed; A's hash and execution still matched.
 The source and private cache inventories were unchanged after both builds.
 The receipt digest contains temporary absolute paths and is an observation,
-not a portable BuildRevision input.
+not a portable BuildRevision input. After the crate/manifest environment check
+was added, two more opt-in A/B qualifications passed with 1,598 and 4,293 ms
+A compiles. These uncontrolled runs do not isolate a performance change or
+establish a build-latency tail.
 
 Python refusal fixtures cover incomplete or malformed receipts, wrong
 compiler/source, duplicate unit, altered fixed environment, escaped artifact
@@ -85,7 +91,9 @@ Another fixture refuses a source file inside the allowed root when Cargo's
 target names a different source; a two-unit fixture accepts a valid dependency
 and refuses the wrong extern name. The macOS dynamic-library search fixture
 refuses an outside or empty entry and wrong private home. Another fixture
-refuses a probe from the cache root or with an unrecognized query. Six Rust
+refuses a probe from the cache root or with an unrecognized query. The ten
+Python fixtures also refuse wrong child crate/manifest values and a Cargo
+target source outside its package directory. Six Rust
 wrapper tests cover byte preservation, limits, probe classification,
 exclusive receipt creation, process outcomes and exact child environment.
 `./dev check` passes; its normal test suite omits the expensive A/B fixture.

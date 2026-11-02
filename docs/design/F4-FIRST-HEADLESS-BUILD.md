@@ -131,7 +131,8 @@ successful compile receipts with the fresh Cargo artifact transcript, checks
 each named `--extern` against an artifact reported for that dependency, and
 refuses unsupported paths and hooks. The first pinned Cargo profile also
 accepts only its observed version/configuration probe arguments from the
-admitted source root. This remains an observed graph after
+admitted source root. The compiler's Cargo crate/manifest environment must
+agree with Cargo's target and source package. This remains an observed graph after
 execution. The wrapper does not observe rustc's implicit file reads, loaded
 libraries, linker subprocess reads or the full macOS system boundary, and its
 own executable still needs release selection. It runs per rustc process, not
