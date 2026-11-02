@@ -1,0 +1,12 @@
+# All-type, maximum-edge provisional candidate probe
+
+2 November 2026. An ignored Rust 1.99.1 release fixture exercises the existing complete staged-candidate validator and provisional manifest writer with **256 source-carried game descriptors, 512 game records (two per type), 3,584 scenes, 100,000 field-history entries, 1,024 version entries and 65,536 required typed references**. References are distributed across 3,583 scene IDs rather than one hot target. The project declares 4,096 scene/game records and stages 4,354 files / 21,820,298 copied bytes. The test checks all 256 type dispatch counts, resolved local closure and the derived revision. A separate fresh candidate with 513 games and 65,664 edges refuses at the selected 65,536-edge limit.
+
+| Path | Validation through provisional revision, after stage capture | Fresh-process peak RSS |
+| --- | --- | --- |
+| Valid maximum-edge candidate | 172.738, 176.658, 174.405 ms | 45,580,288; 45,760,512; 47,054,848 B |
+| Excess-edge refusal | 93.616 ms | 44,957,696 B |
+
+Each row was run in an isolated process on local macOS arm64. The elapsed interval starts after fixture generation and exact-byte staging; RSS is the **whole process** `os.wait4` peak and includes those earlier phases. The source fixture SHA-256 is `c05eaddfda38bbd3588cf6172ac08ca1aafda5dcd3ad4881121bd1645ff0f7bf` (`crates/thrum-source/src/registry_stage.rs`); release test binary SHA-256 is `50b72fa88d4a602d5de846c993dc4263b671eeb9d8a7af552d22411a242ac393`. The valid path was run three times serially; the excess path once. Reproduce with `RUSTC_WRAPPER= rustup run 1.99.1 cargo test --locked --offline --release -p thrum-source registry_stage::tests::measure_dense_all_type_max_edges_candidate -- --ignored --exact --nocapture` and the same command for `registry_stage::tests::dense_all_type_excess_edges_refuse`. Run the resulting test binary in a fresh process to compare peak RSS; macOS reports `ru_maxrss` in bytes.
+
+This qualifies the selected **local, provisional** dispatch and edge-count boundary under one dense candidate. It does not authenticate a prior admitted root, exercise external dependencies or a source editor, include SQLite admission and its physical peak, or combine two live history/candidate generations. The first game's full edit-to-ready latency, device pressure and production accepted-source API remain open. This is a cost observation, not a target latency or whole-process memory cap.

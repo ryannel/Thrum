@@ -1284,8 +1284,46 @@ mod tests {
         eprintln!("records=4096 elapsed={:?}", start.elapsed());
     }
 
-    fn dense_fixture(schema_count: usize) -> (Fixture, StagedTree) {
+    #[derive(Clone, Copy, Eq, PartialEq)]
+    enum DenseShape {
+        OneGame,
+        MaxEdges,
+        ExcessEdges,
+    }
+
+    fn write_dense_reference_game(
+        fixture: &Fixture,
+        path: &str,
+        id: &str,
+        record_type: &str,
+        field_prefix: &str,
+        seed: usize,
+    ) {
+        let mut game = BufWriter::new(fs::File::create(fixture.0.join(path)).unwrap());
+        write!(
+            game,
+            "{{\"id\":\"{id}\",\"type\":\"{record_type}\",\"schema\":1,\"fields\":{{"
+        )
+        .unwrap();
+        for field in 0..128 {
+            if field != 0 {
+                game.write_all(b",").unwrap();
+            }
+            let scene_index = (seed * 128 + field) % 3_583;
+            let target = if scene_index == 0 {
+                SCENE_ID.to_owned()
+            } else {
+                format!("7a5ef644-7225-4770-9f4d-{scene_index:012x}")
+            };
+            write!(game, "\"{field_prefix}.r{field:03}\":\"{target}\"").unwrap();
+        }
+        game.write_all(b"}}").unwrap();
+        game.flush().unwrap();
+    }
+
+    fn dense_fixture(schema_count: usize, shape: DenseShape) -> (Fixture, StagedTree) {
         assert!((1..=256).contains(&schema_count));
+        assert!(shape == DenseShape::OneGame || schema_count == 256);
         let fixture = Fixture::new();
         basic(&fixture);
 
@@ -1293,10 +1331,20 @@ mod tests {
         let mut schema: serde_json::Value =
             serde_json::from_slice(&fs::read(fixture.0.join(schema_path)).unwrap()).unwrap();
         let fields = schema["fields"]["schema.fields"].as_array_mut().unwrap();
-        for index in 0..126 {
-            fields.push(json!({
-                "id":format!("marker.extra{index:03}"), "kind":"text",
-                "presence":"optional", "maxUtf8Bytes":64
+        if shape == DenseShape::OneGame {
+            for index in 0..126 {
+                fields.push(json!({
+                    "id":format!("marker.extra{index:03}"), "kind":"text",
+                    "presence":"optional", "maxUtf8Bytes":64
+                }));
+            }
+        } else {
+            fields.clear();
+            fields.extend((0..128).map(|field| {
+                json!({
+                    "id":format!("marker.r{field:03}"), "kind":"record-ref",
+                    "presence":"required", "targetType":"core.scene", "resolution":"required"
+                })
             }));
         }
         fields.sort_unstable_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
@@ -1310,11 +1358,15 @@ mod tests {
             let type_id = format!("game.type{index:03}");
             let record_id = format!("8a5ef644-7225-4770-9f4d-{index:012x}");
             let fields: Vec<_> = (0..128)
-                .map(|field| {
-                    json!({
+                .map(|field| match shape {
+                    DenseShape::OneGame => json!({
                         "id":format!("value.f{field:03}"), "kind":"text",
                         "presence":"optional", "maxUtf8Bytes":64
-                    })
+                    }),
+                    DenseShape::MaxEdges | DenseShape::ExcessEdges => json!({
+                        "id":format!("value.r{field:03}"), "kind":"record-ref",
+                        "presence":"required", "targetType":"core.scene", "resolution":"required"
+                    }),
                 })
                 .collect();
             let bytes = serde_json::to_vec(&json!({
@@ -1368,24 +1420,71 @@ mod tests {
         history.flush().unwrap();
         drop(history);
 
-        let game_path = fixture.0.join("records/marker.record.json");
-        let mut game = BufWriter::new(fs::File::create(game_path).unwrap());
-        write!(game, "{{\"id\":\"{GAME_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.scene\":\"{SCENE_ID}\"").unwrap();
-        let large_value = "v".repeat(65_000);
-        for index in 0..128 {
-            write!(game, ",\"x.game.marker.note{index:03}\":\"{large_value}\"").unwrap();
-        }
-        game.write_all(b"}}").unwrap();
-        game.flush().unwrap();
-        drop(game);
-
         let mut record_paths = vec![
             "records/marker.record.json".to_owned(),
             "scenes/main.scene.json".to_owned(),
         ];
         let mut staged_paths: Vec<String> = PATHS.iter().map(|path| (*path).to_owned()).collect();
         staged_paths.extend(schema_paths.iter().skip(1).cloned());
-        for index in 1..4_095_u32 {
+        let game_count = if shape == DenseShape::OneGame {
+            let game_path = fixture.0.join("records/marker.record.json");
+            let mut game = BufWriter::new(fs::File::create(game_path).unwrap());
+            write!(game, "{{\"id\":\"{GAME_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.scene\":\"{SCENE_ID}\"").unwrap();
+            let large_value = "v".repeat(65_000);
+            for index in 0..128 {
+                write!(game, ",\"x.game.marker.note{index:03}\":\"{large_value}\"").unwrap();
+            }
+            game.write_all(b"}}").unwrap();
+            game.flush().unwrap();
+            1
+        } else {
+            write_dense_reference_game(
+                &fixture,
+                "records/marker.record.json",
+                GAME_ID,
+                "game.marker",
+                "marker",
+                0,
+            );
+            for index in 0..schema_count {
+                let record_type = if index == 0 {
+                    "game.marker".to_owned()
+                } else {
+                    format!("game.type{index:03}")
+                };
+                let field_prefix = if index == 0 { "marker" } else { "value" };
+                for copy in 0..2 {
+                    if index == 0 && copy == 0 {
+                        continue;
+                    }
+                    let path = if index == 0 {
+                        format!("records/marker-{copy}.record.json")
+                    } else {
+                        format!("records/type{index:03}-{copy}.record.json")
+                    };
+                    let id = format!("9a5ef644-7225-4770-9f4d-{:012x}", index * 2 + copy);
+                    write_dense_reference_game(
+                        &fixture,
+                        &path,
+                        &id,
+                        &record_type,
+                        field_prefix,
+                        index * 2 + copy,
+                    );
+                    record_paths.push(path.clone());
+                    staged_paths.push(path);
+                }
+            }
+            if shape == DenseShape::ExcessEdges {
+                let path = "records/marker-2.record.json";
+                let id = "9a5ef644-7225-4770-9f4d-000000000200";
+                write_dense_reference_game(&fixture, path, id, "game.marker", "marker", 512);
+                record_paths.push(path.to_owned());
+                staged_paths.push(path.to_owned());
+            }
+            schema_count * 2 + usize::from(shape == DenseShape::ExcessEdges)
+        };
+        for index in 1..(4_096 - game_count) {
             let path = format!("scenes/scene-{index:04}.scene.json");
             let id = format!("7a5ef644-7225-4770-9f4d-{index:012x}");
             fixture.write(
@@ -1437,7 +1536,7 @@ mod tests {
     #[test]
     #[ignore = "local one-schema dense candidate cost probe"]
     fn measure_dense_combined_candidate() {
-        let (_fixture, stage) = dense_fixture(1);
+        let (_fixture, stage) = dense_fixture(1, DenseShape::OneGame);
         let start = std::time::Instant::now();
         let candidate = validate_staged_candidate(&stage, &[]).unwrap();
         std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
@@ -1452,7 +1551,7 @@ mod tests {
     #[test]
     #[ignore = "local 256-schema dense registry and game parse cost probe"]
     fn measure_dense_registry_and_game_parse() {
-        let (_fixture, stage) = dense_fixture(256);
+        let (_fixture, stage) = dense_fixture(256, DenseShape::OneGame);
         let start = std::time::Instant::now();
         let registry = validate_staged_registry(&stage, &[]).unwrap();
         let game_path = fixed_path("records/marker.record.json");
@@ -1472,7 +1571,7 @@ mod tests {
     #[test]
     #[ignore = "local 256-descriptor full provisional candidate cost probe"]
     fn measure_dense_256_descriptor_candidate() {
-        let (_fixture, stage) = dense_fixture(256);
+        let (_fixture, stage) = dense_fixture(256, DenseShape::OneGame);
         let start = std::time::Instant::now();
         let candidate = validate_staged_candidate(&stage, &[]).unwrap();
         assert_eq!(candidate.registry().schemas().len(), 256);
@@ -1489,9 +1588,58 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "local all-type and maximum required-edge candidate cost probe"]
+    fn measure_dense_all_type_max_edges_candidate() {
+        let (_fixture, stage) = dense_fixture(256, DenseShape::MaxEdges);
+        let start = std::time::Instant::now();
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        let revision = candidate.provisional_manifest().unwrap().revision();
+        std::hint::black_box(revision);
+        let elapsed = start.elapsed();
+        assert_eq!(candidate.registry().schemas().len(), 256);
+        assert_eq!(candidate.records().games().len(), 512);
+        assert_eq!(candidate.records().scenes().len(), 3_584);
+        assert_eq!(candidate.records().required_edges(), 65_536);
+        let mut types = [0_u8; 256];
+        for game in candidate.records().games() {
+            let record_type = game.summary().record_type();
+            let index = if record_type == "game.marker" {
+                0
+            } else {
+                record_type
+                    .strip_prefix("game.type")
+                    .unwrap()
+                    .parse::<usize>()
+                    .unwrap()
+            };
+            types[index] += 1;
+        }
+        assert!(types.iter().all(|count| *count == 2));
+        eprintln!(
+            "all_type_max_edges files={} copied_bytes={} elapsed={elapsed:?}",
+            stage.files().len(),
+            stage.copied_bytes(),
+        );
+    }
+
+    #[test]
+    #[ignore = "local one-over-limit required-edge refusal probe"]
+    fn dense_all_type_excess_edges_refuse() {
+        let (_fixture, stage) = dense_fixture(256, DenseShape::ExcessEdges);
+        let start = std::time::Instant::now();
+        assert!(matches!(
+            validate_staged_candidate(&stage, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::TooManyRequiredEdges
+            ))
+        ));
+        eprintln!("all_type_excess_edges elapsed={:?}", start.elapsed());
+    }
+
+    #[test]
     #[ignore = "local two-buffer maximum history lineage cost probe"]
     fn measure_dense_staged_history_lineage() {
-        let (fixture, prior_stage) = dense_fixture(1);
+        let (fixture, prior_stage) = dense_fixture(1, DenseShape::OneGame);
         let declared: Vec<_> = prior_stage
             .files()
             .iter()
