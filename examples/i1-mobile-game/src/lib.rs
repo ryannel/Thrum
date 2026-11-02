@@ -3,8 +3,44 @@
 //! This is a bounded game fixture using Thrum's authority and replica rules.
 //! It does not add a second simulation or networking implementation.
 
-#[cfg(any(target_os = "ios", target_os = "android", test))]
 mod game;
+
+/// Exercise the bundled rules through the ordinary headless authority and replica.
+/// This is a bounded native entry proof, not a build-readiness check.
+pub fn headless_probe() -> Result<(), &'static str> {
+    use std::time::{Duration, Instant};
+
+    use thrum_core::{Admission, HostPublication};
+
+    let origin = Instant::now();
+    let (mut host, mut receipts) = game::create_host(origin);
+    if host.submit(game::tap_input(1, 0)) != Ok(Admission::Queued) {
+        return Err("tap input was not queued");
+    }
+    let callback = host
+        .on_callback(origin + Duration::from_millis(20))
+        .map_err(|_| "headless callback failed")?;
+    let mut view = game::LocalView::default();
+    receipts
+        .deliver(&mut host, &callback, |publication| {
+            if let HostPublication::Replicated { admitted, .. } = publication {
+                view.observe(admitted);
+            }
+        })
+        .map_err(|_| "headless receipt delivery failed")?;
+    let taps = host
+        .replica()
+        .and_then(|replica| replica.get(game::COUNTER))
+        .map(|counter| counter.taps);
+    if taps != Some(1)
+        || view.handled_results != 1
+        || view.rejected_results != 0
+        || view.last_event_id != Some(1)
+    {
+        return Err("headless authority/replica outcome differed");
+    }
+    Ok(())
+}
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
 mod mobile;

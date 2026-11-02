@@ -402,6 +402,7 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path::{Path, PathBuf};
+    use std::process::Command;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::Instant;
     use thrum_source::{
@@ -909,6 +910,191 @@ mod tests {
         ));
         c_pin.close().unwrap();
         assert_eq!(declared_inputs.source_root(), a);
+    }
+
+    #[test]
+    #[ignore = "local native Cargo build from the full admitted workspace"]
+    fn admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary() {
+        let fixture = Fixture::new();
+        let mut paths = fixture.write("Admitted headless game", false, false);
+        let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap();
+        for root_file in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml"] {
+            copy_build_input(checkout, fixture.root(), root_file, &mut paths);
+        }
+        for package in [
+            "crates/thrum-core",
+            "crates/thrum-mobile-shell",
+            "crates/thrum-source",
+            "crates/thrum-cook",
+            "examples/i1-mobile-game",
+            "tools/xtask",
+        ] {
+            copy_build_input(
+                checkout,
+                fixture.root(),
+                &format!("{package}/Cargo.toml"),
+                &mut paths,
+            );
+            copy_build_source_tree(
+                checkout,
+                fixture.root(),
+                &format!("{package}/src"),
+                &mut paths,
+            );
+        }
+        fs::create_dir(fixture.root().join("build")).unwrap();
+        fs::write(
+            fixture.root().join("build/headless.json"),
+            serde_json::to_vec(&serde_json::json!({
+                "format":1,
+                "cargoManifest":"Cargo.toml",
+                "cargoLock":"Cargo.lock",
+                "rustToolchain":"rust-toolchain.toml",
+                "package":"i1-mobile-game",
+                "ruleSource":"examples/i1-mobile-game/src/game.rs",
+                "entryScene":SCENE_ID
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        paths.push(SourcePath::parse("build/headless.json").unwrap());
+        paths.sort_unstable();
+
+        let mut store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let a = fixture.admit(&mut store, 0, 1, &paths);
+        let rule_path = fixture.root().join("examples/i1-mobile-game/src/game.rs");
+        fs::write(
+            &rule_path,
+            b"this working file is no longer the accepted game",
+        )
+        .unwrap();
+        let mut a_pin = store.pin_current(a.generation).unwrap();
+        let product = cook_entry_scene(&mut a_pin, SceneTarget::Headless).unwrap();
+        let declaration = read_pinned_build_declaration(&mut a_pin, &product).unwrap();
+        assert_eq!(declaration.source_root(), a);
+        let a_input = fixture.root().join(".engine/input-a");
+        let a_materialized =
+            materialize_pinned_source(&mut a_pin, &a_input, Fixture::build_plan()).unwrap();
+        assert_eq!(a_materialized.source_root(), a);
+        let a_files = tree_hashes(a_materialized.path());
+        let a_output = fixture.root().join(".engine/output-a");
+        let started = Instant::now();
+        let built_a = cargo_build_headless(a_materialized.path(), &a_output);
+        let build_elapsed = started.elapsed();
+        assert!(
+            built_a.status.success(),
+            "{}",
+            String::from_utf8_lossy(&built_a.stderr)
+        );
+        assert_eq!(tree_hashes(a_materialized.path()), a_files);
+        let binary_name = format!("headless{}", std::env::consts::EXE_SUFFIX);
+        let binary_a = a_output.join("debug").join(&binary_name);
+        let binary_a_bytes = fs::read(&binary_a).unwrap();
+        let binary_a_hash = Sha256::digest(&binary_a_bytes);
+        let ran_a = Command::new(&binary_a).output().unwrap();
+        assert!(ran_a.status.success());
+        assert_eq!(
+            ran_a.stdout,
+            b"thrum-headless-v1 taps=1 results=1 events=1\n"
+        );
+        eprintln!(
+            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={:02x?}",
+            a_materialized.file_count(),
+            a_materialized.copied_bytes(),
+            build_elapsed.as_millis(),
+            binary_a_bytes.len(),
+            binary_a_hash
+        );
+        a_pin.close().unwrap();
+        a_materialized.close().unwrap();
+
+        fs::write(&rule_path, b"pub fn deliberately_invalid( {\n").unwrap();
+        let b = fixture.admit(&mut store, a.generation, 2, &paths);
+        let mut b_pin = store.pin_current(b.generation).unwrap();
+        let b_product = cook_entry_scene(&mut b_pin, SceneTarget::Headless).unwrap();
+        assert!(read_pinned_build_declaration(&mut b_pin, &b_product).is_ok());
+        let b_input = fixture.root().join(".engine/input-b");
+        let b_materialized =
+            materialize_pinned_source(&mut b_pin, &b_input, Fixture::build_plan()).unwrap();
+        let b_files = tree_hashes(b_materialized.path());
+        let b_output = fixture.root().join(".engine/output-b");
+        let built_b = cargo_build_headless(b_materialized.path(), &b_output);
+        assert!(!built_b.status.success());
+        let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
+        assert!(b_diagnostic.contains("game.rs") && b_diagnostic.contains("error"));
+        assert!(!b_output.join("debug").join(binary_name).exists());
+        assert_eq!(tree_hashes(b_materialized.path()), b_files);
+        assert_eq!(Sha256::digest(fs::read(&binary_a).unwrap()), binary_a_hash);
+        assert!(Command::new(&binary_a).output().unwrap().status.success());
+        b_pin.close().unwrap();
+        b_materialized.close().unwrap();
+        assert_eq!(store.current_root().unwrap().unwrap(), b);
+    }
+
+    fn copy_build_input(from: &Path, to: &Path, relative: &str, paths: &mut Vec<SourcePath>) {
+        let destination = to.join(relative);
+        fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        fs::copy(from.join(relative), destination).unwrap();
+        paths.push(SourcePath::parse(relative).unwrap());
+    }
+
+    fn copy_build_source_tree(from: &Path, to: &Path, relative: &str, paths: &mut Vec<SourcePath>) {
+        for entry in fs::read_dir(from.join(relative)).unwrap() {
+            let entry = entry.unwrap();
+            let child = format!("{relative}/{}", entry.file_name().to_str().unwrap());
+            if entry.file_type().unwrap().is_dir() {
+                copy_build_source_tree(from, to, &child, paths);
+            } else {
+                copy_build_input(from, to, &child, paths);
+            }
+        }
+    }
+
+    fn tree_hashes(root: &Path) -> Vec<(PathBuf, [u8; 32])> {
+        fn visit(root: &Path, current: &Path, output: &mut Vec<(PathBuf, [u8; 32])>) {
+            for entry in fs::read_dir(current).unwrap() {
+                let entry = entry.unwrap();
+                if entry.file_type().unwrap().is_dir() {
+                    visit(root, &entry.path(), output);
+                } else {
+                    output.push((
+                        entry.path().strip_prefix(root).unwrap().to_owned(),
+                        Sha256::digest(fs::read(entry.path()).unwrap()).into(),
+                    ));
+                }
+            }
+        }
+        let mut output = Vec::new();
+        visit(root, root, &mut output);
+        output.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+        output
+    }
+
+    fn cargo_build_headless(input: &Path, output: &Path) -> std::process::Output {
+        Command::new(env!("CARGO"))
+            .current_dir(input)
+            .args([
+                "build",
+                "--locked",
+                "--offline",
+                "--package",
+                "i1-mobile-game",
+                "--bin",
+                "headless",
+            ])
+            .env("CARGO_TARGET_DIR", output)
+            .env("CARGO_INCREMENTAL", "0")
+            .env("RUSTC_WRAPPER", "")
+            .output()
+            .unwrap()
     }
 
     #[test]

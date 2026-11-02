@@ -91,6 +91,10 @@ Proof order:
 2. Qualify a trusted native compiler adapter against a complete pinned local
    Rust workspace, with no checkout read, network or input-tree writes. Record
    exact compiler/dependency/output provenance and failed-compile recovery.
+   The [first native compile proof](../evidence/i2a/F4-ADMITTED-HEADLESS-COMPILE.md)
+   exercises the actual game and failed-edit retention from a pinned workspace.
+   It does not yet isolate arbitrary build-script or proc-macro execution,
+   attest the compiler/dependency closure, or make the adapter trusted.
 3. Publish and reload a verified target manifest and binary/product closure;
    corrupt/missing bytes and interrupted publication refuse, while the prior
    ready build remains available.
