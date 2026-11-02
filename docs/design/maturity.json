@@ -283,6 +283,10 @@
       "i2a_source_validation": {
         "evidence": "../evidence/i2a/SOURCE-VALIDATION.md",
         "scope": "Native source path, bounded JSON syntax and common record envelope rejection fixtures only; semantic F3 registry, immutable capture and durable admission remain unbuilt."
+      },
+      "i2a_manifest_identity": {
+        "evidence": "../evidence/i2a/SOURCE-MANIFEST.md",
+        "scope": "Pure JCS/SHA-256 manifest identity from supplied exact-byte metadata with a 100k-entry local cost probe; staged-byte verification, F3 closure and durable source admission remain unbuilt."
       }
     },
     {

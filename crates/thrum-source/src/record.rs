@@ -9,11 +9,28 @@ use serde_json::Value;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RecordEnvelope<'a> {
     /// Canonical lowercase RFC-4122-form UUID.
-    pub id: &'a str,
+    id: &'a str,
     /// Nonempty ASCII schema type ID; F3 owns its registered spelling.
-    pub record_type: &'a str,
+    record_type: &'a str,
     /// Positive schema version.
-    pub schema: u64,
+    schema: u64,
+}
+
+impl<'a> RecordEnvelope<'a> {
+    /// Canonical stable record ID.
+    pub fn id(&self) -> &'a str {
+        self.id
+    }
+
+    /// Nonempty ASCII type ID for F3 registry lookup.
+    pub fn record_type(&self) -> &'a str {
+        self.record_type
+    }
+
+    /// Positive source schema version.
+    pub fn schema(&self) -> u64 {
+        self.schema
+    }
 }
 
 /// A record does not have the common F3 identity envelope.
@@ -75,7 +92,7 @@ fn nonempty_ascii(id: &str) -> bool {
     !id.is_empty() && id.is_ascii()
 }
 
-fn canonical_uuid(id: &str) -> bool {
+pub(crate) fn canonical_uuid(id: &str) -> bool {
     let bytes = id.as_bytes();
     if bytes.len() != 36 {
         return false;
@@ -103,8 +120,8 @@ mod tests {
         let valid = br#"{"id":"2a5ef644-7225-4770-9f4d-e1d9c0a7d515","type":"core.scene-object","schema":1,"fields":{"transform.translation":[2,0,4]}}"#;
         let value = parse_record_json(valid).unwrap();
         let identity = validate_record_envelope(&value).unwrap();
-        assert_eq!(identity.record_type, "core.scene-object");
-        assert_eq!(identity.schema, 1);
+        assert_eq!(identity.record_type(), "core.scene-object");
+        assert_eq!(identity.schema(), 1);
 
         for invalid in [
             br#"{"id":"2A5ef644-7225-4770-9f4d-e1d9c0a7d515","type":"core.scene-object","schema":1,"fields":{}}"#.as_slice(),
