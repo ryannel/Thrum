@@ -68,6 +68,11 @@ passages and their design consequences. State what was actually inspected; slide
 inaccessible title or abstract does not supply an algorithm. Try legitimate author/institutional copies for important
 access gaps, then record their effect on the decision.
 
+For accessible reference code, pin the revision and inspect the actual producer, consumer and preparation paths that
+matter to the choice. Record the supported configuration, licence, reusable algorithm or contract, and what remains
+undisclosed. Translate source findings into the proposed design; a repository link or feature demo alone is not
+implementation evidence for an entire production system.
+
 Retain a compact evidence account for consequential choices:
 
 - Choice, affected experience, credible alternatives and selection reason.
@@ -130,6 +135,20 @@ what changes next and why the results agree, without choosing a missing core alg
 structural choices upfront; tuning values and bounded feasibility uncertainties may remain explicit. Use small probes
 to settle such uncertainties, then update the design. Do not require perfect predictions or exhaustive pseudocode,
 but do not defer an essential mechanism under a capability name or a promise to integrate later.
+
+Trace one creator journey from editable inputs through preparation, validation, versioned products, runtime loading
+and observation. Then change a source recipe or provider and trace what rebuilds, invalidates, persists or resets.
+Name the real tools and output contracts where known; label proposed tools as unbuilt. A runtime diagram is incomplete
+when essential content cannot be produced, rebuilt or delivered, or when a test consumes a different product than the
+shipping path. Scale this journey to the module: procedural content may have no offline bake, but still needs a
+reproducible source and configuration lifecycle.
+
+For a substantial build-ready design, dogfood the saved plan from the implementer's side for a difficult component
+or coupled interaction. From the written design, list concrete inputs, operations, outputs, first fixture and failure
+conditions; record where a developer must invent a law, representation, coordinate or time convention, handoff or
+dependency. Resolve those choices in the owning design and contracts, then reread the revised instructions. Keep the
+original gaps visible; new answers do not prove the earlier plan was complete. This is a build-readiness check, not
+an implementation or proof claim.
 
 Check the design against every required capability and consequential connection, including reviewer discoveries.
 An impressive worked case must not conceal an unowned requirement elsewhere. Deferrals remain explicit and do not
