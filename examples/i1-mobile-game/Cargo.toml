@@ -16,6 +16,11 @@ workspace = true
 thrum-core = { path = "../../crates/thrum-core" }
 thrum-mobile-shell = { path = "../../crates/thrum-mobile-shell" }
 
+[dev-dependencies]
+thrum-source = { path = "../../crates/thrum-source" }
+thrum-cook = { path = "../../crates/thrum-cook" }
+sha2 = { version = "=0.11.1", default-features = false }
+
 [target.'cfg(target_os = "ios")'.dependencies]
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal"] }

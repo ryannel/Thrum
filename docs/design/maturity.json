@@ -245,7 +245,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "f6c311446f4a44f9261eee8faa42621a424f72cc11c8e7004427cc7a85fcea4a",
+      "current_design_sha256": "b52020ae13b2b4ba282d83eead8b6a629b18490d93af77fa1ae32bbb557364d5",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
@@ -503,7 +503,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "f6c311446f4a44f9261eee8faa42621a424f72cc11c8e7004427cc7a85fcea4a",
+      "current_design_sha256": "b52020ae13b2b4ba282d83eead8b6a629b18490d93af77fa1ae32bbb557364d5",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
@@ -531,6 +531,10 @@
       "i2a_headless_scene_product": {
         "evidence": "../evidence/i2a/F4-HEADLESS-SCENE-COOK.md",
         "scope": "A first CPU-only entry-scene product is cooked from verified pinned accepted project/scene bytes with a target/version/direct-input product digest distinct from SourceRevision. A bounded byte codec and independent content hash support checked load using expected identities from a future trusted manifest. A production-store integration test proves mutable checkout isolation, changed-scene recook, identical reusable bytes after unrelated source edits, corrupt/truncated/mismatched load refusal, historical accepted pin and refusal of a valid incompatible two-entry source while retaining a prior in-memory product. This does not implement durable product publication, a trusted build manifest, code/toolchain closure, target-ready BuildRevision, world activation, save or platform qualification."
+      },
+      "i2a_linked_rule_source": {
+        "evidence": "../evidence/i2a/F4-LINKED-RULE-SOURCE.md",
+        "scope": "A production F4 helper matches fixed-size Rust rule-source length/digest build metadata to one accepted pinned source file, checking authenticated manifest identity and streaming the stored blob through the source verifier. The helper does not require whole source files embedded in production binary memory. F4 and i1-mobile-game tests show checkout isolation, code-edit mismatch, pinned scene cook and the prior local authority/replica committing an action after the new source fails the match. The mobile example uses source/cook only as dev dependencies. No exact executable/toolchain/dependency attestation, trusted build manifest, BuildRevision, new-world activation, save/restore or device qualification is claimed."
       }
     },
     {
@@ -561,7 +565,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "f6c311446f4a44f9261eee8faa42621a424f72cc11c8e7004427cc7a85fcea4a",
+      "current_design_sha256": "b52020ae13b2b4ba282d83eead8b6a629b18490d93af77fa1ae32bbb557364d5",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
@@ -623,7 +627,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "f6c311446f4a44f9261eee8faa42621a424f72cc11c8e7004427cc7a85fcea4a",
+      "current_design_sha256": "b52020ae13b2b4ba282d83eead8b6a629b18490d93af77fa1ae32bbb557364d5",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
@@ -931,7 +935,7 @@
       "reviewed_design_sha256": "563aa04679e2bc16a2d2deb0aa69ecfcbb4c062bb8a6812d0a8561fcab3f3fdf",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "f6c311446f4a44f9261eee8faa42621a424f72cc11c8e7004427cc7a85fcea4a",
+      "current_design_sha256": "b52020ae13b2b4ba282d83eead8b6a629b18490d93af77fa1ae32bbb557364d5",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01",
@@ -2911,7 +2915,7 @@
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "e2375229b35de060cdf05c0e18e9d5aa0305c198b82adec30a4aeffb4cd0dcdc",
       "modules/TOOLS-DELIVERY.md": "2b1d53cedad9e2ce02d0e595bd3e041b91195c2c823b2bdf204e353053223f02",
-      "modules/WORLD-CONTENT.md": "f6c311446f4a44f9261eee8faa42621a424f72cc11c8e7004427cc7a85fcea4a"
+      "modules/WORLD-CONTENT.md": "b52020ae13b2b4ba282d83eead8b6a629b18490d93af77fa1ae32bbb557364d5"
     },
     "coordinated_handoffs": {
       "SOURCE": {

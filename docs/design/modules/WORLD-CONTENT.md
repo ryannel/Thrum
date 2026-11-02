@@ -79,6 +79,28 @@ The [first executable proof](../../evidence/i2a/F4-HEADLESS-SCENE-COOK.md) check
 unrelated files, historical pins and failure retention. End-to-end edit-to-ready,
 product storage and runtime performance are still unqualified.
 
+### Linked native rule-source check before a ready build
+
+The first static-code integration can verify a supplied admitted Rust rule-file
+path against length and SHA-256 metadata from a compiling game module. F4 compares
+that metadata with the authenticated manifest before touching SQLite, then
+streams the pinned blob to a sink so the native store verifies its actual chunks.
+The result is a typed `LinkedRuleSource` with path and digest. A changed code file
+refuses this match; the prior run and source/product identities remain independent.
+The check uses the pin's bounded read scratch, with no copied source tree and no
+work inside the game callback. A production builder can emit fixed-size metadata
+without embedding complete source files in the game binary.
+
+This check does **not** attest that the executable was built from that file. A
+target-ready `BuildRevision` still needs an exact retained binary identity,
+toolchain/dependency and schema closure, trusted target manifest and run-start
+verification. The test-only `i1-mobile-game` integration exercises a real
+`include_bytes!` of its rule module to derive test metadata, an accepted scene product, a subsequent
+unmatched code edit and an action on the old authority/replica. Native source/cook
+tooling is only a development dependency of that example, leaving its phone
+runtime dependency closure unchanged. The [proof record](../../evidence/i2a/F4-LINKED-RULE-SOURCE.md)
+states the residual build and save obligations.
+
 The [first-use review](../FIRST-USE-WALKTHROUGHS.md) makes reimport a concrete authoring obligation: F3/F4 preserve
 source-to-canonical identity correspondence, while T1 records game-owned overrides and exposes mapping conflicts.
 Imported node/material/skin/clip identities must be distinguished from mutable names and array positions. Where an
