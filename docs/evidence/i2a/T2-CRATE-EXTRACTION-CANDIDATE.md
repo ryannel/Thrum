@@ -12,9 +12,10 @@ through a bounded gzip reader and strict tar parser. It refuses archive paths
 outside the package root, unsupported members, duplicate names, extra or
 missing extracted files/directories, changed bytes and an unexpected Cargo
 extraction marker. Complete private-root inventories before and after must
-match. Four synthetic fixtures cover success, changed/extra extracted files,
-an altered `.cargo-ok` marker and a nested empty directory with an explicit
-package-root directory entry.
+match. Five synthetic fixtures cover success, changed/extra extracted files,
+an altered `.cargo-ok` marker, a nested empty directory with an explicit
+package-root directory entry, and a crate file named `manifest.in` larger than
+the Rust installer manifest limit.
 
 On an isolated copy of the earlier admitted-source fixture, a fresh locked
 offline cache preparation again produced private-root SHA-256
