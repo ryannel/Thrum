@@ -2,6 +2,7 @@
 
 2 November 2026. **Production mechanisms selected; implementation/content/device qualification remain open.**
 [The production baseline](CLOUD-PRODUCTION-BASELINE.md) fixes the authoring, source, rendering and lighting path.
+The [whole-atmosphere coverage map](ATMOSPHERE-SYSTEM.md) and [provider contract](CLOUD-PROVIDERS.md) make delivery and replacement explicit.
 The [migration build plan](CLOUD-MIGRATION.md) is the single checked execution queue. Its
 [technique/source map](../research/ATMOSPHERICS-TECHNIQUES.md), [capability ledger](CLOUD-CAPABILITIES.md),
 [POC acceptance contract](CLOUD-PROOF-ACCEPTANCE.md) and [performance execution contract](CLOUD-PERFORMANCE.md)
@@ -30,14 +31,14 @@ Standalone proof admission and actual engine/platform admission are separate.
 
 | ID | Current selected direction | Evidence / unfinished gate |
 | --- | --- | --- |
-| CD01 Source | Houdini FX22.0.459 SOP/sparse Pyro -> evolving VDB -> one Thrum optical cook for all five families. | Licensed installation prerequisite and accepted local content remain unrun; no required implicit/2.5D challenger. |
+| CD01 Source | Native runtime sparse3D source with live bounded transport/local source-loss and genus recipes; generated static basis data, no Houdini. | Nubis³ is the selected visual/render reference; our dynamic lifecycle adaptation must pass early native image/motion/control gates. |
 | CD02 Detail | Optical frames contain structural birth, mature renewal and loss; stable coordinates and fixed optical calibration. | Watched source/reference motion and intermediate-frame comparison. |
-| CD03 Residency | Immutable density endpoints with bounded page/frame-window IO; complete episode-context ambient stream. | Density shares only where identical; all-cloud AO cannot share by master/frame alone. Actual1x/16x/64x bytes and latency qualify. |
-| CD04 Optics | Hillaire four-LUT air + RGB aerial T; two-lobe HG/one extra MS octave; baked ambient accessibility; full-column BSM receiver shadows and complete secondary Sun rays inside cloud domains. | Complete equations/paths fixed in baseline; numerical, image, source and cost POCs qualify implementation/settings. |
+| CD03 Residency | Versioned current optical field snapshots and bounded runtime source/occupancy updates; shared static ingredients, current voxel light. | No baked all-cloud AO or full lifetime stream. Actual state/scratch/halo/mip/copy and1x/16x/64x work/latency qualify. |
+| CD04 Optics | Hillaire four-LUT air + RGB aerial T; two-lobe HG/one extra MS octave; current voxel Sun/ambient cache,2local Sun samples, receiver BSM and complete-ray oracle/fallback. | Complete equations/paths fixed in baseline; numerical, image, source and cost POCs qualify implementation/settings. |
 | CD05 Consumers | Main, attenuation, reflected/environment and optional CPU semantics bind independently. | Retained offscreen causes survive; no-optical-consumer GPU work retires. |
 | CD06 Reuse | Retain Beer/phase semantics, oracles, comparison inputs, reflection boundary, controls and provenance where qualified. | Replace viewer-shaped ownership, one-box assumptions, fixed sky and private final display. |
 | CD07 Far sky | Same3D source query at ordinary footprint mips and conservative occupancy to curved horizon. | Direct resolved thin-gap/terminal tests qualify LOD; no required far-transfer codec or painted horizon. |
-| CD08 Weather | Finite authored world episodes with persistent event IDs and offline shared height-wind/pose tracks. | Runtime adds no wind; different ages are authored birth times. Actual local development, survivor and matched-boundary QA, not live edit/branch controls. |
+| CD08 Weather | Live weather/front/lift/dry/storm controls and persistent source state under one height-wind provider. | Runtime W acts once plus declared internal motion; required midlife wind/front/storm response, mature renewal and survival without loading a clip. |
 | CD09 View cost | Disjoint near-prefix/far-tail integration, independent temporal histories and current spatial/fresh fallback. | Fixed formats/lifetime proposal in baseline; motion/cut/64x and fog/geometry joins qualify quality/cost. |
 | CD10 Progression | Small source/air/seam pilots -> early coupled cost screen -> all source regimes -> complete path -> families/weather/skies -> engine binding. | One active checkbox queue in CLOUD-MIGRATION. Optional research does not gate required implementation. |
 
@@ -51,7 +52,7 @@ final upscaler or exposure transform. No speculative crates or wholesale prototy
 
 | Handoff | Meaning and consumer obligation |
 | --- | --- |
-| Source snapshot | Stable world/epoch/time, recipe/story revision, event/layer/group IDs, phase/trajectory/support, leases and interpretation. No camera-created source facts. |
+| Source snapshot | Stable world/epoch/time, recipe/control/provider revision, event/layer/group IDs, evolution/support, leases and interpretation. No camera-created source facts. |
 | Optical sample | Nonnegative extinction/scattering in m^-1, normalized liquid/ice phase semantics, support/footprint/error/representation/time. Valid zero differs from unavailable. |
 | Cloud path | Endpoints/directional boundary, source groups/time and ordinary cloud tau/T with validity/error. V3 composes air/fog/geometry once. Filtered radiance visibility cannot silently answer point queries. |
 | Correspondence | Current and actual retained prior times, prior position/error and local birth/loss invalidity. Absent mapping rejects history. |
@@ -71,12 +72,12 @@ multiple parts or quality levels representing one condensate use a partition sum
 not add. Prepared coefficients use a fixed optical calibration; liquid/ice scattering channels remain meaningful
 through interpolation/LOD. They are authored optical proxies, not conserved meteorological water by assertion.
 
-Shared wind acts once during Houdini episode authoring, at material height. Density exports in a moving event-local
-frame with exact fixed-scale rigid pose; internal shear/advection is baked. Runtime samples pose plus adjacent optical
-frames at the same inverse-pose coordinate and adds no wind. All consumers use the same episode/world clock and wind
-metadata. Whole-episode synchronization preserves the all-cloud ambient bake; independent phase/cloning/live wind
-edits are optional recook/retarget work, not baseline controls. P1b validates Cu/Cb, Sc/St and Ci regimes before format
-or library freeze. See baseline for pose interpolation, AO keys, episode boundaries and admission rules.
+Shared wind acts once in the live3D source update, at material height. E1 supplies spatial/time controls and W; the
+source adds named internal updraft/outflow/fall terms without redefining world wind. Runtime source transport/local
+creation/loss changes actual3D support and topology under new forcing. Main/mirror/light never add a second source
+wind. Control/seed/source checkpoints make replay/recovery explicit; optical GPU state is distinct from CPU semantic
+weather/causes. All families publish the same representation-neutral query and current source time. P1b validates
+Cu/Cb, dense Sc/St and thin Ci before source layout/library freeze. See baseline for exact operators and lifecycle.
 
 V3 integrates summed local extinction/source over overlapping air/fog/cloud intervals with one prefix throughput.
 Disjoint affine operators compose front A/rear B as `(S_A+T_A*S_B,T_A*T_B)`. Clear-air LUTs replace only disjoint,
@@ -104,8 +105,8 @@ aerosol albedo/phase/height and ozone choice are pinned assets; the old bounded 
 
 Use stable radial-height/shell-root formulas, conservative tangent predicates and split GPU origins. A camera rebase
 cannot reseed clouds. Fixed spherical chart IDs/cell adjacency deduplicate face edges and preserve source identities;
-wind/pose export uses the declared spherical world mapping, never arbitrary angular texture scroll. Offline source
-mapping must match its shared world wind profile or reject admission; runtime does not impose an affine warp.
+wind/pose export uses the declared spherical world mapping, never arbitrary angular texture scroll. Runtime source
+transport/halo mapping must match shared W and the declared spherical chart or reject admission.
 
 World-source demand covers main, independent reflection/environment, direct-light and ambient paths to their actual
 finite planet/top/source terminals, including sources far outside the main frustum. Test cross-chart edges, horizon,

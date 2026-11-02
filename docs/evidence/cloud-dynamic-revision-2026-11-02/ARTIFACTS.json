@@ -1,0 +1,21 @@
+{
+  "scope": "Selected runtime/cloud/provider written plan; no implementation, visual or target-cost qualification.",
+  "sha256": {
+    "docs/design/modules/CLOUDS.md": "176cd6c0ff81082119db0c501e2d7e5cb2e46768354c13ae8d16ba969e96eff8",
+    "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md": "1759f9148daeba1eba5971f1bea04c63d7199b436de914030704b9dee35702db",
+    "docs/design/modules/CLOUD-PROVIDERS.md": "ae09e82bd6f9d8246e4fd62c0dda704d015e347cc61d87b0d81f9b13e3230288",
+    "docs/design/modules/ATMOSPHERE-SYSTEM.md": "ba1ab6ea2de4b812a7e9ff8c774d861227afb30c1397975b3939362f8d871848",
+    "docs/design/modules/CLOUD-MIGRATION.md": "ceee02ba431fdbc669396b2d3d6b2e0f2f2a9f8e7c7c165e6b211760b142ec97",
+    "docs/design/modules/CLOUD-CAPABILITIES.md": "c928ef395e5cfccc24b34610fe39902848c604913d2d570c5af7e4aa100243e4",
+    "docs/design/modules/CLOUD-PROOF-ACCEPTANCE.md": "13b8a8c11268d1aa8e654674b5b2ff7ce9f7ddf28a7eb51cd02732ffadc77bd5",
+    "docs/design/modules/CLOUD-PERFORMANCE.md": "4153cf92bf6eb7fe5b44dd27cd98444028acd6188a90a33854489f19f5b2ba23",
+    "docs/design/research/ATMOSPHERICS-TECHNIQUES.md": "26484dcacaf43f69576dba55e253ef692ce20f9e29dbb117ada113aba93ee85b",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/REVIEW.md": "06d1cac0b1ca371d5c6ca3f8ccb523a0969c57928280624222a934582ca0eed7",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/render-closure.md": "2f000a5655836aebe6b30b03150eea7b53ffa2307cad7e6b7561555015fcb597",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/source-closure.md": "1767f3f5c34e2a3e72679e3051511a673f5e39181ac6a24a47d3d11a2d5e69af",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/source-review.md": "e4f9b543606238d0fc7923f77df104f7517be99650b95061747009a5e0b7800b",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/system-closure.md": "29b7f773f9e490062506607c5d3115433c647e0f813c5f3e6e95e50e519a1593",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/system-review.md": "19dadb6f5e2ab25fdde142748fa3bc2a727ae2951d401d23c5afc5db5aa56d89",
+    "docs/evidence/cloud-dynamic-revision-2026-11-02/visual-selection.md": "a3cba395da8f1db8bd632921ff5cdc4d258c76eaff34a6176b268ffd5cb7525f"
+  }
+}

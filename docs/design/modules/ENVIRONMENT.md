@@ -1,5 +1,10 @@
 # Environment — proposed module-family design
 
+Current bounded cloud/air work has a [complete atmosphere coverage map](ATMOSPHERE-SYSTEM.md) and
+[replaceable runtime provider recipe](CLOUD-PROVIDERS.md). They commission core optics/live cloud weather and explicit
+seams, not the whole E1 water/surface/vegetation/effect system or physical meteorology.
+
+
 **Initial implementation specification:** [PLAY-ENVIRONMENT-SPEC.md](../PLAY-ENVIRONMENT-SPEC.md) now selects the concrete baseline mechanisms,
 limits and failure rules. This family document retains the wider responsibility; specification does not imply runtime qualification.
 
