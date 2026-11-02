@@ -1020,6 +1020,9 @@ mod tests {
             "{}",
             String::from_utf8_lossy(&built_a.stderr)
         );
+        let selected_units = private_cargo_home.as_deref().map(|home| {
+            inspect_headless_cargo_units(&built_a.stdout, a_materialized.path(), home, &a_output)
+        });
         assert_eq!(tree_hashes(a_materialized.path()), a_files);
         let binary_name = format!("headless{}", std::env::consts::EXE_SUFFIX);
         let binary_a = a_output.join("debug").join(&binary_name);
@@ -1032,12 +1035,13 @@ mod tests {
             b"thrum-headless-v1 taps=1 results=1 events=1\n"
         );
         eprintln!(
-            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={:02x?}",
+            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={:02x?} selected_units={:02x?}",
             a_materialized.file_count(),
             a_materialized.copied_bytes(),
             build_elapsed.as_millis(),
             binary_a_bytes.len(),
-            binary_a_hash
+            binary_a_hash,
+            selected_units
         );
         a_pin.close().unwrap();
         a_materialized.close().unwrap();
@@ -1187,6 +1191,148 @@ mod tests {
         output
     }
 
+    fn inspect_headless_cargo_units(
+        transcript: &[u8],
+        input: &Path,
+        cargo_home: &Path,
+        output: &Path,
+    ) -> [u8; 32] {
+        let input = fs::canonicalize(input).unwrap();
+        let cargo_home = fs::canonicalize(cargo_home).unwrap();
+        let output = fs::canonicalize(output).unwrap();
+        let mut units = Vec::new();
+        let mut finished = false;
+        for line in transcript
+            .split(|byte| *byte == b'\n')
+            .filter(|line| !line.is_empty())
+        {
+            let message: serde_json::Value = serde_json::from_slice(line).unwrap();
+            match message["reason"].as_str().unwrap() {
+                "compiler-artifact" => {
+                    let package_id = message["package_id"].as_str().unwrap();
+                    let registry = package_id.starts_with("registry+");
+                    let allowed_root = if registry { &cargo_home } else { &input };
+                    for path in [
+                        message["manifest_path"].as_str().unwrap(),
+                        message["target"]["src_path"].as_str().unwrap(),
+                    ] {
+                        assert!(
+                            fs::canonicalize(path).unwrap().starts_with(allowed_root),
+                            "outside selected input: {path}"
+                        );
+                    }
+                    let kinds = message["target"]["kind"].as_array().unwrap();
+                    assert!(
+                        kinds
+                            .iter()
+                            .all(|kind| kind != "custom-build" && kind != "proc-macro")
+                    );
+                    assert_eq!(message["fresh"], false, "each output tree must be new");
+                    for filename in message["filenames"].as_array().unwrap() {
+                        let path = Path::new(filename.as_str().unwrap());
+                        assert!(
+                            path.is_file() && !path.is_symlink(),
+                            "missing artifact: {}",
+                            path.display()
+                        );
+                        assert!(
+                            fs::canonicalize(path).unwrap().starts_with(&output),
+                            "artifact escapes output: {}",
+                            path.display()
+                        );
+                    }
+                    let executable = message["executable"].as_str();
+                    if let Some(path) = executable {
+                        assert!(fs::canonicalize(path).unwrap().starts_with(&output));
+                    }
+                    let manifest =
+                        fs::canonicalize(message["manifest_path"].as_str().unwrap()).unwrap();
+                    let package = if registry {
+                        package_id.to_owned()
+                    } else {
+                        let (uri, version) = package_id.split_once('#').unwrap();
+                        let package_dir = cargo_file_uri_path(uri);
+                        assert_eq!(
+                            fs::canonicalize(package_dir).unwrap(),
+                            manifest.parent().unwrap()
+                        );
+                        let relative = manifest.parent().unwrap().strip_prefix(&input).unwrap();
+                        format!("path:{}@{version}", relative.display())
+                    };
+                    let target = message["target"]["name"].as_str().unwrap();
+                    let kind = kinds
+                        .iter()
+                        .map(|kind| kind.as_str().unwrap())
+                        .collect::<Vec<_>>()
+                        .join(",");
+                    let features = message["features"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|feature| feature.as_str().unwrap())
+                        .collect::<Vec<_>>()
+                        .join(",");
+                    units.push(format!("{package}:{target}:{kind}:{features}"));
+                }
+                "build-script-executed" => panic!("first headless profile has no build scripts"),
+                "build-finished" => {
+                    assert_eq!(message["success"], true);
+                    assert!(!finished);
+                    finished = true;
+                }
+                "compiler-message" => panic!("unexpected compiler diagnostic in successful build"),
+                other => panic!("unrecognized Cargo build message: {other}"),
+            }
+        }
+        assert!(finished);
+        units.sort_unstable();
+        assert_eq!(
+            units,
+            [
+                "path:crates/thrum-core@0.1.0:thrum_core:lib:",
+                "path:crates/thrum-mobile-shell@0.1.0:thrum_mobile_shell:lib:",
+                "path:examples/i1-mobile-game@0.1.0:headless:bin:",
+                "path:examples/i1-mobile-game@0.1.0:i1_mobile_game:rlib,staticlib,cdylib:",
+                "registry+https://github.com/rust-lang/crates.io-index#hashbrown@0.17.1:hashbrown:lib:inline-more",
+            ]
+        );
+        Sha256::digest(units.join("\n").as_bytes()).into()
+    }
+
+    fn cargo_file_uri_path(uri: &str) -> PathBuf {
+        fn hex_digit(byte: u8) -> u8 {
+            match byte {
+                b'0'..=b'9' => byte - b'0',
+                b'a'..=b'f' => byte - b'a' + 10,
+                b'A'..=b'F' => byte - b'A' + 10,
+                _ => panic!("invalid Cargo file URI escape"),
+            }
+        }
+
+        let encoded = uri.strip_prefix("path+file://").unwrap().as_bytes();
+        let mut decoded = Vec::with_capacity(encoded.len());
+        let mut index = 0;
+        while index < encoded.len() {
+            if encoded[index] == b'%' {
+                assert!(index + 2 < encoded.len(), "truncated Cargo file URI escape");
+                decoded.push(hex_digit(encoded[index + 1]) * 16 + hex_digit(encoded[index + 2]));
+                index += 3;
+            } else {
+                decoded.push(encoded[index]);
+                index += 1;
+            }
+        }
+        PathBuf::from(String::from_utf8(decoded).unwrap())
+    }
+
+    #[test]
+    fn cargo_file_uri_decodes_spaced_unicode_path() {
+        assert_eq!(
+            cargo_file_uri_path("path+file:///tmp/My%20Scratch/%C3%A9"),
+            PathBuf::from("/tmp/My Scratch/é")
+        );
+    }
+
     fn cargo_build_headless(
         input: &Path,
         output: &Path,
@@ -1209,6 +1355,7 @@ mod tests {
                 "i1-mobile-game",
                 "--bin",
                 "headless",
+                "--message-format=json-render-diagnostics",
             ])
             .env("CARGO_TARGET_DIR", output)
             .env("CARGO_INCREMENTAL", "0")
