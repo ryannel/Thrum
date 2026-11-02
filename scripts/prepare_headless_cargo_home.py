@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import threading
@@ -192,19 +193,44 @@ def collect_bounded(
 
 
 def root_inventory(root):
+    if os.name != "posix":
+        raise ValueError("private Cargo inventory requires POSIX no-follow reads")
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
+        raise ValueError("private Cargo home must be an ordinary absolute directory")
+    def identity(info):
+        return (
+            info.st_dev, info.st_ino, info.st_mode, info.st_size,
+            info.st_mtime_ns, info.st_ctime_ns,
+        )
+
     digest = hashlib.sha256(b"thrum.cargo-home.v1\0")
     count = total = 0
     for path in sorted(root.rglob("*")):
-        if path.is_symlink():
-            raise ValueError(f"private cache contains a symlink: {path}")
-        if not path.is_file():
+        before = path.lstat()
+        if stat.S_ISDIR(before.st_mode):
             continue
+        if not stat.S_ISREG(before.st_mode):
+            raise ValueError(f"private cache contains a non-file entry: {path}")
+        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+        fd = os.open(path, flags)
+        with os.fdopen(fd, "rb") as stream:
+            opened = os.fstat(stream.fileno())
+            if not stat.S_ISREG(opened.st_mode) or identity(before) != identity(opened):
+                raise ValueError(f"private cache file changed before hashing: {path}")
+            content = hashlib.sha256()
+            length = 0
+            for chunk in iter(lambda: stream.read(CHUNK), b""):
+                content.update(chunk)
+                length += len(chunk)
+            if identity(opened) != identity(os.fstat(stream.fileno())):
+                raise ValueError(f"private cache file changed while hashing: {path}")
+        if length != before.st_size or identity(before) != identity(path.lstat()):
+            raise ValueError(f"private cache file changed during inventory: {path}")
         relative = path.relative_to(root).as_posix().encode("utf-8")
-        length = path.stat().st_size
         digest.update(len(relative).to_bytes(4, "little"))
         digest.update(relative)
         digest.update(length.to_bytes(8, "little"))
-        digest.update(bytes.fromhex(sha256_file(path)))
+        digest.update(content.digest())
         count += 1
         total += length
     return {"sha256": digest.hexdigest(), "files": count, "bytes": total}
@@ -463,15 +489,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True)
     parser.add_argument("--verify-reuse", type=Path)
+    parser.add_argument("--private-home", type=Path)
     for name in ("shared-home", "destination", "cargo", "rustc", "target"):
         parser.add_argument(f"--{name}")
     args = parser.parse_args()
     if args.verify_reuse is not None:
         if not Path(args.source).is_absolute():
             raise ValueError("admitted source must be absolute for reuse verification")
-        for name in ("cargo", "rustc", "target"):
+        for name in ("cargo", "rustc", "target", "private_home"):
             if getattr(args, name) is None:
-                parser.error(f"--{name} is required for reuse verification")
+                parser.error(f"--{name.replace('_', '-')} is required for reuse verification")
         candidate = json.loads(args.verify_reuse.read_text(encoding="utf-8"))
         if candidate["format"] != 1:
             raise ValueError("unsupported private Cargo candidate format")
@@ -491,6 +518,8 @@ def main():
         actual = cargo_reuse_key(Path(args.source), args.target, selected_tools)
         if actual != candidate["reuseKey"]:
             raise ValueError("private Cargo cache cannot be reused for this source")
+        if root_inventory(args.private_home) != candidate["privateRoot"]:
+            raise ValueError("private Cargo cache bytes changed since preparation")
         print(json.dumps({"reuseKey": actual["sha256"]}, sort_keys=True))
         return
     for name in ("shared_home", "destination", "cargo", "rustc", "target"):

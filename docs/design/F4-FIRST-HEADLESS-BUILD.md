@@ -89,9 +89,13 @@ The candidate manifest binds a separate cache reuse key to those selection
 inputs, the pinned toolchain/build declarations, and the exact Cargo/Rustc
 executable paths, lengths and hashes. A verifier checks the caller-selected
 target and executable files against that candidate before a later admitted-source
-build reuses the pruned cache; it refuses new ambient Cargo config or implicit
+build reuses the pruned cache. It also rehashes the complete private cache tree
+against the candidate digest and refuses new ambient Cargo config or implicit
 `build.rs` files. This is a candidate-selection guard, not a complete compiler
 input attestation or a substitute for source immutability during compilation.
+The local per-edit rehash is an explicit latency cost; a future authenticated,
+immutable dependency root may use a cheaper verified retention mechanism only
+after proving the same byte-integrity guarantee.
 On macOS, both metadata passes run in a deny-network sandbox with source,
 private cache, toolchain and required system read grants; an external path
 dependency refuses before its manifest can be read. Other build hosts need

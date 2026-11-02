@@ -1128,6 +1128,8 @@ mod tests {
                     .arg(input)
                     .arg("--verify-reuse")
                     .arg(&self.manifest_path)
+                    .arg("--private-home")
+                    .arg(&self.path)
                     .arg("--target")
                     .arg(&self.target)
                     .arg("--cargo")
