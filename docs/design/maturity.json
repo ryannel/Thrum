@@ -291,6 +291,10 @@
       "i2a_provisional_stage": {
         "evidence": "../evidence/i2a/PROVISIONAL-STAGE.md",
         "scope": "Native complete-tree inventory and provisional exact-byte staging with local budget, drift and old-reader fixtures; no F3 schema/dependency validation, durable source admission, cook or save."
+      },
+      "i2a_bootstrap_semantics": {
+        "evidence": "../evidence/i2a/SOURCE-BOOTSTRAP.md",
+        "scope": "Narrow project/empty-scene schema and stable-ID reference proof over rehashed staged bytes; no general F3 registry, candidate manifest, durable admission or runtime consumption."
       }
     },
     {
