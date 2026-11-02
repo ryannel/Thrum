@@ -86,11 +86,20 @@ candidate still checks its selected paths explicitly.
 
 `originEvidence` binds one adjacent canonical JSON file by filename and
 SHA-256. That record names the Rust, Apple linker, Apple SDK and crates.io
-sources with version strings and official HTTPS URLs. The matcher checks the
-record's bytes, shape and official hostnames. It cannot prove that those URLs
-actually supplied the installed bytes; the controlled preparation job and
-human release review own that provenance claim. No real reviewed manifest is
-committed yet. The matcher reports an exact root match with `buildReady:false`
+sources with version strings and official HTTPS URLs. Origin-record format two
+also binds three adjacent canonical proof reports by filename and SHA-256:
+selected Cargo archives, sparse-index records and extracted source. The
+format-two reports each commit to one portable selection digest over the
+target, lockfile hash, private-root identity and exact selected archive and
+index-record maps. The matcher checks that digest, target, lockfile/archive
+selection, selected private-root digest and report shape against the manifest
+and cache candidate. The digest excludes local installation paths. It checks
+the record's bytes, shape and official hostnames. It cannot prove that those
+URLs actually supplied the installed bytes or that the reports were produced
+by a controlled job; the release preparation job and human review own that
+claim. The installed Rust component proof is not yet bound to the selected
+tool-root digest. No real reviewed manifest is committed yet. The matcher
+reports an exact root and Cargo proof-receipt match with `buildReady:false`
 because selected compiler reads, system libraries, output provenance and
 publication remain open.
 

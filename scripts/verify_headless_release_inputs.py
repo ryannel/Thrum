@@ -16,11 +16,14 @@ from urllib.parse import urlsplit
 
 from inventory_headless_tool_roots import inventory_roots
 from prepare_headless_cargo_home import verify_reuse
+from release_cargo_selection import selection_sha256
+from verify_crates_io_archive_origin import locked_archives
 
 
 PROFILE = "headless-macos-arm64-dev-v1"
 TARGET = "aarch64-apple-darwin"
 ROOT_NAMES = ("rustToolchain", "linkerToolchain", "sdk")
+PROOF_NAMES = ("cargoArchives", "cargoIndex", "cargoExtraction")
 ORIGIN_HOSTS = {
     "rustToolchain": {"static.rust-lang.org"},
     "linkerToolchain": {"developer.apple.com", "download.developer.apple.com", "apps.apple.com"},
@@ -141,8 +144,8 @@ def validate_manifest(manifest):
 
 
 def validate_origin_evidence(record):
-    exact_fields(record, ("format", "sources"), "origin evidence")
-    if type(record["format"]) is not int or record["format"] != 1:
+    exact_fields(record, ("format", "sources", "proofs"), "origin evidence")
+    if type(record["format"]) is not int or record["format"] != 2:
         raise ValueError("unsupported origin evidence format")
     exact_fields(record["sources"], ORIGIN_HOSTS, "origin evidence sources")
     for name, source in record["sources"].items():
@@ -156,6 +159,92 @@ def validate_origin_evidence(record):
             raise ValueError(f"origin evidence {name} URL is not an official HTTPS origin")
         if not isinstance(source["version"], str) or not 1 <= len(source["version"]) <= 128:
             raise ValueError(f"origin evidence {name} version is missing or too long")
+    exact_fields(record["proofs"], PROOF_NAMES, "origin evidence proofs")
+    files = set()
+    for name, proof in record["proofs"].items():
+        exact_fields(proof, ("file", "sha256"), f"origin proof {name}")
+        filename = proof["file"]
+        if (not isinstance(filename, str) or not EVIDENCE_FILE.fullmatch(filename)
+                or filename in (".", "..") or filename in files):
+            raise ValueError(f"origin proof {name} must use a distinct adjacent file")
+        files.add(filename)
+        sha256_hex(proof["sha256"], f"origin proof {name} SHA-256")
+
+
+def verify_origin_proofs(record, evidence_path, manifest, candidate, lock_bytes):
+    """Bind reviewed report bytes to one selected private root; no fetch occurs here."""
+    root = manifest["dependencyRoot"]["sha256"]
+    selection = selection_sha256(candidate)
+    reports = {}
+    for name in PROOF_NAMES:
+        descriptor = record["proofs"][name]
+        if descriptor["file"] == evidence_path.name:
+            raise ValueError("origin proof cannot refer to the evidence record itself")
+        path = evidence_path.parent / descriptor["file"]
+        report, digest = canonical_json_file(path, 512 * 1024)
+        if digest != descriptor["sha256"]:
+            raise ValueError(f"origin proof bytes differ: {name}")
+        if (not isinstance(report, dict) or type(report.get("format")) is not int
+                or report["format"] != 2
+                or report.get("target") != TARGET
+                or report.get("privateRootSha256") != root
+                or report.get("selectionSha256") != selection
+                or report.get("buildReady") is not False):
+            raise ValueError(f"origin proof selection differs: {name}")
+        reports[name] = report
+
+    archives = reports["cargoArchives"]
+    exact_fields(archives, (
+        "format", "target", "lockSha256", "privateRootSha256", "selectionSha256",
+        "archives", "buildReady",
+    ), "cargo archive origin proof")
+    if archives["lockSha256"] != manifest["lockSha256"]:
+        raise ValueError("cargo archive proof lockfile differs")
+    selected_archives = candidate.get("registryArchives")
+    if not isinstance(selected_archives, dict) or not selected_archives:
+        raise ValueError("private cache lacks selected archive identities")
+    locked = locked_archives(lock_bytes)
+    expected_archives = []
+    for filename in sorted(selected_archives):
+        if filename not in locked:
+            raise ValueError(f"selected archive absent from lockfile: {filename}")
+        name, _, checksum = locked[filename]
+        identity = selected_archives[filename]
+        if (not isinstance(identity, dict) or set(identity) != {"sha256", "bytes"}
+                or identity["sha256"] != checksum or type(identity["bytes"]) is not int
+                or identity["bytes"] <= 0):
+            raise ValueError(f"invalid private archive identity: {filename}")
+        expected_archives.append({
+            "url": f"https://static.crates.io/crates/{name}/{filename}",
+            "sha256": checksum, "bytes": identity["bytes"],
+        })
+    if archives["archives"] != expected_archives:
+        raise ValueError("cargo archive proof differs from selected cache")
+
+    index = reports["cargoIndex"]
+    exact_fields(index, (
+        "format", "target", "privateRootSha256", "selectionSha256", "indexNames",
+        "cachedVersionsMatched", "buildReady",
+    ), "cargo index origin proof")
+    index_records = candidate.get("registryIndexRecords")
+    if not isinstance(index_records, dict) or not index_records:
+        raise ValueError("private cache lacks selected index identities")
+    count(index["indexNames"], "cargo index proof names")
+    count(index["cachedVersionsMatched"], "cargo index proof versions")
+    if (index["indexNames"] != len(index_records)
+            or index["cachedVersionsMatched"] < index["indexNames"]):
+        raise ValueError("cargo index proof differs from selected cache")
+
+    extraction = reports["cargoExtraction"]
+    exact_fields(extraction, (
+        "format", "target", "privateRootSha256", "selectionSha256", "packages",
+        "matchedFiles", "matchedBytes", "buildReady",
+    ), "cargo extraction proof")
+    for field in ("packages", "matchedFiles", "matchedBytes"):
+        count(extraction[field], f"cargo extraction proof {field}")
+    if (extraction["packages"] != len(selected_archives)
+            or extraction["matchedFiles"] == 0 or extraction["matchedBytes"] == 0):
+        raise ValueError("cargo extraction proof differs from selected cache")
 
 
 def selected_file_in_root(path, root, label):
@@ -194,6 +283,10 @@ def verify_release_inputs(manifest_path, source, cache_manifest_path, private_ho
     candidate, _ = canonical_json_file(cache_manifest_path, 512 * 1024)
     if candidate["lockSha256"] != manifest["lockSha256"]:
         raise ValueError("admitted lockfile differs from reviewed release selection")
+    lock_bytes = bounded_regular_bytes(source / "Cargo.lock", 4 * 1024 * 1024)
+    if hashlib.sha256(lock_bytes).hexdigest() != manifest["lockSha256"]:
+        raise ValueError("admitted lockfile bytes differ from reviewed release manifest")
+    verify_origin_proofs(record, evidence, manifest, candidate, lock_bytes)
     selected_file_in_root(cargo, rust_toolchain, "Cargo")
     selected_file_in_root(rustc, rust_toolchain, "Rustc")
     selected_file_in_root(linker, linker_toolchain, "linker")
@@ -214,6 +307,7 @@ def verify_release_inputs(manifest_path, source, cache_manifest_path, private_ho
     return {
         "format": 1, "profile": PROFILE, "manifestSha256": manifest_hash,
         "selectionKey": actual_key["sha256"], "matchedInputRoots": True,
+        "matchedOriginProofs": True,
         "buildReady": False,
     }
 

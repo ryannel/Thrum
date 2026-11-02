@@ -12,8 +12,16 @@ private Cargo home. Duplicate/unknown fields, noncanonical JSON, wrong target,
 malformed digests and missing or changed adjacent origin evidence refuse. Small
 manifest and origin files are opened through held parent-directory descriptors
 with no-follow/nonblocking flags and checked for replacement around reads. The
-origin record names exact official HTTPS hosts and versions; hostname checking
-does not establish acquisition history. The caller must be a trusted engine
+format-two origin record names exact official HTTPS hosts and versions and
+hash-binds adjacent canonical Cargo archive, index and extraction reports. The
+matcher checks each report against the selected lockfile, archive list, target
+and private-root digest. The three format-two reports share a portable
+`selectionSha256` over target, lockfile, private-root identity and exact
+archive/index selections. A receipt from a different same-count selection
+therefore refuses, even if the proof and origin-record hashes are consistently
+updated. Hostname and receipt checking do not establish
+acquisition history or attest that the reports ran in a controlled job. The
+caller must be a trusted engine
 release loader that selects a repository-reviewed manifest and retained
 acquisition record.
 
@@ -29,11 +37,13 @@ admitted A/B sandbox compile still passed with the new key and kept the same
 1,480 ms, root reuse check 162 ms and compilation 1,566 ms in that run; these
 are warm-host observations, not a build-time guarantee.
 
-Five small POSIX fixtures check the CLI and matching selection with code-only reuse;
+Seven small POSIX fixtures check the CLI and matching selection with code-only reuse;
 changed dependency, Cargo manifest, origin record and SDK bytes; duplicate
 or unknown manifest fields; wrong selected target; an internally inconsistent
 lock hash; a Unicode installation path; a manifest-file symlink swap; and an
-unofficial HTTPS origin even when its bytes are deliberately rehashed into the manifest. They
+unofficial HTTPS origin even when its bytes are deliberately rehashed into the manifest.
+The proof fixtures refuse changed proof bytes and correctly rehashed reports
+naming a wrong private root, archive URL or same-count index selection. They
 use synthetic tiny roots rather than installed release inputs. The separate
 [tool-root inventory proof](F4-TOOL-ROOT-INVENTORY.md) measured the installed
 three-root cold scan at 11.0 seconds over about 4.86 GB logical bytes. This
@@ -51,7 +61,8 @@ The cache root was again 2,923 files, 67,792,387 logical bytes and SHA-256
 `58c57419b000f0dbb2037792932f0191abecceae9e14e77e4b384fb06811225b`.
 An ephemeral candidate manifest used the previously inventoried installed
 Rust 1.99.1, Xcode 27.2 linker and macOS SDK root digests, with a synthetic
-origin record containing official URL/version labels. The cold matcher read
+format-one origin record containing official URL/version labels. This was run
+before the format-two proof-receipt requirement. The cold matcher read
 those roots and returned `matchedInputRoots:true`, `buildReady:false`,
 manifest SHA-256
 `dd7dc25a0b39e054abd3ab903980ed432ec4e03ac0d03aa73aad7c95c699b3ab`
