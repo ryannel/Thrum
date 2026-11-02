@@ -327,6 +327,10 @@
       "i2a_game_record": {
         "evidence": "../evidence/i2a/SOURCE-GAME-RECORD.md",
         "scope": "Direct first-profile descriptor-fed game-record validation with bounded strict optional opaque JSON, typed reference summary and descriptor hash provenance, plus local dense/deep/wide parser cost/RSS probes; no staged source verification, target resolution, source-editor round-trip or durable admission."
+      },
+      "i2a_staged_registry": {
+        "evidence": "../evidence/i2a/SOURCE-STAGED-REGISTRY.md",
+        "scope": "Provisional staged core.project schema 2, declared core.schema and source-carried history records are rehashed and joined for reserved path membership, unique registry record IDs and active field/version consistency. Local small-tree repeated validation cost only; scene/game record semantics, references, authenticated predecessor, combined memory reservation and durable admission remain open."
       }
     },
     {
