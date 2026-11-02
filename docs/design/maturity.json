@@ -2793,7 +2793,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "698f54e7590735a7ad5ce9305369363492e278c26af70efc5838596229c9274e",
+    "design_sha256": "8f94e6029b505630ccc3af0a382b048834f9f9bec1f824532878ab95fc65d062",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
@@ -2915,11 +2915,11 @@
     "mobile_app_shell": {
       "design": "selected_one_winit_event_loop_one_headless_host_finite_touch_and_result_delivery_gate_with_android_activity_pause_bridge",
       "implementation": "partial_ios_app_source_static_libraries_linked_unsigned_simulator_bundle_and_android_gameactivity_gradle_source",
-      "functional_validation": "local_bundled_game_authority_replica_result_test_and_ios_target_compile_link_only",
+      "functional_validation": "local_bundled_game_authority_replica_result_and_60_240_hz_deadline_clock_tests_and_ios_target_compile_link_only",
       "visual_validation": "not_run",
       "platform_performance": "not_run",
       "performance_measurement": "not_run",
-      "scope": "The app integrates the finite lifecycle/touch gate, bounded pending intents, one-peer receipt cursor, real headless host, in-memory replica and one-color Metal/Vulkan surface response. iOS device/simulator Rust libraries compile and an unsigned simulator app links. No simulator/device run, Android Rust app build or APK, actual JNI/lifecycle/surface behavior, memory/CPU/GPU measurement or sustained display claim exists. Android SDK/NDK/Gradle and working CoreSimulatorService are unavailable locally.",
+      "scope": "The app integrates the finite lifecycle/touch gate, bounded pending intents, one-peer receipt cursor, real headless host, in-memory replica, configurable-clock deadline scheduling and one-color Metal/Vulkan surface response. iOS device/simulator Rust libraries compile and an unsigned simulator app links. No simulator/device run, Android Rust app build or APK, actual JNI/lifecycle/surface behavior, memory/CPU/GPU/power measurement or sustained display claim exists. Android SDK/NDK/Gradle and working CoreSimulatorService are unavailable locally.",
       "evidence": "../evidence/i1-headless/MOBILE-APP-SHELL.md"
     }
   }
