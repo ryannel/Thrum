@@ -102,6 +102,10 @@ or private Cargo root after canonicalization. The local run passed with 53
 admitted files (1,232,354 B) and a 1,745 ms fresh-output build. The normalized
 diagnostic digest was
 `5d5280794e73179b41cac152647f99ed928af85894311aca88f2f74c09a60be8`.
+A second run from a distinct temporary root and changed admitted code bytes
+produced the same digest, with a 1,207 ms fresh-output A build. The digest
+identifies reported path membership, not source content; the separate pinned
+source and private-cache inventories check bytes.
 An independent small macOS fixture supplies five dep-info rules, then proves
 that an outside-root source, malformed first rule and missing unit each refuse.
 The [Cargo dep-info reference](https://doc.rust-lang.org/cargo/reference/build-cache.html#dep-info-files)
