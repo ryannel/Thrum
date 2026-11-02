@@ -75,15 +75,29 @@ admitted files, 1,213,846 bytes, 1,455 ms for A's debug build and a
 2,345,736-byte executable. A checkout source read, shared Cargo config read
 and materialized input write were refused. Exact source and private-cache
 path/hash inventories were unchanged after both builds, while admitted B's
-invalid Rust failed and A's binary still verified and ran. The private cache
-had 318 files, 28,523,480 bytes and local canonical path/length/file-hash
-tree digest `1f5efe1d26eaf48c6e07c83e4b3745497452242daff8c7eeed83909842c8238d`.
+invalid Rust failed and A's binary still verified and ran. That earlier
+manually prepared private cache had 318 files, 28,523,480 bytes and local
+canonical path/length/file-hash tree digest
+`1f5efe1d26eaf48c6e07c83e4b3745497452242daff8c7eeed83909842c8238d`.
 This is one host observation, not a build-time target or a general cache size.
+
+The structured Cargo transcript from the fresh A output tree reported five
+compiler artifacts: `hashbrown 0.17.1`, `thrum-core`, `thrum-mobile-shell`,
+and the bundled game's library and headless binary. The test checks the
+reported source/manifest paths against admitted input or private Cargo home,
+artifact paths against the fresh output tree, absence of build-script and
+proc-macro events, and a sorted Cargo-ID or admitted-relative-path/version,
+target, kind and feature digest. The observed unit digest is
+`47042cc82aa994ad4383eba23b10891b66c296a9b1a87acd2a12c0bf5834b4c1`. This is
+an observed selected graph, not a complete file-read trace or compiler
+invocation attestation. The latest run used 53 admitted files (1,220,551 B),
+1,477 ms for A's debug build and a 2,345,736 B executable; these are one
+warm-cache local observation, not a performance guarantee.
 
 The sandboxed run improves the process boundary; it does not make a trusted
 builder. The prepared cache's index records were copied from mutable host
 state and its tree digest is diagnostic rather than a release-verified root.
-Broad system reads remain; selected Cargo build units, build-script/proc-macro
+Broad system reads remain; general selected-unit and build-script/proc-macro
 inputs, exact compiler/dependency identities and the output manifest are not
 closed. A successful process exit and binary hash therefore do not form a
 trusted `BuildRevision`. The next T2 step is a closed, attested compiler

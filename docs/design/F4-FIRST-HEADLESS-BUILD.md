@@ -88,6 +88,13 @@ their own qualified metadata and compiler isolation adapter.
 The isolated compiler can reuse that root without granting the shared cache.
 Keep this cache outside the source project and F3's `.engine` temporary budget;
 source admission must see neither cache files nor an undeclared cache manifest.
+The first sandboxed fixture now checks Cargo's structured compiler-artifact
+stream against five expected package targets. Every reported manifest/source
+path belongs to admitted source or the private cache, every reported artifact
+belongs to the fresh output tree, and build-script/proc-macro messages refuse.
+This observes one selected graph after execution; it does not authorize a
+general package graph, attest exact compiler invocations or prove all files
+read by rustc. A trusted adapter must close those inputs before publication.
 
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,
