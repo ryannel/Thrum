@@ -90,13 +90,32 @@ proc-macro events, and a sorted Cargo-ID or admitted-relative-path/version,
 target, kind and feature digest. The observed unit digest is
 `47042cc82aa994ad4383eba23b10891b66c296a9b1a87acd2a12c0bf5834b4c1`. This is
 an observed selected graph, not a complete file-read trace or compiler
-invocation attestation. The latest run used 53 admitted files (1,222,780 B),
-1,976 ms for A's debug build and a 2,345,736 B executable; these are one
+invocation attestation. The latest run used 53 admitted files (1,225,138 B),
+1,148 ms for A's debug build and a 2,345,736 B executable; these are one
 warm-cache local observation, not a performance guarantee.
 
 The sandboxed run improves the process boundary; it does not make a trusted
 builder. The prepared cache's index records were copied from mutable host
 state and its tree digest is diagnostic rather than a release-verified root.
+The local macOS profile was then narrowed further: data reads no longer grant
+all of `/private/var`, `/var`, `/opt` or `/Applications`; it grants the selected
+developer tree (here `/Applications/Xcode.app/Contents/Developer`), named
+system roots, admitted input, private cache, toolchain and output. A denial
+probe against the test project's
+`Cargo.toml` outside the materialized input passed. With the default `cc`
+linker, two otherwise passing A builds took 7,406 and 7,436 ms. Local macOS
+sandbox logs showed `xcrun` and `xcodebuild` repeatedly trying to read denied
+temporary cache files. Setting Cargo's host-target linker to Xcode Clang and
+`SDKROOT` to the selected MacOSX SDK avoided those cache lookups; two narrow
+sandbox A builds took 1,039 and 1,031 ms. Resolving the selected developer
+root with `xcode-select` or `DEVELOPER_DIR` and its linker/SDK with `xcrun`
+under explicit `--sdk macosx` before sandbox entry produced a 1,026 ms A build.
+The Cargo linker variable is keyed from the selected Rustc host triple rather
+than the test process architecture. These are local cold-output-tree
+observations, not a latency guarantee. The direct linker and SDK are selected
+by path but their complete bytes and loaded dependency closure are not yet
+authenticated.
+
 Broad system reads remain; general selected-unit and build-script/proc-macro
 inputs, exact compiler/dependency identities and the output manifest are not
 closed. A successful process exit and binary hash therefore do not form a

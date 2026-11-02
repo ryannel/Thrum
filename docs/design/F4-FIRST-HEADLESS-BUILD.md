@@ -108,6 +108,16 @@ checks them again after both compiles. Hashing is cold preparation work, not
 per-tick or per-edit work. These two files do not constitute the toolchain:
 Rustc loads libraries and standard crates, and native linking uses system SDK
 inputs. The trusted adapter must bind their exact release closure as well.
+On the local macOS ARM64 qualification, the compiler sandbox can omit broad
+temporary-directory and application reads when it resolves the selected
+developer root, Clang linker and MacOSX SDK before entering the sandbox,
+grants that root, and passes the selected paths to Cargo. Leaving the default
+`cc` shim under that
+narrow policy causes repeated denied `xcrun`/Xcode cache reads and an observed
+roughly fivefold cold-build slowdown. The direct linker path avoids those
+mutable cache reads and is faster in the paired local fixture. It remains a
+host-specific candidate until the selected Clang, SDK, loaded libraries and
+their invocation are verified as one release/toolchain closure.
 
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
 build, with fresh `SessionId` and `WorldEpoch`. The existing `GameRules`,
