@@ -143,6 +143,23 @@ such existing system-file probe on the host. This is a narrower local data-read
 boundary; global metadata reads and the named system roots remain broad, and
 there is no complete compiler file-read trace or release root authentication.
 
+An exploratory removal of the global metadata grant did **not** pass the
+admitted A/B build and was reverted. Cargo first refused creation under the
+temporary work root. Canonicalizing Cargo's output path and granting metadata
+for the observed temporary and Rust toolchain ancestors let compilation reach
+the native link, but Clang then reported no developer tools. The local macOS
+sandbox log showed denied metadata probes for `/Applications` and for
+`libxcrun.dylib` under the selected Xcode developer tree and Command Line
+Tools tree. The linker diagnostic said `xcode-select: ... No developer tools
+were found, requesting install` and `clang: error: linker command failed`.
+These observations point to an Xcode support/discovery dependency outside the
+selected Clang toolchain and SDK roots. They do not prove that both probed
+`libxcrun.dylib` files were loaded. The attempted profile was not retained;
+these denials are one-host evidence, not a complete read trace.
+The trusted adapter must explicitly select and verify any required Xcode
+support bytes and close path-ancestor metadata before removing the global
+grant or claiming a complete input closure.
+
 Broad system reads remain; general selected-unit and build-script/proc-macro
 inputs, exact compiler/dependency identities and the output manifest are not
 closed. A successful process exit and binary hash therefore do not form a
