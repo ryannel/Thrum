@@ -16,8 +16,12 @@ pub(crate) struct ProjectRecord {
     pub(crate) entry_scenes: Vec<String>,
 }
 
-pub(crate) struct SceneRecord {
-    pub(crate) id: String,
+/// Fixed first-profile scene data for an admitted-source consumer.
+pub struct SceneRecord {
+    /// Stable authored scene identity.
+    pub id: String,
+    /// Optional human-facing caption; not an authority or runtime handle.
+    pub label: Option<String>,
 }
 
 pub(crate) fn parse_project(
@@ -30,7 +34,8 @@ pub(crate) fn parse_project(
     Ok(record)
 }
 
-pub(crate) fn parse_scene(bytes: &[u8]) -> Result<SceneRecord, serde_json::Error> {
+/// Decode the fixed scene record without constructing a generic JSON tree.
+pub fn parse_scene(bytes: &[u8]) -> Result<SceneRecord, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let record = SceneSeed.deserialize(&mut deserializer)?;
     deserializer.end()?;
@@ -318,16 +323,15 @@ impl<'de> Visitor<'de> for SceneVisitor {
         let mut id: Option<String> = None;
         let mut record_type: Option<String> = None;
         let mut schema: Option<u64> = None;
-        let mut fields_seen = false;
+        let mut fields = None;
         let mut documentation_seen = false;
         while let Some(key) = map.next_key::<String>()? {
             match key.as_str() {
                 "id" if id.is_none() => id = Some(map.next_value()?),
                 "type" if record_type.is_none() => record_type = Some(map.next_value()?),
                 "schema" if schema.is_none() => schema = Some(map.next_value()?),
-                "fields" if !fields_seen => {
-                    map.next_value_seed(SceneFieldsSeed)?;
-                    fields_seen = true;
+                "fields" if fields.is_none() => {
+                    fields = Some(map.next_value_seed(SceneFieldsSeed)?);
                 }
                 "documentation" if !documentation_seen => {
                     let _: String = map.next_value()?;
@@ -344,18 +348,21 @@ impl<'de> Visitor<'de> for SceneVisitor {
         if !canonical_uuid(&id)
             || record_type.as_deref() != Some("core.scene")
             || schema != Some(1)
-            || !fields_seen
+            || fields.is_none()
         {
             return Err(A::Error::custom("invalid scene identity, type or schema"));
         }
-        Ok(SceneRecord { id })
+        Ok(SceneRecord {
+            id,
+            label: fields.flatten(),
+        })
     }
 }
 
 struct SceneFieldsSeed;
 
 impl<'de> DeserializeSeed<'de> for SceneFieldsSeed {
-    type Value = ();
+    type Value = Option<String>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
@@ -368,24 +375,23 @@ impl<'de> DeserializeSeed<'de> for SceneFieldsSeed {
 struct SceneFieldsVisitor;
 
 impl<'de> Visitor<'de> for SceneFieldsVisitor {
-    type Value = ();
+    type Value = Option<String>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("empty scene fields or an optional scene.label string")
     }
 
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        let mut label_seen = false;
+        let mut label = None;
         while let Some(key) = map.next_key::<String>()? {
             match key.as_str() {
-                "scene.label" if !label_seen => {
-                    let _: String = map.next_value()?;
-                    label_seen = true;
+                "scene.label" if label.is_none() => {
+                    label = Some(map.next_value()?);
                 }
                 _ => return Err(A::Error::custom("duplicate or unsupported scene field")),
             }
         }
-        Ok(())
+        Ok(label)
     }
 }
 
@@ -415,7 +421,9 @@ mod tests {
         let scene = format!(
             "{{\"fields\":{{\"scene.label\":\"hello\"}},\"type\":\"core.scene\",\"id\":\"{SCENE_ID}\",\"schema\":1}}"
         );
-        assert_eq!(parse_scene(scene.as_bytes()).unwrap().id, SCENE_ID);
+        let parsed_scene = parse_scene(scene.as_bytes()).unwrap();
+        assert_eq!(parsed_scene.id, SCENE_ID);
+        assert_eq!(parsed_scene.label.as_deref(), Some("hello"));
     }
 
     #[test]
@@ -423,6 +431,7 @@ mod tests {
         let valid = format!(
             "{{\"id\":\"{SCENE_ID}\",\"type\":\"core.scene\",\"schema\":1,\"fields\":{{}}}}"
         );
+        assert_eq!(parse_scene(valid.as_bytes()).unwrap().label, None);
         assert!(
             parse_scene(
                 valid

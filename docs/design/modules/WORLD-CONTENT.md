@@ -41,6 +41,37 @@ Terrain is a W2 geometry product family, not the world coordinate model. A lands
 
 ## Import, cook and runtime residency
 
+### First headless source-to-scene product slice
+
+The first F4 implementation accepts an F3 `PinnedSource` only. It reads the verified
+`project.json` and the single declared entry scene through the pin; no mutable checkout
+path is accepted by the API. The fixed project parser names the entry ID, while the
+authenticated manifest locates its stable `core.scene` record path. The fixed scene
+parser retains its optional caption. A missing or incompatible record refuses the cook
+without publishing a product. The source root remains F3 authority; F4 owns the derived
+`SceneProduct` and its typed `SceneProductRevision`.
+
+The v1 headless product key hashes a domain/version tag, target, the exact verified
+project and scene input digests. The project bytes already contain the entry ID,
+and the scene bytes already contain the caption. It does not hash the
+whole `SourceRevision`: unrelated admitted files may advance the root without recooking
+an unchanged scene. The product retains its source-root provenance separately. This
+first profile has one entry scene, one CPU-only target and an in-memory product. It is
+not a `BuildRevision` or runnable game: code binary/toolchain/schema closure, durable
+product bytes/manifest, load-time verification and run/save pins remain later F4/F1/P7
+work. A complete build key must add those inputs before W1 or N1 may activate a world.
+
+The cook path allocates two bounded record buffers, parses only the selected project and
+scene, and scans manifest record metadata once for the entry ID. Its cost is `O(project
+bytes + scene bytes + manifest entries)` plus the native store's verified chunk reads;
+it is offline and never runs in a world callback. At the admitted 100,000-entry maximum,
+the one-time ID scan may need an index if it becomes a repeated cook bottleneck. Avoid
+an always-live ID map until a workload justifies its memory. The product retains only
+the caption and fixed identity/provenance; the input buffers are dropped after cooking.
+The [first executable proof](../../evidence/i2a/F4-HEADLESS-SCENE-COOK.md) checks edits,
+unrelated files, historical pins and failure retention. End-to-end edit-to-ready,
+product storage and runtime performance are still unqualified.
+
 The [first-use review](../FIRST-USE-WALKTHROUGHS.md) makes reimport a concrete authoring obligation: F3/F4 preserve
 source-to-canonical identity correspondence, while T1 records game-owned overrides and exposes mapping conflicts.
 Imported node/material/skin/clip identities must be distinguished from mutable names and array positions. Where an
