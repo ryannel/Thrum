@@ -1258,6 +1258,14 @@
           "correctness": "CPU_reset_replay_regression_and_GPU_finite_transport_layer_support_mask_cache_queued_graph_equivalence_pass",
           "experienced_quality": "seeded_Sc_box_wall_removed_same_camera_before_after_boundary_occupancy_zero_at0_60_300s_other_morphology_motion_cache_error_unqualified",
           "performance": "shared_velocity_retained_optional_off_short_single_cell_screen_inconclusive_adverse_full_sky_AB_required_64x_history_capacity_failure_not_closed_M2_and_whole_GPU_unqualified"
+        },
+        "runtime_storm_pilot": {
+          "record": "../evidence/cloud-storm-source-2026-11-02/README.md",
+          "build": "cb526d8eeb4b3ae8",
+          "implementation": "standalone_Cb_low_body_and_clear_start_feed_cap_outflow_ice_shared_phase_coherent_material_mips_larger_private_grid_no_engine_binding",
+          "correctness": "CPU_reset_intent_and_GPU_phase_sum_material_phase_mip_below_base_seed_transport_cases_pass_Cu_mask_cache_oracle_pass",
+          "experienced_quality": "connected_cap_visible_from_clear_at480s_all_boundary_faces_clear_tower_columnar_soft_art_rejected_long1060s_chart_boundary_failure_motion_acceptance_open",
+          "performance": "M3_Max_10s_queued_1x16x_progress_observed_53_1MiB_logical_Cb_whole_GPU_timestamp_totals_rejected_process_M2_fullsky_unqualified"
         }
       }
     },

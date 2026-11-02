@@ -140,3 +140,14 @@ accepted images/motion and lighting. Report CPU, source/full-graph GPU time, phy
 bandwidth, preparation and fence overlap; no memory-for-compute win follows from mathematical equivalence alone.
 Retain1x and accelerated results separately. Default selection may remain direct while this wider test is pending;
 that is not removal of the cached path.
+
+## Bounded storm source cost checkpoint
+
+The [Cb source pilot](../../evidence/cloud-storm-source-2026-11-02/README.md) uses128×80×128 over24km horizontally to
+contain a growing anvil without discarding the prior source pitch. Its53.1MiB logical ledger includes40MiB q
+textures,2.5MiB carriers and149,796extra native-noise mip bytes; optional float32 velocity storage would add20MiB.
+Six new backtraced carrier-neighbour evaluations add983,040 velocity/rest queries each per source tick, shared by all
+optical readers rather than repeated per ray. Account for filtered-noise bandwidth too. The10s available-host screens
+deliver1x/16x queued source progress, but whole-GPU timestamps are rejected and target devices/full skies/process peaks
+remain unqualified. The wider chart again reaches its edge on the1060s trace; no indefinite-source or region-exchange
+admission follows. Organised source morphology must be accepted before optimizing an unacceptable visual workload.

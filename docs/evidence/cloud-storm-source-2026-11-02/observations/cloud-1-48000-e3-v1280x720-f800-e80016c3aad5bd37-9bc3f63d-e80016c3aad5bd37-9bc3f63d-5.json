@@ -1,0 +1,157 @@
+{
+  "name": "cloud-1-48000-e3-v1280x720-f800-e80016c3aad5bd37-9bc3f63d-e80016c3aad5bd37-9bc3f63d-5",
+  "build": "e80016c3aad5bd37",
+  "identity": {
+    "files": {
+      "index.html": "3e5dac886209cae4aaf609c4327f36b2748d928474ca2e3f1e2516a6a903e98d",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "3908549d3f2d4df201c12b53bc1a4590a2f9aec58a8632e4b4040769e9cb233b",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "70eece815c2eff13cbc33f64358336d47acf7db8c8cfa27586dac4fbfc8d9cec",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "94516ab74f2ad702c5b4eeafbfc151692577863b3e2d988fbbd9ebbe0ec91432",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench.js": "246baee805a95b2fb8c2a2952690a7d5fbdb743abffd75c18aa4351a92b87c50",
+      "src/gpu-reference.js": "4a98f12536bae946d7fcafcd656f9e36846a45c8b1f9047fa17f8b1fc8cc9001",
+      "src/gpu.js": "8afc01d2f1274b47d371855249eb1cc2cb38c18799d07e67530f8c13c3545582",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/scene.js": "08c34b18fce4539352a11b536f673996ec1205118de1d3441cc22b27c9df13b4",
+      "src/source-mask-reference.js": "1053878ea53457001c4d55971c12819e7e622248efc556bc61ab2720c9530968",
+      "src/source.js": "e7e72d6e01361d55326b814cde07942a9ad0e1e85b84fc5ddef09aacdd707b54",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "e80016c3aad5bd37"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 480,
+    "epoch": 3,
+    "weather": {
+      "time": 480,
+      "weatherTick": 480,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 1440,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:468",
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 1,
+      "inputTick": 480
+    }
+  },
+  "submittedFrame": {
+    "frame": 799,
+    "presented": true,
+    "time": 480,
+    "committedSourceTime": 480,
+    "sourceSteps": 1920,
+    "worldTime": 480,
+    "weatherInput": {
+      "time": 480,
+      "weatherTick": 480,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 1440,
+      "rainFlux": 0.002,
+      "latestLightning": "lightning:71:468",
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 1,
+      "inputTick": 480
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.18,
+      "distance": 25000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        7268.642285380028,
+        1524.2606643543959,
+        23497.54448291438
+      ],
+      "target": [
+        0,
+        6000,
+        0
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -7000,
+        500,
+        -7000
+      ],
+      [
+        7000,
+        15000,
+        7000
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.0045,
+        0.0018
+      ],
+      "MS": [
+        1,
+        0.25,
+        0
+      ],
+      "exposure": 0.5
+    },
+    "epoch": 3,
+    "family": 1,
+    "controls": {
+      "family": 1,
+      "sun": 32,
+      "mode": 0,
+      "provider": 0,
+      "fog": false,
+      "mirror": true,
+      "main": true,
+      "alpha": 1,
+      "emptyWork": true,
+      "resolved": true,
+      "extinctionScale": 1,
+      "cachedVelocity": false,
+      "sourceDiagnostic": false,
+      "viewSteps": 384,
+      "materialSpace": "advected"
+    },
+    "lightBuilt": true
+  },
+  "capture": "cloud-1-48000-e3-v1280x720-f800-e80016c3aad5bd37-9bc3f63d.png"
+}

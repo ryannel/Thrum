@@ -1,0 +1,209 @@
+{
+  "name": "gpu-reference-checks-cb526d8eeb4b3ae8-594afc19-1",
+  "build": "cb526d8eeb4b3ae8",
+  "identity": {
+    "files": {
+      "index.html": "dd4a9af46fe435505d12bb4ae0633529ba9b99005a6a750d0e5c977a733cd8ff",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/optics.wgsl": "97f36dce04c4940d074d44ae6b09f87e2afdace33e4b4c38bcb02692a000bb57",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "889cd814e7040d92d0d9f6accc53ce6af7deec2f9663221c43f22b3d47e1b9e0",
+      "shaders/support.wgsl": "52bb22d63603080474756e5d594178f37ca03e95c618888128fad8f03d2910a4",
+      "shaders/velocity.wgsl": "94516ab74f2ad702c5b4eeafbfc151692577863b3e2d988fbbd9ebbe0ec91432",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench.js": "82bb60c46a018c010fdb83e5b77e742d199939ccfdd0a84de07b581c3542ef65",
+      "src/gpu-reference.js": "dc86be713a795bc2493620e46741b54b0de7503ccbaf041944ebf008574a3cea",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "5d6c3deaf11e9ec688f738f9b7d0a88a876ed63aa13cfa0cff96463c7a716daf",
+      "src/source-mask-reference.js": "1053878ea53457001c4d55971c12819e7e622248efc556bc61ab2720c9530968",
+      "src/source.js": "e7e72d6e01361d55326b814cde07942a9ad0e1e85b84fc5ddef09aacdd707b54",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "style.css": "ce25cfe24238d8b1486dcc66d034430078c498d2ea0e82dc615873f6d077ece7"
+    },
+    "build": "cb526d8eeb4b3ae8"
+  },
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "devicePixelRatio": 2
+  },
+  "world": {
+    "time": 11.065395000381475,
+    "epoch": 1,
+    "weather": {
+      "time": 11.065395000381475,
+      "weatherTick": 11,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 33.19618500114443,
+      "rainFlux": 0,
+      "latestLightning": null,
+      "moist": 0.85,
+      "dry": 0.08,
+      "lift": 1,
+      "wind": 3,
+      "storm": 0,
+      "inputTick": 11
+    }
+  },
+  "scope": "Finite interior GPU advection/reaction/front/source and optical-unit checks; not full morphology/cache/temporal qualification",
+  "pass": true,
+  "checks": {
+    "neutralReaction": {
+      "maxError": 8.8578790788163e-05,
+      "tolerance": 0.0005,
+      "pass": true
+    },
+    "crossedFrontReaction": {
+      "maxError": 1.389181497352121e-05,
+      "tolerance": 0.0005,
+      "pass": true
+    },
+    "linearAdvection": {
+      "maxError": 0,
+      "tolerance": 0.0005,
+      "pass": true
+    },
+    "noBirthWithoutLift": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "birthInEmptyField": {
+      "max": 0.0271759033203125,
+      "pass": true
+    },
+    "finiteLayerSupport": {
+      "banks": {
+        "2": {
+          "edgePeak": 0,
+          "interiorPeak": 0.794921875
+        },
+        "3": {
+          "edgePeak": 0,
+          "interiorPeak": 0.5927734375
+        }
+      },
+      "pass": true
+    },
+    "cbNoBirthBelowCondensationBase": {
+      "maxError": 0,
+      "tolerance": 1e-07,
+      "pass": true
+    },
+    "phaseTransferConservesProxy": {
+      "maxError": 0.0002401175311230186,
+      "tolerance": 0.0005,
+      "icePeak": 0.001613616943359375,
+      "pass": true
+    },
+    "nativeMipMean": {
+      "actual": [
+        112,
+        64,
+        128,
+        255
+      ],
+      "pass": true
+    },
+    "lowBodyStormSeed": {
+      "highPeak": 0,
+      "lowPeak": 0.91943359375,
+      "pass": true
+    },
+    "cbPhaseCoherentMorphology": {
+      "actual": [
+        0.16168001294136047,
+        0.16168001294136047,
+        0.32336002588272095,
+        0.32336002588272095
+      ],
+      "maxError": 2.5882720966485806e-08,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "phaseCoherentMorphology": {
+      "actual": [
+        0.15000006556510925,
+        0.15000006556510925,
+        0.3000001311302185,
+        0.3000001311302185
+      ],
+      "maxError": 1.311302185169616e-07,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "opticalDepth": {
+      "actualTau": 0.009000002406537533,
+      "expectedTau": 0.009,
+      "maxError": 2.406537533486408e-09,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    "beerTransmittance": {
+      "maxError": 2.983841396186904e-08,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "homogeneousSegment": {
+      "maxError": 7.029200208008568e-09,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "thinAndVacuumLimit": {
+      "maxError": 5.960464455334602e-09,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "segmentComposition": {
+      "maxError": 5.960464477539063e-08,
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "clearAir": {
+      "actual": [
+        0.9003720879554749,
+        0.7784712314605713,
+        0.623827338218689
+      ],
+      "reference": [
+        0.9002577870373972,
+        0.7782526401591936,
+        0.623550538578591
+      ],
+      "maxError": 0.00027679964009796887,
+      "tolerance": 0.005,
+      "pass": true
+    },
+    "analyticAttenuationProvider": {
+      "maxError": 2.3203547305783445e-08,
+      "tolerance": 5e-05,
+      "pass": true
+    },
+    "phaseNormalization": {
+      "integral": 0.999955952167511,
+      "maxError": 4.404783248901367e-05,
+      "tolerance": 0.001,
+      "pass": true
+    }
+  },
+  "errors": []
+}

@@ -297,3 +297,12 @@ hardware-specific adaptive light sharing; specialized BC/ASTC; source optical fl
 Static SDF acceleration is an optional optimization after conservative occupancy works; a dynamic SDF must be rebuilt
 with safe distance/error bounds. These do not determine required baseline POCs. Prepared sources may be alternative
 providers, but cannot satisfy a profile requiring arbitrary runtime weather response unless they actually provide it.
+
+## Runtime Cb pilot profile (provisional)
+
+The [bounded source-risk proof](../../evidence/cloud-storm-source-2026-11-02/README.md) carries coarse Cb support in native q
+and uses bounded multiplicative material modulation before phase partition/optical calibration. This preserves the thin
+transported cap that a large subtractive Cu-style noise remap erased. A static native-noise mip chain and sampled
+new-carrier deformation metric bound the pilot's material bandwidth; invalid correspondence/renewal and full filtering
+error still need qualification. The larger isolated chart is not a regional/sparse-source architecture. The pilot
+remains columnar and does not close the organised tower/anvil morphology or coupled/runtime budget gates above.
