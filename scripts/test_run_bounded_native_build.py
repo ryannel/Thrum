@@ -261,6 +261,16 @@ class NativeBuildSupervisor(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("THRUM_TEST_NATIVE_SUPERVISOR_PROCESS") == "1",
                          "opt-in macOS Cargo interruption proof")
     def test_interrupted_cargo_compile_retains_pending_wrapper_receipt(self):
+        self._cargo_compiler_fault("sigterm")
+
+    @unittest.skipUnless(os.environ.get("THRUM_TEST_NATIVE_SUPERVISOR_PROCESS") == "1",
+                         "opt-in macOS Cargo timeout proof")
+    def test_timed_out_cargo_compile_retains_pending_wrapper_receipt(self):
+        self._cargo_compiler_fault("timeout")
+
+    def _cargo_compiler_fault(self, fault):
+        if fault not in ("sigterm", "timeout"):
+            raise ValueError("unsupported Cargo compiler fault")
         wrapper = Path(os.environ["THRUM_TEST_RUSTC_RECEIPT_WRAPPER"])
         self.assertTrue(wrapper.is_absolute() and wrapper.is_file() and not wrapper.is_symlink())
         cargo = Path(subprocess.check_output(
@@ -310,7 +320,8 @@ class NativeBuildSupervisor(unittest.TestCase):
             request.write_text(json.dumps(data))
             runner = (
                 "import pathlib,sys;import run_bounded_native_build as native;"
-                f"sys.exit(native.run(pathlib.Path({str(request)!r})))"
+                f"sys.exit(native.run(pathlib.Path({str(request)!r}),"
+                f"timeout_seconds={6 if fault == 'timeout' else 120}))"
             )
             supervisor = subprocess.Popen(
                 [sys.executable, "-c", runner], cwd=Path(__file__).parent,
@@ -330,12 +341,16 @@ class NativeBuildSupervisor(unittest.TestCase):
                               + stderr.decode(errors="replace")
                               + (report.read_text() if report.exists() else "no report"))
                 compile_pid = int(compile_pidfile.read_text())
-                os.kill(supervisor.pid, signal.SIGTERM)
-                _, stderr = supervisor.communicate(timeout=6)
+                if fault == "sigterm":
+                    os.kill(supervisor.pid, signal.SIGTERM)
+                _, stderr = supervisor.communicate(timeout=12)
                 self.assertEqual(supervisor.returncode, 125,
                                  stderr.decode(errors="replace"))
                 report = json.loads((output / "cargo-supervisor.json").read_text())
-                self.assertEqual(report["kind"], "interrupted")
+                self.assertEqual(report["kind"],
+                                 "interrupted" if fault == "sigterm" else "supervisorError")
+                if fault == "timeout":
+                    self.assertEqual(report["detail"], "Cargo build timed out")
                 self.assertFalse(report["buildReady"])
                 self.assertEqual(report["receiptInventory"]["kind"], "observedOnly")
                 self.assertGreaterEqual(report["receiptInventory"]["pending"], 1)
