@@ -2229,6 +2229,14 @@
         "scope": "Pre-submission owned payload bytes only. Game validator must certify complete partition state and dependency closure; external sent sink must reserve exact bytes/ACK metadata before sequence assignment. No W1 adapter, result/event journal, ACK ledger or full bandwidth/whole-callback qualification.",
         "evidence": "../evidence/integration/N1-UNSENT-QUEUE-2026-11-03.md",
         "isolated_cost_samples": "../evidence/integration/N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv"
+      },
+      "authority_result_retirement": {
+        "implementation": "registered thrum-network bounded 256-result server retirement frontier with match, peer and connection-epoch key; independent admitted-higher identities and one occupied exact receipt",
+        "functional_validation": "six focused helper tests cover higher admission across a gap and simulated journal reuse, occupied receipt, no-mutation callback retry, unwind poison, match/peer/epoch refusal, current-authority epoch callback refusal and u64 boundary; independent read-only review found no defect",
+        "platform_performance": "three pre-reserved 256-ID Vec arrays; no allocator-call, CPU-tail, RSS, actual sent-journal or whole-callback measurement",
+        "scope": "Server-side helper only. A future sent ledger must authenticate exact submitted-frame ACKs before stage; the host callback must verify current Authority match/peer/epoch before calling the epoch-less core API. Physical frame/journal reuse, transport and whole-host integration remain open.",
+        "evidence": "../evidence/integration/N1-RESULT-RETIREMENT-2026-11-03.md",
+        "sent_ledger_candidate": "research/N1-SENT-LEDGER-CONSTRUCTION-2026-11-03.md"
       }
     }
   ],
