@@ -6,17 +6,20 @@ private parent for the new destination.
 """
 
 import argparse
+import errno
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import select
 import shutil
 import signal
 import stat
 import subprocess
 import sys
 import threading
+import time
 import tomllib
 
 REGISTRY_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
@@ -117,18 +120,79 @@ def cargo_metadata(cargo, rustc, source, cargo_home, target, scratch):
     return json.loads(output)
 
 
+class ChildExitObserver:
+    """Observe child exit without releasing its PID before group cleanup."""
+
+    def __init__(self, process):
+        self.process = process
+        self.queue = None
+        self.already_exited = False
+        if os.name == "posix" and hasattr(select, "kqueue"):
+            self.queue = select.kqueue()
+            try:
+                event = select.kevent(
+                    process.pid, filter=select.KQ_FILTER_PROC,
+                    flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+                    fflags=select.KQ_NOTE_EXIT,
+                )
+                self.queue.control([event], 0, 0)
+            except OSError as failure:
+                self.queue.close()
+                self.queue = None
+                if failure.errno != errno.ESRCH:
+                    raise
+                # The child can exit before kqueue registration. It remains
+                # our unreaped child, so its PID is still reserved.
+                self.already_exited = True
+            except BaseException:
+                self.queue.close()
+                raise
+        elif os.name == "posix" and not hasattr(os, "waitid"):
+            raise ValueError("native Cargo supervisor lacks a no-reap exit observer")
+
+    def exited(self, timeout):
+        if self.already_exited:
+            return True
+        if self.queue is not None:
+            events = self.queue.control(None, 1, timeout)
+            if not events:
+                return False
+            if events[0].flags & select.KQ_EV_ERROR:
+                raise OSError(events[0].data, "Cargo process exit observation failed")
+            return bool(events[0].fflags & select.KQ_NOTE_EXIT)
+        if os.name == "posix":
+            result = os.waitid(os.P_PID, self.process.pid,
+                               os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            if result is None:
+                time.sleep(timeout)
+            return result is not None
+        try:
+            self.process.wait(timeout=timeout)
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+
+    def close(self):
+        if self.queue is not None:
+            self.queue.close()
+
+
 def collect_bounded(
     command, cwd, environment,
     stdout_limit=MAX_METADATA_BYTES, stderr_limit=MAX_DIAGNOSTIC_BYTES,
+    timeout_seconds=120, parent_pid=None, label="Cargo metadata",
 ):
     """Drain both pipes while limiting retained bytes and killing overproducing Cargo."""
     process = subprocess.Popen(
         command, cwd=cwd, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
         start_new_session=os.name == "posix",
     )
     output = bytearray()
     error = bytearray()
     exceeded = threading.Event()
+    read_failed = threading.Event()
+    read_errors = []
 
     def terminate_group():
         try:
@@ -136,58 +200,91 @@ def collect_bounded(
                 os.killpg(process.pid, signal.SIGKILL)
             else:
                 process.kill()
-        except ProcessLookupError:
+        except (ProcessLookupError, PermissionError):
+            # macOS reports EPERM for a group containing only the unreaped
+            # exited leader: there is no live member to signal.
             pass
 
     def drain(pipe, retained, limit):
-        for chunk in iter(lambda: os.read(pipe.fileno(), 64 * 1024), b""):
-            if len(retained) + len(chunk) > limit:
-                exceeded.set()
-                terminate_group()
-                break
-            retained.extend(chunk)
+        try:
+            for chunk in iter(lambda: os.read(pipe.fileno(), 64 * 1024), b""):
+                if len(retained) + len(chunk) > limit:
+                    exceeded.set()
+                    break
+                retained.extend(chunk)
+        except OSError as failure:
+            read_errors.append(failure)
+            read_failed.set()
 
     readers = [
         threading.Thread(target=drain, args=(process.stdout, output, stdout_limit), daemon=True),
         threading.Thread(target=drain, args=(process.stderr, error, stderr_limit), daemon=True),
     ]
+    readers_joined = False
+    group_released = False
+    try:
+        observer = ChildExitObserver(process)
+    except BaseException:
+        terminate_group()
+        process.wait()
+        process.stdout.close()
+        process.stderr.close()
+        raise
     try:
         for reader in readers:
             reader.start()
-        try:
-            status = process.wait(timeout=120)
-        except subprocess.TimeoutExpired:
-            terminate_group()
-            process.wait()
-            raise ValueError("locked offline Cargo metadata timed out")
+        deadline = time.monotonic() + timeout_seconds
+        while True:
+            if parent_pid is not None and os.getppid() != parent_pid:
+                raise ValueError(f"{label} supervisor lost its parent")
+            if exceeded.is_set():
+                raise ValueError(f"{label} exceeds the first-profile output limit")
+            if read_failed.is_set():
+                raise OSError(f"{label} diagnostic reader failed: {read_errors[0]}")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ValueError(f"{label} timed out")
+            if observer.exited(min(0.1, remaining)):
+                break
         for reader in readers:
             reader.join(timeout=0.2)
         held_pipes = any(reader.is_alive() for reader in readers)
+        # The group leader is still our unreaped child. Terminate any
+        # same-group descendants before its PID can be reused.
+        terminate_group()
+        group_released = True
+        status = process.wait(timeout=5)
         if held_pipes:
-            terminate_group()
             for reader in readers:
                 reader.join(timeout=1)
+        readers_joined = True
         if any(reader.is_alive() for reader in readers):
-            raise ValueError("Cargo metadata descendants retained output pipes")
+            raise ValueError(f"{label} descendants retained output pipes")
         if held_pipes:
-            raise ValueError("Cargo metadata descendants retained output pipes")
+            raise ValueError(f"{label} descendants retained output pipes")
         if exceeded.is_set():
-            raise ValueError("Cargo metadata exceeds the first-profile output limit")
+            raise ValueError(f"{label} exceeds the first-profile output limit")
+        if read_failed.is_set():
+            raise OSError(f"{label} diagnostic reader failed: {read_errors[0]}")
         return status, bytes(output), bytes(error)
     except BaseException:
         # Ctrl-C also lands here. The child starts a new session, so terminal
         # interruption alone does not stop it before the caller removes scratch.
-        terminate_group()
+        if not group_released:
+            terminate_group()
+            group_released = True
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
-        for reader in readers:
-            if reader.ident is not None:
-                reader.join(timeout=1)
+        if not readers_joined:
+            for reader in readers:
+                if reader.ident is not None:
+                    reader.join(timeout=1)
         raise
     finally:
+        observer.close()
         process.stdout.close()
         process.stderr.close()
 

@@ -13,12 +13,26 @@ import unittest
 from unittest import mock
 
 from prepare_headless_cargo_home import (
-    cargo_reuse_key, collect_bounded, possible_headless_packages, prepare,
+    ChildExitObserver, cargo_reuse_key, collect_bounded, possible_headless_packages, prepare,
     root_inventory,
 )
 
 
 class PrepareHeadlessCargoHome(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "darwin", "kqueue fast-exit race is macOS")
+    def test_fast_child_exits_before_kqueue_registration(self):
+        def delayed_observer(process):
+            time.sleep(0.05)
+            return ChildExitObserver(process)
+
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch("prepare_headless_cargo_home.ChildExitObserver",
+                            side_effect=delayed_observer):
+                status, output, error = collect_bounded(
+                    ["/usr/bin/true"], Path(directory), os.environ.copy(),
+                )
+            self.assertEqual((status, output, error), (0, b"", b""))
+
     @unittest.skipUnless(os.name == "posix", "private inventory requires POSIX")
     def test_private_inventory_preserves_digest_order_and_refuses_parent_swap(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -243,6 +257,169 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
                     Path(directory), os.environ.copy(),
                 )
             self.assertLess(time.monotonic() - started, 3)
+
+    @unittest.skipUnless(os.name == "posix", "sessions require POSIX")
+    def test_escaped_session_cannot_block_collector_cleanup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pidfile = Path(directory) / "escaped.pid"
+            escaped = (
+                "import os,pathlib,time;"
+                f"marker=pathlib.Path({str(pidfile)!r});"
+                "temp=marker.with_suffix('.tmp');"
+                "temp.write_text(str(os.getpid()));temp.replace(marker);"
+                "time.sleep(10)"
+            )
+            launcher = (
+                "import subprocess,sys;"
+                f"subprocess.Popen([sys.executable,'-c',{escaped!r}],"
+                "start_new_session=True)"
+            )
+            escaped_pid = None
+            try:
+                started = time.monotonic()
+                with self.assertRaisesRegex(ValueError, "descendants retained output pipes"):
+                    collect_bounded(
+                        [sys.executable, "-c", launcher],
+                        Path(directory), os.environ.copy(),
+                    )
+                self.assertLess(time.monotonic() - started, 3)
+                escaped_pid = int(pidfile.read_text())
+            finally:
+                if escaped_pid is None and pidfile.exists():
+                    escaped_pid = int(pidfile.read_text())
+                if escaped_pid is not None:
+                    try:
+                        os.kill(escaped_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    @unittest.skipUnless(os.name == "posix", "process groups require POSIX")
+    def test_closed_pipe_descendant_is_stopped_before_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pidfile = Path(directory) / "descendant.pid"
+            child = (
+                "import os,pathlib,time;"
+                f"marker=pathlib.Path({str(pidfile)!r});"
+                "temp=marker.with_suffix('.tmp');"
+                "temp.write_text(str(os.getpid()));temp.replace(marker);"
+                "time.sleep(10)"
+            )
+            launcher = (
+                "import pathlib,subprocess,sys,time;"
+                f"marker=pathlib.Path({str(pidfile)!r});"
+                f"subprocess.Popen([sys.executable,'-c',{child!r}],"
+                "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,"
+                "stderr=subprocess.DEVNULL);"
+                "end=time.monotonic()+3;"
+                "\nwhile not marker.exists() and time.monotonic()<end: time.sleep(0.01)"
+                "\nif not marker.exists(): raise SystemExit('descendant did not start')"
+            )
+            child_pid = None
+            try:
+                status, _, _ = collect_bounded(
+                    [sys.executable, "-c", launcher],
+                    Path(directory), os.environ.copy(),
+                )
+                self.assertEqual(status, 0)
+                child_pid = int(pidfile.read_text())
+                deadline = time.monotonic() + 3
+                while time.monotonic() < deadline:
+                    try:
+                        os.kill(child_pid, 0)
+                    except ProcessLookupError:
+                        break
+                    time.sleep(0.02)
+                else:
+                    self.fail("closed-pipe descendant survived completed collection")
+            finally:
+                if child_pid is None and pidfile.exists():
+                    child_pid = int(pidfile.read_text())
+                if child_pid is not None:
+                    try:
+                        os.kill(child_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    @unittest.skipUnless(os.name == "posix", "pipe fixture requires POSIX")
+    def test_metadata_child_receives_closed_stdin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            child = "import sys;print(len(sys.stdin.buffer.read(1)))"
+            runner = (
+                "import os,sys;"
+                f"sys.path.insert(0,{str(Path(__file__).parent)!r});"
+                "from prepare_headless_cargo_home import collect_bounded;"
+                f"result=collect_bounded([sys.executable,'-c',{child!r}],"
+                f"{directory!r},os.environ.copy(),timeout_seconds=1);"
+                "sys.stdout.buffer.write(result[1])"
+            )
+            wrapper = subprocess.Popen(
+                [sys.executable, "-c", runner], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+            try:
+                self.assertEqual(wrapper.wait(timeout=3), 0)
+                self.assertEqual(wrapper.stdout.read(), b"0\n")
+            finally:
+                if wrapper.poll() is None:
+                    wrapper.kill()
+                    wrapper.wait()
+                wrapper.stdin.close()
+                wrapper.stdout.close()
+                wrapper.stderr.close()
+
+    @unittest.skipUnless(os.name == "posix", "parent identity requires POSIX")
+    def test_supervisor_stops_child_when_parent_disappears(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pidfile = Path(directory) / "child.pid"
+            child = (
+                "import os,pathlib,time;"
+                f"marker=pathlib.Path({str(pidfile)!r});"
+                "temp=marker.with_suffix('.tmp');"
+                "temp.write_text(str(os.getpid()));temp.replace(marker);"
+                "time.sleep(10)"
+            )
+            supervisor = (
+                "import os,sys;"
+                f"sys.path.insert(0,{str(Path(__file__).parent)!r});"
+                "from prepare_headless_cargo_home import collect_bounded;"
+                f"collect_bounded([sys.executable,'-c',{child!r}],"
+                f"{directory!r},os.environ.copy(),parent_pid=os.getppid())"
+            )
+            launcher = (
+                "import pathlib,subprocess,sys,time;"
+                f"p=subprocess.Popen([sys.executable,'-c',{supervisor!r}],"
+                "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);"
+                f"marker=pathlib.Path({str(pidfile)!r});"
+                "end=time.monotonic()+3;"
+                "\nwhile not marker.exists() and time.monotonic()<end: time.sleep(0.01)"
+                "\nif not marker.exists(): raise SystemExit('child did not start')"
+                "\nprint(p.pid,flush=True)"
+            )
+            supervisor_pid = None
+            child_pid = None
+            try:
+                launched = subprocess.run(
+                    [sys.executable, "-c", launcher],
+                    capture_output=True, timeout=5, check=True,
+                )
+                supervisor_pid = int(launched.stdout)
+                child_pid = int(pidfile.read_text())
+                deadline = time.monotonic() + 3
+                while time.monotonic() < deadline:
+                    try:
+                        os.kill(child_pid, 0)
+                    except ProcessLookupError:
+                        break
+                    time.sleep(0.02)
+                else:
+                    self.fail("child survived supervisor parent loss")
+            finally:
+                for pid in (child_pid, supervisor_pid):
+                    if pid is not None:
+                        try:
+                            os.kill(pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
 
     def fixture(self, root):
         source = root / "accepted-input"

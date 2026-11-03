@@ -1701,7 +1701,7 @@ mod tests {
         } else {
             command.env("RUSTC_WRAPPER", "");
         }
-        let result = command
+        let command = command
             .current_dir(input)
             .args([
                 "build",
@@ -1713,15 +1713,128 @@ mod tests {
                 "headless",
                 "--message-format=json-render-diagnostics",
             ])
-            .env("CARGO_TARGET_DIR", output)
+            .env("CARGO_TARGET_DIR", &output)
             .env("CARGO_INCREMENTAL", "0")
-            .env("CARGO_NET_OFFLINE", "true")
-            .output()
-            .unwrap();
+            .env("CARGO_NET_OFFLINE", "true");
+        #[cfg(target_os = "macos")]
+        let result = if sandbox {
+            supervised_headless_build(command, checkout, &output)
+        } else {
+            command.output().unwrap()
+        };
+        #[cfg(not(target_os = "macos"))]
+        let result = command.output().unwrap();
         if let Some(selected) = native_tools {
             selected.assert_files_unchanged();
         }
         result
+    }
+
+    #[cfg(target_os = "macos")]
+    fn supervised_headless_build(
+        command: &Command,
+        checkout: &Path,
+        output: &Path,
+    ) -> std::process::Output {
+        use std::fmt::Write as _;
+        use std::process::Stdio;
+
+        let os_text = |value: &std::ffi::OsStr| {
+            value
+                .to_str()
+                .expect("selected native build command must be UTF-8")
+                .to_owned()
+        };
+        let environment = command
+            .get_envs()
+            .map(|(name, value)| {
+                (
+                    os_text(name),
+                    os_text(value.expect("selected command must not inherit removed variables")),
+                )
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let request = serde_json::json!({
+            "format": 1,
+            "command": std::iter::once(os_text(command.get_program()))
+                .chain(command.get_args().map(os_text))
+                .collect::<Vec<_>>(),
+            "cwd": command.get_current_dir().unwrap(),
+            "environment": environment,
+            "output": output,
+            "ownerPid": std::process::id(),
+        });
+        let request_path = output.join("cargo-supervisor-request.json");
+        let mut request_file = fs::File::create_new(&request_path).unwrap();
+        serde_json::to_writer(&mut request_file, &request).unwrap();
+        drop(request_file);
+        let status =
+            Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
+                .arg(checkout.join("scripts/run_bounded_native_build.py"))
+                .arg("--request")
+                .arg(&request_path)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .unwrap();
+        let report: serde_json::Value =
+            serde_json::from_slice(&read_supervisor_file(output, "cargo-supervisor.json", 4096))
+                .unwrap();
+        assert_eq!(report["kind"], "completed", "{report}");
+        assert_eq!(report["cargoStatus"].as_i64(), status.code().map(i64::from));
+        let stdout = read_supervisor_file(output, "cargo.stdout", 4 * 1024 * 1024);
+        let stderr = read_supervisor_file(output, "cargo.stderr", 1024 * 1024);
+        for (name, bytes) in [("stdout", &stdout), ("stderr", &stderr)] {
+            assert_eq!(report[format!("{name}Bytes")], bytes.len());
+            let mut hash = String::with_capacity(64);
+            for byte in Sha256::digest(bytes) {
+                write!(&mut hash, "{byte:02x}").unwrap();
+            }
+            assert_eq!(report[format!("{name}Sha256")], hash);
+        }
+        std::process::Output {
+            status,
+            stdout,
+            stderr,
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn read_supervisor_file(output: &Path, name: &str, limit: u64) -> Vec<u8> {
+        let path = output.join(name);
+        let metadata = fs::symlink_metadata(&path).unwrap();
+        assert!(metadata.is_file() && !metadata.file_type().is_symlink());
+        assert!(metadata.len() <= limit);
+        let file = fs::File::open(&path).unwrap();
+        let mut bytes = Vec::with_capacity(metadata.len() as usize);
+        file.take(limit + 1).read_to_end(&mut bytes).unwrap();
+        assert_eq!(bytes.len() as u64, metadata.len());
+        bytes
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn supervisor_report_refuses_oversized_or_aliased_file() {
+        let fixture = Fixture::new();
+        let report = fixture.root().join("cargo-supervisor.json");
+        fs::write(&report, vec![b'x'; 4097]).unwrap();
+        assert!(
+            std::panic::catch_unwind(|| {
+                read_supervisor_file(fixture.root(), "cargo-supervisor.json", 4096)
+            })
+            .is_err()
+        );
+        fs::remove_file(&report).unwrap();
+        let other = fixture.root().join("other-report");
+        fs::write(&other, b"{}\n").unwrap();
+        std::os::unix::fs::symlink(&other, &report).unwrap();
+        assert!(
+            std::panic::catch_unwind(|| {
+                read_supervisor_file(fixture.root(), "cargo-supervisor.json", 4096)
+            })
+            .is_err()
+        );
     }
 
     #[cfg(target_os = "macos")]
