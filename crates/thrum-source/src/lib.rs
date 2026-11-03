@@ -55,6 +55,9 @@ mod render_source_root;
 // Scene-v3 source grammar remains private until F3/F4 adoption.
 #[allow(dead_code)]
 mod scene_source_v3;
+// Render-v1 source meaning remains private until the full F3 closure lands.
+#[allow(dead_code)]
+mod render_source_definition;
 // Material source meaning stays independent of target support and admission.
 #[allow(dead_code)]
 mod render_source_material;

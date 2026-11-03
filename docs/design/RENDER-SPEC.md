@@ -104,6 +104,9 @@ For `mask`, coverage uses `baseRGBA.a >= alphaCutoff`; equality is covered.
 Depth, shadow and forward evaluate that same sampled alpha, factor and cutoff.
 The source grammar keeps an opaque material's cutoff absent rather than
 inventing an authored value for the unused ABI lane.
+The R0 [ideal sampler law](research/R0-SAMPLER-IDEAL-AND-TARGET-2026-11-03.md)
+fixes mathematical ties, addressing and transfer before filtering; F4/V3
+version the finite target evaluator, support envelope and boundary proof.
 
 The BRDF's `base`, `m` and `roughness` are these effective values.
 Base/emissive RGB are decoded from sRGB before linear filtering and

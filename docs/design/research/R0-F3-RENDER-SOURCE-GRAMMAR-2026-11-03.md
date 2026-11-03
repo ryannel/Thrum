@@ -117,8 +117,9 @@ earlier material field error. An optional field is absent or present with its
 specified type; explicit `null` is invalid. An opaque material has no authored
 cutoff, while a masked material must provide one.
 
-For a masked material, a sample is covered when its linearly sampled base
-alpha multiplied by the authored base alpha factor is **greater than or equal
+For a masked material, a sample is covered when its sampler-evaluated base
+alpha in the linear unit interval, multiplied by the authored base alpha factor,
+is **greater than or equal
 to** `alpha_cutoff`. Equality is covered in depth, shadow and forward roles.
 This selects the boundary rule only; the shared target alpha evaluation and
 filtering proof remain F4/V3 work. A valid masked material with unequal
@@ -153,6 +154,12 @@ interval. A texture reference's slot determines its permitted transfer
 format. A material's single sampler and `uv0` policy avoid hidden per-slot
 differences; imported content with incompatible independent samplers/UV sets
 must be converted losslessly or explicitly refused.
+The [ideal sampler law](R0-SAMPLER-IDEAL-AND-TARGET-2026-11-03.md) freezes
+nearest `floor(Nu)` ties, bilinear `Nu−1/2` tap weights, per-tap clamp/repeat/
+mirror addressing including negative UVs, straight RGBA8 bytes and the sRGB
+EOTF before RGB filtering. Alpha and linear-data bytes use `byte/255` and
+filter independently. This is source meaning; finite-precision mode/LOD,
+arithmetic, backend support and error certificates are versioned F4/V3 work.
 For the first R0 masked product, F4 requires equal `min_filter` and
 `mag_filter`, so pass-specific derivatives cannot select different filtering
 kernels. A valid source with unequal filters is F4 `Unsupported` for a masked
