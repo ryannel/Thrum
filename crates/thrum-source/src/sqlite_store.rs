@@ -7238,6 +7238,11 @@ fn measure_maximum_phased_manifest_reader_progress() {
 #[ignore = "local maximum-profile final reference-closure contention probe"]
 fn measure_maximum_manifest_closure_reader_wait() {
     const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let distinct = if std::env::var_os("THRUM_TEST_UNIQUE_MANIFEST_CLOSURE").is_some() {
+        100_000
+    } else {
+        256
+    };
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {
         free_headroom_bytes: 0,
@@ -7248,13 +7253,17 @@ fn measure_maximum_manifest_closure_reader_wait() {
     let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
     let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
     let mut old_pin = store.pin_current(a.generation).unwrap();
-    let one_byte_files: Vec<_> = (0_u8..=255)
-        .map(|byte| {
-            let bytes = [byte];
-            (Sha256::digest(bytes).into(), bytes)
+    let blobs: Vec<_> = (0..distinct)
+        .map(|index| {
+            let bytes = if distinct == 256 {
+                vec![index as u8]
+            } else {
+                (index as u32).to_le_bytes().to_vec()
+            };
+            (Sha256::digest(&bytes).into(), bytes)
         })
         .collect();
-    for group in one_byte_files.chunks(SMALL_BATCH_FILES) {
+    for group in blobs.chunks(SMALL_BATCH_FILES) {
         store
             .owner
             .lock()
@@ -7266,8 +7275,8 @@ fn measure_maximum_manifest_closure_reader_wait() {
         .map(|index| {
             ManifestEntry::new(
                 SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
-                1,
-                one_byte_files[index % 256].0,
+                blobs[index % distinct].1.len() as u64,
+                blobs[index % distinct].0,
                 None,
             )
             .unwrap()
@@ -7310,7 +7319,7 @@ fn measure_maximum_manifest_closure_reader_wait() {
         generation
     );
     eprintln!(
-        "maximum_manifest_closure files=100000 reader_wait_copy_ms={reader_ms:.3} commit_ms={commit_ms:.3}"
+        "maximum_manifest_closure files=100000 distinct={distinct} reader_wait_copy_ms={reader_ms:.3} commit_ms={commit_ms:.3}"
     );
 }
 
