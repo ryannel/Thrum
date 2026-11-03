@@ -911,6 +911,7 @@ mod tests {
             MaterializationHost::open(&fixture.project, &store, &fixture.jobs, plan).unwrap();
         let a = host.materialize(&mut pin, scratch()).unwrap();
         let reader = host.input_lease(a).unwrap();
+        let second_reader = host.input_lease(a).unwrap();
         let b = host.materialize(&mut pin, scratch()).unwrap();
         assert!(reader.join("master.bin").is_file());
         let both_claims = host.active_claim_bytes();
@@ -920,6 +921,8 @@ mod tests {
         host.close(b).unwrap();
         assert!(host.active_claim_bytes() > 0);
         drop(reader);
+        assert!(matches!(host.close(a), Err(JobError::ReadersActive(id)) if id == a));
+        drop(second_reader);
         host.close(a).unwrap();
         assert_eq!(host.active_claim_bytes(), 0);
         drop(host);
