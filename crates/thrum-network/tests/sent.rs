@@ -3,7 +3,7 @@
 use thrum_network::envelope;
 use thrum_network::r4::{self, ActionResult, Actor, Event, GroupHeader, GroupInput};
 use thrum_network::retirement::{PeerKey, RetirementError};
-use thrum_network::sent::{AckError, OrdinaryLedger, SubmitError, WriteError};
+use thrum_network::sent::{AckError, OrdinaryLedger, RejectError, SubmitError, WriteError};
 
 fn key() -> PeerKey {
     PeerKey {
@@ -259,6 +259,11 @@ fn callback_refusal_retains_exact_receipt_and_wrong_ack_cannot_retarget_it() {
     assert!(ledger.receipt_occupied());
     assert_eq!(ledger.outstanding_entries(), 1);
     assert_eq!(
+        ledger.reject_state_group(key(), 1),
+        Err(RejectError::ConflictingAdmission)
+    );
+    assert_eq!(ledger.rejected_sequence(), None);
+    assert_eq!(
         ledger.acknowledge_through(key(), 2, |_, _| Ok::<_, &str>(())),
         Err(AckError::ReceiptOccupied)
     );
@@ -350,6 +355,94 @@ fn wrong_epoch_duplicate_identity_and_sequence_exhaustion_do_not_mutate() {
         Err(SubmitError::SequenceExhausted)
     );
     assert_eq!(exhausted.retained_frame_bytes(), 0);
+}
+
+#[test]
+fn exact_reject_blocks_admission_and_new_ordinary_sequences_without_releasing_ids() {
+    let mut ledger = OrdinaryLedger::new(key(), 0, 6).unwrap();
+    let first = payload(1, &[], &[result(7)], &[]);
+    let rejected = payload(2, &[], &[result(9)], &[event(90)]);
+    let later = payload(3, &[], &[], &[]);
+    for group in [&first, &rejected, &later] {
+        ledger.submit_state_group(key(), group, 0).unwrap();
+    }
+    assert_eq!(
+        ledger.reject_state_group(key(), 2),
+        Err(RejectError::NotWritten)
+    );
+    assert_eq!(ledger.rejected_sequence(), None);
+    write_all(&mut ledger);
+    let wrong = PeerKey {
+        connection_epoch: 8,
+        ..key()
+    };
+    assert_eq!(
+        ledger.reject_state_group(wrong, 2),
+        Err(RejectError::WrongIdentity)
+    );
+    assert_eq!(
+        ledger.reject_state_group(key(), 4),
+        Err(RejectError::UnknownSequence)
+    );
+    let retained = ledger.retained_frame_bytes();
+    ledger.reject_state_group(key(), 2).unwrap();
+    assert_eq!(ledger.rejected_sequence(), Some(2));
+    assert_eq!(
+        ledger.acknowledge_through(key(), 3, |_, _| -> Result<(), ()> {
+            panic!("rejected group cannot be admitted")
+        }),
+        Err(AckError::RejectedSequence)
+    );
+    assert_eq!(ledger.retained_frame_bytes(), retained);
+    assert_eq!(ledger.outstanding_entries(), 3);
+    assert_eq!(
+        ledger.submit_state_group(key(), &later, 0),
+        Err(SubmitError::ReplacementRequired)
+    );
+    assert_eq!(ledger.last_sequence(), 3);
+    ledger
+        .acknowledge_through(key(), 1, |_, through| {
+            assert_eq!(through, 7);
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+    assert_eq!(ledger.result_retired_through(), 7);
+    assert_eq!(ledger.outstanding_entries(), 2);
+    assert_eq!(
+        ledger.acknowledge_through(key(), 2, |_, _| -> Result<(), ()> {
+            panic!("rejected group cannot be admitted")
+        }),
+        Err(AckError::RejectedSequence)
+    );
+    assert_eq!(ledger.rejected_sequence(), Some(2));
+    assert_eq!(ledger.last_sequence(), 3);
+}
+
+#[test]
+fn reject_stops_exposing_later_assigned_but_unwritten_frame() {
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let group = payload(1, &[], &[], &[]);
+    ledger.submit_state_group(key(), &group, 0).unwrap();
+    ledger.submit_state_group(key(), &group, 0).unwrap();
+    let first = ledger.next_write().unwrap().unwrap();
+    assert_eq!(first.sequence, 1);
+    ledger
+        .accept_written(1, first.first.len() + first.second.len())
+        .unwrap();
+    assert_eq!(ledger.next_write().unwrap().unwrap().sequence, 2);
+    let retained = ledger.retained_frame_bytes();
+    ledger.reject_state_group(key(), 1).unwrap();
+    assert_eq!(
+        ledger.next_write().err(),
+        Some(WriteError::ReplacementRequired)
+    );
+    assert_eq!(
+        ledger.accept_written(2, 1),
+        Err(WriteError::ReplacementRequired)
+    );
+    assert_eq!(ledger.retained_frame_bytes(), retained);
+    assert_eq!(ledger.outstanding_entries(), 2);
+    assert_eq!(ledger.last_sequence(), 2);
 }
 
 #[test]
