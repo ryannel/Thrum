@@ -1012,10 +1012,32 @@ mod tests {
             materialize_pinned_source(&mut a_pin, &a_input, Fixture::build_plan()).unwrap();
         assert_eq!(a_materialized.source_root(), a);
         let a_files = tree_hashes(a_materialized.path());
+        let native_tools =
+            std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").map(|_| select_native_sandbox_tools());
+        let installed_cargo = PathBuf::from(env!("CARGO"));
+        let installed_rustc =
+            installed_cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+        #[cfg(target_os = "macos")]
+        let (cache_cargo, cache_rustc) = native_tools.as_ref().map_or_else(
+            || (installed_cargo.clone(), installed_rustc.clone()),
+            |tools| {
+                (
+                    tools.toolchain.join("bin/cargo"),
+                    tools.toolchain.join("bin/rustc"),
+                )
+            },
+        );
+        #[cfg(not(target_os = "macos"))]
+        let (cache_cargo, cache_rustc) = (installed_cargo, installed_rustc);
         let mut owned_cache = None;
         if prepare_cargo_home {
-            let prepared =
-                prepare_private_cargo_home(checkout, fixture.root(), a_materialized.path());
+            let prepared = prepare_private_cargo_home(
+                checkout,
+                fixture.root(),
+                a_materialized.path(),
+                &cache_cargo,
+                &cache_rustc,
+            );
             private_cargo_home = Some(prepared.path.clone());
             owned_cache = Some(prepared);
         }
@@ -1024,10 +1046,10 @@ mod tests {
             cache.assert_tool_bytes();
             cache.assert_reusable_source(checkout, a_materialized.path());
         }
-        let native_tools =
-            std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").map(|_| select_native_sandbox_tools());
         #[cfg(target_os = "macos")]
         if let (Some(cache), Some(tools)) = (&owned_cache, &native_tools) {
+            assert_eq!(cache.cargo_path, tools.toolchain.join("bin/cargo"));
+            assert_eq!(cache.rustc_path, tools.toolchain.join("bin/rustc"));
             assert_eq!(
                 file_sha256_hex(&tools.toolchain.join("bin/cargo")),
                 cache.cargo_hash
@@ -1481,14 +1503,14 @@ mod tests {
         path: PathBuf,
         manifest_path: PathBuf,
         target: String,
+        cargo_path: PathBuf,
+        rustc_path: PathBuf,
         cargo_hash: String,
         rustc_hash: String,
     }
 
     impl PreparedCacheHome {
         fn assert_reusable_source(&self, checkout: &Path, input: &Path) {
-            let cargo = Path::new(env!("CARGO"));
-            let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
             let started = Instant::now();
             let result =
                 Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
@@ -1502,9 +1524,9 @@ mod tests {
                     .arg("--target")
                     .arg(&self.target)
                     .arg("--cargo")
-                    .arg(cargo)
+                    .arg(&self.cargo_path)
                     .arg("--rustc")
-                    .arg(&rustc)
+                    .arg(&self.rustc_path)
                     .output()
                     .unwrap();
             assert!(
@@ -1519,10 +1541,8 @@ mod tests {
         }
 
         fn assert_tool_bytes(&self) {
-            let cargo = Path::new(env!("CARGO"));
-            let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
-            assert_eq!(file_sha256_hex(cargo), self.cargo_hash);
-            assert_eq!(file_sha256_hex(&rustc), self.rustc_hash);
+            assert_eq!(file_sha256_hex(&self.cargo_path), self.cargo_hash);
+            assert_eq!(file_sha256_hex(&self.rustc_path), self.rustc_hash);
         }
     }
 
@@ -1537,10 +1557,10 @@ mod tests {
         checkout: &Path,
         fixture: &Path,
         input: &Path,
+        cargo: &Path,
+        rustc: &Path,
     ) -> PreparedCacheHome {
-        let cargo = Path::new(env!("CARGO"));
-        let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
-        let version = Command::new(&rustc).arg("-vV").output().unwrap();
+        let version = Command::new(rustc).arg("-vV").output().unwrap();
         assert!(version.status.success());
         let details = String::from_utf8(version.stdout).unwrap();
         let target = details
@@ -1560,6 +1580,8 @@ mod tests {
             path: destination.clone(),
             manifest_path: manifest_path.clone(),
             target: target.to_owned(),
+            cargo_path: cargo.to_owned(),
+            rustc_path: rustc.to_owned(),
             cargo_hash: String::new(),
             rustc_hash: String::new(),
         };
@@ -1576,7 +1598,7 @@ mod tests {
                 .arg("--cargo")
                 .arg(cargo)
                 .arg("--rustc")
-                .arg(&rustc)
+                .arg(rustc)
                 .arg("--target")
                 .arg(target)
                 .output()

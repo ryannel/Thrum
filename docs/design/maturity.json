@@ -622,7 +622,7 @@
         "functional_validation": "seven small APFS helper fixtures passed, including changed-source and unsupported-entry refusal; full local Rust, Xcode linker and SDK clones matched candidate inventories; cloned Rustc/Cargo and Clang/SDK ran; an opt-in sandboxed admitted A/B build selected all three cloned roots, allowed cloned-file reads, denied corresponding installed-file reads and metadata, reconciled A and failed-B receipts, and reloaded/reran retained A after invalid B; one separate-root verifier fixture plus fourteen prior fixtures passed",
         "experienced_quality": "not_applicable_to_headless_tool_root_preparation",
         "platform_performance": "one local macOS 26.6.2 APFS probe: 394-file Rust raw clone 0.056 seconds and 757760 observed free-space bytes; 39237-file Xcode linker/SDK raw clone 8.398 seconds and 52809728 observed free-space bytes for 3.83 GB logical content. An exact-inventory helper run including full clone-byte hashing took 0.626, 8.788 and 14.604 seconds for Rust, linker and SDK separately. Three uncontrolled cloned A compiler stages took 10171, 4297 and 4262 ms; the final run also took 1284 ms for private-cache preparation and 207 ms for candidate retention. No paired installed-versus-cloned or complete warm edit-to-ready comparison is claimed",
-        "scope": "Same-volume held-descriptor APFS clones reproduce selected local tool-root inventories. An opt-in admitted A/B compiler consumes selected cloned Cargo/Rustc and Clang/SDK under narrow sandbox grants while installed counterparts are denied, but the helper accepts an unreviewed local digest and does not keep clones immutable after return. Private-cache metadata preparation and Xcode support still use installed paths. No reviewed release manifest, selected host-runtime bytes, complete compiler read closure or ready BuildRevision is claimed; buildReady stays false."
+        "scope": "Same-volume held-descriptor APFS clones reproduce selected local tool-root inventories. An opt-in admitted A/B compiler consumes selected cloned Cargo/Rustc and Clang/SDK under narrow sandbox grants while installed counterparts are denied, but the helper accepts an unreviewed local digest and does not keep clones immutable after return. In this historical run private-cache metadata preparation and Xcode support still used installed paths; a later qualification selects cloned Cargo/Rustc for metadata. No reviewed release manifest, selected host-runtime bytes, complete compiler read closure or ready BuildRevision is claimed; buildReady stays false."
       },
       "i2a_compiler_support_grant_reduction": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
@@ -650,6 +650,15 @@
         "experienced_quality": "not_applicable_to_headless_compiler_isolation",
         "platform_performance": "uncontrolled A fresh-output stages of 3736 ms installed and 8066 ms cloned on one Mac; no paired policy, clone or tail comparison",
         "scope": "The bounded compiler sandbox removes broad /usr/bin and /dev data-read grants, retaining exact /dev/null and /dev/urandom paths. System-library/cryptex roots, implicit compiler reads, immutable selected host bytes, release review and ready BuildRevision remain open; buildReady stays false."
+      },
+      "i2a_selected_metadata_tools": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../evidence/i2a/T2-SELECTED-METADATA-TOOLS-2026-11-03.md",
+        "implementation": "macos_opt_in_private_cache_and_compiler_fixture_only",
+        "functional_validation": "installed-root and exact-inventory APFS-clone sandboxed A/B builds passed with the same selected Cargo/Rustc paths supplied to metadata preparation, cache reuse and compiler execution; A compiled and reloaded after invalid B",
+        "experienced_quality": "not_applicable_to_headless_build_fixture",
+        "platform_performance": "uncontrolled local A fresh-output builds took 3924 ms installed and 5620 ms cloned; private-cache preparation took 1264 and 1726 ms respectively; no speed or tail conclusion",
+        "scope": "The opt-in fixture selects the Rust tool root before private-cache metadata, passes its Cargo/Rustc paths to preparation and reuse, verifies path equality with the compiler root and rechecks executable hashes. Xcode discovery/support, broad metadata sandbox system reads, writable clone ownership, reviewed release inputs, implicit compiler read closure and ready BuildRevision remain open; buildReady stays false."
       },
       "i2a_narrowed_macos_metadata": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
