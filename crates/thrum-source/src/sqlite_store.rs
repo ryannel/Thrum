@@ -4518,6 +4518,120 @@ fn accepted_owner_kill_mid_blob_reopens_a_pin_and_retries_b() {
 }
 
 #[test]
+fn accepted_partial_retry_defers_behind_reader_blocked_wal() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let mut store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A retained during blocked B retry");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 68, 41);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let master_file = stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let mut scratch = Vec::new();
+    let admission = store.owner.admission().unwrap();
+    let mut short_input = stage_b.open(&master).unwrap().take(16 * CHUNK_BYTES as u64);
+    assert!(matches!(
+        store.stage_blob_phased(
+            &mut short_input,
+            master_file.length(),
+            *master_file.sha256(),
+            &mut scratch,
+            &mut || {},
+        ),
+        Err(StoreError::InputIo)
+    ));
+    drop(admission);
+    let wal_before = fs::metadata(wal_path(&database)).unwrap().len();
+    assert!(wal_before > 0 && wal_before < plan.wal_stop_bytes);
+    // Select the operational stop after seeding the retained prefix.
+    // It exactly reaches the next four-MiB chunk allowance, so that the
+    // blocked checkpoint is exercised regardless of prior checkpoint timing.
+    let retry_stop = wal_before + 9 * MIB;
+    store.plan.wal_stop_bytes = retry_stop;
+    store.owner.lock().unwrap().wal_guard = WalGuard::for_plan(store.plan).unwrap();
+
+    let reader = Connection::open(&database).unwrap();
+    reader.execute_batch("BEGIN").unwrap();
+    assert_eq!(
+        reader
+            .query_row("SELECT generation FROM root WHERE id=1", [], |row| row
+                .get::<_, i64>(0))
+            .unwrap(),
+        a.generation
+    );
+    let mut old_reads = 0;
+    let blocked = store
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                let mut copied = Vec::new();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+                old_reads += 1;
+            },
+            || {},
+        )
+        .unwrap_err();
+    assert_eq!(old_reads, 16);
+    let Some(StoreSpacePressure::WalCheckpoint {
+        observed_wal_bytes,
+        incoming_allowance_bytes,
+        stop_bytes,
+        checkpoint_busy: true,
+    }) = blocked.space_pressure()
+    else {
+        panic!("expected reader-blocked WAL checkpoint: {blocked}");
+    };
+    assert_eq!(stop_bytes, retry_stop);
+    assert_eq!(incoming_allowance_bytes, 9 * MIB);
+    assert!(observed_wal_bytes + incoming_allowance_bytes >= stop_bytes);
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let (state, retained): (i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![master_file.sha256().as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, retained), (0, 16));
+    reader.execute_batch("COMMIT").unwrap();
+    let b = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(store.current_root().unwrap(), Some(b));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    a_pin.close().unwrap();
+}
+
+#[test]
 fn accepted_old_pin_reads_between_new_blob_chunks() {
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {

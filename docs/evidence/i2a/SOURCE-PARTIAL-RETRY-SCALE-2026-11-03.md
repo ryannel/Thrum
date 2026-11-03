@@ -26,6 +26,17 @@ reopen retains B and its outcome. The killed process leaves an orphaned
 provisional stage; the test's retry stage allowance accounts for that second
 copy. Automatic orphan cleanup and its temporary peak are separate work.
 
+A normal test additionally holds a raw SQLite read transaction after seeding
+sixteen B chunks. It selects an operational WAL stop at the current WAL length
+plus the next chunk's nine-MiB allowance, then attempts the accepted B retry.
+All sixteen retained chunks can be compared and A can be read between them,
+but the missing chunk receives a `WalCheckpoint` receipt with `checkpoint_busy`
+and B remains incomplete and unselected. Releasing only that raw reader lets
+the same B retry finish while the A pin remains live. The post-seed stop
+selection makes the checkpoint boundary deterministic; it is a test policy,
+not a calibrated production threshold. A source pin alone does not hold the
+SQLite snapshot that blocks this checkpoint.
+
 ## Local release observation
 
 macOS 26.6.2, arm64, pinned Rust 1.99.1, `cargo test --release -p
@@ -52,16 +63,16 @@ The seed phase's maximum append calls were 10.870, 75.045 and 72.426 ms;
 these are separate from the retry values above. The 40 MiB stop is an
 operational checkpoint threshold, not a maximum physical WAL allocation.
 
-The normal accepted-owner crash test and this opt-in scale test passed.
+The normal accepted-owner crash and reader-blocked WAL tests, and this opt-in
+scale test, passed.
 An independent adversarial review corrected the child fixture lifetime,
 the kill deadline, the update oracle and the seed/retry timer scope before
 this checkpoint.
 
 ## Still open for the full F3 gate
 
-The retained A pin does not itself block a SQLite checkpoint. A separate
-reader-held checkpoint refusal and retry, interrupted malformed-layout
-cleanup at scale, actual native `ENOSPC` after a successful guard check,
+Interrupted malformed-layout cleanup at scale, actual native `ENOSPC` after
+a successful guard check,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
