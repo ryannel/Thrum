@@ -563,6 +563,15 @@
         "platform_performance": "one earlier local fresh-output A build took 3240 ms; candidate copy and internal verify took 175 ms, and first reload took 25 ms. A later uncontrolled A build took 3514 ms with stage/rename/parent sync, candidate install plus internal verify took 195 ms and first reload took 31 ms. Fresh-child startup/reopen cost, peak RSS and timing tails have not been isolated; no cross-device claim",
         "scope": "A test-only helper streams and retains exact scene, executable, receipt-wrapper, raw receipt and selected build-evidence bytes in an exclusively owned sibling stage, verifies and syncs it, then renames it into an absent candidate name and syncs the parent. An external report SHA-256 anchors canonical local candidate metadata; reload checks source/product identities, fixed target, bounded file membership and hashes, selected environment/cache/wrapper relationship and the receipt-summary raw-set digest. The reload scan stops after one more name than the report allows before collecting unbounded names. A process killed before rename leaves only an ignored stage; an existing candidate is not replaced. A post-rename parent-sync fault may leave a visible but unselected candidate. The old candidate executes after source/output teardown and invalid B. This does not certify power-loss durability or implement a ready-root transaction, production publication, immutable tool/dependency roots, complete compiler/system-read closure, a reviewed release manifest or BuildRevision; buildReady stays false."
       },
+      "i2a_apfs_tool_root_retention_probe": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../design/research/T2-MACOS-APFS-TOOL-ROOT-RETENTION-2026-11-03.md",
+        "implementation": "ignored_local_feasibility_probe_only",
+        "functional_validation": "cloned Rust, Xcode linker and SDK root inventories matched their installed-source digests; cloned Rustc/Cargo reported versions, cloned Clang compiled with cloned SDK, and a private clone write left the original library hash unchanged",
+        "experienced_quality": "not_applicable_to_headless_tool_root_preparation",
+        "platform_performance": "one local macOS 26.6.2 APFS run: 394-file Rust clone 0.056 seconds and 757760 observed free-space bytes; 39237-file Xcode linker/SDK clone 8.398 seconds and 52809728 observed free-space bytes for 3.83 GB logical content; uncontrolled cold preparation only, not a complete edit-to-ready measurement",
+        "scope": "Explicit same-volume per-file APFS clones can reproduce selected local tool-root inventories with low observed physical space use, and the copied compilers work. The probe does not provide whole-tree atomicity, a no-writer owner, selected Xcode support/runtime bytes, compiler read closure, a reviewed release manifest, or ready BuildRevision. The existing candidate keeps buildReady false."
+      },
       "i2a_narrowed_macos_metadata": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/F4-NARROW-METADATA.md",
