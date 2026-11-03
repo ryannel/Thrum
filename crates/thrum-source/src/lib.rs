@@ -25,6 +25,9 @@ mod provisional_store_vfs_test;
 mod record;
 pub mod registry;
 pub mod registry_stage;
+// The exact predicate is compiled privately ahead of the shared render decoder.
+#[allow(dead_code)]
+mod render_bound;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;
