@@ -89,3 +89,24 @@ a speedup. The outer qualifier's full inventories are cold evidence checks,
 not the warm edit path. The guard is still a cooperating child rather than
 one reviewed T2 selection owner, and compiler/support/runtime closure,
 guard-death during a job, warm edit-to-ready tails and RSS remain open.
+
+## Real materialized lockfile drift
+
+At exact local source commit `f9c167a16f4d7315d62c11fbf627d2532b353add`,
+the opt-in admitted A/B run passed with an additional refusal after B's
+compile and receipt checks. The test appended one newline to B's owned,
+materialized `Cargo.lock`. That changed its raw lockfile digest and the
+dependency-selection key; the persistent held guard returned the specific
+`held-cache owner refused reuse` error. The qualifier required the
+`real_materialized_lock_drift_refused=true` marker, exactly two earlier
+successful 1 ms/1 ms reuse checks, and zero fixture whole-cache rehashes.
+The guard closed normally, A's retained candidate still ran after invalid B,
+all four roots re-inventoried unchanged, and owned scratch was cleaned. The
+overall A/B process took 21.609 seconds; the outer post-build inventory took
+11.096 seconds. The normal `RUSTC_WRAPPER= ./dev check` passed at the code
+commit, and independent review found no issue.
+
+This proves refusal on a real changed materialized dependency input between
+jobs. It does not prove that a write during an active compiler is observed or
+contained, and it does not turn the cooperating guard into one reviewed T2
+release owner. The retained A candidate remains unready.
