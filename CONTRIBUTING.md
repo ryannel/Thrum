@@ -14,8 +14,9 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
-This is a portable library compile check, not a browser runtime/rendering test. CI describes Linux,
-macOS and Windows checks, plus Wasm compilation; a configured job is not evidence it has run.
+This is a portable library compile check, not a browser runtime/rendering test. The GitHub Actions
+workflow describes Linux, macOS and Windows checks, plus Wasm compilation; a configured job is not
+evidence it has run.
 On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets
 `aarch64-apple-ios`, `aarch64-apple-ios-sim` and `aarch64-linux-android` installed with `rustup target add --toolchain 1.99.1`.
 It compiles only `thrum-core`; app packages, native activity/UI, devices and lifecycle remain separate checks.
@@ -31,9 +32,10 @@ and authority; transport does not become a second gameplay implementation.
 
 Use idiomatic Rust: modules express ownership, types distinguish identities/units/lifetimes where useful,
 `Result` carries expected failure, and public APIs document invariants and error behavior. Avoid hidden
-global state, unchecked assumptions at external boundaries and blanket lint suppression. No arbitrary
-function/file size limits or literal-count rules. Workspace lints forbid unsafe code by default; a future
-necessary adapter must justify a narrow exception and its safety invariants in review.
+global state, unchecked assumptions at external boundaries and blanket lint suppression. Workspace lints
+forbid unsafe code by default; a future necessary adapter must justify a narrow exception and its safety
+invariants in review. The [engine contributor skill](.agents/skills/engine-contributor/SKILL.md) records how
+to choose work, match rigour to state and shape code.
 
 Add a crate only for a demonstrated boundary, reuse or platform/build need. Register it in
 [architecture policy](.config/architecture.toml); all workspace crates inherit common package/lint settings.
@@ -46,10 +48,17 @@ Record dependency purpose, exact version/license and target costs before adding 
 not vendor Bevy code without source revision, applicable license/notices and a maintenance rationale.
 
 `./dev check` is the hard gate: pinned rustfmt, workspace Clippy, Rust tests and repository checks.
-Clippy's default checks plus `dbg_macro`, `todo` and `unimplemented` catch likely mistakes and unfinished
-code. We deliberately have no file/function line limit, folder file count or literal count gate. A fixed
-argument-count lint is also disabled; review large signatures in context instead of forcing wrapper types.
-Warnings from optional style review are advice, not a reason to split coherent code mechanically.
+Clippy runs `all` and `pedantic` plus selected restriction lints (`Cargo.toml`, thresholds in `clippy.toml`)
+with every warning denied. Suppress only with `#[expect(lint, reason = "...")]` on the narrowest item;
+`#[allow]` is rejected and an unfulfilled expectation fails. Production code does not `unwrap` or print,
+keeps `pub` for exported items only, and documents every unsafe block of an approved exception.
+
+The repository check also keeps `#[cfg(test)]` to test modules in production files and requires a reason
+on every `#[ignore]`. Size gates are generous backstops, not targets: a function fails above 200 lines, a
+production file notes above 1,000 code lines and fails above 2,500, and a test file notes above 2,000 and
+fails above 4,000 (blank, comment and inline-test lines excluded). A note asks whether the file still holds
+one responsibility; split by responsibility, never to satisfy a count. Folder file counts and argument
+counts are not gated.
 
 For capability design and performance-sensitive implementation, use the owning design's
 [cost account](docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design). Consider repeated cheap work,

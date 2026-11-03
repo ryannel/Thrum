@@ -9,15 +9,54 @@ edition = "2024"
 rust-version = "1.99.1"
 publish = false
 
+# `./dev check` denies every warning. Thresholds and test allowances live in clippy.toml.
+# Suppress a lint only with `#[expect(lint, reason = "...")]` on the narrowest item;
+# `#[allow]` is rejected and an unfulfilled expectation fails the check.
 [workspace.lints.rust]
 unsafe_code = "deny"
 missing_docs = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+# Public API stays narrow: `pub` only where the item is actually exported.
+unreachable_pub = "warn"
+let_underscore_drop = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
 
 [workspace.lints.clippy]
-all = "warn"
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Pedantic exceptions. Each is noise for this codebase rather than a defect signal.
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+similar_names = "allow"
+doc_markdown = "allow"
+cast_precision_loss = "allow"
+many_single_char_names = "allow"
+# Size gates are generous backstops, not targets (threshold in clippy.toml; file sizes in
+# scripts/repo_check.py). An argument count can force needless parameter structs.
+too_many_lines = "warn"
+too_many_arguments = "allow"
+# Suppression discipline.
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+# Unfinished or debugging code.
 dbg_macro = "warn"
 todo = "warn"
 unimplemented = "warn"
-# A fixed argument count can force needless parameter structs. Review API shape
-# against ownership and call sites instead of using this numeric gate.
-too_many_arguments = { level = "allow", priority = 1 }
+print_stdout = "warn"
+print_stderr = "warn"
+# Runtime failure discipline: return `Result` or state the invariant with `expect`.
+unwrap_used = "warn"
+mem_forget = "warn"
+lossy_float_literal = "warn"
+# Ownership clarity: reference-count bumps must read as cheap `Arc::clone(&x)`.
+clone_on_ref_ptr = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+# Unsafe is denied by default; any approved exception documents every block.
+undocumented_unsafe_blocks = "warn"
+multiple_unsafe_ops_per_block = "warn"
+# One module layout: `foo.rs` plus `foo/`, never `foo/mod.rs`.
+mod_module_files = "warn"
