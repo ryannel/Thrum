@@ -152,6 +152,16 @@ packet-credit ownership through replacement/device loss. The existing
 synthetic four-role GPU proofs and CPU numeric/index probes do not establish
 this source-to-shadow result.
 
+The [reproducible CPU numeric
+probe](../../evidence/render/R0-FIRST-SHADOW-NUMERIC-PROBE-2026-11-03.md)
+tests 13,544 source/packed projections over eight origins and an independent
+four-tap scalar oracle. The largest sampled packed depth difference is
+57.37 µm over the 6 m light span. The visibility oracle catches camera-culling
+and comparison-sign mutations; a separate geometric interval check catches
+the wrong Sun sign. These finite samples are neither a
+worst-case f32/GPU raster bound nor an approved `b0_m` or retained-map
+certificate; target depth and contact quality remain proof gates above.
+
 [WebGPU depth and samplers](https://gpuweb.github.io/gpuweb/),
 [WGSL comparison sampling](https://gpuweb.github.io/gpuweb/wgsl/#texturesamplecomparelevel),
 [Microsoft shadow-map projection guidance](https://learn.microsoft.com/en-us/windows/desktop/DxTechArts/cascaded-shadow-maps),
