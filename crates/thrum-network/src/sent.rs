@@ -33,6 +33,26 @@ pub enum SubmitError {
     JournalCapacity,
     /// No more application sequences can be assigned in this epoch.
     SequenceExhausted,
+    /// A rejected ordinary group requires a replacement baseline or close.
+    ReplacementRequired,
+}
+
+/// Refusal of a client StateGroup Reject before changing retained state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RejectError {
+    /// Wrong match, peer or connection epoch.
+    WrongIdentity,
+    /// An uncertain write or authority callback requires peer teardown.
+    Poisoned,
+    /// The named sequence does not identify an outstanding ordinary frame.
+    UnknownSequence,
+    /// The named frame was not fully submitted to the ordered transport.
+    NotWritten,
+    /// A client admission ACK for this sequence already has an occupied
+    /// result receipt awaiting authority disposition.
+    ConflictingAdmission,
+    /// A rejected frame is already awaiting replacement.
+    ReplacementRequired,
 }
 
 /// Exact known-byte transport advance refusal.
@@ -40,6 +60,9 @@ pub enum SubmitError {
 pub enum WriteError {
     /// An uncertain write already quarantined this peer.
     Poisoned,
+    /// A rejected ordinary group prevents starting another frame; this
+    /// slice requires close until integrated baseline replacement exists.
+    ReplacementRequired,
     /// Only the first incompletely written frame may advance.
     WrongSequence,
     /// Accepted-byte count exceeds the remaining exact frame bytes.
@@ -55,6 +78,8 @@ pub enum AckError<E> {
     Poisoned,
     /// Sequence is not a complete outstanding submitted prefix.
     InvalidSequence,
+    /// Cumulative admission cannot pass a rejected StateGroup.
+    RejectedSequence,
     /// A prior exact ACK receipt is still awaiting authority disposition.
     ReceiptOccupied,
     /// The result frontier refused or the authority callback failed.
@@ -104,6 +129,7 @@ pub struct OrdinaryLedger {
     last_sequence: u64,
     acknowledged_through: u64,
     pending_ack: Option<u64>,
+    rejected_sequence: Option<u64>,
     poisoned: bool,
     authority_call_in_progress: bool,
 }
@@ -139,6 +165,7 @@ impl OrdinaryLedger {
             last_sequence,
             acknowledged_through: last_sequence,
             pending_ack: None,
+            rejected_sequence: None,
             poisoned: false,
             authority_call_in_progress: false,
         })
@@ -177,6 +204,10 @@ impl OrdinaryLedger {
     pub fn receipt_occupied(&self) -> bool {
         self.retirement.receipt_occupied()
     }
+    /// Exact ordinary sequence rejected by the peer, if any.
+    pub fn rejected_sequence(&self) -> Option<u64> {
+        self.rejected_sequence
+    }
     /// Whether transport disposition has become uncertain.
     pub fn is_poisoned(&self) -> bool {
         self.poisoned || self.authority_call_in_progress
@@ -202,6 +233,9 @@ impl OrdinaryLedger {
         }
         if key != self.key {
             return Err(SubmitError::WrongIdentity);
+        }
+        if self.rejected_sequence.is_some() {
+            return Err(SubmitError::ReplacementRequired);
         }
         let group = r4::decode(payload).map_err(SubmitError::Framing)?;
         let sequence = self
@@ -287,6 +321,9 @@ impl OrdinaryLedger {
         if self.is_poisoned() {
             return Err(WriteError::Poisoned);
         }
+        if self.rejected_sequence.is_some() {
+            return Err(WriteError::ReplacementRequired);
+        }
         let Some(entry) = (0..self.entry_len)
             .map(|i| self.entry(i))
             .find(|entry| entry.written < entry.frame_len)
@@ -307,6 +344,9 @@ impl OrdinaryLedger {
     pub fn accept_written(&mut self, sequence: u64, count: usize) -> Result<(), WriteError> {
         if self.is_poisoned() {
             return Err(WriteError::Poisoned);
+        }
+        if self.rejected_sequence.is_some() {
+            return Err(WriteError::ReplacementRequired);
         }
         let Some(offset) =
             (0..self.entry_len).find(|&i| self.entry(i).written < self.entry(i).frame_len)
@@ -330,6 +370,36 @@ impl OrdinaryLedger {
     /// sequence or silently discarded; the peer must close.
     pub fn quarantine_uncertain_write(&mut self) {
         self.poisoned = true;
+    }
+
+    /// Record one externally authenticated Reject for an exact fully written
+    /// ordinary frame. It is never admission ACK and frees no retained bytes
+    /// or identities. Replacement framing is a separate later owner; until
+    /// then the peer must close rather than resume ordinary submission.
+    pub fn reject_state_group(&mut self, key: PeerKey, sequence: u64) -> Result<(), RejectError> {
+        if self.is_poisoned() {
+            return Err(RejectError::Poisoned);
+        }
+        if key != self.key {
+            return Err(RejectError::WrongIdentity);
+        }
+        if self.rejected_sequence.is_some() {
+            return Err(RejectError::ReplacementRequired);
+        }
+        if self.pending_ack.is_some_and(|through| sequence <= through) {
+            return Err(RejectError::ConflictingAdmission);
+        }
+        let Some(entry) = (0..self.entry_len)
+            .map(|index| self.entry(index))
+            .find(|entry| entry.sequence == sequence)
+        else {
+            return Err(RejectError::UnknownSequence);
+        };
+        if entry.written != entry.frame_len {
+            return Err(RejectError::NotWritten);
+        }
+        self.rejected_sequence = Some(sequence);
+        Ok(())
     }
 
     /// Admit a complete cumulative StateGroup prefix and retire its exact
@@ -358,6 +428,12 @@ impl OrdinaryLedger {
             .map_err(|_| AckError::InvalidSequence)?;
         if count == 0 || count > self.entry_len {
             return Err(AckError::InvalidSequence);
+        }
+        if self
+            .rejected_sequence
+            .is_some_and(|rejected| rejected <= through)
+        {
+            return Err(AckError::RejectedSequence);
         }
         let mut result_count = 0;
         for index in 0..count {

@@ -24,12 +24,25 @@ refusal retains both frame/journal bytes and an occupied receipt for retry;
 unwind quarantines both owners. Successful retirement frees the exact frame
 and journal ranges. No result is released merely by watermark or group ID.
 
-Seven focused tests pass with `RUSTC_WRAPPER= rustup run 1.99.1 cargo test -p
+## Exact rejected-group boundary
+
+An exact externally authenticated Reject names a fully written outstanding
+StateGroup. It releases no frame or journal identity and prevents cumulative
+admission ACK from crossing that sequence. Earlier admitted groups can still
+retire. New ordinary capture, write exposure and write advancement refuse;
+this slice requires explicit peer close until a unified baseline replacement
+owner exists. A Reject cannot contradict an occupied admission receipt for
+the same sequence. The future session must authenticate Reject and define
+what happens to later already assigned frames when replacement begins.
+
+Nine focused tests pass with `RUSTC_WRAPPER= rustup run 1.99.1 cargo test -p
 thrum-network --test sent`. They cover envelope content, result 8 admitted
 above pending 7 then result 7 advancing the authority prefix through 9,
 physical frame split across the arena boundary, byte/entry/result/event caps,
 no-mutation refusal, normal callback retry, callback unwind quarantine,
-known partial write, wrong epoch and sequence exhaustion. The result-gap test
+known partial write, wrong epoch, sequence exhaustion, rejected-group ACK
+barrier, conflicting admission receipt and a later assigned but unwritten
+frame held after Reject. The result-gap test
 proves that result 8 remains identified after its frame and journal entry are
 retired. It does not claim reuse of that same physical result slot before the
 gap closes. The full `RUSTC_WRAPPER= ./dev check` gate passed. Independent
@@ -54,9 +67,9 @@ per window. This is the structural **post-coalescing release shape**; it does
 not run the unsent queue, W1 or a game-schema validator. The byte reader uses a
 rolling checksum to force all output bytes to be consumed; its work is part
 of the number and is not a WSS adapter. Seven fresh process samples on the
-Apple M3 Max development host with rustc 1.99.1 have a 25,728.2 ns median
-per window (range 25,594.2–28,883.7 ns). All four ledgers together reserve
-721,984 Rust value/arena/Vec-capacity bytes throughout the probe. See the
+Apple M3 Max development host with rustc 1.99.1 have a 27,268.9 ns median
+per window (range 26,626.8–27,685.9 ns). All four ledgers together reserve
+722,048 Rust value/arena/Vec-capacity bytes throughout the probe. See the
 [raw samples](N1-ORDINARY-SENT-LEDGER-COST-SAMPLES-2026-11-03.csv).
 This excludes W1 extraction, schema validation, results/events, baseline,
 TLS, socket buffering, allocator-call counts, RSS and whole-callback tails.
