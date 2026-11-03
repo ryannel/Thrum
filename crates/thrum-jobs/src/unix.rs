@@ -861,6 +861,44 @@ mod tests {
     }
 
     #[test]
+    fn competing_process_owner_child() {
+        let Some(project) = std::env::var_os("THRUM_JOB_LOCK_PROJECT") else {
+            return;
+        };
+        let project = PathBuf::from(project);
+        let jobs = PathBuf::from(std::env::var_os("THRUM_JOB_LOCK_JOBS").unwrap());
+        let store =
+            NativeSourceStore::open(&project.join(".engine/source.sqlite"), source_plan()).unwrap();
+        assert!(matches!(
+            MaterializationHost::open(&project, &store, &jobs, account()),
+            Err(JobError::Busy)
+        ));
+    }
+
+    #[test]
+    fn second_process_cannot_acquire_live_host_lock() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
+        drop(store);
+        let output = Command::new(std::env::current_exe().unwrap())
+            .arg("--exact")
+            .arg("unix::tests::competing_process_owner_child")
+            .arg("--nocapture")
+            .env("THRUM_JOB_LOCK_PROJECT", &fixture.project)
+            .env("THRUM_JOB_LOCK_JOBS", &fixture.jobs)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "child owner check failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        drop(host);
+    }
+
+    #[test]
     fn killed_registered_job_is_quarantined_on_restart() {
         let fixture = Fixture::new();
         let store = fixture.accepted_store();
