@@ -1,0 +1,9 @@
+# Inactive render material source facts
+
+3 November 2026. A private render-v1 material decoder now borrows known raw JSON fields, validates them in frozen schema order and emits copied material facts. It resolves no texture reference and applies no F4 device or recipe support restriction. In particular, an unequal min/mag sampler on a masked material is valid source, and a texture reference remains an edge even if its factor is zero.
+
+The decoder checks required `id`, alpha mode, sidedness and strict four-field sampler; mask requires a finite unit-interval cutoff and opaque forbids any authored cutoff. Optional base/emissive/factor values use the native RENDER-SPEC defaults only when absent. Present `null` refuses. The three optional texture slots retain canonical typed UUID declarations for later namespace and slot-format closure. Plain and escaped keys, enums and UUIDs have the same meaning. Recognized top-level duplicate keys precede all field semantics; nested sampler duplicates precede sampler semantics at the material `sampler` field. Unknown keys refuse last.
+
+Eight focused object tests cover defaults, authored extrema and subnormals, all 36 sampler combinations, mode/cutoff rules, strict field and vector shapes, escaped equivalence, duplicate/unknown ordering and valid-but-unsupported source. One collection test checks canonical UUID error selection, zero-factor texture-edge retention and provisional projection suppression. Targeted tests and Clippy pass; independent defect-first review found no blocker in the decoder or scanner.
+
+This is inactive local structure. Global duplicate UUID and typed/same-root/slot-format edge closure, source admission, F4 selected-pin texture and material products, shared target alpha sampling, combined allocation/RSS and device performance remain open. The first alpha equality rule is specified in the candidate grammar and RENDER-SPEC but has no runtime evaluator proof yet.

@@ -43,6 +43,9 @@ mod render_source_collections;
 // Chunked canonical texture source path remains inactive until F3/F4 binding.
 #[allow(dead_code)]
 mod render_source_texture;
+// Material source meaning stays independent of target support and admission.
+#[allow(dead_code)]
+mod render_source_material;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;
