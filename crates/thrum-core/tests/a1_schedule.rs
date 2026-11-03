@@ -29,7 +29,7 @@ fn stage_order_wins_registration_order_and_conflicts_add_dependency_edges() {
         spec(1, Stage::Input, vec![], &[]),
         spec(3, Stage::Simulate, vec![access(AccessMode::Write)], &[]),
     ])
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     assert_eq!(
         graph.order().map(|s| s.id).collect::<Vec<_>>(),
         [SystemId(1), SystemId(2), SystemId(3), SystemId(4)]
@@ -50,7 +50,7 @@ fn explicit_dependencies_external_resources_and_graph_failures_are_validated() {
         spec(2, Stage::Simulate, vec![external], &[]),
         spec(3, Stage::Simulate, vec![external], &[]),
     ])
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     assert_eq!(
         graph.order().map(|s| s.id).collect::<Vec<_>>(),
         [SystemId(2), SystemId(1), SystemId(3)]
@@ -94,7 +94,7 @@ fn read_only_access_does_not_conflict_and_failure_cannot_reach_publish() {
         spec(3, Stage::Resolve, vec![], &[]),
         spec(4, Stage::Publish, vec![], &[]),
     ])
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     let mut visited = Vec::new();
     assert_eq!(
         graph.run(|system| {
@@ -120,11 +120,11 @@ fn batches_expose_only_conflict_free_ready_systems_with_stage_barriers() {
         spec(5, Stage::Resolve, vec![], &[]),
         spec(6, Stage::Publish, vec![], &[]),
     ])
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     assert_eq!(
         graph
             .batches()
-            .map(|batch| batch.to_vec())
+            .map(<[SystemId]>::to_vec)
             .collect::<Vec<_>>(),
         vec![
             vec![SystemId(1)],

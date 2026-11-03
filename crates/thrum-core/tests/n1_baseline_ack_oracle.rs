@@ -148,7 +148,10 @@ impl Ledger {
         }
         let admitted: Vec<u64> = self.frames.range(..=through).map(|(&seq, _)| seq).collect();
         for sequence in admitted {
-            let entry = self.frames.remove(&sequence).unwrap();
+            let entry = self
+                .frames
+                .remove(&sequence)
+                .expect("test setup or assertion requires a value");
             for id in entry.results {
                 self.results.remove(&id);
             }
@@ -220,7 +223,10 @@ impl Ledger {
             results: BTreeSet::new(),
             events: BTreeSet::new(),
         })?;
-        self.baseline.as_mut().unwrap().next_chunk += 1;
+        self.baseline
+            .as_mut()
+            .expect("test setup or assertion requires a value")
+            .next_chunk += 1;
         Some((sequence, index))
     }
 
@@ -263,7 +269,10 @@ impl Ledger {
             results: BTreeSet::new(),
             events: BTreeSet::new(),
         })?;
-        self.baseline.as_mut().unwrap().ended = true;
+        self.baseline
+            .as_mut()
+            .expect("test setup or assertion requires a value")
+            .ended = true;
         Some(sequence)
     }
 
@@ -289,7 +298,10 @@ impl Ledger {
         if !covered {
             return false;
         }
-        let baseline = self.baseline.take().unwrap();
+        let baseline = self
+            .baseline
+            .take()
+            .expect("test setup or assertion requires a value");
         for id in &baseline.included_results {
             self.results.remove(id);
         }
@@ -324,22 +336,32 @@ impl Ledger {
 #[test]
 fn rejected_sequence_does_not_block_eight_chunk_baseline_credits() {
     let mut ledger = Ledger::default();
-    let admitted = ledger.group(8000, &[7], &[70]).unwrap();
+    let admitted = ledger
+        .group(8000, &[7], &[70])
+        .expect("test setup or assertion requires a value");
     assert!(!ledger.header_ack(admitted + 1)); // No unsent publication may be admitted.
     assert_eq!(ledger.results, BTreeSet::from([7]));
     assert_eq!(ledger.account().1, 1);
     assert!(ledger.header_ack(admitted));
-    let rejected = ledger.group(8000, &[9], &[90]).unwrap();
+    let rejected = ledger
+        .group(8000, &[9], &[90])
+        .expect("test setup or assertion requires a value");
     assert!(ledger.reject(rejected));
     assert!(!ledger.header_ack(rejected));
     assert_eq!(ledger.results, BTreeSet::from([9]));
     assert_eq!(ledger.events, BTreeSet::from([90]));
 
-    let begin = ledger.begin_replacement(41, 8, &[9], &[90]).unwrap();
+    let begin = ledger
+        .begin_replacement(41, 8, &[9], &[90])
+        .expect("test setup or assertion requires a value");
     assert_eq!(begin, rejected + 1);
     assert!(ledger.group(100, &[], &[]).is_none());
-    let (first, first_index) = ledger.submit_chunk().unwrap();
-    let (second, second_index) = ledger.submit_chunk().unwrap();
+    let (first, first_index) = ledger
+        .submit_chunk()
+        .expect("test setup or assertion requires a value");
+    let (second, second_index) = ledger
+        .submit_chunk()
+        .expect("test setup or assertion requires a value");
     assert_eq!((first_index, second_index), (0, 1));
     assert_eq!((first, second), (begin + 1, begin + 2));
     assert!(ledger.submit_chunk().is_none()); // Both credits are occupied.
@@ -353,7 +375,9 @@ fn rejected_sequence_does_not_block_eight_chunk_baseline_credits() {
         assert!(ledger.chunk_ack(41, index));
         assert!(!ledger.chunk_ack(41, index));
         if index + 2 < 8 {
-            let (sequence, actual_index) = ledger.submit_chunk().unwrap();
+            let (sequence, actual_index) = ledger
+                .submit_chunk()
+                .expect("test setup or assertion requires a value");
             assert_eq!(actual_index, index + 2);
             assert_eq!(sequence, last_sequence + 1);
             last_sequence = sequence;
@@ -371,7 +395,9 @@ fn rejected_sequence_does_not_block_eight_chunk_baseline_credits() {
     }
     assert_eq!(peak_baseline_bytes, BEGIN_FRAME + 2 * CHUNK_FRAME);
     assert!(ledger.submit_chunk().is_none());
-    let end = ledger.end_replacement().unwrap();
+    let end = ledger
+        .end_replacement()
+        .expect("test setup or assertion requires a value");
     assert_eq!(end, last_sequence + 1);
     assert_eq!(ledger.account(), (8000, 1, BEGIN_FRAME + END_FRAME, 10));
     assert!(!ledger.baseline_ack(42));
@@ -388,17 +414,25 @@ fn rejected_sequence_does_not_block_eight_chunk_baseline_credits() {
 #[test]
 fn incomplete_or_failed_replacement_cannot_release_mandatory_records() {
     let mut ledger = Ledger::default();
-    let rejected = ledger.group(100, &[11], &[110]).unwrap();
+    let rejected = ledger
+        .group(100, &[11], &[110])
+        .expect("test setup or assertion requires a value");
     assert!(ledger.reject(rejected));
-    ledger.begin_replacement(5, 1, &[], &[110]).unwrap();
-    let (_, index) = ledger.submit_chunk().unwrap();
+    ledger
+        .begin_replacement(5, 1, &[], &[110])
+        .expect("test setup or assertion requires a value");
+    let (_, index) = ledger
+        .submit_chunk()
+        .expect("test setup or assertion requires a value");
     assert!(!ledger.baseline_ack(5));
     assert!(ledger.chunk_ack(5, index));
-    ledger.end_replacement().unwrap();
+    ledger
+        .end_replacement()
+        .expect("test setup or assertion requires a value");
     assert!(!ledger.baseline_ack(5)); // Result 11 was omitted.
     assert_eq!(ledger.results, BTreeSet::from([11]));
     assert_eq!(ledger.events, BTreeSet::from([110]));
-    assert!(ledger.superseded.is_empty());
+    assert_eq!(ledger.superseded, []);
     ledger.fail_replacement_and_close();
     assert!(ledger.closed);
     assert_eq!(ledger.account(), (0, 0, 0, 0));

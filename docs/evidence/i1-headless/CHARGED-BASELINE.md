@@ -1,12 +1,14 @@
 # Charged read-only baseline
 
+> Status after the code-quality cleanup: the I1 timing examples cited here were removed from the active tree. Their historical measurements and source remain in Git; quoted example commands are no longer current commands.
+
 1 November 2026. This is the first product integration of the selected shared-column group owner. It applies to a read-only baseline from a sealed, pool-charged authority. Live tick output, replica admission and host delivery still use the prototype path.
 
 `Authority::try_baseline_charged` counts all full-state changes, retained results and events, and peer watermarks. It checks the four column sizes and reserves their combined requested bytes before allocating a column or copying a value. A nonempty column has a fixed fill limit, a private vector and one pool charge behind a shared owner. Cloning the group copies its header and four owner handles; the final reader releases each column charge. An empty column allocates nothing. The prototype `baseline` remains available for unqualified callers.
 
 The two-peer correctness fixture compares every charged baseline column and header with the prototype after a committed event and a game rejection. It proves capacity refusal leaves pool usage unchanged, a copied group retains the charge, and the last group reader releases it after the authority drops. Closed state and outcome values have already passed the authority's pool and size admission, so copying their inline parts shares charged payload handles. Event sorting is in place. This proof does not charge replica maps or callback storage.
 
-The [release fixture](../../../crates/thrum-core/examples/i1_baseline_cost.rs) builds two-peer baselines with 64 and 4,096 fixed-inline records sharing a 512-byte charged payload. It runs 20 warmups and 100 samples, then measures 64 clone-and-drop operations per sample. Two local macOS/aarch64 runs gave these p50 values in nanoseconds; each clone entry is the **whole 64-operation batch**.
+The `release fixture` (historical `git show 84d7673:crates/thrum-core/examples/i1_baseline_cost.rs`) builds two-peer baselines with 64 and 4,096 fixed-inline records sharing a 512-byte charged payload. It runs 20 warmups and 100 samples, then measures 64 clone-and-drop operations per sample. Two local macOS/aarch64 runs gave these p50 values in nanoseconds; each clone entry is the **whole 64-operation batch**.
 
 | Records | Prototype build | Charged build | Prototype clone batch | Charged clone batch |
 | ---: | ---: | ---: | ---: | ---: |

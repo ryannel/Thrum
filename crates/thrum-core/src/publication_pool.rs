@@ -53,7 +53,7 @@ pub struct PublicationCharge {
 
 struct ChargedBytes {
     bytes: Box<[u8]>,
-    _charge: PublicationCharge,
+    charge: PublicationCharge,
 }
 
 /// Immutable payload bytes with one pool charge for every shared owner.
@@ -64,7 +64,7 @@ pub struct PublicationBytes(Arc<ChargedBytes>);
 struct ColumnStorage<T> {
     values: Vec<T>,
     limit: usize,
-    _charge: PublicationCharge,
+    charge: PublicationCharge,
 }
 
 /// Shared, fixed-fill publication storage. Only its builder can push values;
@@ -116,11 +116,9 @@ impl<T> PublicationColumn<T> {
             });
         };
         match Arc::try_unwrap(inner) {
-            Ok(ColumnStorage {
-                values, _charge, ..
-            }) => Ok(ChargedColumnIntoIter {
+            Ok(ColumnStorage { values, charge, .. }) => Ok(ChargedColumnIntoIter {
                 values: values.into_iter(),
-                _charge: Some(_charge),
+                _charge: Some(charge),
             }),
             Err(inner) => Err(Self { inner: Some(inner) }),
         }
@@ -129,7 +127,7 @@ impl<T> PublicationColumn<T> {
     pub(crate) fn belongs_to(&self, pool: &PublicationPool) -> bool {
         self.inner
             .as_ref()
-            .is_none_or(|owner| Arc::ptr_eq(&owner._charge.state, &pool.state))
+            .is_none_or(|owner| Arc::ptr_eq(&owner.charge.state, &pool.state))
     }
 
     pub(crate) fn required_charge(capacity: usize) -> Result<usize, PublicationCapacity> {
@@ -156,7 +154,7 @@ impl<T> PublicationColumn<T> {
             inner: Some(Arc::new(ColumnStorage {
                 values: Vec::with_capacity(capacity),
                 limit: capacity,
-                _charge: charge,
+                charge,
             })),
         })
     }
@@ -178,7 +176,7 @@ impl<T> PublicationColumn<T> {
             inner: Some(Arc::new(ColumnStorage {
                 values,
                 limit: requested_limit,
-                _charge: charge,
+                charge,
             })),
         })
     }
@@ -225,8 +223,16 @@ impl sealed::ClosedValue for () {}
 /// charged. It does not by itself establish a finite whole-tick profile.
 pub trait ClosedPublicationValue: Clone + sealed::ClosedValue {
     /// Check fixed type shape once, even when the initial world is empty.
+    ///
+    /// # Errors
+    ///
+    /// The inline shape or payload slots exceed the selected closed value limits.
     fn validate_shape(limits: ClosedValueLimits) -> Result<(), ClosedValueError>;
     /// Check every retained payload owner against this pool and byte limit.
+    ///
+    /// # Errors
+    ///
+    /// A retained payload belongs to another pool or exceeds the selected shape or byte limits.
     fn validate_for_pool(
         &self,
         pool: &PublicationPool,
@@ -278,6 +284,10 @@ closed_scalar!(StableId);
 
 /// Per-value limits selected for one closed-state authority profile.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "public limit fields use max to distinguish admissible ceilings from current usage"
+)]
 pub struct ClosedValueLimits {
     /// Maximum fixed inline bytes in one state record.
     pub max_inline_bytes: usize,
@@ -309,6 +319,10 @@ pub enum PublicationRecordError {
 
 impl<const INLINE: usize, const BLOBS: usize> PublicationRecord<INLINE, BLOBS> {
     /// Build a closed value, checking the provenance of every payload owner.
+    ///
+    /// # Errors
+    ///
+    /// One of the retained payloads belongs to another publication pool.
     pub fn try_new(
         pool: &PublicationPool,
         inline: [u8; INLINE],
@@ -389,10 +403,14 @@ impl<const INLINE: usize, const BLOBS: usize> ClosedPublicationValue
 
 impl PublicationBytes {
     fn belongs_to(&self, pool: &PublicationPool) -> bool {
-        Arc::ptr_eq(&self.0._charge.state, &pool.state)
+        Arc::ptr_eq(&self.0.charge.state, &pool.state)
     }
     /// Reserve the logical payload and owner bytes before copying from a
     /// caller-owned source. The source and allocator metadata are not charged.
+    ///
+    /// # Errors
+    ///
+    /// The required owner bytes overflow or the pool cannot reserve them.
     pub fn try_copy_from_slice(
         pool: &PublicationPool,
         source: &[u8],
@@ -403,6 +421,10 @@ impl PublicationBytes {
 
     /// Transfer an existing admission reservation to a retained byte owner.
     /// Insufficient reserved capacity rejects before copying the source.
+    ///
+    /// # Errors
+    ///
+    /// The required owner bytes overflow or exceed the remaining reservation.
     pub fn try_copy_from_reservation(
         reservation: &mut PublicationReservation,
         source: &[u8],
@@ -411,12 +433,16 @@ impl PublicationBytes {
         let payload = Box::<[u8]>::from(source);
         Ok(Self(Arc::new(ChargedBytes {
             bytes: payload,
-            _charge: charge,
+            charge,
         })))
     }
 
     /// Logical bytes required to retain a payload of `len` bytes, including
     /// its shared owner. Callers can sum this before reserving a complete tick.
+    ///
+    /// # Errors
+    ///
+    /// The payload length plus owner overhead overflows `usize`.
     pub fn required_charge(len: usize) -> Result<usize, PublicationCapacity> {
         len.checked_add(size_of::<ChargedBytes>())
             .and_then(|total| total.checked_add(2 * size_of::<usize>()))
@@ -449,6 +475,10 @@ impl PublicationPool {
     /// Requested bytes for this pool's one shared control allocation,
     /// including its Arc strong/weak counters. This fixed setup cost is
     /// outside the usable owner-byte limit reported by `limit_bytes`.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the fixed pool-control layout cannot be represented.
     pub fn control_allocation_bytes() -> usize {
         let (layout, _) = Layout::new::<[AtomicUsize; 2]>()
             .extend(Layout::new::<PoolState>())
@@ -479,10 +509,14 @@ impl PublicationPool {
 
     /// Atomically reserve peak space before a world mutation. On failure, no
     /// capacity changes hands. A zero-byte reservation is valid.
+    ///
+    /// # Errors
+    ///
+    /// The requested total overflows or exceeds the pool limit.
     pub fn try_reserve(&self, bytes: usize) -> Result<PublicationReservation, PublicationCapacity> {
         if bytes == 0 {
             return Ok(PublicationReservation {
-                state: self.state.clone(),
+                state: Arc::clone(&self.state),
                 remaining: 0,
             });
         }
@@ -500,7 +534,7 @@ impl PublicationPool {
             ) {
                 Ok(_) => {
                     return Ok(PublicationReservation {
-                        state: self.state.clone(),
+                        state: Arc::clone(&self.state),
                         remaining: bytes,
                     });
                 }
@@ -513,7 +547,7 @@ impl PublicationPool {
 impl PublicationReservation {
     pub(crate) fn pool(&self) -> PublicationPool {
         PublicationPool {
-            state: self.state.clone(),
+            state: Arc::clone(&self.state),
         }
     }
 
@@ -528,13 +562,17 @@ impl PublicationReservation {
 
     /// Transfer part of this reservation to one allocation owner. The sum of
     /// unspent reservations and live charges remains unchanged here.
+    ///
+    /// # Errors
+    ///
+    /// The requested charge exceeds the unspent reservation.
     pub fn charge(&mut self, bytes: usize) -> Result<PublicationCharge, PublicationCapacity> {
         self.remaining = self
             .remaining
             .checked_sub(bytes)
             .ok_or(PublicationCapacity)?;
         Ok(PublicationCharge {
-            state: self.state.clone(),
+            state: Arc::clone(&self.state),
             bytes,
         })
     }
@@ -635,7 +673,7 @@ mod tests {
         drop(first);
         assert_eq!(pool.used_bytes(), 30);
         let second = pool.try_reserve(70).unwrap();
-        let held = charge.clone();
+        let held = Arc::clone(&charge);
         drop(charge);
         assert_eq!(pool.used_bytes(), 100);
         drop(second);
@@ -682,9 +720,8 @@ mod tests {
         column.push(9);
         drop(reservation);
         let shared_reader = column.clone();
-        let column = match column.try_into_unique_iter() {
-            Ok(_) => panic!("shared column must remain shared"),
-            Err(column) => column,
+        let Err(column) = column.try_into_unique_iter() else {
+            panic!("shared column must remain shared");
         };
         drop(shared_reader);
         let mut values = column.try_into_unique_iter().ok().unwrap();
@@ -716,9 +753,9 @@ mod tests {
         let mut workers = Vec::new();
         for _ in 0..2 {
             let pool = pool.clone();
-            let start = start.clone();
-            let attempted = attempted.clone();
-            let release = release.clone();
+            let start = Arc::clone(&start);
+            let attempted = Arc::clone(&attempted);
+            let release = Arc::clone(&release);
             workers.push(thread::spawn(move || {
                 start.wait();
                 let reservation = pool.try_reserve(7);

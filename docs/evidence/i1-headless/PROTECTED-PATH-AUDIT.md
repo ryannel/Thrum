@@ -1,5 +1,7 @@
 # Protected fixed-slot path audit
 
+> Status after the code-quality cleanup: the I1 timing examples cited here were removed from the active tree. Their historical measurements and source remain in Git; quoted example commands are no longer current commands.
+
 1 November 2026. This audit follows accepted input through a selected sealed fixed-slot, inline-output authority, its required finite local replica, the native callback collection and acknowledgement. It does not qualify structural spawning, tick-created variable payloads, arbitrary game-private scratch, remote queues or named devices.
 
 The audit found three uncharged engine paths and closed them for this profile. `PreparedEdits::Many` can own a large vector even when its length fits the declared edit count; the protected authority now treats that variant as a terminal game-contract fault before any world edit. The prototype `baseline()` convenience path could allocate uncharged result and state vectors through the host's read-only authority; `try_baseline()` now returns `Unqualified` in protected mode, while `try_baseline_charged()` remains available. The host's two built-in system stages used an uncharged retained vector and allocation-based validation scratch; their ownership, dependency and conflict checks now produce an inline two-stage order with no scheduler heap allocation. The prototype and ordinary charged hosts use the same validated order.
@@ -10,7 +12,7 @@ The combined test admits the maximum eight pending inputs from each of two peers
 
 The independent review agent re-audited the selected profile after the fixes and found no remaining engine-owned dynamic allocation hole in this scope. It judged the fixed-slot owner-byte gate ready to close with the exclusions above. The broader process and game-work gates remain open.
 
-The [release fixture](../../../crates/thrum-core/examples/i1_charged_replica_cost.rs) compared commit `b6b6d2e` with this change in A/B/B/A order, with separate Cargo target directories and distinct executable SHA-256 hashes: before `bf1a1cd89a8531967a6a1e0c52b51dcb385ac934cc0f9ccc72d9eb780499ba11`, after `d1b7a60c8ca2273492e0aa64bb3f983623ac43944aaa9263632f15557175c14d`. The raw runs are [before A](protected-gate-before-a.txt), [after A](protected-gate-after-a.txt), [after B](protected-gate-after-b.txt) and [before B](protected-gate-before-b.txt). Complete protected submit/callback/acknowledge p50 nanoseconds were:
+The `release fixture` (historical `git show 84d7673:crates/thrum-core/examples/i1_charged_replica_cost.rs`) compared commit `b6b6d2e` with this change in A/B/B/A order, with separate Cargo target directories and distinct executable SHA-256 hashes: before `bf1a1cd89a8531967a6a1e0c52b51dcb385ac934cc0f9ccc72d9eb780499ba11`, after `d1b7a60c8ca2273492e0aa64bb3f983623ac43944aaa9263632f15557175c14d`. The raw runs are [before A](protected-gate-before-a.txt), [after A](protected-gate-after-a.txt), [after B](protected-gate-after-b.txt) and [before B](protected-gate-before-b.txt). Complete protected submit/callback/acknowledge p50 nanoseconds were:
 
 | Workload | Before A / B | After A / B |
 | --- | ---: | ---: |

@@ -251,6 +251,10 @@ pub struct Simulation {
 
 impl Simulation {
     /// Allocate a bounded fixture world and compile its serial stage graph.
+    ///
+    /// # Errors
+    ///
+    /// Capacity or movement-speed configuration is invalid.
     pub fn new(epoch: WorldEpoch, config: SimConfig) -> Result<Self, SimError> {
         if config.entity_capacity > u32::MAX as usize
             || !config.movement_speed.is_finite()
@@ -300,6 +304,10 @@ impl Simulation {
     }
 
     /// Seed initial committed tick-zero components before input registration.
+    ///
+    /// # Errors
+    ///
+    /// Seeding has already ended, the ID repeats, an entity component is nonfinite, or capacity is full.
     pub fn seed(&mut self, entity: ComponentEntity) -> Result<Handle, SimError> {
         if self.tick != 0 || !self.peers.is_empty() {
             return Err(SimError::AlreadyStarted);
@@ -320,6 +328,10 @@ impl Simulation {
     }
 
     /// Read committed typed components through a checked handle.
+    ///
+    /// # Errors
+    ///
+    /// The handle is stale or belongs to another world.
     pub fn get(&self, handle: Handle) -> Result<ComponentView<'_>, SimError> {
         self.store.row(handle).map(|row| self.store.view(row))
     }
@@ -330,6 +342,10 @@ impl Simulation {
     }
 
     /// Register one control binding. Local and remote callers use this same path.
+    ///
+    /// # Errors
+    ///
+    /// Peer capacity is full, the peer already exists, or the handle and ownership do not match.
     pub fn register_peer(&mut self, binding: Ownership, handle: Handle) -> Result<(), SimError> {
         let row = self.store.row(handle)?;
         if self.store.ownership[row] != Some(binding)
@@ -373,6 +389,10 @@ impl Simulation {
 
     /// Admit exactly one frame for a peer's next tick. Complete validation comes
     /// before sequence mutation; admission does not mutate committed components.
+    ///
+    /// # Errors
+    ///
+    /// The peer, connection, actor, tick, sequence, control, axes, actions, or pending-frame slot fails admission.
     pub fn admit_frame(&mut self, frame: InputFrame<SimAction>) -> Result<(), FrameError> {
         frame.validate_axes()?;
         if frame.actions.len() > self.config.actions_per_frame {
@@ -425,6 +445,18 @@ impl Simulation {
     /// Execute one fixed tick. Resolve commands apply after simulation; new
     /// entities begin moving next tick. All rejection paths precede publication.
     /// No wall time is read. Drive this from the existing bounded `TickClock`.
+    ///
+    /// # Errors
+    ///
+    /// The tick cannot advance, a command conflicts or exceeds capacity, or a component becomes nonfinite.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a checked internal storage invariant is broken.
+    #[expect(
+        clippy::float_cmp,
+        reason = "change ticks track exact component value changes, not geometric proximity"
+    )]
     pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome, SimError> {
         let next = self.tick.checked_add(1).ok_or(SimError::TickExhausted)?;
         self.validate_commands(commands)?;

@@ -507,8 +507,7 @@ fn validate_event_links<E, R>(
             || result.event_id.is_some_and(|id| {
                 !events
                     .binary_search_by_key(&id, |event| event.id)
-                    .ok()
-                    .is_some_and(|index| {
+                    .is_ok_and(|index| {
                         events[index].origin == result.origin
                             && events[index].tick == result.resolved_tick
                     })
@@ -708,6 +707,10 @@ impl<T> Replica<T> {
 
     /// Admit a complete baseline at once, including outstanding results above
     /// a pending sequence gap. The baseline consists only of full spawns.
+    ///
+    /// # Errors
+    ///
+    /// The baseline has invalid authority, lifecycle, event, outcome, or peer state.
     pub fn from_baseline<E, R>(
         baseline: StateGroup<T, E, R>,
     ) -> Result<(Self, AdmittedGroup<E, R>), ReplicaError> {
@@ -757,6 +760,10 @@ impl<T> Replica<T> {
     /// Admit a sealed baseline into finite object and peer-progress storage.
     /// The default peer limit is the baseline's current peer count; use the
     /// explicit-limit constructor when later charged groups may add peers.
+    ///
+    /// # Errors
+    ///
+    /// The baseline is invalid or its charged owners cannot be admitted.
     pub fn from_charged_baseline<E, R>(
         baseline: ChargedStateGroup<T, E, R>,
         pool: &PublicationPool,
@@ -771,6 +778,10 @@ impl<T> Replica<T> {
 
     /// Admit a sealed baseline with an explicit maximum peer count. Confirmed
     /// and candidate progress buffers are both charged before visibility.
+    ///
+    /// # Errors
+    ///
+    /// The baseline is invalid, or its object or peer columns exceed the selected charged capacity.
     pub fn from_charged_baseline_with_peer_limit<E, R>(
         baseline: ChargedStateGroup<T, E, R>,
         pool: &PublicationPool,
@@ -865,6 +876,10 @@ impl<T> Replica<T> {
     /// Conservative object-capacity check for a required charged replica.
     /// The host calls this with the authority's maximum possible spawns
     /// before allowing a tick to commit.
+    ///
+    /// # Errors
+    ///
+    /// The replica has no charged object profile or the requested bound cannot be represented.
     pub fn can_admit_charged_spawns(&self, max_spawns: usize) -> Result<bool, ReplicaError> {
         let ObjectStore::Charged(index) = &self.objects else {
             return Err(ReplicaError::UnqualifiedGroup);
@@ -881,6 +896,14 @@ impl<T> Replica<T> {
 
     /// Atomically validate a shared charged group, then admit it into the
     /// finite object index. Peer-progress candidates are pool-charged.
+    ///
+    /// # Errors
+    ///
+    /// The group is out of order, foreign, invalid, or exceeds charged replica capacity.
+    ///
+    /// # Panics
+    ///
+    /// Panics if an internal charged-index invariant fails after group validation.
     pub fn apply_charged<E, R>(
         &mut self,
         group: ChargedStateGroup<T, E, R>,
@@ -917,11 +940,11 @@ impl<T> Replica<T> {
         let ObjectStore::Charged(index) = &self.objects else {
             unreachable!("charged pool checked above")
         };
-        if !index
+        if index
             .len()
             .checked_sub(despawns)
             .and_then(|after_removal| after_removal.checked_add(spawns))
-            .is_some_and(|final_count| final_count <= index.max_live())
+            .is_none_or(|final_count| final_count > index.max_live())
         {
             return Err(ReplicaError::Capacity);
         }
@@ -992,6 +1015,10 @@ impl<T> Replica<T> {
     }
 
     /// Atomically validate and admit the next full-state group.
+    ///
+    /// # Errors
+    ///
+    /// The group is out of order, foreign, or violates object, event, or outcome invariants.
     pub fn apply<E, R>(
         &mut self,
         group: StateGroup<T, E, R>,
@@ -1106,12 +1133,14 @@ mod charged_tests {
     #[test]
     fn charged_progress_tracks_full_window_and_rejects_excess_peer_capacity() {
         let pool = PublicationPool::new(100_000);
+        let empty_results: [ActionResult<()>; 0] = [];
+        let empty_events: [CommittedEvent<()>; 0] = [];
         assert!(matches!(
             ChargedProgress::try_from_baseline(
                 0,
                 0,
-                &[] as &[ActionResult<()>],
-                &[] as &[CommittedEvent<()>],
+                &empty_results,
+                &empty_events,
                 &[(PeerId(1), 0)],
                 &pool,
                 0,
@@ -1121,8 +1150,8 @@ mod charged_tests {
         let mut progress = ChargedProgress::try_from_baseline(
             0,
             0,
-            &[] as &[ActionResult<()>],
-            &[] as &[CommittedEvent<()>],
+            &empty_results,
+            &empty_events,
             &[(PeerId(1), 0)],
             &pool,
             1,
@@ -1543,7 +1572,7 @@ mod charged_tests {
         assert_eq!(replica.tick(), 1);
         assert_eq!(replica.get(StableId(1)), None);
         assert_eq!(replica.get(StableId(2)), Some(&2));
-        assert!(admitted.results().is_empty());
+        assert_eq!(admitted.results(), []);
 
         let overfull = group(
             &pool,

@@ -98,6 +98,10 @@ pub struct Schedule {
 
 impl Schedule {
     /// Compile stage, explicit-dependency and conflicting-access edges once.
+    ///
+    /// # Errors
+    ///
+    /// A system ID repeats, a dependency is missing or backwards across stages, or the graph has a cycle.
     pub fn new(systems: Vec<SystemSpec>) -> Result<Self, ScheduleError> {
         let n = systems.len();
         for (i, system) in systems.iter().enumerate() {
@@ -182,6 +186,10 @@ impl Schedule {
 
     /// Run the same graph serially. Failure prevents all later systems, including
     /// publication. The runner owns staged writes and its recovery/fault policy.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first error produced by the caller-supplied system callback.
     pub fn run<E>(&self, mut run: impl FnMut(&SystemSpec) -> Result<(), E>) -> Result<(), E> {
         self.order().try_for_each(&mut run)
     }

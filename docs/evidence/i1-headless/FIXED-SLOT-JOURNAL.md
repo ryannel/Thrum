@@ -1,5 +1,7 @@
 # Charged fixed-slot change journal
 
+> Status after the code-quality cleanup: the I1 timing examples cited here were removed from the active tree. Their historical measurements and source remain in Git; quoted example commands are no longer current commands.
+
 1 November 2026. The selected protected, inline-output host now activates a charged change journal before accepting inputs. Its fixed-slot game declaration has zero spawns and at most two edits per action. The original `BTreeMap` journal remains for prototype and ordinary charged worlds, preserving their unrestricted lifecycle behavior.
 
 Activation requires a clean charged publication and the authority's pool. It reserves one mark per existing slot, a touched `(StableId, slot)` vector bounded by `min(slot count, maximum peers × 8 pending inputs × maximum edits per action)`, and a free-slot buffer large enough for every existing slot. If the old free buffer is replaced, the reservation also covers its overlap with the new buffer. A failed or foreign-pool activation leaves the world unchanged. Charges remain with the world until its final owner drops. The protected authority activates this representation before setting its execution-credit profile; a failure prevents host construction.
@@ -8,7 +10,7 @@ The first touch of a slot appends its stable ID and slot once. Repeated replacem
 
 Focused tests cover full competing-pool refusal and retry at activation, foreign-pool refusal, pre-existing free slots, repeated replacement, an invalid second edit leaving the journal untouched, update then despawn, reverse-ID touches, full free-list occupancy, an exhausted generation, two consecutive publications, old snapshot isolation and final charge release. A protected host test updates and then despawns an object under full competing pool use; the required replica sees both results. The review agent found no defect in the scoped design or implementation. `RUSTC_WRAPPER= ./dev check` passes.
 
-The [release fixture](../../../crates/thrum-core/examples/i1_charged_replica_cost.rs) runs 1,000 warmups and 3,000 measured two-peer callbacks with 16 distinct inline replacements per tick, followed by acknowledgements. The ordinary charged path keeps the tree; the protected path uses the journal and execution credits. Two sequential macOS/aarch64 runs gave these complete-path p50 nanoseconds:
+The `release fixture` (historical `git show 84d7673:crates/thrum-core/examples/i1_charged_replica_cost.rs`) runs 1,000 warmups and 3,000 measured two-peer callbacks with 16 distinct inline replacements per tick, followed by acknowledgements. The ordinary charged path keeps the tree; the protected path uses the journal and execution credits. Two sequential macOS/aarch64 runs gave these complete-path p50 nanoseconds:
 
 | Objects | Ordinary charged, runs 1 / 2 | Protected, runs 1 / 2 |
 | ---: | ---: | ---: |

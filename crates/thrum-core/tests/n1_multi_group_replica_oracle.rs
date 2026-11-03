@@ -100,34 +100,7 @@ impl CompositeReplica {
         let mut next = prior.clone();
         let mut owner = self.entity_owner.clone();
         let mut home = self.entity_home.clone();
-        if group.generation != prior.generation {
-            let replacement = group
-                .complete_replacement
-                .ok_or(Refusal::MissingFullState)?;
-            for entity in next.entities.keys() {
-                owner.remove(entity);
-            }
-            for entity in replacement.keys() {
-                if home
-                    .get(entity)
-                    .is_some_and(|assigned| *assigned != group.partition)
-                {
-                    return Err(Refusal::CrossPartitionEntity);
-                }
-                if !home.contains_key(entity) && home.len() == ASSIGNMENT_CAP {
-                    return Err(Refusal::AssignmentCapacity);
-                }
-                if owner.insert(*entity, group.partition).is_some() {
-                    return Err(Refusal::CrossPartitionEntity);
-                }
-                home.insert(*entity, group.partition);
-            }
-            next.entities = replacement;
-            next.generation = group.generation;
-            if !group.changes.is_empty() {
-                return Err(Refusal::RepeatedEntity);
-            }
-        } else {
+        if group.generation == prior.generation {
             if group.complete_replacement.is_some() {
                 return Err(Refusal::MissingFullState);
             }
@@ -169,6 +142,33 @@ impl CompositeReplica {
                     }
                 }
             }
+        } else {
+            let replacement = group
+                .complete_replacement
+                .ok_or(Refusal::MissingFullState)?;
+            for entity in next.entities.keys() {
+                owner.remove(entity);
+            }
+            for entity in replacement.keys() {
+                if home
+                    .get(entity)
+                    .is_some_and(|assigned| *assigned != group.partition)
+                {
+                    return Err(Refusal::CrossPartitionEntity);
+                }
+                if !home.contains_key(entity) && home.len() == ASSIGNMENT_CAP {
+                    return Err(Refusal::AssignmentCapacity);
+                }
+                if owner.insert(*entity, group.partition).is_some() {
+                    return Err(Refusal::CrossPartitionEntity);
+                }
+                home.insert(*entity, group.partition);
+            }
+            next.entities = replacement;
+            next.generation = group.generation;
+            if !group.changes.is_empty() {
+                return Err(Refusal::RepeatedEntity);
+            }
         }
         next.sample_tick = group.tick;
         self.partitions.insert(group.partition, next);
@@ -198,16 +198,16 @@ fn one_replica_admits_same_tick_partitions_and_tracks_distinct_sample_ages() {
     let mut replica = CompositeReplica::baseline(0, [(10, 1, &[(1, 0)]), (20, 1, &[(2, 0)])]);
     replica
         .apply(group(10, 1, 1, vec![Change::Update(1, 1)]))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     replica
         .apply(group(20, 1, 1, vec![Change::Update(2, 5)]))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(replica.state(1), Some((1, 1)));
     assert_eq!(replica.state(2), Some((5, 1)));
 
     replica
         .apply(group(10, 1, 3, vec![Change::Update(1, 3)]))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(replica.state(1), Some((3, 3)));
     assert_eq!(replica.state(2), Some((5, 1)));
 
@@ -236,7 +236,7 @@ fn one_replica_admits_same_tick_partitions_and_tracks_distinct_sample_ages() {
             changes: Vec::new(),
             complete_replacement: Some(BTreeMap::from([(2, 7), (3, 8)])),
         })
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(replica.state(2), Some((7, 4)));
     assert_eq!(replica.state(3), Some((8, 4)));
     assert_eq!(replica.state(1), Some((3, 3)));
@@ -280,7 +280,7 @@ fn leaving_visibility_does_not_transfer_baseline_partition_assignment() {
             changes: Vec::new(),
             complete_replacement: Some(BTreeMap::new()),
         })
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(replica.state(2), None);
     let before = replica.clone();
     assert_eq!(
@@ -296,7 +296,7 @@ fn leaving_visibility_does_not_transfer_baseline_partition_assignment() {
     assert_eq!(replica, before);
     replica
         .apply(group(20, 2, 2, vec![Change::Spawn(2, 5)]))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(replica.state(2), Some((5, 2)));
 }
 
@@ -308,11 +308,11 @@ fn invisible_id_churn_refuses_before_assignment_table_growth() {
         tick += 1;
         replica
             .apply(group(20, 1, tick, vec![Change::Spawn(entity, entity)]))
-            .unwrap();
+            .expect("test setup or assertion requires a value");
         tick += 1;
         replica
             .apply(group(20, 1, tick, vec![Change::Despawn(entity)]))
-            .unwrap();
+            .expect("test setup or assertion requires a value");
     }
     assert_eq!(replica.entity_home.len(), ASSIGNMENT_CAP);
     assert_eq!(replica.entity_owner.len(), 2);
@@ -329,6 +329,6 @@ fn invisible_id_churn_refuses_before_assignment_table_growth() {
     assert_eq!(replica, before);
     replica
         .apply(group(10, 1, 1, vec![Change::Update(1, 1)]))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(replica.state(1), Some((1, 1)));
 }

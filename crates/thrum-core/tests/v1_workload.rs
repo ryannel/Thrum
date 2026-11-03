@@ -1,9 +1,11 @@
 //! Fixture correctness and zero-allocation assertion for the representative workload.
 // The test allocator only observes this thread while explicitly armed. GlobalAlloc
 // requires unsafe delegation to System; production thrum-core still denies unsafe.
-#![allow(unsafe_code)]
+#![allow(
+    unsafe_code,
+    reason = "test-only counting allocator delegates to System"
+)]
 
-#[allow(dead_code)]
 #[path = "support/v1_workload.rs"]
 mod support;
 
@@ -20,6 +22,7 @@ struct CountingAllocator;
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
+// SAFETY: Each allocator operation delegates to System with the same arguments.
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         COUNTING.with(|active| {
@@ -27,10 +30,12 @@ unsafe impl GlobalAlloc for CountingAllocator {
                 ALLOCATIONS.with(|count| count.set(count.get() + 1));
             }
         });
+        // SAFETY: The layout is passed through unchanged to System.
         unsafe { System.alloc(layout) }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // SAFETY: The pointer and layout came from the matching System allocation.
         unsafe { System.dealloc(ptr, layout) }
     }
 }

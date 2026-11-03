@@ -49,7 +49,7 @@ impl GameRules for Rule {
             }
             Action::Spawn(id) if world.handle_for(*id).is_none() => Ok(Change::Spawn(*id)),
             Action::Despawn(id) => Ok(Change::Despawn(world.handle_for(*id).ok_or(())?)),
-            _ => Err(()),
+            Action::Spawn(_) => Err(()),
         }
     }
 
@@ -61,7 +61,12 @@ impl GameRules for Rule {
     ) -> PreparedCommit<Counter, u64> {
         match change {
             Change::Add(handle, emit) => {
-                let next = world.get(handle).unwrap().state.0 + 1;
+                let next = world
+                    .get(handle)
+                    .expect("test setup or assertion requires a value")
+                    .state
+                    .0
+                    + 1;
                 PreparedCommit {
                     edits: PreparedEdits::One(WorldEdit::Replace(handle, Counter(next))),
                     event: emit.then_some(next),
@@ -206,14 +211,23 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
     let fast = PeerId(1);
     let slow = PeerId(2);
     let mut world = World::new(WorldEpoch(1));
-    world.spawn(StableId(1), Counter(0)).unwrap();
-    world.spawn(StableId(2), Counter(0)).unwrap();
+    world
+        .spawn(StableId(1), Counter(0))
+        .expect("test setup or assertion requires a value");
+    world
+        .spawn(StableId(2), Counter(0))
+        .expect("test setup or assertion requires a value");
     let mut authority = Authority::new(AuthorityId::Match(MatchId(1)), Rule, world);
-    authority.register_peer(fast, 1, ActorId(1)).unwrap();
-    authority.register_peer(slow, 1, ActorId(2)).unwrap();
-    let (mut fast_replica, _) = Replica::from_baseline(authority.baseline()).unwrap();
-    let (mut slow_replica, _) =
-        Replica::from_baseline(for_peer(&authority.baseline(), slow)).unwrap();
+    authority
+        .register_peer(fast, 1, ActorId(1))
+        .expect("test setup or assertion requires a value");
+    authority
+        .register_peer(slow, 1, ActorId(2))
+        .expect("test setup or assertion requires a value");
+    let (mut fast_replica, _) = Replica::from_baseline(authority.baseline())
+        .expect("test setup or assertion requires a value");
+    let (mut slow_replica, _) = Replica::from_baseline(for_peer(&authority.baseline(), slow))
+        .expect("test setup or assertion requires a value");
     let origin = Instant::now();
     let mut host = HeadlessHost::local_with_peer_limit(
         origin,
@@ -226,7 +240,7 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
         authority,
         2,
     )
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     // Sequence 1 stays pending until tick 10. Sequence 2 resolves first, so
     // the outbound owner must keep its individual result above the gap.
     let mut outbox = SlowOutbox::new();
@@ -243,7 +257,7 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
                 },
             ),
         )
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     outbox
         .submit(
             &mut host,
@@ -257,7 +271,7 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
                 },
             ),
         )
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     for callback in 1..=13_u64 {
         let action = match callback {
             3 => Action::Spawn(StableId(3)),
@@ -275,19 +289,22 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
             },
             action,
         ))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
         let report = host
             .on_callback(origin + Duration::from_millis(17 * callback))
-            .unwrap();
+            .expect("test setup or assertion requires a value");
         for publication in &report.publications {
             let HostPublication::Local(tick) = publication else {
                 panic!("selected local authority producer");
             };
             // The fast peer consumes the same complete committed group.
-            let admitted = fast_replica.apply(tick.group.clone()).unwrap();
+            let admitted = fast_replica
+                .apply(tick.group.clone())
+                .expect("test setup or assertion requires a value");
             if let Some((_, through)) = admitted.resolved_through.iter().find(|(id, _)| *id == fast)
             {
-                host.acknowledge_results(fast, *through).unwrap();
+                host.acknowledge_results(fast, *through)
+                    .expect("test setup or assertion requires a value");
             }
             outbox.offer_group(
                 &tick.group,
@@ -350,16 +367,18 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
             emit: false,
         },
     ))
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     let report = host
         .on_callback(origin + Duration::from_millis(272))
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     assert_eq!(report.clock.completed, 3);
     for publication in &report.publications {
         let HostPublication::Local(tick) = publication else {
             unreachable!()
         };
-        fast_replica.apply(tick.group.clone()).unwrap();
+        fast_replica
+            .apply(tick.group.clone())
+            .expect("test setup or assertion requires a value");
     }
     assert_eq!(fast_replica.tick(), host.authority().tick_index());
     assert_eq!(fast_replica.get(StableId(1)), Some(&Counter(12)));
@@ -367,7 +386,9 @@ fn stalled_peer_owns_complete_inline_groups_without_pinning_world_snapshots() {
     // Delayed delivery of the exact retained peer projections remains an
     // atomic replica path, including the gap and lifecycle transitions.
     for group in &outbox.pending {
-        slow_replica.apply(group.clone()).unwrap();
+        slow_replica
+            .apply(group.clone())
+            .expect("test setup or assertion requires a value");
     }
     assert_eq!(slow_replica.tick(), 12);
     assert_eq!(slow_replica.get(StableId(1)), Some(&Counter(10)));

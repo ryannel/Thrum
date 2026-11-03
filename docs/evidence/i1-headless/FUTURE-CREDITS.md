@@ -1,5 +1,7 @@
 # Fixed-slot future execution credits
 
+> Status after the code-quality cleanup: the I1 timing examples cited here were removed from the active tree. Their historical measurements and source remain in Git; quoted example commands are no longer current commands.
+
 1 November 2026. This qualifies one selected sealed host profile, not the whole-process byte gate. `HeadlessHost::with_protected_inline_replica` accepts a closed charged authority only when its game declares zero spawns, no more than two prepared edits per action, inline-only action/entity/event/rejection values, and a finite maximum peer count. Activation rejects pre-existing pending inputs because they have no credit. The ordinary sealed constructor retains its previous, narrower admission behavior.
 
 For each new accepted input, authority admission reserves a conservative peak for one future snapshot plus changed-state, result, event and maximum-peer watermark columns **before** it grows completed history or consumes the sequence. The peak uses the fixed slot high-water, the declared edit bound and maximum peers, not the current due batch or current peer count. Activation checks that `max_peers × 8` such credits cover the aggregate peak for a maximum legal due batch. Duplicate lookup precedes credit allocation. A refused candidate releases its temporary credit and leaves its sequence available for retry. The existing completed-history, replica object-table, peer-progress and callback-floor owners remain charged separately.
@@ -8,7 +10,7 @@ At each due tick, the authority checks the due credits and transfers their unspe
 
 The tests cover a full competing reservation after admission, two peers resolving together, a later sequence resolving before an earlier future sequence, duplicate credit reuse, failed admission followed by same-sequence retry, a dirty snapshot page and replica update, eight held snapshot readers followed by retry, a peer join after a future input, transfer failure atomicity, and final-owner release. The review agent found no defect in the scoped implementation. `RUSTC_WRAPPER= ./dev check` passes the repository, Rust lint and test gates.
 
-The existing [changed-tick release fixture](../../../crates/thrum-core/examples/i1_charged_replica_cost.rs) now includes protected mode. It runs 1,000 warmups and 10,000 measured submit/callback/acknowledge cycles per case on macOS/aarch64 with two peers and one inline replacement. Sequential run medians in nanoseconds were:
+The existing `changed-tick release fixture` (historical `git show 84d7673:crates/thrum-core/examples/i1_charged_replica_cost.rs`) now includes protected mode. It runs 1,000 warmups and 10,000 measured submit/callback/acknowledge cycles per case on macOS/aarch64 with two peers and one inline replacement. Sequential run medians in nanoseconds were:
 
 | Objects | Ordinary charged, runs 1 / 2 | Protected, runs 1 / 2 |
 | ---: | ---: | ---: |

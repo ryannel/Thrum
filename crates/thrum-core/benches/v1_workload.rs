@@ -1,5 +1,8 @@
 //! Fixture baseline only. A1/A5 add engine adapters and end-to-end benchmarks.
-#[allow(dead_code)]
+#[expect(
+    dead_code,
+    reason = "shared workload fixture has consumers across test and benchmark targets"
+)]
 #[path = "../tests/support/v1_workload.rs"]
 mod support;
 
@@ -17,7 +20,7 @@ fn main() {
 }
 
 #[divan::bench]
-fn moving_world_and_four_peers(bencher: divan::Bencher) {
+fn moving_world_and_four_peers(bencher: divan::Bencher<'_, '_>) {
     let mut workload = support::Workload::new();
     bencher.bench_local(move || {
         workload.step();
@@ -26,7 +29,7 @@ fn moving_world_and_four_peers(bencher: divan::Bencher) {
 }
 
 #[divan::bench]
-fn four_peer_conditioner(bencher: divan::Bencher) {
+fn four_peer_conditioner(bencher: divan::Bencher<'_, '_>) {
     let mut link = support::LinkConditioner::new(0xA0A0_2026_1103);
     let mut tick = 0;
     bencher.bench_local(move || {
@@ -40,14 +43,14 @@ fn component_fixture() -> Simulation {
     let mut sim = Simulation::new(
         WorldEpoch(1),
         SimConfig {
-            tick_hz: NonZeroU32::new(60).unwrap(),
+            tick_hz: NonZeroU32::new(60).expect("test setup or assertion requires a value"),
             entity_capacity: support::ENTITY_COUNT,
             peer_capacity: support::PEER_COUNT,
             actions_per_frame: 8,
             movement_speed: 6.0,
         },
     )
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     for id in 0..support::ENTITY_COUNT {
         sim.seed(ComponentEntity {
             id: StableId(id as u128),
@@ -57,22 +60,25 @@ fn component_fixture() -> Simulation {
             ownership: None,
             visual: Some(2),
         })
-        .unwrap();
+        .expect("test setup or assertion requires a value");
     }
     sim
 }
 
 #[divan::bench]
-fn a1_component_tick(bencher: divan::Bencher) {
+fn a1_component_tick(bencher: divan::Bencher<'_, '_>) {
     let mut sim = component_fixture();
     bencher.bench_local(move || {
-        divan::black_box(sim.step(&[]).unwrap());
+        divan::black_box(
+            sim.step(&[])
+                .expect("test setup or assertion requires a value"),
+        );
         divan::black_box(&sim);
     });
 }
 
 #[divan::bench]
-fn a1_four_full_snapshots(bencher: divan::Bencher) {
+fn a1_four_full_snapshots(bencher: divan::Bencher<'_, '_>) {
     let sim = component_fixture();
     let mut snapshots = std::array::from_fn::<_, 4, _>(|_| {
         SimulationSnapshot::with_capacity(WorldEpoch(1), support::ENTITY_COUNT)

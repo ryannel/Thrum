@@ -209,7 +209,12 @@ mod tests {
         let bytes = index.allocation_bytes();
         let mut live = VecDeque::new();
         for id in 1..=28_u128 {
-            index.insert_new(StableId(id), id as u64).unwrap();
+            index
+                .insert_new(
+                    StableId(id),
+                    u64::try_from(id).expect("fixture ID fits u64"),
+                )
+                .unwrap();
             live.push_back(id);
         }
         assert!(!index.can_add(1));
@@ -220,16 +225,27 @@ mod tests {
         );
         for step in 0..100_000_u128 {
             let old = live.pop_front().unwrap();
-            assert_eq!(index.remove(StableId(old)), Ok(old as u64));
+            assert_eq!(
+                index.remove(StableId(old)),
+                Ok(u64::try_from(old).expect("fixture ID fits u64"))
+            );
             let new = step + 29;
-            index.insert_new(StableId(new), new as u64).unwrap();
+            index
+                .insert_new(
+                    StableId(new),
+                    u64::try_from(new).expect("fixture ID fits u64"),
+                )
+                .unwrap();
             live.push_back(new);
             if step % 1_000 == 0 {
                 assert_eq!(index.len(), 28);
                 assert_eq!(index.allocation_bytes(), bytes);
                 assert_eq!(pool.used_bytes(), bytes);
                 for id in &live {
-                    assert_eq!(index.get(StableId(*id)), Some(&(*id as u64)));
+                    assert_eq!(
+                        index.get(StableId(*id)),
+                        Some(&(u64::try_from(*id).expect("fixture ID fits u64")))
+                    );
                 }
             }
         }
