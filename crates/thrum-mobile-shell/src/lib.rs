@@ -83,6 +83,10 @@ pub enum TouchAdmission {
 /// The small state shared by the mobile event-loop adapter and fake-surface
 /// lifecycle tests. It does not own the world, clock or GPU surface.
 #[derive(Debug)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "surface, focus, foreground and host pause are independent platform signals"
+)]
 pub struct MobileGate {
     surface_epoch: u64,
     surface_available: bool,
@@ -268,7 +272,6 @@ impl MobileGate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{hint::black_box, time::Instant};
     use thrum_core::{ClockConfig, ClockState, TickClock};
 
     fn active_ios() -> MobileGate {
@@ -414,32 +417,5 @@ mod tests {
         assert_eq!(ticks, 7);
         assert_eq!((resumed.admitted, resumed.completed), (1, 1));
         assert_eq!(resumed.state, ClockState::Active);
-    }
-
-    #[test]
-    #[ignore = "local release-mode cost probe"]
-    fn bench_android_reconcile_touch_pair() {
-        const ITERATIONS: u64 = 1_000_000;
-        let signal = AndroidLifecycleSignal::new();
-        signal.on_resume();
-        let mut gate = MobileGate::new();
-        gate.surface_ready();
-        gate.observe_android(signal.snapshot());
-        assert!(gate.mark_host_active());
-        for run in 0..5 {
-            let started = Instant::now();
-            for id in 0..ITERATIONS {
-                gate.observe_android(black_box(signal.snapshot()));
-                black_box(gate.touch_started(black_box(id)));
-                black_box(gate.touch_ended(black_box(id)));
-            }
-            let elapsed = started.elapsed();
-            println!(
-                "mobile gate run {run}: {:.2} ns/reconcile+start+end, gate={} B signal={} B",
-                elapsed.as_nanos() as f64 / ITERATIONS as f64,
-                size_of::<MobileGate>(),
-                size_of::<AndroidLifecycleSignal>()
-            );
-        }
     }
 }

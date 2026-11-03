@@ -63,6 +63,11 @@ impl LocalReceiptCursor {
     /// Terminal reports deliver prior commits once but skip acknowledgement
     /// because the host is faulted. The callback stays with the caller so its
     /// clock overload and backpressure report remains observable.
+    ///
+    /// # Errors
+    ///
+    /// Returns a receipt error if the cursor is poisoned, a publication is out
+    /// of order or belongs to another peer, or the host rejects acknowledgement.
     pub fn deliver<G: GameRules>(
         &mut self,
         host: &mut HeadlessHost<G>,
@@ -137,10 +142,7 @@ impl LocalReceiptCursor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        hint::black_box,
-        time::{Duration, Instant},
-    };
+    use std::time::{Duration, Instant};
     use thrum_core::{
         ActionRejection, ActorId, Authority, AuthorityId, ClockConfig, HostBudget, Input,
         InputSchedule, Origin, PreparedCommit, PreparedEdits, ResultDisposition, RuleContext,
@@ -163,9 +165,7 @@ mod tests {
             action: &u8,
             _context: &mut RuleContext<'_>,
         ) -> Result<(), u8> {
-            if *action == 1 {
-                panic!("test rule fault");
-            }
+            assert!(*action != 1, "test rule fault");
             Err(1)
         }
 
@@ -218,7 +218,7 @@ mod tests {
             authority,
         )
         .unwrap();
-        assert!(baseline.results.is_empty());
+        assert_eq!(baseline.results, Vec::new());
         let mut receipts = LocalReceiptCursor::new(PEER, &host, 0);
         let mut seen = 0;
         let mut timing_rejections = 0;
@@ -308,7 +308,7 @@ mod tests {
             authority,
         )
         .unwrap();
-        assert!(baseline.results.is_empty());
+        assert_eq!(baseline.results, Vec::new());
         let mut receipts = LocalReceiptCursor::new(PEER, &host, 0);
         host.submit(input(1, InputSchedule::NextTick { observed_tick: 0 }))
             .unwrap();
@@ -362,7 +362,7 @@ mod tests {
             authority,
         )
         .unwrap();
-        assert!(baseline.results.is_empty());
+        assert_eq!(baseline.results, Vec::new());
         let mut receipts = LocalReceiptCursor::new(PEER, &host, 0);
         host.submit(input(1, InputSchedule::NextTick { observed_tick: 0 }))
             .unwrap();
@@ -408,7 +408,7 @@ mod tests {
             authority,
         )
         .unwrap();
-        assert!(baseline.results.is_empty());
+        assert_eq!(baseline.results, Vec::new());
         let mut receipts = LocalReceiptCursor::new(PEER, &host, 0);
         host.submit(input(1, InputSchedule::NextTick { observed_tick: 0 }))
             .unwrap();
@@ -434,60 +434,5 @@ mod tests {
             Err(LocalReceiptError::OutOfOrderPublication)
         );
         assert_eq!(observed, 1);
-    }
-
-    #[test]
-    #[ignore = "local release-mode complete minimal receipt-path probe"]
-    fn bench_minimal_local_receipt_path() {
-        const ACTIONS: u64 = 10_000;
-        for run in 0..3 {
-            let origin = Instant::now();
-            let mut authority = Authority::new(
-                AuthorityId::Standalone(SessionId(10 + run)),
-                RejectingRule,
-                World::new(WorldEpoch(10 + run)),
-            );
-            authority.register_peer(PEER, 1, ACTOR).unwrap();
-            let (mut host, baseline) = HeadlessHost::with_replica(
-                origin,
-                ClockConfig::default(),
-                HostBudget {
-                    callback_cpu: Duration::from_millis(5),
-                    other_work: Duration::from_millis(1),
-                    tick_cost_bound: Duration::from_millis(4),
-                },
-                authority,
-            )
-            .unwrap();
-            assert!(baseline.results.is_empty());
-            let mut receipts = LocalReceiptCursor::new(PEER, &host, 0);
-            let mut now = origin;
-            let started = Instant::now();
-            for sequence in 1..=ACTIONS {
-                host.submit(input(
-                    sequence,
-                    InputSchedule::NextTick {
-                        observed_tick: host.authority().tick_index(),
-                    },
-                ))
-                .unwrap();
-                now += Duration::from_nanos(16_666_667);
-                let report = host.on_callback(now).unwrap();
-                receipts
-                    .deliver(&mut host, &report, |publication| {
-                        let HostPublication::Replicated { admitted, .. } = publication else {
-                            panic!("expected in-memory replica publication");
-                        };
-                        black_box(admitted.results.as_slice());
-                    })
-                    .unwrap();
-            }
-            let elapsed = started.elapsed();
-            assert_eq!(receipts.acknowledged_through, ACTIONS);
-            println!(
-                "minimal local receipt run {run}: {:.1} ns/submit+callback+delivery+ack",
-                elapsed.as_nanos() as f64 / ACTIONS as f64
-            );
-        }
     }
 }
