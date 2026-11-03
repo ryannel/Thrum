@@ -111,6 +111,52 @@ trusts the local user for this development profile. Owner-clearable file flags
 remain an accident barrier, and the preparer must still prove one held
 no-writer lifecycle for its selected bytes.
 
+### Retained-root owner lifecycle target
+
+For this development profile, cold preparation creates each content-identified
+clone under a checked private owner directory. A permanent, user-immutable
+per-selection lock file outside the clone excludes cooperating preparation
+while it is made and sealed; the lock inode is never replaced. The preparer
+removes write and special mode bits without removing execute bits, applies the
+owner-clearable `UF_IMMUTABLE` flag to files and directories from leaves to root, and verifies
+the exact inventory and a separately versioned seal policy before publishing a
+small canonical selection record. Relative symlinks are checked without
+following them; sealing their parent directory protects the entry. The root
+directory is sealed last, so an interrupted preparation cannot appear complete
+merely because some children were sealed. A partial clone or record is
+quarantined and never selected.
+
+A build reopens the selected record and root under a shared lock, checks their
+identity and seal, and retains the lock and root descriptor through metadata,
+compiler shutdown, receipt reconciliation and output verification. Several
+builds may read the same sealed selection concurrently. A lock downgrade is
+not treated as atomic: acquisition starts again and revalidates after obtaining
+the shared lock. The lock descriptor must not be inherited by compiler
+children. Published roots are append-only in this profile: a cooperating job
+never unseals, renames or deletes one, even after a lease owner dies. This
+keeps selected pathnames stable for surviving children. Garbage collection is
+a separate future operation requiring proof that no compiler child still uses
+the root. Recovery under the exclusive lock refuses partial state and may
+quarantine only an owned identity; it cannot relabel that state as published.
+This lifecycle still requires explicit selected support,
+dependency and runtime records; sealing the three tool roots alone does not
+close those inputs.
+
+The lock coordinates only Thrum jobs. The flags and read-only modes block
+accidental writes, including compiler writes that escaped a sandbox rule, but
+the trusted local user can deliberately clear them. The release job and human
+review must bind the selected record to an actual reviewed manifest before a
+ready build can use it. Cold sealing and full hashing may cost seconds and are
+outside the edit path; a warm build reuses its held read lease rather than
+rescanning gigabytes on every edit. A fresh process must revalidate cold state
+before relying on the record, including after an interrupted preparation.
+Measure lock wait, seal walk, physical allocation and build overlap separately
+before claiming a performance benefit.
+The [first held-root candidate](../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
+proves this lifecycle only for one caller-selected APFS clone and a small
+fixture. It has not held the complete reviewed selection through a real Cargo
+job, and its cold full-Xcode seal cost is not yet known.
+
 ## macOS runtime boundary
 
 The local profile still permits named system-library and configuration
