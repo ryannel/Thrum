@@ -2237,8 +2237,8 @@
       "unsent_payload_queue": {
         "implementation": "registered thrum-network 16-slot exact R4 payload arena, inline ordered metadata, complete-partition-only state coalescing and poison-on-unwind transfer boundary",
         "functional_validation": "seven focused tests cover owned bytes, chronology, partial-state and mandatory preservation, P+1 refusal, retryable no-mutation sink error and uncertain-transfer poison; independent review found and corrected three contract faults and found no remaining transfer issue",
-        "platform_performance": "seven Apple M3 Max release-process samples: median 1584.9 ns per four-peer three-tick state-only window with 48 small captures and 16 no-op transfers; four queues reserve 447200 Rust bytes. No 32-actor mandatory burst, allocator-call, RSS, W1 callback, sent-ledger or transport measurement",
-        "scope": "Pre-submission owned payload bytes only. Game validator must certify complete partition state and dependency closure; external sent sink must reserve exact bytes/ACK metadata before sequence assignment. No W1 adapter, result/event journal, ACK ledger or full bandwidth/whole-callback qualification.",
+        "platform_performance": "seven Apple M3 Max release-process samples after peer-key binding: median 1939.0 ns per four-peer three-tick state-only window with 48 small captures and 16 no-op transfers; four queues reserve 447328 Rust bytes. No 32-actor mandatory burst, allocator-call, RSS, W1 callback, sent-ledger or transport measurement",
+        "scope": "Pre-submission payload bytes are bound to one match, peer and connection epoch. Game validator must certify complete partition state and dependency closure; the separate queue-to-sent method now reserves ordinary frame bytes/ACK metadata before sequence assignment and refuses a mismatched ledger. No W1 adapter, full event history, baseline ACK ledger or full bandwidth/whole-callback qualification.",
         "evidence": "../evidence/integration/N1-UNSENT-QUEUE-2026-11-03.md",
         "isolated_cost_samples": "../evidence/integration/N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv"
       },
@@ -2257,6 +2257,14 @@
         "scope": "Ordinary StateGroup-only no-socket slice after external game-schema and match-lifetime event-identity certification. The ledger privately owns the result retirement frontier, preventing helper substitution on ACK retry. A fully written exact Reject retains frame/journal identities, blocks cumulative admission across it and requires close until replacement exists. ACK and Reject identities are supplied by a future authenticated session. No cross-kind sequence ledger, baseline/chunk reserve, supersession, historical event dedup, W1 producer or transport adapter. Result journal retirement is physical; reuse of that exact result slot during a pending lower gap is not claimed.",
         "evidence": "../evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md",
         "isolated_cost_samples": "../evidence/integration/N1-ORDINARY-SENT-LEDGER-COST-SAMPLES-2026-11-03.csv"
+      },
+      "queue_to_sent_transfer": {
+        "implementation": "registered thrum-network no-socket UnsentQueue-to-OrdinaryLedger transfer method with a single successful sequence commit",
+        "functional_validation": "two focused tests cover state-only coalescing before submission, mandatory result ordering, exact encoded frames and authority ACK, plus wrong-epoch, queue/ledger peer mismatch, full sent-entry cap and Reject refusal preserving queued bytes and sequence; independent review identified and corrected the unbound queue identity defect",
+        "platform_performance": "seven Apple M3 Max fresh release-process samples: median 35982.5 ns for four peer-keyed queues and ledgers over a three-tick structural state-only release shape, 48 captures coalesced to 16 framed submissions and a full 30208-byte checksum; four owners reserve 1169376 Rust value/arena/Vec-capacity bytes. No W1, game closure, mandatory records, allocator-call, RSS, transport or whole-callback measurement",
+        "scope": "N1-owned ordinary queue/sent boundary only. Game-schema certification is supplied by the queue validator; W1 capture, actual manifest closure, authenticated session, baseline replacement, event history and transport are not integrated.",
+        "evidence": "../evidence/integration/N1-QUEUE-SENT-TRANSFER-2026-11-03.md",
+        "isolated_cost_samples": "../evidence/integration/N1-QUEUE-SENT-TRANSFER-COST-SAMPLES-2026-11-03.csv"
       },
       "baseline_physical_staging_oracle": {
         "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",

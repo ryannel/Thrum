@@ -3,8 +3,8 @@
 `thrum-network::outbound::UnsentQueue` owns sixteen fixed 6,944-byte R4
 payload slots (111,104 payload bytes) in one allocation plus inline metadata
 and chronological slot order. It is created only for an admitted networking
-peer. The first-profile queue itself reserves 111,800 Rust bytes on the local
-target, below the 128 KiB unsent profile by 19,272 bytes; allocator overhead,
+peer. Bound to one match/peer/epoch, each queue reserves 111,832 Rust bytes on
+the local target, below the 128 KiB unsent profile by 19,240 bytes; allocator overhead,
 per-peer transport and other N1 owners are excluded. No sequence is assigned
 while a payload is unsent.
 
@@ -34,8 +34,10 @@ An ignored release probe captures four 88-byte state-only groups for each of
 four peers over three ticks, coalesces to four groups per peer, then transfers
 those sixteen groups to a no-op sink while reading every outbound byte. It
 repeats 2,000 windows per process. Seven Apple M3 Max process samples are in
-[the CSV](N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv); median is **1,584.9
-ns per four-peer three-tick window**. This is a narrow in-process queue cost,
+[the CSV](N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv); after binding every
+queue to its peer and epoch, seven fresh release processes have a median of
+**1,939.0 ns per four-peer three-tick window** and four queues reserve
+447,328 Rust owner bytes. This is a narrow in-process queue cost,
 not an ordinary network workload: it excludes W1 extraction, full 32-actor
 groups, mandatory results/events, schema dependency work, envelope, sent
 ledger, ACK, sockets, callback tails and RSS. Sixteen slots can exhaust in
@@ -45,7 +47,9 @@ selected recipe must bound that burst or close/resync without loss.
 `transfer_next` removes a unit only after a successful external callback.
 Normal callback refusal is retryable **only if the callback made no external
 mutation**. If it unwinds after an uncertain publication, the queue is
-poisoned and capture/peek/transfer refuse until peer teardown. The real
-sent-frame owner must reserve exact framed bytes and ACK metadata before
-sequence assignment and successful transfer; this slice does not implement
-or qualify that owner, journal identity or remote admission ACK.
+poisoned and capture/peek/transfer refuse until peer teardown. The
+[ordinary queue-to-sent integration](N1-QUEUE-SENT-TRANSFER-2026-11-03.md)
+now reserves framed bytes and ACK metadata before sequence assignment and
+successful transfer. A queue is bound to one match, peer and connection epoch;
+the integration refuses a mismatched ledger. This queue cost probe excludes
+the sent owner, journal identity and remote admission ACK.

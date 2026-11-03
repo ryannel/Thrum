@@ -5,6 +5,7 @@ use thrum_network::{
         OutboundError, OutboundValidator, PartitionSeed, StateCoverage, TransferError, UnsentQueue,
     },
     r4::{self, Actor, Event, GroupHeader, GroupInput},
+    retirement::PeerKey,
 };
 
 struct Schema;
@@ -40,6 +41,14 @@ fn actor(id: u64, health: u16) -> Actor {
         inventory_revision: 0,
         owner: 0,
         visibility_generation: 1,
+    }
+}
+
+fn key(peer_id: u64) -> PeerKey {
+    PeerKey {
+        match_id: *b"0123456789abcdef",
+        peer_id,
+        connection_epoch: peer_id + 100,
     }
 }
 
@@ -85,7 +94,15 @@ fn payload(group_id: u32, tick: u64, mandatory: bool) -> ([u8; r4::MAX_PAYLOAD_B
 
 #[test]
 fn state_only_coalesces_to_chronological_tail_across_other_partition() {
-    let mut queue = UnsentQueue::from_baseline(&[seed(10), seed(20)]).unwrap();
+    let invalid = PeerKey {
+        match_id: [0; 16],
+        ..key(1)
+    };
+    assert_eq!(
+        UnsentQueue::from_baseline(invalid, &[seed(10)]).err(),
+        Some(OutboundError::WrongIdentity)
+    );
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
     let reserved = queue.reserved_capacity_bytes();
     let (mut first, size) = payload(10, 1, false);
     queue.capture(&first[..size], &Schema).unwrap();
@@ -121,7 +138,7 @@ fn state_only_coalesces_to_chronological_tail_across_other_partition() {
 
 #[test]
 fn mandatory_barrier_prevents_crossing_and_failed_transfer_retains_bytes() {
-    let mut queue = UnsentQueue::from_baseline(&[seed(10)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
     for (tick, mandatory) in [(1, false), (2, true), (3, false)] {
         let (bytes, size) = payload(10, tick, mandatory);
         queue.capture(&bytes[..size], &Schema).unwrap();
@@ -148,7 +165,7 @@ fn mandatory_barrier_prevents_crossing_and_failed_transfer_retains_bytes() {
 
 #[test]
 fn seventeenth_mandatory_unit_refuses_without_consuming_tick_or_slot() {
-    let mut queue = UnsentQueue::from_baseline(&[seed(10)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
     let reserved = queue.reserved_capacity_bytes();
     for tick in 1..=16 {
         let (bytes, size) = payload(10, tick, true);
@@ -168,7 +185,7 @@ fn seventeenth_mandatory_unit_refuses_without_consuming_tick_or_slot() {
 
 #[test]
 fn malformed_and_stale_group_refuse_without_queue_mutation() {
-    let mut queue = UnsentQueue::from_baseline(&[seed(10)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
     let (bytes, size) = payload(10, 1, false);
     assert_eq!(
         queue.capture(&bytes[..size - 1], &Schema),
@@ -186,7 +203,7 @@ fn malformed_and_stale_group_refuse_without_queue_mutation() {
 
 #[test]
 fn partial_actor_updates_cannot_erase_each_other() {
-    let mut queue = UnsentQueue::from_baseline(&[seed(10)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
     for (tick, id) in [(1, 101), (2, 102)] {
         let mut bytes = [0u8; r4::MAX_PAYLOAD_BYTES];
         let size = r4::encode(
@@ -229,7 +246,7 @@ fn partial_actor_updates_cannot_erase_each_other() {
 
 #[test]
 fn capture_refuses_cross_partition_time_regression() {
-    let mut queue = UnsentQueue::from_baseline(&[seed(10), seed(20)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
     let (later, later_size) = payload(10, 3, false);
     queue.capture(&later[..later_size], &Schema).unwrap();
     let (earlier, earlier_size) = payload(20, 2, false);
@@ -256,7 +273,7 @@ fn capture_refuses_cross_partition_time_regression() {
 fn unwound_external_transfer_poisons_queue_until_peer_teardown() {
     use std::panic::{AssertUnwindSafe, catch_unwind};
 
-    let mut queue = UnsentQueue::from_baseline(&[seed(10)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
     let (bytes, size) = payload(10, 1, true);
     queue.capture(&bytes[..size], &Schema).unwrap();
     let caught = catch_unwind(AssertUnwindSafe(|| {
@@ -283,7 +300,7 @@ fn measure_four_peer_three_tick_state_only_queue() {
 
     let seeds = [seed(10), seed(20), seed(30), seed(40)];
     let mut queues: [UnsentQueue; 4] =
-        std::array::from_fn(|_| UnsentQueue::from_baseline(&seeds).unwrap());
+        std::array::from_fn(|i| UnsentQueue::from_baseline(key(i as u64 + 1), &seeds).unwrap());
     let reserved: usize = queues
         .iter()
         .map(UnsentQueue::reserved_capacity_bytes)
