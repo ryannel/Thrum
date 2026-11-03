@@ -56,6 +56,40 @@ recovery and dirty-work/cost bounds. Same-IDCu→Cb and changing fronts remain r
 selection is **unfinished**; no new default source or production-quality claim is made by naming it. The single
 [build queue](CLOUD-MIGRATION.md#p1b--representative-live-source-regimes-before-layoutlibrary-freeze) owns the next proof.
 
+### Authored input and local-geometry discrimination
+
+[The static-master checkpoint](../../evidence/cloud-authored-masters-2026-11-03/README.md) retains exact CC0 source
+volumes, rights/recipes, conservative128/256cooks and actual shared-optical images.03/256 is a usable static Cu ingredient,
+not complete Cb anatomy or a live lifecycle.128 loses visible detail at the matched3km pose;384rays barely changes256.
+One sampledR16texture replaces unused full PDE/rest allocation in that frozen adapter. No full-sky/device admission follows.
+
+Before constructing another whole source, falsify **local support geometry** on this actual3D input. Let rho be raw
+authored density. Cook d0 from the signed Euclidean distance to opposite-class voxel centres of rho>=.001/.005, with
+explicit native/half/voxel-scale approximation; it is not an exact continuous isosurface SDF. Use positive-inside d0,
+32m halfwidth w in the current2048m fixture and baseline `rho_ref=rho*smoothstep(-w,w,d0)`. Audit that reference's
+boundary/tail change instead of claiming it equals rho. Current reference-integral losses are about1.28/2.47percent
+at128 and4.68/6.82percent at256, for the two isovalues; optical/ray errors still require actual inspection.
+
+Compare `rho*smoothstep(-w,w,d0-e*M)` with `max(rho_ref-r*M,0)` and `alpha*rho_ref` under the same material map,
+calibration/light/sampling. M=1 first, then fixed resolvable3D channels with M in[.3,1]; no animated noise warp.
+Choose r and alpha to match the SDF candidate's native integrated extinction at each held exposure. Source/light/
+shadow/reflection must evaluate the SAME operator, not apply a final-frame alpha. Complete extinction needs
+`e>=(max(d0)+w+epsilon)/min(M)`, including half/native error margin; maxd alone is insufficient. Drying uses monotone
+exposure or a persistent trailing dry field, never a passing kernel that accidentally regrows survivors. No constant
+normal-speed claim is made for noisy E because `grad(d0-e*M)` changes the normal metric.
+
+Measure components/contours at fixed fractions of instantaneous peak, actual zero-density gaps, substantial persistent
+remnants and interior probes; alpha fading can split fixed-absolute-threshold components too. Judge native front/side/
+oblique images and then1x/16xmotion. Reject shrinking cotton, carved tunnels, transient pinholes or disappearance without
+readable surviving fragments; reject an apparent gain that vanishes under matched extinction. A successful one-master
+operator does not supply mature renewal, new anatomy, attached growth, independent fragment motion or tower-fed ice.
+
+Independent review found unresolved full authored-producer details: complementary cap ownership cannot be max-unioned
+without losing density; wet de-erosion expands prospective support; attached motion needs the full parent-map derivative;
+phase must be spatial; filtering max-unions does not commute with max of filtered parts; coarse erosion controls need
+a weather-bandwidth bound. Those contracts must close before dependent live-part/cap/up-rez implementation. They do not
+prevent this bounded operator falsification. Keep the complete replacement source design explicitly unfinished.
+
 ## Native content and live source path
 
 1. Version plain recipe/control data, generator source and seeds in the package. Generate reusable Perlin–Worley/

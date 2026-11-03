@@ -1,7 +1,7 @@
 # Clouds and atmosphere — governing module design
 
-2 November 2026. **Production mechanisms selected; implementation/content/device qualification remain open.**
-[The production baseline](CLOUD-PRODUCTION-BASELINE.md) fixes the authoring, source, rendering and lighting path.
+3 November2026. **Renderer/atmosphere baseline retained; failed dynamic morphology reopened. Content/lifecycle/device qualification remain open.**
+[The production baseline](CLOUD-PRODUCTION-BASELINE.md) owns the renderer/light path and explicit source rejection/replacement status.
 The [whole-atmosphere coverage map](ATMOSPHERE-SYSTEM.md) and [provider contract](CLOUD-PROVIDERS.md) make delivery and replacement explicit.
 The [migration build plan](CLOUD-MIGRATION.md) is the single checked execution queue. Its
 [technique/source map](../research/ATMOSPHERICS-TECHNIQUES.md), [capability ledger](CLOUD-CAPABILITIES.md),
@@ -24,14 +24,14 @@ witnesses. Pretty stills, positive arithmetic, tests, a source hash and review a
 
 Scientific meteorology, full conservation, all WMO genera, extra optical phenomena, tornadoes and unrestricted flight
 are optional. Rain/lightning **causes and integration seams** are required; their rendered effects remain separate.
-The current task is a reviewed written plan, not implementation. Thrum is still a Rust scaffold without an engine runtime.
+The current commission includes standalone construction and proof; Thrum is still a Rust scaffold without an engine runtime.
 Standalone proof admission and actual engine/platform admission are separate.
 
 ## Governing decisions
 
 | ID | Current selected direction | Evidence / unfinished gate |
 | --- | --- | --- |
-| CD01 Source | Native runtime sparse3D source with live bounded transport/local source-loss and genus recipes; generated static basis data, no Houdini. | Nubis³ is the selected visual/render reference; our dynamic lifecycle adaptation must pass early native image/motion/control gates. |
+| CD01 Source | One native runtime3D optical source/domain remains required. Pulse/transport profiles2/3/4 are rejected as default morphology; authored3D anatomy/local-geometry challenger under proof, no Houdini. | [Failed source/motion evidence](../../evidence/cloud-front-growth-2026-11-03/README.md), [qualified static ingredients](../../evidence/cloud-authored-masters-2026-11-03/README.md). Exact replacement lifecycle/scale contracts remain unfinished; Nubis³ does not prove our adaptation. |
 | CD02 Detail | Optical frames contain structural birth, mature renewal and loss; stable coordinates and fixed optical calibration. | Watched source/reference motion and intermediate-frame comparison. |
 | CD03 Residency | Versioned current optical field snapshots and bounded runtime source/occupancy updates; shared static ingredients, current voxel light. | No baked all-cloud AO or full lifetime stream. Actual state/scratch/halo/mip/copy and1x/16x/64x work/latency qualify. |
 | CD04 Optics | Hillaire four-LUT air + RGB aerial T; two-lobe HG/one extra MS octave; current voxel Sun/ambient cache,2local Sun samples, receiver BSM and complete-ray oracle/fallback. | Complete equations/paths fixed in baseline; numerical, image, source and cost POCs qualify implementation/settings. |
@@ -73,8 +73,8 @@ not add. Prepared coefficients use a fixed optical calibration; liquid/ice scatt
 through interpolation/LOD. They are authored optical proxies, not conserved meteorological water by assertion.
 
 Shared wind acts once in the live3D source update, at material height. E1 supplies spatial/time controls and W; the
-source adds named internal updraft/outflow/fall terms without redefining world wind. Runtime source transport/local
-creation/loss changes actual3D support and topology under new forcing. Main/mirror/light never add a second source
+source adds named internal updraft/outflow/fall terms without redefining world wind. The source provider must change actual3D support/topology under new forcing; its replacement lifecycle mechanism remains
+unqualified after the pulse/transport failure. Main/mirror/light never add a second source
 wind. Control/seed/source checkpoints make replay/recovery explicit; optical GPU state is distinct from CPU semantic
 weather/causes. All families publish the same representation-neutral query and current source time. P1b validates
 Cu/Cb, dense Sc/St and thin Ci before source layout/library freeze. See baseline for exact operators and lifecycle.

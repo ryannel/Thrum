@@ -1,7 +1,7 @@
 # Cloud and atmospherics migration build plan
 
-2 November 2026. **Selected production-derived baseline; P0/P1a construction active.**
-[The production baseline](CLOUD-PRODUCTION-BASELINE.md) locks authoring, data, renderer, light and consumer path.
+3 November2026. **Renderer baseline retained; source anatomy/lifecycle correction active.**
+[The production baseline](CLOUD-PRODUCTION-BASELINE.md) owns renderer/light/consumer choices and the reopened source decision.
 [CLOUDS](CLOUDS.md) owns scope/contracts; [capabilities](CLOUD-CAPABILITIES.md) own actual outcomes;
 [POC DoD](CLOUD-PROOF-ACCEPTANCE.md) and [CPU/GPU/memory discipline](CLOUD-PERFORMANCE.md) govern evidence.
 This is the only active checkbox queue. Earlier research-led candidate comparisons are historical.
@@ -11,7 +11,7 @@ lighting -> Hillaire air + Beer receiver shadows + one cloud MS octave -> joint 
 reflections -> per-view reconstruction**. [Provider selection](CLOUD-PROVIDERS.md) is replaceable; the
 [complete atmosphere coverage map](ATMOSPHERE-SYSTEM.md) separates delivered optics/weather from neighbouring effects.
 Houdini and complete baked lifecycle playback are removed. The renderer has production lineage; the dynamic source
-and exact combined image/cost are unproved. Visual success leads selection; lower cost wins only at equivalent accepted
+and exact combined image/cost are unproved. Contradictory native/motion evidence rejects the pulse/transport morphology; authored3D ingredients and bounded geometry-versus-fade discrimination now precede another live source implementation. Visual success leads selection; lower cost wins only at equivalent accepted
 quality, behaviour and consumer scope. POCs verify this selected model, not an indefinite algorithm competition.
 
 ## Progress and completion semantics
@@ -140,6 +140,8 @@ lighting or opacity to hide that failed cue. Regional exchange remains necessary
 - [x] Preserve bounded dual-rest correspondence proof, exact reset producer/phase checks and real1x/16x/cost evidence; this does not accept lifecycle art or budgets.
 - [x] Preserve bounded causal-feed/optical-connectivity/root-to-cap witness proof and long1x failed-appearance evidence; not source-art acceptance.
 - [x] Preserve [front-normal stencil/mask proof and rejected1x/16x source anatomy](../../evidence/cloud-front-growth-2026-11-03/README.md); this does not accept the source or budgets.
+- [x] Retain [static CC0 master/cook/shared-optical proof](../../evidence/cloud-authored-masters-2026-11-03/README.md), including source-resolution loss and exact GPU scalar uploads; no full Cu/Cb/lifecycle or cost acceptance.
+- [ ] Falsify SDF support erosion against density subtraction and matched-extinction alpha on that master; inspect native peak-relative contours/zero gaps/interiors, then actual1x/16x before choosing the replacement lifecycle.
 - [ ] Prove a broad frozen authored3D formation from front/side/oblique, then lock its full weather-driven growth/erosion, survivor/correspondence and tower-fed-ice producer before dependent lifecycle work.
 - [ ] Recover optics after a long host/background gap as an explicit new optical epoch, with current-time chart/seed alignment; preserve CPU weather and declare lost q continuity.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
