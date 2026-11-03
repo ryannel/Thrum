@@ -149,7 +149,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541"
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact task/publication APIs, overload parameters, platform event and storage adapters.",
@@ -212,7 +212,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541",
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10",
         "RENDER-SPEC.md": "790835b67f73b05c01c3808ba495558c22ae85fa46699eff2a1a39669498bdb1"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -269,7 +269,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541"
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Schema field/codecs, migration registry, coordinate tolerances and storage primitive audit.",
@@ -518,6 +518,13 @@
         "performance_validation": "Three local 100,000-distinct-blob closure runs copied A in 0.213\u20130.283 ms while B's exact final transaction took 110.659\u2013125.314 ms. Three fresh-process 64 MiB public admission runs sampled A-copy maxima of 3.254\u20134.597 ms, writer wall 310.898\u2013322.490 ms and whole-process peak RSS 22,151,168\u201322,347,776 bytes. Ordinary 12 MiB pinned copies took 7.924\u20138.309 ms. Four continuous A pins completed 32,849\u201336,491 verified copies while a 64 MiB B published in 330.624\u2013346.059 ms across three local runs. These are local synthetic samples, not representative tails or attributed overhead.",
         "scope": "One read-only SQLite connection per accepted-source owner lets existing pins query immutable A blobs while B stages and checks exact final closure. A shared/exclusive publication gate drains short reads before root/outcome writes and installs quarantine before releasing an uncertain COMMIT. Pin writes, root authority and checkpoints remain on the writer. The reader drops first and both handles disable close-time checkpointing. One sustained externally blocked-WAL case recovers after drain. Continuous-reader checkpoint pressure, portable gate fairness, allocation count, complete source-to-build latency, power-loss and other-platform behavior remain open."
       },
+      "i2a_bounded_partial_blob_retry": {
+        "evidence": "../evidence/i2a/SOURCE-PARTIAL-BLOB-RETRY-2026-11-03.md",
+        "implementation": "accepted_store_matching_prefix_reuse_bounded_repair_and_cleanup",
+        "functional_validation": "Production accepted-owner and test-core fixtures pass matching-prefix no-delete, A pinned reads between B chunks, process-kill/reopen retry, same-length corruption repair, interrupted malformed-layout cleanup, header mismatch and oversized corrupt-row refusal, plus existing stale-writer and exact root/outcome regressions. Tiny-file batch tests cover no-delete reuse, repair, changed-header refusal and atomic rollback across cleanup.",
+        "performance_validation": "Work is bounded to one chunk per repair/cleanup SQL transaction and matching prefix chunks are not rewritten; no large-profile WAL/main/temporary peak, elapsed tail or RSS measurement is claimed.",
+        "scope": "Native streaming and tiny-file batch retries no longer delete every incomplete chunk in one transaction. State=0 remains unselectable, matching bytes are reused, and final full-store hash verification remains required. Hundreds-of-chunks pressure, actual ENOSPC during cleanup, power loss, aggregate source-to-build cost and the wider planning/resource policy remain open."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
@@ -617,7 +624,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541",
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10",
         "RENDER-SPEC.md": "790835b67f73b05c01c3808ba495558c22ae85fa46699eff2a1a39669498bdb1"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -810,7 +817,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541"
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Typed entity/component APIs, table/sparse implementation, transform and command details.",
@@ -868,7 +875,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541",
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10",
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -1178,7 +1185,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541"
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "RecoveryRoot format, adapters, operation epochs, save/replay envelope and migration."
@@ -1857,7 +1864,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541"
+        "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Operation registry, transaction/undo and durable retry/recovery interfaces."
@@ -2728,7 +2735,7 @@
     "contract_sha256": "093bd2e4e4d724efdc22d746e4bbb9899795c1d049849d5b7ded85d1e2d92154",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-      "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541",
+      "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10",
       "RENDER-SPEC.md": "790835b67f73b05c01c3808ba495558c22ae85fa46699eff2a1a39669498bdb1",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
@@ -3111,7 +3118,7 @@
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
       "FIRST-USE-WALKTHROUGHS.md": "38402601329f448342ba86c97878adb62e079846b0ba3345f86430202d9e7eac",
-      "FOUNDATION-SPEC.md": "dba0cc8235c711de9f2b4f54d602de3a11d7c82cdf23a007672fcb5e21d1a541",
+      "FOUNDATION-SPEC.md": "8735d9a9f389ae6e65f750b36b38e026bcbade5e72cff371a7fa638a85ec8e10",
       "FROM-SCRATCH-WALKTHROUGHS.md": "5f64e1fc79ba65819654b42cde2877945d5a8532fc3e11f5d4f70119fa2c988c",
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",

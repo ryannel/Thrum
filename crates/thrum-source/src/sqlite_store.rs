@@ -1509,77 +1509,131 @@ impl SqliteStoreCore {
         files: impl IntoIterator<Item = ([u8; 32], &'a [u8])>,
     ) -> Result<(), StoreError> {
         self.ensure_wal_room(5 * MIB)?;
-        let tx = self
-            .conn
-            .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let mut count = 0_usize;
-        let mut total_bytes = 0_usize;
-        for (hash, bytes) in files {
-            count += 1;
-            total_bytes = total_bytes
-                .checked_add(bytes.len())
-                .ok_or(StoreError::InputLength)?;
-            if count > SMALL_BATCH_FILES || total_bytes > SMALL_BATCH_BYTES {
-                return Err(StoreError::InputLength);
-            }
-            if Sha256::digest(bytes).as_slice() != hash {
-                return Err(StoreError::HashMismatch);
-            }
-            let length = i64::try_from(bytes.len()).map_err(|_| StoreError::InputLength)?;
-            let chunk_count = i64::from(!bytes.is_empty());
-            let existing: Option<(i64, i64, i64)> = tx
-                .query_row(
-                    "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
-                    params![hash.as_slice()],
-                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-                )
-                .optional()?;
-            match existing {
-                Some((old_length, old_chunks, 1)) => {
-                    if old_length != length || old_chunks != chunk_count {
-                        return Err(StoreError::BlobMetadataMismatch);
-                    }
-                    continue;
+        let mut malformed = None;
+        let result = (|| {
+            let tx = self
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let mut count = 0_usize;
+            let mut total_bytes = 0_usize;
+            for (hash, bytes) in files {
+                count += 1;
+                total_bytes = total_bytes
+                    .checked_add(bytes.len())
+                    .ok_or(StoreError::InputLength)?;
+                if count > SMALL_BATCH_FILES
+                    || total_bytes > SMALL_BATCH_BYTES
+                    || bytes.len() as u64 > SMALL_BATCH_FILE_BYTES
+                {
+                    return Err(StoreError::InputLength);
                 }
-                Some((_, _, 0)) => {
-                    tx.execute(
-                        "DELETE FROM blob_chunks WHERE hash=?1",
-                        params![hash.as_slice()],
-                    )?;
-                    tx.execute(
-                        "UPDATE blob_header SET length=?2, chunk_count=?3 WHERE hash=?1",
-                        params![hash.as_slice(), length, chunk_count],
-                    )?;
-                }
-                None => {
-                    tx.execute(
-                        "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, ?3, 0)",
-                        params![hash.as_slice(), length, chunk_count],
-                    )?;
-                }
-                Some(_) => return Err(StoreError::BlobMetadataMismatch),
-            }
-            if !bytes.is_empty() {
-                tx.execute(
-                    "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 0, ?2)",
-                    params![hash.as_slice(), bytes],
-                )?;
-                let stored: Vec<u8> = tx.query_row(
-                    "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
-                    params![hash.as_slice()],
-                    |row| row.get(0),
-                )?;
-                if stored.len() != bytes.len() || Sha256::digest(&stored).as_slice() != hash {
+                if Sha256::digest(bytes).as_slice() != hash {
                     return Err(StoreError::HashMismatch);
                 }
+                let length = i64::try_from(bytes.len()).map_err(|_| StoreError::InputLength)?;
+                let chunk_count = i64::from(!bytes.is_empty());
+                let existing: Option<(i64, i64, i64)> = tx
+                    .query_row(
+                        "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+                        params![hash.as_slice()],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                let mut insert_chunk = !bytes.is_empty();
+                match existing {
+                    Some((old_length, old_chunks, 1)) => {
+                        if old_length != length || old_chunks != chunk_count {
+                            return Err(StoreError::BlobMetadataMismatch);
+                        }
+                        continue;
+                    }
+                    Some((old_length, old_chunks, 0)) => {
+                        if old_length != length || old_chunks != chunk_count {
+                            return Err(StoreError::BlobMetadataMismatch);
+                        }
+                        let prior = {
+                            let mut statement = tx.prepare(
+                                "SELECT chunk_index, length(bytes) FROM blob_chunks
+                                 WHERE hash=?1 ORDER BY chunk_index LIMIT 2",
+                            )?;
+                            let mut rows = statement.query(params![hash.as_slice()])?;
+                            let first = rows
+                                .next()?
+                                .map(|row| {
+                                    Ok::<_, rusqlite::Error>((
+                                        row.get::<_, i64>(0)?,
+                                        row.get::<_, i64>(1)?,
+                                    ))
+                                })
+                                .transpose()?;
+                            let extra = rows.next()?.is_some();
+                            (first, extra)
+                        };
+                        match prior {
+                            (None, false) => {}
+                            (Some((0, size)), false) if chunk_count == 1 && size == length => {
+                                let matches: bool = tx.query_row(
+                                    "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+                                    params![hash.as_slice()],
+                                    |row| {
+                                        let ValueRef::Blob(stored) = row.get_ref(0)? else {
+                                            return Ok(false);
+                                        };
+                                        Ok(stored == bytes)
+                                    },
+                                )?;
+                                if !matches {
+                                    tx.execute(
+                                        "UPDATE blob_chunks SET bytes=?2 WHERE hash=?1 AND chunk_index=0",
+                                        params![hash.as_slice(), bytes],
+                                    )?;
+                                }
+                                insert_chunk = false;
+                            }
+                            _ => {
+                                malformed = Some((hash, length, chunk_count));
+                                return Err(StoreError::InvalidChunkLayout);
+                            }
+                        }
+                    }
+                    None => {
+                        tx.execute(
+                            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, ?3, 0)",
+                            params![hash.as_slice(), length, chunk_count],
+                        )?;
+                    }
+                    Some(_) => return Err(StoreError::BlobMetadataMismatch),
+                }
+                if insert_chunk {
+                    tx.execute(
+                        "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 0, ?2)",
+                        params![hash.as_slice(), bytes],
+                    )?;
+                }
+                if !bytes.is_empty() {
+                    let stored: Vec<u8> = tx.query_row(
+                        "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+                        params![hash.as_slice()],
+                        |row| row.get(0),
+                    )?;
+                    if stored.len() != bytes.len() || Sha256::digest(&stored).as_slice() != hash {
+                        return Err(StoreError::HashMismatch);
+                    }
+                }
+                tx.execute(
+                    "UPDATE blob_header SET state=1 WHERE hash=?1 AND state=0",
+                    params![hash.as_slice()],
+                )?;
             }
-            tx.execute(
-                "UPDATE blob_header SET state=1 WHERE hash=?1 AND state=0",
-                params![hash.as_slice()],
-            )?;
+            tx.commit()?;
+            Ok(())
+        })();
+        if let Some((hash, length, chunk_count)) = malformed {
+            // The batch rolled back before touching any selected state. Clear
+            // the bad incomplete rows in bounded transactions for a retry.
+            self.clear_incomplete_blob_chunks(hash, length, chunk_count)?;
         }
-        tx.commit()?;
-        Ok(())
+        result
     }
 
     #[cfg(test)]
@@ -1700,11 +1754,8 @@ impl SqliteStoreCore {
             }
             return Ok(true);
         }
-        self.ensure_wal_room(MIB)?;
-        let tx = self
+        let existing: Option<(i64, i64, i64)> = self
             .conn
-            .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let existing: Option<(i64, i64, i64)> = tx
             .query_row(
                 "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
                 params![expected_hash.as_slice()],
@@ -1719,26 +1770,114 @@ impl SqliteStoreCore {
                 // The caller still verifies its candidate stage separately.
                 return Ok(true);
             }
-            Some((_, _, 0)) => {
-                tx.execute(
-                    "DELETE FROM blob_chunks WHERE hash=?1",
-                    params![expected_hash.as_slice()],
-                )?;
-                tx.execute(
-                    "UPDATE blob_header SET length=?2, chunk_count=?3 WHERE hash=?1",
-                    params![expected_hash.as_slice(), sql_length, chunk_count],
-                )?;
+            Some((prior_length, prior_chunks, 0)) => {
+                if prior_length != sql_length || prior_chunks != chunk_count {
+                    return Err(StoreError::BlobMetadataMismatch);
+                }
+                if !self.partial_blob_has_contiguous_layout(length, expected_hash, chunk_count)? {
+                    self.clear_incomplete_blob_chunks(expected_hash, sql_length, chunk_count)?;
+                }
+                return Ok(false);
             }
             None => {
+                self.ensure_wal_room(MIB)?;
+                let tx = self
+                    .conn
+                    .transaction_with_behavior(TransactionBehavior::Immediate)?;
                 tx.execute(
                     "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, ?3, 0)",
                     params![expected_hash.as_slice(), sql_length, chunk_count],
                 )?;
+                tx.commit()?;
             }
             Some(_) => return Err(StoreError::BlobMetadataMismatch),
         }
-        tx.commit()?;
         Ok(false)
+    }
+
+    /// A partial blob is never selected. Its persisted chunks can be reused
+    /// only as a contiguous prefix with the expected lengths; the caller also
+    /// compares every byte with its immutable input before skipping an insert.
+    fn partial_blob_has_contiguous_layout(
+        &self,
+        length: u64,
+        hash: [u8; 32],
+        chunk_count: i64,
+    ) -> Result<bool, StoreError> {
+        let mut statement = self.conn.prepare(
+            "SELECT chunk_index, length(bytes) FROM blob_chunks WHERE hash=?1 ORDER BY chunk_index",
+        )?;
+        let mut rows = statement.query(params![hash.as_slice()])?;
+        let mut index = 0_i64;
+        while let Some(row) = rows.next()? {
+            let actual_index: i64 = row.get(0)?;
+            let actual_length: i64 = row.get(1)?;
+            if actual_index != index || index >= chunk_count {
+                return Ok(false);
+            }
+            let offset = u64::try_from(index)
+                .map_err(|_| StoreError::InvalidChunkLayout)?
+                .checked_mul(CHUNK_BYTES as u64)
+                .ok_or(StoreError::InvalidChunkLayout)?;
+            let expected_length = length.saturating_sub(offset).min(CHUNK_BYTES as u64);
+            if actual_length != expected_length as i64 {
+                return Ok(false);
+            }
+            index += 1;
+        }
+        Ok(true)
+    }
+
+    /// Delete at most one bounded chunk per transaction. A crash leaves the
+    /// header incomplete and the next retry continues this idempotent cleanup.
+    fn clear_incomplete_blob_chunks(
+        &mut self,
+        hash: [u8; 32],
+        sql_length: i64,
+        chunk_count: i64,
+    ) -> Result<(), StoreError> {
+        loop {
+            let last: Option<(i64, i64)> = self
+                .conn
+                .query_row(
+                    "SELECT chunk_index, length(bytes) FROM blob_chunks WHERE hash=?1 ORDER BY chunk_index DESC LIMIT 1",
+                    params![hash.as_slice()],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .optional()?;
+            let Some((index, stored_length)) = last else {
+                return Ok(());
+            };
+            // A corrupt oversized row cannot be removed under this profile's
+            // bounded-transaction claim; leave it unselectable for repair.
+            let stored_length =
+                u64::try_from(stored_length).map_err(|_| StoreError::InvalidChunkLayout)?;
+            if stored_length > CHUNK_BYTES as u64 {
+                return Err(StoreError::InvalidChunkLayout);
+            }
+            let rounded = stored_length
+                .div_ceil(SQLITE_PAGE_BYTES)
+                .checked_mul(SQLITE_PAGE_BYTES)
+                .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+            let allowance = rounded
+                .checked_mul(2)
+                .and_then(|value| value.checked_add(MIB))
+                .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+            self.ensure_wal_room(allowance)?;
+            let tx = self
+                .conn
+                .transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let deleted = tx.execute(
+                "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=?2
+                 AND EXISTS (SELECT 1 FROM blob_header
+                   WHERE hash=?1 AND length=?3 AND chunk_count=?4 AND state=0)",
+                params![hash.as_slice(), index, sql_length, chunk_count],
+            )?;
+            if deleted != 1 {
+                return Err(StoreError::StaleBlobWriter);
+            }
+            tx.commit()?;
+        }
     }
 
     fn append_blob_chunk(
@@ -1749,6 +1888,24 @@ impl SqliteStoreCore {
         index: i64,
         bytes: &[u8],
     ) -> Result<(), StoreError> {
+        let sql_length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
+        let retained: Option<bool> = self
+            .conn
+            .query_row(
+                "SELECT c.bytes FROM blob_chunks AS c JOIN blob_header AS h ON h.hash=c.hash
+                 WHERE c.hash=?1 AND c.chunk_index=?2 AND h.length=?3 AND h.chunk_count=?4 AND h.state=0",
+                params![expected_hash.as_slice(), index, sql_length, chunk_count],
+                |row| {
+                    let ValueRef::Blob(stored) = row.get_ref(0)? else {
+                        return Ok(false);
+                    };
+                    Ok(stored == bytes)
+                },
+            )
+            .optional()?;
+        if retained == Some(true) {
+            return Ok(());
+        }
         let rounded = (bytes.len() as u64)
             .div_ceil(SQLITE_PAGE_BYTES)
             .checked_mul(SQLITE_PAGE_BYTES)
@@ -1758,26 +1915,43 @@ impl SqliteStoreCore {
             .and_then(|value| value.checked_add(MIB))
             .ok_or(StoreError::Budget(BudgetError::Overflow))?;
         self.ensure_wal_room(allowance)?;
-        let sql_length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let inserted = tx.execute(
-            "INSERT INTO blob_chunks (hash, chunk_index, bytes)
-                 SELECT ?1, ?2, ?3
-                 WHERE EXISTS (
-                   SELECT 1 FROM blob_header
-                   WHERE hash=?1 AND length=?4 AND chunk_count=?5 AND state=0
-                 )",
-            params![
-                expected_hash.as_slice(),
-                index,
-                bytes,
-                sql_length,
-                chunk_count
-            ],
-        )?;
-        if inserted != 1 {
+        let changed = if retained == Some(false) {
+            // The partial row is not authority. Repair only this bounded
+            // chunk from the supplied stage; the full hash is checked again
+            // before the complete marker can be published.
+            tx.execute(
+                "UPDATE blob_chunks SET bytes=?3 WHERE hash=?1 AND chunk_index=?2
+                 AND EXISTS (SELECT 1 FROM blob_header
+                   WHERE hash=?1 AND length=?4 AND chunk_count=?5 AND state=0)",
+                params![
+                    expected_hash.as_slice(),
+                    index,
+                    bytes,
+                    sql_length,
+                    chunk_count
+                ],
+            )?
+        } else {
+            tx.execute(
+                "INSERT INTO blob_chunks (hash, chunk_index, bytes)
+                     SELECT ?1, ?2, ?3
+                     WHERE EXISTS (
+                       SELECT 1 FROM blob_header
+                       WHERE hash=?1 AND length=?4 AND chunk_count=?5 AND state=0
+                     )",
+                params![
+                    expected_hash.as_slice(),
+                    index,
+                    bytes,
+                    sql_length,
+                    chunk_count
+                ],
+            )?
+        };
+        if changed != 1 {
             return Err(StoreError::StaleBlobWriter);
         }
         tx.commit()?;
@@ -3805,6 +3979,73 @@ fn accepted_kill_after_verified_stage_retains_a_and_retries_b() {
 }
 
 #[test]
+fn accepted_owner_reuses_partial_blob_while_old_pin_reads() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "before partial B retry");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+
+    let bytes = vec![0x9d_u8; CHUNK_BYTES * 2 + 17];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    let mut scratch = Vec::new();
+    let _admission = store.owner.admission().unwrap();
+    let mut copied = Vec::new();
+    let mut visits = 0;
+    assert!(matches!(
+        store.stage_blob_phased(
+            &mut bytes[..CHUNK_BYTES * 2].as_ref(),
+            bytes.len() as u64,
+            hash,
+            &mut scratch,
+            &mut || {
+                copied.clear();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+                visits += 1;
+            },
+        ),
+        Err(StoreError::InputIo)
+    ));
+    assert_eq!(visits, 2);
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .execute_batch(
+            "CREATE TRIGGER no_partial_delete BEFORE DELETE ON blob_chunks
+             BEGIN SELECT RAISE(ABORT, 'matching partial chunks must be reused'); END;",
+        )
+        .unwrap();
+    store
+        .stage_blob_phased(
+            &mut bytes.as_slice(),
+            bytes.len() as u64,
+            hash,
+            &mut scratch,
+            &mut || {
+                copied.clear();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+                visits += 1;
+            },
+        )
+        .unwrap();
+    assert_eq!(visits, 5);
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    drop(_admission);
+    a_pin.close().unwrap();
+}
+
+#[test]
 fn accepted_old_pin_reads_between_new_blob_chunks() {
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {
@@ -5071,6 +5312,208 @@ fn blob_chunks_verify_before_complete_and_failed_stream_cannot_be_root() {
 }
 
 #[test]
+fn incomplete_blob_retry_reuses_verified_chunks_without_deleting_them() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = vec![0x5a_u8; CHUNK_BYTES + 17];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    assert!(matches!(
+        store.stage_blob(&mut bytes[..CHUNK_BYTES].as_ref(), bytes.len() as u64, hash),
+        Err(StoreError::InputIo)
+    ));
+    store
+        .conn
+        .execute_batch(
+            "CREATE TRIGGER no_partial_delete BEFORE DELETE ON blob_chunks
+             BEGIN SELECT RAISE(ABORT, 'matching partial chunks must be reused'); END;",
+        )
+        .unwrap();
+    store
+        .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
+        .unwrap();
+    let (state, count): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, count), (1, 2));
+}
+
+#[test]
+fn mismatched_partial_chunk_is_repaired_in_one_bounded_write() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = vec![0x6b_u8; CHUNK_BYTES + 17];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    assert!(matches!(
+        store.stage_blob(&mut bytes[..CHUNK_BYTES].as_ref(), bytes.len() as u64, hash),
+        Err(StoreError::InputIo)
+    ));
+    store
+        .conn
+        .execute(
+            "UPDATE blob_chunks SET bytes=zeroblob(length(bytes)) WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    store
+        .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
+        .unwrap();
+    let (state, count): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, count), (1, 2));
+    assert_eq!(store.commit_probe(0, 1, 1, [1; 32], hash).unwrap(), 1);
+}
+
+#[test]
+fn malformed_partial_cleanup_resumes_after_sql_failure() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let mut store = SqliteStoreCore::open(&database).unwrap();
+    let bytes = vec![0x7c_u8; CHUNK_BYTES * 2 + 17];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    assert!(matches!(
+        store.stage_blob(
+            &mut bytes[..CHUNK_BYTES * 2].as_ref(),
+            bytes.len() as u64,
+            hash
+        ),
+        Err(StoreError::InputIo)
+    ));
+    store
+        .conn
+        .execute(
+            "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 3, x'00')",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute_batch(
+            "CREATE TABLE cleanup_calls (count INTEGER NOT NULL);
+             INSERT INTO cleanup_calls VALUES (0);
+             CREATE TRIGGER fail_second_cleanup BEFORE DELETE ON blob_chunks
+             BEGIN
+               UPDATE cleanup_calls SET count=count+1;
+               SELECT CASE WHEN (SELECT count FROM cleanup_calls)=2
+                 THEN RAISE(ABORT, 'injected cleanup failure') END;
+             END;",
+        )
+        .unwrap();
+    assert!(matches!(
+        store.stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash),
+        Err(StoreError::Sql(_))
+    ));
+    let remaining: i64 = store
+        .conn
+        .query_row(
+            "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(remaining, 1);
+    drop(store);
+
+    let mut reopened = SqliteStoreCore::open(&database).unwrap();
+    reopened
+        .conn
+        .execute_batch("DROP TRIGGER fail_second_cleanup;")
+        .unwrap();
+    reopened
+        .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
+        .unwrap();
+    assert_eq!(reopened.commit_probe(0, 1, 1, [1; 32], hash).unwrap(), 1);
+}
+
+#[test]
+fn partial_header_mismatch_refuses_without_deleting_chunks() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = vec![0x3e_u8; CHUNK_BYTES + 17];
+    let hash: [u8; 32] = Sha256::digest(&bytes).into();
+    assert!(matches!(
+        store.stage_blob(&mut bytes[..CHUNK_BYTES].as_ref(), bytes.len() as u64, hash),
+        Err(StoreError::InputIo)
+    ));
+    store
+        .conn
+        .execute(
+            "UPDATE blob_header SET chunk_count=chunk_count+1 WHERE hash=?1",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash),
+        Err(StoreError::BlobMetadataMismatch)
+    ));
+    let (state, count): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, count), (0, 1));
+}
+
+#[test]
+fn oversized_partial_chunk_refuses_automatic_cleanup() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = b"small expected blob";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 0)",
+            params![hash.as_slice(), bytes.len() as i64],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 0, zeroblob(?2))",
+            params![hash.as_slice(), CHUNK_BYTES as i64 + 1],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash),
+        Err(StoreError::InvalidChunkLayout)
+    ));
+    let (state, length): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT state, (SELECT length(bytes) FROM blob_chunks WHERE hash=?1 AND chunk_index=0)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, length), (0, CHUNK_BYTES as i64 + 1));
+}
+
+#[test]
 fn extra_stored_chunk_cannot_become_complete() {
     let fixture = Fixture::new();
     let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
@@ -5147,7 +5590,7 @@ fn stale_stream_cannot_append_after_same_hash_replacement_completes() {
     let fixture = Fixture::new();
     let mut first = SqliteStoreCore::open(&fixture.database()).unwrap();
     let mut second = SqliteStoreCore::open(&fixture.database()).unwrap();
-    let complete_bytes = vec![5_u8; CHUNK_BYTES];
+    let complete_bytes = vec![5_u8; CHUNK_BYTES + 17];
     let hash: [u8; 32] = Sha256::digest(&complete_bytes).into();
     let stale_bytes = vec![6_u8; CHUNK_BYTES + 17];
     let mut replaced = false;
@@ -5180,7 +5623,7 @@ fn stale_stream_cannot_append_after_same_hash_replacement_completes() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(count, 1);
+    assert_eq!(count, 2);
     assert_eq!(first.commit_probe(0, 1, 1, [4; 32], hash).unwrap(), 1);
 }
 
@@ -5466,6 +5909,212 @@ fn small_blob_batch_verifies_and_rolls_back_as_one_unit() {
         )
         .unwrap();
     assert_eq!(stored, second);
+}
+
+#[test]
+fn small_blob_batch_reuses_and_repairs_incomplete_chunk() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = b"reused tiny source";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 0)",
+            params![hash.as_slice(), bytes.len() as i64],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 0, ?2)",
+            params![hash.as_slice(), bytes.as_slice()],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute_batch(
+            "CREATE TRIGGER no_small_retry_delete BEFORE DELETE ON blob_chunks
+             BEGIN SELECT RAISE(ABORT, 'small retry must reuse'); END;",
+        )
+        .unwrap();
+    store
+        .stage_small_blob_batch([(hash, bytes.as_slice())])
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "UPDATE blob_header SET state=0 WHERE hash=?1",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "UPDATE blob_chunks SET bytes=zeroblob(length(bytes)) WHERE hash=?1",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    store
+        .stage_small_blob_batch([(hash, bytes.as_slice())])
+        .unwrap();
+    let stored: Vec<u8> = store
+        .conn
+        .query_row(
+            "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(stored, bytes);
+}
+
+#[test]
+fn small_blob_batch_refuses_partial_header_mismatch_without_overwriting() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = b"header identity";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 0)",
+            params![hash.as_slice(), bytes.len() as i64 + 1],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.stage_small_blob_batch([(hash, bytes.as_slice())]),
+        Err(StoreError::BlobMetadataMismatch)
+    ));
+    let (length, state): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT length, state FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((length, state), (bytes.len() as i64 + 1, 0));
+}
+
+#[test]
+fn small_blob_batch_cleans_wrong_length_partial_before_retry() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = b"exact tiny source";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 0)",
+            params![hash.as_slice(), bytes.len() as i64],
+        )
+        .unwrap();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, 0, x'00')",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    assert!(matches!(
+        store.stage_small_blob_batch([(hash, bytes.as_slice())]),
+        Err(StoreError::InvalidChunkLayout)
+    ));
+    let remaining: i64 = store
+        .conn
+        .query_row(
+            "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(remaining, 0);
+    store
+        .stage_small_blob_batch([(hash, bytes.as_slice())])
+        .unwrap();
+}
+
+#[test]
+fn small_blob_batch_cleans_malformed_partial_one_row_at_a_time() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let bytes = b"bounded tiny retry";
+    let hash: [u8; 32] = Sha256::digest(bytes).into();
+    let fresh = b"new batch member";
+    let fresh_hash: [u8; 32] = Sha256::digest(fresh).into();
+    store
+        .conn
+        .execute(
+            "INSERT INTO blob_header (hash, length, chunk_count, state) VALUES (?1, ?2, 1, 0)",
+            params![hash.as_slice(), bytes.len() as i64],
+        )
+        .unwrap();
+    for index in [1_i64, 2] {
+        store
+            .conn
+            .execute(
+                "INSERT INTO blob_chunks (hash, chunk_index, bytes) VALUES (?1, ?2, x'00')",
+                params![hash.as_slice(), index],
+            )
+            .unwrap();
+    }
+    store
+        .conn
+        .execute_batch(
+            "CREATE TABLE tiny_cleanup_calls (count INTEGER NOT NULL);
+             INSERT INTO tiny_cleanup_calls VALUES (0);
+             CREATE TRIGGER fail_second_tiny_cleanup BEFORE DELETE ON blob_chunks
+             BEGIN
+               UPDATE tiny_cleanup_calls SET count=count+1;
+               SELECT CASE WHEN (SELECT count FROM tiny_cleanup_calls)=2
+                 THEN RAISE(ABORT, 'second deletion') END;
+             END;",
+        )
+        .unwrap();
+    assert!(matches!(
+        store.stage_small_blob_batch([(fresh_hash, fresh.as_slice()), (hash, bytes.as_slice())]),
+        Err(StoreError::Sql(_))
+    ));
+    let fresh_count: i64 = store
+        .conn
+        .query_row(
+            "SELECT count(*) FROM blob_header WHERE hash=?1",
+            params![fresh_hash.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(fresh_count, 0);
+    let (state, remaining): (i64, i64) = store
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, remaining), (0, 1));
+    store
+        .conn
+        .execute_batch("DROP TRIGGER fail_second_tiny_cleanup;")
+        .unwrap();
+    assert!(matches!(
+        store.stage_small_blob_batch([(fresh_hash, fresh.as_slice()), (hash, bytes.as_slice())]),
+        Err(StoreError::InvalidChunkLayout)
+    ));
+    store
+        .stage_small_blob_batch([(fresh_hash, fresh.as_slice()), (hash, bytes.as_slice())])
+        .unwrap();
+    let completed: i64 = store
+        .conn
+        .query_row(
+            "SELECT count(*) FROM blob_header WHERE state=1",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(completed, 2);
 }
 
 #[cfg(test)]
@@ -7162,6 +7811,13 @@ fn process_kill_after_chunk_recovers_old_root_and_restages() {
         store.commit_probe(1, 1, 2, [2; 32], hash),
         Err(StoreError::MissingCompleteBlob)
     ));
+    store
+        .conn
+        .execute_batch(
+            "CREATE TRIGGER no_partial_delete BEFORE DELETE ON blob_chunks
+             BEGIN SELECT RAISE(ABORT, 'killed partial chunk must be reused'); END;",
+        )
+        .unwrap();
     store
         .stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash)
         .unwrap();
