@@ -125,8 +125,9 @@ impl Drop for MaterializationHost {
 
 impl MaterializationHost {
     /// Acquire one cooperating owner and inventory pre-existing job roots.
-    /// The caller creates the private parent before opening; this method does
-    /// not repair or delete uncertain roots.
+    /// The caller creates the private sibling `<project-name>.thrum-jobs`
+    /// beside the canonical project before opening. This method does not
+    /// repair or delete uncertain roots.
     pub fn open(
         project_root: &Path,
         source_store: &NativeSourceStore,
@@ -155,7 +156,14 @@ impl MaterializationHost {
         }
         let source_store = source_store_path.to_owned();
         let parent = fs::canonicalize(job_parent).map_err(|source| io_error(job_parent, source))?;
-        if parent != job_parent || parent.starts_with(&project) || project.starts_with(&parent) {
+        let project_name = project.file_name().ok_or(JobError::InvalidPlanOrRoot)?;
+        let mut job_name = project_name.to_os_string();
+        job_name.push(".thrum-jobs");
+        let expected_parent = project
+            .parent()
+            .ok_or(JobError::InvalidPlanOrRoot)?
+            .join(job_name);
+        if parent != job_parent || parent != expected_parent {
             return Err(JobError::InvalidPlanOrRoot);
         }
         let project_meta = fs::metadata(&project).map_err(|source| io_error(&project, source))?;
@@ -485,23 +493,47 @@ fn ensure_input_identity(held: &File, path: &Path) -> Result<(), JobError> {
 }
 
 fn open_owner_lock(path: &Path) -> Result<File, JobError> {
-    let file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .mode(0o600)
-        .open(path)
-        .map_err(|source| io_error(path, source))?;
-    let on_path = fs::symlink_metadata(path).map_err(|source| io_error(path, source))?;
-    let opened = file.metadata().map_err(|source| io_error(path, source))?;
-    if !on_path.file_type().is_file()
-        || opened.dev() != on_path.dev()
-        || opened.ino() != on_path.ino()
-    {
-        return Err(JobError::InvalidPlanOrRoot);
+    for _ in 0..3 {
+        let existing = match fs::symlink_metadata(path) {
+            Ok(metadata) if metadata.file_type().is_file() && metadata.nlink() == 1 => true,
+            Ok(_) => return Err(JobError::InvalidPlanOrRoot),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => false,
+            Err(source) => return Err(io_error(path, source)),
+        };
+        let opened = if existing {
+            OpenOptions::new().read(true).write(true).open(path)
+        } else {
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .mode(0o600)
+                .open(path)
+        };
+        let file = match opened {
+            Ok(file) => file,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::AlreadyExists | io::ErrorKind::NotFound
+                ) =>
+            {
+                continue;
+            }
+            Err(source) => return Err(io_error(path, source)),
+        };
+        let on_path = fs::symlink_metadata(path).map_err(|source| io_error(path, source))?;
+        let opened = file.metadata().map_err(|source| io_error(path, source))?;
+        if !on_path.file_type().is_file()
+            || on_path.nlink() != 1
+            || opened.dev() != on_path.dev()
+            || opened.ino() != on_path.ino()
+        {
+            return Err(JobError::InvalidPlanOrRoot);
+        }
+        return Ok(file);
     }
-    Ok(file)
+    Err(JobError::Busy)
 }
 
 fn register(
@@ -575,6 +607,7 @@ fn io_error(path: &Path, source: io::Error) -> JobError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::fs::symlink;
     use std::process::{Command, Stdio};
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{Duration, Instant};
@@ -598,7 +631,7 @@ mod tests {
             let base =
                 std::env::temp_dir().join(format!("thrum-jobs-{}-{number}", std::process::id()));
             let project = base.join("project");
-            let jobs = base.join("jobs");
+            let jobs = base.join("project.thrum-jobs");
             fs::DirBuilder::new().mode(0o700).create(&base).unwrap();
             fs::create_dir(&project).unwrap();
             fs::DirBuilder::new().mode(0o700).create(&jobs).unwrap();
@@ -628,19 +661,13 @@ mod tests {
             let base = fs::canonicalize(base).unwrap();
             Self {
                 project: base.join("project"),
-                jobs: base.join("jobs"),
+                jobs: base.join("project.thrum-jobs"),
                 base,
             }
         }
 
         fn accepted_store(&self) -> NativeSourceStore {
-            let paths = [
-                "master.bin",
-                "project.json",
-                "scenes/main.scene.json",
-                "schemas/history.registry.json",
-            ]
-            .map(|path| SourcePath::parse(path).unwrap());
+            let paths = declared_paths();
             let plan = source_plan();
             let store =
                 NativeSourceStore::open(&self.project.join(".engine/source.sqlite"), plan).unwrap();
@@ -674,6 +701,16 @@ mod tests {
         }
     }
 
+    fn declared_paths() -> [SourcePath; 4] {
+        [
+            "master.bin",
+            "project.json",
+            "scenes/main.scene.json",
+            "schemas/history.registry.json",
+        ]
+        .map(|path| SourcePath::parse(path).unwrap())
+    }
+
     fn account() -> JobSpacePlan {
         JobSpacePlan {
             managed_temporary_target_bytes: 24 * MIB,
@@ -704,6 +741,103 @@ mod tests {
         ));
         assert_eq!(host.active_claim_bytes(), 0);
         assert_eq!(fs::read_dir(&selected.jobs).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn lock_symlink_refuses_before_touching_existing_or_absent_target() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let lock = fixture.jobs.join(".owner.lock");
+        let existing_victim = fixture.base.join("existing-victim");
+        fs::write(&existing_victim, b"untouched").unwrap();
+        symlink(&existing_victim, &lock).unwrap();
+        assert!(matches!(
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()),
+            Err(JobError::InvalidPlanOrRoot)
+        ));
+        assert_eq!(fs::read(&existing_victim).unwrap(), b"untouched");
+        fs::remove_file(&lock).unwrap();
+        let absent_victim = fixture.base.join("absent-victim");
+        symlink(&absent_victim, &lock).unwrap();
+        assert!(matches!(
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()),
+            Err(JobError::InvalidPlanOrRoot)
+        ));
+        assert!(!absent_victim.exists());
+    }
+
+    #[test]
+    fn second_parent_cannot_start_an_independent_account_for_the_same_project() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let alternate = fixture.base.join("other-jobs");
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&alternate)
+            .unwrap();
+        assert!(matches!(
+            MaterializationHost::open(&fixture.project, &store, &alternate, account()),
+            Err(JobError::InvalidPlanOrRoot)
+        ));
+        assert_eq!(fs::read_dir(&alternate).unwrap().count(), 0);
+        let host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
+        assert!(matches!(
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()),
+            Err(JobError::Busy)
+        ));
+        drop(host);
+    }
+
+    #[test]
+    fn f3_admits_b_while_a_registered_root_is_partial_then_f4_copies_a() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let mut pin_a = store.pin_current(1).unwrap();
+        let a_scene = fs::read(fixture.project.join("scenes/main.scene.json")).unwrap();
+        let mut host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
+        let id = host
+            .materialize_with(&mut pin_a, scratch(), || {
+                let jobs = fs::read_dir(&fixture.jobs)
+                    .unwrap()
+                    .map(|entry| entry.unwrap().path())
+                    .filter(|path| path.file_name().unwrap().to_string_lossy().starts_with("job-"))
+                    .collect::<Vec<_>>();
+                assert_eq!(jobs.len(), 1);
+                assert!(jobs[0].join("registration").is_file());
+                assert!(!jobs[0].join("input").exists());
+                fs::write(
+                    fixture.project.join("scenes/main.scene.json"),
+                    br#"{"id":"3a5ef644-7225-4770-9f4d-e1d9c0a7d515","type":"core.scene","schema":1,"fields":{"scene.label":"B"}}"#,
+                )
+                .unwrap();
+                let stage = stage_declared_tree_with_plan(
+                    &fixture.project,
+                    &declared_paths(),
+                    source_plan(),
+                )
+                .unwrap();
+                let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+                let admitted_b = store.admit(1, 2, 2, [2; 32], &candidate).unwrap();
+                assert_eq!(admitted_b.generation, 2);
+            })
+            .unwrap();
+        let input = host.input_path(id).unwrap();
+        assert_eq!(
+            fs::read(input.join("scenes/main.scene.json")).unwrap(),
+            a_scene
+        );
+        assert_eq!(pin_a.root().generation, 1);
+        let pin_b = store.pin_current(2).unwrap();
+        assert_eq!(pin_b.root().generation, 2);
+        drop(pin_b);
+        let stage_with_complete_a =
+            stage_declared_tree_with_plan(&fixture.project, &declared_paths(), source_plan())
+                .unwrap();
+        validate_staged_candidate(&stage_with_complete_a, &[]).unwrap();
+        host.close(id).unwrap();
+        assert_eq!(host.active_claim_bytes(), 0);
     }
 
     #[test]
