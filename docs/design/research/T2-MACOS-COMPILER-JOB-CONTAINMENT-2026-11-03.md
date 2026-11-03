@@ -31,6 +31,24 @@ killable lifetime after a child changes session. Apple's
 discourages daemonizing managed processes; it does not by itself promise
 transitive containment of arbitrary detached grandchildren.
 
+### Foundation `Process` candidate
+
+Apple's [`Process.terminate()` documentation](https://developer.apple.com/documentation/foundation/process/terminate%28%29)
+describes sending a termination signal to the task and its subtasks. This was
+worth testing, but that sentence does not specify a stable job identity across
+`setsid` and reparenting. A local Swift 6.4.2 probe on macOS 26.6.2 launched a
+Python task through Foundation `Process`; that task launched a sleeping child
+with `start_new_session=True`, closed all three standard streams and published
+its PID. After `Process.terminate()` and `waitUntilExit()`, two fresh-marker
+direct-child runs still showed the detached child alive in `ps` state `Ss`. A
+second fixture let an intermediate child exit first, reparenting the detached
+grandchild while the Foundation-managed guardian remained alive. The
+grandchild also survived `terminate()`. A POSIX `kill(parent, SIGTERM)` control
+likewise left the detached child alive. Each fixture explicitly killed its
+sleeping child during cleanup. These are local behavior observations, not a
+claim about every Foundation implementation; they rule out treating this API
+as the required containment proof for the selected host.
+
 ## First-profile implications
 
 The selected [release trust policy](../T2-NATIVE-RELEASE-TRUST.md) reviews exact
