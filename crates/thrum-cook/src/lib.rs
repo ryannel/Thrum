@@ -1048,37 +1048,16 @@ mod tests {
             .map(|home| inspect_headless_dep_info(a_materialized.path(), home, &a_output));
         let mut verified_receipts = None;
         if rustc_wrapper.is_some() {
-            let transcript = a_output.join("cargo-transcript.jsonl");
-            fs::write(&transcript, &built_a.stdout).unwrap();
-            let rustc = Path::new(env!("CARGO"))
-                .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
-            let report =
-                Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
-                    .arg(checkout.join("scripts/verify_rustc_receipts.py"))
-                    .arg("--receipt-dir")
-                    .arg(a_output.join("rustc-receipts"))
-                    .arg("--rustc")
-                    .arg(rustc)
-                    .arg("--source")
-                    .arg(fs::canonicalize(a_materialized.path()).unwrap())
-                    .arg("--cache")
-                    .arg(private_cargo_home.as_deref().unwrap())
-                    .arg("--output")
-                    .arg(fs::canonicalize(&a_output).unwrap())
-                    .arg("--transcript")
-                    .arg(transcript)
-                    .output()
-                    .unwrap();
-            assert!(
-                report.status.success(),
-                "{}",
-                String::from_utf8_lossy(&report.stderr)
+            let receipt = verify_headless_receipts(
+                checkout,
+                a_materialized.path(),
+                private_cargo_home.as_deref().unwrap(),
+                &a_output,
+                &built_a.stdout,
+                ReceiptOutcome::Success,
             );
-            let receipt: serde_json::Value = serde_json::from_slice(&report.stdout).unwrap();
             assert_eq!(receipt["compiles"], 5);
             assert!(receipt["probes"].as_u64().unwrap() > 0);
-            assert_eq!(receipt["buildReady"], false);
-            fs::write(a_output.join("receipt-verification.json"), &report.stdout).unwrap();
             eprintln!(
                 "admitted-headless-a rustc_receipts compiles={} probes={} set_sha256={}",
                 receipt["compiles"], receipt["probes"], receipt["receiptSetSha256"]
@@ -1280,38 +1259,17 @@ mod tests {
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
         assert!(b_diagnostic.contains("game.rs") && b_diagnostic.contains("error"));
         if rustc_wrapper.is_some() {
-            let transcript = b_output.join("cargo-transcript.jsonl");
-            fs::write(&transcript, &built_b.stdout).unwrap();
-            let rustc = Path::new(env!("CARGO"))
-                .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
-            let report =
-                Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
-                    .arg(checkout.join("scripts/verify_rustc_receipts.py"))
-                    .arg("--receipt-dir")
-                    .arg(b_output.join("rustc-receipts"))
-                    .arg("--rustc")
-                    .arg(rustc)
-                    .arg("--source")
-                    .arg(fs::canonicalize(b_materialized.path()).unwrap())
-                    .arg("--cache")
-                    .arg(private_cargo_home.as_deref().unwrap())
-                    .arg("--output")
-                    .arg(fs::canonicalize(&b_output).unwrap())
-                    .arg("--transcript")
-                    .arg(transcript)
-                    .arg("--expect-failure")
-                    .output()
-                    .unwrap();
-            assert!(
-                report.status.success(),
-                "{}",
-                String::from_utf8_lossy(&report.stderr)
+            let receipt = verify_headless_receipts(
+                checkout,
+                b_materialized.path(),
+                private_cargo_home.as_deref().unwrap(),
+                &b_output,
+                &built_b.stdout,
+                ReceiptOutcome::CompileFailure,
             );
-            let receipt: serde_json::Value = serde_json::from_slice(&report.stdout).unwrap();
             assert_eq!(receipt["failedCompile"]["crate"], "i1_mobile_game");
             assert_eq!(receipt["compiles"], 3);
             assert_eq!(receipt["probes"], 3);
-            assert_eq!(receipt["buildReady"], false);
             eprintln!(
                 "admitted-headless-b rustc_receipts successful_compiles={} failed={} probes={} set_sha256={}",
                 receipt["compiles"],
@@ -1363,6 +1321,55 @@ mod tests {
             cache.assert_tool_bytes();
         }
         drop(owned_cache);
+    }
+
+    #[derive(Clone, Copy)]
+    enum ReceiptOutcome {
+        Success,
+        CompileFailure,
+    }
+
+    fn verify_headless_receipts(
+        checkout: &Path,
+        input: &Path,
+        cache: &Path,
+        output: &Path,
+        cargo_stdout: &[u8],
+        outcome: ReceiptOutcome,
+    ) -> serde_json::Value {
+        let transcript = output.join("cargo-transcript.jsonl");
+        fs::write(&transcript, cargo_stdout).unwrap();
+        let rustc = Path::new(env!("CARGO"))
+            .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+        let mut command =
+            Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()));
+        command
+            .arg(checkout.join("scripts/verify_rustc_receipts.py"))
+            .arg("--receipt-dir")
+            .arg(output.join("rustc-receipts"))
+            .arg("--rustc")
+            .arg(rustc)
+            .arg("--source")
+            .arg(fs::canonicalize(input).unwrap())
+            .arg("--cache")
+            .arg(cache)
+            .arg("--output")
+            .arg(fs::canonicalize(output).unwrap())
+            .arg("--transcript")
+            .arg(transcript);
+        if matches!(outcome, ReceiptOutcome::CompileFailure) {
+            command.arg("--expect-failure");
+        }
+        let report = command.output().unwrap();
+        assert!(
+            report.status.success(),
+            "{}",
+            String::from_utf8_lossy(&report.stderr)
+        );
+        let receipt: serde_json::Value = serde_json::from_slice(&report.stdout).unwrap();
+        assert_eq!(receipt["buildReady"], false);
+        fs::write(output.join("receipt-verification.json"), &report.stdout).unwrap();
+        receipt
     }
 
     fn copy_build_input(from: &Path, to: &Path, relative: &str, paths: &mut Vec<SourcePath>) {
