@@ -43,6 +43,12 @@ mod render_source_collections;
 // Chunked canonical texture source path remains inactive until F3/F4 binding.
 #[allow(dead_code)]
 mod render_source_texture;
+// Exact local-light source normalization remains inactive until F3/F4 binding.
+#[allow(dead_code)]
+mod render_light_luminance_exact;
+// Authored point-light facts remain inactive until shared F3/F4 closure.
+#[allow(dead_code)]
+mod render_source_light;
 // Material source meaning stays independent of target support and admission.
 #[allow(dead_code)]
 mod render_source_material;

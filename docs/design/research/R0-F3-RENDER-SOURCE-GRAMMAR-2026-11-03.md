@@ -117,6 +117,13 @@ case must use an exact comparison. This does not revise the existing
 constant-light source predicate. Preserve the decoded colour in F3; the F4
 product must specify normalization and representation residual before it can
 claim `Y=1` at the V3 handoff.
+Local-light field diagnostics use `id`, `position_m`,
+`luminous_intensity_cd`, `unit_luminance_linear_rec709`, `radius_m`, then
+unknown keys. Each position component is finite and in the closed authored
+world extent ±1,000,000 m. Intensity, colour components and radius are finite
+and nonnegative; zero, signed zero and subnormal values retain their decoded
+meaning. Radius has no source maximum inherited from position. Four lights is
+an R0 recipe capacity, not a render-v1 source grammar limit.
 
 The one material sampler has explicit `min_filter`/`mag_filter` values
 `nearest|linear`, `address_u`/`address_v` values
