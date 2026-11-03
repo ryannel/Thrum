@@ -1,0 +1,2850 @@
+{
+  "schema": 1,
+  "baselineBuild": "c3e0ebee9680337c",
+  "archive": "cpu-proof-and-cost.zip",
+  "archive_sha256": "94135f93904a5772d59430caa254729bc8de917aa54d2510f4230de5bbe7fdea",
+  "archive_bytes": 1878287,
+  "uncompressedCodeAndOutcomeBytes": 9079458,
+  "files": {
+    "cloud-system-proof/COMMISSION.md": {
+      "bytes": 8607,
+      "sha256": "11687ca4df2200e8a899c16c5db0b64c8e5e9affb1a5501dde820d1f7be8cb6e"
+    },
+    "cloud-system-proof/assets/admission/admission.json": {
+      "bytes": 150256,
+      "sha256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697"
+    },
+    "cloud-system-proof/assets/input-index.json": {
+      "bytes": 3757,
+      "sha256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8"
+    },
+    "cloud-system-proof/assets/noise/channels-32.json": {
+      "bytes": 526,
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+    },
+    "cloud-system-proof/assets/templates/body.json": {
+      "bytes": 9130,
+      "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+    },
+    "cloud-system-proof/assets/templates/crown-b.json": {
+      "bytes": 11519,
+      "sha256": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918"
+    },
+    "cloud-system-proof/assets/templates/original-FROZEN-INPUTS.json": {
+      "bytes": 1305,
+      "sha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c"
+    },
+    "cloud-system-proof/assets/templates/original-body.json": {
+      "bytes": 9097,
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+    },
+    "cloud-system-proof/assets/templates/original-crown-b.json": {
+      "bytes": 11486,
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309"
+    },
+    "cloud-system-proof/index.html": {
+      "bytes": 5488,
+      "sha256": "edd379c76086cda77a18eb4742e26eb9aeb6128915ae0be1138f460f1dd8df17"
+    },
+    "cloud-system-proof/serve.py": {
+      "bytes": 3410,
+      "sha256": "a74a40612cf696c1dd06bdf9ee0b351e1519cf573ea0ca605b67d4034004a3ea"
+    },
+    "cloud-system-proof/shaders/air.wgsl": {
+      "bytes": 426,
+      "sha256": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd"
+    },
+    "cloud-system-proof/shaders/component-source.wgsl": {
+      "bytes": 2942,
+      "sha256": "8b422e2c590d0e6a9b0336c776b6a496dd702f3d196e57ebf755e7f1307dad90"
+    },
+    "cloud-system-proof/shaders/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-proof/shaders/light.wgsl": {
+      "bytes": 594,
+      "sha256": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05"
+    },
+    "cloud-system-proof/shaders/optics.wgsl": {
+      "bytes": 7571,
+      "sha256": "b114c861825865962741c9dc1b9fa157aaec0995d40cf9c368b305fca5dcae15"
+    },
+    "cloud-system-proof/shaders/shadow.wgsl": {
+      "bytes": 531,
+      "sha256": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3"
+    },
+    "cloud-system-proof/shaders/view.wgsl": {
+      "bytes": 6563,
+      "sha256": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406"
+    },
+    "cloud-system-proof/src/bench/app.js": {
+      "bytes": 18019,
+      "sha256": "3ed2b6d435665a474909d0029a6579538c2a8b55f08f2068042a70bba19b0f10"
+    },
+    "cloud-system-proof/src/bench/motion.js": {
+      "bytes": 2738,
+      "sha256": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf"
+    },
+    "cloud-system-proof/src/bench/trace.js": {
+      "bytes": 434,
+      "sha256": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e"
+    },
+    "cloud-system-proof/src/render/CONTRACT.md": {
+      "bytes": 2475,
+      "sha256": "9d8316360f7e87eb084330472595ef7037e8b36465a200dfcbe6bab8931907de"
+    },
+    "cloud-system-proof/src/render/adapter.js": {
+      "bytes": 10035,
+      "sha256": "5ca7f4f82eb4132489304858e066fc251aca4a146f236ec9d96707572aa6b784"
+    },
+    "cloud-system-proof/src/render/assets.js": {
+      "bytes": 4470,
+      "sha256": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a"
+    },
+    "cloud-system-proof/src/render/frame-lifecycle.js": {
+      "bytes": 1696,
+      "sha256": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18"
+    },
+    "cloud-system-proof/src/render/gpu.js": {
+      "bytes": 6519,
+      "sha256": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77"
+    },
+    "cloud-system-proof/src/render/held-oracle.js": {
+      "bytes": 4303,
+      "sha256": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60"
+    },
+    "cloud-system-proof/src/render/lighting-profile.js": {
+      "bytes": 870,
+      "sha256": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac"
+    },
+    "cloud-system-proof/src/render/reference.js": {
+      "bytes": 1870,
+      "sha256": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9"
+    },
+    "cloud-system-proof/src/render/scene.js": {
+      "bytes": 39334,
+      "sha256": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a"
+    },
+    "cloud-system-proof/src/source/admission-policy.js": {
+      "bytes": 12309,
+      "sha256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+    },
+    "cloud-system-proof/src/source/admission-policy.provenance.json": {
+      "bytes": 212,
+      "sha256": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49"
+    },
+    "cloud-system-proof/src/source/clock.js": {
+      "bytes": 2928,
+      "sha256": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96"
+    },
+    "cloud-system-proof/src/source/math.js": {
+      "bytes": 3558,
+      "sha256": "1eca92cb5966bd5f58c416a0f28a37a3a02c37f6a22cfdff0b685bc3b640c553"
+    },
+    "cloud-system-proof/src/source/model.js": {
+      "bytes": 20531,
+      "sha256": "675edc8de1d0ad197434be3ae1b04ea4f842362fa1ec8d227e1ae878a0a7133b"
+    },
+    "cloud-system-proof/src/source/reference.js": {
+      "bytes": 2457,
+      "sha256": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+    },
+    "cloud-system-proof/src/source/weather.js": {
+      "bytes": 1759,
+      "sha256": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da"
+    },
+    "cloud-system-proof/style.css": {
+      "bytes": 1490,
+      "sha256": "2777e311275761435b29f9e8dde0af2b84d0624bc4c727281ad7b3565b896f0a"
+    },
+    "cloud-system-proof/tests/render/adapter-publish.test.mjs": {
+      "bytes": 1968,
+      "sha256": "5b9fd37cfd0d53c8ea0a4a9825f482576fb3ef0536e8ff4229d6b0bf16ac037c"
+    },
+    "cloud-system-proof/tests/render/assembled/air.wgsl": {
+      "bytes": 7998,
+      "sha256": "475fb99876f556705d6eec3bd0ba5de9eab4b10ce8be7f8089181901dd80778e"
+    },
+    "cloud-system-proof/tests/render/assembled/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-proof/tests/render/assembled/light.wgsl": {
+      "bytes": 8166,
+      "sha256": "73fb243d9ecebcc65d28366cf739a7be24e08451148074e6622541801a83b78b"
+    },
+    "cloud-system-proof/tests/render/assembled/probe.wgsl": {
+      "bytes": 7955,
+      "sha256": "35b1f4bc6699a621f16b6443d7ef7f202432f2b5b62643740d3c5ff89dd63b28"
+    },
+    "cloud-system-proof/tests/render/assembled/shadow.wgsl": {
+      "bytes": 8103,
+      "sha256": "d87492db22d4e90a8f2daa374abfacc170153dc416cd8866aeb1a173889fcfa6"
+    },
+    "cloud-system-proof/tests/render/assembled/view.wgsl": {
+      "bytes": 14135,
+      "sha256": "f3ef354dc8ba8d23d34b44631f5e635fb9bd0cf3d79e2bb848cb348fbf61ff4c"
+    },
+    "cloud-system-proof/tests/render/assets.test.mjs": {
+      "bytes": 1473,
+      "sha256": "99e11f19403de173a44b28a7a874cc100eb2e6f4a92c748ba19595fa82e982eb"
+    },
+    "cloud-system-proof/tests/render/integration-contract.test.mjs": {
+      "bytes": 2947,
+      "sha256": "1317be771b6c4d5b03ce0aac9f5a9b4b868aa538270a76322470d16034ee4f04"
+    },
+    "cloud-system-proof/tests/render/source-query.test.mjs": {
+      "bytes": 1970,
+      "sha256": "8778b2f7a3484e48db5afcb450f9ea5dcf29456b34a6cb938a47dde3f14e28de"
+    },
+    "cloud-system-proof/tests/render/trace.test.mjs": {
+      "bytes": 734,
+      "sha256": "ed7ed0e5df08d6b3e4c21748eaaaaa0a709ed19435bfe45ef06ba94b7be78903"
+    },
+    "cloud-system-proof/tests/source/HANDOFF.json": {
+      "bytes": 5546,
+      "sha256": "a6d23eeb087ccba41a7f248e511aa06ec9f02d902951724dbdf784aeb1d31b2a"
+    },
+    "cloud-system-proof/tests/source/HANDOFF.md": {
+      "bytes": 4535,
+      "sha256": "fdee782e0bb41f3a905e078f7cfc1e746a6c543866e2214461a42878f6a0f7f8"
+    },
+    "cloud-system-proof/tests/source/clock-hardening.patch": {
+      "bytes": 1102,
+      "sha256": "90001b834b894d407fd4ef74b6891cf67256aca957254873407aae2a8027f13d"
+    },
+    "cloud-system-proof/tests/source/clock-profile-results.json": {
+      "bytes": 486,
+      "sha256": "e48da1b02420b409a7c72ff5e4588796865233e28351e946655f209d461cbea7"
+    },
+    "cloud-system-proof/tests/source/clock-profile.mjs": {
+      "bytes": 1719,
+      "sha256": "bf129449049ac5ac01502b4e312ed05a99582994d811558171efc01dc31e1c50"
+    },
+    "cloud-system-proof/tests/source/contracts-results.json": {
+      "bytes": 925,
+      "sha256": "ea12441a88173317e3e138e9ec28212601e92998158cb8e7e9a74a7f023939a2"
+    },
+    "cloud-system-proof/tests/source/contracts.log": {
+      "bytes": 759,
+      "sha256": "af8a1d33454deb9cf6bc88f7cd9cab32f5a681302d040e87e1d782d707d7c24b"
+    },
+    "cloud-system-proof/tests/source/contracts.mjs": {
+      "bytes": 5738,
+      "sha256": "74c2285464d90931f23af13722c1be3553be6b739cff770d3cbc3f7f7fac5549"
+    },
+    "cloud-system-proof/tests/source/control-domain-before-fix.json": {
+      "bytes": 351,
+      "sha256": "bda4459b2443426171c357a1385d0dcc999c7f2a046e9096faff9095f6ca297c"
+    },
+    "cloud-system-proof/tests/source/control-domain-before-fix.log": {
+      "bytes": 579,
+      "sha256": "2088b6f5f3dceeaea1c3e8ec9651f5f6f3832933e2b208bd1e5131bd19ee06c9"
+    },
+    "cloud-system-proof/tests/source/control-domain-result.json": {
+      "bytes": 164,
+      "sha256": "8ef801d8e4de86970d4c68e974d4ff408839b08a201a5154487319e652efb391"
+    },
+    "cloud-system-proof/tests/source/control-domain.log": {
+      "bytes": 579,
+      "sha256": "2088b6f5f3dceeaea1c3e8ec9651f5f6f3832933e2b208bd1e5131bd19ee06c9"
+    },
+    "cloud-system-proof/tests/source/control-domain.mjs": {
+      "bytes": 1449,
+      "sha256": "2be6614aadbbbbec82bc050775926b4285a5c8e51002e1eeebe58af2991a153d"
+    },
+    "cloud-system-proof/tests/source/fixtures.mjs": {
+      "bytes": 1435,
+      "sha256": "5b55a763877e58072d43400f7e4ac61cae5b49865f2b4cf976722fb4fac5358f"
+    },
+    "cloud-system-proof/tests/source/portable-results.json": {
+      "bytes": 1653,
+      "sha256": "8a547fd62bf3a3981ccfafc8def291a2c9cb0ed388985498391225fd41306543"
+    },
+    "cloud-system-proof/tests/source/portable-run.log": {
+      "bytes": 1653,
+      "sha256": "8a547fd62bf3a3981ccfafc8def291a2c9cb0ed388985498391225fd41306543"
+    },
+    "cloud-system-proof/tests/source/portable.log": {
+      "bytes": 222,
+      "sha256": "082ad0e68bffe1738c08021f5ae87df0e3e2d7ff52df7949c54ef7c88f37e284"
+    },
+    "cloud-system-proof/tests/source/portable.py": {
+      "bytes": 2052,
+      "sha256": "3e5470a97dfe992d1711705df366a982efd6287c61dd12a25bdf91608b03100f"
+    },
+    "cloud-system-proof/tests/source/presentation-status.mjs": {
+      "bytes": 962,
+      "sha256": "74bfe6ed0e2a52e80a66515766930eada330b32bf84088789a18d5500d5203ca"
+    },
+    "cloud-system-proof/tests/source/reference-continuation.mjs": {
+      "bytes": 969,
+      "sha256": "de9fab82baf4e26348c7b3bc3e484263328997b20f2a815bee846f4166dbe043"
+    },
+    "cloud-system-proof/tests/source/reference-results.json": {
+      "bytes": 873,
+      "sha256": "9fe9e4384e1fc8f7a7c85d70b0becd6c49c4d49032e222ff9f9b9a0fc1fad85c"
+    },
+    "cloud-system-proof/tests/source/reference.log": {
+      "bytes": 687,
+      "sha256": "2c69f12072535d493e0d87e128c468a2764abad5817c9c97a9e0540a24cae965"
+    },
+    "cloud-system-proof/tests/source/reference.mjs": {
+      "bytes": 3433,
+      "sha256": "f9b692a46dfc9961237c1ee76bd072c38e17010bd88d33bd5269c1097a1a3cf0"
+    },
+    "cloud-system-proof/tests/source/replay-results.json": {
+      "bytes": 40291,
+      "sha256": "77db46e9ae243b4d2c4d0f59a74a44b0d8c981283ed883035df19146e6a46248"
+    },
+    "cloud-system-proof/tests/source/replays.log": {
+      "bytes": 1743,
+      "sha256": "944421cd1b2a67aeb9c19c7bd666e00b74648e4fc4a0ab5e94007588db496e74"
+    },
+    "cloud-system-proof/tests/source/replays.mjs": {
+      "bytes": 2411,
+      "sha256": "7e552bb0487d27539cd1248810db35dc260ee925629d6ab668aa0a35de9bab3c"
+    },
+    "cloud-system-proof/tests/source/run-logs/clock-profile.log": {
+      "bytes": 436,
+      "sha256": "8a6d038a989941bda6600aa5a846f50a9200ecb8cd7185c36da75fbdbbcfe28f"
+    },
+    "cloud-system-proof/tests/source/run-logs/contracts.log": {
+      "bytes": 759,
+      "sha256": "af8a1d33454deb9cf6bc88f7cd9cab32f5a681302d040e87e1d782d707d7c24b"
+    },
+    "cloud-system-proof/tests/source/run-logs/control-domain.log": {
+      "bytes": 37,
+      "sha256": "c6a85533ce02066d173bc6854611f1247ef6788e435b926dd47779c38915b5bd"
+    },
+    "cloud-system-proof/tests/source/run-logs/presentation-status.log": {
+      "bytes": 78,
+      "sha256": "a3ad45ec54e99801e12bdb30d18e74f33b461e18c200eaee23e047224e0bcdd5"
+    },
+    "cloud-system-proof/tests/source/run-logs/reference-continuation.log": {
+      "bytes": 151,
+      "sha256": "324acec18698d75264c28b82f19b872561407a2a22eeaf525e46dff69ff5762d"
+    },
+    "cloud-system-proof/tests/source/run-logs/reference.log": {
+      "bytes": 687,
+      "sha256": "2c69f12072535d493e0d87e128c468a2764abad5817c9c97a9e0540a24cae965"
+    },
+    "cloud-system-proof/tests/source/run-logs/replays.log": {
+      "bytes": 1743,
+      "sha256": "944421cd1b2a67aeb9c19c7bd666e00b74648e4fc4a0ab5e94007588db496e74"
+    },
+    "cloud-system-proof/tests/source/run-logs/smoke.log": {
+      "bytes": 20201,
+      "sha256": "dc6be4ea6fabded0eeb4304fcac9a712566152637f9bd574e2be2a3a02fa78a5"
+    },
+    "cloud-system-proof/tests/source/run.mjs": {
+      "bytes": 3673,
+      "sha256": "ff16bddd6d1079133ea01f3bfbc1e366fc82d0f55b810d48de3b72257058b488"
+    },
+    "cloud-system-proof/tests/source/smoke.log": {
+      "bytes": 2617,
+      "sha256": "0f7f71d56807c53f662c01d2f11b2ad393780bafee22938aacc3677c522a6b2c"
+    },
+    "cloud-system-proof/tests/source/smoke.mjs": {
+      "bytes": 862,
+      "sha256": "73e970cd5d00e09727b1e679817883df3b3fc1a85fa87c084dcaea207dc1acf1"
+    },
+    "cloud-system-proof/tests/source/suite-results.json": {
+      "bytes": 25162,
+      "sha256": "a81e3f25262c47d4385b9da16f8c15ff7f1200966bb0b1456714941de212857e"
+    },
+    "cloud-system-proof/tests/source/suite.log": {
+      "bytes": 222,
+      "sha256": "082ad0e68bffe1738c08021f5ae87df0e3e2d7ff52df7949c54ef7c88f37e284"
+    },
+    "cloud-system-cpu-cost/HANDOFF.json": {
+      "bytes": 11669,
+      "sha256": "e3707a70ab0a5106888cd030fa2594f515e80e4aea1c44a039ff25caa52bad27"
+    },
+    "cloud-system-cpu-cost/PREFLIGHT.md": {
+      "bytes": 2806,
+      "sha256": "1ad2f45a977f960acf5d3fd7d6eb84db4c49db400a552443e93ac1668f42be1a"
+    },
+    "cloud-system-cpu-cost/REPORT.md": {
+      "bytes": 10476,
+      "sha256": "61cc741ae1d5b7c795575442a1483f9fbff49cc979170cdb0ef325a16f21c0f0"
+    },
+    "cloud-system-cpu-cost/analysis.json": {
+      "bytes": 104837,
+      "sha256": "7618bc197747665ba7473399d2002ae7c442559f6ff26b60accb51703238a8c2"
+    },
+    "cloud-system-cpu-cost/analyze.py": {
+      "bytes": 2992,
+      "sha256": "ae6a9189f54f7fd2ae1157f4bb9ce5a75a1a9919f7ca0077e3eaa0851e4abb23"
+    },
+    "cloud-system-cpu-cost/results/1-birth-present.json": {
+      "bytes": 31125,
+      "sha256": "3867e6e414ee152bfbf3218c88528e0c2c758520b2a512b5eb944efb74914b2c"
+    },
+    "cloud-system-cpu-cost/results/1-birth-present.log": {
+      "bytes": 164,
+      "sha256": "24f1cf017269ba996f5f5bb22702bc24eee5d104e952920815afc719092d55bf"
+    },
+    "cloud-system-cpu-cost/results/1-birth-ticks.json": {
+      "bytes": 20048,
+      "sha256": "43a49f9462158a07a008939544a56180f02a88be126b413499543192b1ec6330"
+    },
+    "cloud-system-cpu-cost/results/1-birth-ticks.log": {
+      "bytes": 125,
+      "sha256": "b2fbabd96d2732fb16a4939d1138fca7925223ea9e2e3bd00b7cc70f7588deae"
+    },
+    "cloud-system-cpu-cost/results/1-dry-present.json": {
+      "bytes": 38149,
+      "sha256": "765906be62ae809feec7d9a9dd0ff91f243c762276fb0e2b5e9c10d708306d00"
+    },
+    "cloud-system-cpu-cost/results/1-dry-present.log": {
+      "bytes": 161,
+      "sha256": "2e527b1ce9f0ce4525e53b52226ca7f7d974be062be841ca89cfefb0e52549ce"
+    },
+    "cloud-system-cpu-cost/results/1-dry-ticks.json": {
+      "bytes": 25416,
+      "sha256": "cd6444b45a5008ffa1fa61b0044cde139c4bf2c9af0022c9145d870931a830a3"
+    },
+    "cloud-system-cpu-cost/results/1-dry-ticks.log": {
+      "bytes": 134,
+      "sha256": "708c5ebf53c5917c782c30db1436203b893a498d5fefcb6639c540d6ae9ed503"
+    },
+    "cloud-system-cpu-cost/results/1-steady-present.json": {
+      "bytes": 16183,
+      "sha256": "7c7ff7ee58a6e7ce492a164c157c9ab0fecd95cc372e37794277b93528e50fc8"
+    },
+    "cloud-system-cpu-cost/results/1-steady-present.log": {
+      "bytes": 173,
+      "sha256": "67f94a71eea2eb56d5fddb72294f6c6030f64abf69e814a46ebe1035c2497a69"
+    },
+    "cloud-system-cpu-cost/results/1-steady-ticks.json": {
+      "bytes": 10313,
+      "sha256": "ad53c934de88cb269227dc80d4ba2a28fe523d93c3585caa32e6721f0e516594"
+    },
+    "cloud-system-cpu-cost/results/1-steady-ticks.log": {
+      "bytes": 138,
+      "sha256": "24132e27c622a347a3e25527381cd244f40c4c8fabe2b84919fd0d8eada0277b"
+    },
+    "cloud-system-cpu-cost/results/16-birth-present.json": {
+      "bytes": 46993,
+      "sha256": "a1e3c74681802a5a69798260eaca98ece968954675a677732608b6bbd7c29a8a"
+    },
+    "cloud-system-cpu-cost/results/16-birth-present.log": {
+      "bytes": 169,
+      "sha256": "1920dab32e3dab09681747cb25814e3153ee68d1fb5e43d1d0c5febfc4a56f92"
+    },
+    "cloud-system-cpu-cost/results/16-birth-ticks.json": {
+      "bytes": 23774,
+      "sha256": "0ff39a5425c1c2980e1a96843376e7858a7e04c490fdab16c37491968988c879"
+    },
+    "cloud-system-cpu-cost/results/16-birth-ticks.log": {
+      "bytes": 130,
+      "sha256": "739923814c18a87801ad545874ffa748f69dd0f97bfcc14e4965c963c190fdb8"
+    },
+    "cloud-system-cpu-cost/results/16-dry-present.json": {
+      "bytes": 56044,
+      "sha256": "a898e09fffca929a69fb52252886dfabc1c707d6298227372f629e777ce9291b"
+    },
+    "cloud-system-cpu-cost/results/16-dry-present.log": {
+      "bytes": 166,
+      "sha256": "0a799d121ea80319f473477a455e17dfb8b79c81107b45cde67c812b3434aec3"
+    },
+    "cloud-system-cpu-cost/results/16-dry-ticks.json": {
+      "bytes": 25532,
+      "sha256": "b5222d71ab71677220ee470ee2b5221f06327d792007dcb783794558f9dee7df"
+    },
+    "cloud-system-cpu-cost/results/16-dry-ticks.log": {
+      "bytes": 128,
+      "sha256": "12ed33c2674cda9468d83df07bca40d9dc7c68ddf45ebeb4fb326ba4674dd8ca"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-allocation.allocation.json": {
+      "bytes": 2027624,
+      "sha256": "c5622fab40a6a35bc5edfd8f931c783f258100417f2f46799967ee0b585e8439"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-allocation.json": {
+      "bytes": 26763,
+      "sha256": "ff78208ceebcdc2bceb85dea82b597343d1b0ef31e34139406463a06bb2be62b"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-allocation.log": {
+      "bytes": 179,
+      "sha256": "95f303f75bf0b6d6f20d462fa94b13a83d8203dcff9218dd12e9874fc966b502"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-cpu.cpu.json": {
+      "bytes": 56022,
+      "sha256": "9b5f42c2cd52131e9110aed729cdc7461297b3b7c4d14c836bf014a202e39310"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-cpu.json": {
+      "bytes": 23979,
+      "sha256": "819d85731570bf05baf2966b55ae315dd49e807f14f79af1cd87520ac16b2654"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-cpu.log": {
+      "bytes": 180,
+      "sha256": "39a96fb91bec24313297142879ad4d405367a3fff7eb96417a9d83c7fcc75ae2"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-pattern.json": {
+      "bytes": 21736,
+      "sha256": "a1ba7823678bbec95dfa00bfaa7df8861924cc326f20094cc2b3ef7b70cc0f3f"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present-pattern.log": {
+      "bytes": 175,
+      "sha256": "2323f10e68ea07b453e24c0a93022d640bba6402e413dd6147fd9a1e773a714b"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present.json": {
+      "bytes": 23130,
+      "sha256": "70a44e8d978d8689ce6490d1cf7f37029fcccd31b7c6990adf24a8dcec2ea9e1"
+    },
+    "cloud-system-cpu-cost/results/16-steady-present.log": {
+      "bytes": 169,
+      "sha256": "4015a208515ccb3308ff6b43c9de249eb07ad2d08c4a596627178ce10b15caab"
+    },
+    "cloud-system-cpu-cost/results/16-steady-ticks.json": {
+      "bytes": 10718,
+      "sha256": "58c32d76a79e1ff6842796aea5ece7b6538b58a518208207902a6749da706edf"
+    },
+    "cloud-system-cpu-cost/results/16-steady-ticks.log": {
+      "bytes": 130,
+      "sha256": "e35acf5ea9a7c3ce7ff98bc7a7d0df17b42e1209e0224ccf694afd07cb33dc3e"
+    },
+    "cloud-system-cpu-cost/results/2-birth-present.json": {
+      "bytes": 39462,
+      "sha256": "e0d05a6bee5132f09f6afae1492a8200dde144ea31e6f2acd78e0020340d8870"
+    },
+    "cloud-system-cpu-cost/results/2-birth-present.log": {
+      "bytes": 166,
+      "sha256": "69083c385946f1409d03ebeef1380703fba6201985261193527111ec57f140c5"
+    },
+    "cloud-system-cpu-cost/results/2-birth-ticks.json": {
+      "bytes": 19509,
+      "sha256": "29dc07859b4e66b39d32e7cd48afd151e067eadca10757e500575b8acb3a2f93"
+    },
+    "cloud-system-cpu-cost/results/2-birth-ticks.log": {
+      "bytes": 124,
+      "sha256": "f2a6a660e5cdb61fc98e70bed1374b4b0e0e7d0be27825c19b843cd24c42c448"
+    },
+    "cloud-system-cpu-cost/results/2-dry-present.json": {
+      "bytes": 44986,
+      "sha256": "1999428dd6662a13e5148c0653eaf3b6148dbfe7fc9c6d3fbb896d539b3cae5d"
+    },
+    "cloud-system-cpu-cost/results/2-dry-present.log": {
+      "bytes": 169,
+      "sha256": "8fe0b9357eae47bffb98d70eb8cf707a25f0495121aa06e9d1700e3d952d90ea"
+    },
+    "cloud-system-cpu-cost/results/2-dry-ticks.json": {
+      "bytes": 24488,
+      "sha256": "a189848355e879dc773043bb161b26d893b4a4f2d12302af969cb56102a18f46"
+    },
+    "cloud-system-cpu-cost/results/2-dry-ticks.log": {
+      "bytes": 126,
+      "sha256": "36115e2c13012afc4c6682c82c25ef5850a90bba30fc853b8aa44ce30b1689f0"
+    },
+    "cloud-system-cpu-cost/results/2-steady-present.json": {
+      "bytes": 16734,
+      "sha256": "45aa663e33f342c5f1eda7bb42d05b73045619eb6153152c2bc03db712ed6f4c"
+    },
+    "cloud-system-cpu-cost/results/2-steady-present.log": {
+      "bytes": 166,
+      "sha256": "1b5529a9184b813d5bd0e945278d0aac41941725a2c244b50dc09142519e5f3f"
+    },
+    "cloud-system-cpu-cost/results/2-steady-ticks.json": {
+      "bytes": 10306,
+      "sha256": "8bd8b5208048f28affdcd8deb0e0322eb33a21758c368ea1e2e30b58e4685525"
+    },
+    "cloud-system-cpu-cost/results/2-steady-ticks.log": {
+      "bytes": 135,
+      "sha256": "1191174c3b9be7633346ca1fcdf9c4638f875e489785f1725491b47d28a100e3"
+    },
+    "cloud-system-cpu-cost/results/64-birth-present.json": {
+      "bytes": 4834,
+      "sha256": "ffef384029438acc376afbf7543cd4116664b4ea4e732f577ed9ef4e3674e132"
+    },
+    "cloud-system-cpu-cost/results/64-birth-present.log": {
+      "bytes": 433,
+      "sha256": "ef1017fa013b5cc732fc185263547ce3b4d0aa3e3bc3e2acf3d525472345b31d"
+    },
+    "cloud-system-cpu-cost/results/64-birth-ticks.json": {
+      "bytes": 21886,
+      "sha256": "a11dee7ff5c03a342064d35c7a109c41167020e33cfca995db5ee5f5d49e5b82"
+    },
+    "cloud-system-cpu-cost/results/64-birth-ticks.log": {
+      "bytes": 617,
+      "sha256": "2b09c161761e5f20b1e000cb23cbd05c518415944463e32b5714d78319067cf6"
+    },
+    "cloud-system-cpu-cost/results/64-dry-present.json": {
+      "bytes": 4676,
+      "sha256": "fa80be620f3f2ee230365470b6f85de230825c8f19560c418a3bef065dba3cbb"
+    },
+    "cloud-system-cpu-cost/results/64-dry-present.log": {
+      "bytes": 510,
+      "sha256": "d635d04ed0d0fb30500321ee6d915e80c642859476c8d461394b6d424a0e01de"
+    },
+    "cloud-system-cpu-cost/results/64-dry-ticks.json": {
+      "bytes": 4696,
+      "sha256": "8c076c89baa2d919f72b47ce74e0395c6c6992f72b40b31307a39b1532757d44"
+    },
+    "cloud-system-cpu-cost/results/64-dry-ticks.log": {
+      "bytes": 514,
+      "sha256": "67da9237cda1b873a262fcb372d80fd73e62e76813f362e7c9669e18a5d7c729"
+    },
+    "cloud-system-cpu-cost/results/64-steady-present.json": {
+      "bytes": 5050,
+      "sha256": "da71a4a0d4c3e84ad515ce0ed0ff9861746838b124ca4d5a6c149111363bb64f"
+    },
+    "cloud-system-cpu-cost/results/64-steady-present.log": {
+      "bytes": 440,
+      "sha256": "309634866beb99805520f75702386d3cd4396ef0116cba6cdd6c79016f54c1a0"
+    },
+    "cloud-system-cpu-cost/results/64-steady-ticks.json": {
+      "bytes": 4751,
+      "sha256": "d94cc27dcdd31f55a11dbc6b66b81fc2a38f3fff7fd398d3b64645b74cb88bea"
+    },
+    "cloud-system-cpu-cost/results/64-steady-ticks.log": {
+      "bytes": 418,
+      "sha256": "15c3ee48a4902ad2a58e3f4634892c0762c2efe1b923d473fb1a025e8573f0b1"
+    },
+    "cloud-system-cpu-cost/run-index.json": {
+      "bytes": 3304,
+      "sha256": "152b9b2d2d22fda55c7f6651203056417dfef75e2c6eeb93d56832828ebbb7fc"
+    },
+    "cloud-system-cpu-cost/run.log": {
+      "bytes": 495,
+      "sha256": "5a8cae409e3e8304bc82d6b2cdb173b3f0ce6d5cb987653c5d19d870abd787ac"
+    },
+    "cloud-system-cpu-cost/run.py": {
+      "bytes": 1229,
+      "sha256": "4623784745a6820c2c5391af9c110f9ba1fa59fe052d7ae782d3f8e796abf7eb"
+    },
+    "cloud-system-cpu-cost/verify.py": {
+      "bytes": 2392,
+      "sha256": "ab0da9431fd003e1fb0f3179e4b570d1c3956835c83d3e195841d1835d4d9335"
+    },
+    "cloud-system-cpu-cost/worker.mjs": {
+      "bytes": 11909,
+      "sha256": "2f5427a825c1cd7cb2f3a59c51cf880e06088c234dbc22744ee5cfd49f65d43d"
+    },
+    "cloud-system-cpu-fast-proof/BASELINE.json": {
+      "bytes": 817,
+      "sha256": "7398b95f37386eb8b1900f53c5e8c0c0ec619aa28d8da9955d3bfca051582e28"
+    },
+    "cloud-system-cpu-fast-proof/COMMISSION.md": {
+      "bytes": 8607,
+      "sha256": "11687ca4df2200e8a899c16c5db0b64c8e5e9affb1a5501dde820d1f7be8cb6e"
+    },
+    "cloud-system-cpu-fast-proof/FINAL-HANDOFF.json": {
+      "bytes": 114570,
+      "sha256": "51c9520298eed849e5b2726b949e4d425fe24e5232053ad40779fffa7500fddf"
+    },
+    "cloud-system-cpu-fast-proof/FRAME-DESIGN.md": {
+      "bytes": 2455,
+      "sha256": "705da711544cffb5dc36ee666a04b16020cea7de5fd83fc2421145761d31698d"
+    },
+    "cloud-system-cpu-fast-proof/FRAME-RESULT.md": {
+      "bytes": 5875,
+      "sha256": "54c309a3fb16fed3d8c9465a0499b716956e1ca0f2639d5224d27c135be8757d"
+    },
+    "cloud-system-cpu-fast-proof/FRAME-STAGE.md": {
+      "bytes": 2819,
+      "sha256": "a81975a637d33c67b3d0ed988f0676d1a844b08af930d34929fa2a481d0dc35b"
+    },
+    "cloud-system-cpu-fast-proof/PREFLIGHT.md": {
+      "bytes": 1999,
+      "sha256": "4d336f37c296c77cff2bcf5176bc15f37e12e97718016bbfc7ee9aac6a4a0169"
+    },
+    "cloud-system-cpu-fast-proof/PUBLICATION-HANDOFF.json": {
+      "bytes": 48656,
+      "sha256": "da0edb31ec22ea7b84ad28155dfb4978081c72ab9d4598ee0a0f5a38f1ff8261"
+    },
+    "cloud-system-cpu-fast-proof/PUBLICATION-RESULT.md": {
+      "bytes": 4489,
+      "sha256": "965b8de3ec86fa8ad5af8a8a7bf6890fb93eeeac3e8232f1da085ca3b8226a50"
+    },
+    "cloud-system-cpu-fast-proof/README.md": {
+      "bytes": 2217,
+      "sha256": "32677b871ec6f70e20e4918113cfd3c61d3f52dd238d8f8d84ebfaa0a39f49c7"
+    },
+    "cloud-system-cpu-fast-proof/STAGE1.md": {
+      "bytes": 2101,
+      "sha256": "3e3018e3e254ec8edd0077b66f5a2fb0aff7697523539e33ccb9ce3d7738b4ab"
+    },
+    "cloud-system-cpu-fast-proof/assets/admission/admission.json": {
+      "bytes": 150256,
+      "sha256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697"
+    },
+    "cloud-system-cpu-fast-proof/assets/input-index.json": {
+      "bytes": 3757,
+      "sha256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8"
+    },
+    "cloud-system-cpu-fast-proof/assets/noise/channels-32.json": {
+      "bytes": 526,
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+    },
+    "cloud-system-cpu-fast-proof/assets/templates/body.json": {
+      "bytes": 9130,
+      "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+    },
+    "cloud-system-cpu-fast-proof/assets/templates/crown-b.json": {
+      "bytes": 11519,
+      "sha256": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918"
+    },
+    "cloud-system-cpu-fast-proof/assets/templates/original-FROZEN-INPUTS.json": {
+      "bytes": 1305,
+      "sha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c"
+    },
+    "cloud-system-cpu-fast-proof/assets/templates/original-body.json": {
+      "bytes": 9097,
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+    },
+    "cloud-system-cpu-fast-proof/assets/templates/original-crown-b.json": {
+      "bytes": 11486,
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/admission-policy.js": {
+      "bytes": 12309,
+      "sha256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/admission-policy.provenance.json": {
+      "bytes": 212,
+      "sha256": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/clock.js": {
+      "bytes": 2928,
+      "sha256": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/math.js": {
+      "bytes": 3558,
+      "sha256": "1eca92cb5966bd5f58c416a0f28a37a3a02c37f6a22cfdff0b685bc3b640c553"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/model.js": {
+      "bytes": 20531,
+      "sha256": "675edc8de1d0ad197434be3ae1b04ea4f842362fa1ec8d227e1ae878a0a7133b"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/reference.js": {
+      "bytes": 2457,
+      "sha256": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+    },
+    "cloud-system-cpu-fast-proof/baseline/src/source/weather.js": {
+      "bytes": 1759,
+      "sha256": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da"
+    },
+    "cloud-system-cpu-fast-proof/combined-source.patch": {
+      "bytes": 14354,
+      "sha256": "5383d47b89ad7b80962432f465aaf1f1a0f724ab580cee91c18d174dbb801cf3"
+    },
+    "cloud-system-cpu-fast-proof/cost/analysis.json": {
+      "bytes": 186759,
+      "sha256": "908a8d7b73cc517ae407df578bd843e4563860e4075a70382fcc95b835cc9c10"
+    },
+    "cloud-system-cpu-fast-proof/cost/analyze.py": {
+      "bytes": 2808,
+      "sha256": "7f015c0ffde7feb9e394d83afa942f9dc8c2650e009ce86b50b6896e4ed21815"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-birth-present-r1.json": {
+      "bytes": 31529,
+      "sha256": "38d57ed50153d665a9cf00c68803eda221009f02729e1647eb1bbf00c1e7d06a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-birth-present-r1.log": {
+      "bytes": 186,
+      "sha256": "48a45293fbf291be6deeb7403de686a61382ff3fd7ee8878a6d9709f7927f36a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-birth-present-r2.json": {
+      "bytes": 31549,
+      "sha256": "ad42adb445d81de119fbcedd2daf62c8f756798d0baba070c34a952c7a1d2cf9"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-birth-present-r2.log": {
+      "bytes": 184,
+      "sha256": "8fb11683d912aafb118c31c4810f63bb9ad6ff52416bd82052f2d5b570d69fff"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-birth-ticks-r1.json": {
+      "bytes": 20159,
+      "sha256": "2e2323b8d0640380d43d3300107c0ad6e56c9a7f6d273b93a37d82eb957ce11e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-birth-ticks-r1.log": {
+      "bytes": 140,
+      "sha256": "f90ed370aebeced39ad0accdfc48658a6f7b873b7c8c25e5109f23ad24bbeff8"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-dry-present-r1.json": {
+      "bytes": 38019,
+      "sha256": "76eb6f5ad0668aabb5e477165ea375d62cbe454e51a6ac18dc373440edb556e1"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-dry-present-r1.log": {
+      "bytes": 167,
+      "sha256": "7dd30097962255a7cf91046273497e472b3b95143d9cd8e3751be748d6e1fea0"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-dry-present-r2.json": {
+      "bytes": 38034,
+      "sha256": "086facac813dd657d4acd6c9b25631b4cc8cd342c02132a8035892e9fb91e161"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-dry-present-r2.log": {
+      "bytes": 172,
+      "sha256": "411b874d9a48983347c7a8ce33ba30b5cced1aa2e201f8b9b55ba0392a598395"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-dry-ticks-r1.json": {
+      "bytes": 25662,
+      "sha256": "51ae580b63d7bc870b80b04e94d16469512553092ac30f6408b999328f844e5a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-dry-ticks-r1.log": {
+      "bytes": 135,
+      "sha256": "83ceba252710d00aaac6b0b8263d7f07abd59d98a962f50f26b305a3cf5bce58"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-steady-present-r1.json": {
+      "bytes": 15815,
+      "sha256": "6a4897ae36a7c59abd82e11d7c8c6e5906ea741a56b11f583c66548d3e430c9b"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-steady-present-r1.log": {
+      "bytes": 180,
+      "sha256": "245e90ca3010aa533d4132ab820b576cdee7cc179e47f47323951f12cb7920e3"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-steady-present-r2.json": {
+      "bytes": 15956,
+      "sha256": "80a59105c38d469c5995b6c3001d066321253c1f41eed9c24a300eee85398ef4"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-steady-present-r2.log": {
+      "bytes": 187,
+      "sha256": "655d0217ff2d9f466f356c78f42b301e3d4f84d694192f4e39292aa483ac2b52"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-steady-ticks-r1.json": {
+      "bytes": 10434,
+      "sha256": "d7aa4775c444fa5c964cb5f0aed703e67194537afe4f85520dcc7521eb731695"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-1-steady-ticks-r1.log": {
+      "bytes": 142,
+      "sha256": "c4d6268990c615330eb4343c02c370d6a5d76bd5aa9e195806a9fce2da4e214e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-birth-present-r1.json": {
+      "bytes": 47007,
+      "sha256": "54a572503e06c70b197c6bc97ccce1a5eeebbfab1c823cef8f969e5498ed1751"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-birth-present-r1.log": {
+      "bytes": 188,
+      "sha256": "22d1e7c580126f163ccdf42b3a948aabd0982b970fb1dc005bc4a3c043d1cf89"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-birth-present-r2.json": {
+      "bytes": 50508,
+      "sha256": "7008ffa1939dc5be2d6f28bd29a1bfdd01ea7c3d3e1bc5bc919911f9b47a57e7"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-birth-present-r2.log": {
+      "bytes": 181,
+      "sha256": "59af129722afe5c655e85fefc5cc777791549f7816eb74f67540c4e0261f1a5f"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-birth-ticks-r1.json": {
+      "bytes": 23812,
+      "sha256": "3424acf9894300868ffa2763df0807464c4d4e2efb724d906a8fd761f54b13b1"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-birth-ticks-r1.log": {
+      "bytes": 139,
+      "sha256": "cca47ffd42e2f150a15e32d2d38b2a9815ff1cc4260f008be51210e14a6ef216"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-dry-present-r1.json": {
+      "bytes": 56330,
+      "sha256": "4ff20470b9d65962db7c49bf7cb2f1be2edc5a78b19e7748900446780d5599d0"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-dry-present-r1.log": {
+      "bytes": 177,
+      "sha256": "f235e84254ac28d46f8ef7c6958adcf0940496075aebf401bce319caa666d5f7"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-dry-present-r2.json": {
+      "bytes": 56349,
+      "sha256": "64c835485308f7a116b270329363e35840373d169f6d79878b13d7de2b4ba340"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-dry-present-r2.log": {
+      "bytes": 174,
+      "sha256": "1acab904c6877e817ddd56657f4a3fd64ea82e6bc2de72ebdb5e005d85bbc2ee"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-dry-ticks-r1.json": {
+      "bytes": 25644,
+      "sha256": "9d81a194543556a05f3d3c2fd4b0ce32eea38d337ac348a38c9742be4fe1d16f"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-dry-ticks-r1.log": {
+      "bytes": 138,
+      "sha256": "2301fc170b0289981f0c6e45b002628aa8436d277526a78f8af36f6b8478ed80"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-steady-present-r1.json": {
+      "bytes": 26635,
+      "sha256": "7f3da611b643b017b5ee62d447058c5458974dd1615e0e55139bdf2f1de0572e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-steady-present-r1.log": {
+      "bytes": 188,
+      "sha256": "43a53d4047283b76890b1ac5ce243c3eecdc9783bfc39ded53930c6adc740af3"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-steady-present-r2.json": {
+      "bytes": 23133,
+      "sha256": "4c0f6dd913ec0cb6c4512535f345a6583782dfa24d94f19c0388f169146c427d"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-steady-present-r2.log": {
+      "bytes": 180,
+      "sha256": "ed4c4e66bbeaf7b216dfe7a64a6b75f10afa8e7707df172081780ed9a77f6178"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-steady-ticks-r1.json": {
+      "bytes": 10968,
+      "sha256": "d7f6f26e6fe1286593aec5d9e425e678a2992fdb71cc470a673c4968ce844f43"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-16-steady-ticks-r1.log": {
+      "bytes": 143,
+      "sha256": "0ba9fa91811c5b0ce951d8860406349ac2e4d7207e7213cfb8b347d0ff71b76b"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-birth-present-r1.json": {
+      "bytes": 39708,
+      "sha256": "4829ce9099a064f6e51d3b9443701ae893bf3555dcc20f2f6936e25920b653ec"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-birth-present-r1.log": {
+      "bytes": 186,
+      "sha256": "d6a940ba6a84c19b497bdbf8ba11a5d85b6ceced8fa9f5626409ce38241be1c5"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-birth-present-r2.json": {
+      "bytes": 40528,
+      "sha256": "fc86ff0508591643c16ddc2255d5ac116ced3327e0544957d745b42af09df0a6"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-birth-present-r2.log": {
+      "bytes": 174,
+      "sha256": "3b2c0e228257935254ad1c56fec39bfabd1c6a24ab43909111ffb35017083bbe"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-birth-ticks-r1.json": {
+      "bytes": 19892,
+      "sha256": "e7b517ffcfed8b2ba46201d3dc8093c7eb592546699959ba35fbc3b71281bc77"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-birth-ticks-r1.log": {
+      "bytes": 140,
+      "sha256": "1687bc1b1147e797334899ff5337fb0646b3206dfb3c4bc05a20b4edac9dd717"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-dry-present-r1.json": {
+      "bytes": 37984,
+      "sha256": "bc4f2b852cbd7ed125f0e1d0a1fd2543c563a4844bba79685526f36e15be5299"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-dry-present-r1.log": {
+      "bytes": 176,
+      "sha256": "1e58a6cfa3bcc6bfe4e56bb2fa699fa5bc16330a4d35d86fccf81d376b073858"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-dry-present-r2.json": {
+      "bytes": 45039,
+      "sha256": "6a6e9b668e2125b5826f733be5d64167b01694070aafab43835c47af74bff639"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-dry-present-r2.log": {
+      "bytes": 174,
+      "sha256": "ac48c75961598674fbf6cb05609d8867912f25b63aa35060f9738f005f251267"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-dry-ticks-r1.json": {
+      "bytes": 24458,
+      "sha256": "8d59a8dc204a779d56488eb1135160e9367b9116f9fcfa1a691dc10716032b3d"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-dry-ticks-r1.log": {
+      "bytes": 137,
+      "sha256": "b038a8d4b3855e90031e94540ad34c4b9b687eb871601a2e4437827e7a66d9dd"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-steady-present-r1.json": {
+      "bytes": 17122,
+      "sha256": "4aa81f8ddb94b1aec9ef8612d4a66b7f8633ac32a1fa1d4142a8866d68ac7a01"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-steady-present-r1.log": {
+      "bytes": 174,
+      "sha256": "e1d38c7c8cf1dededdda0851febfcf065b2a212f499485c09eba5bb1a4409384"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-steady-present-r2.json": {
+      "bytes": 17096,
+      "sha256": "fcb08b56e87f1b6308442217fd61c6b1b222859713912db40ad07377bc670a30"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-steady-present-r2.log": {
+      "bytes": 176,
+      "sha256": "a7bbdd820d712f7efed079e49446960de774270afb2172fc69c2ec892d88bd5e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-steady-ticks-r1.json": {
+      "bytes": 10430,
+      "sha256": "c0018d91c668a7adda3234f58b837082bd2d9b2f92aae4ec9e04c9b8a8bd3ee4"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-2-steady-ticks-r1.log": {
+      "bytes": 140,
+      "sha256": "b002950f2f96f4a67204b2ecfe091669ca0dc9180a7401db3c5f00f0e1615752"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-birth-present-r1.json": {
+      "bytes": 5147,
+      "sha256": "f58107b32213033e1f246404b07c3843bbcc661f1a0298f1d2f62f62137bbc59"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-birth-present-r1.log": {
+      "bytes": 441,
+      "sha256": "f487b6ac07ee88f00290f0990d87d371b1d3fd3b50d2abc204ed79a8dbe55cd5"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-birth-ticks-r1.json": {
+      "bytes": 4908,
+      "sha256": "4d4321da06c513237b03b0c77a5088e8c18ab63b97d84e8512bf6b4fc25e5b6c"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-birth-ticks-r1.log": {
+      "bytes": 426,
+      "sha256": "5d507932056038f2ff54949431084719ac9e33927993122a02f90aba0fcd1cc9"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-dry-present-r1.json": {
+      "bytes": 4829,
+      "sha256": "29011c2adaf1d825313411ee469b091a24c8850e57d589012a7bf5316fa6b442"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-dry-present-r1.log": {
+      "bytes": 527,
+      "sha256": "07b6cb2e09b41d46646422fe1e9a392862b28c3addc9976a319bbba93d84f35b"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-dry-ticks-r1.json": {
+      "bytes": 4830,
+      "sha256": "0110297e62e731a5669496224967cde9b301aae44e37a930b2e5e8e8d3a4ec44"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-dry-ticks-r1.log": {
+      "bytes": 534,
+      "sha256": "2c73aa984a1ec0aba2cf08bf7efa075e600b50c3576961720a6d01f7061fdd38"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-steady-present-r1.json": {
+      "bytes": 4924,
+      "sha256": "24393ec9cff0f407696da12d152476e9814a53a49a138a7b05561677ea8e22fb"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-steady-present-r1.log": {
+      "bytes": 440,
+      "sha256": "4e562420bfb385cac4e82c6d1e925b4496ccad4f9b8802933085531143b3ca53"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-steady-ticks-r1.json": {
+      "bytes": 11648,
+      "sha256": "fd7d58479af8b576fc876e1e401bf74abae072be6a650933e3985cb4193cf700"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/baseline-64-steady-ticks-r1.log": {
+      "bytes": 143,
+      "sha256": "9de338b188a68b2f41d7f0926ef3aba40c518a1b4dad01cddc3f98ab2ab48977"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-birth-present-r1.json": {
+      "bytes": 31522,
+      "sha256": "8084780c5951967490831b87fab76eca467eedb5b0dd895dd927543686c509b9"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-birth-present-r1.log": {
+      "bytes": 179,
+      "sha256": "17906ac0ff9c10b069fc28926e3d5a77ab4e9d6402207c50b37c114e25bb4546"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-birth-present-r2.json": {
+      "bytes": 31692,
+      "sha256": "611e7e3f1fdecea5c73dcead7fb20ed9e72339c9f1c29c58e530bb23f3f59f26"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-birth-present-r2.log": {
+      "bytes": 185,
+      "sha256": "7ad47b3615bf35ea41f7d419e3ca753bc98597ea75488c2a7977880944b59b9e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-birth-ticks-r1.json": {
+      "bytes": 20186,
+      "sha256": "0f44810eb933f943b00ae5a30a07d88e056166c6a8d8b8a95becd55632ef6ac5"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-birth-ticks-r1.log": {
+      "bytes": 142,
+      "sha256": "ad1b48c829064fa12efd90a04f62beff82e9a54361914968888b5753bde96061"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-dry-present-r1.json": {
+      "bytes": 37860,
+      "sha256": "14dc4add52e70adbad63ba4b967dc18fbcb56366c38f0fce4bf13e94d2e98e86"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-dry-present-r1.log": {
+      "bytes": 177,
+      "sha256": "a8551469710c8b9f322bd6267f3c0e66c7e445918d3fc7f3effc45e8898bde6d"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-dry-present-r2.json": {
+      "bytes": 37614,
+      "sha256": "935896babda26623093d56d06c79e439916e58f5316fe0c38e8a4bbd3edfa63f"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-dry-present-r2.log": {
+      "bytes": 184,
+      "sha256": "4aae1f0c6498b3601017322f9e08e470ebbbf763a7acdc4db036847528193ae0"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-dry-ticks-r1.json": {
+      "bytes": 25648,
+      "sha256": "5def9d15e476de88b7ea7ee16977095c01ce10ba37cedfcaaf2cfb1edd7b646a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-dry-ticks-r1.log": {
+      "bytes": 141,
+      "sha256": "d4dd2d92390ef732397f6b443affe4a7ddab2bb5b18a1ad62b925d2e90b57239"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-steady-present-r1.json": {
+      "bytes": 16432,
+      "sha256": "69680d2b150d664a9394e132abc4b3caf199ce9159f2650862dcc86c27f51b17"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-steady-present-r1.log": {
+      "bytes": 181,
+      "sha256": "ad5cc58df515a5d1a53d053846d99a364d43609420b479dc8f146173cb27c9d2"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-steady-present-r2.json": {
+      "bytes": 16467,
+      "sha256": "6ba5b7ab544b6e44c3f50364bc7a26b1aeaed856cac3e68c12a2002915bd000b"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-steady-present-r2.log": {
+      "bytes": 186,
+      "sha256": "9e9f4d2b03d5fa2a684623e1ebcc62046aea244ffd358c774d5fe87c84a40cd1"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-steady-ticks-r1.json": {
+      "bytes": 10443,
+      "sha256": "350e264e2f106cc953779d82a3da5a0fe1e7dfe1c4b299dbda87738095c0585b"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-1-steady-ticks-r1.log": {
+      "bytes": 152,
+      "sha256": "8557ee0318fe5b54d6bc3ef1492e53a7d8af32b5a404d59e30124cca9375c225"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-birth-present-r1.json": {
+      "bytes": 50956,
+      "sha256": "66d8cf200a6937bfc22c100f3b5fe72017d315e6c63fecdb22bb5385b5f6742e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-birth-present-r1.log": {
+      "bytes": 184,
+      "sha256": "cd823f26efb7325830ce704401b60f2a51691574d55c8cf0974e123160aa9a2e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-birth-present-r2.json": {
+      "bytes": 49653,
+      "sha256": "05f2164ded817b55f48c7d5bed24cde487968e406cb2371c7d00031e27d1c9b5"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-birth-present-r2.log": {
+      "bytes": 190,
+      "sha256": "b4add48dbe24f61b27128224d5e5a6c3ec701d0e42d3bdad02ec2f265fb04081"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-birth-ticks-r1.json": {
+      "bytes": 23897,
+      "sha256": "942927661479d3ffd715d21f8f33b929d4d09f0da97ba8dd3ab277b7a2cb97ef"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-birth-ticks-r1.log": {
+      "bytes": 143,
+      "sha256": "cf7058aeb8efe7099dcba79178cb938373809bcad979d8a5d97380e1dd84e4e1"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-dry-present-r1.json": {
+      "bytes": 56076,
+      "sha256": "d121e5ea400fe85ba57ffd24941b82566bfcdbeeb00162b2cd0b92ccb9810283"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-dry-present-r1.log": {
+      "bytes": 175,
+      "sha256": "cc9d34c6b9f378f1c5892321a58c1f37c309f5db30ef5d32d1248d2933857e37"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-dry-present-r2.json": {
+      "bytes": 55675,
+      "sha256": "1468c75352a4bd54afe77ad7886b44532f84c2f2dc66ed541afd57898ad18d7a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-dry-present-r2.log": {
+      "bytes": 181,
+      "sha256": "3c8848a7c3bbc6a9479955d35b9633bae8051bd181b1db23ab4698ad031d5bdd"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-dry-ticks-r1.json": {
+      "bytes": 25539,
+      "sha256": "5bfbe993328e5d52e2792fc29c60d833331b5305c9304207f0095ac07d126b44"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-dry-ticks-r1.log": {
+      "bytes": 145,
+      "sha256": "f097019113609773f385ab390bb13a7548c740e539219e3bcf3e823302710b57"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-steady-present-r1.json": {
+      "bytes": 26309,
+      "sha256": "d4a208352e4252f4db908e2ca5a712fa55c4d755e40ccb9838f775a922efe953"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-steady-present-r1.log": {
+      "bytes": 185,
+      "sha256": "42e59d178343979416d332d30bcdf9950feae5be13a4767ea398ed507d71bd89"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-steady-present-r2.json": {
+      "bytes": 23396,
+      "sha256": "3db388ac36faa08b6fff20b9fdcb5e8bc9e906728d0589549dc3780cbfebfe8e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-steady-present-r2.log": {
+      "bytes": 192,
+      "sha256": "de2c01bcd07b996f8eeacd33bca8194fd282074ab241ad85c7cb20ec3b00b276"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-steady-ticks-r1.json": {
+      "bytes": 10857,
+      "sha256": "fda101b786d16cf4bee103154b93cc728124df54f60dbc51325af50ce9e3f5ed"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-16-steady-ticks-r1.log": {
+      "bytes": 147,
+      "sha256": "cd58c39cf1e43854aba7a9a21f6098331567751785145f88df83b437caf74c9d"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-birth-present-r1.json": {
+      "bytes": 39852,
+      "sha256": "26838db7d60c874f68d049955eb72ef6ef7de6c2e46d4a3dde31875e1e19ac2c"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-birth-present-r1.log": {
+      "bytes": 182,
+      "sha256": "e98de00a6573e580c9a242cda839f2ba00466f66790fbc44941ecaff98eb3180"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-birth-present-r2.json": {
+      "bytes": 39856,
+      "sha256": "b9c9cbdd54148380d54c32a4a6e91a094cccd62e275dc84ca8ec3da0dc5843ff"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-birth-present-r2.log": {
+      "bytes": 186,
+      "sha256": "a88b72967771e990dee77bd653a1f2fbf60222c03ecb28beefafa6a7eeaf2932"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-birth-ticks-r1.json": {
+      "bytes": 20163,
+      "sha256": "7b06f0c36fe468a6fff9d475c22439d1435dada4eb9a1eb4c9d9f2aecf8f9523"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-birth-ticks-r1.log": {
+      "bytes": 143,
+      "sha256": "c99076d4b2c763aeff957466a0133ef0330fb7c64dbc140851733cccc3ab6cba"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-dry-present-r1.json": {
+      "bytes": 44987,
+      "sha256": "ab17a2eda0c7db4c33b5739cedc6aca8a68e30e4803fe1d0c22dc5f2c44c71a8"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-dry-present-r1.log": {
+      "bytes": 177,
+      "sha256": "c91f460a7505baf6df160827cdbf7206e020444431b9420242e39ff803c82f37"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-dry-present-r2.json": {
+      "bytes": 45004,
+      "sha256": "b6950bc083462456b25f7f6521a3468d4cdea9eb93eeb1fcd3137c62cf2d50f4"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-dry-present-r2.log": {
+      "bytes": 176,
+      "sha256": "fc07d225e0e4efe18992eb30558769f01a5428831fbd70d5ea3341e5f93d3314"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-dry-ticks-r1.json": {
+      "bytes": 25248,
+      "sha256": "39309834b25480def392e43dd267b87bb12e7bb91cd6abbd856f8e33b3892775"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-dry-ticks-r1.log": {
+      "bytes": 142,
+      "sha256": "1cdfc56e6799e31c670b22b5c6e533e13bbf2367d907c9b4b8e0e445e923495a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-steady-present-r1.json": {
+      "bytes": 17120,
+      "sha256": "a00536e69e856cf6e95b9eacd1191631904eeadbbcbf5eb7b94c0a587a97c968"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-steady-present-r1.log": {
+      "bytes": 180,
+      "sha256": "aaf04db4334ed1056e5f41fd43f92780965579a9ed9affe360f42bb8afa2cfff"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-steady-present-r2.json": {
+      "bytes": 17048,
+      "sha256": "e25830c84c2fb66e0dbd26dc8fbdda9e4d8dedf042558ad62ba81ffe7f12b5b3"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-steady-present-r2.log": {
+      "bytes": 189,
+      "sha256": "daaa49227c2c96a3d082c20f33ac13fb93a2f7ba50bd5135e89f51406510be03"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-steady-ticks-r1.json": {
+      "bytes": 10441,
+      "sha256": "1015f6378ce24a0918c81ab9641bee9d13c75aa27c383ca133c3c9fa310860c7"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-2-steady-ticks-r1.log": {
+      "bytes": 143,
+      "sha256": "eb96675b9bbb75b874f03d2909021ab2ecb81d96254cf61a545c3bedb02b849a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-birth-present-r1.json": {
+      "bytes": 5160,
+      "sha256": "35f1d5658dbe96469d06689b6f63d02c8f52ee31930ad01827531960bcc691d5"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-birth-present-r1.log": {
+      "bytes": 451,
+      "sha256": "fa9f08f89533e0214f5ae040896fe93fdc3c8346f8ecc3c87f5f93d5655e9234"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-birth-ticks-r1.json": {
+      "bytes": 4934,
+      "sha256": "4b3413365d8a5127806ac417be51444a9e7d49fe1e3e881fbfb604d68d69915e"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-birth-ticks-r1.log": {
+      "bytes": 434,
+      "sha256": "881b0ca8bc5c70c5910e667d3bc1e67aaf15c60e85e812a6038484bab2449235"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-dry-present-r1.json": {
+      "bytes": 4718,
+      "sha256": "f73022699e4e8dd60e0363f2da54eeff6061545260d1587a3920ed12639445a9"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-dry-present-r1.log": {
+      "bytes": 497,
+      "sha256": "aaf547cd8a5e3ae1b7f60ac0b455791c59405a073b9af57a8b00c99389c7a6c6"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-dry-ticks-r1.json": {
+      "bytes": 4697,
+      "sha256": "578edafbcfd7d798347b703195c32b3f9fddc5070f60a47bb54b599ffbdc37b2"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-dry-ticks-r1.log": {
+      "bytes": 494,
+      "sha256": "ed59ac03b77c2fb66d1943672aebacba56bbc32b2f303d2a1667ce2b716860b9"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-steady-present-r1.json": {
+      "bytes": 4601,
+      "sha256": "b78e668c3aa6992bb097b10f273865d4384deef0e5bdf31b8b4197ace3fbe950"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-steady-present-r1.log": {
+      "bytes": 368,
+      "sha256": "e1712460a8e8abc6885114d1f263feb8d4a23f90245f6f8d0c63239e88b8d313"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-steady-ticks-r1.json": {
+      "bytes": 4804,
+      "sha256": "740754675dfdd236fc65db379931c2a8192ddf75dc8048b7472602ac3c72c72a"
+    },
+    "cloud-system-cpu-fast-proof/cost/results/publication-64-steady-ticks-r1.log": {
+      "bytes": 416,
+      "sha256": "195281bc809105706e3b6e87366b3c6039377e3f1ab6f0743ca48462d58e7694"
+    },
+    "cloud-system-cpu-fast-proof/cost/run-index.json": {
+      "bytes": 14339,
+      "sha256": "7a71f64095c74bbe2e7186340fd1da21a9f88fe5d835fbc25a07b2be84475b12"
+    },
+    "cloud-system-cpu-fast-proof/cost/run.log": {
+      "bytes": 2622,
+      "sha256": "9268eae1d4f1aee425346464ca63d5ce2868ff0a306b64e6077c972b1c23e4e7"
+    },
+    "cloud-system-cpu-fast-proof/cost/run.py": {
+      "bytes": 1598,
+      "sha256": "3439d8d2feec8ffcfec5dc992069ced47b242f3bb25960d08f94824f1caee40f"
+    },
+    "cloud-system-cpu-fast-proof/cost/worker.mjs": {
+      "bytes": 12067,
+      "sha256": "9fe8cc55aba4095ba3dd979f66d8b3852386311a160ff5414f126acb4fe68f07"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/admission/admission.json": {
+      "bytes": 150256,
+      "sha256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/input-index.json": {
+      "bytes": 3757,
+      "sha256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/noise/channels-32.json": {
+      "bytes": 526,
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/templates/body.json": {
+      "bytes": 9130,
+      "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/templates/crown-b.json": {
+      "bytes": 11519,
+      "sha256": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/templates/original-FROZEN-INPUTS.json": {
+      "bytes": 1305,
+      "sha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/templates/original-body.json": {
+      "bytes": 9097,
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+    },
+    "cloud-system-cpu-fast-proof/frame/assets/templates/original-crown-b.json": {
+      "bytes": 11486,
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/air.wgsl": {
+      "bytes": 426,
+      "sha256": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/component-source.wgsl": {
+      "bytes": 2942,
+      "sha256": "8b422e2c590d0e6a9b0336c776b6a496dd702f3d196e57ebf755e7f1307dad90"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/light.wgsl": {
+      "bytes": 594,
+      "sha256": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/optics.wgsl": {
+      "bytes": 7571,
+      "sha256": "b114c861825865962741c9dc1b9fa157aaec0995d40cf9c368b305fca5dcae15"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/shadow.wgsl": {
+      "bytes": 531,
+      "sha256": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3"
+    },
+    "cloud-system-cpu-fast-proof/frame/shaders/view.wgsl": {
+      "bytes": 6563,
+      "sha256": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/bench/app.js": {
+      "bytes": 18019,
+      "sha256": "3ed2b6d435665a474909d0029a6579538c2a8b55f08f2068042a70bba19b0f10"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/bench/motion.js": {
+      "bytes": 2738,
+      "sha256": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/bench/trace.js": {
+      "bytes": 434,
+      "sha256": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/CONTRACT.md": {
+      "bytes": 2475,
+      "sha256": "9d8316360f7e87eb084330472595ef7037e8b36465a200dfcbe6bab8931907de"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/adapter.js": {
+      "bytes": 10035,
+      "sha256": "5ca7f4f82eb4132489304858e066fc251aca4a146f236ec9d96707572aa6b784"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/assets.js": {
+      "bytes": 4470,
+      "sha256": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/frame-lifecycle.js": {
+      "bytes": 1696,
+      "sha256": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/gpu.js": {
+      "bytes": 6519,
+      "sha256": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/held-oracle.js": {
+      "bytes": 4303,
+      "sha256": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/lighting-profile.js": {
+      "bytes": 870,
+      "sha256": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/reference.js": {
+      "bytes": 1870,
+      "sha256": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/render/scene.js": {
+      "bytes": 39334,
+      "sha256": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/admission-policy.js": {
+      "bytes": 12309,
+      "sha256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/admission-policy.provenance.json": {
+      "bytes": 212,
+      "sha256": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/clock.js": {
+      "bytes": 2928,
+      "sha256": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/math.js": {
+      "bytes": 5436,
+      "sha256": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/model.js": {
+      "bytes": 21026,
+      "sha256": "e21f9f5163f0a183136ce02a2d2cc9d6d5f6459943acfc5fa3254ba8ec8ae70e"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/reference.js": {
+      "bytes": 2457,
+      "sha256": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+    },
+    "cloud-system-cpu-fast-proof/frame/src/source/weather.js": {
+      "bytes": 1759,
+      "sha256": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/adapter-publish.test.mjs": {
+      "bytes": 1968,
+      "sha256": "5b9fd37cfd0d53c8ea0a4a9825f482576fb3ef0536e8ff4229d6b0bf16ac037c"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assembled/air.wgsl": {
+      "bytes": 7998,
+      "sha256": "475fb99876f556705d6eec3bd0ba5de9eab4b10ce8be7f8089181901dd80778e"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assembled/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assembled/light.wgsl": {
+      "bytes": 8166,
+      "sha256": "73fb243d9ecebcc65d28366cf739a7be24e08451148074e6622541801a83b78b"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assembled/probe.wgsl": {
+      "bytes": 7955,
+      "sha256": "35b1f4bc6699a621f16b6443d7ef7f202432f2b5b62643740d3c5ff89dd63b28"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assembled/shadow.wgsl": {
+      "bytes": 8103,
+      "sha256": "d87492db22d4e90a8f2daa374abfacc170153dc416cd8866aeb1a173889fcfa6"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assembled/view.wgsl": {
+      "bytes": 14135,
+      "sha256": "f3ef354dc8ba8d23d34b44631f5e635fb9bd0cf3d79e2bb848cb348fbf61ff4c"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/assets.test.mjs": {
+      "bytes": 1473,
+      "sha256": "99e11f19403de173a44b28a7a874cc100eb2e6f4a92c748ba19595fa82e982eb"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/integration-contract.test.mjs": {
+      "bytes": 2947,
+      "sha256": "1317be771b6c4d5b03ce0aac9f5a9b4b868aa538270a76322470d16034ee4f04"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/source-query.test.mjs": {
+      "bytes": 1970,
+      "sha256": "8778b2f7a3484e48db5afcb450f9ea5dcf29456b34a6cb938a47dde3f14e28de"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/render/trace.test.mjs": {
+      "bytes": 734,
+      "sha256": "ed7ed0e5df08d6b3e4c21748eaaaaa0a709ed19435bfe45ef06ba94b7be78903"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/HANDOFF.json": {
+      "bytes": 5546,
+      "sha256": "a6d23eeb087ccba41a7f248e511aa06ec9f02d902951724dbdf784aeb1d31b2a"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/HANDOFF.md": {
+      "bytes": 4535,
+      "sha256": "fdee782e0bb41f3a905e078f7cfc1e746a6c543866e2214461a42878f6a0f7f8"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/clock-hardening.patch": {
+      "bytes": 1102,
+      "sha256": "90001b834b894d407fd4ef74b6891cf67256aca957254873407aae2a8027f13d"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/clock-profile-results.json": {
+      "bytes": 486,
+      "sha256": "e48da1b02420b409a7c72ff5e4588796865233e28351e946655f209d461cbea7"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/clock-profile.mjs": {
+      "bytes": 1719,
+      "sha256": "bf129449049ac5ac01502b4e312ed05a99582994d811558171efc01dc31e1c50"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/contracts-results.json": {
+      "bytes": 925,
+      "sha256": "ea12441a88173317e3e138e9ec28212601e92998158cb8e7e9a74a7f023939a2"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/contracts.mjs": {
+      "bytes": 5738,
+      "sha256": "74c2285464d90931f23af13722c1be3553be6b739cff770d3cbc3f7f7fac5549"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/control-domain-before-fix.json": {
+      "bytes": 351,
+      "sha256": "bda4459b2443426171c357a1385d0dcc999c7f2a046e9096faff9095f6ca297c"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/control-domain-result.json": {
+      "bytes": 164,
+      "sha256": "8ef801d8e4de86970d4c68e974d4ff408839b08a201a5154487319e652efb391"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/control-domain.mjs": {
+      "bytes": 1449,
+      "sha256": "2be6614aadbbbbec82bc050775926b4285a5c8e51002e1eeebe58af2991a153d"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/fixtures.mjs": {
+      "bytes": 1435,
+      "sha256": "5b55a763877e58072d43400f7e4ac61cae5b49865f2b4cf976722fb4fac5358f"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/portable-results.json": {
+      "bytes": 1653,
+      "sha256": "8a547fd62bf3a3981ccfafc8def291a2c9cb0ed388985498391225fd41306543"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/portable.py": {
+      "bytes": 2052,
+      "sha256": "3e5470a97dfe992d1711705df366a982efd6287c61dd12a25bdf91608b03100f"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/presentation-status.mjs": {
+      "bytes": 962,
+      "sha256": "74bfe6ed0e2a52e80a66515766930eada330b32bf84088789a18d5500d5203ca"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/reference-continuation.mjs": {
+      "bytes": 969,
+      "sha256": "de9fab82baf4e26348c7b3bc3e484263328997b20f2a815bee846f4166dbe043"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/reference-results.json": {
+      "bytes": 873,
+      "sha256": "9fe9e4384e1fc8f7a7c85d70b0becd6c49c4d49032e222ff9f9b9a0fc1fad85c"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/reference.mjs": {
+      "bytes": 3433,
+      "sha256": "f9b692a46dfc9961237c1ee76bd072c38e17010bd88d33bd5269c1097a1a3cf0"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/replay-results.json": {
+      "bytes": 40291,
+      "sha256": "77db46e9ae243b4d2c4d0f59a74a44b0d8c981283ed883035df19146e6a46248"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/replays.mjs": {
+      "bytes": 2411,
+      "sha256": "7e552bb0487d27539cd1248810db35dc260ee925629d6ab668aa0a35de9bab3c"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/clock-profile.log": {
+      "bytes": 436,
+      "sha256": "8a6d038a989941bda6600aa5a846f50a9200ecb8cd7185c36da75fbdbbcfe28f"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/contracts.log": {
+      "bytes": 759,
+      "sha256": "af8a1d33454deb9cf6bc88f7cd9cab32f5a681302d040e87e1d782d707d7c24b"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/control-domain.log": {
+      "bytes": 37,
+      "sha256": "c6a85533ce02066d173bc6854611f1247ef6788e435b926dd47779c38915b5bd"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/presentation-status.log": {
+      "bytes": 78,
+      "sha256": "a3ad45ec54e99801e12bdb30d18e74f33b461e18c200eaee23e047224e0bcdd5"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/reference-continuation.log": {
+      "bytes": 151,
+      "sha256": "324acec18698d75264c28b82f19b872561407a2a22eeaf525e46dff69ff5762d"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/reference.log": {
+      "bytes": 687,
+      "sha256": "2c69f12072535d493e0d87e128c468a2764abad5817c9c97a9e0540a24cae965"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/replays.log": {
+      "bytes": 1743,
+      "sha256": "944421cd1b2a67aeb9c19c7bd666e00b74648e4fc4a0ab5e94007588db496e74"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run-logs/smoke.log": {
+      "bytes": 20201,
+      "sha256": "dc6be4ea6fabded0eeb4304fcac9a712566152637f9bd574e2be2a3a02fa78a5"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/run.mjs": {
+      "bytes": 3673,
+      "sha256": "ff16bddd6d1079133ea01f3bfbc1e366fc82d0f55b810d48de3b72257058b488"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/smoke.mjs": {
+      "bytes": 862,
+      "sha256": "73e970cd5d00e09727b1e679817883df3b3fc1a85fa87c084dcaea207dc1acf1"
+    },
+    "cloud-system-cpu-fast-proof/frame/tests/source/suite-results.json": {
+      "bytes": 25181,
+      "sha256": "61f9075780fa12859ca86984d0a540542a7f805d2e01bb7301e5cd1665c44120"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/README.md": {
+      "bytes": 1080,
+      "sha256": "a5387f5007bfd58b82c822c07c20f10f1193f11af1b813695b5d3d68e901fecd"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/admission/admission.json": {
+      "bytes": 150256,
+      "sha256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/input-index.json": {
+      "bytes": 3757,
+      "sha256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/noise/channels-32.json": {
+      "bytes": 526,
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/body.json": {
+      "bytes": 9130,
+      "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/crown-b.json": {
+      "bytes": 11519,
+      "sha256": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/original-FROZEN-INPUTS.json": {
+      "bytes": 1305,
+      "sha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/original-body.json": {
+      "bytes": 9097,
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/original-crown-b.json": {
+      "bytes": 11486,
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/air.wgsl": {
+      "bytes": 426,
+      "sha256": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/component-source.wgsl": {
+      "bytes": 2942,
+      "sha256": "8b422e2c590d0e6a9b0336c776b6a496dd702f3d196e57ebf755e7f1307dad90"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/light.wgsl": {
+      "bytes": 594,
+      "sha256": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/optics.wgsl": {
+      "bytes": 7571,
+      "sha256": "b114c861825865962741c9dc1b9fa157aaec0995d40cf9c368b305fca5dcae15"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/shadow.wgsl": {
+      "bytes": 531,
+      "sha256": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/shaders/view.wgsl": {
+      "bytes": 6563,
+      "sha256": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/bench/app.js": {
+      "bytes": 18019,
+      "sha256": "3ed2b6d435665a474909d0029a6579538c2a8b55f08f2068042a70bba19b0f10"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/bench/motion.js": {
+      "bytes": 2738,
+      "sha256": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/bench/trace.js": {
+      "bytes": 434,
+      "sha256": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/CONTRACT.md": {
+      "bytes": 2475,
+      "sha256": "9d8316360f7e87eb084330472595ef7037e8b36465a200dfcbe6bab8931907de"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/adapter.js": {
+      "bytes": 10035,
+      "sha256": "5ca7f4f82eb4132489304858e066fc251aca4a146f236ec9d96707572aa6b784"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/assets.js": {
+      "bytes": 4470,
+      "sha256": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/frame-lifecycle.js": {
+      "bytes": 1696,
+      "sha256": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/gpu.js": {
+      "bytes": 6519,
+      "sha256": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/held-oracle.js": {
+      "bytes": 4303,
+      "sha256": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/lighting-profile.js": {
+      "bytes": 870,
+      "sha256": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/reference.js": {
+      "bytes": 1870,
+      "sha256": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/render/scene.js": {
+      "bytes": 39334,
+      "sha256": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/admission-policy.js": {
+      "bytes": 12309,
+      "sha256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/admission-policy.provenance.json": {
+      "bytes": 212,
+      "sha256": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/clock.js": {
+      "bytes": 2928,
+      "sha256": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/math.js": {
+      "bytes": 4847,
+      "sha256": "ba10489a82887d791b2eef328dff73b32cbb10d53650f029d58366ef9caeca98"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/model.js": {
+      "bytes": 21022,
+      "sha256": "06a33ee57fd5d39ccd111b597cb0756d5473e9eaf2ebdb6ed57660477d55eae9"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/reference.js": {
+      "bytes": 2457,
+      "sha256": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/src/source/weather.js": {
+      "bytes": 1759,
+      "sha256": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/adapter-publish.test.mjs": {
+      "bytes": 1968,
+      "sha256": "5b9fd37cfd0d53c8ea0a4a9825f482576fb3ef0536e8ff4229d6b0bf16ac037c"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assembled/air.wgsl": {
+      "bytes": 7998,
+      "sha256": "475fb99876f556705d6eec3bd0ba5de9eab4b10ce8be7f8089181901dd80778e"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assembled/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assembled/light.wgsl": {
+      "bytes": 8166,
+      "sha256": "73fb243d9ecebcc65d28366cf739a7be24e08451148074e6622541801a83b78b"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assembled/probe.wgsl": {
+      "bytes": 7955,
+      "sha256": "35b1f4bc6699a621f16b6443d7ef7f202432f2b5b62643740d3c5ff89dd63b28"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assembled/shadow.wgsl": {
+      "bytes": 8103,
+      "sha256": "d87492db22d4e90a8f2daa374abfacc170153dc416cd8866aeb1a173889fcfa6"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assembled/view.wgsl": {
+      "bytes": 14135,
+      "sha256": "f3ef354dc8ba8d23d34b44631f5e635fb9bd0cf3d79e2bb848cb348fbf61ff4c"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/assets.test.mjs": {
+      "bytes": 1473,
+      "sha256": "99e11f19403de173a44b28a7a874cc100eb2e6f4a92c748ba19595fa82e982eb"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/integration-contract.test.mjs": {
+      "bytes": 2947,
+      "sha256": "1317be771b6c4d5b03ce0aac9f5a9b4b868aa538270a76322470d16034ee4f04"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/source-query.test.mjs": {
+      "bytes": 1970,
+      "sha256": "8778b2f7a3484e48db5afcb450f9ea5dcf29456b34a6cb938a47dde3f14e28de"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/render/trace.test.mjs": {
+      "bytes": 734,
+      "sha256": "ed7ed0e5df08d6b3e4c21748eaaaaa0a709ed19435bfe45ef06ba94b7be78903"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/HANDOFF.json": {
+      "bytes": 5546,
+      "sha256": "a6d23eeb087ccba41a7f248e511aa06ec9f02d902951724dbdf784aeb1d31b2a"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/HANDOFF.md": {
+      "bytes": 4535,
+      "sha256": "fdee782e0bb41f3a905e078f7cfc1e746a6c543866e2214461a42878f6a0f7f8"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/clock-hardening.patch": {
+      "bytes": 1102,
+      "sha256": "90001b834b894d407fd4ef74b6891cf67256aca957254873407aae2a8027f13d"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/clock-profile-results.json": {
+      "bytes": 486,
+      "sha256": "e48da1b02420b409a7c72ff5e4588796865233e28351e946655f209d461cbea7"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/clock-profile.mjs": {
+      "bytes": 1719,
+      "sha256": "bf129449049ac5ac01502b4e312ed05a99582994d811558171efc01dc31e1c50"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/contracts-results.json": {
+      "bytes": 925,
+      "sha256": "ea12441a88173317e3e138e9ec28212601e92998158cb8e7e9a74a7f023939a2"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/contracts.mjs": {
+      "bytes": 5738,
+      "sha256": "74c2285464d90931f23af13722c1be3553be6b739cff770d3cbc3f7f7fac5549"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/control-domain-before-fix.json": {
+      "bytes": 351,
+      "sha256": "bda4459b2443426171c357a1385d0dcc999c7f2a046e9096faff9095f6ca297c"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/control-domain-result.json": {
+      "bytes": 164,
+      "sha256": "8ef801d8e4de86970d4c68e974d4ff408839b08a201a5154487319e652efb391"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/control-domain.mjs": {
+      "bytes": 1449,
+      "sha256": "2be6614aadbbbbec82bc050775926b4285a5c8e51002e1eeebe58af2991a153d"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/fixtures.mjs": {
+      "bytes": 1435,
+      "sha256": "5b55a763877e58072d43400f7e4ac61cae5b49865f2b4cf976722fb4fac5358f"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/portable-results.json": {
+      "bytes": 1653,
+      "sha256": "8a547fd62bf3a3981ccfafc8def291a2c9cb0ed388985498391225fd41306543"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/portable.py": {
+      "bytes": 2052,
+      "sha256": "3e5470a97dfe992d1711705df366a982efd6287c61dd12a25bdf91608b03100f"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/presentation-status.mjs": {
+      "bytes": 962,
+      "sha256": "74bfe6ed0e2a52e80a66515766930eada330b32bf84088789a18d5500d5203ca"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/reference-continuation.mjs": {
+      "bytes": 969,
+      "sha256": "de9fab82baf4e26348c7b3bc3e484263328997b20f2a815bee846f4166dbe043"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/reference-results.json": {
+      "bytes": 873,
+      "sha256": "9fe9e4384e1fc8f7a7c85d70b0becd6c49c4d49032e222ff9f9b9a0fc1fad85c"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/reference.mjs": {
+      "bytes": 3433,
+      "sha256": "f9b692a46dfc9961237c1ee76bd072c38e17010bd88d33bd5269c1097a1a3cf0"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/replay-results.json": {
+      "bytes": 40291,
+      "sha256": "77db46e9ae243b4d2c4d0f59a74a44b0d8c981283ed883035df19146e6a46248"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/replays.mjs": {
+      "bytes": 2411,
+      "sha256": "7e552bb0487d27539cd1248810db35dc260ee925629d6ab668aa0a35de9bab3c"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/run.mjs": {
+      "bytes": 3673,
+      "sha256": "ff16bddd6d1079133ea01f3bfbc1e366fc82d0f55b810d48de3b72257058b488"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/smoke.mjs": {
+      "bytes": 862,
+      "sha256": "73e970cd5d00e09727b1e679817883df3b3fc1a85fa87c084dcaea207dc1acf1"
+    },
+    "cloud-system-cpu-fast-proof/frame-attempt1/tests/source/suite-results.json": {
+      "bytes": 25171,
+      "sha256": "c9768ac3c421050927d8332e2f5ccc0709c80ea9a8e5f05dc28ab2e83f975f6a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/analysis.json": {
+      "bytes": 185992,
+      "sha256": "0a3533413aa5f70d34e13b1c153b6da198e3ba4de69d095fe8233a06dbce57fa"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/analyze.py": {
+      "bytes": 2814,
+      "sha256": "1649b21e17ef82b5d8e203ff1874dee38ed7a9ad5fe3c6532421b8969ac932a1"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-birth-present-r1.json": {
+      "bytes": 28246,
+      "sha256": "85432ed0c5222b05dc278b18011249820093798a5dafcf087f1a550784970fd1"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-birth-present-r1.log": {
+      "bytes": 172,
+      "sha256": "3acabef1f21d476f1384e2986774ff353c9c4cc54ffa26e5ac158c3ab7e4f6a4"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-birth-present-r2.json": {
+      "bytes": 28245,
+      "sha256": "7613d05b24d94679f5dc37f944900ded5fd01eba64cc04c87685b719b3cc4e8f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-birth-present-r2.log": {
+      "bytes": 175,
+      "sha256": "56a9c6c92cf27828adc770d9c30f7060afe16dfe6d4f35490242f4604ec78bda"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-birth-ticks-r1.json": {
+      "bytes": 19907,
+      "sha256": "6c15e71434e8eb54f51eaadd7bdf943d9c0adfbdfbc4d4f54f9749704251c39a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-birth-ticks-r1.log": {
+      "bytes": 137,
+      "sha256": "e3361918722c5b052ac8c999a158f4baec80a903eb54cd80feede21a04f1f859"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-dry-present-r1.json": {
+      "bytes": 33483,
+      "sha256": "e2dc5bd3e37e3502ba798e03a138e71124cc64ae38d11ed6061a71873e294ddd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-dry-present-r1.log": {
+      "bytes": 180,
+      "sha256": "a4b118f3a9795ba2589821261469c849bbef9d82f33af6f96cd1e5e51c8f9a94"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-dry-present-r2.json": {
+      "bytes": 33470,
+      "sha256": "fc3d5f2b0857c3c550fd7b0a3dfb09d04ee25662d70d206cbf3614d47857f5d0"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-dry-present-r2.log": {
+      "bytes": 181,
+      "sha256": "3a12ac85391bd71364557251e29d67dc48016980025f38545955d2437b04d3d5"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-dry-ticks-r1.json": {
+      "bytes": 25776,
+      "sha256": "caa96e2bb36da5c0d1c3296955af3221c8e1daf186efa4032d2dac2fa2fed2a4"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-dry-ticks-r1.log": {
+      "bytes": 135,
+      "sha256": "2a1049819577c21b271bf25b8f4c84e1f55babd1291c0d87af2c8590a7dd3309"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-steady-present-r1.json": {
+      "bytes": 14892,
+      "sha256": "8f1db319429a2b8e38346245d08e0208fda7a4a4cc432216d4cc173f1e79593d"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-steady-present-r1.log": {
+      "bytes": 173,
+      "sha256": "e7076e89d774edee9906d3e41088f7cf1f42965ad1b7b910a564214ea9557320"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-steady-present-r2.json": {
+      "bytes": 14764,
+      "sha256": "97afa4e10a778b31fa88f4982683eea5626c027d3097a88a769b7b44444b5fdd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-steady-present-r2.log": {
+      "bytes": 173,
+      "sha256": "6a9cc4da4dbd10a407df5e5cf5f9ba58f6d0355580c9249088b3e00dc5ff76d3"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-steady-ticks-r1.json": {
+      "bytes": 10423,
+      "sha256": "535405cc545772e172e41d319555243038dd7b32c2db2429ffcaaaff1aa48aee"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-1-steady-ticks-r1.log": {
+      "bytes": 137,
+      "sha256": "1bb2ae26dda56e1eeff774facdb752cd2a747e2009ae7c611eb9af97a838910b"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-birth-present-r1.json": {
+      "bytes": 42174,
+      "sha256": "35aefdf2892f6ab98012cb8260e81c720a75ccf8e2ddfe8fe430e161663187f6"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-birth-present-r1.log": {
+      "bytes": 187,
+      "sha256": "6f8feef06fffa01d0567d2390e5c846ae008f2132dddd27b37b111a6552834bc"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-birth-present-r2.json": {
+      "bytes": 42208,
+      "sha256": "4466610df57e5d141ebb0cd4e2607a279a5c7ffe0d04018812f1d2048fb848a0"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-birth-present-r2.log": {
+      "bytes": 179,
+      "sha256": "016322022d5be94cd0da8d0c63eaa05dc81c77f67f56357e07a5fb547c1aec46"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-birth-ticks-r1.json": {
+      "bytes": 22775,
+      "sha256": "0f87d76aea1d119b2ec39b5289dd2ccedf5daf78dcd6ce4408f08d5a405a7acd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-birth-ticks-r1.log": {
+      "bytes": 148,
+      "sha256": "d873fa5f54a43e42f63eca984c379dfdc9d10a787ca14772f49d35919e1517cd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-dry-present-r1.json": {
+      "bytes": 45460,
+      "sha256": "5d3a2344df74e6e38e787c49896ed61f785efa901cbcf10e2a43d15cc6e21d32"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-dry-present-r1.log": {
+      "bytes": 176,
+      "sha256": "bffd09e228690f39468cad2288591543c55ee8f9a29c66acb6979ce06804db3e"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-dry-present-r2.json": {
+      "bytes": 45288,
+      "sha256": "c299489afef0b542d236d7c31d80d9809d0301da505637fdf1e4840d260b2f7f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-dry-present-r2.log": {
+      "bytes": 175,
+      "sha256": "04d7c93354d2793461b53ff2e8d4040335582c418a6481b9ac6ee4ed79fb56e0"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-dry-ticks-r1.json": {
+      "bytes": 25276,
+      "sha256": "db564f83467f116d8dda0edf34eb9ac1062ed483f39491ec065ca1a7d66f101e"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-dry-ticks-r1.log": {
+      "bytes": 145,
+      "sha256": "c89166a68710e05acbdd1aa7717f59c41fa6239ac866f9a89273900b59c2503b"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-steady-present-r1.json": {
+      "bytes": 21951,
+      "sha256": "285c7d24f99c057e79f0ed1d6df94e504ac83f8e399397a60569d640c8cfc8ea"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-steady-present-r1.log": {
+      "bytes": 173,
+      "sha256": "ea648a64f68090f8b22cce82a034ebb2c90552427f3ec66b7fafe7dd5f40dc3a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-steady-present-r2.json": {
+      "bytes": 17889,
+      "sha256": "2d4c5d287fdf002ea12ecae26bf9ce9d54eba1569fb89b7570359ff96bd6ed1a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-steady-present-r2.log": {
+      "bytes": 176,
+      "sha256": "19ce93049e51a4b5aa13462a0e62f94a33e1b3ba3ed85ed96b891fa4dcf181ee"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-steady-ticks-r1.json": {
+      "bytes": 11475,
+      "sha256": "8d9c03a72b731761d51f332192eea49996f2328d2b77c2361117d1c95d45076f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-16-steady-ticks-r1.log": {
+      "bytes": 143,
+      "sha256": "742285684953f18eaea3eb7077d5f47b52ae7a77f3b8e68a879f43b1138eb92f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-birth-present-r1.json": {
+      "bytes": 31350,
+      "sha256": "7e66d56d9aaee7422c5e41c71be8b28e95d0493487c08c2b967290807fc9a1c3"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-birth-present-r1.log": {
+      "bytes": 183,
+      "sha256": "9627b9dec9719f809c4425326ac8b3fd4652c35ab68ddc9aca2b2384f5671e85"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-birth-present-r2.json": {
+      "bytes": 30934,
+      "sha256": "1549b56637d05dbc08be0723ab07b05e0cc37bd2944338a4b6af65ce049d2e60"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-birth-present-r2.log": {
+      "bytes": 172,
+      "sha256": "d94ab0c29aa3de0ebdb5c5d6833e25b393b4ff882efd7a2666b1500a1ef41b70"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-birth-ticks-r1.json": {
+      "bytes": 19645,
+      "sha256": "4ac8727d688adfe36833952f0a20e72b44ab5810abd3afe2af0177b40e86be00"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-birth-ticks-r1.log": {
+      "bytes": 145,
+      "sha256": "e89cd31f7dca9347374a5f209847d95fedf0ad50b3d52c730547aab48923403a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-dry-present-r1.json": {
+      "bytes": 38232,
+      "sha256": "28100151b0f22fa6a3b7c42f1c3963cd8019d0dd4ffb884e51e4daed400e59ae"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-dry-present-r1.log": {
+      "bytes": 169,
+      "sha256": "9d35e698a0ed60d4f65feffb9e1a6547f4ca8c9fe56913b7bad6d994246e9fe1"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-dry-present-r2.json": {
+      "bytes": 38530,
+      "sha256": "515617a9f289909c5510478869468d54db43490e01c388c2f7f69bdb8ecad5cc"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-dry-present-r2.log": {
+      "bytes": 182,
+      "sha256": "3d9481fd6b9086d738737ed8a88ab6c7622696af9482dc1681da8dce9f4d793b"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-dry-ticks-r1.json": {
+      "bytes": 24972,
+      "sha256": "01fc13ba59d5d2289e74308924657af3721a1ff50a5998cb0cadd4991bba5481"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-dry-ticks-r1.log": {
+      "bytes": 132,
+      "sha256": "58d5cb9c69076c179685fc14a5322c8b6572d1010f3b66fb5616ebad9eb5339e"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-steady-present-r1.json": {
+      "bytes": 13999,
+      "sha256": "08cf3bfc2f4e5d78b9d4fd5c4ac22afccf0a2b1f11facaab9aa3694aae661bb0"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-steady-present-r1.log": {
+      "bytes": 177,
+      "sha256": "74b4fcb0eac0cdde9346a5fd1d8a63ad68b7f9cea3ef1ea8cfb72986d4eefcb1"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-steady-present-r2.json": {
+      "bytes": 14132,
+      "sha256": "840db3eb0421102fef58b5dded4a8889e0c8cdd3ca63379ee53836d5c6e05178"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-steady-present-r2.log": {
+      "bytes": 183,
+      "sha256": "d081c09c264d5e6cb222095826b3fb76ecb986355cc1ff9d93da0f5eea54dfea"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-steady-ticks-r1.json": {
+      "bytes": 10412,
+      "sha256": "b58095d1f77373f002697e0ba427eafc182698971ff1ada1d1eba1b87363b44c"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-2-steady-ticks-r1.log": {
+      "bytes": 137,
+      "sha256": "d8baf915b0c363fb86b6707eeb1158a6a2512c37a3d1bf6c196331fa45dbeace"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-birth-present-r1.json": {
+      "bytes": 4827,
+      "sha256": "8a97aa122db4e2804a9dbf5bc58f9a1de35ccef98339acc6843c6dd0366f8985"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-birth-present-r1.log": {
+      "bytes": 412,
+      "sha256": "4132e2336383ae9ff7203f11c197b74238103eca8a0b8c79c2024bb0a85ce291"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-birth-ticks-r1.json": {
+      "bytes": 21634,
+      "sha256": "35bcd53487193ab35feaf2ef30959c878d2fb40b8887ce8f8c934d5adc336ca8"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-birth-ticks-r1.log": {
+      "bytes": 141,
+      "sha256": "87a5c1ff77ea80e934556a464da349f121c4b97f9d6895a1f661d402a42d2986"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-dry-present-r1.json": {
+      "bytes": 5107,
+      "sha256": "48e08f571aa69e98b4a5de1e1763e3728f5acf7273504a8525a87bd743b3d6cf"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-dry-present-r1.log": {
+      "bytes": 615,
+      "sha256": "1874b75e1c01909a2fe1dadfe62704f326a611543d8c5a58ed77b2c215f9e1f6"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-dry-ticks-r1.json": {
+      "bytes": 4957,
+      "sha256": "8d4ea7f3d436e4c128f587a23a03e4527549501f45df55da579597c190d36397"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-dry-ticks-r1.log": {
+      "bytes": 566,
+      "sha256": "f8e5a6aed0e8d961f128b12b3ebaa0c4131d510b60116b063c6220626db2577d"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-steady-present-r1.json": {
+      "bytes": 5143,
+      "sha256": "4e6378906136ff24dd4a53a308ced94376f69c21ee878fb4c2277a9f3287a00a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-steady-present-r1.log": {
+      "bytes": 438,
+      "sha256": "88ef3e0b0b2d2dc30c1697b77c1d800524ba2fb48c2d622e482a4088643f6bef"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-steady-ticks-r1.json": {
+      "bytes": 4867,
+      "sha256": "9c8469b6a82bf13049864b75c7000051902e507d22815650e7245b3f3702feaa"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/frame-64-steady-ticks-r1.log": {
+      "bytes": 421,
+      "sha256": "c3381c7f01be13b7d8615c6f6553c68bda894b66a42e220c31805aecda947832"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-birth-present-r1.json": {
+      "bytes": 32566,
+      "sha256": "cc5045ce2ba4fa04a208ec8d645040a633ff40c1dc24f4a5c0b72a0886f64f64"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-birth-present-r1.log": {
+      "bytes": 181,
+      "sha256": "c89b77bfa04b37ee4547ae63b0277cb9c12b90cc75d3f667cb90ebe3ad8f9a3a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-birth-present-r2.json": {
+      "bytes": 32706,
+      "sha256": "bac2d3df1b62c46678bf185c6cfd941d41f2123949c35c865ebf0241903bd398"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-birth-present-r2.log": {
+      "bytes": 189,
+      "sha256": "c842a88559985fd44efe1badcbc54783b409d1effbe0f2ac9a4b871232eb675c"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-birth-ticks-r1.json": {
+      "bytes": 19401,
+      "sha256": "3036b1d21e6c76d635604a3c261b157ecfff7f00ebb70c4fefa617b24e28d12c"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-birth-ticks-r1.log": {
+      "bytes": 149,
+      "sha256": "8e54f5aa029939350b0a31925499313f82f87ca609cf94a9bc8ce49dbc267bfd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-dry-present-r1.json": {
+      "bytes": 38057,
+      "sha256": "d3bd069db2f266113d776a68572f161f0f4928cc0c0401c56b08b07dc6e48c4f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-dry-present-r1.log": {
+      "bytes": 179,
+      "sha256": "e313df6dcf5f821cab2b0464e485fe42d3394cbff703e1a4ce3eb1a59aa3d684"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-dry-present-r2.json": {
+      "bytes": 38060,
+      "sha256": "13dc3970bad253382401e714e37f708ed71bcfd9c2da7b8472f7bfefeb58684d"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-dry-present-r2.log": {
+      "bytes": 177,
+      "sha256": "a7067708ee5e17119db2a5dfc8ca36435a57bee17ce5fdcdd4d25fb3a639952a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-dry-ticks-r1.json": {
+      "bytes": 25433,
+      "sha256": "6085c6ef870fc70d6dd0567b2290891d9840f94dea331614de67b1138d9aa40e"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-dry-ticks-r1.log": {
+      "bytes": 147,
+      "sha256": "217ec7846e8ee4978bcf208db73c424ac64977454d95adcd8b42c207c4589ef8"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-steady-present-r1.json": {
+      "bytes": 15696,
+      "sha256": "961ef0cf75c89c4d75e4724f159250470b5e801ed0515228d4179e4e7e3a4079"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-steady-present-r1.log": {
+      "bytes": 182,
+      "sha256": "358a990f55faf10c573079007458520ef92f61bd1aef0dba2200ae6893b62e00"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-steady-present-r2.json": {
+      "bytes": 15725,
+      "sha256": "b690a2fb557c229fb81bab544de4bf4344953d865b8ed9179301cf4207a78df1"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-steady-present-r2.log": {
+      "bytes": 188,
+      "sha256": "077fe73724f99970e457c693d4ed38a06b8f1c1074b9665f5d21b1181c431bff"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-steady-ticks-r1.json": {
+      "bytes": 10431,
+      "sha256": "1236b2d16e8a921d1d9f170e999f5d8f60a4325a2278b54e79bbf5362780d980"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-1-steady-ticks-r1.log": {
+      "bytes": 144,
+      "sha256": "d24d4cbe2ede6f8af836c65baf3188b8e519c3c8b25712ca87c3318a02d63edc"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-birth-present-r1.json": {
+      "bytes": 48531,
+      "sha256": "c426727ba898ef02432e5e9d903ec43c17ff373f0c9df08d075c097b89e75d86"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-birth-present-r1.log": {
+      "bytes": 183,
+      "sha256": "03f4e2dfb7fef985abc055e39de512b2d9385ae30f9d787ace762b941c356ca7"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-birth-present-r2.json": {
+      "bytes": 47221,
+      "sha256": "dcc0d893dde8b0a99c18a3351faeae569091cfe1b0e01a02744d587282ff71b6"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-birth-present-r2.log": {
+      "bytes": 182,
+      "sha256": "9707754476a50090aa83a4bb386bbc88bd2a955694f15d2f7f3c4fc74b7df4fd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-birth-ticks-r1.json": {
+      "bytes": 24202,
+      "sha256": "444affe5c324aaa2fe152e0de3f18fc50cb782d9480012433fd03826aadb2e5f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-birth-ticks-r1.log": {
+      "bytes": 145,
+      "sha256": "3737aee2595a63632b4f1105cc0dc6e9751816ce9d09b7a555b75aa573a1f48a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-dry-present-r1.json": {
+      "bytes": 56002,
+      "sha256": "163a4cbda6fe2226e86eeaf3528aef1298053f51f34853f9270f6b49056fa6ba"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-dry-present-r1.log": {
+      "bytes": 181,
+      "sha256": "125da6a29ac2460c08aa0e292b27007fee1d71bbd0b7628d6ce31d4375dcca85"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-dry-present-r2.json": {
+      "bytes": 55682,
+      "sha256": "67342a7b35fa6991125561e55be3c41ee8b89145c25843d4954c13b434014442"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-dry-present-r2.log": {
+      "bytes": 179,
+      "sha256": "f5fa9ffbe7878fe0d06c833a6bd069fe7d97e5113b34a47421a4f3c7de35fa70"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-dry-ticks-r1.json": {
+      "bytes": 25520,
+      "sha256": "e1627c216ed054596028ee182b8db47f4fafd0c96372c1520d2489f51d2ee1c0"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-dry-ticks-r1.log": {
+      "bytes": 141,
+      "sha256": "a15428b1fe8f5ac930483bedbfccf9b62746529fa9a30641f00da389e7174172"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-steady-present-r1.json": {
+      "bytes": 23360,
+      "sha256": "0acb5f91c09c2589333ea7c17ba06969ec9820ca2a03108fc547e6a7da517fbd"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-steady-present-r1.log": {
+      "bytes": 181,
+      "sha256": "a34b92fe073a16b287dcdfd1edb4a8d395a6d27b070f54a13a556cbd90fb16fb"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-steady-present-r2.json": {
+      "bytes": 23749,
+      "sha256": "320eb6c3d18298c67870c2642360d1682262348c41d0426a0bf1d5b678f9f084"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-steady-present-r2.log": {
+      "bytes": 181,
+      "sha256": "934f10165e801d363cc364f814be730a81a560dce848b2aa5c93eacc2680af38"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-steady-ticks-r1.json": {
+      "bytes": 11607,
+      "sha256": "b55aa065a7eed8eb741cf33f7c854cd2921e89ba484e1a33b036dd40cb6da932"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-16-steady-ticks-r1.log": {
+      "bytes": 146,
+      "sha256": "9c692cb8f1d9234b097f429789dd632f3442ebac352e8759484f4fcd4fb3bcf2"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-birth-present-r1.json": {
+      "bytes": 39537,
+      "sha256": "4283525441128edde3ef362026fb20fbdaec5605b89b2775a99bf8da2996ab0d"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-birth-present-r1.log": {
+      "bytes": 188,
+      "sha256": "6e27547c5467c6fb188a5b03c2985972bbca085a3adfd8bda2cec81e5290b333"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-birth-present-r2.json": {
+      "bytes": 38536,
+      "sha256": "5a5d2b20188598a7351989ce4f8bdc06f217b6424c62f8541808ff24a0c41250"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-birth-present-r2.log": {
+      "bytes": 189,
+      "sha256": "6b1c5ab092ce1997391862209a739231ef6cdd54155c9e5268138f2760c7c677"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-birth-ticks-r1.json": {
+      "bytes": 19508,
+      "sha256": "8a4987abf8e06049066f7811ee27389419fcc8907a5dd5fd3ed2efedbd536718"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-birth-ticks-r1.log": {
+      "bytes": 142,
+      "sha256": "6f9bd53841f0fd5a0d51c4cf27bc6cd5a390a55efcb2cb4af4b66fd224c377b7"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-dry-present-r1.json": {
+      "bytes": 44417,
+      "sha256": "8b586a9cd3ab7518e94400e04d6c4664082f19a47d5b9076379880e4ed37d40f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-dry-present-r1.log": {
+      "bytes": 178,
+      "sha256": "bb0a8f7ca286eb24e07bb807a38d4b11e21a3b5bd8bd5f3632c87e5b6291558d"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-dry-present-r2.json": {
+      "bytes": 38161,
+      "sha256": "21a45dbd4802b3e6ea6a8f398975b36320f571b6e86748b26cb548570073a8d7"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-dry-present-r2.log": {
+      "bytes": 179,
+      "sha256": "586e2c6601ae29cb297af3dd68c587319f48222d359ad6bf8efc2ce77b22df3d"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-dry-ticks-r1.json": {
+      "bytes": 25379,
+      "sha256": "e64e47264d9923e605a6ad0083e5468e1c4e98aa5ea57bdd1cc94977c938a2e9"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-dry-ticks-r1.log": {
+      "bytes": 147,
+      "sha256": "06f196332e58e92c0acc9cdd6ef0b83cb44b3ad84dd3e858d1fe05eaa8d46d6f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-steady-present-r1.json": {
+      "bytes": 16418,
+      "sha256": "f098badeb131a9103ff1b644ec875a040daff329a7f1bd084d65540f89cfb3cc"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-steady-present-r1.log": {
+      "bytes": 182,
+      "sha256": "fde606622d9b8a56c6743ad87ab2706f11bd68f6204f6e2d131ab9e92096232e"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-steady-present-r2.json": {
+      "bytes": 15916,
+      "sha256": "c9710635db891080d5da7561471d8a69f0465492d059a1c4a29c632f5814f7b4"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-steady-present-r2.log": {
+      "bytes": 178,
+      "sha256": "24097371242e523bd549bca0d7c87e8d0ce59a52be62131d602698500dcc1cae"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-steady-ticks-r1.json": {
+      "bytes": 10845,
+      "sha256": "1380b3951d3e4c880e1cbfcd9e5d60d1a9b0f197374e62aee14b761331f353e2"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-2-steady-ticks-r1.log": {
+      "bytes": 149,
+      "sha256": "3445068300f74e44cef5ba5db457a8231e3a560250ee4907b4f2101c2dbe5dbf"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-birth-present-r1.json": {
+      "bytes": 4799,
+      "sha256": "7a063413a3853ccf9d5c3099ce686b4336409ee964ec85f1f36bc1288e3662bf"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-birth-present-r1.log": {
+      "bytes": 409,
+      "sha256": "e60b09940613115866f5e278ac3744cc802b41c25907c9e64bbcc65d1cbe7a7b"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-birth-ticks-r1.json": {
+      "bytes": 22304,
+      "sha256": "66da9e15bade132c4b7c74fa1b898474a3bc3a2beda025edd25263cabd65c77e"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-birth-ticks-r1.log": {
+      "bytes": 153,
+      "sha256": "99d9080647525ab970b302d6352c3caac4360c4ec887d26d2eb886ef938c08b9"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-dry-present-r1.json": {
+      "bytes": 4849,
+      "sha256": "d4c461f66218e8a96cd3ebaf0eb0bf675161878adb5b386a08609666986756ca"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-dry-present-r1.log": {
+      "bytes": 542,
+      "sha256": "4f62a74947da3a9fd148e8acbc50bfecc524611cadcd7ef5c2829f1e30f80ede"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-dry-ticks-r1.json": {
+      "bytes": 4653,
+      "sha256": "b7ca0546b8f9bdf3775fdf55246f7f018711fbcb0c6cf366467acd68016f981a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-dry-ticks-r1.log": {
+      "bytes": 482,
+      "sha256": "07dc43d084473499c455d0ebafa51003c69beb65943f57c24699c6e7011bbb0b"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-steady-present-r1.json": {
+      "bytes": 4602,
+      "sha256": "c18050134b361265216301b7d3abf8a60b186a0069bbbdc260c0987f6645c259"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-steady-present-r1.log": {
+      "bytes": 369,
+      "sha256": "149a4df63925a40375dacedd1769d9387e11c993ea6e74f0bb19cbe6dd2c9c9f"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-steady-ticks-r1.json": {
+      "bytes": 4715,
+      "sha256": "08510e745c218650505c5cbec4a8784fc8bd0bd1991d7bc149cc3a1e53c6b69c"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/results/publication-64-steady-ticks-r1.log": {
+      "bytes": 390,
+      "sha256": "8a5d1e32f7e8bba0ba34c2f3bdc2f1410b8db180a2e790c102b0bf491bbd509a"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/run-index.json": {
+      "bytes": 14243,
+      "sha256": "ab6ba4b07818bd845c6142ddc00200f36d212b8cb210b8fdfe31f17336844a68"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/run.log": {
+      "bytes": 2524,
+      "sha256": "29de9b786906a59ac87549ec755ab8e6ccca0d844aea7481202668af2949a956"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/run.py": {
+      "bytes": 1592,
+      "sha256": "1614479e81a8bee90ca19180308f9e4df83a4804d115f1e38f3fe9f298f50253"
+    },
+    "cloud-system-cpu-fast-proof/frame-cost/worker.mjs": {
+      "bytes": 12067,
+      "sha256": "cec173a7443a485d48fc8ae6a97ef276c79f98271aebfd790b29c6b0faae3287"
+    },
+    "cloud-system-cpu-fast-proof/index.html": {
+      "bytes": 5488,
+      "sha256": "edd379c76086cda77a18eb4742e26eb9aeb6128915ae0be1138f460f1dd8df17"
+    },
+    "cloud-system-cpu-fast-proof/serve.py": {
+      "bytes": 3410,
+      "sha256": "a74a40612cf696c1dd06bdf9ee0b351e1519cf573ea0ca605b67d4034004a3ea"
+    },
+    "cloud-system-cpu-fast-proof/shaders/air.wgsl": {
+      "bytes": 426,
+      "sha256": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd"
+    },
+    "cloud-system-cpu-fast-proof/shaders/component-source.wgsl": {
+      "bytes": 2942,
+      "sha256": "8b422e2c590d0e6a9b0336c776b6a496dd702f3d196e57ebf755e7f1307dad90"
+    },
+    "cloud-system-cpu-fast-proof/shaders/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-cpu-fast-proof/shaders/light.wgsl": {
+      "bytes": 594,
+      "sha256": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05"
+    },
+    "cloud-system-cpu-fast-proof/shaders/optics.wgsl": {
+      "bytes": 7571,
+      "sha256": "b114c861825865962741c9dc1b9fa157aaec0995d40cf9c368b305fca5dcae15"
+    },
+    "cloud-system-cpu-fast-proof/shaders/shadow.wgsl": {
+      "bytes": 531,
+      "sha256": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3"
+    },
+    "cloud-system-cpu-fast-proof/shaders/view.wgsl": {
+      "bytes": 6563,
+      "sha256": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406"
+    },
+    "cloud-system-cpu-fast-proof/src/bench/app.js": {
+      "bytes": 18019,
+      "sha256": "3ed2b6d435665a474909d0029a6579538c2a8b55f08f2068042a70bba19b0f10"
+    },
+    "cloud-system-cpu-fast-proof/src/bench/motion.js": {
+      "bytes": 2738,
+      "sha256": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf"
+    },
+    "cloud-system-cpu-fast-proof/src/bench/trace.js": {
+      "bytes": 434,
+      "sha256": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e"
+    },
+    "cloud-system-cpu-fast-proof/src/render/CONTRACT.md": {
+      "bytes": 2475,
+      "sha256": "9d8316360f7e87eb084330472595ef7037e8b36465a200dfcbe6bab8931907de"
+    },
+    "cloud-system-cpu-fast-proof/src/render/adapter.js": {
+      "bytes": 10035,
+      "sha256": "5ca7f4f82eb4132489304858e066fc251aca4a146f236ec9d96707572aa6b784"
+    },
+    "cloud-system-cpu-fast-proof/src/render/assets.js": {
+      "bytes": 4470,
+      "sha256": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a"
+    },
+    "cloud-system-cpu-fast-proof/src/render/frame-lifecycle.js": {
+      "bytes": 1696,
+      "sha256": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18"
+    },
+    "cloud-system-cpu-fast-proof/src/render/gpu.js": {
+      "bytes": 6519,
+      "sha256": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77"
+    },
+    "cloud-system-cpu-fast-proof/src/render/held-oracle.js": {
+      "bytes": 4303,
+      "sha256": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60"
+    },
+    "cloud-system-cpu-fast-proof/src/render/lighting-profile.js": {
+      "bytes": 870,
+      "sha256": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac"
+    },
+    "cloud-system-cpu-fast-proof/src/render/reference.js": {
+      "bytes": 1870,
+      "sha256": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9"
+    },
+    "cloud-system-cpu-fast-proof/src/render/scene.js": {
+      "bytes": 39334,
+      "sha256": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a"
+    },
+    "cloud-system-cpu-fast-proof/src/source/admission-policy.js": {
+      "bytes": 12309,
+      "sha256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+    },
+    "cloud-system-cpu-fast-proof/src/source/admission-policy.provenance.json": {
+      "bytes": 212,
+      "sha256": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49"
+    },
+    "cloud-system-cpu-fast-proof/src/source/clock.js": {
+      "bytes": 2928,
+      "sha256": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96"
+    },
+    "cloud-system-cpu-fast-proof/src/source/math.js": {
+      "bytes": 3558,
+      "sha256": "1eca92cb5966bd5f58c416a0f28a37a3a02c37f6a22cfdff0b685bc3b640c553"
+    },
+    "cloud-system-cpu-fast-proof/src/source/model.js": {
+      "bytes": 20889,
+      "sha256": "087c84f8aca679c75b7551bf2d8561b8b81142d000ee3e0fbef783283f2e8da2"
+    },
+    "cloud-system-cpu-fast-proof/src/source/reference.js": {
+      "bytes": 2457,
+      "sha256": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+    },
+    "cloud-system-cpu-fast-proof/src/source/weather.js": {
+      "bytes": 1759,
+      "sha256": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da"
+    },
+    "cloud-system-cpu-fast-proof/style.css": {
+      "bytes": 1490,
+      "sha256": "2777e311275761435b29f9e8dde0af2b84d0624bc4c727281ad7b3565b896f0a"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/adapter-publish.test.mjs": {
+      "bytes": 1968,
+      "sha256": "5b9fd37cfd0d53c8ea0a4a9825f482576fb3ef0536e8ff4229d6b0bf16ac037c"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assembled/air.wgsl": {
+      "bytes": 7998,
+      "sha256": "475fb99876f556705d6eec3bd0ba5de9eab4b10ce8be7f8089181901dd80778e"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assembled/display.wgsl": {
+      "bytes": 707,
+      "sha256": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assembled/light.wgsl": {
+      "bytes": 8166,
+      "sha256": "73fb243d9ecebcc65d28366cf739a7be24e08451148074e6622541801a83b78b"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assembled/probe.wgsl": {
+      "bytes": 7955,
+      "sha256": "35b1f4bc6699a621f16b6443d7ef7f202432f2b5b62643740d3c5ff89dd63b28"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assembled/shadow.wgsl": {
+      "bytes": 8103,
+      "sha256": "d87492db22d4e90a8f2daa374abfacc170153dc416cd8866aeb1a173889fcfa6"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assembled/view.wgsl": {
+      "bytes": 14135,
+      "sha256": "f3ef354dc8ba8d23d34b44631f5e635fb9bd0cf3d79e2bb848cb348fbf61ff4c"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/assets.test.mjs": {
+      "bytes": 1473,
+      "sha256": "99e11f19403de173a44b28a7a874cc100eb2e6f4a92c748ba19595fa82e982eb"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/integration-contract.test.mjs": {
+      "bytes": 2947,
+      "sha256": "1317be771b6c4d5b03ce0aac9f5a9b4b868aa538270a76322470d16034ee4f04"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/source-query.test.mjs": {
+      "bytes": 1970,
+      "sha256": "8778b2f7a3484e48db5afcb450f9ea5dcf29456b34a6cb938a47dde3f14e28de"
+    },
+    "cloud-system-cpu-fast-proof/tests/render/trace.test.mjs": {
+      "bytes": 734,
+      "sha256": "ed7ed0e5df08d6b3e4c21748eaaaaa0a709ed19435bfe45ef06ba94b7be78903"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/HANDOFF.json": {
+      "bytes": 5546,
+      "sha256": "a6d23eeb087ccba41a7f248e511aa06ec9f02d902951724dbdf784aeb1d31b2a"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/HANDOFF.md": {
+      "bytes": 4535,
+      "sha256": "fdee782e0bb41f3a905e078f7cfc1e746a6c543866e2214461a42878f6a0f7f8"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/clock-hardening.patch": {
+      "bytes": 1102,
+      "sha256": "90001b834b894d407fd4ef74b6891cf67256aca957254873407aae2a8027f13d"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/clock-profile-results.json": {
+      "bytes": 486,
+      "sha256": "e48da1b02420b409a7c72ff5e4588796865233e28351e946655f209d461cbea7"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/clock-profile.mjs": {
+      "bytes": 1719,
+      "sha256": "bf129449049ac5ac01502b4e312ed05a99582994d811558171efc01dc31e1c50"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/contracts-results.json": {
+      "bytes": 925,
+      "sha256": "ea12441a88173317e3e138e9ec28212601e92998158cb8e7e9a74a7f023939a2"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/contracts.mjs": {
+      "bytes": 5738,
+      "sha256": "74c2285464d90931f23af13722c1be3553be6b739cff770d3cbc3f7f7fac5549"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/control-domain-before-fix.json": {
+      "bytes": 351,
+      "sha256": "bda4459b2443426171c357a1385d0dcc999c7f2a046e9096faff9095f6ca297c"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/control-domain-result.json": {
+      "bytes": 164,
+      "sha256": "8ef801d8e4de86970d4c68e974d4ff408839b08a201a5154487319e652efb391"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/control-domain.mjs": {
+      "bytes": 1449,
+      "sha256": "2be6614aadbbbbec82bc050775926b4285a5c8e51002e1eeebe58af2991a153d"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/fixtures.mjs": {
+      "bytes": 1435,
+      "sha256": "5b55a763877e58072d43400f7e4ac61cae5b49865f2b4cf976722fb4fac5358f"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/portable-results.json": {
+      "bytes": 1653,
+      "sha256": "8a547fd62bf3a3981ccfafc8def291a2c9cb0ed388985498391225fd41306543"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/portable.py": {
+      "bytes": 2052,
+      "sha256": "3e5470a97dfe992d1711705df366a982efd6287c61dd12a25bdf91608b03100f"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/presentation-status.mjs": {
+      "bytes": 962,
+      "sha256": "74bfe6ed0e2a52e80a66515766930eada330b32bf84088789a18d5500d5203ca"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/reference-continuation.mjs": {
+      "bytes": 969,
+      "sha256": "de9fab82baf4e26348c7b3bc3e484263328997b20f2a815bee846f4166dbe043"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/reference-results.json": {
+      "bytes": 873,
+      "sha256": "9fe9e4384e1fc8f7a7c85d70b0becd6c49c4d49032e222ff9f9b9a0fc1fad85c"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/reference.mjs": {
+      "bytes": 3433,
+      "sha256": "f9b692a46dfc9961237c1ee76bd072c38e17010bd88d33bd5269c1097a1a3cf0"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/replay-results.json": {
+      "bytes": 40291,
+      "sha256": "77db46e9ae243b4d2c4d0f59a74a44b0d8c981283ed883035df19146e6a46248"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/replays.mjs": {
+      "bytes": 2411,
+      "sha256": "7e552bb0487d27539cd1248810db35dc260ee925629d6ab668aa0a35de9bab3c"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/clock-profile.log": {
+      "bytes": 436,
+      "sha256": "8a6d038a989941bda6600aa5a846f50a9200ecb8cd7185c36da75fbdbbcfe28f"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/contracts.log": {
+      "bytes": 759,
+      "sha256": "af8a1d33454deb9cf6bc88f7cd9cab32f5a681302d040e87e1d782d707d7c24b"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/control-domain.log": {
+      "bytes": 37,
+      "sha256": "c6a85533ce02066d173bc6854611f1247ef6788e435b926dd47779c38915b5bd"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/presentation-status.log": {
+      "bytes": 78,
+      "sha256": "a3ad45ec54e99801e12bdb30d18e74f33b461e18c200eaee23e047224e0bcdd5"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/reference-continuation.log": {
+      "bytes": 151,
+      "sha256": "324acec18698d75264c28b82f19b872561407a2a22eeaf525e46dff69ff5762d"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/reference.log": {
+      "bytes": 687,
+      "sha256": "2c69f12072535d493e0d87e128c468a2764abad5817c9c97a9e0540a24cae965"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/replays.log": {
+      "bytes": 1743,
+      "sha256": "944421cd1b2a67aeb9c19c7bd666e00b74648e4fc4a0ab5e94007588db496e74"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run-logs/smoke.log": {
+      "bytes": 20201,
+      "sha256": "dc6be4ea6fabded0eeb4304fcac9a712566152637f9bd574e2be2a3a02fa78a5"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/run.mjs": {
+      "bytes": 3673,
+      "sha256": "ff16bddd6d1079133ea01f3bfbc1e366fc82d0f55b810d48de3b72257058b488"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/smoke.mjs": {
+      "bytes": 862,
+      "sha256": "73e970cd5d00e09727b1e679817883df3b3fc1a85fa87c084dcaea207dc1acf1"
+    },
+    "cloud-system-cpu-fast-proof/tests/source/suite-results.json": {
+      "bytes": 25171,
+      "sha256": "c9768ac3c421050927d8332e2f5ccc0709c80ea9a8e5f05dc28ab2e83f975f6a"
+    },
+    "cloud-system-cpu-fast-proof/verification/differential-results.json": {
+      "bytes": 4834,
+      "sha256": "4e509f5bd4c3d9c852615af3f90f60a62460d23e9f22e95e9c17772d6a3a9f32"
+    },
+    "cloud-system-cpu-fast-proof/verification/differential.log": {
+      "bytes": 3285,
+      "sha256": "591f687099b79cb9fc8519c4cde2169acaa2731292171fe6bb916919d8e2dff4"
+    },
+    "cloud-system-cpu-fast-proof/verification/differential.mjs": {
+      "bytes": 5560,
+      "sha256": "2ac5caa69918dc99b6c488557172bcdf1d9651d46839cd84d1503eb8d1ebc5e3"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-attempt1-differential.log": {
+      "bytes": 594,
+      "sha256": "1fe752944b1c5d27e7c56da7fade293aa2f549cb03509303737b1ce1ba74d315"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-attempt1-differential.mjs": {
+      "bytes": 5555,
+      "sha256": "a7177c340643ffb67533a37f86afe745ed090d0f3781ed61e95b2c2f0f5f7683"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-attempt1-failure.json": {
+      "bytes": 1301,
+      "sha256": "c55c49592f7de0662411a2616510b17170acf0f3e4372b71cfe18deab8902d99"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-contracts-results.json": {
+      "bytes": 481,
+      "sha256": "60666ded427567d48ded0d40dc09c3787b5d7c946024cf2f9a2f3f2f26ef01df"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-contracts.log": {
+      "bytes": 428,
+      "sha256": "b1b9c720302cdf04d2bea6a52d65f9705abcf1a9cea37e95318eff8d016ea5dc"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-contracts.mjs": {
+      "bytes": 3576,
+      "sha256": "9bd5bfa378343967136ecb41d9fcabb55006e3a4653ec9ab7c8f6a716ef50365"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-differential-results.json": {
+      "bytes": 4829,
+      "sha256": "a1880a6009b4ef3b0a5b5e0f4329700d9097a523503e7a4400e90f08057cd6ee"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-differential.log": {
+      "bytes": 3280,
+      "sha256": "2387e23d323363625cbb1a0fe44c3d25d51da05cff79fc9c46787f242728dff9"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-differential.mjs": {
+      "bytes": 5756,
+      "sha256": "54fba72a99d1710a3d45b88fc5277a858b9d0b1fe2099f6f4948dbd1d7c00559"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-field-results.json": {
+      "bytes": 305,
+      "sha256": "999d2f85a95ecf343eabb497ceac356363fe3042752b0f34f8507490a6d7c220"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-field.log": {
+      "bytes": 272,
+      "sha256": "16778d7b5254ef586f62930925fb09eb9fb06cb56beaa2189620573a289ac937"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-field.mjs": {
+      "bytes": 1890,
+      "sha256": "042874bb6c868aa8c3bd3d943f4e91044865ca8105e7dbe31daac8d38a397a97"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-render-suite.log": {
+      "bytes": 854,
+      "sha256": "9cf9d4386d2e36f8dacc0f549753ff9ee2338310d4f2ee60f8aa0c66deef952b"
+    },
+    "cloud-system-cpu-fast-proof/verification/frame-source-suite.log": {
+      "bytes": 222,
+      "sha256": "103e1ee8d92773e4d48a38479ec941940bd97a86978f9ce68d543c3f766f3482"
+    },
+    "cloud-system-cpu-fast-proof/verification/patch-restore/src/source/math.js": {
+      "bytes": 5436,
+      "sha256": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862"
+    },
+    "cloud-system-cpu-fast-proof/verification/patch-restore/src/source/model.js": {
+      "bytes": 21026,
+      "sha256": "e21f9f5163f0a183136ce02a2d2cc9d6d5f6459943acfc5fa3254ba8ec8ae70e"
+    },
+    "cloud-system-cpu-fast-proof/verification/patch-restore.log": {
+      "bytes": 71,
+      "sha256": "197d2a608ef96c6f147101ee6a71d40df2c8d55b8705044d2ef19c21e38ea987"
+    },
+    "cloud-system-cpu-fast-proof/verification/render-suite.log": {
+      "bytes": 851,
+      "sha256": "381e16e47552e592b665d17f530853c0831372c8ebe0b887d2b2f7f8546c3177"
+    },
+    "cloud-system-cpu-fast-proof/verification/source-suite-resource.json": {
+      "bytes": 191,
+      "sha256": "4e913804ae3525bccb4ede09852785b70b7556ba99c922c827de16e52f18e8b2"
+    },
+    "cloud-system-cpu-fast-proof/verification/source-suite.log": {
+      "bytes": 222,
+      "sha256": "1c290790a83dc0c188b5e7ed2607d47ca063f18364c0e00975a2873e14d59f5e"
+    },
+    "cloud-system-cpu-fast-proof/verify.py": {
+      "bytes": 3304,
+      "sha256": "7ce0eb5e16ae6bcdb73654cd66b6b43befee04e147ec9373b4df5d6cd9282ec5"
+    }
+  },
+  "external_by_decoded_sha256": {
+    "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11": {
+      "bytes": 65536,
+      "destinations": [
+        "cloud-system-proof/assets/noise/channels-32.r16f",
+        "cloud-system-cpu-fast-proof/assets/noise/channels-32.r16f",
+        "cloud-system-cpu-fast-proof/frame/assets/noise/channels-32.r16f",
+        "cloud-system-cpu-fast-proof/frame-attempt1/assets/noise/channels-32.r16f"
+      ],
+      "gzip_file": "../cloud-geometry-operators-2026-11-03/inputs/volumes/channels-32.r16f.gz",
+      "gzip_sha256": "66717a7dcb15e80502ed2fcb68cd8dbbc8a7810cc8870e95fd9852c78b63d6f6",
+      "gzip_bytes": 50997
+    },
+    "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19": {
+      "bytes": 6291456,
+      "destinations": [
+        "cloud-system-proof/assets/templates/body.density.r16f",
+        "cloud-system-cpu-fast-proof/assets/templates/body.density.r16f",
+        "cloud-system-cpu-fast-proof/frame/assets/templates/body.density.r16f",
+        "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/body.density.r16f"
+      ],
+      "gzip_file": "../cloud-component-proof-2026-11-03/inputs/v2-body.density.r16f.gz",
+      "gzip_sha256": "152c3dc6fce34c105fdacda3cd9c46362af1ec8cd98958b78d08337aa2cba8f5",
+      "gzip_bytes": 838091
+    },
+    "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14": {
+      "bytes": 6291456,
+      "destinations": [
+        "cloud-system-proof/assets/templates/body.distance.r16f",
+        "cloud-system-cpu-fast-proof/assets/templates/body.distance.r16f",
+        "cloud-system-cpu-fast-proof/frame/assets/templates/body.distance.r16f",
+        "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/body.distance.r16f"
+      ],
+      "gzip_file": "../cloud-component-proof-2026-11-03/inputs/v2-body.distance.r16f.gz",
+      "gzip_sha256": "2fe5614f2d3f9dee90c8468132318307fad8054185d7e9657b305c56be650a42",
+      "gzip_bytes": 2487746
+    },
+    "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9": {
+      "bytes": 1769472,
+      "destinations": [
+        "cloud-system-proof/assets/templates/crown-b.density.r16f",
+        "cloud-system-cpu-fast-proof/assets/templates/crown-b.density.r16f",
+        "cloud-system-cpu-fast-proof/frame/assets/templates/crown-b.density.r16f",
+        "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/crown-b.density.r16f"
+      ],
+      "gzip_file": "../cloud-component-proof-2026-11-03/inputs/v2-crown-b.density.r16f.gz",
+      "gzip_sha256": "c04b85b5c992ac12d7d147727e43e201c6eab15df7eb436dd55e2a41d545a5a8",
+      "gzip_bytes": 119606
+    },
+    "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416": {
+      "bytes": 1769472,
+      "destinations": [
+        "cloud-system-proof/assets/templates/crown-b.distance.r16f",
+        "cloud-system-cpu-fast-proof/assets/templates/crown-b.distance.r16f",
+        "cloud-system-cpu-fast-proof/frame/assets/templates/crown-b.distance.r16f",
+        "cloud-system-cpu-fast-proof/frame-attempt1/assets/templates/crown-b.distance.r16f"
+      ],
+      "gzip_file": "../cloud-component-proof-2026-11-03/inputs/v2-crown-b.distance.r16f.gz",
+      "gzip_sha256": "bc1702f18f031eaccf19f7d8f2c67af679a96041b6fb60bd8cfec89f70842f3a",
+      "gzip_bytes": 655289
+    }
+  },
+  "native_storage": "Decode eachuniqueSHA once thenhardlink destinations. No payload included in this package.",
+  "scope": "Original cost study and exact publication/frame CPU candidates/outcomes; combined CPU candidate not adopted or live."
+}

@@ -1,0 +1,53 @@
+{
+  "initial": {
+    "meanX": 4,
+    "meanZ": 0,
+    "shearX": 0.002,
+    "shearZ": 0,
+    "uplift": 0.15,
+    "moist": true,
+    "lift": true,
+    "frontX": -2500,
+    "frontStart": 420,
+    "frontSpeed": 50,
+    "frontWidth": 800,
+    "dryGain": 1
+  },
+  "commands": [
+    {
+      "time": 150,
+      "controls": {
+        "meanX": 0,
+        "meanZ": 6,
+        "shearX": 0,
+        "shearZ": -0.0015,
+        "uplift": 0.25,
+        "moist": true,
+        "lift": true,
+        "frontX": -2500,
+        "frontStart": 420,
+        "frontSpeed": 50,
+        "frontWidth": 800,
+        "dryGain": 0
+      }
+    },
+    {
+      "time": 500,
+      "controls": {
+        "meanX": 0,
+        "meanZ": 6,
+        "shearX": 0,
+        "shearZ": -0.0015,
+        "uplift": 0.25,
+        "moist": true,
+        "lift": true,
+        "frontX": 522,
+        "frontStart": 500,
+        "frontSpeed": 35,
+        "frontWidth": 800,
+        "dryGain": 1
+      }
+    }
+  ],
+  "scope": "Two future commands entered at actual browser source100; applied to existing matter, not a loading clip. This file reproduces the same physical activation ticks."
+}

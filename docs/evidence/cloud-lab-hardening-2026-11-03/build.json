@@ -1,0 +1,67 @@
+{
+  "identity": {
+    "build": "c3e0ebee9680337c",
+    "files": {
+      "assets/admission/admission.json": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+      "assets/input-index.json": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+      "assets/noise/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+      "assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "assets/templates/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "assets/templates/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "assets/templates/body.json": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+      "assets/templates/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "assets/templates/crown-b.distance.r16f": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+      "assets/templates/crown-b.json": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918",
+      "assets/templates/original-FROZEN-INPUTS.json": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+      "assets/templates/original-body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "assets/templates/original-crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "index.html": "edd379c76086cda77a18eb4742e26eb9aeb6128915ae0be1138f460f1dd8df17",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "8b422e2c590d0e6a9b0336c776b6a496dd702f3d196e57ebf755e7f1307dad90",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "b114c861825865962741c9dc1b9fa157aaec0995d40cf9c368b305fca5dcae15",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench/app.js": "3ed2b6d435665a474909d0029a6579538c2a8b55f08f2068042a70bba19b0f10",
+      "src/bench/motion.js": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf",
+      "src/bench/trace.js": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e",
+      "src/render/adapter.js": "5ca7f4f82eb4132489304858e066fc251aca4a146f236ec9d96707572aa6b784",
+      "src/render/assets.js": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a",
+      "src/render/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/render/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/render/held-oracle.js": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60",
+      "src/render/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/render/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/render/scene.js": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a",
+      "src/source/admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+      "src/source/clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+      "src/source/math.js": "1eca92cb5966bd5f58c416a0f28a37a3a02c37f6a22cfdff0b685bc3b640c553",
+      "src/source/model.js": "675edc8de1d0ad197434be3ae1b04ea4f842362fa1ec8d227e1ae878a0a7133b",
+      "src/source/reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+      "src/source/weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+      "style.css": "2777e311275761435b29f9e8dde0af2b84d0624bc4c727281ad7b3565b896f0a"
+    }
+  },
+  "archive": "instrument-c3e0ebee9680337c.zip",
+  "archive_sha256": "eb378d51bbd71d93f905a1db8e5d761715eb5cf647e6bcb092d46de1b65b274f",
+  "external": {
+    "assets/templates/body.density.r16f": {
+      "gzip": "../cloud-component-proof-2026-11-03/inputs/v2-body.density.r16f.gz",
+      "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19"
+    },
+    "assets/templates/body.distance.r16f": {
+      "gzip": "../cloud-component-proof-2026-11-03/inputs/v2-body.distance.r16f.gz",
+      "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14"
+    },
+    "assets/templates/crown-b.density.r16f": {
+      "gzip": "../cloud-component-proof-2026-11-03/inputs/v2-crown-b.density.r16f.gz",
+      "sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9"
+    },
+    "assets/templates/crown-b.distance.r16f": {
+      "gzip": "../cloud-component-proof-2026-11-03/inputs/v2-crown-b.distance.r16f.gz",
+      "sha256": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416"
+    }
+  },
+  "qualification": "Actual integrated pilot; see README for separately judged source, motion, correctness and cost."
+}

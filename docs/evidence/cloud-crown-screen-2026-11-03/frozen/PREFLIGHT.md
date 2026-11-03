@@ -1,0 +1,17 @@
+# Pinned structured-crown preflight
+
+Planning written before any native allocations or rendering. Owner: cloud_core_review. CPU work is held until root explicitly releases the source timing window.
+
+Only this directory is writable. Frozen master/component/current-source files are read-only inputs. No SciPy, EDT, GPU/browser, full source cook, candidate search, density rescaling or threshold relaxation.
+
+Inputs: original cloud-03-256 R16 (32 MiB, streamed SHA then read-only mmap); frozen v2 BODY rho/d, B metadata/rho; shared32³ R16 noise; actual source220 capture4 tuple and captures4/5/6 cameras. All input hashes are recorded and checked against receipts/metadata. New mask is exactly the commissioned path R12→24 plus upper R20/depth R16, compact polynomial smoothmax3 in fixed order. Path simplification uses deterministic RDP1m and verifies both directions by .125m samples with an additional .0625m distance guard; reject if guarded maximum exceeds2m. No smoothing among stem sections.
+
+Native construction: three 96³ Float16 arrays (5,308,416 B total); 4-Z slabs at96²; float coordinate/mask temporaries under2 MiB. No full decoded master, 3D argwhere, mesh or EDT. Candidate arrays are in memory only, not delivered runtime payloads. Whole input files remain mmap Float16. Body rho+d12 MiB, master32 MiB, oldB1.69 MiB, noise64KiB may be resident; mapped files count toward RSS.
+
+Screens: streamed native bounds/mass/faces; eight-corner minimum-rho interpolation-cell lower bounds (one95³ F32 array,3.27 MiB); local bounded boxes around fixed6m root/path/head spheres and expanded support spheres. The expanded screen uses radius6+8+2sqrt(3)+.13m, checking cell minima≥.001, sufficient only and not a post-EDT certificate. No global nearest-bad search. Root/chain/head lower bounds remain raw masked-rho predictions.
+
+Projection: front/side native axis Beer integration at scale6; perspective front/side/oblique256×144 rays,48° vertical FOV,8world-m midpoint steps. Three candidates share identical cameras/ray samples. Isolated B uses source220 ID5 pose, a fixed closer camera1200m targeting root/head midpoint, same yaw/pitch; composite uses actual capture4/5/6 camera poses and all source220 parts. BODY retains actual fresh-distance taper, age and global a/512 material noise. Weather is exactly zero at220 (captured update count0); reject otherwise. B is rho only before new distance exists, so raw/old/new B are explicitly upper bounds to eventual fresh-tapered q. One-formation max at each ray point precedes integration. No lighting or scattering is represented.
+
+Ray tiles:8 image rows×8 depth samples×256 rays=16,384 points. Query/coords/interpolation/max buffers conservatively<12 MiB; image accumulators<2 MiB. Native candidate arrays+one cell lower array+ray/image scratch<24 MiB; target working arrays<32 MiB. Interpreter/NumPy/Pillow ~30–45 MiB plus mapped inputs<50 MiB gives planned peak≤128 MiB. Guard before/after each slab, cell screen and ray tile: early112 MiB, hard160 MiB; reserve tests stop before allocations projected to exceed early threshold. Actual RSS/high-water and array accounting are saved. Root may monitor externally. No GC used to mask a failed limit.
+
+Expected CPU 1–4 minutes, output under8 MiB (six perspective contacts, two native-axis contacts, small JSON/code/README). If cost guard trips, retain adverse receipt and stop rather than changing recipe/quality silently. Author will inspect images and return one honest recommendation; root owns visual selection and any further cook commission.

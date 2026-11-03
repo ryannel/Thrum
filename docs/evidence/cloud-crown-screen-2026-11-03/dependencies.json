@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "scope": "Exact preflight inputs; shared binary payloads are retained once in sibling evidence packages",
+  "original_master": "CC0 JangaFX03 static input; see sibling authored-masters package selected-vdbs.zip and licence/provenance",
+  "inputs": [
+    {
+      "kind": "gzip",
+      "container": "../cloud-authored-masters-2026-11-03/instrument/assets/cloud-03-256.density.r16f.gz",
+      "container_sha256": "3fb5b8b115a164b87d4bc80ce5e4ac8daa6d4829d57f0dbceddbdfde28bc4163",
+      "container_bytes": 1383988,
+      "target": "cloud-authored-master/cloud-03-256.density.r16f",
+      "decoded_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+      "decoded_bytes": 33554432
+    },
+    {
+      "kind": "gzip",
+      "container": "../cloud-component-proof-2026-11-03/inputs/v2-body.density.r16f.gz",
+      "container_sha256": "152c3dc6fce34c105fdacda3cd9c46362af1ec8cd98958b78d08337aa2cba8f5",
+      "container_bytes": 838091,
+      "target": "cloud-component-content-v2/body.density.r16f",
+      "decoded_sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "decoded_bytes": 6291456
+    },
+    {
+      "kind": "gzip",
+      "container": "../cloud-component-proof-2026-11-03/inputs/v2-body.distance.r16f.gz",
+      "container_sha256": "2fe5614f2d3f9dee90c8468132318307fad8054185d7e9657b305c56be650a42",
+      "container_bytes": 2487746,
+      "target": "cloud-component-content-v2/body.distance.r16f",
+      "decoded_sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "decoded_bytes": 6291456
+    },
+    {
+      "kind": "gzip",
+      "container": "../cloud-component-proof-2026-11-03/inputs/v2-crown-b.density.r16f.gz",
+      "container_sha256": "c04b85b5c992ac12d7d147727e43e201c6eab15df7eb436dd55e2a41d545a5a8",
+      "container_bytes": 119606,
+      "target": "cloud-component-content-v2/crown-b.density.r16f",
+      "decoded_sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "decoded_bytes": 1769472
+    },
+    {
+      "kind": "zip",
+      "container": "../cloud-system-pilot-2026-11-03/instrument-73bdfdc76eb3cdf4.zip",
+      "container_sha256": "b652f5d661a5cccdaf05c827f8bb5d22c8e7d4232f135b27cb3444b2156b6580",
+      "container_bytes": 185316,
+      "target": "cloud-system-proof/assets/noise/channels-32.r16f",
+      "decoded_sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "decoded_bytes": 65536,
+      "member": "assets/noise/channels-32.r16f"
+    },
+    {
+      "kind": "copy",
+      "container": "inputs/body.json",
+      "target": "cloud-component-content-v2/body.json",
+      "decoded_sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "decoded_bytes": 9097
+    },
+    {
+      "kind": "copy",
+      "container": "inputs/crown-b.json",
+      "target": "cloud-component-content-v2/crown-b.json",
+      "decoded_sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "decoded_bytes": 11486
+    },
+    {
+      "kind": "copy",
+      "container": "inputs/system-t220000-mode0-c3e0ebee9680337c-eea93588-4.json",
+      "target": "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-4.json",
+      "decoded_sha256": "2eb4b6c9a88a0f18f1ea7f3b0d05fe82f7c86b30415cddc7be8311e0f209f0eb",
+      "decoded_bytes": 50162
+    },
+    {
+      "kind": "copy",
+      "container": "inputs/system-t220000-mode0-c3e0ebee9680337c-eea93588-5.json",
+      "target": "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-5.json",
+      "decoded_sha256": "54d8095408a9f1b008dcdc898753f02c4b814f4ff9f8fe9e15fc7da73ca47e52",
+      "decoded_bytes": 50181
+    },
+    {
+      "kind": "copy",
+      "container": "inputs/system-t220000-mode0-c3e0ebee9680337c-eea93588-6.json",
+      "target": "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-6.json",
+      "decoded_sha256": "ce799ee499888ab9348e94687cd7517546a705ec6b5987148d9f207acb484c3f",
+      "decoded_bytes": 50167
+    }
+  ]
+}

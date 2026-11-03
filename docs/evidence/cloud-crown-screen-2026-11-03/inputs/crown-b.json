@@ -1,0 +1,462 @@
+{
+  "id": "crown-b",
+  "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "source_file_reference": "../cloud-authored-master/cloud-03-256.density.r16f",
+  "source_license": "CC0; see masterprovenance",
+  "domain_origin_global_xyz_local_m": [
+    104,
+    160,
+    128
+  ],
+  "domain_span_local_m": [
+    192,
+    192,
+    192
+  ],
+  "dimensions_xyz": [
+    96,
+    96,
+    96
+  ],
+  "pitch_local_m": 2,
+  "basis_units": "LOCALmetres/density, no bakedworldscale; perinstanceb=s*g; worldintegral=b\u00b3localintegral",
+  "array_storage": "little-endian Float16, Xfastest, numpy[Z,Y,X]",
+  "texture_coordinate_contract": "uv=(global material xyz\u2212origin)/span; texelcentres origin+(i+.5)*2; return0 outside domain",
+  "root_global_xyz_local_m": [
+    225,
+    265,
+    197
+  ],
+  "recipe": {
+    "id": "crown-b",
+    "origin": [
+      104,
+      160,
+      128
+    ],
+    "span": [
+      192,
+      192,
+      192
+    ],
+    "root": [
+      225,
+      265,
+      197
+    ],
+    "rounded_controls": [
+      [
+        225,
+        265,
+        197,
+        33
+      ],
+      [
+        221,
+        295,
+        207,
+        40
+      ]
+    ],
+    "w_half": 8
+  },
+  "zero_all_six_border_faces": true,
+  "density": {
+    "file": "crown-b.density.r16f",
+    "bytes": 1769472,
+    "sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "max_abs_half_rounding": 0.00012186169624328613
+  },
+  "distance": {
+    "file": "crown-b.distance.r16f",
+    "bytes": 1769472,
+    "sha256": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+    "definition": "EDT(rho>=.001)\u2212EDT(rho<.001), opposite-class sample centres,2m; separatefreshprocess signs float32\u2192half then disjointmerge; exactly same signedfloat32\u2192half",
+    "iso": 0.001,
+    "min_decoded_local_m": -160.5,
+    "max_decoded_local_m": 33.8125,
+    "max_abs_half_rounding_local_m": 0.0624847412109375
+  },
+  "reference": {
+    "definition": "separate decoded rho/d samples then rho*smoothstep(\u22128,8,d), localw8/worldw32",
+    "kappa_per_world_m": 0.019,
+    "source_whole_integral_native_sum": 42147.107284367085,
+    "source_crop_integral_native_sum": 25146.213473200798,
+    "masked_raw_integral_native_sum": 4410.992326200008,
+    "tapered_integral_native_sum": 4300.030607765249,
+    "reference_loss_of_masked_raw": 0.025155726926949895,
+    "reference_loss_of_whole_master": 0.8979756646463805,
+    "raw_integral_local_m3": 35287.93860960007,
+    "reference_integral_local_m3": 34400.244862121996,
+    "quadrature_scope": "nativevoxelcentre separate\u03c1/dkernel quadrature,LOCALintegral; perpartreferenceworld=Aseed*b\u00b3local, notjointmaxoragedintegral",
+    "relative_raw_integral_change_from_input_crop": 0.8245862212654419
+  },
+  "actual_reference_bounds": {
+    "0": {
+      "sample_min_xyz_m": [
+        175.0,
+        225.0,
+        157.0
+      ],
+      "sample_max_xyz_m": [
+        267.0,
+        337.0,
+        253.0
+      ],
+      "sample_count": 62081,
+      "filled_volume_local_m3": 496648
+    },
+    "0.001": {
+      "sample_min_xyz_m": [
+        175.0,
+        227.0,
+        159.0
+      ],
+      "sample_max_xyz_m": [
+        267.0,
+        335.0,
+        253.0
+      ],
+      "sample_count": 56873,
+      "filled_volume_local_m3": 454984
+    },
+    "0.005": {
+      "sample_min_xyz_m": [
+        175.0,
+        227.0,
+        159.0
+      ],
+      "sample_max_xyz_m": [
+        265.0,
+        335.0,
+        251.0
+      ],
+      "sample_count": 51937,
+      "filled_volume_local_m3": 415496
+    },
+    "0.01": {
+      "sample_min_xyz_m": [
+        177.0,
+        229.0,
+        159.0
+      ],
+      "sample_max_xyz_m": [
+        265.0,
+        335.0,
+        251.0
+      ],
+      "sample_count": 48757,
+      "filled_volume_local_m3": 390056
+    },
+    "0.04": {
+      "sample_min_xyz_m": [
+        179.0,
+        231.0,
+        161.0
+      ],
+      "sample_max_xyz_m": [
+        263.0,
+        333.0,
+        249.0
+      ],
+      "sample_count": 39101,
+      "filled_volume_local_m3": 312808
+    }
+  },
+  "root_certificate": {
+    "q_attach": 0.04,
+    "guard_threshold": 0.041,
+    "ball_radius_local_m": 23.15067380558045,
+    "method": "separate minrho,mind in interpolationcell, productlower>=.041; nearest uncertifiedcellbox\u2212.001m",
+    "pass_positive": true
+  },
+  "potential_support": {
+    "local_support_bbox_min_xyz_m": [
+      173.0,
+      223.0,
+      155.0
+    ],
+    "local_support_bbox_max_xyz_m": [
+      269.0,
+      339.0,
+      255.0
+    ],
+    "conservative_radius_about_root_local_m": 81.51073548925933,
+    "bound": "every potentially nonzero trilinear cell corner; separate maxrho>0,maxd>\u22128; may overestimate actual support"
+  },
+  "seed_support_formula": "Rlocal*s*G0*sigmaMax(.008) for first4healthywall=growthseconds withgG0/mu1; off/drycancelsclaim",
+  "finite_extinction": {
+    "min_channel_multiplier": 0.3,
+    "endpoint_local_m": 146.04166666666669,
+    "formula": "(maxdecodedD+8localtaper+2localguard)/.3",
+    "native_nonzero_endpoint": 0,
+    "continuous_bound": "trilineard<=maxdecodedD,M>=.3 implies smooth0 everywhere"
+  },
+  "qualification": "staticproduceronly; noGPU/runtime/art/lifecycleadmission",
+  "root_to_crown_frame": {
+    "head_global_xyz_local_m": [
+      221,
+      295,
+      207
+    ],
+    "root_to_crown_orthoframe_columns": [
+      [
+        0.9912279006826347,
+        0.13216372009101796,
+        -0.0
+      ],
+      [
+        -0.12549116102763172,
+        0.9411837077072378,
+        0.3137279025690793
+      ],
+      [
+        0.041463446699881945,
+        -0.3109758502491146,
+        0.9495129294272966
+      ]
+    ],
+    "definition": "outerlistCOLUMNvectors; actualroot\u2192selecteddensehead, NOTcentroid"
+  },
+  "conversion": {
+    "roundmask_controls": [
+      [
+        225,
+        265,
+        197,
+        33
+      ],
+      [
+        221,
+        295,
+        207,
+        40
+      ]
+    ],
+    "mask_halfwidth_local_m": 8,
+    "field": "exactmaxlinearlyvaryingballs33\u219240,smoothstep(\u22128,8,D); notassumedSDF",
+    "root_head_length_local_m": 31.874754901018456,
+    "radius_gradient": 0.2196095317983555,
+    "additional_spatial_resampling": "none"
+  },
+  "stage_tool": {
+    "python": "3.14.10",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "stage_recipe_sha256": "b754815ad212164f5b7db81fca62b097152d9d149af8110582a14f3a47f54873",
+    "helper_recipe_sha256": "123869a395a83fdf43a42ea33f0d435f099e43250750d334f1942723a261f72b"
+  },
+  "process_peak_rss_bytes": 57802752,
+  "head_certificate": {
+    "actual_q041_ball_radius_local_m": 17.662521732655694,
+    "head_global_xyz_local_m": [
+      221,
+      295,
+      207
+    ]
+  },
+  "path_certificate": {
+    "threshold": 0.041,
+    "vertices": [
+      {
+        "point_global_xyz_local_m": [
+          225,
+          265,
+          197
+        ],
+        "actual_q041_ball_radius_local_m": 23.15067380558045
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          265,
+          199
+        ],
+        "actual_q041_ball_radius_local_m": 22.359679774997897
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          265,
+          201
+        ],
+        "actual_q041_ball_radius_local_m": 20.590260281974
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          267,
+          201
+        ],
+        "actual_q041_ball_radius_local_m": 21.446610589527214
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          267,
+          203
+        ],
+        "actual_q041_ball_radius_local_m": 19.79798987322333
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          269,
+          203
+        ],
+        "actual_q041_ball_radius_local_m": 20.8796130178211
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          269,
+          205
+        ],
+        "actual_q041_ball_radius_local_m": 19.389719429665316
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          271,
+          205
+        ],
+        "actual_q041_ball_radius_local_m": 20.6871608655772
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          271,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 19.389719429665316
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          273,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 20.8796130178211
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          275,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 22.448944320643648
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          277,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 23.49368024894146
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          279,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 23.40839982143925
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          281,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 22.977250586152113
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          283,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 22.714633383201093
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          285,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 22.62641699796952
+      },
+      {
+        "point_global_xyz_local_m": [
+          225,
+          287,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 20.97517696340303
+      },
+      {
+        "point_global_xyz_local_m": [
+          223,
+          287,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 20.97517696340303
+      },
+      {
+        "point_global_xyz_local_m": [
+          223,
+          289,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 20.395078054371137
+      },
+      {
+        "point_global_xyz_local_m": [
+          223,
+          291,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 18.866962264113205
+      },
+      {
+        "point_global_xyz_local_m": [
+          223,
+          293,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 17.434595774162695
+      },
+      {
+        "point_global_xyz_local_m": [
+          223,
+          295,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 16.123515496597097
+      },
+      {
+        "point_global_xyz_local_m": [
+          221,
+          295,
+          207
+        ],
+        "actual_q041_ball_radius_local_m": 17.662521732655694
+      }
+    ],
+    "maximum_axis_step_local_m": 2,
+    "minimum_vertex_radius_local_m": 16.123515496597097,
+    "continuous_polyline_tube_radius_local_lower_m": 15.123515496597097,
+    "scope": "actualposttaperpercelllowerbound sphereunion; includesrawmaskandfreshEDT"
+  },
+  "schema_version": "thrum.cloud-component-basis.local.v2",
+  "seed_support_assumptions": {
+    "g0": 0.015625,
+    "g_constant_through_first4_healthy_growth_seconds": true,
+    "mu_healthy": 1,
+    "healthy_first4wall_equals_growth_seconds": true,
+    "gamma_bound_first4": 0.008,
+    "Aseed0_neck_not_claimed": "entirepotentialseedburiedinactualparentq>=.04; actualchildneckonlyafterAseed1",
+    "off_or_dry_cancels_healthy_claim": true
+  },
+  "frozen_status": "validhashedLOCALbasis, contentUNQUALIFIED,noadoption"
+}

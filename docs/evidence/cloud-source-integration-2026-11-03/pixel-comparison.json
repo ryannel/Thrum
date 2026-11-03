@@ -1,0 +1,11 @@
+{
+  "candidate": "observations/system-t100000-mode0-17fca3a6a1012a52-eb355a9f-1.png",
+  "baseline": "../cloud-lab-hardening-2026-11-03/observations/system-t100000-mode0-c3e0ebee9680337c-eea93588-1.png",
+  "size": [
+    1280,
+    720
+  ],
+  "decodedRGBABytesEqual": true,
+  "bothDecodedPixelSHA256": "681f4e926be844676b9589360fd212566c9afd4f1e25dc2e7d8adc7992e8849f",
+  "scope": "Actual same-device held source100 scene pixels match, not all times/cameras or performance"
+}

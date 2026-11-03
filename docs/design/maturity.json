@@ -1125,7 +1125,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "d68a7b041d71af6de3164c321aeccb6f25970ca2d0946aa6fbc98529f8d00701",
+      "current_design_sha256": "07897dc987b9629a2f15d45278e57d8546dfc933d9ac31a3bd1807ccaabf5ad9",
       "current_design_delta": "3 November source reassessment rejects pulse/transport morphology after native and 1x/16x evidence; no Houdini or full cached lifecycle required. Retains Nubis3-style 3D optical/render lineage, Hillaire air, voxel light, BSM and independent views. Exact CC0 static masters/cooks and sampled R16 input path pass scoped checks; complete replacement live source and combined visuals/budgets are unfinished. Prior source/PDE and whole-GPU failures remain evidence, not a selected foundation. Local SDF removal now differs visibly from matched-integral fade in native stills/sampled1x16x contacts; no whole breakup/lifecycle acceptance. Reviewed finite-material liquid Cu pilot commissioned; direct sparse point field closes sampling semantics, not cost. Actual frozen Cb inputs reject skeletal and smooth-column anatomy.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -1357,6 +1357,36 @@
           "correctness": "wet1200_36births_0failed_max6IDs_defaultdry14retired_off_on_fresh_recovery_scoped_reviews_and_actual_GPU_CPU100_500_point_probes_pass",
           "experienced_quality": "actual90s1x_growth_90s1x_breakup_40s16x_sampled_native_frames_show_local_head_renewal_and_moving_wisps_broad_soft_heads_some_size_cues_remain_no_CF01_or_continuous_watched_acceptance",
           "performance": "logical_GPU24302992_bytes_full_recorded_window8192ring_no_overwrite_observer_on_median_p95_growth37_4_47_4ms_not_GPU_execution_M2_process_or_fullsky_admission"
+        },
+        "visible_cu_changed_weather": {
+          "record": "../evidence/cloud-lab-hardening-2026-11-03/README.md",
+          "build": "c3e0ebee9680337c",
+          "implementation": "quarter_clock_guard_visible100_start_named_windows_elapsed_initialization_desktop_controls_causal_wind150_front500_common_consumers",
+          "correctness": "fresh_restored_render8_source8_pass_analytic_region_old_new_shear_matches_actual220_002215_GPU_CPU100_and_changedwind220_pass",
+          "experienced_quality": "actual90s1x_and40s16x_sampled_motion_no_wind_snap_mainhidden_retains_mirror_shadow_close2km384ray_front_side_oblique_reject_smooth_crown_no_CF01",
+          "performance": "recorded_observer_on_submission_median_p95_35_76_47_57ms_normal31_39_44_34ms_accelerated_no_dropped_steps_or_encoded_bytes_not_quiet_GPU_scanout_M2_fullsky_admission"
+        },
+        "isolated_cu_source_cpu_cost": {
+          "record": "../evidence/cloud-source-cost-2026-11-03/README.md",
+          "implementation": "baseline_kernel_cost_account_publication_bulk_selection_and_immutable_birth_Q_dual_cache_candidates_not_yet_live_integrated",
+          "correctness": "independent_final_two_file_review_no_findings_48selectors_19000steps_57005tuples_finite_native_points_pose_bounds_exact",
+          "experienced_quality": "no_new_browser_or_image_qualification_from_CPU_kernels",
+          "performance": "16copy_dry_publication8_4_to10x_kernel_gain_frame_vs_publication_wet1_3_to1_4x_dry16x_no_consistent_additional_win_memory_stops_retained_not_fullsky_or_frame_gain"
+        },
+        "crown_v3_preflight_rejected": {
+          "record": "../evidence/cloud-crown-screen-2026-11-03/README.md",
+          "implementation": "one_frozen_native_crown_mask_CPU_preflight_only_no_distance_cook_or_runtime_asset_adoption",
+          "correctness": "old_rho_reconstructs_byte_exact_three_math_tests_pass_fresh_dependency_restore_verified_post_taper_certificates_unrun",
+          "experienced_quality": "root_author_reject_six_final_perspective_contacts_mitten_peanut_and_upright_composite_trunk",
+          "performance": "34_682s_CPU_preflight_sampled85_766MiB_not_runtime_cost_next_two_band_geometry_screen_unimplemented"
+        },
+        "integrated_cu_cpu_work_removal": {
+          "record": "../evidence/cloud-source-integration-2026-11-03/README.md",
+          "build": "17fca3a6a1012a52",
+          "implementation": "selected_bounded_prototype_private_exposure_publication_and_immutable_birth_Q_dual_reuse_only_two_CPU_files_changed_original_GPU_path",
+          "correctness": "fresh_restored_render8_source8_pass_actual550_125_GPU_CPU1760points35positive_maxqdelta0_0001195291_independent_patch_review",
+          "experienced_quality": "actual100s_native_RGBA_pixelidentical_to_c3e0_actual40s16x_samples_and220_mainoff_retained_consumers_pass_bounded_continuity_heads_still_smooth_no_CF01",
+          "performance": "isolated_kernel_evidence_only_observer_on_submission32_705_43_845ms_median_p95_no_matched_integrated_frame_gain_or_residency_device_fullsky_admission"
         }
       }
     },

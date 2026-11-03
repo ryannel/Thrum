@@ -1,0 +1,315 @@
+{
+  "id": "body",
+  "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "source_file_reference": "../cloud-authored-master/cloud-03-256.density.r16f",
+  "source_license": "CC0; see masterprovenance",
+  "domain_origin_global_xyz_local_m": [
+    64,
+    176,
+    0
+  ],
+  "domain_span_local_m": [
+    384,
+    128,
+    512
+  ],
+  "dimensions_xyz": [
+    192,
+    64,
+    256
+  ],
+  "pitch_local_m": 2,
+  "basis_units": "LOCALmetres/density, no bakedworldscale; perinstanceb=s*g; worldintegral=b\u00b3localintegral",
+  "array_storage": "little-endian Float16, Xfastest, numpy[Z,Y,X]",
+  "texture_coordinate_contract": "uv=(global material xyz\u2212origin)/span; texelcentres origin+(i+.5)*2; return0 outside domain",
+  "root_global_xyz_local_m": [
+    299,
+    233,
+    167
+  ],
+  "recipe": {
+    "id": "body",
+    "origin": [
+      64,
+      176,
+      0
+    ],
+    "span": [
+      384,
+      128,
+      512
+    ],
+    "root": [
+      299,
+      233,
+      167
+    ],
+    "eta": 0.6
+  },
+  "zero_all_six_border_faces": true,
+  "density": {
+    "file": "body.density.r16f",
+    "bytes": 6291456,
+    "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "max_abs_half_rounding": 0.00024414062499966693
+  },
+  "distance": {
+    "file": "body.distance.r16f",
+    "bytes": 6291456,
+    "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "definition": "EDT(rho>=.001)\u2212EDT(rho<.001), opposite-class sample centres,2m; separatefreshprocess signs float32\u2192half then disjointmerge; exactly same signedfloat32\u2192half",
+    "iso": 0.001,
+    "min_decoded_local_m": -190.75,
+    "max_decoded_local_m": 35.9375,
+    "max_abs_half_rounding_local_m": 0.0624847412109375
+  },
+  "reference": {
+    "definition": "separate decoded rho/d samples then rho*smoothstep(\u22128,8,d), localw8/worldw32",
+    "kappa_per_world_m": 0.019,
+    "source_whole_integral_native_sum": 42147.107284367085,
+    "source_crop_integral_native_sum": 42147.107284367085,
+    "masked_raw_integral_native_sum": 25288.17759871483,
+    "tapered_integral_native_sum": 24107.3891868087,
+    "reference_loss_of_masked_raw": 0.04669329797676425,
+    "reference_loss_of_whole_master": 0.4280179414412517,
+    "raw_integral_local_m3": 202305.42078971863,
+    "reference_integral_local_m3": 192859.1134944696,
+    "quadrature_scope": "nativevoxelcentre separate\u03c1/dkernel quadrature,LOCALintegral; perpartreferenceworld=Aseed*b\u00b3local, notjointmaxoragedintegral",
+    "relative_raw_integral_change_from_input_crop": 0.40000205878673567
+  },
+  "actual_reference_bounds": {
+    "0": {
+      "sample_min_xyz_m": [
+        99.0,
+        197.0,
+        25.0
+      ],
+      "sample_max_xyz_m": [
+        413.0,
+        295.0,
+        487.0
+      ],
+      "sample_count": 439007,
+      "filled_volume_local_m3": 3512056
+    },
+    "0.001": {
+      "sample_min_xyz_m": [
+        99.0,
+        199.0,
+        27.0
+      ],
+      "sample_max_xyz_m": [
+        413.0,
+        295.0,
+        485.0
+      ],
+      "sample_count": 387684,
+      "filled_volume_local_m3": 3101472
+    },
+    "0.005": {
+      "sample_min_xyz_m": [
+        99.0,
+        201.0,
+        29.0
+      ],
+      "sample_max_xyz_m": [
+        411.0,
+        295.0,
+        485.0
+      ],
+      "sample_count": 337928,
+      "filled_volume_local_m3": 2703424
+    },
+    "0.01": {
+      "sample_min_xyz_m": [
+        99.0,
+        203.0,
+        31.0
+      ],
+      "sample_max_xyz_m": [
+        407.0,
+        295.0,
+        485.0
+      ],
+      "sample_count": 308738,
+      "filled_volume_local_m3": 2469904
+    },
+    "0.04": {
+      "sample_min_xyz_m": [
+        101.0,
+        205.0,
+        33.0
+      ],
+      "sample_max_xyz_m": [
+        397.0,
+        293.0,
+        483.0
+      ],
+      "sample_count": 229971,
+      "filled_volume_local_m3": 1839768
+    }
+  },
+  "root_certificate": {
+    "q_attach": 0.04,
+    "guard_threshold": 0.041,
+    "ball_radius_local_m": 16.49142250247064,
+    "method": "separate minrho,mind in interpolationcell, productlower>=.041; nearest uncertifiedcellbox\u2212.001m",
+    "pass_positive": true
+  },
+  "potential_support": {
+    "local_support_bbox_min_xyz_m": [
+      97.0,
+      195.0,
+      23.0
+    ],
+    "local_support_bbox_max_xyz_m": [
+      415.0,
+      297.0,
+      489.0
+    ],
+    "conservative_radius_about_root_local_m": 336.72540741678523,
+    "bound": "every potentially nonzero trilinear cell corner; separate maxrho>0,maxd>\u22128; may overestimate actual support"
+  },
+  "seed_support_formula": "Rlocal*s*G0*sigmaMax(.008) for first4healthywall=growthseconds withgG0/mu1; off/drycancelsclaim",
+  "finite_extinction": {
+    "min_channel_multiplier": 0.3,
+    "endpoint_local_m": 153.125,
+    "formula": "(maxdecodedD+8localtaper+2localguard)/.3",
+    "native_nonzero_endpoint": 0,
+    "continuous_bound": "trilineard<=maxdecodedD,M>=.3 implies smooth0 everywhere"
+  },
+  "qualification": "staticproduceronly; noGPU/runtime/art/lifecycleadmission",
+  "conversion": {
+    "vertical_compression_eta": 0.6,
+    "anchor_y_local_m": 233,
+    "operation": "exact1Doverlap ofpiecewiseconstant sourcecells under ydst=233+.6(ysrc\u2212233); Float64accumulation\u2192R16",
+    "ideal_prehalf_integral_native_sum": 25288.264370620014,
+    "eta_times_whole_native_sum": 25288.26437062025,
+    "prehalf_relative_mass_error": 5.610554026056983e-15,
+    "source_equivalent_vertical_pitch_local_m": 3.3333333333333335,
+    "eta_already_baked_no_second_compression": true
+  },
+  "stage_tool": {
+    "python": "3.14.10",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "stage_recipe_sha256": "b754815ad212164f5b7db81fca62b097152d9d149af8110582a14f3a47f54873",
+    "helper_recipe_sha256": "123869a395a83fdf43a42ea33f0d435f099e43250750d334f1942723a261f72b"
+  },
+  "process_peak_rss_bytes": 69861376,
+  "wet_core": {
+    "threshold": 0.01,
+    "cell_lower_threshold": 0.01,
+    "youngest_mature_age_range_s": [
+      60,
+      160
+    ],
+    "inverse_shear_norm_bound": 0.32,
+    "continuous_guard_local_m": "horizontal disk .32*maxabsYcelloffset +2sqrt(2)m +.001m; per-cell separate-minrho/mind product>=.01",
+    "connectivity": "largest6-connected face-sharing certified cell region",
+    "component_count_before_selection": 77,
+    "core_cells": 116398,
+    "volume_local_m3": 931184,
+    "body_native_filled_voxels": 308738,
+    "volume_fraction": 0.37701222395688255,
+    "projected_footprint_fraction": 0.5320813771517997,
+    "footprint_local_m2": 34000,
+    "body_native_footprint_local_m2": 63900,
+    "bounds_cell_centres_global_xyz_m": [
+      [
+        110,
+        206,
+        96
+      ],
+      [
+        370,
+        286,
+        344
+      ]
+    ],
+    "required_volume_fraction": 0.25,
+    "required_footprint_fraction": 0.25,
+    "pass": true,
+    "mask": {
+      "file": "body.wet-core.cells.u8",
+      "sha256": "a88d70bb7ede20c27902532681624add98c6b2bb6954b80ae14d1e4afa1c9ef1",
+      "dims_xyz": [
+        191,
+        63,
+        255
+      ],
+      "storage": "U8 cell flags, Xfastest; centres origin+2*(index+1)"
+    }
+  },
+  "shoulder_catalogue": [
+    {
+      "id": "body-shoulder-0",
+      "root_global_xyz_m": [
+        242,
+        246.8,
+        276
+      ],
+      "actual_q041_ball_radius_local_m": 9.849888284819812,
+      "parent_age165_world_radius_lower_m": 33.431351777687894,
+      "desired_crown_world_frame_columns": [
+        [
+          0.9741549295852557,
+          0.22588088268984963,
+          -0.0
+        ],
+        [
+          -0.22401545941829681,
+          0.9661099314689636,
+          0.12825271487236023
+        ],
+        [
+          0.028969836442738334,
+          -0.12493801442560196,
+          0.9917415619713416
+        ]
+      ],
+      "source": "fixedv1sitecompressedabout233; notnewplacementsearch",
+      "instance_id": "b-1"
+    },
+    {
+      "id": "body-shoulder-6",
+      "root_global_xyz_m": [
+        292,
+        244.4,
+        152
+      ],
+      "actual_q041_ball_radius_local_m": 11.159645142642962,
+      "parent_age165_world_radius_lower_m": 37.87677704455181,
+      "desired_crown_world_frame_columns": [
+        [
+          0.9966952444105922,
+          -0.08123170421276298,
+          0.0
+        ],
+        [
+          0.07888287305831909,
+          0.967875599861145,
+          -0.23873481154441833
+        ],
+        [
+          0.0193928355966659,
+          0.2379458513415807,
+          0.9710847977743788
+        ]
+      ],
+      "source": "fixedv1sitecompressedabout233; notnewplacementsearch",
+      "instance_id": "b-2"
+    }
+  ],
+  "schema_version": "thrum.cloud-component-basis.local.v2",
+  "seed_support_assumptions": {
+    "g0": 0.015625,
+    "g_constant_through_first4_healthy_growth_seconds": true,
+    "mu_healthy": 1,
+    "healthy_first4wall_equals_growth_seconds": true,
+    "gamma_bound_first4": 0.008,
+    "Aseed0_neck_not_claimed": "entirepotentialseedburiedinactualparentq>=.04; actualchildneckonlyafterAseed1",
+    "off_or_dry_cancels_healthy_claim": true
+  },
+  "frozen_status": "validhashedLOCALbasis, contentUNQUALIFIED,noadoption"
+}

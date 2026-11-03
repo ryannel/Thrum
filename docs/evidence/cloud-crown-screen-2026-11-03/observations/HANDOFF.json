@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "owner": "cloud_core_review",
+  "decision": "author recommends reject before EDT; root owns selection",
+  "scope": "ONE pinned pre-EDT masked-rho/native-opacity content screen; no art/runtime/certificate promotion",
+  "input_sha256": {
+    "cloud-authored-master/cloud-03-256.density.r16f": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "cloud-component-content-v2/crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+    "cloud-component-content-v2/body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+    "cloud-component-content-v2/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "cloud-component-content-v2/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "cloud-component-content-v2/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "cloud-system-proof/assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-4.json": "2eb4b6c9a88a0f18f1ea7f3b0d05fe82f7c86b30415cddc7be8311e0f209f0eb",
+    "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-5.json": "54d8095408a9f1b008dcdc898753f02c4b814f4ff9f8fe9e15fc7da73ca47e52",
+    "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-6.json": "ce799ee499888ab9348e94687cd7517546a705ec6b5987148d9f207acb484c3f"
+  },
+  "script_sha256": "8e210d29a26cbd1f8714d4e6648b6a37e5a1ee1c86261c23d27fdbc2c34b8867",
+  "files": {
+    "COMMISSION.md": {
+      "sha256": "d7e65e836a2ed0e3a721614ddc7c178b0bbcd92c255f0486928e70f577dd8861",
+      "bytes": 4528
+    },
+    "PREFLIGHT.md": {
+      "sha256": "a9f0d1d1a1e1ee9a24e9615f054c190ce5c04b8a1496796edf6af802f1f775f4",
+      "bytes": 3567
+    },
+    "README.md": {
+      "sha256": "e5b7084ed6aee6aecc980b1f96c90fd3709579b6dfde27484bed07b8e69940a5",
+      "bytes": 7000
+    },
+    "adverse-reader.json": {
+      "sha256": "561a496a6fa8377a651e2f26f01c2eb5cfe2d1435426f59bd350414d27988474",
+      "bytes": 95
+    },
+    "composite220-front.png": {
+      "sha256": "bb39a9356b1fbc3de35ba035957814787afeb1b1505829c7862ac71c3ece0795",
+      "bytes": 48344
+    },
+    "composite220-oblique.png": {
+      "sha256": "34e5734fa007a18d971e504fd81db3b42711b2988d60c6bb542ae37172fb34f8",
+      "bytes": 47149
+    },
+    "composite220-side.png": {
+      "sha256": "0da9dd52482dabf109bb13f708996e97f21332123650b7f74895b6773c60d557",
+      "bytes": 41549
+    },
+    "framing-900-results.json": {
+      "sha256": "6af00f0829a64b3e4f45f972c785178bc8f2712bf6142b8b0e429685f70940be",
+      "bytes": 15503
+    },
+    "isolated-front.png": {
+      "sha256": "463e5be032ef7ffa6a5db9122f651a617964cf15012f86aa0fa8c91584c19a95",
+      "bytes": 47160
+    },
+    "isolated-oblique.png": {
+      "sha256": "c418677bbf7f2f93afec0016b645da80e1959669a61913c713d46e948cab3b56",
+      "bytes": 44020
+    },
+    "isolated-side.png": {
+      "sha256": "67967a5cef6a613560b2e7bda16224cf47ee5fb4652d3962557a00b0d5da2cba",
+      "bytes": 42411
+    },
+    "native-front.png": {
+      "sha256": "3b22b2b1544c6cccf35aaba27040988a0b43efae830b0c7d9b2366c036dba869",
+      "bytes": 21191
+    },
+    "native-side.png": {
+      "sha256": "cef486eb458f32809b98f00eaa507a616bf6fddd870385ec3af47cce5d644b4f",
+      "bytes": 20851
+    },
+    "preflight.py": {
+      "sha256": "8e210d29a26cbd1f8714d4e6648b6a37e5a1ee1c86261c23d27fdbc2c34b8867",
+      "bytes": 15901
+    },
+    "results.json": {
+      "sha256": "fa1408dc2174e73f30e00fd74fb820be5253d41826b09cbabd8fd398c71d6738",
+      "bytes": 17063
+    },
+    "test_preflight.py": {
+      "sha256": "99cb70df2407a328156ca79f3b66b3fab3b2f2c3ec2e1c56aed4932174e50b21",
+      "bytes": 1371
+    }
+  },
+  "retained_bytes_excluding_handoff": 377703,
+  "no_new_native_payload": true,
+  "next_action": "No further cook unless root selects despite rejection; no second recipe commissioned"
+}

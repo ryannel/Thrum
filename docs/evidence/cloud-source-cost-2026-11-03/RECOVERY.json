@@ -1,0 +1,44 @@
+{
+  "pass": true,
+  "createdUTC": "2026-11-03T10:00:52.656275+00:00",
+  "archiveSHA256": "94135f93904a5772d59430caa254729bc8de917aa54d2510f4230de5bbe7fdea",
+  "restoreSpecSHA256": "de0ed0d8585aa210fd8c6dd8304955c3799a53d20b895fffea5089d2ce7d22a9",
+  "outputWasFresh": true,
+  "relocatedOutsideOriginalWorktree": "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-source-cost-recovery-ddaki1y0/restored",
+  "steps": [
+    {
+      "label": "fresh recovery and exact identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-source-cost-2026-11-03/restore.py",
+        "--output",
+        "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-source-cost-recovery-ddaki1y0/restored"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"pass\": true, \"archive\": \"cpu-proof-and-cost.zip\", \"archiveMembers\": 694, \"externalUniquePayloads\": 5, \"restoredBytesVerified\": false, \"baselineBuild\": \"c3e0ebee9680337c\", \"scope\": \"Package/exact restored-byte verification only; no replay or timing\"}\n{\"pass\": true, \"archive\": \"cpu-proof-and-cost.zip\", \"archiveMembers\": 694, \"externalUniquePayloads\": 5, \"restoredBytesVerified\": true, \"baselineBuild\": \"c3e0ebee9680337c\", \"scope\": \"Package/exact restored-byte verification only; no replay or timing\"}\nRestored exact CPU proof layouts at /private/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-source-cost-recovery-ddaki1y0/restored No replay/benchmark/browser was run.\n",
+      "stderr": ""
+    },
+    {
+      "label": "restored original receipt validator",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-source-cost-recovery-ddaki1y0/restored/cloud-system-cpu-cost/verify.py"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"pass\": true, \"runs\": 27, \"primaryComplete\": 18, \"memoryStopped\": 6, \"diagnostics\": 3, \"sourceAndMetadataPinsUnchanged\": true, \"payloadPinsChecked\": 65, \"maxRecordedPairMiB\": 241.28125}\n",
+      "stderr": ""
+    },
+    {
+      "label": "restored optimized receipt validator",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-source-cost-recovery-ddaki1y0/restored/cloud-system-cpu-fast-proof/verify.py"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"pass\": true, \"publicationFreezeFiles\": 240, \"sourceAndOldEvaluatorUnchanged\": true, \"sourceOnlyFinalPatchReconstructsExactly\": true, \"matrices\": [{\"matrix\": \"cost\", \"complete\": 55, \"stopped\": 11, \"maxReservedPairMiB\": 225.234375}, {\"matrix\": \"frame-cost\", \"complete\": 56, \"stopped\": 10, \"maxReservedPairMiB\": 226.984375}], \"newNonR16Bytes\": 5669261, \"budgetBytes\": 8388608}\n",
+      "stderr": ""
+    }
+  ],
+  "temporaryRestoredDataRemovedAfterVerification": true,
+  "scope": "Hash/structure/receipt validator recovery only; no source replay, timing, browser or GPU"
+}

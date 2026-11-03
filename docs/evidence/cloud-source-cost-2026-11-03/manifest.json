@@ -1,0 +1,49 @@
+{
+  "files": {
+    "GPU-QUERY-REVIEW.md": {
+      "bytes": 3702,
+      "sha256": "5267da624f462224226201de03c2a35cd9dc1e0218e3ecf4d9f4869901e85b24"
+    },
+    "OWNER.md": {
+      "bytes": 480,
+      "sha256": "317331b19ee7b3fead7839ac948aa86475c41ac70958c7bb10e10cca2204939b"
+    },
+    "README.md": {
+      "bytes": 6861,
+      "sha256": "0e642622c785607e68f594b58462649247e14894f7e60d69b4b85bd3e77a8405"
+    },
+    "RECOVERY.json": {
+      "bytes": 3087,
+      "sha256": "53901fe48b3de6fe627952c52c190cdbbf5d3fd534b3b6b487aeef55ecaa7ee0"
+    },
+    "baseline-c3e0-identity.json": {
+      "bytes": 3967,
+      "sha256": "6f8e961a91331eb582a0aeb854870e8bcdc23759269889f10a5e27b0701cf138"
+    },
+    "cpu-proof-and-cost.zip": {
+      "bytes": 1878287,
+      "sha256": "94135f93904a5772d59430caa254729bc8de917aa54d2510f4230de5bbe7fdea"
+    },
+    "independent-publication-differential.json": {
+      "bytes": 4834,
+      "sha256": "cff00514c5d4a5dcd467cdb45bab03faa63cd1c6a7d8d337a2505d5adfc2be2f"
+    },
+    "independent-review.md": {
+      "bytes": 2857,
+      "sha256": "5f52989c60af9429921a6b9c77925f9c2ed15fcedbdca97b4205fff69ed55ac6"
+    },
+    "restore-spec.json": {
+      "bytes": 131891,
+      "sha256": "de0ed0d8585aa210fd8c6dd8304955c3799a53d20b895fffea5089d2ce7d22a9"
+    },
+    "restore.py": {
+      "bytes": 1577,
+      "sha256": "4cd34b07ea46715dd90ff692db466f7229ab29f49362b9cd9dbc48eb3b7f6849"
+    },
+    "verify.py": {
+      "bytes": 2126,
+      "sha256": "c6199ad3ce7134e53a2ccb2551e435aa98ea92bba57e446c2e2e85820b7c0438"
+    }
+  },
+  "scope": "CPU evidence only, no live adoption; GPU read-only review and subsequent failed screens explicitly separate"
+}
