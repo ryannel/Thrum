@@ -13,8 +13,9 @@ source identity and root/outcome remain independent of these operational values.
 The first profile has one T2 host process coordinating its cooperating F3 and F4
 jobs, with one exclusive host owner and a fixed, discoverable private T2
 job-root layout outside the entire source project tree but on the selected
-filesystem domain. Register the job ID, root path, source/build generation, resource
-class, intended child process group and state in a small durable record before
+filesystem domain. Register an immutable job-incarnation token, root/allocation
+identity, source/build generation, resource class, intended child process group
+and state in a small durable record before
 any copy or compiler launch. Create the owned root first, then atomically write
 and sync its record and parent; a crash between those steps leaves a
 discoverable unpaired root. After verified tree cleanup, sync the parent
@@ -24,6 +25,12 @@ failed-cleanup record. At startup, enumerate all owned job roots and
 records before admitting work. An unpaired root, incomplete registration or
 unresolved compiler family is quarantined and retains its conservative claim;
 the host refuses overlapping new work until inspection/recovery resolves it.
+Reconstruct claims by keyed replacement from durable phase records and a
+complete inventory, never by adding a root scan to an existing charge. For a
+known unresolved root, keep at least its durable full phase claim and any
+inventoried overrun. An orphan with no trustworthy phase bound has an unknown
+amount, which blocks the domain or overlapping work until recovery; do not
+invent a finite zero or default claim. Repeated inventory is idempotent.
 PID reuse is not evidence that an earlier child is gone. This makes restart
 inventory possible for the first host, without claiming transitive containment.
 T2 identifies the destination filesystem domain from opened roots, not
@@ -36,15 +43,28 @@ registration, recovery and reconciliation before it can claim this policy.
 Unrelated OS writers can always consume space between observation and write.
 Direct F3/F4 calls that bypass this first host are outside its cooperating-job
 promise, even if they write to the same volume.
+Before registering or copying a materialization root, bind the F3 pin's
+read-only canonical source-store path to the selected project's expected store
+path. Two projects can have identical accepted root bytes and generations;
+neither proves store ownership. This path is an operational binding held by the
+live F3 owner, not a source-content identity or protection against external
+path replacement. Preserve the F3 pin while F4 reads or copies its bytes.
 
 T2 owns scheduling and the account, not source or build authority. F3 retains
 exact admission, pin, WAL/checkpoint and recovery decisions. F4 retains verified
 input/product/build ownership, compiler lifecycle and ready publication. Each
 job supplies a checked plan for *remaining incremental retained growth* in its
-own phase, the paths it owns, and an idempotent release event. A rewrite's raw
-I/O bytes do not equal new retained growth. T2 records a claim by job,
-generation, filesystem domain, resource class (managed temporary, main/WAL,
-compiler/output or other), phase and estimate basis. Claims are operational estimates;
+own phase, the paths it owns, and an idempotent release event keyed to the exact
+job-incarnation token. Source/build generation is not an owner identity: two jobs
+can use the same generation, and a delayed release cannot match a reused job ID.
+A rewrite's raw I/O bytes do not equal new retained growth. T2 records a claim
+by job incarnation, source/build generation, filesystem domain, normalized
+root/allocation identity with one exclusive owner, resource class (managed
+temporary, main/WAL, compiler/output or other), phase generation, owner-report
+version and estimate basis. A complete per-class job plan is one atomic
+compare-and-register operation; refusal exposes no component claim. Claim and
+release receipts name the exact token and subclaims; duplicate release is
+idempotent. Claims are operational estimates;
 owners still guard writes and syncs and preserve the prior complete state on
 failure. A closed/failed job cannot release another job's claim.
 
@@ -87,18 +107,30 @@ unreported write or unrelated writer can still race both observations; retain
 the uncertain claim and owner-local live checks. Record each input quantity,
 estimate class, sample time, filesystem domain and conservative-overcount
 reason in a typed receipt.
+Keep class charge, retained allocated bytes, incremental-growth estimate, full
+uncertain compiler claim, observation age and unknown quantity as distinct
+fields. Policy deferral is distinct from native I/O failure or a physical-space
+guarantee.
 
 ## Transaction and lifecycle
 
 1. Snapshot registered roots and their owner-reported charges outside the
    account mutex, then acquire T2's short per-domain mutex. Pair that
    snapshot with
-   the current claim version, take a fresh free-space observation, and compare
+   the current claim version and cooperating domain epoch, take a fresh
+   free-space observation within that serialized comparison, and compare
    the complete simultaneous plan. Retry if the version changed. Reserve a
    claim or return a typed deferral/refusal with
    requested/allowed/observed quantities. Release the lock before copying or
    compiling. Do not hold it for a whole build.
-2. F3 and F4 perform owner-local preflight, before/after-write live checks and
+2. Owner handoffs name the exact job incarnation, phase generation,
+   monotonically increasing owner-report version and domain epoch. Reject
+   delayed reports or releases from an old phase or incarnation before
+   replacing a claim. Separate cancel request, compiler-family stop, output
+   inventory, verified cleanup and retained-root transfer. A stop or cancel
+   never refunds; verified cleanup also requires no live reader or required
+   retained root. Failed cleanup keeps a durable unresolved claim. F3 and F4
+   perform owner-local preflight, before/after-write live checks and
    fault handling. Their instrumented stage/store/materialization copy paths
    reconcile completed chunks at short lock boundaries. An overrun requests
    more claim before the next instrumented chunk or defers/stops at an

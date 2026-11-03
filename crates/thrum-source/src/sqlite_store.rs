@@ -2652,6 +2652,8 @@ impl From<rusqlite::Error> for SourceStoreError {
 }
 
 struct NativeSourceOwner {
+    // Immutable operational identity shared with every pin from this owner.
+    store_path: PathBuf,
     // Drop the reader before the writer, with the owner lock held through both.
     read_conn: Mutex<Connection>,
     read_gate: RwLock<bool>,
@@ -2733,6 +2735,15 @@ pub struct NativeSourceStore {
 }
 
 impl NativeSourceStore {
+    /// Canonical database path selected when this source owner opened.
+    ///
+    /// This is an operational store binding for a cooperating host, not part
+    /// of the accepted source revision. It does not revalidate the path after
+    /// an external rename or replacement.
+    pub fn store_path(&self) -> &Path {
+        &self.owner.store_path
+    }
+
     /// Open or create one native SQLite source store with a planning policy.
     ///
     /// A cooperating owner holds an exclusive sidecar lock until this handle
@@ -2778,6 +2789,7 @@ impl NativeSourceStore {
         }
         let store = Self {
             owner: Arc::new(NativeSourceOwner {
+                store_path: database,
                 read_conn: Mutex::new(read_conn),
                 read_gate: RwLock::new(false),
                 inner: Mutex::new(core),
@@ -3280,6 +3292,15 @@ pub struct PinnedSource {
 }
 
 impl PinnedSource {
+    /// Canonical database path of the owner that issued this pin.
+    ///
+    /// The path remains available while the pin keeps that owner alive. A
+    /// cooperating host can compare it with its selected project store before
+    /// creating build inputs; source bytes and revision do not encode it.
+    pub fn store_path(&self) -> &Path {
+        &self.owner.store_path
+    }
+
     /// Pinned root identity; it stays stable when another root is admitted.
     pub fn root(&self) -> AcceptedSourceRoot {
         self.root
@@ -4038,9 +4059,12 @@ fn native_source_pin_keeps_owner_after_store_handle_drops() {
     let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let accepted = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
     let mut pinned = store.pin_current(accepted.generation).unwrap();
+    let store_path = store.store_path().to_owned();
+    assert_eq!(pinned.store_path(), store_path);
     let path = SourcePath::parse("project.json").unwrap();
     let expected = fs::read(fixture.source_root().join(path.as_str())).unwrap();
     drop(store);
+    assert_eq!(pinned.store_path(), store_path);
     assert_eq!(
         NativeSourceStore::open(&fixture.database(), plan)
             .err()
@@ -4067,6 +4091,34 @@ fn native_source_pin_keeps_owner_after_store_handle_drops() {
         .query_row("SELECT count(*) FROM read_pin", [], |row| row.get(0))
         .unwrap();
     assert_eq!(pins, 0);
+}
+
+#[test]
+fn identical_accepted_bytes_from_distinct_stores_have_distinct_pin_bindings() {
+    let left = Fixture::new();
+    let right = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let left_stage = minimal_source_stage(&left, "same source");
+    let right_stage = minimal_source_stage(&right, "same source");
+    let left_candidate = validate_staged_candidate(&left_stage, &[]).unwrap();
+    let right_candidate = validate_staged_candidate(&right_stage, &[]).unwrap();
+    let left_store = NativeSourceStore::open(&left.database(), plan).unwrap();
+    let right_store = NativeSourceStore::open(&right.database(), plan).unwrap();
+    let left_root = left_store.admit(0, 1, 1, [1; 32], &left_candidate).unwrap();
+    let right_root = right_store
+        .admit(0, 1, 1, [1; 32], &right_candidate)
+        .unwrap();
+    assert_eq!(left_root, right_root);
+    let left_pin = left_store.pin_current(1).unwrap();
+    let right_pin = right_store.pin_current(1).unwrap();
+    assert_eq!(left_pin.store_path(), left_store.store_path());
+    assert_eq!(right_pin.store_path(), right_store.store_path());
+    assert_ne!(left_pin.store_path(), right_pin.store_path());
+    left_pin.close().unwrap();
+    right_pin.close().unwrap();
 }
 
 #[test]
