@@ -9,6 +9,8 @@ mod build_declaration;
 #[cfg(test)]
 mod candidate_output;
 mod constant_light;
+#[cfg(test)]
+mod constant_light_identity;
 mod constant_light_source;
 mod native_worktree;
 pub use build_declaration::{
