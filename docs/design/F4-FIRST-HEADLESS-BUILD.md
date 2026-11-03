@@ -87,7 +87,24 @@ against the recooked expected product and executes A again. Invalid B leaves
 that candidate intact. This format is local
 diagnostic evidence, not `BuildRevision` or a publication API. It does not
 authenticate original inputs, make installed tools immutable, trace implicit
-compiler reads or prove crash-safe atomic publication.
+compiler reads or prove ready-root publication.
+
+The opt-in candidate now uses one exclusively owned, same-volume staging
+directory. Each copied file and the report are synced after final bytes and
+metadata are written; the completed bundle is verified, its directory is
+synced, then it is renamed into a previously absent candidate name and the
+parent directory is synced before success is reported. A process killed before
+rename leaves a staging directory that readers ignore; an ordinary failure
+removes its own stage. An existing candidate is never replaced. If the parent
+sync fails, a visible new directory may exist but no caller has received a
+successful selection. This is an **unready local candidate** with
+process-crash atomic visibility, not a ready-root transaction, power-loss
+durability certification or publication API. The selected ready root must
+later be committed separately after complete T2 closure, using an independent
+digest and retained reader pins; a stale stage cannot become a ready root.
+The extra work is one staging/parent metadata sync and rename beyond the
+existing streamed copy and verification. It runs per build, never per world
+update; failed edits leave the previous runnable candidate intact.
 
 The first compiler profile should prepare one private Cargo dependency root
 from release-verified registry index records and lockfile-checksummed archives,
