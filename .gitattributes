@@ -10,3 +10,6 @@ dev text eol=lf
 *.r8 binary
 *.webm binary
 *.mp4 binary
+
+# Preserve original license bytes used by the retained manifest.
+docs/evidence/cloud-geometry-operators-2026-11-03/instrument/*/LICENSE.txt -text
