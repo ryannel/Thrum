@@ -611,6 +611,14 @@
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."
       },
+      "i2a_constant_light_pinned_cook_cost": {
+        "evidence": "../evidence/i2a/E1-PINNED-COOK-PERF-2026-11-03.md",
+        "implementation": "measurement_of_existing_public_accepted_pin_and_constant_light_cook_apis",
+        "functional_validation": "both fixture revisions were durably admitted through production source store; every fresh process verified A and B lux and retained A through B work; no production code changed",
+        "experienced_quality": "not_applicable_to_authoring_cost_probe",
+        "platform_performance": "five fresh release processes on Apple M3 Max: repeated B cook medians 34.0 us small and 627.5 us at 4099 manifest entries; repeated B pin 4.14 and 10.17 ms; full B pin+cook+close with A held 8.49 and 15.48 ms; process peak RSS ranges 4.28-4.36 and 14.17-17.20 MiB",
+        "scope": "The large source also has a larger project record and 115903 selected bytes; the three manifest scans cannot be timed separately from parsing. Warm local fixture stores, no concurrent admission, no end-to-end publication, universal budget or device qualification."
+      },
       "i2a_authored_rain_schema_proposal": {
         "evidence": "research/E1-AUTHORED-RAIN-F3-SCHEMA-2026-11-03.md",
         "scope": "An isolated proposed schema-2 authored-rain/fixture grammar has pinned candidate built-in meanings, independent Rust/Python typed and global closure checks, exact rational phase coverage, adversarial refusals and local parse/RSS measurements. It does not change production dispatch or qualify admitted source, F4 products, first-hit exposure, runtime exchange, R0 ambient/background closure, visuals or device cost. C09/F3/F4 adoption remains open."
