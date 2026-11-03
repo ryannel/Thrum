@@ -42,3 +42,21 @@ supersession, cross-kind sequencing, authenticated wire ACKs, historical event
 dedup, W1 capture or real transport. The selected per-peer total and
 four-peer CPU/allocator/RSS, mandatory burst, slow-ACK and whole-callback
 targets remain unqualified. The larger N1 build-plan item stays open.
+
+## Isolated release cost
+
+The ignored release probe `measure_four_peer_coalesced_state_only_release_shape`
+reuses four preconstructed ledger owners for 2,000 windows per process. Each
+window submits, exposes, fully reads and ACKs four 32-actor state-only
+partition groups per peer: 16 frames and 30,208 encoded bytes. Partition and
+actor IDs are distinct, peer epochs differ, and group ticks advance by three
+per window. This is the structural **post-coalescing release shape**; it does
+not run the unsent queue, W1 or a game-schema validator. The byte reader uses a
+rolling checksum to force all output bytes to be consumed; its work is part
+of the number and is not a WSS adapter. Seven fresh process samples on the
+Apple M3 Max development host with rustc 1.99.1 have a 25,728.2 ns median
+per window (range 25,594.2–28,883.7 ns). All four ledgers together reserve
+721,984 Rust value/arena/Vec-capacity bytes throughout the probe. See the
+[raw samples](N1-ORDINARY-SENT-LEDGER-COST-SAMPLES-2026-11-03.csv).
+This excludes W1 extraction, schema validation, results/events, baseline,
+TLS, socket buffering, allocator-call counts, RSS and whole-callback tails.

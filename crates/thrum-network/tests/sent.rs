@@ -14,11 +14,21 @@ fn key() -> PeerKey {
 }
 
 fn payload(tick: u64, actors: &[Actor], results: &[ActionResult], events: &[Event]) -> Vec<u8> {
+    payload_for_partition(tick, 5, actors, results, events)
+}
+
+fn payload_for_partition(
+    tick: u64,
+    group_id: u32,
+    actors: &[Actor],
+    results: &[ActionResult],
+    events: &[Event],
+) -> Vec<u8> {
     let mut bytes = vec![0; r4::MAX_PAYLOAD_BYTES];
     let len = r4::encode(
         GroupInput {
             header: GroupHeader {
-                group_id: 5,
+                group_id,
                 interest_generation: 1,
                 commit_tick: tick,
                 resolved_through: 0,
@@ -340,4 +350,84 @@ fn wrong_epoch_duplicate_identity_and_sequence_exhaustion_do_not_mutate() {
         Err(SubmitError::SequenceExhausted)
     );
     assert_eq!(exhausted.retained_frame_bytes(), 0);
+}
+
+#[test]
+#[ignore = "local release-only coalesced state-only sent-frame cost probe"]
+fn measure_four_peer_coalesced_state_only_release_shape() {
+    use std::hint::black_box;
+    use std::time::Instant;
+
+    let mut groups: [_; 4] = std::array::from_fn(|partition| {
+        let actors: [_; 32] = std::array::from_fn(|index| Actor {
+            wire_id: (partition * 32 + index + 1) as u64,
+            quaternion: [0, 0, 0, 32767],
+            visibility_generation: 1,
+            ..actor()
+        });
+        payload_for_partition(3, partition as u32 + 1, &actors, &[], &[])
+    });
+    let keys: [_; 4] = std::array::from_fn(|index| PeerKey {
+        peer_id: index as u64 + 1,
+        connection_epoch: index as u64 + 101,
+        ..key()
+    });
+    let mut ledgers: Vec<_> = keys
+        .iter()
+        .map(|&key| OrdinaryLedger::new(key, 0, 0).unwrap())
+        .collect();
+    let reserved: usize = ledgers
+        .iter()
+        .map(OrdinaryLedger::reserved_capacity_bytes)
+        .sum();
+    const WINDOWS: u64 = 2_000;
+    let start = Instant::now();
+    let mut checksum = 0u64;
+    for window in 0..WINDOWS {
+        let tick = window * 3 + 3;
+        for group in &mut groups {
+            group[8..16].copy_from_slice(&tick.to_le_bytes());
+        }
+        for (ledger, &key) in ledgers.iter_mut().zip(&keys) {
+            for group in &groups {
+                checksum ^= black_box(ledger.submit_state_group(key, black_box(group), 0).unwrap());
+            }
+            while let Some(frame) = ledger.next_write().unwrap() {
+                for &byte in frame.first.iter().chain(frame.second) {
+                    checksum = checksum
+                        .wrapping_mul(16_777_619)
+                        .wrapping_add(u64::from(byte));
+                }
+                let sequence = frame.sequence;
+                let remaining = frame.first.len() + frame.second.len() - frame.accepted_bytes;
+                ledger.accept_written(sequence, remaining).unwrap();
+            }
+            let through = ledger.last_sequence();
+            checksum ^= ledger
+                .acknowledge_through(key, through, |_, _| Ok::<_, ()>(()))
+                .unwrap();
+            black_box(&*ledger);
+        }
+    }
+    let elapsed = start.elapsed();
+    assert_eq!(
+        ledgers
+            .iter()
+            .map(OrdinaryLedger::retained_frame_bytes)
+            .sum::<usize>(),
+        0
+    );
+    assert_eq!(
+        ledgers
+            .iter()
+            .map(OrdinaryLedger::reserved_capacity_bytes)
+            .sum::<usize>(),
+        reserved
+    );
+    println!(
+        "n1_sent_four_peer_coalesced_release_shape_ns={:.1} reserved_rust_bytes={} checksum={}",
+        elapsed.as_nanos() as f64 / WINDOWS as f64,
+        reserved,
+        black_box(checksum)
+    );
 }
