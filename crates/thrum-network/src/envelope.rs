@@ -131,6 +131,14 @@ fn hello_valid(header: Header) -> bool {
 
 /// Encode one exact application message without allocation. The caller
 /// separately validates the kind payload and live connection state.
+///
+/// # Errors
+///
+/// Returns an error for invalid framing, identity or destination capacity.
+///
+/// # Panics
+///
+/// Panics only if the checked 64 KiB message bound no longer fits a `u32`.
 pub fn encode(
     header: Header,
     payload: &[u8],
@@ -147,7 +155,11 @@ pub fn encode(
     destination[4..6].copy_from_slice(&MAJOR.to_le_bytes());
     destination[6] = header.kind as u8;
     destination[7] = 0;
-    destination[8..12].copy_from_slice(&(payload.len() as u32).to_le_bytes());
+    destination[8..12].copy_from_slice(
+        &u32::try_from(payload.len())
+            .expect("bounded envelope payload")
+            .to_le_bytes(),
+    );
     destination[12..16].fill(0);
     destination[16..32].copy_from_slice(&header.match_id);
     destination[32..40].copy_from_slice(&header.connection_epoch.to_le_bytes());
@@ -160,6 +172,14 @@ pub fn encode(
 
 /// Decode fixed framing and first-version header rules before any payload
 /// allocation or kind-specific parsing. State and rate checks are still due.
+///
+/// # Errors
+///
+/// Returns an error for invalid framing, identity or destination capacity.
+///
+/// # Panics
+///
+/// Panics only if a previously checked internal size or ownership invariant is broken.
 pub fn decode(bytes: &[u8]) -> Result<Message<'_>, EnvelopeError> {
     if bytes.len() < HEADER_BYTES {
         return Err(EnvelopeError::Length);
@@ -170,24 +190,46 @@ pub fn decode(bytes: &[u8]) -> Result<Message<'_>, EnvelopeError> {
     if bytes[..4] != MAGIC {
         return Err(EnvelopeError::Magic);
     }
-    if u16::from_le_bytes(bytes[4..6].try_into().unwrap()) != MAJOR {
+    if u16::from_le_bytes(bytes[4..6].try_into().expect("checked fixed header length")) != MAJOR {
         return Err(EnvelopeError::Version);
     }
     let kind = Kind::try_from(bytes[6])?;
     if bytes[7] != 0 || bytes[12..16] != [0; 4] {
         return Err(EnvelopeError::ReservedField);
     }
-    let payload_len = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
+    let payload_len = u32::from_le_bytes(
+        bytes[8..12]
+            .try_into()
+            .expect("checked fixed header length"),
+    ) as usize;
     if total_len(payload_len)? != bytes.len() {
         return Err(EnvelopeError::Length);
     }
     let header = Header {
         kind,
-        match_id: bytes[16..32].try_into().unwrap(),
-        connection_epoch: u64::from_le_bytes(bytes[32..40].try_into().unwrap()),
-        message_sequence: u64::from_le_bytes(bytes[40..48].try_into().unwrap()),
-        server_tick: u64::from_le_bytes(bytes[48..56].try_into().unwrap()),
-        acknowledged_sequence: u64::from_le_bytes(bytes[56..64].try_into().unwrap()),
+        match_id: bytes[16..32]
+            .try_into()
+            .expect("checked fixed header length"),
+        connection_epoch: u64::from_le_bytes(
+            bytes[32..40]
+                .try_into()
+                .expect("checked fixed header length"),
+        ),
+        message_sequence: u64::from_le_bytes(
+            bytes[40..48]
+                .try_into()
+                .expect("checked fixed header length"),
+        ),
+        server_tick: u64::from_le_bytes(
+            bytes[48..56]
+                .try_into()
+                .expect("checked fixed header length"),
+        ),
+        acknowledged_sequence: u64::from_le_bytes(
+            bytes[56..64]
+                .try_into()
+                .expect("checked fixed header length"),
+        ),
     };
     if !hello_valid(header) {
         return Err(EnvelopeError::HelloIdentity);

@@ -198,18 +198,18 @@ impl QueueState {
         }
         self.slots[slot] = Some(Slot {
             header: group.header,
-            len: payload.len() as u16,
+            len: u16::try_from(payload.len()).expect("bounded R4 payload"),
             mandatory,
-            result_count: group.results().len() as u8,
-            event_count: group.events().len() as u8,
+            result_count: u8::try_from(group.results().len()).expect("bounded R4 result count"),
+            event_count: u8::try_from(group.events().len()).expect("bounded R4 event count"),
         });
         self.pending_results = pending_results;
         self.pending_events = pending_events;
         if let Some((position, _)) = coalesced {
             self.order.copy_within(position + 1..self.len, position);
-            self.order[self.len - 1] = slot as u8;
+            self.order[self.len - 1] = u8::try_from(slot).expect("bounded unsent slot");
         } else {
-            self.order[self.len] = slot as u8;
+            self.order[self.len] = u8::try_from(slot).expect("bounded unsent slot");
             self.len += 1;
         }
         self.partitions[index] = Some(Partition {
@@ -246,6 +246,10 @@ pub struct UnsentQueue {
 impl UnsentQueue {
     /// Reserve the exact payload arena after validating baseline cursors.
     /// No N1 queue allocation occurs when the capability is disabled.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, capture or transfer state.
     pub fn from_baseline(key: PeerKey, seeds: &[PartitionSeed]) -> Result<Self, OutboundError> {
         if key.match_id == [0; 16] || key.connection_epoch == 0 {
             return Err(OutboundError::WrongIdentity);
@@ -300,13 +304,17 @@ impl UnsentQueue {
     }
     /// Fixed Rust owner bytes and exact payload arena, excluding allocator metadata.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>() + self.payloads.len()
+        size_of::<Self>() + self.payloads.len()
     }
 
     /// Validate and copy a complete R4 payload at the authority publication
     /// barrier. State-only units can replace only the last unit for their own
     /// partition incarnation, and move to the chronological tail. Mandatory
     /// bytes are never coalesced. No envelope sequence is assigned here.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, capture or transfer state.
     pub fn capture(
         &mut self,
         payload: &[u8],
@@ -327,6 +335,10 @@ impl UnsentQueue {
     /// Schema hooks run against a copy of small queue metadata; payload bytes
     /// and live cursors remain unchanged on any refusal or hook unwind.
     /// The caller still owns whole-tick schema and membership completeness.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, capture or transfer state.
     pub fn capture_batch(
         &mut self,
         payloads: &[&[u8]],
@@ -367,6 +379,10 @@ impl UnsentQueue {
 
     /// Borrow the earliest chronological unit. Its bytes remain stable until
     /// a successful `transfer_next` or a same-partition state-only coalescing.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, capture or transfer state.
     pub fn peek_next(&self) -> Result<Option<QueuedGroup<'_>>, OutboundError> {
         if self.transfer_in_progress {
             return Err(OutboundError::Poisoned);
@@ -392,6 +408,16 @@ impl UnsentQueue {
     /// callback must reserve exact bytes and ACK metadata before assigning its
     /// envelope sequence, and may fail without mutating its own state. Only a
     /// successful callback frees this unsent slot. No remote ACK occurs here.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, capture or transfer state.
+    ///
+    /// # Panics
+    ///
+    /// The caller's transfer callback may panic. Such an unwind leaves the
+    /// queue poisoned so its bytes cannot be submitted again. An internal
+    /// invariant failure can also panic after a successful callback.
     pub fn transfer_next<E>(
         &mut self,
         transfer: impl FnOnce(QueuedGroup<'_>) -> Result<(), E>,

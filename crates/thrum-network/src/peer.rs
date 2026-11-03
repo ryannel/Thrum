@@ -97,6 +97,10 @@ pub struct CaptureWriter<'a> {
 impl CaptureWriter<'_> {
     /// Encode one complete structural R4 group without allocating. Any
     /// capacity or framing refusal remains recorded for the whole callback.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn push(&mut self, input: GroupInput<'_>) -> Result<(), ScratchError> {
         self.scratch.push(input)
     }
@@ -143,7 +147,7 @@ impl CaptureScratch {
 
     /// Fixed Rust value and scratch-arena bytes, excluding allocator metadata.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>() + self.bytes.len()
+        size_of::<Self>() + self.bytes.len()
     }
 
     fn clear(&mut self) {
@@ -177,6 +181,10 @@ impl OrdinaryPeer {
     /// Construct from one externally admitted baseline incarnation. Sequence
     /// zero is reserved for initial Hello; any nonzero seed must come from a
     /// verified same-epoch control prefix.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn from_baseline(
         key: PeerKey,
         partitions: &[PartitionSeed],
@@ -240,9 +248,7 @@ impl OrdinaryPeer {
     /// Reserved Rust value and arena/Vec capacity bytes, excluding allocator
     /// bookkeeping and the caller's game projection scratch.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>()
-            - std::mem::size_of::<UnsentQueue>()
-            - std::mem::size_of::<OrdinaryLedger>()
+        size_of::<Self>() - size_of::<UnsentQueue>() - size_of::<OrdinaryLedger>()
             + self.unsent.reserved_capacity_bytes()
             + self.sent.reserved_capacity_bytes()
     }
@@ -252,6 +258,10 @@ impl OrdinaryPeer {
     /// game validator must certify complete schema/dependency closure. Any
     /// refusal or hook unwind leaves exact queue bytes/cursors untouched and
     /// requires closing this ordinary-only peer; authority time continues.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn capture_batch(
         &mut self,
         payloads: &[&[u8]],
@@ -281,6 +291,10 @@ impl OrdinaryPeer {
     /// game callback may borrow a W1 publication only for this call; its
     /// scalar R4 bytes are copied into N1 before that publication is dropped.
     /// A refusal or unwind closes only this peer and commits no queue bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn capture_projected<E>(
         &mut self,
         scratch: &mut CaptureScratch,
@@ -342,6 +356,10 @@ impl OrdinaryPeer {
     /// Transfer the earliest N1-owned group only after exact frame/journal
     /// reservation and sequence commit. Capacity pressure preserves queue
     /// bytes and permits an exact later retry; other failures require close.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn submit_next(
         &mut self,
         acknowledged_client_sequence: u64,
@@ -365,6 +383,10 @@ impl OrdinaryPeer {
 
     /// Borrow the earliest incomplete exact frame. A qualified ordered
     /// transport may advance only its known accepted-byte offset.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn next_write(&self) -> Result<Option<FrameParts<'_>>, PeerError<WriteError>> {
         if self.phase() != PeerPhase::Ordinary {
             return Err(PeerError::RequiresClose);
@@ -373,6 +395,10 @@ impl OrdinaryPeer {
     }
 
     /// Record only exact bytes known accepted for the next frame.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn accept_written(
         &mut self,
         sequence: u64,
@@ -402,6 +428,10 @@ impl OrdinaryPeer {
     /// `key` to the authenticated session and recheck current authority
     /// incarnation inside its callback; a callback refusal retains the exact
     /// receipt for retry without retiring any frame or mandatory identity.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn acknowledge_through<E>(
         &mut self,
         key: PeerKey,
@@ -419,6 +449,10 @@ impl OrdinaryPeer {
     /// Verify one exact Reject. A valid Reject retains all frames and
     /// mandatory identities but requires close until baseline replacement
     /// joins this same sent owner.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, capacity, transport or acknowledgement.
     pub fn reject_state_group(
         &mut self,
         key: PeerKey,

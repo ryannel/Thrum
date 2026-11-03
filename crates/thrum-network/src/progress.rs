@@ -59,6 +59,10 @@ impl Progress {
     /// Construct from an externally verified same-epoch baseline. `pending`
     /// must enumerate every sequence immediately above `resolved_through`,
     /// including individually resolved results above a pending gap.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline or pending-input capacity.
     pub fn from_baseline(
         controlled_group_id: u32,
         controlled_actor_id: u64,
@@ -95,6 +99,10 @@ impl Progress {
 
     /// Reserve one client input sequence only after finite retained capacity
     /// is available. The caller still validates the action and connection.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline or pending-input capacity.
     pub fn reserve_input(&mut self, action_type: u32) -> Result<u64, ProgressError> {
         if self.pending.len() == MAX_PENDING_INPUTS {
             return Err(ProgressError::Capacity);
@@ -125,7 +133,7 @@ impl Progress {
 
     /// Reserved Rust value and Vec element-capacity bytes, excluding allocator metadata.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>() + self.pending.capacity() * std::mem::size_of::<PendingInput>()
+        size_of::<Self>() + self.pending.capacity() * size_of::<PendingInput>()
     }
 
     pub(crate) fn preflight(
