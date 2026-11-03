@@ -56,6 +56,7 @@ pub(crate) const LIGHT_DEFINITION: &str = concat!(
 );
 
 pub(crate) struct RecordHeader {
+    #[cfg(test)]
     pub(crate) id: String,
     pub(crate) record_type: String,
     pub(crate) schema: u64,
@@ -126,8 +127,12 @@ pub(crate) fn record_header(bytes: &[u8]) -> Result<RecordHeader, serde_json::Er
             if id.is_none() || !fields_seen {
                 return Err(A::Error::custom("missing source envelope field"));
             }
+            let id = required(id)?;
+            #[cfg(not(test))]
+            drop(id);
             Ok(RecordHeader {
-                id: required(id)?,
+                #[cfg(test)]
+                id,
                 record_type: required(record_type)?,
                 schema: required(schema)?,
             })
