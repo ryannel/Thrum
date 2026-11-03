@@ -407,10 +407,18 @@ mod tests {
     #[cfg(target_os = "macos")]
     use std::ffi::OsString;
     use std::fs;
+    #[cfg(target_os = "macos")]
+    use std::io::{BufRead, BufReader};
     use std::io::{Read, Seek, SeekFrom, Write};
     use std::path::{Path, PathBuf};
     use std::process::Command;
+    #[cfg(target_os = "macos")]
+    use std::process::{Child, Stdio};
     use std::sync::atomic::{AtomicU64, Ordering};
+    #[cfg(target_os = "macos")]
+    use std::sync::mpsc;
+    #[cfg(target_os = "macos")]
+    use std::time::Duration;
     use std::time::Instant;
     use thrum_source::{
         NativeSourceStore, SourceSpacePlan, registry_stage::validate_staged_candidate,
@@ -926,6 +934,9 @@ mod tests {
     fn admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary() {
         let mut private_cargo_home = std::env::var_os("THRUM_TEST_CARGO_HOME").map(PathBuf::from);
         let prepare_cargo_home = std::env::var_os("THRUM_TEST_PREPARE_CARGO_HOME").is_some();
+        #[cfg(target_os = "macos")]
+        let sealed_cache_owner =
+            std::env::var_os("THRUM_TEST_SEALED_CACHE_OWNER").map(PathBuf::from);
         let rustc_wrapper = std::env::var_os("THRUM_TEST_RUSTC_RECEIPT_WRAPPER").map(PathBuf::from);
         assert!(
             (private_cargo_home.is_none() && !prepare_cargo_home)
@@ -935,6 +946,12 @@ mod tests {
         assert!(
             private_cargo_home.is_none() || !prepare_cargo_home,
             "select an existing private home or prepare a new one"
+        );
+        #[cfg(target_os = "macos")]
+        assert!(
+            sealed_cache_owner.is_none()
+                || prepare_cargo_home && std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some(),
+            "sealing the private cache requires native preparation and sandbox"
         );
         assert!(
             rustc_wrapper.is_none()
@@ -1027,6 +1044,8 @@ mod tests {
         #[cfg(not(target_os = "macos"))]
         let (cache_cargo, cache_rustc) = (installed_cargo, installed_rustc);
         let mut owned_cache = None;
+        #[cfg(target_os = "macos")]
+        let mut cache_guard = None;
         if prepare_cargo_home {
             let prepared = prepare_private_cargo_home(
                 checkout,
@@ -1035,6 +1054,26 @@ mod tests {
                 &cache_cargo,
                 &cache_rustc,
             );
+            #[cfg(target_os = "macos")]
+            let prepared = if let Some(owner) = &sealed_cache_owner {
+                let guard = SealedCacheGuard::prepare_and_hold(checkout, owner, &prepared);
+                let mut prepared = prepared;
+                prepared.path = guard.root.clone();
+                prepared.manifest_path = guard.manifest_path.clone();
+                eprintln!("admitted-headless-cache tree_sha256={}", guard.tree_sha256);
+                eprintln!(
+                    "admitted-headless-cache legacy_sha256={} files={} bytes={} prepare_ms={} cold_open_ms={}",
+                    guard.legacy_sha256,
+                    guard.files,
+                    guard.bytes,
+                    guard.prepare_ms,
+                    guard.cold_open_ms
+                );
+                cache_guard = Some(guard);
+                prepared
+            } else {
+                prepared
+            };
             private_cargo_home = Some(prepared.path.clone());
             owned_cache = Some(prepared);
         }
@@ -1403,6 +1442,10 @@ mod tests {
         if let Some(cache) = &owned_cache {
             cache.assert_tool_bytes();
         }
+        #[cfg(target_os = "macos")]
+        if let Some(guard) = cache_guard {
+            guard.close();
+        }
         drop(owned_cache);
     }
 
@@ -1504,6 +1547,8 @@ mod tests {
     }
 
     struct PreparedCacheHome {
+        source_path: PathBuf,
+        source_manifest_path: PathBuf,
         path: PathBuf,
         manifest_path: PathBuf,
         target: String,
@@ -1552,8 +1597,156 @@ mod tests {
 
     impl Drop for PreparedCacheHome {
         fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.path);
-            let _ = fs::remove_file(&self.manifest_path);
+            let _ = fs::remove_dir_all(&self.source_path);
+            let _ = fs::remove_file(&self.source_manifest_path);
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    struct SealedCacheGuard {
+        root: PathBuf,
+        manifest_path: PathBuf,
+        tree_sha256: String,
+        legacy_sha256: String,
+        files: u64,
+        bytes: u64,
+        prepare_ms: u128,
+        cold_open_ms: u128,
+        child: Option<Child>,
+    }
+
+    #[cfg(target_os = "macos")]
+    impl SealedCacheGuard {
+        fn prepare_and_hold(checkout: &Path, owner: &Path, cache: &PreparedCacheHome) -> Self {
+            let python = std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into());
+            let helper = checkout.join("scripts/hold_macos_private_cargo_cache.py");
+            let prepare_started = Instant::now();
+            let prepared = Command::new(&python)
+                .arg(&helper)
+                .arg("--prepare")
+                .arg("--source")
+                .arg(&cache.source_path)
+                .arg("--manifest")
+                .arg(&cache.source_manifest_path)
+                .arg("--owner")
+                .arg(owner)
+                .output()
+                .unwrap();
+            assert!(
+                prepared.status.success(),
+                "{}",
+                String::from_utf8_lossy(&prepared.stderr)
+            );
+            let prepare_ms = prepare_started.elapsed().as_millis();
+            let selected: serde_json::Value = serde_json::from_slice(&prepared.stdout).unwrap();
+            let root = PathBuf::from(selected["root"].as_str().unwrap());
+            let tree_sha256 = selected["tree"]["sha256"].as_str().unwrap().to_owned();
+            let legacy_sha256 = selected["legacy"]["sha256"].as_str().unwrap().to_owned();
+            let files = selected["legacy"]["files"].as_u64().unwrap();
+            let bytes = selected["legacy"]["bytes"].as_u64().unwrap();
+            let manifest_path = owner.join(format!(".cargo-manifest-{tree_sha256}.json"));
+            let open_started = Instant::now();
+            let mut child = Command::new(&python)
+                .arg(&helper)
+                .arg("--hold")
+                .arg("--owner")
+                .arg(owner)
+                .arg("--tree-json")
+                .arg(serde_json::to_string(&selected["tree"]).unwrap())
+                .arg("--legacy-json")
+                .arg(serde_json::to_string(&selected["legacy"]).unwrap())
+                .arg("--manifest-sha")
+                .arg(selected["manifestSha256"].as_str().unwrap())
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .unwrap();
+            let stdout = child.stdout.take().unwrap();
+            let (sender, receiver) = mpsc::sync_channel(1);
+            let reader = std::thread::spawn(move || {
+                let mut ready = String::new();
+                let result = BufReader::new(stdout).read_line(&mut ready);
+                let _ = sender.send((result, ready));
+            });
+            let response = receiver.recv_timeout(Duration::from_secs(10));
+            if response.is_err() {
+                drop(child.stdin.take());
+                let _ = child.kill();
+                let _ = child.wait();
+                reader.join().unwrap();
+                panic!("sealed cache lease did not report readiness within ten seconds");
+            }
+            let (read_result, ready) = response.unwrap();
+            reader.join().unwrap();
+            if let Err(error) = read_result {
+                drop(child.stdin.take());
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("sealed cache lease readiness pipe failed: {error}");
+            }
+            if ready != "READY\n" {
+                drop(child.stdin.take());
+                let _ = child.kill();
+                let _ = child.wait();
+                let mut stderr = String::new();
+                child
+                    .stderr
+                    .take()
+                    .unwrap()
+                    .take(16 * 1024)
+                    .read_to_string(&mut stderr)
+                    .unwrap();
+                panic!("sealed cache lease did not open: {ready} {}", stderr);
+            }
+            assert!(
+                child.try_wait().unwrap().is_none(),
+                "sealed cache lease guard exited before the build"
+            );
+            let cold_open_ms = open_started.elapsed().as_millis();
+            Self {
+                root,
+                manifest_path,
+                tree_sha256,
+                legacy_sha256,
+                files,
+                bytes,
+                prepare_ms,
+                cold_open_ms,
+                child: Some(child),
+            }
+        }
+
+        fn close(mut self) {
+            let mut child = self.child.take().unwrap();
+            drop(child.stdin.take());
+            let deadline = Instant::now() + Duration::from_secs(5);
+            loop {
+                if let Some(status) = child.try_wait().unwrap() {
+                    assert!(
+                        status.success(),
+                        "sealed cache lease guard failed: {status}"
+                    );
+                    return;
+                }
+                if Instant::now() >= deadline {
+                    child.kill().unwrap();
+                    child.wait().unwrap();
+                    panic!("sealed cache lease guard did not exit after input closed");
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    impl Drop for SealedCacheGuard {
+        fn drop(&mut self) {
+            if let Some(mut child) = self.child.take() {
+                drop(child.stdin.take());
+                let _ = child.kill();
+                let _ = child.wait();
+            }
         }
     }
 
@@ -1581,6 +1774,8 @@ mod tests {
         ));
         assert!(!destination.exists() && !manifest_path.exists());
         let mut owner = PreparedCacheHome {
+            source_path: destination.clone(),
+            source_manifest_path: manifest_path.clone(),
             path: destination.clone(),
             manifest_path: manifest_path.clone(),
             target: target.to_owned(),

@@ -132,6 +132,7 @@ def main():
             "THRUM_PYTHON": "python3.11",
             "THRUM_TEST_NATIVE_SANDBOX": "1",
             "THRUM_TEST_PREPARE_CARGO_HOME": "1",
+            "THRUM_TEST_SEALED_CACHE_OWNER": str(owner),
             "THRUM_TEST_RUSTC_RECEIPT_WRAPPER": str(wrapper),
             "THRUM_TEST_RETAINED_RUST_ROOT": str(selected["rust"][0]),
             "THRUM_TEST_RETAINED_LINKER_ROOT": str(selected["linker"][0]),
@@ -171,6 +172,8 @@ def main():
             if b"test result: ok. 1 passed;" not in stdout:
                 raise ValueError(f"held A/B test did not report one passing case: {log_path}")
             required = (
+                "admitted-headless-cache tree_sha256",
+                "admitted-headless-cache legacy_sha256",
                 "admitted-headless-a rustc_receipts",
                 "admitted-headless-a candidate_sha256",
                 "admitted-headless-a retained_reload_ms",
@@ -183,6 +186,15 @@ def main():
                 if len(matches) != 1:
                     raise ValueError(f"held A/B result lacks one {marker} observation: {log_path}")
                 observations[marker] = matches[0]
+            cache_digest = observations["admitted-headless-cache tree_sha256"].split("=", 1)[1]
+            if (len(cache_digest) != 64
+                    or any(char not in "0123456789abcdef" for char in cache_digest)):
+                raise ValueError("held cache marker has an invalid digest")
+            cache_root = owner / f"root-{cache_digest}"
+            cache_expected = inventory_root(cache_root)
+            if cache_expected["sha256"] != cache_digest:
+                raise ValueError("held cache changed after admitted A/B build")
+            selected["cache"] = (cache_root, cache_expected)
             for lease in held_leases:
                 lease.assert_live()
             checked = time.perf_counter_ns()
