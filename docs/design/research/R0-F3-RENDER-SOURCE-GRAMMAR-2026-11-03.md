@@ -66,6 +66,10 @@ The [isolated embedded-index microprobe](../../evidence/render/R0-F3-EMBEDDED-IN
 shows this dimension is independent: four bounded source-shaped roots can
 carry 332,016 embedded IDs with only four edges. Its generic JSON parser
 dominates peak memory, so it does not yet justify a numeric capacity.
+An [isolated strict typed-decoder prototype](../../evidence/render/R0-F3-TYPED-DECODER-PROTOTYPE-2026-11-03.md)
+reduces that fixture's measured peak by releasing per-object scratch and
+preserves escaped-string semantics, but it is outside F3 and does not measure
+combined stage/pin work or select the capacity.
 
 ## Field meanings
 
@@ -126,7 +130,10 @@ viewport aspect and view-relative origin are derived per packet.
 JSON numbers decode through F3's pinned finite-binary64 decoder. Their exact
 decoded values, including subnormal values, are source meaning; semantic
 keys normalize negative zero, whereas `SourceRevision` still hashes exact
-file bytes. F3 checks dimensions, domains, canonical UUIDs, typed closure and
+file bytes. Decode JSON string escapes before validating UUIDs, enum values
+and field names; equivalent escaped/plain spellings have the same semantic
+meaning, while duplicate decoded keys refuse. F3 checks dimensions,
+domains, canonical UUIDs, typed closure and
 the Foundation v1 authoring extent. For a mesh triangle, require three
 distinct indices and at least one nonzero component of the **exact dyadic**
 cross product `(P1−P0)×(P2−P0)` formed from decoded f64 vertices. An ordinary
@@ -158,8 +165,11 @@ and interpolation meaning requires a new source schema. No substitute
 normal or omitted map is silently used.
 
 The Foundation v1 world-coordinate extent of ±`10^6` m applies to initial
-camera/light/instance positions and transformed bounds; each mesh's local
-geometry radius measured from its local origin is at most `10^3` m. These are
+camera/light/instance positions and transformed bounds; each mesh vertex's
+local radius measured from its local origin has exact decoded-f64 squared
+norm at most `10^6` m². A rounded binary64 `hypot` may accept a point just
+outside that bound; use a certified fast comparison with exact fallback.
+These are
 existing source-profile bounds,
 not new R0 fixture constraints. A valid source can still be unrepresentable
 in the first R0 device profile.
