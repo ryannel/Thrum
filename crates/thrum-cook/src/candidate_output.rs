@@ -18,7 +18,7 @@ const MAX_FILES: usize = 128;
 const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_REPORT_BYTES: u64 = 32 * 1024;
 const MAX_JSON_BYTES: u64 = 128 * 1024;
-const EVIDENCE: [&str; 8] = [
+const EVIDENCE: [&str; 9] = [
     "build.sb",
     "build-declaration.json",
     "cargo-supervisor-request.json",
@@ -27,6 +27,7 @@ const EVIDENCE: [&str; 8] = [
     "environment.json",
     "private-cache-manifest.json",
     "receipt-verification.json",
+    "rustc-receipt-wrapper",
 ];
 
 /// Named source evidence is copied along with the executable. Names are fixed
@@ -362,6 +363,7 @@ pub(crate) fn verify(
         || environment["productRevision"] != report["productRevision"]
         || environment["target"] != report["target"]
         || environment["cacheManifestSha256"] != files["private-cache-manifest.json"]["sha256"]
+        || environment["receiptWrapperSha256"] != files["rustc-receipt-wrapper"]["sha256"]
     {
         return Err(invalid("environment selection differs from candidate"));
     }

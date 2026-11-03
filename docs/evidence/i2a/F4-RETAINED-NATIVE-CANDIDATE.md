@@ -12,11 +12,11 @@ After A's sandboxed Cargo build, the fixture checks selected Cargo units and
 dep-info, reconciles the rustc wrapper receipts with the fresh Cargo transcript,
 and requires successful Cargo completion. It then streams the 2,345,784-byte
 executable into a separate owned candidate directory. The same directory
-retains cooked scene bytes, all raw `.receipt` files, receipt-verifier output,
-Cargo transcript, supervisor request/report, admitted build declaration,
+retains cooked scene bytes, all raw `.receipt` files, the exact receipt-wrapper
+executable, receipt-verifier output, Cargo transcript, supervisor request/report, admitted build declaration,
 private-cache candidate manifest, generated sandbox policy and a local
 environment observation. That observation names the selected source/product,
-target, cache-manifest hash, selected Cargo/Rustc executable hashes and observed
+target, cache-manifest and wrapper hashes, selected Cargo/Rustc executable hashes and observed
 tool-file hashes and paths. It explicitly says installed roots and host runtime
 are still mutable and unclosed.
 
@@ -25,7 +25,7 @@ SHA-256 values. Its separately held SHA-256 anchors reload; it is neither a
 `BuildRevision` nor a ready manifest. Reload checks the accepted source root,
 distinct `SceneProductRevision`, scene codec and content hash, complete file
 membership, all retained bytes, raw receipt-set digest, and the relationship
-between the cache manifest, environment, supervisor request and scene
+between the cache manifest, wrapper, environment, supervisor request and scene
 declaration. It refuses nonordinary files and bounded-file violations.
 
 The fixture removes A's materialized source and original Cargo output before
@@ -42,9 +42,9 @@ that digest independently.
 
 The final local run used Rust 1.99.1, Python 3.11, the opt-in macOS sandbox,
 prepared private Cargo home and rustc receipt wrapper. A's fresh-output build
-took 3,342 ms; cache preparation took 1,228 ms. Candidate copy plus its first
-internal verification took 161 ms, and the first reload after source/output
-removal took 19 ms. The successful build had five compile receipts and three
+took 3,349 ms; cache preparation took 1,258 ms. Candidate copy plus its first
+internal verification took 175 ms, and the first reload after source/output
+removal took 25 ms. The successful build had five compile receipts and three
 probes; the private cache remained at 2,923 files and 67,792,387 logical bytes.
 These are single local elapsed times, not tail or device guarantees. The copy
 streams large files through a 64 KiB buffer; the scene/JSON records are bounded
