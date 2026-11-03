@@ -522,6 +522,10 @@ selects one queue and four scratch textures for an isolated 720p spatial proof.
 Its [logical oracle](../evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
 tests frame credits, held submissions and resize retirement. It does not
 establish a real output surface, F4 leases, GPU allocation or target viability.
+The [synthetic four-role Metal chain](../evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
+executes those scratch formats and one output path with exact offscreen pixels;
+it does not yet execute the authored R0 game, a two-credit held-frame resize
+or measured device-memory residency.
 
 **Spatial implementation input.** The selected spatial operator is FXAA 3.11
 Quality on the encoded scene image. Its exact reference bytes, provenance and

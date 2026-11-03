@@ -203,3 +203,11 @@ Apple M3 Max. It deliberately makes three submissions outside this schedule's
 two-credit policy and does not exercise the four-role graph, F4 leases,
 retirement, surface ownership or physical memory high-water. The native
 gate adds synchronization work and gives no ordinary-frame timing evidence.
+
+A separate [one-frame four-role synthetic Metal chain](../../evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
+then exercised the selected D32 shadow/view, RGBA16Float linear/encoded and
+independent RGBA8 output descriptors through actual read dependencies. A
+half-aware CPU oracle matched every one of 921,600 output pixels. This
+validates one format/usage/pass combination, but the fixture has no held
+frames, resize, two-credit admission, F4 leases, real surface or physical
+memory measurement. Its uniform FXAA case is not an edge-quality proof.
