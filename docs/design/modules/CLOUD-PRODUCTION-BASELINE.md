@@ -56,6 +56,12 @@ recovery and dirty-work/cost bounds. Same-IDCu→Cb and changing fronts remain r
 selection is **unfinished**; no new default source or production-quality claim is made by naming it. The single
 [build queue](CLOUD-MIGRATION.md#p1b--representative-live-source-regimes-before-layoutlibrary-freeze) owns the next proof.
 
+The subsequent [fixed loft macro screen](../../evidence/cloud-swept-macro-screen-2026-11-03/README.md) also fails
+visible anatomy and base-onset spread before detail/native cooking. Retire that candidate. The next source proof audits
+where useful raw03 lobes are lost through preparation, optical taper and assembly overlap; it does not select another
+primitive/noise formula. The condensation-base/positive-root frame invariant is reviewed, but new native metadata,
+runtime migration, local lifecycle, all optical readers and cost remain unqualified.
+
 ### Authored input and local-geometry discrimination
 
 [The static-master checkpoint](../../evidence/cloud-authored-masters-2026-11-03/README.md) retains exact CC0 source

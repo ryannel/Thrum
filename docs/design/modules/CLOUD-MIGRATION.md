@@ -53,7 +53,9 @@ The immediate deliverable is one runnable two-formation lab with normal and acce
 - [x] Select exact91b967 CPU source after independent functional review and both original/coupled-dry4ms host screens; retain raw tails, prior failures and functional restore.
 - [x] Assemble [source91 build6bd88ae9bef60733](../../evidence/cloud-assembled-source-2026-11-03/README.md) with explicit CPU-screened/GPU-and-art-unqualified status: independent integration review, actual16-path HTTP closure, matched100s exact decoded pixels, finite GPU/CPU points, normal110s/16×75s/dry90s recordings and retained-reader/remote-blocker checks. The127 reference remains unchanged. This checks assembly only; anatomy, breakup, variation and full-system cost remain open.
 - [x] Reject the [one pre-distance density/base/edge candidate](../../evidence/cloud-natural-content-preflight-2026-11-03/README.md) before EDT: the fixed base gate fails (56.70% versus80% narrow rises;54.19m versus16m height range), and scalar views still show the broad bank/few masses. More optical amount does not author the missing anatomy. No new native asset or runtime field was adopted.
-- [ ] Correct the measured broad/soft base, weak middle-scale anatomy and coarse erosion at the native source layer; recertify new content and inspect normal/accelerated local growth and breakup in the assembled readers. A new explicit macro/base producer is required; its mechanism must be reviewed before another field is cooked.
+- [x] Screen and [reject the fixed branching-loft macro candidate](../../evidence/cloud-swept-macro-screen-2026-11-03/README.md) before detail/EDT/native cooking: actual A/B images and independent visual review show merged caps/forks/clubs, failed major/shoulder cues and44.12/49.24m base-onset ranges. Connection and optical bands pass but do not rescue anatomy. Preserve the initial diagnostic broadcast failure and the separately reviewed repair.
+- [x] Derive and independently review the condensation-base frame versus positive attachment root, actual growth/shear velocity and parentless BODY renewal contract. Eight scalar cases pass; numeric metadata in the rejected candidate is illustrative, not admitted for another asset. Runtime/all-reader/native/motion and cost gates remain open.
+- [ ] Audit known useful raw03 anatomy through actual compression/crop, optical taper and isolated/assembled overlap at matched world poses. Use the result to select and implement the corrective source/query path; then recertify final native content and judge normal/accelerated growth and breakup. Do not extend the rejected loft through another parameter/noise search or use opacity/light to conceal missing structure.
 - [ ] Supply distinct formation anatomy and causal opportunity schedules under one weather/source clock; reject synchronized clones, including after supply-off/on. Keep the identical synchronized pair as a worst-case cost fixture.
 - [x] Select the [complete bounded joint-media operating model](../../evidence/cloud-joint-media-design-2026-11-03/README.md) and promote its reviewed analytic CPU fog helper into maintained proof code;12 focused tests pass. Complete-graph implementation, GPU numerics, visuals and costs remain open.
 - [ ] Complete joint clear-air/fog Sun visibility and current environment/ambient with common source queries, independent reflected rays and main-hidden consumers; inspect low/high Sun and offscreen blockers.
@@ -66,9 +68,10 @@ changes need contradictory evidence and an explicit revision. No paid tools/serv
 
 ## Implementation boundaries and integration order
 
-Build the standalone proof under `tmp/cloud-production-proof/`; do not restructure the old instrument into a new
-engine. These are internal units, not speculative crates or public SDK promises. Promote selected source/evidence
-with exact pins at checkpoints; engine packages and permitted dependencies are registered only at P8.
+Develop bounded candidates under owned `tmp/<cloud-task>/` directories; integrate selected implementations into
+[the maintained assembly](../../../scripts/cloud_atmosphere_proof/README.md). Maintained code must not import scratch.
+The existing frozen source91 viewer remains the runnable comparator until its replacement is qualified. These are
+internal proof units, not speculative crates or SDK promises; engine packages/dependencies are registered only at P8.
 
 | Unit / first stage | Owns | Reads / prohibited coupling |
 | --- | --- | --- |
