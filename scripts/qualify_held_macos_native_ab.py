@@ -76,6 +76,8 @@ def main():
         raise ValueError("expected owned retained-root scratch directory")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--resume-owner", type=Path)
+    parser.add_argument("--fault-guard", action="store_true",
+                        help="kill the held guard after a pending real compiler receipt")
     args = parser.parse_args()
     if args.resume_owner is None:
         owner = Path(tempfile.mkdtemp(prefix="held-ab-", dir=scratch))
@@ -142,6 +144,8 @@ def main():
             "THRUM_TEST_RETAINED_SDK_INVENTORY": json.dumps(selected["sdk"][1], sort_keys=True),
             "RUSTC_WRAPPER": "",
         }
+        if args.fault_guard:
+            env["THRUM_TEST_KILL_HELD_GUARD_DURING_BUILD"] = "1"
         command = [
             "rustup", "run", "1.99.1", "cargo", "test", "--locked", "--offline",
             "-p", "thrum-cook",
@@ -160,6 +164,56 @@ def main():
         )
         log_path.write_bytes(stdout + b"\n--- stderr ---\n" + stderr)
         build_ms = (time.perf_counter_ns() - started) / 1e6
+        if args.fault_guard:
+            lines = stderr.decode("utf-8", errors="replace").splitlines()
+            markers = (
+                "admitted-headless-cache tree_sha256=",
+                "admitted-headless-cache held_native_roots=4",
+                "admitted-headless-cache injected_guard_loss_after_pending_compile=true",
+                "admitted-headless-cache guard_loss_cleanup_kind=\"interrupted\" pending_receipts=",
+                "candidate_absent=true",
+            )
+            observations = {}
+            for marker in markers:
+                matches = [line.strip()[:512] for line in lines if marker in line]
+                if len(matches) != 1:
+                    raise ValueError(f"guard fault lacks one {marker} observation: {log_path}")
+                observations[marker] = matches[0]
+            if status == 0:
+                raise ValueError("guard fault unexpectedly passed the admitted build")
+            pending_line = observations[markers[3]]
+            try:
+                pending = int(pending_line.split("pending_receipts=", 1)[1].split()[0])
+            except (IndexError, ValueError) as error:
+                raise ValueError("guard fault has no valid pending count") from error
+            if (pending < 1 or b"test result: FAILED" not in stdout
+                    or b"held native guard failed during Cargo build" not in stderr):
+                raise ValueError("guard fault did not finish the expected cleanup path")
+            cache_digest = observations[markers[0]].split("=", 1)[1]
+            if (len(cache_digest) != 64
+                    or any(char not in "0123456789abcdef" for char in cache_digest)):
+                raise ValueError("guard fault has invalid cache digest")
+            cache_root = owner / f"root-{cache_digest}"
+            cache_expected = inventory_root(cache_root)
+            if cache_expected["sha256"] != cache_digest:
+                raise ValueError("held cache changed during guard fault")
+            selected["cache"] = (cache_root, cache_expected)
+            checked = time.perf_counter_ns()
+            for root, expected in selected.values():
+                if inventory_root(root) != expected:
+                    raise ValueError("held tool bytes changed during guard fault")
+            print(json.dumps({
+                "buildReady": False,
+                "checkoutCommit": subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=checkout, text=True,
+                ).strip(),
+                "fault": "held-guard-lost-after-pending-compiler-receipt",
+                "admittedAbMs": build_ms,
+                "postBuildFullInventoryMs": (time.perf_counter_ns() - checked) / 1e6,
+                "observations": observations,
+            }, sort_keys=True))
+            success = True
+            return
         if status != 0:
             raise RuntimeError(f"held A/B qualification failed; see {log_path}")
         if b"test result: ok. 1 passed;" not in stdout:

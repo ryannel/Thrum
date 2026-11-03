@@ -1044,7 +1044,6 @@ mod tests {
         #[cfg(not(target_os = "macos"))]
         let (cache_cargo, cache_rustc) = (installed_cargo, installed_rustc);
         let mut owned_cache = None;
-        #[cfg(target_os = "macos")]
         let mut cache_guard = None;
         if prepare_cargo_home {
             let prepared = prepare_private_cargo_home(
@@ -1141,6 +1140,7 @@ mod tests {
             private_cargo_home.as_deref(),
             rustc_wrapper.as_deref(),
             native_tools.as_ref(),
+            cache_guard.as_mut(),
         );
         let build_elapsed = started.elapsed();
         assert!(
@@ -1179,6 +1179,12 @@ mod tests {
         let binary_a_bytes = fs::metadata(&binary_a).unwrap().len();
         let binary_a_hash = file_sha256_hex(&binary_a);
         let candidate_a = if let (Some(_), Some(cache)) = (&verified_receipts, &owned_cache) {
+            #[cfg(target_os = "macos")]
+            if let Some(guard) = &mut cache_guard {
+                guard
+                    .ensure_live()
+                    .expect("held native guard exited before candidate retention");
+            }
             fs::copy(
                 a_materialized.path().join("build/headless.json"),
                 a_output.join("build-declaration.json"),
@@ -1419,6 +1425,7 @@ mod tests {
             private_cargo_home.as_deref(),
             rustc_wrapper.as_deref(),
             native_tools.as_ref(),
+            cache_guard.as_mut(),
         );
         assert!(!built_b.status.success());
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
@@ -1806,8 +1813,24 @@ mod tests {
         reader: Option<std::thread::JoinHandle<()>>,
     }
 
+    #[cfg(not(target_os = "macos"))]
+    struct SealedCacheGuard;
+
     #[cfg(target_os = "macos")]
     impl SealedCacheGuard {
+        fn ensure_live(&mut self) -> Result<(), &'static str> {
+            match self.child.as_mut().unwrap().try_wait() {
+                Ok(None) => {}
+                Ok(Some(_)) => return Err("held native guard exited"),
+                Err(_) => return Err("held native guard status is unavailable"),
+            }
+            match self.responses.try_recv() {
+                Err(mpsc::TryRecvError::Empty) => Ok(()),
+                Err(mpsc::TryRecvError::Disconnected) => Err("held native guard output closed"),
+                Ok(_) => Err("held native guard emitted unsolicited output"),
+            }
+        }
+
         fn prepare_and_hold(
             checkout: &Path,
             owner: &Path,
@@ -1931,6 +1954,7 @@ mod tests {
         }
 
         fn verify_reuse(&mut self, source: &Path, target: &str) -> Result<(), &'static str> {
+            self.ensure_live()?;
             let started = Instant::now();
             let request_id = self.next_request_id;
             self.next_request_id = self.next_request_id.checked_add(1).unwrap();
@@ -1951,6 +1975,7 @@ mod tests {
                 .expect("held cache reuse response failed");
             let result = held_cache_response(&line, request_id, &self.expected_reuse_sha256);
             if result.is_ok() {
+                self.ensure_live()?;
                 eprintln!(
                     "verified-held-private-cargo-reuse ms={}",
                     started.elapsed().as_millis()
@@ -2473,6 +2498,7 @@ mod tests {
         private_cargo_home: Option<&Path>,
         rustc_wrapper: Option<&Path>,
         native_tools: Option<&NativeSandboxTools>,
+        cache_guard: Option<&mut SealedCacheGuard>,
     ) -> std::process::Output {
         fs::create_dir_all(output).unwrap();
         let output = fs::canonicalize(output).unwrap();
@@ -2523,10 +2549,12 @@ mod tests {
             .env("CARGO_NET_OFFLINE", "true");
         #[cfg(target_os = "macos")]
         let result = if sandbox {
-            supervised_headless_build(command, checkout, &output)
+            supervised_headless_build(command, checkout, &output, cache_guard)
         } else {
             command.output().unwrap()
         };
+        #[cfg(not(target_os = "macos"))]
+        let _ = cache_guard;
         #[cfg(not(target_os = "macos"))]
         let result = command.output().unwrap();
         if let Some(selected) = native_tools {
@@ -2540,6 +2568,7 @@ mod tests {
         command: &Command,
         checkout: &Path,
         output: &Path,
+        mut cache_guard: Option<&mut SealedCacheGuard>,
     ) -> std::process::Output {
         use std::fmt::Write as _;
         use std::process::Stdio;
@@ -2573,7 +2602,12 @@ mod tests {
         let mut request_file = fs::File::create_new(&request_path).unwrap();
         serde_json::to_writer(&mut request_file, &request).unwrap();
         drop(request_file);
-        let status =
+        if let Some(guard) = cache_guard.as_mut() {
+            guard
+                .ensure_live()
+                .expect("native guard died before Cargo launch");
+        }
+        let mut supervisor =
             Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
                 .arg(checkout.join("scripts/run_bounded_native_build.py"))
                 .arg("--request")
@@ -2581,8 +2615,105 @@ mod tests {
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
-                .status()
+                .spawn()
                 .unwrap();
+        let mut guard_fault = None;
+        let inject_guard_loss =
+            std::env::var_os("THRUM_TEST_KILL_HELD_GUARD_DURING_BUILD").is_some();
+        let mut injected_guard_loss = false;
+        let poll_supervisor = |child: &mut Child| match child.try_wait() {
+            Ok(status) => status,
+            Err(error) => {
+                eprintln!(
+                    "native supervisor status failed ({error}); compiler scratch is quarantined"
+                );
+                std::process::exit(125);
+            }
+        };
+        let status = loop {
+            if inject_guard_loss
+                && !injected_guard_loss
+                && pending_compiler_receipt(&output.join("rustc-receipts"))
+            {
+                let guard = cache_guard
+                    .as_mut()
+                    .expect("fault fixture needs held guard");
+                guard.child.as_mut().unwrap().kill().unwrap();
+                injected_guard_loss = true;
+                eprintln!("admitted-headless-cache injected_guard_loss_after_pending_compile=true");
+            }
+            if let Some(guard) = cache_guard.as_mut()
+                && let Err(fault) = guard.ensure_live()
+            {
+                guard_fault = Some(fault);
+                break poll_supervisor(&mut supervisor);
+            }
+            if let Some(status) = poll_supervisor(&mut supervisor) {
+                break Some(status);
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        };
+        if guard_fault.is_none()
+            && let Some(guard) = cache_guard.as_mut()
+        {
+            guard_fault = guard.ensure_live().err();
+        }
+        if let Some(fault) = guard_fault {
+            if status.is_none() {
+                let signalled = Command::new("/bin/kill")
+                    .arg("-TERM")
+                    .arg(supervisor.id().to_string())
+                    .status();
+                if !signalled.is_ok_and(|status| status.success()) {
+                    eprintln!(
+                        "native supervisor cancellation failed; compiler scratch is quarantined"
+                    );
+                    std::process::exit(125);
+                }
+                let deadline = Instant::now() + Duration::from_secs(10);
+                while poll_supervisor(&mut supervisor).is_none() {
+                    if Instant::now() >= deadline {
+                        eprintln!(
+                            "native supervisor did not clean up after guard loss; compiler scratch is quarantined"
+                        );
+                        std::process::exit(125);
+                    }
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+            }
+            let report = std::panic::catch_unwind(|| {
+                read_supervisor_file(output, "cargo-supervisor.json", 4096)
+            })
+            .ok()
+            .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok());
+            let cleaned = report.as_ref().is_some_and(|report| {
+                report["format"] == 1
+                    && report["buildReady"] == false
+                    && matches!(
+                        report["kind"].as_str(),
+                        Some("completed" | "refusedStatus" | "interrupted" | "supervisorError")
+                    )
+            });
+            if !cleaned {
+                eprintln!(
+                    "native supervisor cleanup is unverified after guard loss; compiler scratch is quarantined"
+                );
+                std::process::exit(125);
+            }
+            if inject_guard_loss {
+                let pending = report.as_ref().unwrap()["receiptInventory"]["pending"]
+                    .as_u64()
+                    .unwrap_or(0);
+                let candidate_absent = !output.parent().unwrap().join("candidate-a").exists();
+                eprintln!(
+                    "admitted-headless-cache guard_loss_cleanup_kind={} pending_receipts={pending} candidate_absent={candidate_absent}",
+                    report.as_ref().unwrap()["kind"],
+                );
+                assert!(injected_guard_loss && pending > 0 && candidate_absent);
+            }
+            panic!("held native guard failed during Cargo build: {fault}");
+        }
+        let status = status.unwrap();
         let report: serde_json::Value =
             serde_json::from_slice(&read_supervisor_file(output, "cargo-supervisor.json", 4096))
                 .unwrap();
@@ -2611,6 +2742,38 @@ mod tests {
             stdout,
             stderr,
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn pending_compiler_receipt(directory: &Path) -> bool {
+        let Ok(entries) = fs::read_dir(directory) else {
+            return false;
+        };
+        entries.flatten().any(|entry| {
+            let path = entry.path();
+            if !path
+                .extension()
+                .is_some_and(|extension| extension == "receipt")
+                || !fs::symlink_metadata(&path).is_ok_and(|metadata| {
+                    metadata.is_file()
+                        && !metadata.file_type().is_symlink()
+                        && metadata.len() <= 1024 * 1024
+                })
+            {
+                return false;
+            }
+            let Ok(file) = fs::File::open(path) else {
+                return false;
+            };
+            let mut bytes = Vec::new();
+            if file.take(1024 * 1024 + 1).read_to_end(&mut bytes).is_err() {
+                return false;
+            }
+            (17..=1024 * 1024).contains(&bytes.len())
+                && &bytes[..12] == b"THRMRCP1\x01\0\0\0"
+                && bytes[12] == 1
+                && bytes.ends_with(b"PEND")
+        })
     }
 
     #[cfg(target_os = "macos")]
