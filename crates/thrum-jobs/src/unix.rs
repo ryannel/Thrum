@@ -627,9 +627,12 @@ mod tests {
 
     impl Fixture {
         fn new() -> Self {
+            Self::new_at(&std::env::temp_dir())
+        }
+
+        fn new_at(volume: &Path) -> Self {
             let number = NEXT.fetch_add(1, Ordering::Relaxed);
-            let base =
-                std::env::temp_dir().join(format!("thrum-jobs-{}-{number}", std::process::id()));
+            let base = volume.join(format!("thrum-jobs-{}-{number}", std::process::id()));
             let project = base.join("project");
             let jobs = base.join("project.thrum-jobs");
             fs::DirBuilder::new().mode(0o700).create(&base).unwrap();
@@ -956,6 +959,109 @@ mod tests {
         assert_eq!(fs::read_dir(&fixture.jobs).unwrap().count(), 1);
         let id = host.materialize(&mut pin, scratch()).unwrap();
         host.close(id).unwrap();
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    #[ignore = "requires THRUM_TEST_ENOSPC_VOLUME_DIR on an exclusive task-owned APFS image"]
+    fn registered_f4_mid_copy_enospc_retires_root_and_refunds_only_after_cleanup() {
+        use thrum_source::SourceStoreErrorKind;
+
+        struct FillerGuard(PathBuf);
+        impl Drop for FillerGuard {
+            fn drop(&mut self) {
+                let _ = fs::remove_file(&self.0);
+            }
+        }
+
+        let volume = PathBuf::from(
+            std::env::var_os("THRUM_TEST_ENOSPC_VOLUME_DIR")
+                .expect("set THRUM_TEST_ENOSPC_VOLUME_DIR to a task-owned APFS mount"),
+        );
+        let total = fs4::total_space(&volume).unwrap();
+        assert!((64 * MIB..=512 * MIB).contains(&total));
+        let volume_lock = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(volume.join("thrum-native-enospc-test.lock"))
+            .unwrap();
+        FileExt::lock(&volume_lock).unwrap();
+
+        let fixture = Fixture::new_at(&volume);
+        let filler_path = fixture.base.join("filler.bin");
+        let _filler_guard = FillerGuard(filler_path.clone());
+        let store = fixture.accepted_store();
+        let mut pin = store.pin_current(1).unwrap();
+        let mut host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
+        let mut before_fill = 0_u64;
+        let mut after_fill = 0_u64;
+        let failed = host.materialize_with(&mut pin, scratch(), || {
+            let registered = fs::read_dir(&fixture.jobs)
+                .unwrap()
+                .map(|entry| entry.unwrap().path())
+                .find(|path| {
+                    path.file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .starts_with("job-")
+                })
+                .unwrap();
+            assert!(registered.join("registration").is_file());
+            assert!(!registered.join("input").exists());
+            before_fill = fs4::available_space(&fixture.jobs).unwrap();
+            assert!(before_fill >= 16 * MIB);
+            let mut filler = File::create(&filler_path).unwrap();
+            let bytes = [0x51_u8; MIB as usize];
+            let mut blocks = 0_u64;
+            loop {
+                let available = fs4::available_space(&fixture.jobs).unwrap();
+                if available <= 14 * MIB {
+                    break;
+                }
+                if let Err(error) = filler.write_all(&bytes) {
+                    assert_eq!(error.raw_os_error(), Some(28));
+                    break;
+                }
+                blocks += 1;
+                assert!(blocks <= 512, "fault volume did not fill as planned");
+            }
+            after_fill = fs4::available_space(&fixture.jobs).unwrap();
+            assert!(after_fill < 15 * MIB);
+        });
+        let cause = match failed {
+            Err(JobError::Materialize(MaterializeError::Source(cause))) => cause,
+            other => panic!("expected registered native F4 output fault: {other:?}"),
+        };
+        assert_eq!(cause.kind(), SourceStoreErrorKind::Output);
+        let native = std::error::Error::source(&cause)
+            .and_then(|error| error.downcast_ref::<io::Error>())
+            .and_then(io::Error::raw_os_error);
+        assert_eq!(native, Some(28));
+        assert_eq!(host.active_claim_bytes(), 0);
+        assert_eq!(fs::read_dir(&fixture.jobs).unwrap().count(), 1);
+        eprintln!("t2_f4_native_enospc before_fill={before_fill} after_fill={after_fill}");
+
+        fs::remove_file(&filler_path).unwrap();
+        let retried = host.materialize(&mut pin, scratch()).unwrap();
+        let mut master = File::open(host.input_path(retried).unwrap().join("master.bin")).unwrap();
+        let mut verified_bytes = 0_u64;
+        let mut buffer = [0_u8; 64 * 1024];
+        loop {
+            let count = master.read(&mut buffer).unwrap();
+            if count == 0 {
+                break;
+            }
+            assert!(buffer[..count].iter().all(|byte| *byte == 0x5a));
+            verified_bytes += count as u64;
+        }
+        assert_eq!(verified_bytes, 12 * MIB);
+        assert_eq!(store.current_root().unwrap(), Some(pin.root()));
+        host.close(retried).unwrap();
+        assert_eq!(host.active_claim_bytes(), 0);
+        pin.close().unwrap();
     }
 
     #[test]

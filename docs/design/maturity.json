@@ -2040,7 +2040,16 @@
         "functional_validation": "fifteen focused ordinary tests cover aggregate deferral, alternate-parent and foreign identical-root pin refusal, ordered F3 B admission with an A registered partial root and later complete input, F4 preflight failure and checked refund, uncertain cleanup without refund, process kill after durable registration, restart quarantine, lock-symlink refusal, second-process owner-lock exclusion and parent/job/input replacement refusal; full repository gate recorded in evidence",
         "experienced_quality": "not_applicable_to_headless_job_owner",
         "platform_performance": "no isolated CPU, memory, physical allocation, copy latency or device measurement; cost path uses checked aggregate arithmetic, one admission free-space probe and F4's existing streamed copy without per-chunk account scans",
-        "scope": "A live selected F3 source store binds each F4 pin before a same-volume external job root is registered. One synchronous F4 phase is charged conservatively and refunded only after checked input/root retirement. Existing roots quarantine on restart. F3 project scans, main/WAL charges, compiler output, caches, native space faults, retained recovery, cross-platform implementation and ready publication remain open."
+        "scope": "A live selected F3 source store binds each F4 pin before a same-volume external job root is registered. One synchronous F4 phase is charged conservatively and refunded only after checked input/root retirement. Existing roots quarantine on restart. F3 project scans, main/WAL charges, compiler output, caches, broader native fault phases, retained recovery, cross-platform implementation and ready publication remain open."
+      },
+      "i2a_registered_f4_native_fault": {
+        "design": "research/T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md",
+        "evidence": "../evidence/integration/T2-REGISTERED-F4-NATIVE-FAULT-2026-11-03.md",
+        "implementation": "first_unix_f4_input_phase_only",
+        "functional_validation": "two opt-in macOS ARM64 runs on a task-owned 256 MiB APFS image reached native errno 28 after durable T2 registration and F4 preflight; checked F4/root retirement preceded full claim refund, and the same live pin retried an exact 12 MiB master with unchanged selected F3 root",
+        "experienced_quality": "not_applicable_to_headless_job_owner",
+        "platform_performance": "observed free-space samples before/after external filler were 241319936 and 13762560 bytes in the local image; no CPU, RSS, transient physical high-water or device qualification follows",
+        "scope": "Project, accepted source store, external job parent, F4 input and competing filler shared one bounded APFS image. The test exercises a synchronous registered F4 write fault and successful checked refund; concurrent F3 stage/store work, uncertain cleanup or sync, compiler output/cache lifetime, physical reserve and ready publication remain open."
       }
     },
     {
