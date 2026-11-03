@@ -210,6 +210,14 @@ tool-root cold opens and still re-inventories all four before cleanup. The
 guard starts after cache metadata preparation; installed Xcode support and
 host-runtime bytes, reviewed origin and full compiler read closure remain
 outside this selection.
+The [observed guard-loss qualification](../evidence/i2a/T2-FOUR-ROOT-NATIVE-GUARD-2026-11-03.md#guard-loss-during-an-admitted-build)
+now polls the owned guard during Cargo, sends SIGTERM to the bounded supervisor
+if the guard exits, and requires an unready cleanup report before releasing
+ordinary fixture scratch. One real A build fault after a pending compile-kind
+wrapper receipt retained that receipt, published no candidate and left four
+root inventories unchanged. A normal A/B run still passed. This does not prove
+Rustc had started when the guard died or cover guard loss during candidate
+staging, supervisor SIGKILL or detached compiler descendants.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
