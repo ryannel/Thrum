@@ -73,37 +73,53 @@ revision, selected scene and complete product set. A product hash alone is
 not a ready `BuildRevision`. Reopen and verify product bytes independently
 before exposure; a failed B leaves A's selected build and leases intact.
 
-Two numerical evidence keys prevent needless recooking:
+Three dependency levels prevent needless recooking or stale view evidence:
 
-1. **Physical source predicate:** exact decoded geometry/winding, material
-   sidedness/map mode, relevant physical transforms, camera pose and Sun/local
-   source facts. For each flat face, use `N=(P1−P0)×(P2−P0)`, `d=N·P0`,
-   `N·Sun`, `N·Camera−d`, and `N·LocalPosition−d`. This certificate is
-   independent of a view-relative origin. `P0..P2` are physical world-space
-   positions after the first profile's identity transform; source mesh-local
-   positions cannot be substituted after a later transform. It says which
-   real source side is positive; it does not provide shader cosine magnitude.
-2. **Representation and range:** the physical certificate plus actual F4
-   product bytes, normalization/packing versions, chosen origin/projection,
-   interpolation and shader-expression/error-model revisions. It bounds the
-   source-to-represented operands, sign/magnitude error, half-vector, local
-   distances, material/texture extrema, every dangerous shader intermediate
-   and half-float storage. An origin or target change invalidates this second
-   certificate without recomputing unchanged exact physical predicates.
+1. **Immutable F4 geometry/product facts:** exact decoded vertices, winding,
+   material sidedness/map mode, supported transform mode and authenticated
+   light descriptors. Retain enough exact data to reconstruct source plane
+   predicates; f32 vertex products alone cannot do so. An immutable key
+   depends on source semantics, relevant products and evaluator versions.
+2. **Runtime physical predicate:** V2 supplies one coherent physical camera,
+   light and geometry pose for the presentation sample actually extracted;
+   V3 evaluates the derived shading predicates. For each flat face, use
+   `N=(P1−P0)×(P2−P0)`, `d=N·P0`, `N·Sun`, `N·Camera−d`, and
+   `N·LocalPosition−d`. `P0..P2` are physical world-space positions after
+   the first profile's identity transform; mesh-local positions cannot be
+   substituted after a later transform. The key includes product dependencies
+   and actual interpolated presentation poses, but not the view-relative
+   origin. Static Sun/local signs may be cached. These real source signs do
+   not provide shader cosine magnitude.
+3. **Representation and range:** V2 supplies origin, projection and packing
+   bounds; V3 supplies light/material normalization and BRDF bounds; V4 owns
+   display/storage bounds. The compatible evidence depends on the runtime
+   predicate, actual product bytes, target and shader-expression/error-model
+   revisions. It bounds source-to-represented operands, sign/magnitude error,
+   half-vector, local distances, material/texture extrema, every dangerous
+   shader intermediate and half-float storage. An origin or target change
+   invalidates this evidence without recomputing unchanged physical signs.
+   The preparation coordinator requires the complete compatible set before
+   V1 admits the packet.
 
-The representation certificate may be prepared per view for this small static
-fixture. It cannot be assumed cheap for a 250k-triangle scene or arbitrary
-camera motion. A value whose interval crosses a hemisphere, emitter-radius,
+Runtime predicate and representation evidence may be prepared per view for
+this small static fixture. At most six exact camera predicates change per
+moving view while thirty static Sun/local predicates can be reused; other
+representation bounds may still change for all lights. A sample's
+interpolated pose, not merely its committed endpoint, is the key unless a
+separately proved pose envelope covers the interval. This cannot be assumed
+cheap for a 250k-triangle scene or arbitrary moving geometry. A value whose
+interval crosses a hemisphere, emitter-radius,
 normalization or storage precondition returns typed unsupported before the
 dangerous operation. The exact represented-dot GPU diagnostic cannot recover
 opposite source signs that were narrowed to identical inputs, and its sign
 result alone cannot justify a Smith ratio. A general mapped-normal or grazing
 path needs a separate, measured evaluator.
-F4 can reuse a physical predicate only while the source geometry, physical
-pose, material normal mode and camera/light facts named by that key remain
-unchanged. V2 must select or refresh view-dependent representation evidence
-for each committed camera/world endpoint and origin; a stale certificate
-cannot follow a moved pose merely because the source revision is unchanged.
+Camera movement changes runtime evidence without changing SourceRevision or
+BuildRevision. An origin-only shift can reuse physical predicates. Owned
+packet evidence and product leases survive submission, while the world
+snapshot may release after extraction and required copies. A moving geometry
+or mapped-normal source remains unsupported until its transform/normal
+certificate and runtime producer are selected.
 
 ## First authored proof content, not a source-format limit
 
