@@ -114,6 +114,13 @@ expensive path; fallback occupancy and full five-light cost are unmeasured.
 The [independent finite-operation oracle](../../evidence/render/R0-SIGNED-DOT-FILTER-ORACLE-2026-11-03.md)
 checks selected adjacent-rounding, FTZ and fusion schedules against exact
 represented dots; it does not establish a WGSL/backend implementation.
+An adversarial review identified a further gate: the `2^-20` filter certifies
+**sign only**, not usable cosine magnitude. At a computed dot just above the
+threshold, `E` is about 0.536 times that computed value; the exact represented
+dot may be much smaller. Feeding the computed value directly into the Smith
+ratio can therefore have large relative error even on the admitted side.
+The fast lane needs a separate output-error certificate or an accuracy-triggered
+fallback; sign certification alone cannot select the lighting value.
 
 The existing max-component normalization of `v=wi+wo` can avoid a tiny
 denominator without the arbitrary `2^-12` threshold when `v` has a
@@ -152,6 +159,19 @@ first materializing a flushed f32. A similar scaled integer sum could
 support a near-opposed half vector. This adapts the filtered-predicate
 principle in [Shewchuk's primary paper and code](https://www.cs.cmu.edu/~quake/robust.html),
 not its floating implementation or its assumptions verbatim.
+
+For normal-or-zero components, a concrete exact-dot diagnostic can use one
+ten-`u32` signed accumulator on a `2^-298` lattice: decode each component as
+`±M·2^(e−150)`, form each 48-bit significand product, and shift it by
+`e_x+e_y−2`. The sum needs at most 301 signed bits for this operand range;
+320 bits leave room for carries. This is an implementor candidate to test against an
+independent integer oracle, not a validated WGSL implementation. The
+fallback must keep exponent and significant bits through division; converting
+a positive `2^-127` cosine back to ordinary f32 before division can erase a
+finite bright grazing limit. Exact dot sign/magnitude also does not repair a
+rounded or flushed `wi+wo`: near-opposition recovery must start from the
+original represented operands. Unit-vector and `D`/Fresnel accuracy need
+their own certificates.
 
 This fallback is an unbuilt, potentially expensive candidate. WGSL permits
 FTZ in bit-reinterpretation intermediates, so a float-to-integer bitcast is
