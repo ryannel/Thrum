@@ -1,6 +1,6 @@
 # E1 pinned constant-light cook cost probe — 3 November 2026
 
-This bounded probe tests whether complete manifest authentication and three linear selection scans create consequential cost when a small selected constant-light closure lives in a larger legal declared tree. It calls the current production public APIs; it does not change production source or select a universal budget.
+This bounded probe tests whether complete manifest authentication and three linear selection scans create consequential cost when a small selected constant-light closure lives in a larger legal declared tree. It called production public APIs at the time of measurement; those APIs were removed from the active tree during the code-quality reset and remain in Git history. It did not select a universal budget.
 
 ## Identity and method
 

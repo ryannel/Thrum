@@ -107,6 +107,15 @@ pub enum BuildDeclarationError {
 /// This validates membership and identity only. T2 must still parse Cargo and
 /// toolchain files, close dependencies, isolate compiler execution and verify
 /// the binary before any build can be called ready.
+///
+/// # Errors
+///
+/// Returns an error for a mismatched product, absent or invalid declaration,
+/// or a failed verified source read.
+///
+/// # Panics
+///
+/// Panics only if the fixed declaration path is not portable.
 pub fn read_pinned_build_declaration(
     pin: &mut PinnedSource,
     product: &SceneProduct,
@@ -124,7 +133,8 @@ pub fn read_pinned_build_declaration(
     if length > MAX_DECLARATION_BYTES as u64 {
         return Err(BuildDeclarationError::TooLarge);
     }
-    let mut bytes = Vec::with_capacity(length as usize);
+    let capacity = usize::try_from(length).map_err(|_| BuildDeclarationError::TooLarge)?;
+    let mut bytes = Vec::with_capacity(capacity);
     pin.copy_file_to(&path, &mut bytes)
         .map_err(BuildDeclarationError::Source)?;
     let value = parse_record_json(&bytes).map_err(BuildDeclarationError::Syntax)?;
@@ -139,7 +149,7 @@ pub fn read_pinned_build_declaration(
             return Err(BuildDeclarationError::MissingField(name));
         }
     }
-    if fields.get("format").and_then(|value| value.as_u64()) != Some(1) {
+    if fields.get("format").and_then(serde_json::Value::as_u64) != Some(1) {
         return Err(BuildDeclarationError::InvalidField("format"));
     }
     let cargo_manifest = path_field(fields, "cargoManifest")?;

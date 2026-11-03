@@ -1,8 +1,10 @@
 # First production constant-light F4 codec slice
 
+> Status after the code-quality cleanup: this inactive module was removed from the active tree. The historical implementation remains at `git show e331e78:crates/thrum-cook/src/constant_light.rs`; the measurements below describe that historical slice.
+
 3 November 2026. The [selected 160-byte constant-light contract](../../design/modules/ENVIRONMENT.md#selected-first-f4-constant-light-product-and-binding)
 now has a pure Rust codec in
-[`thrum-cook/src/constant_light.rs`](../../../crates/thrum-cook/src/constant_light.rs).
+`thrum-cook/src/constant_light.rs`.
 It is a production module and public typed API, but it does **not** yet read
 the authenticated F3 source pin, establish selected scene/environment/light
 closure, create persistent cook identities or publish a ready build.

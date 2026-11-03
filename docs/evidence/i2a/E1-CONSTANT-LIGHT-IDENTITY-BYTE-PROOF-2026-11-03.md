@@ -1,6 +1,8 @@
 # E1 constant-light identity byte proof
 
-3 November 2026. A private **test-only** Rust module in [`thrum-cook/src/constant_light_identity.rs`](../../../crates/thrum-cook/src/constant_light_identity.rs) exercises the [candidate E1 identity grammar](../../design/research/E1-CONSTANT-LIGHT-PERSISTENT-IDENTITY-2026-11-03.md) without opening a cache, publishing a binding or selecting a build. `TestCookClass` and `TestProfileLock` are arbitrary fixture digests, not trusted T2 credentials. The module is compiled only for tests and grants no production identity or source authority.
+> Status after the code-quality cleanup: this inactive module was removed from the active tree. The historical implementation remains at `git show e331e78:crates/thrum-cook/src/constant_light_identity.rs`; the measurements below describe that historical slice.
+
+3 November 2026. A private **test-only** Rust module in `thrum-cook/src/constant_light_identity.rs` exercises the [candidate E1 identity grammar](../../design/research/E1-CONSTANT-LIGHT-PERSISTENT-IDENTITY-2026-11-03.md) without opening a cache, publishing a binding or selecting a build. `TestCookClass` and `TestProfileLock` are arbitrary fixture digests, not trusted T2 credentials. The module is compiled only for tests and grants no production identity or source authority.
 
 The fixed-array recipe encodes five version/revision words, fixed driver and unsupported mask, two UUIDs, F3-supplied definition hashes, a fixture class digest and fourteen raw decoded binary64 values. It changes negative zero to positive zero in the key while retaining every other raw finite bit; it does not key normalized output. It computes the key, exact 160-byte payload hash, fixed 80-byte product manifest/revision and fixed 204-byte source binding/revision under separate SHA-256 domains. Expected-context checks and a recooked byte comparison reject a valid but wrong self-consistent manifest and payload under the requested key.
 
