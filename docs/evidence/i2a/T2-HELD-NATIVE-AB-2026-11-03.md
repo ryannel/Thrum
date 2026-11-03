@@ -68,3 +68,25 @@ cleans its separately sessioned inner Cargo, so the runner preserves failed
 scratch for diagnosis instead of claiming complete nested-job teardown.
 No complete compiler/system-read closure, durable ready publication or
 `BuildRevision` is claimed; `buildReady:false` remains mandatory.
+
+## Pinned Cargo cache bookkeeping probe
+
+At committed checkout `09a244bf6612168ba5af7e425c16b2ae86ca25b9`,
+the same opt-in command passed again on macOS 26.6.2 ARM64. The fixture now
+asserts that both `.global-cache` and `.package-cache-mutate` are absent from
+the freshly prepared private Cargo home before A. The compiler sandbox denies
+all `CARGO_HOME` writes, and the existing final file-byte comparison found
+the cache unchanged after successful A and expected compile-failed B. A
+produced five successful compiles and three probes; B produced three
+successful compiles, one failed `i1_mobile_game` compile and three probes.
+All three held tool-root inventories were unchanged after the build, and the
+runner cleaned its owned scratch on success. The admitted A/B test process
+took 20.351 seconds and the three-root post-build inventory 10.577 seconds;
+these uncontrolled values are integration observations, not cache-speed data.
+`RUSTC_WRAPPER= ./dev check` also passed at the assertion change.
+
+This establishes that the pinned Cargo version tolerated **absent** cache
+bookkeeping files when its private home was read-only to the compiler for
+this A/B fixture. The home itself was not sealed or held by a cache lease;
+metadata reuse from a sealed home, drift refusal and the warm fast path remain
+open. The runner still reports `buildReady:false`.

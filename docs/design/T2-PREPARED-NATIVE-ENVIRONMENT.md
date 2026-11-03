@@ -194,10 +194,11 @@ that verifies then exits cannot confer that lease on a later compiler process.
 The existing origin comparisons remain local candidate evidence until a
 reviewed release manifest and preparation job bind their acquisition. Prove a
 real metadata preparation followed by an A/B build from the sealed home.
-Test the pinned Cargo version with `.global-cache` and
-`.package-cache-mutate` absent; establish that cache bookkeeping needs no
-write before choosing this path. Then prove mutation/extra-directory refusal,
-independent reopen, interrupted preparation
+The [pinned Cargo bookkeeping probe](../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md#pinned-cargo-cache-bookkeeping-probe)
+passed with `.global-cache` and `.package-cache-mutate` absent and cache writes
+denied during unsealed A/B compilation; this establishes the compiler's
+read-only behavior for that fixture, not a held cache. Prove
+mutation/extra-directory refusal, independent reopen, interrupted preparation
 and multiple concurrent read leases before removing the per-edit rehash.
 Measure cold clone/seal and warm selection-key, cache, tool-hash and total
 edit-to-ready costs separately; retain the full rehash on other platforms
