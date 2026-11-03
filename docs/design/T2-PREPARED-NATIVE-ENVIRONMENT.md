@@ -104,7 +104,10 @@ removed in the local candidate, but metadata and data reads remain available
 within those selected subtrees. `/Library/Preferences` and broad
 `/private/etc` are now denied in the compiler fixture. A bounded refusal
 diagnostic identified one LibreSSL read of `/private/etc/ssl/openssl.cnf`;
-the profile grants and hashes only that file for this need. `dyld` can resolve libraries
+the profile grants and hashes only that file for this need. It also denies
+broad `/usr/bin` and `/dev` data reads in the bounded installed and cloned
+A/B fixtures, retaining `/dev/null` and `/dev/urandom` explicitly. The
+system-library and cryptex reads remain broad. `dyld` can resolve libraries
 through the OS shared cache; visible library paths alone are not a complete
 runtime-byte inventory. The first ready build therefore needs a human-reviewed
 host-runtime trust policy and exact selected OS/runtime evidence alongside the

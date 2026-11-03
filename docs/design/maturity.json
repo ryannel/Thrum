@@ -642,6 +642,15 @@
         "platform_performance": "uncontrolled A compiler stages took 3859 ms with broad /private/etc and 3950 ms with its exact-file grant; no paired speedup or tail claim",
         "scope": "The bounded compiler sandbox no longer grants /Library/Preferences or all of /private/etc. One observed LibreSSL config file is explicitly granted and included in selected byte checks, but OS provenance/immutability and other runtime reads remain open. Release review and ready BuildRevision remain open; buildReady stays false."
       },
+      "i2a_compiler_system_read_grant_reduction": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../evidence/i2a/T2-SYSTEM-READ-GRANTS-2026-11-03.md",
+        "implementation": "macos_opt_in_compiler_sandbox_grant_reduction_only",
+        "functional_validation": "installed-root and exact-inventory APFS-clone sandboxed A/B builds passed; /usr/bin/uname data/metadata and /dev/zero data were denied, /dev/urandom read succeeded, A compiled and reloaded after invalid B",
+        "experienced_quality": "not_applicable_to_headless_compiler_isolation",
+        "platform_performance": "uncontrolled A fresh-output stages of 3736 ms installed and 8066 ms cloned on one Mac; no paired policy, clone or tail comparison",
+        "scope": "The bounded compiler sandbox removes broad /usr/bin and /dev data-read grants, retaining exact /dev/null and /dev/urandom paths. System-library/cryptex roots, implicit compiler reads, immutable selected host bytes, release review and ready BuildRevision remain open; buildReady stays false."
+      },
       "i2a_narrowed_macos_metadata": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/F4-NARROW-METADATA.md",
