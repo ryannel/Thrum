@@ -1,0 +1,97 @@
+{
+  "scope": "Partial sole midshape v1 native run; stopped at early reservation guard. Native-stage values below transcribed from the actual emitted stage receipt, not rerun after failure. No final allview results exist.",
+  "outcome": "root_and_author_reject_available_front; cost_guard_incomplete_all_views",
+  "stopped": {
+    "error": "RSS guard side rows0: 111493120 + reserve 12582912; early=117440512, hard=167772160",
+    "seconds": 23.651767124887556,
+    "sampled_peak_rss_bytes": 111493120
+  },
+  "native_stage_assertions_reached": {
+    "old_masked_density_bytes_equal_frozen": true,
+    "protected_chi0_half_bytes_equal_old": true,
+    "protected_site_count": "not persisted at guard",
+    "new_rho_nonnegative_finite": true,
+    "old_new_all_faces_and_adjacent_sample_planes_zero": true,
+    "native_D0_p0_abs_le_1e_minus9": true,
+    "measured_projection_residual": "not persisted at guard"
+  },
+  "native_stage_emitted": {
+    "sampled_rss_before_projections_bytes": 86507520,
+    "new_sum_native": 4401.509866654873,
+    "new_integral_local_m3": 35212.07893323898,
+    "new_max_rho": 0.418212890625,
+    "new_counts": {
+      "0": 61979,
+      ".001": 57473,
+      ".005": 52962,
+      ".041": 39394
+    },
+    "faces_nonzero": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "new_raw6m_cell_lower": {
+      "root": 0.08880615234375,
+      "primary": 0.062469482421875,
+      "upper": 0.033355712890625,
+      "depth": 0.0596923828125,
+      "minimum_at_original_path_vertices": 0.05938720703125
+    },
+    "expanded_support001_min": {
+      "root": 0.05938720703125,
+      "primary": 0.041412353515625,
+      "upper": 0,
+      "depth": 0
+    }
+  },
+  "old_reference": {
+    "sum_native": 4410.992326200008,
+    "rho041_count": 39701,
+    "provenance": "identical frozen old rho; baseline v3 retained native stats"
+  },
+  "noise_statistics": {
+    "all_native": "not persisted because final results write was after all views",
+    "native_mask_transition": "not persisted because final results write was after all views",
+    "actual_old041_radial_boundaries": {
+      "count": 170,
+      "min": -4.789539486845563,
+      "mean": -0.3171865643877184,
+      "rms": 1.735453286639752,
+      "p95_abs": 3.0656206699719872,
+      "max": 4.784850863386346
+    }
+  },
+  "radial_profiles_file": "boundary-profiles.json",
+  "visible_contour_file": "retained-visible-contour.json",
+  "actual_images": [
+    "native-front.png",
+    "native-side.png",
+    "isolated-front.png"
+  ],
+  "unavailable_views": [
+    "isolated-side",
+    "isolated-oblique",
+    "composite220-front",
+    "composite220-side",
+    "composite220-oblique"
+  ],
+  "no_new_native_payload": true,
+  "no_rerun_after_guard": true,
+  "inputs_expected_sha256": {
+    "cloud-authored-master/cloud-03-256.density.r16f": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "cloud-component-content-v2/crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+    "cloud-component-content-v2/body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+    "cloud-component-content-v2/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "cloud-component-content-v2/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "cloud-component-content-v2/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "cloud-system-proof/assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-4.json": "2eb4b6c9a88a0f18f1ea7f3b0d05fe82f7c86b30415cddc7be8311e0f209f0eb",
+    "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-5.json": "54d8095408a9f1b008dcdc898753f02c4b814f4ff9f8fe9e15fc7da73ca47e52",
+    "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-6.json": "ce799ee499888ab9348e94687cd7517546a705ec6b5987148d9f207acb484c3f"
+  },
+  "source_input_check_scope": "Runtime checked original master SHA, frozen old rho equality/SHA, BODY dependency SHAs and noise SHA; metadata/capture bytes below additionally pinned by retained dependency restore."
+}

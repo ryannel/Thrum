@@ -1,0 +1,81 @@
+{
+  "scope": "Package/shared-container hashes and fresh exact dependency-only restore;7small mathematical tests. No candidate/native/ray work executed in packaging; no independent review of authored operator.",
+  "commands": [
+    {
+      "command": "python3 reproduce.py --verify-only",
+      "exit": 0
+    },
+    {
+      "command": "/opt/homebrew/bin/python3.14 reproduce.py --output /tmp/thrum-midshape-verified-20261103 --test",
+      "exit": 0,
+      "test_groups": [
+        {
+          "name": "test_midshape.py",
+          "tests": 4,
+          "seconds": 0.065
+        },
+        {
+          "name": "test_inherited.py",
+          "tests": 3,
+          "seconds": 0.01
+        }
+      ],
+      "render_executed": false
+    }
+  ],
+  "decoded_inputs": [
+    {
+      "target": "cloud-authored-master/cloud-03-256.density.r16f",
+      "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+      "bytes": 33554432
+    },
+    {
+      "target": "cloud-component-content-v2/body.density.r16f",
+      "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "bytes": 6291456
+    },
+    {
+      "target": "cloud-component-content-v2/body.distance.r16f",
+      "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "bytes": 6291456
+    },
+    {
+      "target": "cloud-component-content-v2/crown-b.density.r16f",
+      "sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "bytes": 1769472
+    },
+    {
+      "target": "cloud-system-proof/assets/noise/channels-32.r16f",
+      "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "bytes": 65536
+    },
+    {
+      "target": "cloud-component-content-v2/body.json",
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "bytes": 9097
+    },
+    {
+      "target": "cloud-component-content-v2/crown-b.json",
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "bytes": 11486
+    },
+    {
+      "target": "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-4.json",
+      "sha256": "2eb4b6c9a88a0f18f1ea7f3b0d05fe82f7c86b30415cddc7be8311e0f209f0eb",
+      "bytes": 50162
+    },
+    {
+      "target": "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-5.json",
+      "sha256": "54d8095408a9f1b008dcdc898753f02c4b814f4ff9f8fe9e15fc7da73ca47e52",
+      "bytes": 50181
+    },
+    {
+      "target": "cloud-system-proof/captures/system-t220000-mode0-c3e0ebee9680337c-eea93588-6.json",
+      "sha256": "ce799ee499888ab9348e94687cd7517546a705ec6b5987148d9f207acb484c3f",
+      "bytes": 50167
+    }
+  ],
+  "recipe_sha256": "6d4bd3a35c136808cecbbef9d410401d25bf4301cd8cef3f88660371b38d356e",
+  "temporary_restore_removed_after_verification": true,
+  "no_native_job_after_guard": true
+}

@@ -1,0 +1,80 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 4300,
+      "sha256": "bbae13187a7eb88071b164444102e49d60f3e61e571733fc9b02d29865f667f7"
+    },
+    "REVIEW.md": {
+      "bytes": 960,
+      "sha256": "3e661651c820836ce000c16540ff959f7baf7a8e69236772bf0cd1d66a943222"
+    },
+    "cloud-natural-core-probe/RESULT.md": {
+      "bytes": 2624,
+      "sha256": "34777fd2b9c38cbce0828f248cae264be8ae54f85ac9a9826c9c9a4fa506d139"
+    },
+    "cloud-natural-core-probe/front.png": {
+      "bytes": 6896,
+      "sha256": "4c1ff31ca0b7799b090a98cbf7b29a226450d9272f24fd8c46c68e17673774b3"
+    },
+    "cloud-natural-core-probe/result.json": {
+      "bytes": 6235,
+      "sha256": "edabb93a8dc64a745128bd69a1842748e585817284d017d8c514d1bc1c781fce"
+    },
+    "cloud-natural-core-probe/side.png": {
+      "bytes": 6557,
+      "sha256": "79b2b2e30642aced773fe7dec8c08bb2cce6a71d445ba4ffbf0f8d666b94083a"
+    },
+    "cloud-natural-core-probe/top.png": {
+      "bytes": 7533,
+      "sha256": "4b7d8e6aa606b3179dba48576a4a3c239deda13098376340ae9f604e303535ab"
+    },
+    "cloud-natural-lobe-selection/SELECTION.md": {
+      "bytes": 5392,
+      "sha256": "b595876b3323703ce1f25d134b835b135ade9f1e891f3abdd27c33184187d459"
+    },
+    "cloud-natural-lobe-selection/front-opacity.png": {
+      "bytes": 22832,
+      "sha256": "93100506250a89ec1ec4f51135e3e72180890661d233f23cc37b7dcbb76df2a4"
+    },
+    "cloud-natural-lobe-selection/front-peak041.png": {
+      "bytes": 10304,
+      "sha256": "b66175199e5b8dd12328cfca213bdfa24d47bc5efaaf629735fc213b412f17a1"
+    },
+    "cloud-natural-lobe-selection/side-opacity.png": {
+      "bytes": 27427,
+      "sha256": "3261df581dea361e0b52136ba21519d999be888d2fd8caa08ccfa7f464b87818"
+    },
+    "cloud-natural-lobe-selection/slice-y260-seam.png": {
+      "bytes": 16656,
+      "sha256": "e01f98f3a640053aa40d4a9725cab71c25191e046f6fb3d7202adb3063151a8f"
+    },
+    "cloud-natural-lobe-selection/slice-y280-seam.png": {
+      "bytes": 16424,
+      "sha256": "d4c657ebc92050687f866f611622c92e37230cfdc29c3f69d4c4cfa2b8bc2574"
+    },
+    "cloud-natural-lobe-selection/slice-y300-seam.png": {
+      "bytes": 15668,
+      "sha256": "bcdab461dff1be0ab887b0fa885083724ad7f0e5fb58426cf1e79d01dc869e0b"
+    },
+    "cloud-natural-lobe-selection/slice-y320-seam.png": {
+      "bytes": 14992,
+      "sha256": "7d5632220b9df1245fb6b1505fe86b0e3510f0b895d16cc1d81d9a836d2d968e"
+    },
+    "cloud-natural-lobe-selection/top-opacity.png": {
+      "bytes": 33605,
+      "sha256": "eaeccf9795fd433a486416c2dd457c4fbbf949e40d252aa5182df559ffad24e7"
+    },
+    "diagnostics.zip": {
+      "bytes": 265090,
+      "sha256": "cbaa96ed54950eff65892cc9da805e49ef9b1654a8d05ffff38bdf7664a05b11"
+    },
+    "restore-spec.json": {
+      "bytes": 5350,
+      "sha256": "59373da3066147fa9063fefdc36ecab5d5116d77ae324c2c81504efb5936bd86"
+    },
+    "restore.py": {
+      "bytes": 1491,
+      "sha256": "b9a02fa08fcc969f75d6f9e03b9a34e76ae135239baa08411b90338d92a61ba4"
+    }
+  }
+}

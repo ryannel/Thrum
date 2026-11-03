@@ -1,0 +1,419 @@
+{
+  "scope": "native raw upper-core connectivity diagnostic only; no selector/mask/EDT/assets",
+  "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "source_metadata_sha256": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3",
+  "script_sha256": "5b984f323f4af700b022dc8bd92afd7c6d78aeeb0f7b50c253006db070814130",
+  "domain": {
+    "origin_xyz_m": [
+      112,
+      224,
+      144
+    ],
+    "span_xyz_m": [
+      192,
+      128,
+      144
+    ],
+    "dimensions_xyz": [
+      96,
+      64,
+      72
+    ],
+    "pitch_m": 2,
+    "native_shape_zyx": [
+      72,
+      64,
+      96
+    ]
+  },
+  "decode": "R16F\u2192Float32; compare >= np.float32(0.041) and native Y centre >=300m; no Float64 threshold ambiguity",
+  "threshold_float32_hex": "0x3d27ef9e",
+  "connectivity": 6,
+  "seed_xyz_m": [
+    221,
+    311,
+    207
+  ],
+  "seed_index_xyz": [
+    54,
+    43,
+    31
+  ],
+  "seed_q_float32": 0.1190185546875,
+  "S_label": 8,
+  "S_voxels": 19208,
+  "O_voxels": 2779,
+  "O_nonempty": true,
+  "positive_total": 21987,
+  "S_bbox_whole_crop_centres_xyz_m": [
+    [
+      131,
+      301,
+      171
+    ],
+    [
+      271,
+      335,
+      261
+    ]
+  ],
+  "S_edge_contact": {
+    "X_min": false,
+    "X_max": false,
+    "Y_min": false,
+    "Y_max": false,
+    "Z_min": false,
+    "Z_max": false
+  },
+  "S_touches_any_crop_edge": false,
+  "S_inside_plateau_X128_288_Z160_272_Yge246": true,
+  "component_count": 12,
+  "components": [
+    {
+      "label": 1,
+      "voxels": 602,
+      "bbox_index_xyz": [
+        [
+          52,
+          38,
+          0
+        ],
+        [
+          71,
+          43,
+          12
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          217,
+          301,
+          145
+        ],
+        [
+          255,
+          311,
+          169
+        ]
+      ]
+    },
+    {
+      "label": 2,
+      "voxels": 99,
+      "bbox_index_xyz": [
+        [
+          71,
+          38,
+          0
+        ],
+        [
+          81,
+          43,
+          2
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          255,
+          301,
+          145
+        ],
+        [
+          275,
+          311,
+          149
+        ]
+      ]
+    },
+    {
+      "label": 3,
+      "voxels": 2060,
+      "bbox_index_xyz": [
+        [
+          84,
+          38,
+          0
+        ],
+        [
+          95,
+          49,
+          28
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          281,
+          301,
+          145
+        ],
+        [
+          303,
+          323,
+          201
+        ]
+      ]
+    },
+    {
+      "label": 4,
+      "voxels": 2,
+      "bbox_index_xyz": [
+        [
+          88,
+          45,
+          0
+        ],
+        [
+          88,
+          46,
+          0
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          289,
+          315,
+          145
+        ],
+        [
+          289,
+          317,
+          145
+        ]
+      ]
+    },
+    {
+      "label": 5,
+      "voxels": 3,
+      "bbox_index_xyz": [
+        [
+          89,
+          47,
+          0
+        ],
+        [
+          90,
+          48,
+          0
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          291,
+          319,
+          145
+        ],
+        [
+          293,
+          321,
+          145
+        ]
+      ]
+    },
+    {
+      "label": 6,
+      "voxels": 1,
+      "bbox_index_xyz": [
+        [
+          87,
+          46,
+          1
+        ],
+        [
+          87,
+          46,
+          1
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          287,
+          317,
+          147
+        ],
+        [
+          287,
+          317,
+          147
+        ]
+      ]
+    },
+    {
+      "label": 7,
+      "voxels": 6,
+      "bbox_index_xyz": [
+        [
+          81,
+          38,
+          3
+        ],
+        [
+          83,
+          38,
+          5
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          275,
+          301,
+          151
+        ],
+        [
+          279,
+          301,
+          155
+        ]
+      ]
+    },
+    {
+      "label": 8,
+      "voxels": 19208,
+      "bbox_index_xyz": [
+        [
+          9,
+          38,
+          13
+        ],
+        [
+          79,
+          55,
+          58
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          131,
+          301,
+          171
+        ],
+        [
+          271,
+          335,
+          261
+        ]
+      ]
+    },
+    {
+      "label": 9,
+      "voxels": 1,
+      "bbox_index_xyz": [
+        [
+          85,
+          38,
+          15
+        ],
+        [
+          85,
+          38,
+          15
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          283,
+          301,
+          175
+        ],
+        [
+          283,
+          301,
+          175
+        ]
+      ]
+    },
+    {
+      "label": 10,
+      "voxels": 2,
+      "bbox_index_xyz": [
+        [
+          15,
+          38,
+          25
+        ],
+        [
+          16,
+          38,
+          25
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          143,
+          301,
+          195
+        ],
+        [
+          145,
+          301,
+          195
+        ]
+      ]
+    },
+    {
+      "label": 11,
+      "voxels": 1,
+      "bbox_index_xyz": [
+        [
+          14,
+          38,
+          26
+        ],
+        [
+          14,
+          38,
+          26
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          141,
+          301,
+          197
+        ],
+        [
+          141,
+          301,
+          197
+        ]
+      ]
+    },
+    {
+      "label": 12,
+      "voxels": 2,
+      "bbox_index_xyz": [
+        [
+          44,
+          38,
+          51
+        ],
+        [
+          44,
+          38,
+          52
+        ]
+      ],
+      "bbox_centres_xyz_m": [
+        [
+          201,
+          301,
+          247
+        ],
+        [
+          201,
+          301,
+          249
+        ]
+      ]
+    }
+  ],
+  "images": [
+    "front.png",
+    "side.png",
+    "top.png"
+  ],
+  "elapsed_s": 0.1251637921668589,
+  "sampled_peak_rss_bytes": 53215232,
+  "process_highwater_bytes": 53231616,
+  "planned_early_rss_bytes": 117440512,
+  "hard_rss_bytes": 167772160
+}

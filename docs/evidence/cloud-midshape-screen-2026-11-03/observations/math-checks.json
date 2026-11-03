@@ -1,0 +1,27 @@
+{
+  "scope": "Small mathematical checks before any native candidate allocation; not art/native/cost qualification",
+  "commands": [
+    {
+      "command": "/opt/homebrew/bin/python3.14 test_midshape.py",
+      "tests": 4,
+      "pass": true,
+      "seconds": 0.096
+    },
+    {
+      "command": "/opt/homebrew/bin/python3.14 test_inherited.py",
+      "tests": 3,
+      "pass": true,
+      "seconds": 0.01
+    }
+  ],
+  "pins": {
+    "midshape.py": "c428c3d894bb2fffeec23391845b002daa0ce0d876a40539d935f50c69b975d1",
+    "measure.py": "1a77091fb06c2ca48fc6a0d49bb2954d1ce60a93df43a673ce2cd7f05e903e5f",
+    "test_midshape.py": "4f336ad98d64f148bdba206733ba8d64225840e1334042375faa35573fe01dee",
+    "test_inherited.py": "99cb70df2407a328156ca79f3b66b3fab3b2f2c3ec2e1c56aed4932174e50b21",
+    "recipe.md": "6d4bd3a35c136808cecbbef9d410401d25bf4301cd8cef3f88660371b38d356e"
+  },
+  "frozen_v3_preflight_sha256": "8e210d29a26cbd1f8714d4e6648b6a37e5a1ee1c86261c23d27fdbc2c34b8867",
+  "base_function_provenance": "Copied frozen v3 sample/material/world/query_body/capsule/contact/native-stat helpers; source identity and pre-distance limitations retained; adapted controlled512x288 serial projection orchestration.",
+  "native_run_executed": false
+}

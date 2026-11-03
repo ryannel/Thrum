@@ -1387,6 +1387,27 @@
           "correctness": "fresh_restored_render8_source8_pass_actual550_125_GPU_CPU1760points35positive_maxqdelta0_0001195291_independent_patch_review",
           "experienced_quality": "actual100s_native_RGBA_pixelidentical_to_c3e0_actual40s16x_samples_and220_mainoff_retained_consumers_pass_bounded_continuity_heads_still_smooth_no_CF01",
           "performance": "isolated_kernel_evidence_only_observer_on_submission32_705_43_845ms_median_p95_no_matched_integrated_frame_gain_or_residency_device_fullsky_admission"
+        },
+        "midshape_v1_preflight_rejected": {
+          "record": "../evidence/cloud-midshape-screen-2026-11-03/README.md",
+          "implementation": "one_fixed_surface_conditioned_two_band_selector_native_and_first_isolated_front_only_no_optical_distance_or_runtime_adoption",
+          "correctness": "seven_math_checks_old_and_protected_bytes_faces_adjacent_planes_pass170radialprofiles",
+          "experienced_quality": "root_author_reject_available_front_still_oval_with_scallops_other_five_views_unrun",
+          "performance": "23_652s_stopped106_328MiB_plus12MiB_reservation_at112MiB_early_guard_not_hard160MiB_or_runtime_budget"
+        },
+        "natural_upper_head_input_gate": {
+          "record": "../evidence/cloud-natural-head-selection-2026-11-03/README.md",
+          "implementation": "raw_fluid_master_reference_selection_and_one_native_upper_core_label_only_no_mask_or_final_asset",
+          "correctness": "exact_seed_positive_S19208_O2779_6connected_core_inside_plateaux_no_crop_contact_original_master_hash_verified",
+          "experienced_quality": "root_inspected_coordinate_front_side_top_slices_and_binary_core_unequal_upper_scallops_no_optical_or_lifecycle_pass",
+          "performance": "raw_diagnostic100_69MiB_core50_77MiB_authoring_only"
+        },
+        "two_cell_sentinel_readiness": {
+          "record": "../evidence/cloud-sentinel-readiness-2026-11-03/README.md",
+          "implementation": "read_only_audit_fixed_two_cell_overlap_and_remote_blocker_composition_domain_consumer_and_recorder_changes_no_multi_cell_runtime",
+          "correctness": "analytical_MAX_within_ADD_between_shared_clock_plan_not_executed",
+          "experienced_quality": "actual_two_cell_fog_air_env_and_mainhidden_motion_unrun",
+          "performance": "dense512_controls482967552_CPU_plus160989184_GPU_bytes_rules_out_naive_topology_no_timing_or_capacity_admission"
         }
       }
     },

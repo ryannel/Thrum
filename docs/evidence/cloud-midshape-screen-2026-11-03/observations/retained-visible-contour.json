@@ -1,0 +1,30 @@
+{
+  "scope": "Sole completed isolated-front .041 projected-peak contour, recovered exactly from orangeRGB255/150/40 on saved contact; undo2xnearest by sampling every2pixels. No new source/ray/native run. Pixel-centre nearest distances; not3Dsurface distance or composite visibility.",
+  "source_png_sha256": "ccb9319cead6d3c81db2184d714db7deb6c5aaed293a7c78d7ec3eddb3dbada1",
+  "method": "old/new panels1/2 crop y40..616,512x288, fixed1200m/48deg; bounded32point nearest-distance blocks, no EDT",
+  "old_to_new": {
+    "count": 449,
+    "mean_pixels": 2.0317716328531144,
+    "rms_pixels": 2.5549637264846954,
+    "max_pixels": 6.0,
+    "p95_pixels": 5.0
+  },
+  "new_to_old": {
+    "count": 466,
+    "mean_pixels": 2.1041847912601614,
+    "rms_pixels": 2.6311113205480074,
+    "max_pixels": 6.324555320336759,
+    "p95_pixels": 5.0
+  },
+  "hausdorff_pixels": 6.324555320336759,
+  "world_m_per_pixel_at_target_plane": 3.7102390442378015,
+  "hausdorff_world_m_focal_plane": 23.46561208695536,
+  "unavailable": [
+    "isolated-side",
+    "isolated-oblique",
+    "composite220-front",
+    "composite220-side",
+    "composite220-oblique"
+  ],
+  "unavailable_reason": "sole native run stopped at early RSS guard before side rows0"
+}

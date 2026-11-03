@@ -1,0 +1,13 @@
+# Upper raw03 core gate result
+
+**The exact seeded core passes this bounded topology gate.** It is nonempty, inside the proposed plateau, and does not touch any crop face. Other upper cores are also nonempty. This is a source-label result only; no selection mask or optical asset exists.
+
+Input: frozen cloud-03-256 raw R16F SHA256 `42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9`. Native crop origin `[112,224,144]`, span `[192,128,144]` m, dimensions `[96,64,72]` XYZ, 2 m pitch, `[Z72,Y64,X96]` memory order. Raw is decoded to Float32 and compared with `np.float32(0.041)` (`0x3d27ef9e`) at voxel centres with Y≥300 m. Exact seed `[221,311,207]` is positive (`q=.1190185546875`); no seed search. Components use 6 face-connected native voxels.
+
+The seed belongs to label **8**, `S=19,208` voxels. Its centre bbox in the full crop is X131–271, Y301–335, Z171–261 m. It misses every one of the six crop faces. It lies wholly in X128–288/Z160–272/Y≥246, with narrowest plateau margin 3 m on the X minimum. `O=2,779` voxels across 11 other components. The largest other core is label3 (`2,060` voxels, X281–303/Y301–323/Z145–201); all 12 component counts and boxes are in [result.json](result.json). Total threshold-positive voxels `21,987` equals `S+O` and the sum of all component sizes.
+
+The [front](front.png), [side](side.png) and [top](top.png) native label projections show `S` cyan, `O` orange, and projected overlap pink. Axes and seed are annotated. The straight lower edge at Y301 is **only the diagnostic Y≥300 threshold**, not the raw cloud boundary or a proposed cut. The `S` top contour retains several unequal scallops. The main `O` core is nearby in depth and at the crop's southeast side.
+
+This pass establishes that an upper head label can be identified without an arbitrary enclosing capsule and without splitting `S` on the specified crop. It does **not** certify that a future data-derived weight preserves the low-density raw halo, the positive path down to root `[225,265,197]`, a zero-density outside collar, or hidden lower selection seams under mapped BODY. Those remain the next mask design and optical-view gates. The `.041` label is not the final `.001` fresh-distance inside class.
+
+Actual runtime: 0.125 s inside the probe, process high-water 50.77 MiB (53,231,616 bytes), output including scripts and images about 35 KiB. Planned 128 MiB, early 112 MiB, hard 160 MiB; neither guard fired. The source was memory mapped, and only the specified crop was decoded; no whole-master labels, EDT, candidate density, GPU/browser or canonical files were written.

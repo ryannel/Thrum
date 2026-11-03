@@ -1,0 +1,4492 @@
+{
+  "scope": "Finite active-chart unoccluded single-B radial profiles of trilinear pre-distance rho=.041; outermost inside-to-outside crossing sampled at<=.25localm/refined24bisections. Not allsurface distance or guaranteed visible composite contour; narrow crossings can be missed by finite sampling.",
+  "profile_count": 170,
+  "matched": 170,
+  "missing": {
+    "old": 0,
+    "new": 0,
+    "both": 0
+  },
+  "signed_local_displacement": {
+    "count": 170,
+    "min": -8.377032473683357,
+    "mean": -0.33829748832127626,
+    "rms": 1.5822269841229117,
+    "p95_abs": 2.9943635329604144,
+    "max": 3.673667848110199
+  },
+  "chiDelta_at_old041_local": {
+    "count": 170,
+    "min": -4.789539486845563,
+    "mean": -0.3171865643877184,
+    "rms": 1.735453286639752,
+    "p95_abs": 3.0656206699719872,
+    "max": 4.784850863386346
+  },
+  "signed_world_displacement_by_partID": {
+    "4": {
+      "count": 170,
+      "min": -41.94018621340801,
+      "mean": -1.6910278721011245,
+      "rms": 7.932017407509048,
+      "p95_abs": 14.863147992935053,
+      "max": 19.549569758089426
+    },
+    "5": {
+      "count": 170,
+      "min": -49.03728983746865,
+      "mean": -1.9800725906070187,
+      "rms": 9.373469108526573,
+      "p95_abs": 18.048158129808357,
+      "max": 21.96416644958743
+    }
+  },
+  "ID5_projected_pixel_shift": {
+    "front": {
+      "count": 170,
+      "min": 0.0,
+      "mean": 1.0539966121677335,
+      "rms": 1.595200239271884,
+      "p95_abs": 3.215742233397142,
+      "max": 8.618669895234989
+    },
+    "side": {
+      "count": 170,
+      "min": 0.0,
+      "mean": 1.0199365519849903,
+      "rms": 1.5941606364514822,
+      "p95_abs": 3.075968708111001,
+      "max": 8.733050922251357
+    },
+    "oblique": {
+      "count": 170,
+      "min": 0.0,
+      "mean": 1.0961631599673634,
+      "rms": 1.716657394030711,
+      "p95_abs": 3.32325153918779,
+      "max": 9.866960052186096
+    }
+  },
+  "records": [
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.9945889518467504,
+        -0.07775559382200806,
+        -0.0688976377952756
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.72054889053106,
+      "new_radius_local": 32.37603495270014,
+      "chiDelta_at_old041_local": -2.36414764944643,
+      "signed_delta_local": -2.344513937830925,
+      "signed_world_shift_by_partID": {
+        "4": -11.442112898662435,
+        "5": -13.711726007818271
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.704469094446558,
+        "side": 2.326037442602087,
+        "oblique": 2.9377163895288674
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.9511686571901302,
+        -0.0036274016579659896,
+        -0.30865033215004994
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.04669991880655,
+      "new_radius_local": 33.00317770987749,
+      "chiDelta_at_old041_local": -2.1308903349104322,
+      "signed_delta_local": -2.043522208929062,
+      "signed_world_shift_by_partID": {
+        "4": -10.231033751267468,
+        "5": -11.962325699866332
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.1896045870099234,
+        "side": 2.1262457514771023,
+        "oblique": 2.4819037369014723
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.844805894489337,
+        0.056662211463447326,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.89923170953989,
+      "new_radius_local": 32.42559806257486,
+      "chiDelta_at_old041_local": -2.44391772242514,
+      "signed_delta_local": -2.473633646965027,
+      "signed_world_shift_by_partID": {
+        "4": -12.636383490274055,
+        "5": -14.553401412243431
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.410243432397263,
+        "side": 2.77634782942493,
+        "oblique": 2.7778380202310884
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.6827491102496536,
+        0.09900460804130415,
+        -0.7239141800240511
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.39166108518839,
+      "new_radius_local": 33.17047327011824,
+      "chiDelta_at_old041_local": -2.191254441370563,
+      "signed_delta_local": -2.2211878150701523,
+      "signed_world_shift_by_partID": {
+        "4": -11.466785117673794,
+        "5": -13.173543971724424
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.9553131872733973,
+        "side": 2.657230884382713,
+        "oblique": 2.2208903168488376
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.4760422065055159,
+        0.12051422372294227,
+        -0.8711257885666205
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.50966299325228,
+      "new_radius_local": 35.15416256338358,
+      "chiDelta_at_old041_local": -0.33510334798075014,
+      "signed_delta_local": -0.3555004298686981,
+      "signed_world_shift_by_partID": {
+        "4": -1.834005554554498,
+        "5": -2.1276577510856383
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.28748658101080105,
+        "side": 0.43560261919454873,
+        "oblique": 0.30822604899666006
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.23877191714777693,
+        0.11972521374597869,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.505975626409054,
+      "new_radius_local": 34.71656543761492,
+      "chiDelta_at_old041_local": 0.3393391161774908,
+      "signed_delta_local": 0.21058981120586395,
+      "signed_world_shift_by_partID": {
+        "4": 1.074679617871259,
+        "5": 1.2704908063317446
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.16469145179383793,
+        "side": 0.2523044567400031,
+        "oblique": 0.15957572827706665
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.012892179711525655,
+        0.09669134783644293,
+        -0.9952309153939389
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.10892639309168,
+      "new_radius_local": 31.409775279462337,
+      "chiDelta_at_old041_local": -2.4757223775202646,
+      "signed_delta_local": -2.699151113629341,
+      "signed_world_shift_by_partID": {
+        "4": -13.534324724806174,
+        "5": -16.367594083725262
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.1707102100785227,
+        "side": 3.0351718034428616,
+        "oblique": 1.8804158333720888
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.26179959176601486,
+        0.0529823458908065,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.62087047845125,
+      "new_radius_local": 33.15900952368975,
+      "chiDelta_at_old041_local": -1.4238374547178294,
+      "signed_delta_local": -2.461860954761505,
+      "signed_world_shift_by_partID": {
+        "4": -12.115360400726185,
+        "5": -14.946402367047268
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.09225234921082,
+        "side": 2.4545019693386476,
+        "oblique": 1.6865077020339598
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.49098769022312433,
+        -0.00842309584087636,
+        -0.8711257885666206
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.484210185706615,
+      "new_radius_local": 33.694163121283054,
+      "chiDelta_at_old041_local": 0.5039146698168563,
+      "signed_delta_local": 0.2099529355764389,
+      "signed_world_shift_by_partID": {
+        "4": 1.0194935010763382,
+        "5": 1.270998465142593
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.19436786449737994,
+        "side": 0.17726674768819803,
+        "oblique": 0.1563390904997071
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.684837684924243,
+        -0.08334029798188201,
+        -0.7239141800240512
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.80908466130495,
+      "new_radius_local": 34.089077956974506,
+      "chiDelta_at_old041_local": 0.26860613817946566,
+      "signed_delta_local": 0.27999329566955566,
+      "signed_world_shift_by_partID": {
+        "4": 1.3560545591052562,
+        "5": 1.6846264742041588
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.28040889214572573,
+        "side": 0.1861588087959222,
+        "oblique": 0.2355234274563824
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.8301390190827526,
+        -0.16666377701283125,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.964056454598904,
+      "new_radius_local": 35.544681303203106,
+      "chiDelta_at_old041_local": 1.6274751894513884,
+      "signed_delta_local": 1.5806248486042023,
+      "signed_world_shift_by_partID": {
+        "4": 7.733215704370051,
+        "5": 9.435936112762207
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.683827057213292,
+        "side": 0.7556787892060413,
+        "oblique": 1.5057616767031323
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.9169896468975581,
+        -0.2527151755363244,
+        -0.30865033215005017
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.89536093920469,
+      "new_radius_local": 35.02913276106119,
+      "chiDelta_at_old041_local": 1.206580932351623,
+      "signed_delta_local": 1.1337718218564987,
+      "signed_world_shift_by_partID": {
+        "4": 5.661413256355414,
+        "5": 6.717684076463629
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2551331996857407,
+        "side": 0.36616138012086874,
+        "oblique": 1.2055641042830998
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.9394708416105301,
+        -0.33563023294964545,
+        -0.0688976377952757
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.59889938682318,
+      "new_radius_local": 34.70725677162409,
+      "chiDelta_at_old041_local": 1.1226191546139015,
+      "signed_delta_local": 1.108357384800911,
+      "signed_world_shift_by_partID": {
+        "4": 5.674532510860891,
+        "5": 6.532582552415608
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2309196045737703,
+        "side": 0.3193124593490267,
+        "oblique": 1.273290014367889
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.8960505469539098,
+        -0.40975842511368754,
+        0.17085505655949879
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.55773129314184,
+      "new_radius_local": 32.121855072677135,
+      "chiDelta_at_old041_local": -1.3451528007455509,
+      "signed_delta_local": -1.4358762204647064,
+      "signed_world_shift_by_partID": {
+        "4": -7.521816555670291,
+        "5": -8.448222719500638
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.5285085896140664,
+        "side": 0.6047155388042019,
+        "oblique": 1.708502992089532
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.7896877842531167,
+        -0.4700480382351009,
+        0.3942690010040559
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.95331660658121,
+      "new_radius_local": 32.27098257094622,
+      "chiDelta_at_old041_local": -1.8465155388783563,
+      "signed_delta_local": -1.6823340356349945,
+      "signed_world_shift_by_partID": {
+        "4": -8.948403684498322,
+        "5": -9.918359081507285
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.6364118858356826,
+        "side": 1.0400382740443865,
+        "oblique": 1.9680758661015427
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.6276310000134335,
+        -0.5123904348129577,
+        0.5861189044334996
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.217139698565006,
+      "new_radius_local": 34.454838283360004,
+      "chiDelta_at_old041_local": 0.22975961291117458,
+      "signed_delta_local": 0.23769858479499817,
+      "signed_world_shift_by_partID": {
+        "4": 1.2693544472944018,
+        "5": 1.4082801785542944
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.20202110423780362,
+        "side": 0.1954808010135213,
+        "oblique": 0.25756724825080585
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.4209240962692957,
+        -0.5339000504945958,
+        0.7333305129760691
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.810188971459866,
+      "new_radius_local": 34.62400058656931,
+      "chiDelta_at_old041_local": -0.41131990288734677,
+      "signed_delta_local": -0.18618838489055634,
+      "signed_world_shift_by_partID": {
+        "4": -0.9856483137160768,
+        "5": -1.1098779428201795
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.13477402953352322,
+        "side": 0.1891178736653099,
+        "oblique": 0.17166203000414892
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        -0.18365380691155636,
+        -0.5331110405176323,
+        0.8258715987882742
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.887145169079304,
+      "new_radius_local": 33.584094636142254,
+      "chiDelta_at_old041_local": 1.4793980355426992,
+      "signed_delta_local": 0.6969494670629501,
+      "signed_world_shift_by_partID": {
+        "4": 3.614717550236985,
+        "5": 4.176982763562755
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.45675571549055743,
+        "side": 0.8221728508983818,
+        "oblique": 0.4853035210487611
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.06801028994774602,
+        -0.5100771746080964,
+        0.8574356398033878
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.86890999227762,
+      "new_radius_local": 33.522134743630886,
+      "chiDelta_at_old041_local": 1.1559870790478983,
+      "signed_delta_local": 0.6532247513532639,
+      "signed_world_shift_by_partID": {
+        "4": 3.291433557232389,
+        "5": 3.926605937348249
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.46514437161059113,
+        "side": 0.8433405272562798,
+        "oblique": 0.3245811454831888
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.316917702002235,
+        -0.4663681726624601,
+        0.8258715987882743
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 28.505963303148746,
+      "new_radius_local": 28.088764809072018,
+      "chiDelta_at_old041_local": -0.8385438268107669,
+      "signed_delta_local": -0.4171984940767288,
+      "signed_world_shift_by_partID": {
+        "4": -2.0368645051545493,
+        "5": -2.506814897346402
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.3441369304626719,
+        "side": 0.551196964150524,
+        "oblique": 0.1923840642101814
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.5461058004593451,
+        -0.40496273093077706,
+        0.7333305129760693
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.418503515422344,
+      "new_radius_local": 31.978149510920048,
+      "chiDelta_at_old041_local": -1.1848900721934517,
+      "signed_delta_local": -0.44035400450229645,
+      "signed_world_shift_by_partID": {
+        "4": -2.093184404278705,
+        "5": -2.63579162220868
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.442170649155513,
+        "side": 0.5779956948697667,
+        "oblique": 0.2947435156737866
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.7399557951604633,
+        -0.33004552878977156,
+        0.5861189044335
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 31.490937925875187,
+      "new_radius_local": 31.183025620877743,
+      "chiDelta_at_old041_local": -0.6097565378152418,
+      "signed_delta_local": -0.30791230499744415,
+      "signed_world_shift_by_partID": {
+        "4": -1.4421790809184658,
+        "5": -1.8312648393086788
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.3448972100690551,
+        "side": 0.37669243085048226,
+        "oblique": 0.2773947321307662
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.8852571293189726,
+        -0.24672204975882248,
+        0.39426900100405654
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 31.66109051555395,
+      "new_radius_local": 30.94684337824583,
+      "chiDelta_at_old041_local": -1.3246017259072218,
+      "signed_delta_local": -0.7142471373081207,
+      "signed_world_shift_by_partID": {
+        "4": -3.349074971068227,
+        "5": -4.216842487822072
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.847243294432295,
+        "side": 0.791041607000637,
+        "oblique": 0.7803237201617721
+      }
+    },
+    {
+      "chart": "side",
+      "s": 0.0,
+      "direction": [
+        0.9721077571337784,
+        -0.16067065123532936,
+        0.1708550565594995
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.109046913683414,
+      "new_radius_local": 32.61845874041319,
+      "chiDelta_at_old041_local": -1.4474535569742153,
+      "signed_delta_local": -1.4905881732702255,
+      "signed_world_shift_by_partID": {
+        "4": -7.099588101280149,
+        "5": -8.745727930196304
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.788920687639646,
+        "side": 1.524281077285308,
+        "oblique": 1.8188141489760792
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.9945889518467504,
+        -0.07775559382200806,
+        -0.0688976377952756
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.11905167251825,
+      "new_radius_local": 33.87624218314886,
+      "chiDelta_at_old041_local": -3.4319302835029917,
+      "signed_delta_local": -3.2428094893693924,
+      "signed_world_shift_by_partID": {
+        "4": -15.826134230853002,
+        "5": -18.96534479761826
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.6901585488246345,
+        "side": 3.2199183181825166,
+        "oblique": 4.035741367638402
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.9511686571901302,
+        -0.0036274016579659896,
+        -0.30865033215004994
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.6761691942811,
+      "new_radius_local": 33.98408151417971,
+      "chiDelta_at_old041_local": -2.699940643276783,
+      "signed_delta_local": -2.6920876801013947,
+      "signed_world_shift_by_partID": {
+        "4": -13.478121155788088,
+        "5": -15.758884097887062
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.844552088345451,
+        "side": 2.8105697902799975,
+        "oblique": 3.2370610177621164
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.844805894489337,
+        0.056662211463447326,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.07673650234938,
+      "new_radius_local": 33.69213055819273,
+      "chiDelta_at_old041_local": -2.7415688060207573,
+      "signed_delta_local": -2.3846059441566467,
+      "signed_world_shift_by_partID": {
+        "4": -12.18159173268083,
+        "5": -14.029614918083412
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.296700399862887,
+        "side": 2.7030318623788,
+        "oblique": 2.6522536104982026
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.6827491102496536,
+        0.09900460804130415,
+        -0.7239141800240511
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.594631500542164,
+      "new_radius_local": 35.51837206631899,
+      "chiDelta_at_old041_local": -1.9684581912349355,
+      "signed_delta_local": -1.076259434223175,
+      "signed_world_shift_by_partID": {
+        "4": -5.556142339415993,
+        "5": -6.383139185947037
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.9388763193742717,
+        "side": 1.3070746920618475,
+        "oblique": 1.0672328932264534
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.4760422065055159,
+        0.12051422372294227,
+        -0.8711257885666205
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.026755861938,
+      "new_radius_local": 38.430701069533825,
+      "chiDelta_at_old041_local": 0.4238033412319586,
+      "signed_delta_local": 0.4039452075958252,
+      "signed_world_shift_by_partID": {
+        "4": 2.0839292789041184,
+        "5": 2.4175980666818417
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.32379722902568164,
+        "side": 0.5028344837678964,
+        "oblique": 0.3475725580780721
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.23877191714777693,
+        0.11972521374597869,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.28068568557501,
+      "new_radius_local": 37.05829647928476,
+      "chiDelta_at_old041_local": -0.6678343876804219,
+      "signed_delta_local": -0.22238920629024506,
+      "signed_world_shift_by_partID": {
+        "4": -1.1348941616222927,
+        "5": -1.3416766955690098
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.17306862414000906,
+        "side": 0.2697431907352087,
+        "oblique": 0.1686338127382491
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.012892179711525655,
+        0.09669134783644293,
+        -0.9952309153939389
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.112184561789036,
+      "new_radius_local": 34.748878709971905,
+      "chiDelta_at_old041_local": -1.0708068637272952,
+      "signed_delta_local": -1.363305851817131,
+      "signed_world_shift_by_partID": {
+        "4": -6.836010034618397,
+        "5": -8.267057254347717
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.0898375646987448,
+        "side": 1.5449758079860991,
+        "oblique": 0.9564444911005665
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.26179959176601486,
+        0.0529823458908065,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.49037707597017,
+      "new_radius_local": 35.09069486707449,
+      "chiDelta_at_old041_local": -0.49689559157468816,
+      "signed_delta_local": -0.3996822088956833,
+      "signed_world_shift_by_partID": {
+        "4": -1.9669242477582183,
+        "5": -2.426542856350813
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.33936091857872286,
+        "side": 0.4023426267285327,
+        "oblique": 0.278877289817591
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.49098769022312433,
+        -0.00842309584087636,
+        -0.8711257885666206
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.41906627267599,
+      "new_radius_local": 32.218989349901676,
+      "chiDelta_at_old041_local": -0.9706177209009866,
+      "signed_delta_local": -0.20007692277431488,
+      "signed_world_shift_by_partID": {
+        "4": -0.9715373682379218,
+        "5": -1.2112117463774
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.1858631789833149,
+        "side": 0.17176245154825917,
+        "oblique": 0.1526839694230408
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.684837684924243,
+        -0.08334029798188201,
+        -0.7239141800240512
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.059037037193775,
+      "new_radius_local": 34.89917803555727,
+      "chiDelta_at_old041_local": -1.42871216611291,
+      "signed_delta_local": -1.1598590016365051,
+      "signed_world_shift_by_partID": {
+        "4": -5.617391956929842,
+        "5": -6.978485594908568
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.14859597106976,
+        "side": 0.7668394241040206,
+        "oblique": 0.9770217393595341
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.8301390190827526,
+        -0.16666377701283125,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.15207011252642,
+      "new_radius_local": 36.82311872392893,
+      "chiDelta_at_old041_local": 0.70849468701695,
+      "signed_delta_local": 0.6710486114025116,
+      "signed_world_shift_by_partID": {
+        "4": 3.283108996215197,
+        "5": 4.005992839694703
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.7049755474915541,
+        "side": 0.31336318596070684,
+        "oblique": 0.6357088653242027
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.9169896468975581,
+        -0.2527151755363244,
+        -0.30865033215005017
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.28491837531328,
+      "new_radius_local": 35.59691499918699,
+      "chiDelta_at_old041_local": -0.6351929316684803,
+      "signed_delta_local": -0.6880033761262894,
+      "signed_world_shift_by_partID": {
+        "4": -3.435498535887677,
+        "5": -4.076472210068642
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.7507824092888737,
+        "side": 0.2086451705566288,
+        "oblique": 0.7254509570692141
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.9394708416105301,
+        -0.33563023294964545,
+        -0.0688976377952757
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.228727765381336,
+      "new_radius_local": 35.58020418137312,
+      "chiDelta_at_old041_local": 0.35692047924929504,
+      "signed_delta_local": 0.35147641599178314,
+      "signed_world_shift_by_partID": {
+        "4": 1.7994776564820263,
+        "5": 2.0715779352213595
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.3849054553958725,
+        "side": 0.093479869853798,
+        "oblique": 0.39985125960698575
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.8960505469539098,
+        -0.40975842511368754,
+        0.17085505655949879
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.44737000018358,
+      "new_radius_local": 32.589738957583904,
+      "chiDelta_at_old041_local": -2.86043770946081,
+      "signed_delta_local": -2.857631042599678,
+      "signed_world_shift_by_partID": {
+        "4": -14.969658372966867,
+        "5": -16.81335978266114
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.0050603518879795,
+        "side": 1.1711860319721807,
+        "oblique": 3.3661966464865065
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.7896877842531167,
+        -0.4700480382351009,
+        0.3942690010040559
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.00682369619608,
+      "new_radius_local": 34.97173813730478,
+      "chiDelta_at_old041_local": -1.0800066140811764,
+      "signed_delta_local": -1.0350855588912964,
+      "signed_world_shift_by_partID": {
+        "4": -5.505662509798629,
+        "5": -6.102444601194442
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.0036412460385573,
+        "side": 0.6339762139281752,
+        "oblique": 1.203580682754908
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.6276310000134335,
+        -0.5123904348129577,
+        0.5861189044334996
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.738366954028606,
+      "new_radius_local": 35.6035428121686,
+      "chiDelta_at_old041_local": -0.154163103786785,
+      "signed_delta_local": -0.13482414186000824,
+      "signed_world_shift_by_partID": {
+        "4": -0.7199858771572988,
+        "5": -0.7987854312881535
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.11486233444101658,
+        "side": 0.1114675124348617,
+        "oblique": 0.14542933043326883
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.4209240962692957,
+        -0.5339000504945958,
+        0.7333305129760691
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.52267950028181,
+      "new_radius_local": 32.86781942099333,
+      "chiDelta_at_old041_local": -0.8416336099721836,
+      "signed_delta_local": -0.6548600792884827,
+      "signed_world_shift_by_partID": {
+        "4": -3.466713206895659,
+        "5": -3.9036525187273288
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.47427710748135943,
+        "side": 0.6762973263700716,
+        "oblique": 0.5960792444059073
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        -0.18365380691155636,
+        -0.5331110405176323,
+        0.8258715987882742
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.08695390075445,
+      "new_radius_local": 33.56583585590124,
+      "chiDelta_at_old041_local": -0.6131736062110466,
+      "signed_delta_local": -0.5211180448532104,
+      "signed_world_shift_by_partID": {
+        "4": -2.7027706189578007,
+        "5": -3.123183521907589
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.35141797149838,
+        "side": 0.6235132501782552,
+        "oblique": 0.3693383907099767
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.06801028994774602,
+        -0.5100771746080964,
+        0.8574356398033878
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.74975449591875,
+      "new_radius_local": 33.676651515066624,
+      "chiDelta_at_old041_local": -1.1394038586293367,
+      "signed_delta_local": -1.073102980852127,
+      "signed_world_shift_by_partID": {
+        "4": -5.40709327720009,
+        "5": -6.450540227189755
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.7857108144359746,
+        "side": 1.4069417205924375,
+        "oblique": 0.568159446448371
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.316917702002235,
+        -0.4663681726624601,
+        0.8258715987882743
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.25673309713602,
+      "new_radius_local": 32.01928538829088,
+      "chiDelta_at_old041_local": -1.0328707451368149,
+      "signed_delta_local": -0.23744770884513855,
+      "signed_world_shift_by_partID": {
+        "4": -1.1592774586764734,
+        "5": -1.4267488074015822
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.20260908913881992,
+        "side": 0.32109305253386256,
+        "oblique": 0.1208747339410234
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.5461058004593451,
+        -0.40496273093077706,
+        0.7333305129760693
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.147442407906055,
+      "new_radius_local": 35.08714509755373,
+      "chiDelta_at_old041_local": -1.9174420355727495,
+      "signed_delta_local": -1.0602973103523254,
+      "signed_world_shift_by_partID": {
+        "4": -5.040030909760139,
+        "5": -6.346536511768298
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.0832641566871026,
+        "side": 1.4256143314274838,
+        "oblique": 0.7480446024645055
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.7399557951604633,
+        -0.33004552878977156,
+        0.5861189044335
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.922969199717045,
+      "new_radius_local": 32.940986923873425,
+      "chiDelta_at_old041_local": 0.10175377098685248,
+      "signed_delta_local": 0.0180177241563797,
+      "signed_world_shift_by_partID": {
+        "4": 0.08439021254544488,
+        "5": 0.10715786344509869
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.02012528656982521,
+        "side": 0.022319256542131963,
+        "oblique": 0.0164586424912948
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.8852571293189726,
+        -0.24672204975882248,
+        0.39426900100405654
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.07755149155855,
+      "new_radius_local": 34.093671791255474,
+      "chiDelta_at_old041_local": -1.7544054523498374,
+      "signed_delta_local": -0.9838797003030777,
+      "signed_world_shift_by_partID": {
+        "4": -4.613370788220153,
+        "5": -5.808725728716848
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.1654054566077818,
+        "side": 1.1075929573113197,
+        "oblique": 1.0886356449680044
+      }
+    },
+    {
+      "chart": "side",
+      "s": 7.968688725254614,
+      "direction": [
+        0.9721077571337784,
+        -0.16067065123532936,
+        0.1708550565594995
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.52138552814722,
+      "new_radius_local": 33.68694791942835,
+      "chiDelta_at_old041_local": -3.049390580185755,
+      "signed_delta_local": -2.834437608718872,
+      "signed_world_shift_by_partID": {
+        "4": -13.500267801355431,
+        "5": -16.63049566976353
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.3623513023993925,
+        "side": 2.8995837654526704,
+        "oblique": 3.44744434415562
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.9945889518467504,
+        -0.07775559382200806,
+        -0.0688976377952756
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.74180539697409,
+      "new_radius_local": 35.420796401798725,
+      "chiDelta_at_old041_local": -2.714705554392142,
+      "signed_delta_local": -2.3210089951753616,
+      "signed_world_shift_by_partID": {
+        "4": -11.327399907111388,
+        "5": -13.574258992450147
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.6038355284633257,
+        "side": 2.292099324437659,
+        "oblique": 2.8629346019412116
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.9511686571901302,
+        -0.0036274016579659896,
+        -0.30865033215004994
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.05844906717539,
+      "new_radius_local": 36.27685412019491,
+      "chiDelta_at_old041_local": -1.638358766710322,
+      "signed_delta_local": -1.7815949469804764,
+      "signed_world_shift_by_partID": {
+        "4": -8.919676993967197,
+        "5": -10.429061611317726
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.8562455502368995,
+        "side": 1.8707900052827586,
+        "oblique": 2.121981247416333
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.844805894489337,
+        0.056662211463447326,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.9510767236352,
+      "new_radius_local": 36.51815799623728,
+      "chiDelta_at_old041_local": -1.2377172585536553,
+      "signed_delta_local": -1.4329187273979187,
+      "signed_world_shift_by_partID": {
+        "4": -7.319964527492448,
+        "5": -8.430448646479881
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.3615183470893386,
+        "side": 1.6478750418410888,
+        "oblique": 1.5768830785863437
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.6827491102496536,
+        0.09900460804130415,
+        -0.7239141800240511
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.437605299055576,
+      "new_radius_local": 34.54074294120073,
+      "chiDelta_at_old041_local": 0.8664119215358814,
+      "signed_delta_local": 0.10313764214515686,
+      "signed_world_shift_by_partID": {
+        "4": 0.5324435745585665,
+        "5": 0.6116944522749576
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.09004892654866688,
+        "side": 0.12619353256392685,
+        "oblique": 0.10230502493934159
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.4760422065055159,
+        0.12051422372294227,
+        -0.8711257885666205
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.07842765003443,
+      "new_radius_local": 38.355740554630756,
+      "chiDelta_at_old041_local": 1.4269789199611391,
+      "signed_delta_local": 1.2773129045963287,
+      "signed_world_shift_by_partID": {
+        "4": 6.589581235665133,
+        "5": 7.644673462222433
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.0279220246626517,
+        "side": 1.6121845179444159,
+        "oblique": 1.1049711417530954
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.23877191714777693,
+        0.11972521374597869,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.192523531615734,
+      "new_radius_local": 36.46827358752489,
+      "chiDelta_at_old041_local": 1.4639635148252061,
+      "signed_delta_local": 0.2757500559091568,
+      "signed_world_shift_by_partID": {
+        "4": 1.4072046649148309,
+        "5": 1.6636033285369933
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.21661268253540159,
+        "side": 0.3399027546717863,
+        "oblique": 0.21254914846314504
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.012892179711525655,
+        0.09669134783644293,
+        -0.9952309153939389
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.93626702576876,
+      "new_radius_local": 38.11443189531565,
+      "chiDelta_at_old041_local": 2.0197187508832144,
+      "signed_delta_local": 1.1781648695468903,
+      "signed_world_shift_by_partID": {
+        "4": 5.907659576112328,
+        "5": 7.144366334687789
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.9383710952542128,
+        "side": 1.3478268558440334,
+        "oblique": 0.8341185273759308
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.26179959176601486,
+        0.0529823458908065,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.87966888397932,
+      "new_radius_local": 34.851211316883564,
+      "chiDelta_at_old041_local": -0.15537728237926518,
+      "signed_delta_local": -0.02845756709575653,
+      "signed_world_shift_by_partID": {
+        "4": -0.14004596028316074,
+        "5": -0.1727710281029309
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.024273741729006305,
+        "side": 0.029090519041993914,
+        "oblique": 0.020345713438034232
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.49098769022312433,
+        -0.00842309584087636,
+        -0.8711257885666206
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 26.108642049133778,
+      "new_radius_local": 26.108631648123264,
+      "chiDelta_at_old041_local": -2.0116734143839947,
+      "signed_delta_local": -1.0401010513305664e-05,
+      "signed_world_shift_by_partID": {
+        "4": -5.050542677434145e-05,
+        "5": -6.296491335872053e-05
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 9.886273517108446e-06,
+        "side": 9.326700310510864e-06,
+        "oblique": 8.350215996012108e-06
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.684837684924243,
+        -0.08334029798188201,
+        -0.7239141800240512
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.658109433948994,
+      "new_radius_local": 36.805446587502956,
+      "chiDelta_at_old041_local": 1.0901452068160424,
+      "signed_delta_local": 0.1473371535539627,
+      "signed_world_shift_by_partID": {
+        "4": 0.7135785816752128,
+        "5": 0.8864786169874421
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.1444252371220728,
+        "side": 0.09710519910694873,
+        "oblique": 0.12443211029982813
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.8301390190827526,
+        -0.16666377701283125,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.06621702760458,
+      "new_radius_local": 40.19323969632387,
+      "chiDelta_at_old041_local": 0.9972877114431637,
+      "signed_delta_local": 1.1270226687192917,
+      "signed_world_shift_by_partID": {
+        "4": 5.51396456193728,
+        "5": 6.728044234570282
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.1643762045230608,
+        "side": 0.5099078866565833,
+        "oblique": 1.0559029901930375
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.9169896468975581,
+        -0.2527151755363244,
+        -0.30865033215005017
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.232304610311985,
+      "new_radius_local": 35.00173973292112,
+      "chiDelta_at_old041_local": -3.350369725775237,
+      "signed_delta_local": -3.2305648773908615,
+      "signed_world_shift_by_partID": {
+        "4": -16.131608203517494,
+        "5": -19.141342037673354
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.478194465269732,
+        "side": 0.9210824018004087,
+        "oblique": 3.3860269592652967
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.9394708416105301,
+        -0.33563023294964545,
+        -0.0688976377952757
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.08069584518671,
+      "new_radius_local": 36.22679812461138,
+      "chiDelta_at_old041_local": -0.7665630436762965,
+      "signed_delta_local": -0.8538977205753326,
+      "signed_world_shift_by_partID": {
+        "4": -4.371758101494634,
+        "5": -5.032814710735156
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.9222678984832507,
+        "side": 0.2076188925168249,
+        "oblique": 0.9620859922895033
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.8960505469539098,
+        -0.40975842511368754,
+        0.17085505655949879
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.52932747453451,
+      "new_radius_local": 38.145435474812984,
+      "chiDelta_at_old041_local": -0.4120372423898897,
+      "signed_delta_local": -0.3838919997215271,
+      "signed_world_shift_by_partID": {
+        "4": -2.011012619291234,
+        "5": -2.2586940765914343
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.40157653888697736,
+        "side": 0.15036687962858705,
+        "oblique": 0.44826910504127704
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.7896877842531167,
+        -0.4700480382351009,
+        0.3942690010040559
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.41831102222204,
+      "new_radius_local": 37.76145131140947,
+      "chiDelta_at_old041_local": -0.6594094498945666,
+      "signed_delta_local": -0.6568597108125687,
+      "signed_world_shift_by_partID": {
+        "4": -3.4938637226198415,
+        "5": -3.8725784178496068
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.6354686269498284,
+        "side": 0.39832221763497033,
+        "oblique": 0.7596261345031537
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.6276310000134335,
+        -0.5123904348129577,
+        0.5861189044334996
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.01968053728342,
+      "new_radius_local": 39.006374411284924,
+      "chiDelta_at_old041_local": 1.0907350876925894,
+      "signed_delta_local": 0.986693874001503,
+      "signed_world_shift_by_partID": {
+        "4": 5.269127951107446,
+        "5": 5.845812781155799
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.8491245881225286,
+        "side": 0.8158446692664795,
+        "oblique": 1.0662544466560633
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.4209240962692957,
+        -0.5339000504945958,
+        0.7333305129760691
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.14404345303774,
+      "new_radius_local": 34.597322054207325,
+      "chiDelta_at_old041_local": -2.4223140491973223,
+      "signed_delta_local": -0.5467213988304138,
+      "signed_world_shift_by_partID": {
+        "4": -2.894246196648968,
+        "5": -3.259032628627073
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.4038910242551718,
+        "side": 0.5702716239829627,
+        "oblique": 0.5007540655965443
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        -0.18365380691155636,
+        -0.5331110405176323,
+        0.8258715987882742
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.79762626439333,
+      "new_radius_local": 35.696496568620205,
+      "chiDelta_at_old041_local": -1.4334907344518641,
+      "signed_delta_local": -1.1011296957731247,
+      "signed_world_shift_by_partID": {
+        "4": -5.710992008031224,
+        "5": -6.599330334627917
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.771897433531286,
+        "side": 1.335236359848592,
+        "oblique": 0.8050538542319399
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.06801028994774602,
+        -0.5100771746080964,
+        0.8574356398033878
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.99475704878569,
+      "new_radius_local": 33.66838950663805,
+      "chiDelta_at_old041_local": -3.009153519278945,
+      "signed_delta_local": -2.3263675421476364,
+      "signed_world_shift_by_partID": {
+        "4": -11.721974984594851,
+        "5": -13.984051560397106
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.7426853835245235,
+        "side": 3.096797001561565,
+        "oblique": 1.3023886291792768
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.316917702002235,
+        -0.4663681726624601,
+        0.8258715987882743
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.43506147712469,
+      "new_radius_local": 37.85489899665117,
+      "chiDelta_at_old041_local": 0.7686386928313087,
+      "signed_delta_local": 0.41983751952648163,
+      "signed_world_shift_by_partID": {
+        "4": 2.0497488691757995,
+        "5": 2.522671973548376
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.3746778289061606,
+        "side": 0.5842499765684047,
+        "oblique": 0.23761311397024532
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.5461058004593451,
+        -0.40496273093077706,
+        0.7333305129760693
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.181437991559505,
+      "new_radius_local": 39.57728011161089,
+      "chiDelta_at_old041_local": 1.6799633905679774,
+      "signed_delta_local": 1.395842120051384,
+      "signed_world_shift_by_partID": {
+        "4": 6.635013935729449,
+        "5": 8.354980148564579
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.4492353634330921,
+        "side": 1.9226311675514505,
+        "oblique": 1.0362512204504652
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.7399557951604633,
+        -0.33004552878977156,
+        0.5861189044335
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.02019213885069,
+      "new_radius_local": 39.08873041719198,
+      "chiDelta_at_old041_local": 0.8484015511528009,
+      "signed_delta_local": 1.0685382783412933,
+      "signed_world_shift_by_partID": {
+        "4": 5.004748193474333,
+        "5": 6.354980125259931
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2166083384027566,
+        "side": 1.371159884909865,
+        "oblique": 1.0199781799600605
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.8852571293189726,
+        -0.24672204975882248,
+        0.39426900100405654
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.290481232106686,
+      "new_radius_local": 35.65930915623903,
+      "chiDelta_at_old041_local": 1.2109477969658502,
+      "signed_delta_local": 0.3688279241323471,
+      "signed_world_shift_by_partID": {
+        "4": 1.729418719125947,
+        "5": 2.177522568782438
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.4320693453686171,
+        "side": 0.41583373100789706,
+        "oblique": 0.4075720458830859
+      }
+    },
+    {
+      "chart": "side",
+      "s": 15.937377450509228,
+      "direction": [
+        0.9721077571337784,
+        -0.16067065123532936,
+        0.1708550565594995
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.16607544571161,
+      "new_radius_local": 36.20226203650236,
+      "chiDelta_at_old041_local": -2.0227663329979944,
+      "signed_delta_local": -1.9638134092092514,
+      "signed_world_shift_by_partID": {
+        "4": -9.353533432757633,
+        "5": -11.522282338343409
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.305019422266591,
+        "side": 2.012310772482193,
+        "oblique": 2.384977378197576
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.9945889518467504,
+        -0.07775559382200806,
+        -0.0688976377952756
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.410287104547024,
+      "new_radius_local": 36.28694079071283,
+      "chiDelta_at_old041_local": -2.3145166601774254,
+      "signed_delta_local": -2.1233463138341904,
+      "signed_world_shift_by_partID": {
+        "4": -10.362731419002525,
+        "5": -12.418242606798719
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.348172200283159,
+        "side": 2.0787030045703387,
+        "oblique": 2.594234640326622
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.9511686571901302,
+        -0.0036274016579659896,
+        -0.30865033215004994
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.79867196828127,
+      "new_radius_local": 32.42163949459791,
+      "chiDelta_at_old041_local": -4.789539486845563,
+      "signed_delta_local": -8.377032473683357,
+      "signed_world_shift_by_partID": {
+        "4": -41.94018621340801,
+        "5": -49.03728983746865
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 8.618669895234989,
+        "side": 8.733050922251357,
+        "oblique": 9.866960052186096
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.844805894489337,
+        0.056662211463447326,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.60921514779329,
+      "new_radius_local": 36.94635058194399,
+      "chiDelta_at_old041_local": -1.896819189766723,
+      "signed_delta_local": -0.6628645658493042,
+      "signed_world_shift_by_partID": {
+        "4": -3.386197008786153,
+        "5": -3.8999041432806485
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.6241017604749077,
+        "side": 0.766453005184398,
+        "oblique": 0.7234875750398104
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.6827491102496536,
+        0.09900460804130415,
+        -0.7239141800240511
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.20753297954798,
+      "new_radius_local": 38.699030347168446,
+      "chiDelta_at_old041_local": 2.1950954813764634,
+      "signed_delta_local": 0.49149736762046814,
+      "signed_world_shift_by_partID": {
+        "4": 2.5373337014404336,
+        "5": 2.9149998664702754
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.4225093785233023,
+        "side": 0.6139649044894299,
+        "oblique": 0.4809254819226646
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.4760422065055159,
+        0.12051422372294227,
+        -0.8711257885666205
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.79274649173021,
+      "new_radius_local": 39.97555776685476,
+      "chiDelta_at_old041_local": 0.5485505093838188,
+      "signed_delta_local": 0.18281127512454987,
+      "signed_world_shift_by_partID": {
+        "4": 0.9431124855108276,
+        "5": 1.0941191453643395
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.14616724079437243,
+        "side": 0.2344110058019858,
+        "oblique": 0.15737892818721178
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.23877191714777693,
+        0.11972521374597869,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.00758744031191,
+      "new_radius_local": 36.080261416733265,
+      "chiDelta_at_old041_local": 0.765991264229272,
+      "signed_delta_local": 0.0726739764213562,
+      "signed_world_shift_by_partID": {
+        "4": 0.37086904044642394,
+        "5": 0.4384429539788332
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.05744789069624398,
+        "side": 0.09100774370044495,
+        "oblique": 0.05675657726720473
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.012892179711525655,
+        0.09669134783644293,
+        -0.9952309153939389
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 28.892113707959652,
+      "new_radius_local": 28.892113707959652,
+      "chiDelta_at_old041_local": 1.723788585915856,
+      "signed_delta_local": 0.0,
+      "signed_world_shift_by_partID": {
+        "4": 0.0,
+        "5": 0.0
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0,
+        "side": 0.0,
+        "oblique": 0.0
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.26179959176601486,
+        0.0529823458908065,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 29.892345659434795,
+      "new_radius_local": 29.88866326957941,
+      "chiDelta_at_old041_local": -1.62750799517538,
+      "signed_delta_local": -0.0036823898553848267,
+      "signed_world_shift_by_partID": {
+        "4": -0.018121852149021265,
+        "5": -0.022356453699926945
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.003217431763237985,
+        "side": 0.0038973656354081296,
+        "oblique": 0.0027628403789075845
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.49098769022312433,
+        -0.00842309584087636,
+        -0.8711257885666206
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 27.08100137859583,
+      "new_radius_local": 27.080757908523083,
+      "chiDelta_at_old041_local": -1.9277426685277177,
+      "signed_delta_local": -0.00024347007274627686,
+      "signed_world_shift_by_partID": {
+        "4": -0.0011822466600489364,
+        "5": -0.0014739021766499133
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0002299800840786259,
+        "side": 0.00021981456968452184,
+        "oblique": 0.0001974347861467307
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.684837684924243,
+        -0.08334029798188201,
+        -0.7239141800240512
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 28.178686894476414,
+      "new_radius_local": 28.178686894476414,
+      "chiDelta_at_old041_local": 2.4711780052060175,
+      "signed_delta_local": 0.0,
+      "signed_world_shift_by_partID": {
+        "4": 0.0,
+        "5": 0.0
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0,
+        "side": 0.0,
+        "oblique": 0.0
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.8301390190827526,
+        -0.16666377701283125,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.11178971081972,
+      "new_radius_local": 41.33644791692495,
+      "chiDelta_at_old041_local": 1.934581591308191,
+      "signed_delta_local": 1.2246582061052322,
+      "signed_world_shift_by_partID": {
+        "4": 5.991646961834033,
+        "5": 7.310904040881898
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2500357781851252,
+        "side": 0.5446042936006128,
+        "oblique": 1.1441815060930878
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.9169896468975581,
+        -0.2527151755363244,
+        -0.30865033215005017
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.83334142714739,
+      "new_radius_local": 40.55541326850653,
+      "chiDelta_at_old041_local": 0.7866543217649491,
+      "signed_delta_local": 0.7220718413591385,
+      "signed_world_shift_by_partID": {
+        "4": 3.6056171232213794,
+        "5": 4.27833045172917
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.7652706341282507,
+        "side": 0.18917451809039484,
+        "oblique": 0.7463259908085634
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.9394708416105301,
+        -0.33563023294964545,
+        -0.0688976377952757
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.21342398971319,
+      "new_radius_local": 39.200814582407475,
+      "chiDelta_at_old041_local": -0.05098142362214553,
+      "signed_delta_local": -0.012609407305717468,
+      "signed_world_shift_by_partID": {
+        "4": -0.06455723819798673,
+        "5": -0.07431898347171541
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.013444833561908115,
+        "side": 0.002746940947408256,
+        "oblique": 0.014048047806672776
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.8960505469539098,
+        -0.40975842511368754,
+        0.17085505655949879
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.113258339464664,
+      "new_radius_local": 42.18424070626497,
+      "chiDelta_at_old041_local": 2.136515755495139,
+      "signed_delta_local": 2.0709823668003082,
+      "signed_world_shift_by_partID": {
+        "4": 10.848810803523204,
+        "5": 12.184978087613182
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.1481808949774615,
+        "side": 0.7821604803163292,
+        "oblique": 2.3960172577941736
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.7896877842531167,
+        -0.4700480382351009,
+        0.3942690010040559
+      ],
+      "crossing_counts": [
+        2,
+        2
+      ],
+      "old_radius_local": 40.30084728449583,
+      "new_radius_local": 39.523473627865314,
+      "chiDelta_at_old041_local": -1.1479275519147234,
+      "signed_delta_local": -0.777373656630516,
+      "signed_world_shift_by_partID": {
+        "4": -4.134882339581693,
+        "5": -4.583079759220136
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.7482689892193323,
+        "side": 0.4687228166125648,
+        "oblique": 0.89265503874625
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.6276310000134335,
+        -0.5123904348129577,
+        0.5861189044334996
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.18029444664717,
+      "new_radius_local": 33.17472989112139,
+      "chiDelta_at_old041_local": -0.26400365948183496,
+      "signed_delta_local": -0.005564555525779724,
+      "signed_world_shift_by_partID": {
+        "4": -0.029715756658554537,
+        "5": -0.03296802652890966
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.004641252510503886,
+        "side": 0.00474317699635381,
+        "oblique": 0.005831615154799078
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.4209240962692957,
+        -0.5339000504945958,
+        0.7333305129760691
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.13696659356356,
+      "new_radius_local": 34.75923793762922,
+      "chiDelta_at_old041_local": -1.5746333183294547,
+      "signed_delta_local": -0.3777286559343338,
+      "signed_world_shift_by_partID": {
+        "4": -1.999628564277928,
+        "5": -2.2516587371391483
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.28156643390356517,
+        "side": 0.39942254851932135,
+        "oblique": 0.3451664949823689
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        -0.18365380691155636,
+        -0.5331110405176323,
+        0.8258715987882742
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.6355402097106,
+      "new_radius_local": 36.155485324561596,
+      "chiDelta_at_old041_local": -1.732607579973712,
+      "signed_delta_local": -2.480054885149002,
+      "signed_world_shift_by_partID": {
+        "4": -12.862766014697625,
+        "5": -14.863554672925973
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.7867668153851521,
+        "side": 3.0505119050047576,
+        "oblique": 1.8539420216584677
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.06801028994774602,
+        -0.5100771746080964,
+        0.8574356398033878
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.854584373533726,
+      "new_radius_local": 36.674626640975475,
+      "chiDelta_at_old041_local": -2.938251277699976,
+      "signed_delta_local": -2.1799577325582504,
+      "signed_world_shift_by_partID": {
+        "4": -10.984253152419752,
+        "5": -13.10396606696069
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.6956842969320773,
+        "side": 2.955330636633552,
+        "oblique": 1.3089460893039533
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.316917702002235,
+        -0.4663681726624601,
+        0.8258715987882743
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.018861539661884,
+      "new_radius_local": 38.860384322702885,
+      "chiDelta_at_old041_local": -1.4456888806577943,
+      "signed_delta_local": -1.1584772169589996,
+      "signed_world_shift_by_partID": {
+        "4": -5.655967499298197,
+        "5": -6.960926242401735
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.0520934498123122,
+        "side": 1.642422705282711,
+        "oblique": 0.7024171991178352
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.5461058004593451,
+        -0.40496273093077706,
+        0.7333305129760693
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.9829682931304,
+      "new_radius_local": 39.02188044041395,
+      "chiDelta_at_old041_local": -0.9810311654738177,
+      "signed_delta_local": -0.9610878527164459,
+      "signed_world_shift_by_partID": {
+        "4": -4.568447394322106,
+        "5": -5.752706423686919
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.9967011839617997,
+        "side": 1.341162645397988,
+        "oblique": 0.7342673576444907
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.7399557951604633,
+        -0.33004552878977156,
+        0.5861189044335
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.21098152548075,
+      "new_radius_local": 41.03647559136152,
+      "chiDelta_at_old041_local": 0.7951605317682049,
+      "signed_delta_local": 0.8254940658807755,
+      "signed_world_shift_by_partID": {
+        "4": 3.8663939502043405,
+        "5": 4.909509082197456
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.9397370174911872,
+        "side": 1.0767120190672859,
+        "oblique": 0.8025981260381218
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.8852571293189726,
+        -0.24672204975882248,
+        0.39426900100405654
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.51090816408396,
+      "new_radius_local": 36.52828948944807,
+      "chiDelta_at_old041_local": -0.057410621266209994,
+      "signed_delta_local": 0.017381325364112854,
+      "signed_world_shift_by_partID": {
+        "4": 0.08150030808704496,
+        "5": 0.10261757795255119
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.02015543117632011,
+        "side": 0.019638625933630884,
+        "oblique": 0.01920973830201829
+      }
+    },
+    {
+      "chart": "side",
+      "s": 23.90606617576384,
+      "direction": [
+        0.9721077571337784,
+        -0.16067065123532936,
+        0.1708550565594995
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.390459932386875,
+      "new_radius_local": 37.645600236952305,
+      "chiDelta_at_old041_local": -2.4182342546526105,
+      "signed_delta_local": -1.7448596954345703,
+      "signed_world_shift_by_partID": {
+        "4": -8.310669140043231,
+        "5": -10.237615222155112
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.0229961768183546,
+        "side": 1.7804605324281182,
+        "oblique": 2.1095288849042984
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.9945889518467504,
+        -0.07775559382200806,
+        -0.0688976377952756
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.45395181328058,
+      "new_radius_local": 38.6797833815217,
+      "chiDelta_at_old041_local": -1.9660218427384784,
+      "signed_delta_local": -1.7741684317588806,
+      "signed_world_shift_by_partID": {
+        "4": -8.658611565435612,
+        "5": -10.376100152556452
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.937140988776049,
+        "side": 1.7351662143836548,
+        "oblique": 2.155265353703187
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.9511686571901302,
+        -0.0036274016579659896,
+        -0.30865033215004994
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 42.932907067239285,
+      "new_radius_local": 37.23142118006945,
+      "chiDelta_at_old041_local": -3.752209514950991,
+      "signed_delta_local": -5.701485887169838,
+      "signed_world_shift_by_partID": {
+        "4": -28.544879174364745,
+        "5": -33.37523363216144
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 5.781488912892218,
+        "side": 6.025937668987543,
+        "oblique": 6.66116407699725
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.844805894489337,
+        0.056662211463447326,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.07639072090387,
+      "new_radius_local": 40.09245040267706,
+      "chiDelta_at_old041_local": -2.1031903814557547,
+      "signed_delta_local": -0.9839403182268143,
+      "signed_world_shift_by_partID": {
+        "4": -5.0263899053570125,
+        "5": -5.788924497536133
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.9126562644453952,
+        "side": 1.1592248821422484,
+        "oblique": 1.0617981478300667
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.6827491102496536,
+        0.09900460804130415,
+        -0.7239141800240511
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 42.14392242580652,
+      "new_radius_local": 43.07353667169809,
+      "chiDelta_at_old041_local": 1.5984168621666097,
+      "signed_delta_local": 0.929614245891571,
+      "signed_world_shift_by_partID": {
+        "4": 4.79909295722049,
+        "5": 5.513407764037855
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.7865852983937498,
+        "side": 1.1867225509190316,
+        "oblique": 0.8971003968988097
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.4760422065055159,
+        0.12051422372294227,
+        -0.8711257885666205
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.233496867120266,
+      "new_radius_local": 41.51831387728453,
+      "chiDelta_at_old041_local": 0.5694332730524019,
+      "signed_delta_local": 0.28481701016426086,
+      "signed_world_shift_by_partID": {
+        "4": 1.4693540001224847,
+        "5": 1.7046199340485166
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.22678236936955934,
+        "side": 0.37095108125738996,
+        "oblique": 0.24462011988570972
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.23877191714777693,
+        0.11972521374597869,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.048576556146145,
+      "new_radius_local": 35.05239246040583,
+      "chiDelta_at_old041_local": -0.00354750442137175,
+      "signed_delta_local": 0.0038159042596817017,
+      "signed_world_shift_by_partID": {
+        "4": 0.0194732808208086,
+        "5": 0.023021395251715464
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0030426020118317406,
+        "side": 0.004859730181819766,
+        "oblique": 0.0030275864301265603
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.012892179711525655,
+        0.09669134783644293,
+        -0.9952309153939389
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 31.015602849423885,
+      "new_radius_local": 31.015603058040142,
+      "chiDelta_at_old041_local": 0.6866695924554075,
+      "signed_delta_local": 2.086162567138672e-07,
+      "signed_world_shift_by_partID": {
+        "4": 1.0460622012868382e-06,
+        "5": 1.2650444476277627e-06
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.727205028206133e-07,
+        "side": 2.505901490009491e-07,
+        "oblique": 1.5861961240772886e-07
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.26179959176601486,
+        0.0529823458908065,
+        -0.9636668743788254
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 30.09475316852331,
+      "new_radius_local": 30.09475316852331,
+      "chiDelta_at_old041_local": 0.4240676724101785,
+      "signed_delta_local": 0.0,
+      "signed_world_shift_by_partID": {
+        "4": 0.0,
+        "5": 0.0
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0,
+        "side": 0.0,
+        "oblique": 0.0
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.49098769022312433,
+        -0.00842309584087636,
+        -0.8711257885666206
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 28.700383447110653,
+      "new_radius_local": 28.700383447110653,
+      "chiDelta_at_old041_local": -0.4792553816609307,
+      "signed_delta_local": 0.0,
+      "signed_world_shift_by_partID": {
+        "4": 0.0,
+        "5": 0.0
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0,
+        "side": 0.0,
+        "oblique": 0.0
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.684837684924243,
+        -0.08334029798188201,
+        -0.7239141800240512
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 25.513418696820736,
+      "new_radius_local": 25.513418696820736,
+      "chiDelta_at_old041_local": 1.3574789694160858,
+      "signed_delta_local": 0.0,
+      "signed_world_shift_by_partID": {
+        "4": 0.0,
+        "5": 0.0
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0,
+        "side": 0.0,
+        "oblique": 0.0
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.8301390190827526,
+        -0.16666377701283125,
+        -0.5320642765946072
+      ],
+      "crossing_counts": [
+        3,
+        3
+      ],
+      "old_radius_local": 40.92736407369375,
+      "new_radius_local": 42.14556110650301,
+      "chiDelta_at_old041_local": 3.824501207002427,
+      "signed_delta_local": 1.2181970328092575,
+      "signed_world_shift_by_partID": {
+        "4": 5.960035636195787,
+        "5": 7.272332447826287
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.229416967437375,
+        "side": 0.5344603130098095,
+        "oblique": 1.1362477618711793
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.9169896468975581,
+        -0.2527151755363244,
+        -0.30865033215005017
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.9795136526227,
+      "new_radius_local": 43.96271275728941,
+      "chiDelta_at_old041_local": 2.3144517668971507,
+      "signed_delta_local": 1.98319910466671,
+      "signed_world_shift_by_partID": {
+        "4": 9.902971201707656,
+        "5": 11.750605182673912
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.070905956356551,
+        "side": 0.4784690876594412,
+        "oblique": 2.026383597558501
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.9394708416105301,
+        -0.33563023294964545,
+        -0.0688976377952757
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.48938725143671,
+      "new_radius_local": 41.31157750636339,
+      "chiDelta_at_old041_local": -0.20151679121339616,
+      "signed_delta_local": -0.17780974507331848,
+      "signed_world_shift_by_partID": {
+        "4": -0.9103446171811023,
+        "5": -1.0479984653363026
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.18715762831073038,
+        "side": 0.03428433294654525,
+        "oblique": 0.19599960996090063
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.8960505469539098,
+        -0.40975842511368754,
+        0.17085505655949879
+      ],
+      "crossing_counts": [
+        1,
+        2
+      ],
+      "old_radius_local": 39.268761210143566,
+      "new_radius_local": 41.95631966739893,
+      "chiDelta_at_old041_local": 1.0648553796105595,
+      "signed_delta_local": 2.6875584572553635,
+      "signed_world_shift_by_partID": {
+        "4": 14.078735624977664,
+        "5": 15.812708710519757
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.7452211564695106,
+        "side": 0.9987119108699954,
+        "oblique": 3.077168141243156
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.7896877842531167,
+        -0.4700480382351009,
+        0.3942690010040559
+      ],
+      "crossing_counts": [
+        2,
+        2
+      ],
+      "old_radius_local": 36.09638760238886,
+      "new_radius_local": 35.77892639487982,
+      "chiDelta_at_old041_local": -1.1328160829375942,
+      "signed_delta_local": -0.31746120750904083,
+      "signed_world_shift_by_partID": {
+        "4": -1.6885891736042427,
+        "5": -1.8716225100535717
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.29778983850051954,
+        "side": 0.19600240236372143,
+        "oblique": 0.35749118164604643
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.6276310000134335,
+        -0.5123904348129577,
+        0.5861189044334996
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.55684044212103,
+      "new_radius_local": 34.396010644733906,
+      "chiDelta_at_old041_local": -1.2214118788859476,
+      "signed_delta_local": -0.1608297973871231,
+      "signed_world_shift_by_partID": {
+        "4": -0.8588608920280097,
+        "5": -0.9528597571438199
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.13446176440483332,
+        "side": 0.13799258031994924,
+        "oblique": 0.16792201607543672
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.4209240962692957,
+        -0.5339000504945958,
+        0.7333305129760691
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.07976741343737,
+      "new_radius_local": 37.575639329850674,
+      "chiDelta_at_old041_local": -2.3589935744810733,
+      "signed_delta_local": -1.5041280835866928,
+      "signed_world_shift_by_partID": {
+        "4": -7.962587516249625,
+        "5": -8.966180055381106
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.1533333297546096,
+        "side": 1.6009502136954725,
+        "oblique": 1.3976130753594866
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.18365380691155636,
+        -0.5331110405176323,
+        0.8258715987882742
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.91365917772055,
+      "new_radius_local": 39.04128745943308,
+      "chiDelta_at_old041_local": -1.3402971913060218,
+      "signed_delta_local": -0.872371718287468,
+      "signed_world_shift_by_partID": {
+        "4": -4.524542322577253,
+        "5": -5.228329746863931
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.6486724578671577,
+        "side": 1.088106764779927,
+        "oblique": 0.6711234518509781
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.06801028994774602,
+        -0.5100771746080964,
+        0.8574356398033878
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.17635307461023,
+      "new_radius_local": 39.67442651838064,
+      "chiDelta_at_old041_local": -1.775954547847407,
+      "signed_delta_local": -1.5019265562295914,
+      "signed_world_shift_by_partID": {
+        "4": -7.567826322305515,
+        "5": -9.028245976495551
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2083193507958407,
+        "side": 2.073663037875337,
+        "oblique": 0.9613828860705032
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.316917702002235,
+        -0.4663681726624601,
+        0.8258715987882743
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.56810837239027,
+      "new_radius_local": 40.608912728726864,
+      "chiDelta_at_old041_local": 0.06094038568337368,
+      "signed_delta_local": 0.04080435633659363,
+      "signed_world_shift_by_partID": {
+        "4": 0.19921679070691842,
+        "5": 0.24518057901327073
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.03751255085447075,
+        "side": 0.058848803195155015,
+        "oblique": 0.026225953186289588
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.5461058004593451,
+        -0.40496273093077706,
+        0.7333305129760693
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.845226399600506,
+      "new_radius_local": 42.2275987342,
+      "chiDelta_at_old041_local": 1.6509795571632646,
+      "signed_delta_local": 1.382372334599495,
+      "signed_world_shift_by_partID": {
+        "4": 6.5709864838415175,
+        "5": 8.274355134861752
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.4449791886393066,
+        "side": 1.9677137096644537,
+        "oblique": 1.0985849189716934
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.7399557951604633,
+        -0.33004552878977156,
+        0.5861189044335
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.58531079441309,
+      "new_radius_local": 44.59691732376814,
+      "chiDelta_at_old041_local": 2.8398546552360795,
+      "signed_delta_local": 3.011606529355049,
+      "signed_world_shift_by_partID": {
+        "4": 14.10556144103907,
+        "5": 17.911103445786843
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.435492889031418,
+        "side": 4.004277475291313,
+        "oblique": 2.992273954728572
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.8852571293189726,
+        -0.24672204975882248,
+        0.39426900100405654
+      ],
+      "crossing_counts": [
+        2,
+        2
+      ],
+      "old_radius_local": 39.213111244142056,
+      "new_radius_local": 38.95145512372255,
+      "chiDelta_at_old041_local": -0.27316351419386375,
+      "signed_delta_local": -0.26165612041950226,
+      "signed_world_shift_by_partID": {
+        "4": -1.2268946113335841,
+        "5": -1.544791134819235
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.3022200508722965,
+        "side": 0.2991418129830371,
+        "oblique": 0.29195434099851125
+      }
+    },
+    {
+      "chart": "side",
+      "s": 31.874754901018456,
+      "direction": [
+        0.9721077571337784,
+        -0.16067065123532936,
+        0.1708550565594995
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.25256455689669,
+      "new_radius_local": 38.65563765913248,
+      "chiDelta_at_old041_local": -2.3834146312580513,
+      "signed_delta_local": -1.596926897764206,
+      "signed_world_shift_by_partID": {
+        "4": -7.606073498562067,
+        "5": -9.369649124222503
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.827435639531402,
+        "side": 1.6162682956830994,
+        "oblique": 1.9191768443678268
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.12549116102763172,
+        -0.9411837077072378,
+        -0.3137279025690793
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.99738097935915,
+      "new_radius_local": 34.22071824222803,
+      "chiDelta_at_old041_local": 0.25870075257106184,
+      "signed_delta_local": 0.22333726286888123,
+      "signed_world_shift_by_partID": {
+        "4": 1.123635645327695,
+        "5": 1.3652001478843343
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.22901958132349184,
+        "side": 0.2109568130640758,
+        "oblique": 0.267950236438873
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.6951296692316861,
+        -0.6736487341111795,
+        -0.25098232205526344
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.6821746006608,
+      "new_radius_local": 34.19483175128698,
+      "chiDelta_at_old041_local": -0.47061962976860394,
+      "signed_delta_local": -0.48734284937381744,
+      "signed_world_shift_by_partID": {
+        "4": -2.312598818127261,
+        "5": -2.910715865893278
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.5516106166174511,
+        "side": 0.6089831489677394,
+        "oblique": 0.5814137632225259
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.6030110205707888,
+        -0.5909799276565695,
+        -0.5358362008834523
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.360148064792156,
+      "new_radius_local": 34.587175376713276,
+      "chiDelta_at_old041_local": 0.3274781204492603,
+      "signed_delta_local": 0.2270273119211197,
+      "signed_world_shift_by_partID": {
+        "4": 1.1020502632592388,
+        "5": 1.3657784336487573
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.26268939692842036,
+        "side": 0.2758599106593852,
+        "oblique": 0.28045804103558925
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.3762162601245599,
+        -0.5517100583709658,
+        -0.7443637129187551
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.67339129000902,
+      "new_radius_local": 33.795564673841,
+      "chiDelta_at_old041_local": -0.9056671485014148,
+      "signed_delta_local": -0.8778266161680222,
+      "signed_world_shift_by_partID": {
+        "4": -4.344318367170315,
+        "5": -5.342990199049478
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.0048714876775067,
+        "side": 0.9942109223647684,
+        "oblique": 1.0500968523448928
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.07551486080217626,
+        -0.5663614560163215,
+        -0.8206900797116412
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.43260621279478,
+      "new_radius_local": 36.4168299511075,
+      "chiDelta_at_old041_local": 1.0266682090093535,
+      "signed_delta_local": 0.9842237383127213,
+      "signed_world_shift_by_partID": {
+        "4": 4.92301556938201,
+        "5": 6.045995180492791
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.1254077894418226,
+        "side": 0.9504384386494656,
+        "oblique": 1.1364137980359021
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.21852048028502075,
+        -0.6310082904255765,
+        -0.7443637129187552
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.031436167657375,
+      "new_radius_local": 34.08425310999155,
+      "chiDelta_at_old041_local": 1.443686434669727,
+      "signed_delta_local": 1.052816942334175,
+      "signed_world_shift_by_partID": {
+        "4": 5.324048327801561,
+        "5": 6.477814163176151
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2201937534312608,
+        "side": 0.783694636942877,
+        "oblique": 1.2315639260398465
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.42710323094650726,
+        -0.7283284945255423,
+        -0.5358362008834523
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.81533717364073,
+      "new_radius_local": 33.02738710492849,
+      "chiDelta_at_old041_local": 0.30100956392923883,
+      "signed_delta_local": 0.2120499312877655,
+      "signed_world_shift_by_partID": {
+        "4": 1.0938098732256416,
+        "5": 1.297496818366238
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.24251403434454463,
+        "side": 0.10644962126821914,
+        "oblique": 0.2571758334205351
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.4943438115874753,
+        -0.832245198220401,
+        -0.2509823220552635
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.7135346904397,
+      "new_radius_local": 31.03852530568838,
+      "chiDelta_at_old041_local": -2.602942223733821,
+      "signed_delta_local": -2.67500938475132,
+      "signed_world_shift_by_partID": {
+        "4": -14.124819605037665,
+        "5": -16.242676058193613
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.776608557781202,
+        "side": 1.0814908506998322,
+        "oblique": 3.270763074711584
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.40222516292657806,
+        -0.914914004675011,
+        0.03387155677292536
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.721028216183186,
+      "new_radius_local": 32.28346578031778,
+      "chiDelta_at_old041_local": -2.542984970108725,
+      "signed_delta_local": -2.437562435865402,
+      "signed_world_shift_by_partID": {
+        "4": -13.009388953152568,
+        "5": -14.72918033737731
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.9640277377024375,
+        "side": 1.4188765766686302,
+        "oblique": 2.7569384374768315
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.17543040248034936,
+        -0.9541838739606148,
+        0.2423990688082281
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.667327873408794,
+      "new_radius_local": 34.549992479383945,
+      "chiDelta_at_old041_local": -0.10232543748408879,
+      "signed_delta_local": -0.11733539402484894,
+      "signed_world_shift_by_partID": {
+        "4": -0.6169967371216244,
+        "5": -0.7079782490179176
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.05592709574774278,
+        "side": 0.10009359191665858,
+        "oblique": 0.1066111819665976
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.12527099684203444,
+        -0.939532476315259,
+        0.3187254356011144
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.237986735999584,
+      "new_radius_local": 33.76217923313379,
+      "chiDelta_at_old041_local": 0.7030616974751691,
+      "signed_delta_local": 0.5241924971342087,
+      "signed_world_shift_by_partID": {
+        "4": 2.6506785018259325,
+        "5": 3.1584531463656913
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.20339011785033143,
+        "side": 0.5705001015050296,
+        "oblique": 0.3478127877058504
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.41930633792923167,
+        -0.874885641906004,
+        0.24239906880822826
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.00991804152727,
+      "new_radius_local": 33.32144542783499,
+      "chiDelta_at_old041_local": -1.1589468821454685,
+      "signed_delta_local": -0.6884726136922836,
+      "signed_world_shift_by_partID": {
+        "4": -3.328118951711918,
+        "5": -4.132000302802192
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.4904833595011164,
+        "side": 0.8415195297454495,
+        "oblique": 0.5022841386661252
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.6278890885907178,
+        -0.7775654378060384,
+        0.03387155677292575
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.02088242024183,
+      "new_radius_local": 32.23024629801512,
+      "chiDelta_at_old041_local": 0.7294206027716306,
+      "signed_delta_local": 0.2093638777732849,
+      "signed_world_shift_by_partID": {
+        "4": 0.9873080727984112,
+        "5": 1.2507326354251171
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.2063492282891037,
+        "side": 0.2634648834338211,
+        "oblique": 0.20808987609758067
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.9211741234448959,
+        -0.35613471479614156,
+        -0.15686395128453964
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.097371228039265,
+      "new_radius_local": 31.587766088545322,
+      "chiDelta_at_old041_local": -2.986573603041631,
+      "signed_delta_local": -2.5096051394939423,
+      "signed_world_shift_by_partID": {
+        "4": -11.946053391430064,
+        "5": -14.750183682170302
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.9269786009214265,
+        "side": 2.9904851569406277,
+        "oblique": 3.06622644852709
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.7882123069405119,
+        -0.23681257064575617,
+        -0.5680151103374494
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.21532379835844,
+      "new_radius_local": 31.7883228585124,
+      "chiDelta_at_old041_local": -2.5270178480030876,
+      "signed_delta_local": -2.427000939846039,
+      "signed_world_shift_by_partID": {
+        "4": -12.031625748844535,
+        "5": -14.380716721867847
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.640083623290308,
+        "side": 2.959074021499801,
+        "oblique": 2.8832881542556716
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.46086226695444454,
+        -0.18013139663804428,
+        -0.8689986483550121
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.38452046364546,
+      "new_radius_local": 34.96211748570204,
+      "chiDelta_at_old041_local": 0.5489565369043518,
+      "signed_delta_local": 0.5775970220565796,
+      "signed_world_shift_by_partID": {
+        "4": 2.9149647158800716,
+        "5": 3.4811247681114996
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.5748938884170153,
+        "side": 0.6984778095050607,
+        "oblique": 0.5969079934228213
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.026837182343256105,
+        -0.20127886757442032,
+        -0.9791662693903593
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.51274839788675,
+      "new_radius_local": 33.96956255286932,
+      "chiDelta_at_old041_local": -0.465212440525785,
+      "signed_delta_local": -0.5431858450174332,
+      "signed_world_shift_by_partID": {
+        "4": -2.717414315323259,
+        "5": -3.3170500839383443
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.5372786282205936,
+        "side": 0.5721795110481543,
+        "oblique": 0.5025117579700601
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.3975662759766355,
+        -0.29458853569552157,
+        -0.8689986483550121
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.40452479571104,
+      "new_radius_local": 36.78141979128122,
+      "chiDelta_at_old041_local": 2.0524785469708093,
+      "signed_delta_local": 2.376894995570183,
+      "signed_world_shift_by_partID": {
+        "4": 11.77777278319513,
+        "5": 14.517631785825289
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.5126713923841013,
+        "side": 1.7908327399349557,
+        "oblique": 2.2562812508946517
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.69862954408344,
+        -0.4350581507822831,
+        -0.5680151103374494
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.39830709248781,
+      "new_radius_local": 37.088491924107075,
+      "chiDelta_at_old041_local": 2.706022259294942,
+      "signed_delta_local": 2.6901848316192627,
+      "signed_world_shift_by_partID": {
+        "4": 13.566277942504609,
+        "5": 16.249746559377915
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.036553371283293,
+        "side": 0.9926101930271773,
+        "oblique": 2.9102928779419384
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.7956829624172642,
+        -0.5850489929110962,
+        -0.15686395128453975
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.669015906751156,
+      "new_radius_local": 35.20928967744112,
+      "chiDelta_at_old041_local": 0.5106520166853729,
+      "signed_delta_local": 0.5402737706899643,
+      "signed_world_shift_by_partID": {
+        "4": 2.833075338284433,
+        "5": 3.2247039868863854
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.5914052672534685,
+        "side": 0.034719888903685256,
+        "oblique": 0.6459966221113622
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.6627211459128803,
+        -0.7043711370614816,
+        0.25428720776837
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.847692392766476,
+      "new_radius_local": 35.9885568395257,
+      "chiDelta_at_old041_local": 1.8720029449832438,
+      "signed_delta_local": 2.140864446759224,
+      "signed_world_shift_by_partID": {
+        "4": 11.531777403403156,
+        "5": 12.737564080153085
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.850096879178607,
+        "side": 1.0914733944684147,
+        "oblique": 2.4537803430555845
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        -0.33537110592681313,
+        -0.7610523110691936,
+        0.5552707457859325
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.314497984945774,
+      "new_radius_local": 36.98816583305597,
+      "chiDelta_at_old041_local": 3.669991987285475,
+      "signed_delta_local": 3.673667848110199,
+      "signed_world_shift_by_partID": {
+        "4": 19.549569758089426,
+        "5": 21.96416644958743
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.5990712804806642,
+        "side": 3.3707626172533227,
+        "oblique": 3.0251283549540053
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.0986539786843755,
+        -0.7399048401328174,
+        0.66543836682128
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.87751507014036,
+      "new_radius_local": 36.1400196030736,
+      "chiDelta_at_old041_local": 2.6610473981462213,
+      "signed_delta_local": 3.262504532933235,
+      "signed_world_shift_by_partID": {
+        "4": 16.482673874319353,
+        "5": 19.57530884843576
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.123040808814116,
+        "side": 3.9584410343821244,
+        "oblique": 0.7247127381223548
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.5230574370042675,
+        -0.6465951720117161,
+        0.5552707457859327
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 30.8509776070714,
+      "new_radius_local": 30.709023766219616,
+      "chiDelta_at_old041_local": -0.5867606127475791,
+      "signed_delta_local": -0.14195384085178375,
+      "signed_world_shift_by_partID": {
+        "4": -0.6743071464999643,
+        "5": -0.8475498854582382
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.11284824775696659,
+        "side": 0.18579402936911252,
+        "oblique": 0.06572115985698557
+      }
+    },
+    {
+      "chart": "root-cap",
+      "s": 0.0,
+      "direction": [
+        0.8241207051110715,
+        -0.5061255569249549,
+        0.25428720776837055
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 34.04874383658171,
+      "new_radius_local": 32.89671144634485,
+      "chiDelta_at_old041_local": -0.9805162872391476,
+      "signed_delta_local": -1.1520323902368546,
+      "signed_world_shift_by_partID": {
+        "4": -5.340383338929304,
+        "5": -6.806350505008432
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2752313580669599,
+        "side": 1.4488223831370097,
+        "oblique": 1.1525628820281715
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.9912279006826347,
+        0.13216372009101796,
+        0.0
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.00965892523527,
+      "new_radius_local": 37.473706655204296,
+      "chiDelta_at_old041_local": -2.7618414184859037,
+      "signed_delta_local": -3.5359522700309753,
+      "signed_world_shift_by_partID": {
+        "4": -17.679761350154877,
+        "5": -20.716162750896814
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.74092138844944,
+        "side": 2.450087781215384,
+        "oblique": 4.347859754214391
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.8376968195811392,
+        0.2699450641820346,
+        -0.47475646471364824
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 35.415262557566166,
+      "new_radius_local": 34.94768216460943,
+      "chiDelta_at_old041_local": -3.6615978913531575,
+      "signed_delta_local": -0.4675803929567337,
+      "signed_world_shift_by_partID": {
+        "4": -2.442609283687914,
+        "5": -2.748422847373516
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.3935034402134537,
+        "side": 0.48153624351996066,
+        "oblique": 0.481461253308209
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.45970555217075765,
+        0.33539484632470756,
+        -0.8223023181058197
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.11437747627497,
+      "new_radius_local": 39.25202048569918,
+      "chiDelta_at_old041_local": 0.6836546146065476,
+      "signed_delta_local": 0.1376430094242096,
+      "signed_world_shift_by_partID": {
+        "4": 0.7207729373364052,
+        "5": 0.821157856732328
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.09060377941834037,
+        "side": 0.17800702662953494,
+        "oblique": 0.10222412358272565
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.04146344669988188,
+        0.3109758502491146,
+        -0.9495129294272966
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.168265752494335,
+      "new_radius_local": 32.16827217489481,
+      "chiDelta_at_old041_local": 1.7131231414937091,
+      "signed_delta_local": 6.42240047454834e-06,
+      "signed_world_shift_by_partID": {
+        "4": 3.228091252929217e-05,
+        "5": 3.875128982379108e-05
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 4.327793570082618e-06,
+        "side": 7.923733124767074e-06,
+        "oblique": 3.7048491477842794e-06
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.531522348511877,
+        0.2032311262336897,
+        -0.8223023181058198
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 25.334531269967556,
+      "new_radius_local": 25.334531269967556,
+      "chiDelta_at_old041_local": 0.38857392894508397,
+      "signed_delta_local": 0.0,
+      "signed_world_shift_by_partID": {
+        "4": 0.0,
+        "5": 0.0
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0,
+        "side": 0.0,
+        "oblique": 0.0
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.8791602662810212,
+        0.041030786067079925,
+        -0.47475646471364824
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 31.908996142446995,
+      "new_radius_local": 31.82323031872511,
+      "chiDelta_at_old041_local": -0.9479033891890183,
+      "signed_delta_local": -0.08576582372188568,
+      "signed_world_shift_by_partID": {
+        "4": -0.4099064147527862,
+        "5": -0.5084084926096947
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0828998484988681,
+        "side": 0.050802081442793294,
+        "oblique": 0.07418159212755093
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.9912279006826347,
+        -0.13216372009101793,
+        -1.1628179697721654e-16
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 41.96546848863363,
+      "new_radius_local": 44.32375470548868,
+      "chiDelta_at_old041_local": 2.9834784197370205,
+      "signed_delta_local": 2.358286216855049,
+      "signed_world_shift_by_partID": {
+        "4": 11.791431084275303,
+        "5": 13.816544271718389
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 2.4581533031231695,
+        "side": 0.9412510792476492,
+        "oblique": 2.4773386939107502
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.8376968195811393,
+        -0.2699450641820346,
+        0.4747564647136481
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.49086508899927,
+      "new_radius_local": 33.6163911446929,
+      "chiDelta_at_old041_local": 0.8484492006404044,
+      "signed_delta_local": 0.1255260556936264,
+      "signed_world_shift_by_partID": {
+        "4": 0.6557398761806954,
+        "5": 0.7378382083719457
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.12700180616628423,
+        "side": 0.0931263061689069,
+        "oblique": 0.1440683949962734
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.459705552170758,
+        -0.33539484632470756,
+        0.8223023181058194
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 33.61861786991358,
+      "new_radius_local": 33.675771825015545,
+      "chiDelta_at_old041_local": 2.3684181810285843,
+      "signed_delta_local": 0.05715395510196686,
+      "signed_world_shift_by_partID": {
+        "4": 0.2992888943038224,
+        "5": 0.3409720513349672
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.053379063181822756,
+        "side": 0.06608592754266364,
+        "oblique": 0.059471700342617985
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.041463446699881765,
+        -0.3109758502491146,
+        0.9495129294272966
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.34626638144255,
+      "new_radius_local": 36.5053351894021,
+      "chiDelta_at_old041_local": 1.7028751186510926,
+      "signed_delta_local": 0.15906880795955658,
+      "signed_world_shift_by_partID": {
+        "4": 0.7995275753581362,
+        "5": 0.9597846672479892
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.15876148415600683,
+        "side": 0.22667758603511157,
+        "oblique": 0.1437662879145354
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.5315223485118773,
+        -0.2032311262336896,
+        0.8223023181058197
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 42.71834250539541,
+      "new_radius_local": 45.9896534755826,
+      "chiDelta_at_old041_local": 4.784850863386346,
+      "signed_delta_local": 3.271310970187187,
+      "signed_world_shift_by_partID": {
+        "4": 15.679855560823434,
+        "5": 19.67701003670515
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.9176253061778383,
+        "side": 4.689209773965067,
+        "oblique": 3.496241752182901
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.8791602662810208,
+        -0.04103078606708013,
+        0.47475646471364874
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 39.505279429256916,
+      "new_radius_local": 39.6405069604516,
+      "chiDelta_at_old041_local": 0.20441822845316182,
+      "signed_delta_local": 0.1352275311946869,
+      "signed_world_shift_by_partID": {
+        "4": 0.6463021059253694,
+        "5": 0.8016109717194484
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.16210600378662002,
+        "side": 0.13183136307481913,
+        "oblique": 0.166622290232233
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.7956829624172642,
+        0.5850489929110962,
+        0.15686395128453964
+      ],
+      "crossing_counts": [
+        2,
+        2
+      ],
+      "old_radius_local": 33.794759534299374,
+      "new_radius_local": 33.66882099956274,
+      "chiDelta_at_old041_local": -0.9313336848348633,
+      "signed_delta_local": -0.1259385347366333,
+      "signed_world_shift_by_partID": {
+        "4": -0.660393630522364,
+        "5": -0.7516827895408065
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.11591378816717125,
+        "side": 0.029428877368252136,
+        "oblique": 0.1496515482554526
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.6627211459128802,
+        0.7043711370614816,
+        -0.2542872077683701
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 37.61871085315943,
+      "new_radius_local": 37.674369134008884,
+      "chiDelta_at_old041_local": 0.10998207374180569,
+      "signed_delta_local": 0.05565828084945679,
+      "signed_world_shift_by_partID": {
+        "4": 0.29980361735822375,
+        "5": 0.33115170835969066
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.03352208073058375,
+        "side": 0.04820612362455427,
+        "oblique": 0.049807564250806825
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.33537110592681285,
+        0.7610523110691936,
+        -0.5552707457859327
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 38.345798797905445,
+      "new_radius_local": 38.444829784333706,
+      "chiDelta_at_old041_local": 1.2830811829453181,
+      "signed_delta_local": 0.0990309864282608,
+      "signed_world_shift_by_partID": {
+        "4": 0.5269973382016936,
+        "5": 0.5920875701094137
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.02924608015385966,
+        "side": 0.12394131443312294,
+        "oblique": 0.05157055942577185
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.09865397868437562,
+        0.7399048401328174,
+        -0.66543836682128
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 32.68580298870802,
+      "new_radius_local": 32.68000067025423,
+      "chiDelta_at_old041_local": -0.3063901199280413,
+      "signed_delta_local": -0.005802318453788757,
+      "signed_world_shift_by_partID": {
+        "4": -0.02931420380358113,
+        "5": -0.03481441163478904
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.001519923098082461,
+        "side": 0.007527915358819563,
+        "oblique": 0.0008442877575783444
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.5230574370042672,
+        0.6465951720117162,
+        -0.5552707457859327
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 31.888153322041035,
+      "new_radius_local": 31.89129240065813,
+      "chiDelta_at_old041_local": 0.9919724160134897,
+      "signed_delta_local": 0.0031390786170959473,
+      "signed_world_shift_by_partID": {
+        "4": 0.014911207278651905,
+        "5": 0.018742189055359165
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0016329272484751388,
+        "side": 0.0036445346060599384,
+        "oblique": 0.0009076767590477763
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.8241207051110717,
+        0.5061255569249548,
+        -0.2542872077683701
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 42.78041488677263,
+      "new_radius_local": 43.18339114636183,
+      "chiDelta_at_old041_local": 1.1616342828143378,
+      "signed_delta_local": 0.40297625958919525,
+      "signed_world_shift_by_partID": {
+        "4": 1.8680444412260433,
+        "5": 2.380833812665233
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.29838085123135094,
+        "side": 0.37786249232854907,
+        "oblique": 0.24876629669215847
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.9211741234448959,
+        0.35613471479614156,
+        0.15686395128453953
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.23007673770189,
+      "new_radius_local": 38.79808373004198,
+      "chiDelta_at_old041_local": -1.5657156253714863,
+      "signed_delta_local": -1.431993007659912,
+      "signed_world_shift_by_partID": {
+        "4": -6.816476686491482,
+        "5": -8.416527190738224
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.3599894310974412,
+        "side": 1.2942960210890886,
+        "oblique": 1.3371746703136886
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.788212306940512,
+        0.23681257064575617,
+        0.5680151103374493
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.2296357229352,
+      "new_radius_local": 39.136035315692425,
+      "chiDelta_at_old041_local": -0.8649039138234322,
+      "signed_delta_local": -1.093600407242775,
+      "signed_world_shift_by_partID": {
+        "4": -5.421419745953602,
+        "5": -6.4799141216960425
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.1848929338045262,
+        "side": 1.178835024894894,
+        "oblique": 1.2631966424544219
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.4608622669544448,
+        0.18013139663804428,
+        0.8689986483550118
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 36.992419980466366,
+      "new_radius_local": 36.24737835675478,
+      "chiDelta_at_old041_local": -1.3265431156335719,
+      "signed_delta_local": -0.745041623711586,
+      "signed_world_shift_by_partID": {
+        "4": -3.7600090756157267,
+        "5": -4.4902981672963715
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.8669183566741868,
+        "side": 1.0012356638283348,
+        "oblique": 0.9394024959715143
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.02683718234325621,
+        0.20127886757442032,
+        0.9791662693903593
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 40.02530964463949,
+      "new_radius_local": 40.99063616245985,
+      "chiDelta_at_old041_local": 0.926362638661701,
+      "signed_delta_local": 0.9653265178203583,
+      "signed_world_shift_by_partID": {
+        "4": 4.829271827586264,
+        "5": 5.8949187213471586
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 1.2037463157805206,
+        "side": 1.4531722312100648,
+        "oblique": 1.285604390416989
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.3975662759766358,
+        0.2945885356955217,
+        0.8689986483550121
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 43.453134439885616,
+      "new_radius_local": 46.42642319947481,
+      "chiDelta_at_old041_local": 3.078899834342542,
+      "signed_delta_local": 2.9732887595891953,
+      "signed_world_shift_by_partID": {
+        "4": 14.732968639562843,
+        "5": 18.16029378037142
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 3.7979647913023142,
+        "side": 4.120377569495788,
+        "oblique": 4.186626756424321
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        0.6986295440834398,
+        0.43505815078228294,
+        0.5680151103374499
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 30.60992807894945,
+      "new_radius_local": 30.60938111692667,
+      "chiDelta_at_old041_local": -0.2576564916755613,
+      "signed_delta_local": -0.0005469620227813721,
+      "signed_world_shift_by_partID": {
+        "4": -0.0027582635728160857,
+        "5": -0.0033038600708321245
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.0006244235326781466,
+        "side": 0.0003815149062398179,
+        "oblique": 0.0007200217597125928
+      }
+    },
+    {
+      "chart": "head-cap",
+      "s": 31.874754901018456,
+      "direction": [
+        -0.12549116102763172,
+        0.9411837077072378,
+        0.3137279025690793
+      ],
+      "crossing_counts": [
+        1,
+        1
+      ],
+      "old_radius_local": 31.452218763530254,
+      "new_radius_local": 31.43953797966242,
+      "chiDelta_at_old041_local": -1.825607391051149,
+      "signed_delta_local": -0.012680783867835999,
+      "signed_world_shift_by_partID": {
+        "4": -0.06379849283337193,
+        "5": -0.07751419440361361
+      },
+      "ID5_projected_pixel_shift": {
+        "front": 0.009225135148082129,
+        "side": 0.017223509199789697,
+        "oblique": 0.011916058922341868
+      }
+    }
+  ]
+}

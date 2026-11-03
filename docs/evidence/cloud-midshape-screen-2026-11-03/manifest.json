@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "scope": "One rejected partial midshape pre-EDT screen; no native payload or allview/art/runtime qualification",
+  "files": {
+    "README.md": {
+      "sha256": "f177a1c121e1d7aa810f48b07b2fc57803ecfd1ecab04c0366286acc11870aea",
+      "bytes": 8281
+    },
+    "dependencies.json": {
+      "sha256": "ec9152637eb0f5ad6e6f05a2ac1e157c72ade78fb335de0a596b6d514c98e83a",
+      "bytes": 4070
+    },
+    "frozen/COMMISSION.md": {
+      "sha256": "51eaf066513585640285563417de42d6dd66fdadd076ca6b0d2f86a409922274",
+      "bytes": 2779
+    },
+    "frozen/DESIGN-REVIEW.txt": {
+      "sha256": "534ac005620df4a8f239ff0f178e81a24c616894c253ccac4999b7a973d6d391",
+      "bytes": 996
+    },
+    "frozen/PREFLIGHT.md": {
+      "sha256": "54e40ecb1880406e8b918521c033b084bc2248b1d91478607635c7ef5f0c039a",
+      "bytes": 3391
+    },
+    "frozen/implementation.diff": {
+      "sha256": "a0482b0034b3cb307eab61e1ee7e7e01b204c3aa77e98310f855c46aaf4c89ea",
+      "bytes": 13387
+    },
+    "frozen/measure.py": {
+      "sha256": "1a77091fb06c2ca48fc6a0d49bb2954d1ce60a93df43a673ce2cd7f05e903e5f",
+      "bytes": 5447
+    },
+    "frozen/measure_retained_contour.py": {
+      "sha256": "5dc7dfaca60a6d3eccdeede981fa5cca68a4a8e87d19317742e248e220ba6c77",
+      "bytes": 1874
+    },
+    "frozen/midshape.py": {
+      "sha256": "c428c3d894bb2fffeec23391845b002daa0ce0d876a40539d935f50c69b975d1",
+      "bytes": 3560
+    },
+    "frozen/preflight.py": {
+      "sha256": "65341ddd4b274f8fc1d08d25e986faa8138d0b7ce5d630412eaf059b4ee0d8be",
+      "bytes": 18549
+    },
+    "frozen/recipe.md": {
+      "sha256": "6d4bd3a35c136808cecbbef9d410401d25bf4301cd8cef3f88660371b38d356e",
+      "bytes": 13160
+    },
+    "frozen/test_inherited.py": {
+      "sha256": "99cb70df2407a328156ca79f3b66b3fab3b2f2c3ec2e1c56aed4932174e50b21",
+      "bytes": 1371
+    },
+    "frozen/test_midshape.py": {
+      "sha256": "4f336ad98d64f148bdba206733ba8d64225840e1334042375faa35573fe01dee",
+      "bytes": 3027
+    },
+    "inputs/body.json": {
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "bytes": 9097
+    },
+    "inputs/crown-b.json": {
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "bytes": 11486
+    },
+    "inputs/system-t220000-mode0-c3e0ebee9680337c-eea93588-4.json": {
+      "sha256": "2eb4b6c9a88a0f18f1ea7f3b0d05fe82f7c86b30415cddc7be8311e0f209f0eb",
+      "bytes": 50162
+    },
+    "inputs/system-t220000-mode0-c3e0ebee9680337c-eea93588-5.json": {
+      "sha256": "54d8095408a9f1b008dcdc898753f02c4b814f4ff9f8fe9e15fc7da73ca47e52",
+      "bytes": 50181
+    },
+    "inputs/system-t220000-mode0-c3e0ebee9680337c-eea93588-6.json": {
+      "sha256": "ce799ee499888ab9348e94687cd7517546a705ec6b5987148d9f207acb484c3f",
+      "bytes": 50167
+    },
+    "observations/adverse.json": {
+      "sha256": "b975057abec12f64acbfb60fa905b4604a486fef2965906722c612ea70e84c65",
+      "bytes": 173
+    },
+    "observations/boundary-profiles.json": {
+      "sha256": "d4072d68ee25e22e1090a1a94707f4f1e93d51d5cea82cec2e692d6fe65d60c4",
+      "bytes": 120593
+    },
+    "observations/isolated-front.png": {
+      "sha256": "ccb9319cead6d3c81db2184d714db7deb6c5aaed293a7c78d7ec3eddb3dbada1",
+      "bytes": 124484
+    },
+    "observations/math-checks.json": {
+      "sha256": "c642b1fde6f8006e863e7c7877cfa9eb206647753c8cad68643dcc2a85c47ce8",
+      "bytes": 1242
+    },
+    "observations/native-front.png": {
+      "sha256": "301d5b10fe923500cd585b0ccee9a253953c516edeb2d5edd7c25076a9d7d2a2",
+      "bytes": 21999
+    },
+    "observations/native-side.png": {
+      "sha256": "82498177b017d0f3edce12b7cdb801ee71d799e92da91f74147031d7af24aaa5",
+      "bytes": 21864
+    },
+    "observations/partial-results.json": {
+      "sha256": "16c28cdfca4a1854bdeb43772e8892934826399960840f992a94859044c26c7a",
+      "bytes": 4284
+    },
+    "observations/retained-visible-contour.json": {
+      "sha256": "3f2ee14aaa7fd2dd31a03d7135a2d504bd2fe28a27c1ca69a025fa996eb1b3bf",
+      "bytes": 1227
+    },
+    "reproduce.py": {
+      "sha256": "33a253fa3522b314822b8706c28f33f4bd3d62e72c230b21c2ebcceed47e10a1",
+      "bytes": 2918
+    },
+    "verification.json": {
+      "sha256": "a8782f1d81a215f7da6cc1a9ca58ee55c8503129cbefbbc1e9c9c5a769a5e457",
+      "bytes": 2883
+    }
+  }
+}

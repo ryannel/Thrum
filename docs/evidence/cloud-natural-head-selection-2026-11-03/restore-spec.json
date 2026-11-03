@@ -1,0 +1,131 @@
+{
+  "archive": "diagnostics.zip",
+  "archive_sha256": "cbaa96ed54950eff65892cc9da805e49ef9b1654a8d05ffff38bdf7664a05b11",
+  "members": {
+    "cloud-natural-lobe-selection/SELECTION.md": {
+      "bytes": 5392,
+      "sha256": "b595876b3323703ce1f25d134b835b135ade9f1e891f3abdd27c33184187d459"
+    },
+    "cloud-natural-lobe-selection/component-slices.json": {
+      "bytes": 5650,
+      "sha256": "227f8a8599676a6e2284835ee6b621543c77884c08fc5099af2d49361a8cfb94"
+    },
+    "cloud-natural-lobe-selection/component_slices.py": {
+      "bytes": 2336,
+      "sha256": "f30ba889e3a8d6dba830a1c225be60253745fe70df330e3b51fae1413cde2c3e"
+    },
+    "cloud-natural-lobe-selection/diagnostic.json": {
+      "bytes": 17277,
+      "sha256": "d3d15cc663ba6608ce26dc5a2022f6a2c56419dd472d3bee751ac3b1e940d550"
+    },
+    "cloud-natural-lobe-selection/front-opacity.png": {
+      "bytes": 22832,
+      "sha256": "93100506250a89ec1ec4f51135e3e72180890661d233f23cc37b7dcbb76df2a4"
+    },
+    "cloud-natural-lobe-selection/front-peak041.png": {
+      "bytes": 10304,
+      "sha256": "b66175199e5b8dd12328cfca213bdfa24d47bc5efaaf629735fc213b412f17a1"
+    },
+    "cloud-natural-lobe-selection/raw_diagnostic.py": {
+      "bytes": 5910,
+      "sha256": "26466d720549b9b3a63312eb7e4ff98b671a79b033247e9923f33d67e7a8e511"
+    },
+    "cloud-natural-lobe-selection/side-opacity.png": {
+      "bytes": 27427,
+      "sha256": "3261df581dea361e0b52136ba21519d999be888d2fd8caa08ccfa7f464b87818"
+    },
+    "cloud-natural-lobe-selection/side-peak041.png": {
+      "bytes": 11054,
+      "sha256": "d2743817c3c4f87915327303524796b7ff6f33835fdfc4b04bae9fd01fa34495"
+    },
+    "cloud-natural-lobe-selection/slice-y220.png": {
+      "bytes": 12555,
+      "sha256": "b8272a06d0b0bdb16e464c4f351b5da80f3ebf78a63924644d231ce14b95b0b7"
+    },
+    "cloud-natural-lobe-selection/slice-y240.png": {
+      "bytes": 12583,
+      "sha256": "4a0c49b1863f0132fbb94289e3ebef0a308566bffcf840cd987a5d4e9c4a6ff4"
+    },
+    "cloud-natural-lobe-selection/slice-y260-seam.png": {
+      "bytes": 16656,
+      "sha256": "e01f98f3a640053aa40d4a9725cab71c25191e046f6fb3d7202adb3063151a8f"
+    },
+    "cloud-natural-lobe-selection/slice-y260.png": {
+      "bytes": 11936,
+      "sha256": "b14166b73404828b68ec52c41b912a31ad55d3db62c043ca6d10f11276e2bc5d"
+    },
+    "cloud-natural-lobe-selection/slice-y280-seam.png": {
+      "bytes": 16424,
+      "sha256": "d4c657ebc92050687f866f611622c92e37230cfdc29c3f69d4c4cfa2b8bc2574"
+    },
+    "cloud-natural-lobe-selection/slice-y280.png": {
+      "bytes": 11723,
+      "sha256": "4938b0902ef9bd8babcd66a22f908c84d7037f5f38cb2fae364f3d616b73acb8"
+    },
+    "cloud-natural-lobe-selection/slice-y300-seam.png": {
+      "bytes": 15668,
+      "sha256": "bcdab461dff1be0ab887b0fa885083724ad7f0e5fb58426cf1e79d01dc869e0b"
+    },
+    "cloud-natural-lobe-selection/slice-y300.png": {
+      "bytes": 11084,
+      "sha256": "d849bd5f114e9d0a85d40dca2cf1973dc4efbbbfdc0e6a90488ecfc9d5b1b894"
+    },
+    "cloud-natural-lobe-selection/slice-y320-seam.png": {
+      "bytes": 14992,
+      "sha256": "7d5632220b9df1245fb6b1505fe86b0e3510f0b895d16cc1d81d9a836d2d968e"
+    },
+    "cloud-natural-lobe-selection/slice-y320.png": {
+      "bytes": 10568,
+      "sha256": "915ddea043e46f41b1101f639c297fdf507fa63bf94476d00de90085fccbb840"
+    },
+    "cloud-natural-lobe-selection/slice-y336.png": {
+      "bytes": 9794,
+      "sha256": "2890efa03f1e14122f163a66e0b00ed1a07bdb48bc74dc2ecbe93da528f6a38d"
+    },
+    "cloud-natural-lobe-selection/top-opacity.png": {
+      "bytes": 33605,
+      "sha256": "eaeccf9795fd433a486416c2dd457c4fbbf949e40d252aa5182df559ffad24e7"
+    },
+    "cloud-natural-core-probe/PREFLIGHT.md": {
+      "bytes": 1301,
+      "sha256": "1c481adba8c776f386b71bdfd4cf24a284ab6f3c4a29cd966e883555a0b7d4d2"
+    },
+    "cloud-natural-core-probe/RESULT.md": {
+      "bytes": 2624,
+      "sha256": "34777fd2b9c38cbce0828f248cae264be8ae54f85ac9a9826c9c9a4fa506d139"
+    },
+    "cloud-natural-core-probe/core_probe.py": {
+      "bytes": 6613,
+      "sha256": "5b984f323f4af700b022dc8bd92afd7c6d78aeeb0f7b50c253006db070814130"
+    },
+    "cloud-natural-core-probe/front.png": {
+      "bytes": 6896,
+      "sha256": "4c1ff31ca0b7799b090a98cbf7b29a226450d9272f24fd8c46c68e17673774b3"
+    },
+    "cloud-natural-core-probe/result.json": {
+      "bytes": 6235,
+      "sha256": "edabb93a8dc64a745128bd69a1842748e585817284d017d8c514d1bc1c781fce"
+    },
+    "cloud-natural-core-probe/side.png": {
+      "bytes": 6557,
+      "sha256": "79b2b2e30642aced773fe7dec8c08bb2cce6a71d445ba4ffbf0f8d666b94083a"
+    },
+    "cloud-natural-core-probe/top.png": {
+      "bytes": 7533,
+      "sha256": "4b7d8e6aa606b3179dba48576a4a3c239deda13098376340ae9f604e303535ab"
+    },
+    "cloud-authored-master/cloud-03-256.json": {
+      "bytes": 7054,
+      "sha256": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3"
+    }
+  },
+  "master": {
+    "kind": "gzip",
+    "container": "../cloud-authored-masters-2026-11-03/instrument/assets/cloud-03-256.density.r16f.gz",
+    "container_sha256": "3fb5b8b115a164b87d4bc80ce5e4ac8daa6d4829d57f0dbceddbdfde28bc4163",
+    "container_bytes": 1383988,
+    "target": "cloud-authored-master/cloud-03-256.density.r16f",
+    "decoded_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "decoded_bytes": 33554432
+  }
+}
