@@ -474,8 +474,8 @@ impl Write for HashCountWriter {
     }
 }
 
-struct ManifestBlobWriter<'a> {
-    store: &'a mut SqliteStoreCore,
+struct ManifestBlobWriter<F> {
+    append: F,
     buffer: Vec<u8>,
     digest: Sha256,
     length: u64,
@@ -486,15 +486,9 @@ struct ManifestBlobWriter<'a> {
     failure: Option<StoreError>,
 }
 
-impl ManifestBlobWriter<'_> {
+impl<F: FnMut(i64, &[u8]) -> Result<(), StoreError>> ManifestBlobWriter<F> {
     fn append_full_chunk(&mut self) -> io::Result<()> {
-        if let Err(error) = self.store.append_blob_chunk(
-            self.length,
-            self.hash,
-            self.chunk_count,
-            self.next_chunk,
-            &self.buffer,
-        ) {
+        if let Err(error) = (self.append)(self.next_chunk, &self.buffer) {
             self.failure = Some(error);
             return Err(io::Error::other("SQLite blob chunk write failed"));
         }
@@ -520,12 +514,11 @@ impl ManifestBlobWriter<'_> {
         if self.digest.finalize().as_slice() != self.hash {
             return Err(StoreError::HashMismatch);
         }
-        self.store
-            .verify_and_complete_blob(self.length, self.hash, self.chunk_count, || {})
+        Ok(())
     }
 }
 
-impl Write for ManifestBlobWriter<'_> {
+impl<F: FnMut(i64, &[u8]) -> Result<(), StoreError>> Write for ManifestBlobWriter<F> {
     fn write(&mut self, mut bytes: &[u8]) -> io::Result<usize> {
         if self.failure.is_some() {
             return Err(io::Error::other("previous SQLite blob write failed"));
@@ -1514,6 +1507,7 @@ impl SqliteStoreCore {
         Ok(())
     }
 
+    #[cfg(test)]
     fn stage_manifest_chunked(&mut self, manifest: &TreeManifest) -> Result<[u8; 32], StoreError> {
         if !manifest.dependency_roots().is_empty() {
             return Err(StoreError::UnsupportedDependencyRoots);
@@ -1535,7 +1529,9 @@ impl SqliteStoreCore {
             return Ok(hash);
         }
         let mut writer = ManifestBlobWriter {
-            store: self,
+            append: |index: i64, bytes: &[u8]| {
+                self.append_blob_chunk(length, hash, chunk_count, index, bytes)
+            },
             buffer: Vec::with_capacity(CHUNK_BYTES),
             digest: Sha256::new(),
             length,
@@ -1549,6 +1545,7 @@ impl SqliteStoreCore {
             return Err(writer.failure.take().unwrap_or(StoreError::OutputIo));
         }
         writer.finish()?;
+        self.verify_and_complete_blob(length, hash, chunk_count, || {})?;
         Ok(hash)
     }
 
@@ -1712,6 +1709,7 @@ impl SqliteStoreCore {
         Ok(())
     }
 
+    #[cfg(test)]
     fn verify_and_complete_blob(
         &mut self,
         length: u64,
@@ -1795,6 +1793,7 @@ impl SqliteStoreCore {
         )
     }
 
+    #[cfg(test)]
     fn commit_manifest_probe(
         &mut self,
         expected_generation: i64,
@@ -1817,6 +1816,28 @@ impl SqliteStoreCore {
             return Err(StoreError::InputLength);
         }
         let revision: [u8; 32] = count.digest.finalize().into();
+        self.commit_verified_manifest_probe(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            revision,
+            manifest,
+        )
+    }
+
+    fn commit_verified_manifest_probe(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        revision: [u8; 32],
+        manifest: &TreeManifest,
+    ) -> Result<i64, StoreError> {
+        if !manifest.dependency_roots().is_empty() {
+            return Err(StoreError::UnsupportedDependencyRoots);
+        }
         self.commit_with_closure(
             expected_generation,
             epoch,
@@ -2334,19 +2355,20 @@ impl NativeSourceStore {
                 }
             }
             self.stage_candidate_files_phased(candidate, &mut scratch, &mut after_committed_chunk)?;
+            let stored_revision = self.stage_manifest_phased(&manifest, &mut scratch)?;
+            if stored_revision != revision {
+                return Err(StoreError::HashMismatch);
+            }
             let generation = {
                 let mut inner = self.owner.lock()?;
                 inner.require_clean()?;
-                let stored_revision = inner.stage_manifest_chunked(&manifest)?;
-                if stored_revision != revision {
-                    return Err(StoreError::HashMismatch);
-                }
                 before_final_commit();
-                inner.commit_manifest_probe(
+                inner.commit_verified_manifest_probe(
                     expected_generation,
                     epoch,
                     key,
                     request_hash,
+                    revision,
                     &manifest,
                 )?
             };
@@ -2420,6 +2442,53 @@ impl NativeSourceStore {
         self.owner
             .lock()?
             .flush_candidate_batch(&mut entries, &mut bytes)
+    }
+
+    fn stage_manifest_phased(
+        &self,
+        manifest: &TreeManifest,
+        scratch: &mut Vec<u8>,
+    ) -> Result<[u8; 32], StoreError> {
+        if !manifest.dependency_roots().is_empty() {
+            return Err(StoreError::UnsupportedDependencyRoots);
+        }
+        let mut count = HashCountWriter {
+            digest: Sha256::new(),
+            length: 0,
+        };
+        manifest
+            .write_jcs(&mut count)
+            .map_err(|_| StoreError::OutputIo)?;
+        let length = count.length;
+        if length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
+            return Err(StoreError::InputLength);
+        }
+        let hash: [u8; 32] = count.digest.finalize().into();
+        let chunk_count = blob_chunk_count(length)?;
+        if self.owner.lock()?.begin_blob(length, hash, chunk_count)? {
+            return Ok(hash);
+        }
+        let mut writer = ManifestBlobWriter {
+            append: |index: i64, bytes: &[u8]| {
+                self.owner
+                    .lock()?
+                    .append_blob_chunk(length, hash, chunk_count, index, bytes)
+            },
+            buffer: Vec::with_capacity(CHUNK_BYTES),
+            digest: Sha256::new(),
+            length,
+            written: 0,
+            hash,
+            chunk_count,
+            next_chunk: 0,
+            failure: None,
+        };
+        if manifest.write_jcs(&mut writer).is_err() {
+            return Err(writer.failure.take().unwrap_or(StoreError::OutputIo));
+        }
+        writer.finish()?;
+        self.verify_and_complete_blob_phased(length, hash, chunk_count, scratch)?;
+        Ok(hash)
     }
 
     fn stage_blob_phased(
@@ -6991,6 +7060,92 @@ fn measure_maximum_manifest_sqlite_stream() {
         elapsed.as_secs_f64() * 1000.0
     );
     assert!(chunks > 1);
+}
+
+#[test]
+#[ignore = "local maximum-profile phased manifest and pinned-reader probe"]
+fn measure_maximum_phased_manifest_reader_progress() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "before maximum manifest");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let files = (0..100_000)
+        .map(|index| {
+            ManifestEntry::new(
+                SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
+                1,
+                Sha256::digest([index as u8]).into(),
+                None,
+            )
+            .unwrap()
+        })
+        .collect();
+    let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
+    let revision = *manifest.revision().as_bytes();
+    let done = std::sync::atomic::AtomicBool::new(false);
+    let (mut samples, writer_ms) = std::thread::scope(|scope| {
+        let writer = scope.spawn(|| {
+            let mut scratch = store.owner.admission().unwrap();
+            let start = Instant::now();
+            assert_eq!(
+                store
+                    .stage_manifest_phased(&manifest, &mut scratch)
+                    .unwrap(),
+                revision
+            );
+            done.store(true, Ordering::Release);
+            start.elapsed().as_secs_f64() * 1000.0
+        });
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            match store.owner.admission_scratch.try_lock() {
+                Err(std::sync::TryLockError::WouldBlock) => break,
+                Ok(guard) => drop(guard),
+                Err(std::sync::TryLockError::Poisoned(_)) => panic!("admission owner poisoned"),
+            }
+            assert!(Instant::now() < deadline, "writer did not start staging");
+            std::thread::yield_now();
+        }
+        let mut samples = Vec::new();
+        while !done.load(Ordering::Acquire) && samples.len() < 1000 {
+            let start = Instant::now();
+            old_pin.copy_file_to(&scene, &mut io::sink()).unwrap();
+            samples.push(start.elapsed().as_secs_f64() * 1000.0);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        (samples, writer.join().unwrap())
+    });
+    assert!(!samples.is_empty());
+    old_pin.close().unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    let complete: i64 = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT chunk_count FROM blob_header WHERE hash=?1 AND state=1",
+            params![revision.as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(complete, 4);
+    samples.sort_by(f64::total_cmp);
+    let p95 = samples[(samples.len() * 95 / 100).min(samples.len() - 1)];
+    eprintln!(
+        "maximum_phased_manifest_reader files=100000 samples={} min_ms={:.3} p95_ms={p95:.3} max_ms={:.3} writer_ms={writer_ms:.3}",
+        samples.len(),
+        samples[0],
+        samples[samples.len() - 1]
+    );
 }
 
 #[test]

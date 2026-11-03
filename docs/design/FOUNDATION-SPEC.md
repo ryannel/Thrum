@@ -202,8 +202,10 @@ lease, final-COMMIT quarantine and an indexed selected-outcome head audit.
 Admission now holds one permit across the attempt while releasing the SQLite
 core between committed blob chunks and bounded tiny-file batches, allowing
 already-pinned reads to interleave. Pin registration/release and the final
-root/outcome transaction remain serialized; complete-blob verification and
-manifest staging can still hold the core for longer phases.
+root/outcome transaction remain serialized; stored-blob verification and
+manifest staging now copy or commit bounded chunks under the core and hash
+outside it. Final direct-file closure/publication can still hold the core for
+a longer transaction.
 The admitted lease still needs canonical RecoveryRoot/application recovery,
 truthful durability diagnosis, selected planning and space-fault recovery,
 complete pin-owner lifecycle and safe GC or conservative retention under its
