@@ -193,24 +193,20 @@ smallest initial production store may disable destructive collection and
 conservatively retain complete closures under a finite planning budget;
 enabling deletion requires the C10 two-epoch recheck over roots, leases,
 staging and build/save owners. The `sqlite_store` path is production compiled
-and exposes an initial accepted-root/pin candidate used by the F4 headless
-fixture. A separate production-compiled
-`ProvisionalSourceStore` now has format-2 store identity, verified blob and
-manifest reads, validated candidate-only provisional publication, exact
-restart status, narrow reader pins and explicit checked checkpoint ownership.
-These paths must be reconciled into one accepted-source authority before E1/F4
-binds to the newer provisional data. The admitted lease still needs the
-canonical RecoveryRoot/application recovery, truthful durability diagnosis,
-selected planning and space-fault recovery, complete pin-owner lifecycle and
-safe GC or conservative retention under its observed budget. The current
-accepted-store candidate permits multiple open connections; a final-COMMIT
-error quarantines only the failing connection. Before concurrent accepted
-admission is qualified, a cooperating writer lock and shared recovery state
-must prevent other owners and pin cleanup from writing until fresh-open exact
-outcome resolution, or the reconciled store must use one exclusive owner.
-The [owner reconciliation study](research/SOURCE-OWNER-RECOVERY-RECONCILIATION-2026-11-03.md)
-selects one exclusive cooperating process owner with shareable read leases for
-the first integrated profile; implementation and adverse recovery proof remain open.
+and exposes the accepted-root/pin candidate used by the F4 headless fixture.
+The separate format-2 `ProvisionalSourceStore` is compiled only for in-crate
+recovery and checkpoint proof fixtures; its publication does not grant
+accepted-source authority. The accepted store has an owning read lease, an
+exclusive cooperating process owner from before SQLite open through the last
+lease, final-COMMIT quarantine and an indexed selected-outcome head audit.
+The admitted lease still needs canonical RecoveryRoot/application recovery,
+truthful durability diagnosis, selected planning and space-fault recovery,
+complete pin-owner lifecycle and safe GC or conservative retention under its
+observed budget. The [owner reconciliation study](research/SOURCE-OWNER-RECOVERY-RECONCILIATION-2026-11-03.md)
+tracks accepted-source interruption and format-2 intent semantics still to
+reconcile. The current lock protects cooperating openers on the qualified
+Unix path; Windows path identity, noncooperating SQLite openers and host
+power-loss behavior remain unqualified.
 
 ### Large-source and undo retention cost
 

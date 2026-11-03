@@ -149,7 +149,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5"
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact task/publication APIs, overload parameters, platform event and storage adapters.",
@@ -212,7 +212,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5",
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
         "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -269,7 +269,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5"
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Schema field/codecs, migration registry, coordinate tolerances and storage primitive audit.",
@@ -488,6 +488,10 @@
         "evidence": "../evidence/i2a/SOURCE-ACCEPTED-HEAD-AUDIT-2026-11-03.md",
         "scope": "Accepted format-1 open now compares the selected root with the indexed top durable outcome and refuses a duplicate latest generation. A public A/B admission fixture mutates the stored selection back to A while B's outcome remains, then injects a duplicate B generation; both fresh opens refuse CorruptStore. The check is an indexed top-two read rather than a full history scan. Coherent database rollback, older-row audit, format-2 intent/migration, full crash recovery and physical planning remain open."
       },
+      "i2a_one_accepted_api": {
+        "evidence": "../evidence/i2a/SOURCE-ONE-ACCEPTED-API-2026-11-03.md",
+        "scope": "The separate format-2 ProvisionalSourceStore is compiled only for in-crate tests, so NativeSourceStore is the sole production-facing accepted-source store export. The full repository gate still runs provisional recovery and fault fixtures and the cook/headless accepted consumers. This is a public-boundary cleanup, not migration of provisional databases or qualification of complete accepted-admission interruption, physical planning or general source closure."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
@@ -502,7 +506,7 @@
       },
       "i2a_provisional_verified_store": {
         "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-VERIFIED-LEASE-2026-11-02.md",
-        "scope": "A production-compiled but explicitly provisional SQLite store takes F3-validated staged candidates, verifies copied bytes and canonical manifest, commits keyed outcomes, atomically pins the selected revision and hash-checks bounded record reads. A/B, reopen, retry, corruption, last-owner and bounded tiny-file batch cases pass. A single local 1,005-file probe reduced fresh transaction count and elapsed time but increased WAL length; physical peak, full RecoveryRoot, schema pins, accepted-source authority, F4 and runtime qualification remain open."
+        "scope": "An in-crate test-only provisional SQLite store takes F3-validated staged candidates, verifies copied bytes and canonical manifest, commits keyed outcomes, atomically pins the selected revision and hash-checks bounded record reads. A/B, reopen, retry, corruption, last-owner and bounded tiny-file batch cases pass. A single local 1,005-file probe reduced fresh transaction count and elapsed time but increased WAL length; physical peak, full RecoveryRoot, schema pins, accepted-source authority, F4 and runtime qualification remain open."
       },
       "i2a_provisional_publication_recovery": {
         "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-PUBLICATION-RECOVERY-2026-11-02.md",
@@ -518,11 +522,11 @@
       },
       "i2a_provisional_explicit_checkpoint": {
         "evidence": "../evidence/i2a/SOURCE-EXPLICIT-CHECKPOINT-2026-11-03.md",
-        "scope": "The production-compiled provisional writer disables automatic and last-close checkpoints, conditionally checks distinct-page main-data allowances and refuses blocked WAL debt. Test-only VFS observation covers NOOP, close, partial PASSIVE, busy TRUNCATE, low space, I/O error and exact committed retry; one instrumented local fresh/edit sample stays within the conditional data allowance. Staging SQL/WAL, APFS physical allocation, durable reservation, 8 GiB floor and accepted-source authority remain unproved."
+        "scope": "The in-crate test-only provisional writer disables automatic and last-close checkpoints, conditionally checks distinct-page main-data allowances and refuses blocked WAL debt. Test-only VFS observation covers NOOP, close, partial PASSIVE, busy TRUNCATE, low space, I/O error and exact committed retry; one instrumented local fresh/edit sample stays within the conditional data allowance. Staging SQL/WAL, APFS physical allocation, durable reservation, 8 GiB floor and accepted-source authority remain unproved."
       },
       "i2a_provisional_commit_io_recovery": {
         "evidence": "../evidence/i2a/SOURCE-COMMIT-IO-RECOVERY-2026-11-03.md",
-        "scope": "Injected actual WAL COMMIT write/sync callback errors exposed old-connection lease cleanup that could erase a recoverable B. The production-compiled provisional owner now quarantines after a final COMMIT error; read, retry, lease cleanup and later SQL refuse until all owners drop and a fresh native open resolves the exact request. Prewrite, presync and postsync orderly-reopen fixtures retain A and correct keyed B status. Power loss, physical peak reservation and accepted-source authority remain unproved."
+        "scope": "Injected actual WAL COMMIT write/sync callback errors exposed old-connection lease cleanup that could erase a recoverable B. The in-crate test-only provisional owner quarantines after a final COMMIT error; read, retry, lease cleanup and later SQL refuse until all owners drop and a fresh native open resolves the exact request. Prewrite, presync and postsync orderly-reopen fixtures retain A and correct keyed B status. Power loss, physical peak reservation and accepted-source authority remain unproved."
       },
       "i2a_requested_io_fence_design": {
         "evidence": "research/SOURCE-REQUESTED-IO-FENCE-2026-11-03.md",
@@ -587,7 +591,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5",
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
         "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -755,7 +759,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5"
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Typed entity/component APIs, table/sparse implementation, transform and command details.",
@@ -813,7 +817,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5",
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -1123,7 +1127,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5"
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "RecoveryRoot format, adapters, operation epochs, save/replay envelope and migration."
@@ -1802,7 +1806,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5"
+        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Operation registry, transaction/undo and durable retry/recovery interfaces."
@@ -2673,7 +2677,7 @@
     "contract_sha256": "c5a808cb5ea377f4ab7995dc1232ab7d001f6a6f599a858f433b9a0905582a8b",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-      "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5",
+      "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
       "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
@@ -3056,7 +3060,7 @@
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
       "FIRST-USE-WALKTHROUGHS.md": "38402601329f448342ba86c97878adb62e079846b0ba3345f86430202d9e7eac",
-      "FOUNDATION-SPEC.md": "cc703f2905a73b985bd80a65a329343dbfe537c8cb2691c250e594d5eec560e5",
+      "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
       "FROM-SCRATCH-WALKTHROUGHS.md": "5f64e1fc79ba65819654b42cde2877945d5a8532fc3e11f5d4f70119fa2c988c",
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",

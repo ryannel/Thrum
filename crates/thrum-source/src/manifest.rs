@@ -110,6 +110,7 @@ impl ManifestEntry {
             .map(|record| (record.id.as_str(), record.record_type.as_str()))
     }
 
+    #[cfg(test)]
     pub(crate) fn source_path(&self) -> &SourcePath {
         &self.path
     }
