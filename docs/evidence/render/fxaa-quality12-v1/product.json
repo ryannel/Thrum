@@ -1,0 +1,58 @@
+{
+  "package": "thrum.fxaa.quality12",
+  "version": 1,
+  "status": "standalone implementation input; no F4 product or V1 graph registration",
+  "upstream": {
+    "url": "https://github.com/GameTechDev/CMAA2/blob/071c6b0857559f4e36f614362e6d2aab1b61938a/Projects/CMAA2/FXAA/Fxaa3_11.h",
+    "commit": "071c6b0857559f4e36f614362e6d2aab1b61938a",
+    "header_sha256": "4834fada78774fc55726adeb717c53ca7324b66820df08ef773515cafb148aef"
+  },
+  "configuration": {
+    "quality_preset": 12,
+    "green_as_luma": 0,
+    "separate_r8_luma": 0,
+    "gather4_alpha": 0,
+    "early_exit": 1,
+    "discard": 0,
+    "subpix": 0.75,
+    "edge_threshold": 0.125,
+    "edge_threshold_min": 0.0625
+  },
+  "interface": {
+    "vertex_entry": "vs_fxaa",
+    "fragment_entry": "fs_fxaa",
+    "bindings": [
+      {
+        "group": 0,
+        "binding": 0,
+        "kind": "filterable float 2D texture",
+        "required_format": "RGBA16Float",
+        "mips": 1,
+        "sample_count": 1,
+        "channels": "sRGB-encoded RGB; alpha=dot(encodedRGB,[.299,.587,.114])"
+      },
+      {
+        "group": 0,
+        "binding": 1,
+        "kind": "filtering sampler",
+        "address_uv": "clamp-to-edge",
+        "min_mag": "linear",
+        "mipmap": "nearest",
+        "lod_min_max": [
+          0,
+          0
+        ]
+      }
+    ],
+    "output": "encoded RGB; alpha=1; tested RGBA16Float and RGBA8Unorm",
+    "draw": "fullscreen triangle vertices0..3, instance0..1, no vertex buffers, blending/depth disabled",
+    "extent": "same nonzero input/output extent and full viewport; no subrect/MSAA/in-place operation",
+    "temporal": "none",
+    "display": "decode encoded output before linear UI; final encode once"
+  },
+  "hashes": {
+    "LICENSE-INTEL-APACHE.txt": "be3cb07dcb1bb6b191d4fa72910d9ccfcdd7d035d2be92c97a7e84a476406c54",
+    "NOTICE-FXAA.txt": "50bc40abee0b5732d7226c723b8bdfcf41bc307b01e21de4adfb838d10532dae",
+    "fxaa.wgsl": "5f26af44c01e3e605c7822b1881b4200ec8bebb6dfcdbabd41fe850cacb64384"
+  }
+}

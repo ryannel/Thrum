@@ -1,0 +1,38 @@
+{
+  "source_files": {
+    "reference.spv": "f6bd37c2096d8ae82deca6a2336e0dc5c5cf08aa7316277ae0c6fc0f1d6cd185",
+    "Cargo.toml": "12982b29fa47d36ddc9dc45c871bc1799a093730bf651a56285c9c751c6ab7ed",
+    "Fxaa3_11.h": "4834fada78774fc55726adeb717c53ca7324b66820df08ef773515cafb148aef",
+    "reference-prefix.hlsl": "58cf14c2a5d6c8d1a5f05adb4d167839bec1af6c5aeafa690d776086bb319950",
+    "LICENSE-INTEL-APACHE.txt": "be3cb07dcb1bb6b191d4fa72910d9ccfcdd7d035d2be92c97a7e84a476406c54",
+    "reference-wrapper.hlsl": "9b9e470da754c58ba0a447046011134744a22b835e0b229d3de8d356576af344",
+    "Cargo.lock": "c042f04655ba2eb2d8005187fbfbc526106522c5e320b2b8e95da8eee77f7d1c",
+    "compile_reference.py": "605dc894a7502e0e0c9bd09e82036e763a507b2aa5a8c01d2fc863276356e15b",
+    "reference.pre.hlsl": "ccac16d96129f90649eb8e21e4433452ee0a297cc8b2e27c665c3849597736c9",
+    "NOTICE-FXAA.txt": "50bc40abee0b5732d7226c723b8bdfcf41bc307b01e21de4adfb838d10532dae",
+    "OWNER.md": "3e57aec1f4a2143454cfb592d56210c818bc0c55d4a01206c17f921a5a75194d",
+    "analyze.py": "c98cb666a2830e93b0db75b6c1c2f19a1500df64e92041ab3bcadc20a4b29803",
+    "src/motion.wgsl": "46f2307df6c9857dd606ff9832a2626746a420678c055b5a1e9568066223d785",
+    "src/main.rs": "0dcb7152973502290791ea78963d02fdc0bc6294fb6eb69398a0e8f8f5b090e2",
+    "src/fxaa.wgsl": "5f26af44c01e3e605c7822b1881b4200ec8bebb6dfcdbabd41fe850cacb64384",
+    "src/bin/prior.rs": "ad31fc29f2d865adbc27c2db5b9aed8a71b6efbbf8aa0d419ac0d6fb5c5de53b",
+    "src/bin/fixture.wgsl": "e1ec7f5997b1b04cc9e317d2359576e4eb197dcbab6027555c5920dda2d1e215",
+    "src/bin/proof.wgsl": "8911fdc464b50f6caf8ca842a529c8aab2553ed02c7e00c822b07e3adcecb468",
+    "src/bin/fxaa.wgsl": "5f26af44c01e3e605c7822b1881b4200ec8bebb6dfcdbabd41fe850cacb64384"
+  },
+  "evidence_files": {
+    "R0-FXAA-INDEPENDENT-MOTION-B-2026-11-02.png": "2a78e66f094bb437f012b1964137211c5c6aa94c433af67047326804fc8e674d",
+    "R0-FXAA-INDEPENDENT-COMPARISON-2026-11-02.png": "66fefd9d16d6138419318ad8468ccf880eb6f97f02ffde7f3455678e2e690f1c",
+    "R0-FXAA-INDEPENDENT-COMPARISON-2026-11-02.json": "26b7b8d468769761ade62b13de08dd0c00fc02e9a870d50b33a049a2a63c9a8c",
+    "R0-FXAA-INDEPENDENT-MOTION-A-2026-11-02.png": "66cee39146a806e03c76645a4672c915326e7cece26fe0686f1910736e09aa92",
+    "R0-FXAA-INDEPENDENT-SOURCE-2026-11-02.tar.gz": "f320434a1322cc199541a3c7d28038ef9a5049c70e7f12a42b325e106894e47a",
+    "R0-FXAA-INDEPENDENT-READBACKS-2026-11-02.tar.gz": "261e626a5f761d23c11ffad9e53889d1d3e1353d9f41ffd82ff7c2fbf842b685"
+  },
+  "host": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\n",
+  "clang": "Apple clang version 21.0.0 (clang-2100.4.1.1)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+  "glslc": "shaderc v2022.3 ndk-r29-beta2\nspirv-tools v2022.4 ndk-r29-beta2\nglslang ndk-r29-beta2\n\nTarget: SPIR-V 1.0\n",
+  "glslc_sha256": "63da7bd4a7086bfb448e2c3d74af167f80204937bf3b440c5c99eeb76ee9b8b6",
+  "run_log": "naga30 SPIR-V validated with empty optional capabilities\nadapter=AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }\ncaptured orientation 64x64\ncaptured masked 256x256\ncaptured thin 256x256\ncaptured motion-a 1280x720\ncaptured motion-b 1280x720\n",
+  "rgba8_run_log": "naga30 SPIR-V validated with empty optional capabilities\nadapter=AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }\ncaptured orientation 64x64\ncaptured masked 256x256\ncaptured thin 256x256\ncaptured motion-a 1280x720\ncaptured motion-b 1280x720\n"
+}

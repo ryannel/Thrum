@@ -1,0 +1,204 @@
+{
+  "regression": {
+    "green": {
+      "comparator_exit": 1,
+      "shader_sha256": "3c39c4ed2795ce9ebb2751cbbb368233ffd5f88fc40c535c6cca13b11190a9cb",
+      "differing_rgb_pixels": {
+        "orientation-64x64": 189,
+        "masked-256x256": 1805,
+        "thin-256x256": 324,
+        "motion-a-1280x720": 22259,
+        "motion-b-1280x720": 12471
+      }
+    },
+    "flip": {
+      "comparator_exit": 1,
+      "shader_sha256": "2f04b6b49e604d74c123d179af73b26c8780f68d767eab86c646d234836cf7e0",
+      "differing_rgb_pixels": {
+        "orientation-64x64": 4096,
+        "masked-256x256": 23048,
+        "thin-256x256": 65536,
+        "motion-a-1280x720": 353264,
+        "motion-b-1280x720": 356862
+      }
+    },
+    "normal": {
+      "comparator_exit": 0,
+      "shader_sha256": "5f26af44c01e3e605c7822b1881b4200ec8bebb6dfcdbabd41fe850cacb64384",
+      "differing_rgb_pixels": {
+        "orientation-64x64": 0,
+        "masked-256x256": 0,
+        "thin-256x256": 0,
+        "motion-a-1280x720": 0,
+        "motion-b-1280x720": 0
+      }
+    }
+  },
+  "measurements": {
+    "a": {
+      "1280x720": {
+        "measured_samples": 64,
+        "valid_nonoverlapping_measured_samples": 64,
+        "invalid_measured_samples": 0,
+        "overlapping_measured_samples": 0,
+        "invalid_warmup_samples": 0,
+        "invalid_rows": [],
+        "gpu_us_valid_subset": {
+          "min": 69.042,
+          "median": 83.1045,
+          "p95_nearest_rank": 96.667,
+          "max": 122.75
+        },
+        "submit_to_completion_median_us": 985.5625,
+        "cpu_encode_submit_median_us": 264.54150000000004,
+        "interpretation": "isolated720p observation only; not an assembled-frame gate"
+      },
+      "1920x1080": {
+        "measured_samples": 64,
+        "valid_nonoverlapping_measured_samples": 62,
+        "invalid_measured_samples": 2,
+        "overlapping_measured_samples": 0,
+        "invalid_warmup_samples": 0,
+        "invalid_rows": [
+          [
+            "53",
+            "1920",
+            "1080",
+            "2172894190552083",
+            "2172894189598916",
+            "NaN",
+            "310.333000",
+            "845.291000",
+            "false",
+            "true"
+          ],
+          [
+            "57",
+            "1920",
+            "1080",
+            "2172894197550041",
+            "2172894196539666",
+            "NaN",
+            "301.583000",
+            "1010.417000",
+            "false",
+            "true"
+          ]
+        ],
+        "gpu_us_valid_subset": {
+          "min": 126.709,
+          "median": 152.1875,
+          "p95_nearest_rank": 167.166,
+          "max": 176.708
+        },
+        "submit_to_completion_median_us": 994.812,
+        "cpu_encode_submit_median_us": 307.45799999999997,
+        "interpretation": "rejected1080p timing method; invalid pairs in repeated runs"
+      }
+    },
+    "b": {
+      "1280x720": {
+        "measured_samples": 64,
+        "valid_nonoverlapping_measured_samples": 64,
+        "invalid_measured_samples": 0,
+        "overlapping_measured_samples": 0,
+        "invalid_warmup_samples": 0,
+        "invalid_rows": [],
+        "gpu_us_valid_subset": {
+          "min": 71.583,
+          "median": 83.5835,
+          "p95_nearest_rank": 98.083,
+          "max": 100.917
+        },
+        "submit_to_completion_median_us": 986.1669999999999,
+        "cpu_encode_submit_median_us": 201.66649999999998,
+        "interpretation": "isolated720p observation only; not an assembled-frame gate"
+      },
+      "1920x1080": {
+        "measured_samples": 64,
+        "valid_nonoverlapping_measured_samples": 63,
+        "invalid_measured_samples": 1,
+        "overlapping_measured_samples": 0,
+        "invalid_warmup_samples": 0,
+        "invalid_rows": [
+          [
+            "33",
+            "1920",
+            "1080",
+            "2172894439528333",
+            "2172894438614333",
+            "NaN",
+            "237.250000",
+            "1044.459000",
+            "false",
+            "true"
+          ]
+        ],
+        "gpu_us_valid_subset": {
+          "min": 128.916,
+          "median": 145.375,
+          "p95_nearest_rank": 156.458,
+          "max": 168.708
+        },
+        "submit_to_completion_median_us": 995.5625,
+        "cpu_encode_submit_median_us": 240.4375,
+        "interpretation": "rejected1080p timing method; invalid pairs in repeated runs"
+      }
+    },
+    "c": {
+      "1280x720": {
+        "measured_samples": 64,
+        "valid_nonoverlapping_measured_samples": 64,
+        "invalid_measured_samples": 0,
+        "overlapping_measured_samples": 0,
+        "invalid_warmup_samples": 0,
+        "invalid_rows": [],
+        "gpu_us_valid_subset": {
+          "min": 77.292,
+          "median": 85.604,
+          "p95_nearest_rank": 94.166,
+          "max": 96.458
+        },
+        "submit_to_completion_median_us": 986.5625,
+        "cpu_encode_submit_median_us": 199.5,
+        "interpretation": "isolated720p observation only; not an assembled-frame gate"
+      },
+      "1920x1080": {
+        "measured_samples": 64,
+        "valid_nonoverlapping_measured_samples": 64,
+        "invalid_measured_samples": 0,
+        "overlapping_measured_samples": 0,
+        "invalid_warmup_samples": 1,
+        "invalid_rows": [
+          [
+            "-16",
+            "1920",
+            "1080",
+            "2172894640495250",
+            "0",
+            "NaN",
+            "237.916000",
+            "1307.458000",
+            "false",
+            "true"
+          ]
+        ],
+        "gpu_us_valid_subset": {
+          "min": 131.458,
+          "median": 146.625,
+          "p95_nearest_rank": 164.542,
+          "max": 193.833
+        },
+        "submit_to_completion_median_us": 987.375,
+        "cpu_encode_submit_median_us": 238.2705,
+        "interpretation": "rejected1080p timing method; invalid pairs in repeated runs"
+      }
+    }
+  },
+  "qualification": {
+    "720p": "isolated serial-completion timestamp observations only; not R0 cost",
+    "1080p": "unqualified; invalid measured/warmup pairs retained",
+    "ordinary_game_motion": "unavailable; two synthetic held frames inspected",
+    "assembled_R0": "not implemented"
+  }
+}

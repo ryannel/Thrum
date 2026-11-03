@@ -1,9 +1,27 @@
 # Water surface and optical transport
 
-1 November 2026. **Selected wider-provider design; unimplemented and unqualified.** Completes the rendering side
-of the [water commission](WATER.md) under C07/C08. It does not replace the smaller two-layer renderer baseline or
-declare a portable ray-tracing engine. V3 owns light/material/media transport; V2 supplies geometry/visibility;
-V1 executes resources/passes; V4 reconstructs/displays. E1 supplies the committed water, not a private renderer or Sun.
+1 November 2026, revised 2 November. **Bounded regional optics selected in design;
+actual-interface focused surface-plus-volume light remains open. Unimplemented and
+unqualified.** This is the rendering side of the [water commission](WATER.md) under
+C07/C08. It does not replace the smaller sorted-alpha renderer baseline or declare
+a portable ray-tracing engine. V3 owns light/material/media transport; V2 supplies
+geometry/visibility; V1 executes resources/passes; V4 reconstructs/displays. E1
+supplies the committed water, not a private renderer or Sun. The
+[R3 optical decision](../research/R3-OPTICS-AND-TRANSPARENCY-DESIGN-2026-11-02.md)
+is the implementor recipe and cost account; the
+[focused-light challenge](../research/R3-FOCUSED-LIGHT-CHALLENGER-2026-11-02.md)
+records the remaining source-coverage/image gap.
+
+The selected `R3-RegionalVirtual` profile traces camera paths through actual
+admitted occupied water and complete supported regional geometry, while
+underwater direct Sun uses a named virtual cover-plane source approximation.
+It omits actual wave focusing and clear focused illumination through arbitrary
+falls. Desktop's four interface/four alpha-event envelope and portable's
+smaller absorption-first envelope are distinct, neither device-qualified.
+`BoundedAlpha2` gives two exact ordered nonrefractive coverage events; grouped
+sorted alpha remains an explicitly approximate alternative. A wider focused
+profile is a conditional research candidate, not selected merely because
+the mechanism and equations below describe what it would require.
 
 ## Common interface and reconstruction
 
@@ -72,6 +90,16 @@ its missing-geometry approximation and preserve any game-significant cue envelop
 
 ## Caustics partition a light, rather than add another light
 
+This section states the **required conservation/source partition for a future
+actual-interface focused profile**, not a claim that the selected regional
+virtual-source profile implements focused caustics. Its finite-Sun first-hit
+source-cell producer, receiver-bin flux bounds and refusal route are explored
+in the [independent challenge](../research/R3-FOCUSED-LIGHT-CHALLENGER-2026-11-02.md).
+Practical real-time admission and bounded focused single-scatter image
+reconstruction remain unselected. The regional virtual profile transports
+one complete source within its deliberately flatter model and does not add
+a caustic texture on top of ordinary Sun.
+
 For incident source l and source area dA,
 `dPhi_in=E_perpendicular,l max(0,n dot omega_l) dA Visibility_l T_air,l`.
 Reflect F of that flux; transmit 1-F, then account water absorption/scattering. Surviving beam power is
@@ -97,8 +125,11 @@ flux partition. The regional proxy and footprint/energy accounting are Thrum ada
 
 ## Layers, falls and closed optical volumes
 
-Retain the initial two-layer path for its supported scenes. Select a separate wider optical profile with at most four
-ordered transmitted-interface events and explicit overflow; it is not unrestricted recursive water reflection.
+Retain the initial two-event path for its supported scenes. The selected desktop
+regional profile admits at most four oriented water-interface events **per camera
+branch**, with separate bounded alpha events and explicit overflow; it is not
+unrestricted recursive reflection or a focused source-light path. A clear
+nonparallel fall requiring actual focused source transport remains outside it.
 Each branch requires oriented media and finite wall thickness/closed optical volume where camera medium selection
 is promised. A bare prepared chart does not supply occupied water or an air cavity.
 Even from outside, clear transmission through a curl requires entry/exit thickness. Select a cooked oriented

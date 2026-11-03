@@ -64,8 +64,8 @@ target_cost = "Native tooling only; sync OS filesystem bindings, no game callbac
 [external_dependencies.rusqlite]
 requirement = "=0.40.2"
 license = "MIT"
-purpose = "Test the selected native SQLite root/outcome transaction and reopen behavior before admission integration"
-target_cost = "Native tooling tests only; bundled SQLite C build with no release source-tooling, portable core or game-callback dependency yet"
+purpose = "Bounded provisional native source snapshot storage and verified reader leases; accepted-source physical reservation and recovery remain open"
+target_cost = "Native source tooling with a bundled SQLite C build; no portable core or game-callback dependency. Provisional storage is not accepted-source or ready-build authority"
 
 [external_dependencies.serde_json]
 requirement = "=1.0.154"

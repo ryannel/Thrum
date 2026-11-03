@@ -6,6 +6,10 @@ The [initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-
 admitted scope. This document carries the broader water brief into Thrum and names the work needed before it can
 be implemented. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
 to resolve analytically, not promises that a future experiment will supply a missing mechanism. No runtime is commissioned here.
+The [2 November gap closure](../research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
+adds a moving-shore rain operating model and provisional smooth finite shore
+solver. It narrows R3 regional optics to an explicit virtual-source profile;
+actual-interface focused caustics and focused volume light remain open.
 
 ## Product scope and baseline fit
 
@@ -41,7 +45,7 @@ authored parameters distinguished. They do not replace the selected initial oper
 | --- | --- |
 | [Dynamics](WATER-DYNAMICS.md) | Complete generalized-heightfield bulk/dispersion/transport, geometry-derived pressure with independent reference and explicit nonreciprocal/transient/nonlocal error, same P3 buoyancy/drag, total-flux sources and finite fall/first-hit arrival. Thin storage is restricted to filling/preconnected wet edges |
 | [Appearance](WATER-APPEARANCE.md) | Causal crest/contact/impact/ventilated-wash sources, separate gas/foam-area/liquid populations, defined flow/rise/surface transfer and source-off tails. Prepared breaking charts are noncontact; predictive entrainment is not fabricated |
-| [Optics](WATER-OPTICS.md) | Common surface/attachment, regional complete visibility with screen-space acceleration, one caustic light partition, oriented media/shells, bounded ordered layers and coverage-aware fallback under V3 |
+| [Optics](WATER-OPTICS.md) | Common surface/attachment, bounded regional visibility with screen-space acceleration, one virtual-source light partition, oriented media/shells, bounded ordered layers and coverage-aware fallback under V3. Actual-interface focused caustics remain a separate open profile |
 | [Integration and proof](WATER-INTEGRATION.md) | Common body/fluid candidates and event recomputation, atomic publication/leases, content/save/replica/off-state products, explicit operation/byte account and least-established coupling first |
 
 [Independent cross-review](../../evidence/water/DESIGN-REVIEW-2026-11-01.md) found and corrected material coupling

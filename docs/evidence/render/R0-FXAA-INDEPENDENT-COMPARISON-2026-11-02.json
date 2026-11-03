@@ -1,0 +1,232 @@
+{
+  "orientation": {
+    "size": [
+      64,
+      64
+    ],
+    "pixels": 4096,
+    "nonfinite_values": 0,
+    "rgb_exact_pixels": 4096,
+    "rgb_max_absolute": 0.0,
+    "rgb_max_in_255_units": 0.0,
+    "rgb_mean_pixel_max_absolute": 0.0,
+    "rgb_p99_pixel_max_absolute": 0.0,
+    "pixels_gt_1_over_255": 0,
+    "pixels_gt_4_over_255": 0,
+    "pixels_gt_16_over_255": 0,
+    "max_at_xy": [
+      0,
+      0
+    ],
+    "max_reference": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "max_wgsl": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "reference_alpha_max_error_vs_input_luma": 0.0,
+    "wgsl_alpha_all_one": true,
+    "hashes": {
+      "orientation-64x64-input.rgba16f": "e538a341d11c2111cac067e2fafccabfbe76f900801e5cc7a102091b6e53d403",
+      "orientation-64x64-reference.rgba16f": "e538a341d11c2111cac067e2fafccabfbe76f900801e5cc7a102091b6e53d403",
+      "orientation-64x64-wgsl.rgba16f": "fe766b14042b20f780ffb98236544bf963053ac06a1ee13c0cbd1f7f198aeb40",
+      "orientation-64x64-reference.rgba8": "c6616d933645be9e123e216ca9b84a7db6b5b16faf92b255d6f772d2276b7196",
+      "orientation-64x64-wgsl.rgba8": "2ef255f803852c3dd48f1e8fea06410240a170a0f207eefb657063167bed26d5"
+    },
+    "gt_1_over_255_bbox": null,
+    "orientation_exact_input_rgb": true,
+    "rgba8_rgb_nonzero_channels": 0,
+    "rgba8_rgb_max_byte_error": 0,
+    "reference_changed_rgb_pixels_vs_input": 0
+  },
+  "masked": {
+    "size": [
+      256,
+      256
+    ],
+    "pixels": 65536,
+    "nonfinite_values": 0,
+    "rgb_exact_pixels": 65536,
+    "rgb_max_absolute": 0.0,
+    "rgb_max_in_255_units": 0.0,
+    "rgb_mean_pixel_max_absolute": 0.0,
+    "rgb_p99_pixel_max_absolute": 0.0,
+    "pixels_gt_1_over_255": 0,
+    "pixels_gt_4_over_255": 0,
+    "pixels_gt_16_over_255": 0,
+    "max_at_xy": [
+      0,
+      0
+    ],
+    "max_reference": [
+      0.58642578125,
+      0.673828125,
+      0.72509765625
+    ],
+    "max_wgsl": [
+      0.58642578125,
+      0.673828125,
+      0.72509765625
+    ],
+    "reference_alpha_max_error_vs_input_luma": 0.0,
+    "wgsl_alpha_all_one": true,
+    "hashes": {
+      "masked-256x256-input.rgba16f": "83d2e3c00263e4824171daddb244df8a9ea5934777aa3ef51abb92da8704d7a7",
+      "masked-256x256-reference.rgba16f": "e9e4e21061e2f0d971e63c9c964b30ae9b80f10c3ef511c323102a8e87b4865a",
+      "masked-256x256-wgsl.rgba16f": "2fd69795e8621343cfc5626c0ebd14b0136f922af820eae6c2221eb8338e0908",
+      "masked-256x256-reference.rgba8": "da4a08de4b4357b6a9fccd806a104f061b36609e5616e3b29f77e224870adc42",
+      "masked-256x256-wgsl.rgba8": "66c87b40cc9ae98b58909cfec9fa9192fdc35efd4d70edd43510bcce48cf7419"
+    },
+    "gt_1_over_255_bbox": null,
+    "rgba8_rgb_nonzero_channels": 0,
+    "rgba8_rgb_max_byte_error": 0,
+    "reference_changed_rgb_pixels_vs_input": 5548
+  },
+  "thin": {
+    "size": [
+      256,
+      256
+    ],
+    "pixels": 65536,
+    "nonfinite_values": 0,
+    "rgb_exact_pixels": 65536,
+    "rgb_max_absolute": 0.0,
+    "rgb_max_in_255_units": 0.0,
+    "rgb_mean_pixel_max_absolute": 0.0,
+    "rgb_p99_pixel_max_absolute": 0.0,
+    "pixels_gt_1_over_255": 0,
+    "pixels_gt_4_over_255": 0,
+    "pixels_gt_16_over_255": 0,
+    "max_at_xy": [
+      0,
+      0
+    ],
+    "max_reference": [
+      0.0699462890625,
+      0.0999755859375,
+      0.1298828125
+    ],
+    "max_wgsl": [
+      0.0699462890625,
+      0.0999755859375,
+      0.1298828125
+    ],
+    "reference_alpha_max_error_vs_input_luma": 0.0,
+    "wgsl_alpha_all_one": true,
+    "hashes": {
+      "thin-256x256-input.rgba16f": "e6aeb91cae563bfbaae9167d1d185f0d9fc51dab02594f2c2f8170f05c001dbd",
+      "thin-256x256-reference.rgba16f": "bd2b14a4550644c08b1136c27e300303a76b6764ae05a85fc8a8a0c6950dd71a",
+      "thin-256x256-wgsl.rgba16f": "ab58d33ebd0c429aea001a3e833cc9d40160508c378b4ed7d9c8c5aa63c620fd",
+      "thin-256x256-reference.rgba8": "13989c90f918e795229fa63f484fb868d01f35ec0cb01d030ddf93390ebe88e5",
+      "thin-256x256-wgsl.rgba8": "2ca6f688881f84a309073efecba7f2f61b0d04645971e0b61180da438d193163"
+    },
+    "gt_1_over_255_bbox": null,
+    "quadrants_gt_1_over_255": {
+      "(0, 0)": 0,
+      "(1, 0)": 0,
+      "(0, 1)": 0,
+      "(1, 1)": 0
+    },
+    "rgba8_rgb_nonzero_channels": 0,
+    "rgba8_rgb_max_byte_error": 0,
+    "reference_changed_rgb_pixels_vs_input": 6152
+  },
+  "motion-a": {
+    "size": [
+      1280,
+      720
+    ],
+    "pixels": 921600,
+    "nonfinite_values": 0,
+    "rgb_exact_pixels": 921600,
+    "rgb_max_absolute": 0.0,
+    "rgb_max_in_255_units": 0.0,
+    "rgb_mean_pixel_max_absolute": 0.0,
+    "rgb_p99_pixel_max_absolute": 0.0,
+    "pixels_gt_1_over_255": 0,
+    "pixels_gt_4_over_255": 0,
+    "pixels_gt_16_over_255": 0,
+    "max_at_xy": [
+      0,
+      0
+    ],
+    "max_reference": [
+      0.080078125,
+      0.11004638671875,
+      0.1600341796875
+    ],
+    "max_wgsl": [
+      0.080078125,
+      0.11004638671875,
+      0.1600341796875
+    ],
+    "reference_alpha_max_error_vs_input_luma": 0.0,
+    "wgsl_alpha_all_one": true,
+    "hashes": {
+      "motion-a-1280x720-input.rgba16f": "48180d772fc817a7e421b3e8028fbf76586717d952bb076302329f8c7c537829",
+      "motion-a-1280x720-reference.rgba16f": "0339181eb0ee4bc808b404cf13784333133b2a6a41151bf73db75b500b18b0f2",
+      "motion-a-1280x720-wgsl.rgba16f": "50f3f78fd3bea4abefc3c2d1880e88580c32b0b038084b51a1a85d35b2d85c7a",
+      "motion-a-1280x720-reference.rgba8": "1ae07a5d97fb1ee039cffce7dee0835bc733f749bb14dcb502eac3ad7d4da42e",
+      "motion-a-1280x720-wgsl.rgba8": "99586f39646884fca0f5ea1e9cbef3293a4f010706912b90e8573da1a909d2a6"
+    },
+    "gt_1_over_255_bbox": null,
+    "rgba8_rgb_nonzero_channels": 0,
+    "rgba8_rgb_max_byte_error": 0,
+    "reference_changed_rgb_pixels_vs_input": 61028,
+    "crop_origin": [
+      0,
+      0
+    ]
+  },
+  "motion-b": {
+    "size": [
+      1280,
+      720
+    ],
+    "pixels": 921600,
+    "nonfinite_values": 0,
+    "rgb_exact_pixels": 921600,
+    "rgb_max_absolute": 0.0,
+    "rgb_max_in_255_units": 0.0,
+    "rgb_mean_pixel_max_absolute": 0.0,
+    "rgb_p99_pixel_max_absolute": 0.0,
+    "pixels_gt_1_over_255": 0,
+    "pixels_gt_4_over_255": 0,
+    "pixels_gt_16_over_255": 0,
+    "max_at_xy": [
+      0,
+      0
+    ],
+    "max_reference": [
+      0.080078125,
+      0.11004638671875,
+      0.1600341796875
+    ],
+    "max_wgsl": [
+      0.080078125,
+      0.11004638671875,
+      0.1600341796875
+    ],
+    "reference_alpha_max_error_vs_input_luma": 0.0,
+    "wgsl_alpha_all_one": true,
+    "hashes": {
+      "motion-b-1280x720-input.rgba16f": "d69529707ac7d0d26002203badc26999d66a70960bb07857d53762eda9967ee5",
+      "motion-b-1280x720-reference.rgba16f": "1bd11aa3c030b8a0803c0179517ad856f29cd308a398d7b88c798e7f162e787a",
+      "motion-b-1280x720-wgsl.rgba16f": "1c70d3a5819117780ec7d90f771f5fd272bf9b71ad05012354c6a4226b884aa1",
+      "motion-b-1280x720-reference.rgba8": "becdc3b43fc01fa8eea4da6dcd8a6b1408ffa1d7df087ae3fd10c42d74c94d48",
+      "motion-b-1280x720-wgsl.rgba8": "61c121143ec68f6e4ccf5902aeaaa9d951caa147a99e619bf315d31e16b55f51"
+    },
+    "gt_1_over_255_bbox": null,
+    "rgba8_rgb_nonzero_channels": 0,
+    "rgba8_rgb_max_byte_error": 0,
+    "reference_changed_rgb_pixels_vs_input": 63352,
+    "crop_origin": [
+      0,
+      0
+    ]
+  }
+}
