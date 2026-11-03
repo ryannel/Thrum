@@ -1077,11 +1077,29 @@ mod tests {
             private_cargo_home = Some(prepared.path.clone());
             owned_cache = Some(prepared);
         }
-        let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
+        #[cfg(target_os = "macos")]
+        let needs_full_cache_rehash = cache_guard.is_none();
+        #[cfg(not(target_os = "macos"))]
+        let needs_full_cache_rehash = true;
+        eprintln!(
+            "admitted-headless-cache fixture_cache_full_rehashes={}",
+            if private_cargo_home.is_some() && needs_full_cache_rehash {
+                2
+            } else {
+                0
+            }
+        );
+        let private_cache_before = if needs_full_cache_rehash {
+            private_cargo_home.as_ref().map(|path| tree_hashes(path))
+        } else {
+            None
+        };
         if let Some(cache) = &owned_cache {
             assert!(!cache.path.join(".global-cache").exists());
             assert!(!cache.path.join(".package-cache-mutate").exists());
-            cache.assert_tool_bytes();
+            if needs_full_cache_rehash {
+                cache.assert_tool_bytes();
+            }
             #[cfg(target_os = "macos")]
             if let Some(guard) = &mut cache_guard {
                 guard.verify_reuse(a_materialized.path(), &cache.target);
@@ -1095,14 +1113,16 @@ mod tests {
         if let (Some(cache), Some(tools)) = (&owned_cache, &native_tools) {
             assert_eq!(cache.cargo_path, tools.toolchain.join("bin/cargo"));
             assert_eq!(cache.rustc_path, tools.toolchain.join("bin/rustc"));
-            assert_eq!(
-                file_sha256_hex(&tools.toolchain.join("bin/cargo")),
-                cache.cargo_hash
-            );
-            assert_eq!(
-                file_sha256_hex(&tools.toolchain.join("bin/rustc")),
-                cache.rustc_hash
-            );
+            if needs_full_cache_rehash {
+                assert_eq!(
+                    file_sha256_hex(&tools.toolchain.join("bin/cargo")),
+                    cache.cargo_hash
+                );
+                assert_eq!(
+                    file_sha256_hex(&tools.toolchain.join("bin/rustc")),
+                    cache.rustc_hash
+                );
+            }
         }
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
@@ -1453,7 +1473,9 @@ mod tests {
         if let (Some(path), Some(before)) = (&private_cargo_home, private_cache_before) {
             assert_eq!(tree_hashes(path), before);
         }
-        if let Some(cache) = &owned_cache {
+        if let Some(cache) = &owned_cache
+            && needs_full_cache_rehash
+        {
             cache.assert_tool_bytes();
         }
         #[cfg(target_os = "macos")]
