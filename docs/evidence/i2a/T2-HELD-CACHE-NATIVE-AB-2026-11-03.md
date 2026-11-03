@@ -43,6 +43,17 @@ SHA-256
 `7d2ee3441357c5d6b8016fb6aa413877da1fb8f65365f84179c233bfc93e8319`.
 A remained runnable. The runner reported `buildReady:false`.
 
+After rebasing onto the source parser checkpoint, a second exact committed
+run passed at `412c159b33294597f63f32fc1222d3abc4afe5ed`, with
+`RUSTC_WRAPPER= ./dev check` passing at that commit too. The sealed cache kept
+both digests and its 2,923-file/67,792,387-byte identity. Cold cache
+preparation took 1,834 ms, cold verified open 391 ms, admitted A/B process
+27.209 seconds and four-root post-build inventory 10.787 seconds. A again
+reported five successful compiles and three probes; B reported three
+successful compiles, one expected failed game compile and three probes while
+A remained runnable. The runner cleaned its owned scratch. These two
+uncontrolled samples do not establish timing distributions or speedup.
+
 This proves real Cargo consumption from a sealed cache with a cooperating
 guard-held lease. It does not yet give the T2 owner a complete reviewed
 tool/dependency/support/runtime selection. The full cache and executable
