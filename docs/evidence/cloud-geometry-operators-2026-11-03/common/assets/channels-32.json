@@ -1,0 +1,17 @@
+{
+  "file": "channels-32.r16f",
+  "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+  "dimensions_xyz": [
+    32,
+    32,
+    32
+  ],
+  "storage": "little-endian binary16 Xfastest numpy[Z,Y,X]",
+  "seed": 731,
+  "generator": "numpy.PCG64 standard_normal -> scipy.gaussian_filter sigma1.5 modewrap -> minmax[0,1] -> binary16",
+  "sampling": "textureSampleLevel with clamp-to-edge linear; coordinate=uv*32-.5; M=.3+.7*N, no time offset",
+  "tool": {
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  }
+}

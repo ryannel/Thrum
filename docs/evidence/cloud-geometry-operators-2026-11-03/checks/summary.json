@@ -1,0 +1,123 @@
+{
+  "recovery_log": "checks/recovery.txt",
+  "recovery": {
+    "exact_builds": 3,
+    "served_file_counts": [
+      70,
+      69,
+      68
+    ],
+    "scoped_relocated_test_runs": 6,
+    "all_pass": true,
+    "temporary_logical_bytes_before_cleanup": 398240065,
+    "retained_logical_bytes_at_run": 56321905,
+    "combined_logical_bytes_at_run": 454561970,
+    "planned_combined_disk_bound_bytes": 536870912,
+    "temporary_trees_removed": true,
+    "scope": "Observed logical file sizes, not process/GPU residency or physical allocated blocks."
+  },
+  "actual_http_cap_check": "checks/server-cap.json",
+  "probe_receipts": [
+    {
+      "file": "observations/probes/geometry-probe-256-173d261dc10b86c2-4a80a226-1.json",
+      "build": "173d261dc10b86c2",
+      "operator": 1,
+      "actual_exposure_world_m": 0,
+      "channel": "uniform",
+      "pass": true,
+      "agreement_gate_present": true,
+      "endpoint_expected_zero": false,
+      "active_sample_count": 1527,
+      "max_normalized_errors": {
+        "raw": 0.24951267056530213,
+        "distanceWorldM": 0.2499995231637513,
+        "multiplier": 0,
+        "coefficient": 0.20046296323799317
+      }
+    },
+    {
+      "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-1.json",
+      "build": "81c3f43f76b490fa",
+      "operator": 1,
+      "actual_exposure_world_m": 0,
+      "channel": "uniform",
+      "pass": true,
+      "agreement_gate_present": true,
+      "endpoint_expected_zero": false,
+      "active_sample_count": 1527,
+      "max_normalized_errors": {
+        "raw": 0.24951267056530213,
+        "distanceWorldM": 0.2499995231637513,
+        "multiplier": 0,
+        "coefficient": 0.20046296323799317
+      }
+    },
+    {
+      "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-2.json",
+      "build": "81c3f43f76b490fa",
+      "operator": 1,
+      "actual_exposure_world_m": 0,
+      "channel": "uniform",
+      "pass": true,
+      "agreement_gate_present": true,
+      "endpoint_expected_zero": false,
+      "active_sample_count": 1527,
+      "max_normalized_errors": {
+        "raw": 0.24951267056530213,
+        "distanceWorldM": 0.2499995231637513,
+        "multiplier": 0,
+        "coefficient": 0.20046296323799317
+      }
+    },
+    {
+      "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-3.json",
+      "build": "81c3f43f76b490fa",
+      "operator": 1,
+      "actual_exposure_world_m": 197.375,
+      "channel": "uniform",
+      "pass": true,
+      "agreement_gate_present": true,
+      "endpoint_expected_zero": true,
+      "active_sample_count": 0,
+      "max_normalized_errors": {
+        "raw": 0.24951267056530213,
+        "distanceWorldM": 0.2499995231637513,
+        "multiplier": 0,
+        "coefficient": 0
+      }
+    },
+    {
+      "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-4.json",
+      "build": "81c3f43f76b490fa",
+      "operator": 1,
+      "actual_exposure_world_m": 657.9166666666667,
+      "channel": "noisy",
+      "pass": true,
+      "agreement_gate_present": true,
+      "endpoint_expected_zero": true,
+      "active_sample_count": 0,
+      "max_normalized_errors": {
+        "raw": 0.24951267056530213,
+        "distanceWorldM": 0.2499995231637513,
+        "multiplier": 0.005988023957672591,
+        "coefficient": 0
+      }
+    },
+    {
+      "file": "observations/probes/geometry-probe-256-fd0181d8140a4ff9-b7cc4aa8-1.json",
+      "build": "fd0181d8140a4ff9",
+      "operator": 4,
+      "actual_exposure_world_m": 0,
+      "channel": "uniform",
+      "pass": true,
+      "agreement_gate_present": false,
+      "endpoint_expected_zero": false,
+      "active_sample_count": 1527,
+      "max_normalized_errors": null
+    }
+  ],
+  "logical_renderer_bytes_03_256": 78528524,
+  "source_and_distance_bytes_each_256": 33554432,
+  "channel_noise_bytes": 65536,
+  "visual_status": "Preliminary operator comparison; final campaign visual assessment pending."
+}

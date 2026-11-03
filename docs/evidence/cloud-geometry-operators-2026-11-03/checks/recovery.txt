@@ -1,0 +1,64 @@
+Exact restored identity: 81c3f43f76b490fa files: 70 directory: /var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-geometry-recovery-1abltfwn/restored/81c3f43f76b490fa
+Exact restored identity: 173d261dc10b86c2 files: 69 directory: /var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-geometry-recovery-1abltfwn/restored/173d261dc10b86c2
+Exact restored identity: fd0181d8140a4ff9 files: 68 directory: /var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-geometry-recovery-1abltfwn/restored/fd0181d8140a4ff9
+{
+  "scope": "Clean temporary relocation using only retained evidence and referenced committed master gzip; no live tmp input, browser/GPU/encoder execution or recook. Temporary trees removed after this run.",
+  "temporary_logical_bytes_before_cleanup": 398240065,
+  "retained_package_logical_bytes_at_run": 56321905,
+  "builds": [
+    {
+      "build": "81c3f43f76b490fa",
+      "served_file_count": 70,
+      "all_exact_payload_hashes": true,
+      "actual_server_payload_identity": true,
+      "relocated_tests": [
+        {
+          "test": "tests/failure.test.mjs",
+          "stdout": "Terminal settled rejection, pre-render GPU faults, healthy late fence/lost-device interruption, bounded device listener, 13 MiB first/partial/cumulative overflow, exact cap and track cleanup passed (mocked GPU/encoder).",
+          "exit": 0
+        },
+        {
+          "test": "tests/geometry.test.mjs",
+          "stdout": "Four pinned SDF/LUT sets, fixednoise, endpointbounds, exactrowmatching, nonfadeinterior response and unchangedlighting/view/shadow checks passed\nRoot native probe reference, world-distance scaling and optical uniform packing preserve ray/main flags",
+          "exit": 0
+        },
+        {
+          "test": "tests/motion.test.mjs",
+          "stdout": "Clock rate/pause/reset/endpoint/late-fence, all LUT brackets, numerical unit-error rejection, and real recorder deadline/abort/cleanup orchestration passed (CPU/mocked recorder; no GPU/browser admission).",
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "build": "173d261dc10b86c2",
+      "served_file_count": 69,
+      "all_exact_payload_hashes": true,
+      "actual_server_payload_identity": true,
+      "relocated_tests": [
+        {
+          "test": "tests/geometry.test.mjs",
+          "stdout": "Four pinned SDF/LUT sets, fixednoise, endpointbounds, exactrowmatching, nonfadeinterior response and unchangedlighting/view/shadow checks passed\nRoot native probe reference, world-distance scaling and optical uniform packing preserve ray/main flags",
+          "exit": 0
+        },
+        {
+          "test": "tests/motion.test.mjs",
+          "stdout": "Clock rate/pause/reset/endpoint/late-fence, all LUT brackets, numerical unit-error rejection, and real recorder deadline/abort/cleanup orchestration passed (CPU/mocked recorder; no GPU/browser admission).",
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "build": "fd0181d8140a4ff9",
+      "served_file_count": 68,
+      "all_exact_payload_hashes": true,
+      "actual_server_payload_identity": true,
+      "relocated_tests": [
+        {
+          "test": "tests/geometry.test.mjs",
+          "stdout": "Four pinned SDF/LUT sets, fixednoise, endpointbounds, exactrowmatching, nonfadeinterior response and unchangedlighting/view/shadow checks passed\nRoot native probe reference, world-distance scaling and optical uniform packing preserve ray/main flags",
+          "exit": 0
+        }
+      ]
+    }
+  ]
+}

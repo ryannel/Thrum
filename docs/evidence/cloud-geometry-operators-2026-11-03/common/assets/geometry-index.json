@@ -1,0 +1,116 @@
+{
+  "ready": true,
+  "schema": "thrum.geometry-falsification.inputs.v1",
+  "source": "03",
+  "parent_frozen_master_build": "adb13e8a53d0bd95",
+  "datasets": [
+    {
+      "source": "03",
+      "quality": 128,
+      "iso_density": 0.001,
+      "distance": {
+        "file": "cloud-03-128-iso0p001.distance.r16f",
+        "bytes": 4194304,
+        "sha256": "89de16be01ece078e80ece9f9ffd6b7406e2ea0d028a14e25fc5740bb7ac4455"
+      },
+      "distanceMetadata": {
+        "file": "cloud-03-128-iso0p001.distance.json",
+        "bytes": 2184,
+        "sha256": "778898f151c621fb1b052fb294b2f7c58f2b19a8f479b9d49e25b80a9e3fefb8"
+      },
+      "curves": {
+        "file": "cloud-03-128-iso0p001.curves.json",
+        "bytes": 117310,
+        "sha256": "fe5637b63e7be383ff05862e3fae2bd6255a7445111b1c34afdfdcb7163cb7d9"
+      }
+    },
+    {
+      "source": "03",
+      "quality": 128,
+      "iso_density": 0.005,
+      "distance": {
+        "file": "cloud-03-128-iso0p005.distance.r16f",
+        "bytes": 4194304,
+        "sha256": "c00d0347987590170a1b978ab28ad6ad2c23040b40c8107357d7630210b82a45"
+      },
+      "distanceMetadata": {
+        "file": "cloud-03-128-iso0p005.distance.json",
+        "bytes": 2171,
+        "sha256": "3a03b9b8d80253d32a55ff8529405edac89638d92d4e900767041b3c38f07aaa"
+      },
+      "curves": {
+        "file": "cloud-03-128-iso0p005.curves.json",
+        "bytes": 114558,
+        "sha256": "21afe115485dab7f6f655ebe6a39dd8f603d93545fa8f21f9645a152839cfb44"
+      }
+    },
+    {
+      "source": "03",
+      "quality": 256,
+      "iso_density": 0.001,
+      "distance": {
+        "file": "cloud-03-256-iso0p001.distance.r16f",
+        "bytes": 33554432,
+        "sha256": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766"
+      },
+      "distanceMetadata": {
+        "file": "cloud-03-256-iso0p001.distance.json",
+        "bytes": 2186,
+        "sha256": "758b48420fe5bf244249c52d1db0295732049c45111c39b27f52212898d52c4c"
+      },
+      "curves": {
+        "file": "cloud-03-256-iso0p001.curves.json",
+        "bytes": 48912,
+        "sha256": "c2c411728c8ea2bf6b04f97e04d8eaf69bab0288601f504afa63701f57e02d01"
+      }
+    },
+    {
+      "source": "03",
+      "quality": 256,
+      "iso_density": 0.005,
+      "distance": {
+        "file": "cloud-03-256-iso0p005.distance.r16f",
+        "bytes": 33554432,
+        "sha256": "c01ef36da4c92575e339e525204ee2cbb1bae3d19ac4397ae2d4bd19f3ac4260"
+      },
+      "distanceMetadata": {
+        "file": "cloud-03-256-iso0p005.distance.json",
+        "bytes": 2184,
+        "sha256": "9b0e805a607e62a8d5e879ecf98d955d6aa82963c6185fb7266bb5893cad9898"
+      },
+      "curves": {
+        "file": "cloud-03-256-iso0p005.curves.json",
+        "bytes": 47813,
+        "sha256": "2eee6ea7206005537509bb4abc410740832e409cf396b9fe99f8d3b19e9b6abb"
+      }
+    }
+  ],
+  "noise": {
+    "file": "channels-32.r16f",
+    "bytes": 65536,
+    "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "dimensions_xyz": [
+      32,
+      32,
+      32
+    ]
+  },
+  "noiseMetadata": {
+    "file": "channels-32.r16f",
+    "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "dimensions_xyz": [
+      32,
+      32,
+      32
+    ],
+    "storage": "little-endian binary16 Xfastest numpy[Z,Y,X]",
+    "seed": 731,
+    "generator": "numpy.PCG64 standard_normal -> scipy.gaussian_filter sigma1.5 modewrap -> minmax[0,1] -> binary16",
+    "sampling": "textureSampleLevel with clamp-to-edge linear; coordinate=uv*32-.5; M=.3+.7*N, no time offset",
+    "tool": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+    }
+  },
+  "scope": "Manual held geometry comparison, calibrated native-integral rows; not constant noisy-front speed, exactcontinuousSDF, dynamics or productioncost"
+}

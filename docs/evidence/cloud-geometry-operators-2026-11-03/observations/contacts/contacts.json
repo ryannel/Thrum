@@ -1,0 +1,156 @@
+{
+  "ffmpeg_version": [
+    "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "built with Apple clang version 21.0.0 (clang-2100.3.34.2)"
+  ],
+  "contacts": [
+    {
+      "file": "sdf-1x-native-roi.png",
+      "sha256": "e7051e2925509130d1a51ab30b51aa9752fff36f596fe3b7cab34597447ee5af",
+      "bytes": 355531,
+      "source_webm": "observations/motion/geometry-motion-op1-1x-120s-173d261dc10b86c2-4a80a226-2.webm",
+      "source_sha256": "e8f005998f1f036bff688f69aeee84e4ede8e3f5e4b6320a9441b2805438f212",
+      "argv": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-geometry-operators-2026-11-03/observations/motion/geometry-motion-op1-1x-120s-173d261dc10b86c2-4a80a226-2.webm",
+        "-vf",
+        "fps=1/15,crop=512:320:384:200,tile=4x2",
+        "-frames:v",
+        "1",
+        "docs/evidence/cloud-geometry-operators-2026-11-03/observations/contacts/sdf-1x-native-roi.png"
+      ],
+      "filter": "fps=1/15,crop=512:320:384:200,tile=4x2",
+      "crop_xywh": [
+        384,
+        200,
+        512,
+        320
+      ],
+      "resize": false,
+      "timing_scope": "FFmpeg fps-filter selection/rounding semantics; these tiles are not individually exact source-clock timestamps or independent frames rendered at stipulated times. Read the original clip and clock receipt."
+    },
+    {
+      "file": "sdf-16x-native-roi.png",
+      "sha256": "1c1e19f6ac712e1587f85affdd2c1ea81257e352083188fe5a48e84274055c27",
+      "bytes": 421057,
+      "source_webm": "observations/motion/geometry-motion-op1-16x-12s-173d261dc10b86c2-4a80a226-4.webm",
+      "source_sha256": "b712a851f6d30e6c7e463b1ef5311b5002d697f394a35148cadefcab191942d7",
+      "argv": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-geometry-operators-2026-11-03/observations/motion/geometry-motion-op1-16x-12s-173d261dc10b86c2-4a80a226-4.webm",
+        "-vf",
+        "fps=1,crop=512:320:384:200,tile=4x3",
+        "-frames:v",
+        "1",
+        "docs/evidence/cloud-geometry-operators-2026-11-03/observations/contacts/sdf-16x-native-roi.png"
+      ],
+      "filter": "fps=1,crop=512:320:384:200,tile=4x3",
+      "crop_xywh": [
+        384,
+        200,
+        512,
+        320
+      ],
+      "resize": false,
+      "timing_scope": "FFmpeg fps-filter selection/rounding semantics; these tiles are not individually exact source-clock timestamps or independent frames rendered at stipulated times. Read the original clip and clock receipt."
+    },
+    {
+      "file": "alpha-1x-native-roi.png",
+      "sha256": "a4c70be8a72e1e7f507c342f2679e2b595103e1d1b77d5a7e388a3808531c1a4",
+      "bytes": 371279,
+      "source_webm": "observations/motion/geometry-motion-op3-1x-120s-173d261dc10b86c2-4a80a226-3.webm",
+      "source_sha256": "571d793cc84f534252e1a90b3136aa4cd0a480666089a6846170384a726aabf7",
+      "argv": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-geometry-operators-2026-11-03/observations/motion/geometry-motion-op3-1x-120s-173d261dc10b86c2-4a80a226-3.webm",
+        "-vf",
+        "fps=1/15,crop=512:320:384:200,tile=4x2",
+        "-frames:v",
+        "1",
+        "docs/evidence/cloud-geometry-operators-2026-11-03/observations/contacts/alpha-1x-native-roi.png"
+      ],
+      "filter": "fps=1/15,crop=512:320:384:200,tile=4x2",
+      "crop_xywh": [
+        384,
+        200,
+        512,
+        320
+      ],
+      "resize": false,
+      "timing_scope": "FFmpeg fps-filter selection/rounding semantics; these tiles are not individually exact source-clock timestamps or independent frames rendered at stipulated times. Read the original clip and clock receipt."
+    },
+    {
+      "file": "alpha-16x-native-roi.png",
+      "sha256": "79fd058d8bd901e7a9976c7f01e4b2e51342f56bf8e08aec02be83b6d0f67134",
+      "bytes": 436986,
+      "source_webm": "observations/motion/geometry-motion-op3-16x-12s-173d261dc10b86c2-4a80a226-5.webm",
+      "source_sha256": "e0b7e32648ffce354a85200a81b16968b275194e11bd4378f2eebf86861ced60",
+      "argv": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-geometry-operators-2026-11-03/observations/motion/geometry-motion-op3-16x-12s-173d261dc10b86c2-4a80a226-5.webm",
+        "-vf",
+        "fps=1,crop=512:320:384:200,tile=4x3",
+        "-frames:v",
+        "1",
+        "docs/evidence/cloud-geometry-operators-2026-11-03/observations/contacts/alpha-16x-native-roi.png"
+      ],
+      "filter": "fps=1,crop=512:320:384:200,tile=4x3",
+      "crop_xywh": [
+        384,
+        200,
+        512,
+        320
+      ],
+      "resize": false,
+      "timing_scope": "FFmpeg fps-filter selection/rounding semantics; these tiles are not individually exact source-clock timestamps or independent frames rendered at stipulated times. Read the original clip and clock receipt."
+    },
+    {
+      "file": "sdf-noisy-16x-native-roi.png",
+      "sha256": "680aabf75a8a71495ae9ad26615cc8532de2ce58a7e9d8c57317ac6dbb946d90",
+      "bytes": 462892,
+      "source_webm": "observations/motion/geometry-motion-op1-16x-12s-81c3f43f76b490fa-ef7d4785-5.webm",
+      "source_sha256": "33689c36438c3bcf0937aa4763fc0ed78d2b6d3985e06db8e2d287d42d5a0934",
+      "build": "81c3f43f76b490fa",
+      "channels": "noisy",
+      "inspection_scope": "Native-pixel contact derivative; continuous watching is not claimed by contact generation.",
+      "argv": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-geometry-operators-2026-11-03/observations/motion/geometry-motion-op1-16x-12s-81c3f43f76b490fa-ef7d4785-5.webm",
+        "-vf",
+        "fps=1,crop=512:320:384:200,tile=4x3",
+        "-frames:v",
+        "1",
+        "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/geometry-contact-update-hkfuo_qm/contacts/sdf-noisy-16x-native-roi.png"
+      ],
+      "filter": "fps=1,crop=512:320:384:200,tile=4x3",
+      "crop_xywh": [
+        384,
+        200,
+        512,
+        320
+      ],
+      "resize": false,
+      "timing_scope": "FFmpeg fps-filter selection/rounding semantics; these tiles are not individually exact source-clock timestamps or independent frames rendered at stipulated times. Read the original clip and clock receipt."
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+[
+  {
+    "source_file": "cloud-authored-master/cloud-03-128.density.r16f",
+    "source_sha256": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+    "output": {
+      "file": "cloud-03-128-iso0p001.distance.r16f",
+      "sha256": "89de16be01ece078e80ece9f9ffd6b7406e2ea0d028a14e25fc5740bb7ac4455",
+      "bytes": 4194304,
+      "dimensions_xyz": [
+        128,
+        128,
+        128
+      ],
+      "storage": "little-endian binary16, Xfastest, numpy[Z,Y,X]",
+      "distance_units": "authored local metres; multiply by world scale4 for the current fixture"
+    },
+    "iso_density": 0.001,
+    "classification": "rho>=iso",
+    "distance_definition": "EDT(mask)-EDT(~mask), distances to nearest opposite-class voxel centres, spacing512/n",
+    "scipy_reference": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html",
+    "pitch_local_m": 4.0,
+    "world_scale": 4.0,
+    "reference_taper_halfwidth_world_m": 32.0,
+    "source_integral": 5268.390921115875,
+    "tapered_reference_integral": 5200.972098807213,
+    "relative_reference_integral_loss": 0.012796852647825596,
+    "relative_sub_iso_density_integral": 0.0006211279905131746,
+    "distance_max_inside_world_m": 181.75,
+    "distance_min_world_m": -1405.0,
+    "half_distance_max_abs_rounding_local_m": 0.124969482421875,
+    "minimum_noise_multiplier": 0.3,
+    "full_extinction_exposure_world_m": 739.1666666666667,
+    "endpoint_nonzero_voxels": 0,
+    "endpoint_definition": "E=e*M with M>=.3, K>=0; emax=(max decoded d_world+w_world+8m)/.3",
+    "scope": "Distance to sampled binary boundary; no claim exact original density isosurface normals, constant noisy-front speed, lifecycle appearance or target budget",
+    "tool": {
+      "python": "3.14.10",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "recipe_sha256": "0d28b30d8e4ea3551b2a80911d77072a02ebe77ab21bcc9e7ff3a2c9c8eca839"
+    },
+    "operator_reference": {
+      "half_space_center_distance_exact": true,
+      "definition": "signed distance to nearest opposite-class voxel centre; not exact continuous rho-isosurface SDF",
+      "interface_error_scope": "Binary classifier and centre EDT have up to voxel-scale surface/normal error; two-grid actual output required"
+    }
+  },
+  {
+    "source_file": "cloud-authored-master/cloud-03-128.density.r16f",
+    "source_sha256": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+    "output": {
+      "file": "cloud-03-128-iso0p005.distance.r16f",
+      "sha256": "c00d0347987590170a1b978ab28ad6ad2c23040b40c8107357d7630210b82a45",
+      "bytes": 4194304,
+      "dimensions_xyz": [
+        128,
+        128,
+        128
+      ],
+      "storage": "little-endian binary16, Xfastest, numpy[Z,Y,X]",
+      "distance_units": "authored local metres; multiply by world scale4 for the current fixture"
+    },
+    "iso_density": 0.005,
+    "classification": "rho>=iso",
+    "distance_definition": "EDT(mask)-EDT(~mask), distances to nearest opposite-class voxel centres, spacing512/n",
+    "scipy_reference": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html",
+    "pitch_local_m": 4.0,
+    "world_scale": 4.0,
+    "reference_taper_halfwidth_world_m": 32.0,
+    "source_integral": 5268.390921115875,
+    "tapered_reference_integral": 5138.480985130313,
+    "relative_reference_integral_loss": 0.02465837063549703,
+    "relative_sub_iso_density_integral": 0.0060371914126877415,
+    "distance_max_inside_world_m": 167.75,
+    "distance_min_world_m": -1410.0,
+    "half_distance_max_abs_rounding_local_m": 0.124969482421875,
+    "minimum_noise_multiplier": 0.3,
+    "full_extinction_exposure_world_m": 692.5,
+    "endpoint_nonzero_voxels": 0,
+    "endpoint_definition": "E=e*M with M>=.3, K>=0; emax=(max decoded d_world+w_world+8m)/.3",
+    "scope": "Distance to sampled binary boundary; no claim exact original density isosurface normals, constant noisy-front speed, lifecycle appearance or target budget",
+    "tool": {
+      "python": "3.14.10",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "recipe_sha256": "0d28b30d8e4ea3551b2a80911d77072a02ebe77ab21bcc9e7ff3a2c9c8eca839"
+    },
+    "operator_reference": {
+      "half_space_center_distance_exact": true,
+      "definition": "signed distance to nearest opposite-class voxel centre; not exact continuous rho-isosurface SDF",
+      "interface_error_scope": "Binary classifier and centre EDT have up to voxel-scale surface/normal error; two-grid actual output required"
+    }
+  },
+  {
+    "source_file": "cloud-authored-master/cloud-03-256.density.r16f",
+    "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "output": {
+      "file": "cloud-03-256-iso0p001.distance.r16f",
+      "sha256": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766",
+      "bytes": 33554432,
+      "dimensions_xyz": [
+        256,
+        256,
+        256
+      ],
+      "storage": "little-endian binary16, Xfastest, numpy[Z,Y,X]",
+      "distance_units": "authored local metres; multiply by world scale4 for the current fixture"
+    },
+    "iso_density": 0.001,
+    "classification": "rho>=iso",
+    "distance_definition": "EDT(mask)-EDT(~mask), distances to nearest opposite-class voxel centres, spacing512/n",
+    "scipy_reference": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html",
+    "pitch_local_m": 2.0,
+    "world_scale": 4.0,
+    "reference_taper_halfwidth_world_m": 32.0,
+    "source_integral": 42147.107284367085,
+    "tapered_reference_integral": 40173.17067747365,
+    "relative_reference_integral_loss": 0.04683445043037604,
+    "relative_sub_iso_density_integral": 0.0004695257454575504,
+    "distance_max_inside_world_m": 157.375,
+    "distance_min_world_m": -1406.0,
+    "half_distance_max_abs_rounding_local_m": 0.124969482421875,
+    "minimum_noise_multiplier": 0.3,
+    "full_extinction_exposure_world_m": 657.9166666666667,
+    "endpoint_nonzero_voxels": 0,
+    "endpoint_definition": "E=e*M with M>=.3, K>=0; emax=(max decoded d_world+w_world+8m)/.3",
+    "scope": "Distance to sampled binary boundary; no claim exact original density isosurface normals, constant noisy-front speed, lifecycle appearance or target budget",
+    "tool": {
+      "python": "3.14.10",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "recipe_sha256": "0d28b30d8e4ea3551b2a80911d77072a02ebe77ab21bcc9e7ff3a2c9c8eca839"
+    },
+    "operator_reference": {
+      "half_space_center_distance_exact": true,
+      "definition": "signed distance to nearest opposite-class voxel centre; not exact continuous rho-isosurface SDF",
+      "interface_error_scope": "Binary classifier and centre EDT have up to voxel-scale surface/normal error; two-grid actual output required"
+    }
+  },
+  {
+    "source_file": "cloud-authored-master/cloud-03-256.density.r16f",
+    "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "output": {
+      "file": "cloud-03-256-iso0p005.distance.r16f",
+      "sha256": "c01ef36da4c92575e339e525204ee2cbb1bae3d19ac4397ae2d4bd19f3ac4260",
+      "bytes": 33554432,
+      "dimensions_xyz": [
+        256,
+        256,
+        256
+      ],
+      "storage": "little-endian binary16, Xfastest, numpy[Z,Y,X]",
+      "distance_units": "authored local metres; multiply by world scale4 for the current fixture"
+    },
+    "iso_density": 0.005,
+    "classification": "rho>=iso",
+    "distance_definition": "EDT(mask)-EDT(~mask), distances to nearest opposite-class voxel centres, spacing512/n",
+    "scipy_reference": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html",
+    "pitch_local_m": 2.0,
+    "world_scale": 4.0,
+    "reference_taper_halfwidth_world_m": 32.0,
+    "source_integral": 42147.107284367085,
+    "tapered_reference_integral": 39271.01181029249,
+    "relative_reference_integral_loss": 0.06823945127881592,
+    "relative_sub_iso_density_integral": 0.004997905573286167,
+    "distance_max_inside_world_m": 151.75,
+    "distance_min_world_m": -1417.0,
+    "half_distance_max_abs_rounding_local_m": 0.124969482421875,
+    "minimum_noise_multiplier": 0.3,
+    "full_extinction_exposure_world_m": 639.1666666666667,
+    "endpoint_nonzero_voxels": 0,
+    "endpoint_definition": "E=e*M with M>=.3, K>=0; emax=(max decoded d_world+w_world+8m)/.3",
+    "scope": "Distance to sampled binary boundary; no claim exact original density isosurface normals, constant noisy-front speed, lifecycle appearance or target budget",
+    "tool": {
+      "python": "3.14.10",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "recipe_sha256": "0d28b30d8e4ea3551b2a80911d77072a02ebe77ab21bcc9e7ff3a2c9c8eca839"
+    },
+    "operator_reference": {
+      "half_space_center_distance_exact": true,
+      "definition": "signed distance to nearest opposite-class voxel centre; not exact continuous rho-isosurface SDF",
+      "interface_error_scope": "Binary classifier and centre EDT have up to voxel-scale surface/normal error; two-grid actual output required"
+    }
+  }
+]

@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Held cloud geometry falsification</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h1>Held cloud geometry falsification</h1><p>Held geometry and analytic exposure fixture · shared light/shadow/reflection · no full lifecycle claim</p></header>
+<section id="controls">
+<label>Master <select id="master"><option value="03">03 · asymmetric Cu</option></select></label>
+<label>Iso density <select id="iso"><option value="0.001">0.001</option><option value="0.005">0.005</option></select></label>
+<label>Operator <select id="operator"><option value="1">SDF support</option><option value="2">Matched density subtraction</option><option value="3">Matched alpha</option><option value="0">Raw master</option><option value="4" selected>Tapered reference</option></select></label>
+<label>Channels <select id="channels"><option value="uniform">Uniform</option><option value="noisy">Fixed noisy channels</option></select></label>
+<label>Exposure · world m <input id="exposure" type="range" min="0" max="0" step="any" value="0"><input id="exposure-value" type="number" min="0" max="0" step="any" value="0" style="width:85px"></label>
+<span id="matched">Calibrated values pending…</span>
+<label>Source <select id="quality"><option value="128">128³</option><option value="256" selected>256³</option></select></label>
+<label>Distance <select id="distance"><option value="3000">3 km</option><option value="5000">5 km</option><option value="8000">8 km</option><option value="custom">Custom</option></select></label>
+<label>View <select id="camera"><option value="oblique">Oblique</option><option value="front">Front</option><option value="side">Side</option><option value="high">High</option></select></label>
+<label>Sun <select id="sun"><option value="5">5°</option><option value="30" selected>30°</option><option value="75">75°</option></select></label>
+<label>Optical κ / m <select id="kappa"><option value="0.0045">0.0045</option><option value="0.009">0.009</option><option value="0.019" selected>0.019</option><option value="0.038">0.038</option></select></label>
+<label>Display <select id="mode"><option value="0">Beauty</option><option value="5">Coefficient opacity</option><option value="6">Raw density opacity</option></select></label>
+<label>Ray steps <select id="steps"><option value="96">96</option><option value="192">192</option><option value="384">384 · reference</option></select></label>
+<label><input type="checkbox" id="full" checked>1280×720</label><label><input type="checkbox" id="mirror" checked>Reflection</label><label><input type="checkbox" id="main" checked>Main cloud</label>
+<button id="play">Play</button><button id="pause">Pause</button><button id="reset">Reset fixture</button><label>Proof rate <select id="rate"><option value="1">1×</option><option value="16">16×</option></select></label><span id="clock">Paused · source 0 s</span><button id="record12">Record 12 wall seconds</button><button id="record90">Record 90 wall seconds</button><button id="record120">Record 120 wall seconds</button><span id="record-status"></span><button id="capture">Capture + receipt</button><button id="probe">Probe upload + coefficients</button>
+</section>
+<p id="status">Loading exact static master…</p><canvas id="canvas" width="1280" height="720"></canvas><p class="help">Drag to orbit · Shift/right drag to pan · Trackpad scroll to orbit · pinch/Ctrl scroll to zoom. The scene is quiet when idle. Manual exposure snaps to calibrated rows. Play uses E=100·min(sourceTime,120)/120 m and interpolated LUT values. After 120 source seconds the endpoint holds; the source clock continues. Reset before paired replays. Capture pauses at the exact current continuous exposure. Underlying master is frozen; this is not a full cloud lifecycle.</p><details><summary>Receipt</summary><pre id="receipt"></pre></details>
+<script type="module" src="src/master-lab.js"></script></body></html>

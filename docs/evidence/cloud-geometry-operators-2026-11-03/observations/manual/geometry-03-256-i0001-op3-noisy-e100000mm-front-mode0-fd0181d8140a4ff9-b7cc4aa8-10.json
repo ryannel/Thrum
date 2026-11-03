@@ -1,0 +1,1552 @@
+{
+  "name": "geometry-03-256-i0001-op3-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-10",
+  "build": "fd0181d8140a4ff9",
+  "identity": {
+    "build": "fd0181d8140a4ff9",
+    "files": {
+      "assets/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+      "assets/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "assets/cloud-03-128-iso0p001.curves.json": "fe5637b63e7be383ff05862e3fae2bd6255a7445111b1c34afdfdcb7163cb7d9",
+      "assets/cloud-03-128-iso0p001.distance.json": "778898f151c621fb1b052fb294b2f7c58f2b19a8f479b9d49e25b80a9e3fefb8",
+      "assets/cloud-03-128-iso0p001.distance.r16f": "89de16be01ece078e80ece9f9ffd6b7406e2ea0d028a14e25fc5740bb7ac4455",
+      "assets/cloud-03-128-iso0p005.curves.json": "21afe115485dab7f6f655ebe6a39dd8f603d93545fa8f21f9645a152839cfb44",
+      "assets/cloud-03-128-iso0p005.distance.json": "3a03b9b8d80253d32a55ff8529405edac89638d92d4e900767041b3c38f07aaa",
+      "assets/cloud-03-128-iso0p005.distance.r16f": "c00d0347987590170a1b978ab28ad6ad2c23040b40c8107357d7630210b82a45",
+      "assets/cloud-03-128.density.r16f": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+      "assets/cloud-03-128.json": "7786196f4ee3c4f6f55e091b2b795fe16418db0b5f8282db2aba3baac2317e9c",
+      "assets/cloud-03-256-iso0p001.curves.json": "c2c411728c8ea2bf6b04f97e04d8eaf69bab0288601f504afa63701f57e02d01",
+      "assets/cloud-03-256-iso0p001.distance.json": "758b48420fe5bf244249c52d1db0295732049c45111c39b27f52212898d52c4c",
+      "assets/cloud-03-256-iso0p001.distance.r16f": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766",
+      "assets/cloud-03-256-iso0p005.curves.json": "2eee6ea7206005537509bb4abc410740832e409cf396b9fe99f8d3b19e9b6abb",
+      "assets/cloud-03-256-iso0p005.distance.json": "9b0e805a607e62a8d5e879ecf98d955d6aa82963c6185fb7266bb5893cad9898",
+      "assets/cloud-03-256-iso0p005.distance.r16f": "c01ef36da4c92575e339e525204ee2cbb1bae3d19ac4397ae2d4bd19f3ac4260",
+      "assets/cloud-03-256.density.r16f": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+      "assets/cloud-03-256.json": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3",
+      "assets/geometry-index.json": "b1d0f78ca09ab65716d93941cdd37bb7bf6362242022389209366a537401dbe5",
+      "assets/geometry-renderer-base.json": "87a270e507cf3a58b15d3a76f4e742c56fa98442d82f62303362add5293b4ca4",
+      "assets/master-placements.json": "ea615b4bc51e13f1597549e08fb7941f5da27de50ed4f3db5b0ba10d6708fba6",
+      "assets/renderer-baseline.json": "550ac5add2d54c71c2ea8021b3fc3d3ae3ec80f80cca232828dad78cba143e21",
+      "index.html": "0495c4005dc5590b74f8820cb3e51e9e091b4e4738b9c963a98b82af638b109f",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/carriers.wgsl": "83b727c6a1f032c42c1a1a0b93ec093379c85b29d93b30a5a707c89d94386a5a",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/field-noise.wgsl": "a7f4786bace511415cb076f8829516b13e74856a29c18c22cacbf4f84608ec26",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/mix.wgsl": "0a9c31287bd2962819c73e105cb3e0565d8bce9abb78893420a45f012717c133",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/normal-stencil.wgsl": "485f307d54810f94d7406269b2275de1167ced49054e0ce046bcce1fd494ec87",
+      "shaders/optics.wgsl": "60f421972a6d9b6ea44e281ec5fc764576256a8658b00e65800fec072f9e96b9",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "0b46857971717fff08d94995462a09e61d0becd711039e0ccef19b468532e911",
+      "shaders/support.wgsl": "39f5e3540fa31c86ea2c10053cd6c23fbf3016c0540505a678acfd1e7916fd1c",
+      "shaders/thermal-shape.wgsl": "b40201a66ff04f4bdba98b86a9cd41199ab95ff999756d171edc60b3b13baba0",
+      "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "shaders/witness.wgsl": "9ce5f8c73d64a7195cd35d143f9d9e98e8439a6807328ce5b8bf43d35b7cdcc6",
+      "src/bench.js": "5ccf147bf2b38c8bbee14243b71b3b2bbdbe924e1d54091309facafa3dd062dc",
+      "src/cirrus.js": "91097d67c46ae156bf4d67b23b5ec9ffac106b839d7fbc430cf9961e42abc7dc",
+      "src/core-reference.js": "a1713aec77fca17fb4f37a0152454d387869bfea60138024347059c6d3aec8d7",
+      "src/feed-reference.js": "681598c1e268b857bc4dc8cd037856641fce4e3ac104aca3c98bf8ae806ab6af",
+      "src/front-mask-reference.js": "412af2b725546f53275ba9ba119f6b3eb70e67e179ca58bb6e9ed5599a04d20a",
+      "src/geometry-adapter.js": "e5687dc4fe1ab2f2d37be76e778bc1aae617ba26df8870eb928936b14118a82c",
+      "src/gpu-reference.js": "f46064fd076564498ed1c1bf0efa74989e711f715b4b598866cce6f480ff1997",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/master-adapter.js": "238bc6e951d8186aa4dfa8bd16bc1885d85d5b67c510816ef95e444800c72065",
+      "src/master-lab.js": "cde10a9728f63c45aa9bb696fe870d75dee8cce574fa84664047cdd89759957a",
+      "src/material-observer.js": "27fa82be643924abe3ec13e11ee3412f3563b45507f17f9b73e5a5a9456a2ae3",
+      "src/morphology.js": "187c830317b8f5eca63ef7dc15cf0e725758248ded5e3a7229beb6104a240a8c",
+      "src/motion.js": "6c00117e2111f436bb7d74b26eed4e408bead3879e9bf36da8cfeed6f007f8c9",
+      "src/normal-reference.js": "f02910836d1e03dc7f474a326fd889c7ecd301d52ee740c335c8d0543c106f6f",
+      "src/optical-topology.js": "fce6f59d30257de4381e30a435607683ec98c9e29d4be6442e12e20d6b5a1f40",
+      "src/profile.js": "118a69abffd8050437fa76d2827142e9945f5da5b6214ee469aec259b6fc1eb1",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "eedd1cdfe7f2ecc4317f15d758607c8ffc292f4474cba8595c00c190d59669c4",
+      "src/source-mask-reference.js": "d6f43dd6f814c98b92686f6291c0496d7e52be39140a8256e253b4563e592419",
+      "src/source-slices.js": "7c63f8bae8af77af718f565502fa8d62ab59827553ac1de37a82c9dbd6ad03e8",
+      "src/source.js": "11b0966f0da6ad791d45e582d9f1e66db042f884c7e25615a052285c97e9d0c2",
+      "src/thermals.js": "9013e5ca8c9225116c826efd7d5b64a29853a304ec6e03282613cdf8f860d607",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "src/witness.js": "c66aa61b41f61f5ab03c2f5dcde147558fcdb359b76c83103e983d9bab72e739",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "rendererBaseline": "6045d1ce1c9ccebe",
+  "observation": "b7cc4aa8",
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "devicePixelRatio": 2,
+    "screen": [
+      1728,
+      1117
+    ]
+  },
+  "sourceFrozen": true,
+  "worldTime": 0,
+  "asset": {
+    "id": "03",
+    "side": 256,
+    "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "bytes": 33554432,
+    "metadata": {
+      "id": "thrum.cloud-master.jangafx-03.static-256.v1",
+      "source_file": "CloudPack/CloudPackVDB/cloud_03_variant_0000.vdb",
+      "source_sha256": "33e789b91dc050801e32f9c8cabe8392434dbe992db009bcb34d2c0df78b51be",
+      "source_metadata": {
+        "class": "unknown",
+        "embergen_version": "0.7.5.7",
+        "file_bbox_max": "(346, 571, 177)",
+        "file_bbox_min": "(22, 94, 11)",
+        "file_compression": "none",
+        "file_mem_bytes": "33479176",
+        "file_voxel_count": "4686505",
+        "grid_type": "density",
+        "is_saved_as_half_float": "True",
+        "name": "density",
+        "original_texture_resolution": "(415, 639, 223)",
+        "simulation_time": "2.683333396911621",
+        "timestep": "161"
+      },
+      "source_transform": {
+        "index_origin_world_xyz": [
+          -207.5,
+          -319.5,
+          -111.5
+        ],
+        "index_to_world_basis_rows_xyz": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      },
+      "source_active_index_bbox_min_xyz": [
+        22,
+        94,
+        11
+      ],
+      "source_active_index_bbox_max_xyz": [
+        346,
+        571,
+        177
+      ],
+      "source_density_stats": {
+        "shape": [
+          325,
+          478,
+          167
+        ],
+        "nonzero": 4686505,
+        "positive_percentiles": {
+          "0": 0.0020008087158203125,
+          "1": 0.0025787353515625,
+          "25": 0.035858154296875,
+          "50": 0.078369140625,
+          "75": 0.1126708984375,
+          "95": 0.1558837890625,
+          "99": 0.316162109375,
+          "100": 0.7939453125,
+          "99.9": 0.50390625
+        },
+        "sum": 376360.63357543945,
+        "mean_full_cube": 0.01450696162520557,
+        "mean_positive": 0.08030731506217095
+      },
+      "source_grid_memory_bytes": 33479240,
+      "peak_dense_source_bytes": 103773800,
+      "orientation": {
+        "source_up_interpretation": "Z-up, consistent with source domain proportions/official default export and preview; VDB has no semantic up-axis tag",
+        "reference_url": "https://docs.jangafx.com/embergen/pages/references/How-To%20Guides/exportVDB.html",
+        "inference_evidence": "Source original domain415x639x223, both selected densities share lowest occupiedZ=11, silhouette/proportions agree with official thumbnail; no embedded semantic up-axis tag",
+        "right_handed_target_mapping": "targetXYZ=(sourceX,sourceZ,-sourceY)",
+        "center_source_index_xyz": [
+          184,
+          332.5,
+          94
+        ]
+      },
+      "authored_geometry": {
+        "extent_m_xyz": [
+          512,
+          512,
+          512
+        ],
+        "uniform_metres_per_source_index": 0.9640167364016736,
+        "active_extent_target_xyz_m": [
+          313.30543933054395,
+          160.99079497907948,
+          460.8
+        ],
+        "center_target_xyz_m": [
+          256,
+          256,
+          256
+        ],
+        "longest_active_extent_fraction": 0.9,
+        "physical_calibration": "Authored512m cube, not a claim about original atmospheric units"
+      },
+      "output": {
+        "file": "cloud-03-256.density.r16f",
+        "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+        "bytes": 33554432,
+        "dimensions_xyz": [
+          256,
+          256,
+          256
+        ],
+        "bounds_min_corner_xyz_m": [
+          0,
+          0,
+          0
+        ],
+        "bounds_max_corner_xyz_m": [
+          512,
+          512,
+          512
+        ],
+        "voxel_pitch_xyz_m": [
+          2,
+          2,
+          2
+        ],
+        "index0_center_xyz_m": [
+          1,
+          1,
+          1
+        ],
+        "index_center_to_local": "localXYZ=(indexXYZ+.5)*2.0m",
+        "storage": "little-endian IEEE754binary16 scalar; Xfastest thenYthenZ; numpy[Z,Y,X]",
+        "density_normalization_constant": 1,
+        "decode": "q=stored_value=raw native density voxel-average; no clamp, max normalization or explicit threshold",
+        "density_stats": {
+          "shape": [
+            256,
+            256,
+            256
+          ],
+          "nonzero": 693138,
+          "positive_percentiles": {
+            "0": 5.960464477539063e-08,
+            "1": 2.7261376380920404e-05,
+            "25": 0.0098419189453125,
+            "50": 0.054718017578125,
+            "75": 0.099365234375,
+            "95": 0.14453125,
+            "99": 0.2047119140625,
+            "100": 0.71533203125,
+            "99.9": 0.3874177246094064
+          },
+          "sum": 42147.107284367085,
+          "mean_full_cube": 0.0025121633579949787,
+          "mean_positive": 0.06080622803015718
+        },
+        "sampling": "Exact separable overlap-average of native piecewise-constant voxel cells; zero background; not a trilinear-point sample",
+        "max_abs_half_rounding_error": 0.00024169683456420898,
+        "mean_abs_half_rounding_error_full_cube": 4.402888061518551e-07,
+        "relative_integral_error_before_half": 3.115814904056676e-09,
+        "relative_integral_error_after_half": 3.5154229989925386e-07,
+        "zero_faces": true,
+        "minimum_exact_zero_collar_voxels": 12,
+        "support_bbox_min_zyx": [
+          12,
+          87,
+          49
+        ],
+        "support_bbox_max_zyx": [
+          243,
+          168,
+          206
+        ]
+      },
+      "gpu_contract": "Expand q toRGBA16F as(liquid=q,ice=0,age=0,birth=0); choose and record opticalkappa independently; no wholecloudage envelope or lifecycle playback",
+      "preview": {
+        "columns": [
+          "native front Beeropacity at mapped voxel size",
+          "256front maximum q",
+          "256front Beeropacity",
+          "256side Beeropacity"
+        ],
+        "sigma_per_m": 0.02,
+        "radiographic_audit": {
+          "front": {
+            "max_abs_tau_error_vs_native_voxel_column_average": 4.191570607298134e-05,
+            "mean_abs_tau_error_vs_native_voxel_column_average": 5.897053022564394e-07,
+            "max_abs_T_error_vs_native_footprint_average": 0.00152532143022166,
+            "mean_abs_T_error_vs_native_footprint_average": 7.400746768033402e-06
+          },
+          "side": {
+            "max_abs_tau_error_vs_native_voxel_column_average": 3.2459014435270994e-05,
+            "mean_abs_tau_error_vs_native_voxel_column_average": 5.941452399313016e-07,
+            "max_abs_T_error_vs_native_footprint_average": 0.0023983232580225833,
+            "mean_abs_T_error_vs_native_footprint_average": 7.79220928718017e-06
+          }
+        },
+        "notes": "Diagnostic projections only; no source shading baked, no diffuse cloud-lighting claim"
+      },
+      "license": "CC0-1.0; retainedLICENSE.txt",
+      "recipe": {
+        "file": "cook-resolution.py",
+        "sha256": "e841c59b444d24ebe59c6a580c85c9bdcc061342bdca58026ac3dfe91f28599a",
+        "python": "3.13.13 (main, Apr 25 2025, 12:39:20) [Clang 21.0.0 (clang-2100.0.123.102)]",
+        "executable": "/Applications/Blender.app/Contents/Resources/5.2/python/bin/python3.13",
+        "numpy": "2.3.4",
+        "openvdb_module_sha256": "0a3913dfac1d5b3c8fc5efe770f4fcb6cb84c6c7dfc118e01fffcc063ce975e7",
+        "openvdb_module": "/Applications/Blender.app/Contents/Resources/5.2/python/lib/python3.13/site-packages/openvdb.cpython-313-darwin.so"
+      },
+      "limits": [
+        "Static Cu ingredient only, not completeCb or accepted dynamicweather lifecycle",
+        "Conservative voxel-average filtering removes unresolved detail; native-to256 arbitrary-ray optical/beauty quality remains unqualified",
+        "Texture must be sampled in a tight localvolume; depositing into the24kmCb128grid destroys its useful spatialdetail"
+      ]
+    },
+    "worldTransform": {
+      "scale": 4,
+      "pitch_m": [
+        8,
+        8,
+        8
+      ],
+      "bounds": [
+        [
+          -1024,
+          412,
+          -1024
+        ],
+        [
+          1024,
+          2460,
+          1024
+        ]
+      ],
+      "local_bounds": {
+        "file": "cloud-03-256.density.r16f",
+        "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+        "bytes": 33554432,
+        "dimensions_xyz": [
+          256,
+          256,
+          256
+        ],
+        "bounds_min_corner_xyz_m": [
+          0,
+          0,
+          0
+        ],
+        "bounds_max_corner_xyz_m": [
+          512,
+          512,
+          512
+        ],
+        "voxel_pitch_xyz_m": [
+          2,
+          2,
+          2
+        ],
+        "index0_center_xyz_m": [
+          1,
+          1,
+          1
+        ],
+        "index_center_to_local": "localXYZ=(indexXYZ+.5)*2.0m",
+        "storage": "little-endian IEEE754binary16 scalar; Xfastest thenYthenZ; numpy[Z,Y,X]",
+        "density_normalization_constant": 1,
+        "decode": "q=stored_value=raw native density voxel-average; no clamp, max normalization or explicit threshold",
+        "density_stats": {
+          "shape": [
+            256,
+            256,
+            256
+          ],
+          "nonzero": 693138,
+          "positive_percentiles": {
+            "0": 5.960464477539063e-08,
+            "1": 2.7261376380920404e-05,
+            "25": 0.0098419189453125,
+            "50": 0.054718017578125,
+            "75": 0.099365234375,
+            "95": 0.14453125,
+            "99": 0.2047119140625,
+            "100": 0.71533203125,
+            "99.9": 0.3874177246094064
+          },
+          "sum": 42147.107284367085,
+          "mean_full_cube": 0.0025121633579949787,
+          "mean_positive": 0.06080622803015718
+        },
+        "sampling": "Exact separable overlap-average of native piecewise-constant voxel cells; zero background; not a trilinear-point sample",
+        "max_abs_half_rounding_error": 0.00024169683456420898,
+        "mean_abs_half_rounding_error_full_cube": 4.402888061518551e-07,
+        "relative_integral_error_before_half": 3.115814904056676e-09,
+        "relative_integral_error_after_half": 3.5154229989925386e-07,
+        "zero_faces": true,
+        "minimum_exact_zero_collar_voxels": 12,
+        "support_bbox_min_zyx": [
+          12,
+          87,
+          49
+        ],
+        "support_bbox_max_zyx": [
+          243,
+          168,
+          206
+        ]
+      },
+      "world_from_local": "world=origin+4*local",
+      "origin_world_m": [
+        -1024,
+        412,
+        -1024
+      ],
+      "centroid_world_m": [
+        5.015963407734262,
+        1426.341703795812,
+        -201.41789674491645
+      ],
+      "placement_anchor128_sha256": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+      "placement_policy": "Exact128worldorigin/target retained across source qualities; no resolution-driven pose change"
+    },
+    "cpuInputBytes": 33554432,
+    "sourceFormat": "r16float",
+    "currentPreviousAlias": true,
+    "sourceChannels": {
+      "density": "R",
+      "ice": "implicitG=0",
+      "age": "notrepresented",
+      "birth": "notrepresented",
+      "sampledAlpha": "formatdefault1;notage/birth"
+    },
+    "obsoletePdeRestDimensions": [
+      1,
+      1,
+      1
+    ],
+    "sourceFrozen": true,
+    "sourceTime": 0,
+    "sourceSteps": 0,
+    "uploadLogicalPeakBytes": 44908556,
+    "retiredSourceCount": 0,
+    "retiredSourceBytes": 0,
+    "manualGeometry": {
+      "preparedGeometry": true,
+      "geometryOperator": 3,
+      "geometryExposure": 100,
+      "geometryRhoThreshold": 0.11237062458434918,
+      "geometryAlpha": 0.31953707570201445,
+      "geometryWidth": 32,
+      "geometryChannels": true,
+      "geometryLookup": {
+        "channel": "noisy",
+        "index": 50,
+        "requestedExposure": 100,
+        "actualExposureWorldM": 100,
+        "effectiveOperatorExposureWorldM": 100,
+        "targetNativeIntegral": 12836.817479957852,
+        "referenceNativeIntegral": 40173.170677473674,
+        "policy": "Nearest calibrated LUT row for every operator; no uncontrolled independent density/alpha tuning or between-row matching claim"
+      },
+      "isoDensity": 0.001,
+      "distance": {
+        "file": "cloud-03-256-iso0p001.distance.r16f",
+        "bytes": 33554432,
+        "sha256": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766"
+      },
+      "curves": {
+        "file": "cloud-03-256-iso0p001.curves.json",
+        "bytes": 48912,
+        "sha256": "c2c411728c8ea2bf6b04f97e04d8eaf69bab0288601f504afa63701f57e02d01"
+      },
+      "noise": {
+        "file": "channels-32.r16f",
+        "bytes": 65536,
+        "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+        "dimensions_xyz": [
+          32,
+          32,
+          32
+        ]
+      },
+      "geometryTextureBytes": {
+        "distance": 33554432,
+        "noise": 65536
+      },
+      "geometryUploadLogicalPeakBytes": 78528524,
+      "retiredDistanceCount": 0,
+      "distanceMetadata": {
+        "source_file": "cloud-authored-master/cloud-03-256.density.r16f",
+        "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+        "output": {
+          "file": "cloud-03-256-iso0p001.distance.r16f",
+          "sha256": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766",
+          "bytes": 33554432,
+          "dimensions_xyz": [
+            256,
+            256,
+            256
+          ],
+          "storage": "little-endian binary16, Xfastest, numpy[Z,Y,X]",
+          "distance_units": "authored local metres; multiply by world scale4 for the current fixture"
+        },
+        "iso_density": 0.001,
+        "classification": "rho>=iso",
+        "distance_definition": "EDT(mask)-EDT(~mask), distances to nearest opposite-class voxel centres, spacing512/n",
+        "scipy_reference": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html",
+        "pitch_local_m": 2,
+        "world_scale": 4,
+        "reference_taper_halfwidth_world_m": 32,
+        "source_integral": 42147.107284367085,
+        "tapered_reference_integral": 40173.17067747365,
+        "relative_reference_integral_loss": 0.04683445043037604,
+        "relative_sub_iso_density_integral": 0.0004695257454575504,
+        "distance_max_inside_world_m": 157.375,
+        "distance_min_world_m": -1406,
+        "half_distance_max_abs_rounding_local_m": 0.124969482421875,
+        "minimum_noise_multiplier": 0.3,
+        "full_extinction_exposure_world_m": 657.9166666666667,
+        "endpoint_nonzero_voxels": 0,
+        "endpoint_definition": "E=e*M with M>=.3, K>=0; emax=(max decoded d_world+w_world+8m)/.3",
+        "scope": "Distance to sampled binary boundary; no claim exact original density isosurface normals, constant noisy-front speed, lifecycle appearance or target budget",
+        "tool": {
+          "python": "3.14.10",
+          "numpy": "2.5.4",
+          "scipy": "1.18.1",
+          "recipe_sha256": "0d28b30d8e4ea3551b2a80911d77072a02ebe77ab21bcc9e7ff3a2c9c8eca839"
+        },
+        "operator_reference": {
+          "half_space_center_distance_exact": true,
+          "definition": "signed distance to nearest opposite-class voxel centre; not exact continuous rho-isosurface SDF",
+          "interface_error_scope": "Binary classifier and centre EDT have up to voxel-scale surface/normal error; two-grid actual output required"
+        }
+      },
+      "referenceScope": "rho_ref=rho*smoothstep(-32m,32m,d_world), differs from original input; basis for allthreeoperators",
+      "nativeMatchingScope": "CPU native texel centres. Trilinear32noise clamp-to-edge. Float32 local math +float64 integral; GPU query and arbitrary projected/ray matching remain unqualified.",
+      "geometryOperatorScope": "Manual held field only; direct coefficient evaluation is not a production cost claim, exact continuous SDF or constant noisy-front speed"
+    }
+  },
+  "presentation": {
+    "frame": 12,
+    "presented": true,
+    "time": 0,
+    "committedSourceTime": 0,
+    "sourceSteps": 0,
+    "worldTime": 0,
+    "weatherInput": {
+      "time": 0,
+      "weatherTick": 0,
+      "revision": 0,
+      "frontX": 1000000,
+      "frontActive": false,
+      "seed": 71,
+      "windIntegral": 0,
+      "rainFlux": 0,
+      "latestLightning": null,
+      "moist": 0,
+      "dry": 0,
+      "lift": 0,
+      "wind": 0,
+      "storm": 0,
+      "inputTick": 0
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0,
+      "pitch": -0.05,
+      "distance": 3000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        5.015963407734262,
+        1276.404195983777,
+        2794.832884439982
+      ],
+      "target": [
+        5.015963407734262,
+        1426.341703795812,
+        -201.41789674491645
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -1024,
+        412,
+        -1024
+      ],
+      [
+        1024,
+        2460,
+        1024
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "MS": [
+        1,
+        0.25,
+        0
+      ],
+      "exposure": 0.5
+    },
+    "epoch": 1,
+    "family": 1,
+    "controls": {
+      "family": 1,
+      "provider": 0,
+      "sun": 30,
+      "mode": 0,
+      "mirror": true,
+      "main": true,
+      "fog": false,
+      "resolved": true,
+      "viewSteps": 96,
+      "extinctionScale": 4.222222222222222,
+      "preparedDensity": true,
+      "materialStructure": false,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": false,
+      "materialCore": false,
+      "connectedFeed": false,
+      "frontMorph": false,
+      "neckMix": false,
+      "dualRest": false,
+      "emptyWork": false,
+      "cachedVelocity": false,
+      "alpha": 1,
+      "sourceDiagnostic": false,
+      "preparedGeometry": true,
+      "geometryOperator": 3,
+      "geometryExposure": 100,
+      "geometryRhoThreshold": 0.11237062458434918,
+      "geometryAlpha": 0.31953707570201445,
+      "geometryWidth": 32,
+      "geometryChannels": true,
+      "geometryLookup": {
+        "channel": "noisy",
+        "index": 50,
+        "requestedExposure": 100,
+        "actualExposureWorldM": 100,
+        "effectiveOperatorExposureWorldM": 100,
+        "targetNativeIntegral": 12836.817479957852,
+        "referenceNativeIntegral": 40173.170677473674,
+        "policy": "Nearest calibrated LUT row for every operator; no uncontrolled independent density/alpha tuning or between-row matching claim"
+      }
+    },
+    "lightBuilt": true
+  },
+  "sourceSteps": 0,
+  "logicalRendererBytes": 78528524,
+  "logicalAllocations": [
+    {
+      "label": "timestamp resolve",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp readback",
+      "bytes": 256
+    },
+    {
+      "label": "optical q 0",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "optical q 1",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "raw source support",
+      "bytes": 4
+    },
+    {
+      "label": "guarded source support",
+      "bytes": 4
+    },
+    {
+      "label": "float32 shared velocity",
+      "bytes": 16
+    },
+    {
+      "label": "advection forward",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "advection reverse",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "material coordinates 0",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "material coordinates 1",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "renewed material B 0",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "renewed material B 1",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "native basis",
+      "bytes": 1198372,
+      "format": "rgba8unorm",
+      "size": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "label": "coherent curl field",
+      "bytes": 2097152,
+      "format": "rgba16float",
+      "size": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "label": "current voxel light",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "receiver Beer field",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "label": "air transmittance",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        256,
+        64
+      ]
+    },
+    {
+      "label": "current optical image",
+      "bytes": 7372800,
+      "format": "rgba16float",
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "uniform 0/0",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/1",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/2",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/3",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/4",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/5",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/6",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/7",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/8",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/9",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/10",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/11",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/12",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/13",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/14",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/15",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/16",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/17",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/18",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/19",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/20",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/21",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/22",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/23",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/24",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/25",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/26",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/27",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/28",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/29",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/30",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/31",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/32",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/0",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/1",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/2",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/3",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/4",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/5",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/6",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/7",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/8",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/9",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/10",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/11",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/12",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/13",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/14",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/15",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/16",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/17",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/18",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/19",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/20",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/21",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/22",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/23",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/24",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/25",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/26",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/27",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/28",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/29",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/30",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/31",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/32",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/0",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/1",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/2",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/3",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/4",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/5",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/6",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/7",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/8",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/9",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/10",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/11",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/12",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/13",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/14",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/15",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/16",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/17",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/18",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/19",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/20",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/21",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/22",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/23",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/24",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/25",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/26",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/27",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/28",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/29",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/30",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/31",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/32",
+      "bytes": 176
+    },
+    {
+      "label": "empty thermal heads",
+      "bytes": 3072
+    },
+    {
+      "label": "empty thermal bands",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/0",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/0",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/1",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/1",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/2",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/2",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/3",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/3",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/4",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/4",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/5",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/5",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/6",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/6",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/7",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/7",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/0",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/0",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/1",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/1",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/2",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/2",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/3",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/3",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/4",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/4",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/5",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/5",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/6",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/6",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/7",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/7",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/0",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/0",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/1",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/1",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/2",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/2",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/3",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/3",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/4",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/4",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/5",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/5",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/6",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/6",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/7",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/7",
+      "bytes": 6272
+    },
+    {
+      "label": "emitters 0/0",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/1",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/2",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/3",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/4",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/5",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/6",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/7",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/0",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/1",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/2",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/3",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/4",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/5",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/6",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/7",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/0",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/1",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/2",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/3",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/4",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/5",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/6",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/7",
+      "bytes": 1024
+    },
+    {
+      "label": "frozen R16 03/256",
+      "bytes": 33554432,
+      "format": "r16float",
+      "size": [
+        256,
+        256,
+        256
+      ],
+      "role": "single sampled frozen scalar; current/previous alias"
+    },
+    {
+      "label": "manual SDF 256/0.001",
+      "bytes": 33554432,
+      "size": [
+        256,
+        256,
+        256
+      ],
+      "format": "r16float",
+      "role": "manual geometry POC read-only input"
+    },
+    {
+      "label": "manual fixed channels32",
+      "bytes": 65536,
+      "size": [
+        32,
+        32,
+        32
+      ],
+      "format": "r16float",
+      "role": "manual geometry POC read-only input"
+    }
+  ],
+  "cameraPreset": "front",
+  "capture": {
+    "file": "geometry-03-256-i0001-op3-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-10.png",
+    "bytes": 358171
+  }
+}

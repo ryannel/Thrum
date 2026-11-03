@@ -1,0 +1,25 @@
+{
+  "noise": {
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "packaging_python": "3.15.2 (main, Oct 25 2026, 16:57:51) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "node": "v24.16.0",
+  "ffmpeg": [
+    "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "built with Apple clang version 21.0.0 (clang-2100.3.34.2)"
+  ],
+  "scope": "Recipes copied byte-exact. Exact decompression/hash restoration tested separately; cross-hardware recook bit identity not certified. Converter for original density retained by referenced authored-master package.",
+  "distance": {
+    "python": "3.14.10",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "recipe_sha256": "0d28b30d8e4ea3551b2a80911d77072a02ebe77ab21bcc9e7ff3a2c9c8eca839"
+  },
+  "curves": {
+    "python": "3.14.10",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "recipe_sha256": "c40fcb9f14456a11252194d6de626d056ea93ec36c3dceb086fb12a287d81e5d"
+  }
+}

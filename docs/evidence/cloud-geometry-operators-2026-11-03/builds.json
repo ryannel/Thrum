@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "master_package": "../cloud-authored-masters-2026-11-03",
+  "master_package_committed_pin": "6f4d3fd075bc41153a62a88deb24c701af7725a5",
+  "builds": {
+    "81c3f43f76b490fa": {
+      "source": "instrument/81c3f43f76b490fa",
+      "identity": "identities/81c3f43f76b490fa.json",
+      "served_files": 70,
+      "payload_bytes": 113952671
+    },
+    "173d261dc10b86c2": {
+      "source": "instrument/173d261dc10b86c2",
+      "identity": "identities/173d261dc10b86c2.json",
+      "served_files": 69,
+      "payload_bytes": 113949589
+    },
+    "fd0181d8140a4ff9": {
+      "source": "instrument/fd0181d8140a4ff9",
+      "identity": "identities/fd0181d8140a4ff9.json",
+      "served_files": 68,
+      "payload_bytes": 113939467
+    }
+  },
+  "binary_inputs": [
+    {
+      "file": "assets/channels-32.r16f",
+      "bytes": 65536,
+      "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "kind": "retained-volume",
+      "compressed_path": "inputs/volumes/channels-32.r16f.gz",
+      "compressed_sha256": "66717a7dcb15e80502ed2fcb68cd8dbbc8a7810cc8870e95fd9852c78b63d6f6",
+      "compressed_bytes": 50997
+    },
+    {
+      "file": "assets/cloud-03-128-iso0p001.distance.r16f",
+      "bytes": 4194304,
+      "sha256": "89de16be01ece078e80ece9f9ffd6b7406e2ea0d028a14e25fc5740bb7ac4455",
+      "kind": "retained-volume",
+      "compressed_path": "inputs/volumes/cloud-03-128-iso0p001.distance.r16f.gz",
+      "compressed_sha256": "0f40d276ea62c277eaf2081e290a1a602d82784fff67497fdea83795b4a7d743",
+      "compressed_bytes": 2069143
+    },
+    {
+      "file": "assets/cloud-03-128-iso0p005.distance.r16f",
+      "bytes": 4194304,
+      "sha256": "c00d0347987590170a1b978ab28ad6ad2c23040b40c8107357d7630210b82a45",
+      "kind": "retained-volume",
+      "compressed_path": "inputs/volumes/cloud-03-128-iso0p005.distance.r16f.gz",
+      "compressed_sha256": "b1943b6189848e52acbcb967eff3fca6e80fd1b673ea38a0bd8ac5b66460615e",
+      "compressed_bytes": 2109317
+    },
+    {
+      "file": "assets/cloud-03-128.density.r16f",
+      "bytes": 4194304,
+      "sha256": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+      "kind": "referenced-density",
+      "master_package_path": "instrument/assets/cloud-03-128.density.r16f.gz",
+      "compressed_sha256": "6dae3a40cd56154d77a706a06a06a6acdcd123e94bffea78e68a26bd7e964af1",
+      "compressed_bytes": 196844
+    },
+    {
+      "file": "assets/cloud-03-256-iso0p001.distance.r16f",
+      "bytes": 33554432,
+      "sha256": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766",
+      "kind": "retained-volume",
+      "compressed_path": "inputs/volumes/cloud-03-256-iso0p001.distance.r16f.gz",
+      "compressed_sha256": "d829cf885c562093cb84d8b508e90319ad025b3b0f91e444699d86dd9da29248",
+      "compressed_bytes": 18871560
+    },
+    {
+      "file": "assets/cloud-03-256-iso0p005.distance.r16f",
+      "bytes": 33554432,
+      "sha256": "c01ef36da4c92575e339e525204ee2cbb1bae3d19ac4397ae2d4bd19f3ac4260",
+      "kind": "retained-volume",
+      "compressed_path": "inputs/volumes/cloud-03-256-iso0p005.distance.r16f.gz",
+      "compressed_sha256": "508c9120e4693805c36b1113cec0afbe683bc46833dc79012bfb6df470c18146",
+      "compressed_bytes": 18905459
+    },
+    {
+      "file": "assets/cloud-03-256.density.r16f",
+      "bytes": 33554432,
+      "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+      "kind": "referenced-density",
+      "master_package_path": "instrument/assets/cloud-03-256.density.r16f.gz",
+      "compressed_sha256": "3fb5b8b115a164b87d4bc80ce5e4ac8daa6d4829d57f0dbceddbdfde28bc4163",
+      "compressed_bytes": 1383988
+    }
+  ]
+}

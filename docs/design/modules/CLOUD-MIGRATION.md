@@ -141,7 +141,7 @@ lighting or opacity to hide that failed cue. Regional exchange remains necessary
 - [x] Preserve bounded causal-feed/optical-connectivity/root-to-cap witness proof and long1x failed-appearance evidence; not source-art acceptance.
 - [x] Preserve [front-normal stencil/mask proof and rejected1x/16x source anatomy](../../evidence/cloud-front-growth-2026-11-03/README.md); this does not accept the source or budgets.
 - [x] Retain [static CC0 master/cook/shared-optical proof](../../evidence/cloud-authored-masters-2026-11-03/README.md), including source-resolution loss and exact GPU scalar uploads; no full Cu/Cb/lifecycle or cost acceptance.
-- [ ] Falsify SDF support erosion against density subtraction and matched-extinction alpha on that master; inspect native peak-relative contours/zero gaps/interiors, then actual1x/16x before choosing the replacement lifecycle.
+- [x] Preserve [SDF/density-subtraction/matched-integral-alpha discrimination](../../evidence/cloud-geometry-operators-2026-11-03/README.md): actual native views,1x/16xclips and sampled contacts, numerical/tolerance/endpoint checks and reviewed failure fixes. Support erosion differs from fade; static thin remnants still fail full breakup. Continuous playback/whole lifecycle are not accepted.
 - [ ] Prove a broad frozen authored3D formation from front/side/oblique, then lock its full weather-driven growth/erosion, survivor/correspondence and tower-fed-ice producer before dependent lifecycle work.
 - [ ] Recover optics after a long host/background gap as an explicit new optical epoch, with current-time chart/seed alignment; preserve CPU weather and declare lost q continuity.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.

@@ -1,0 +1,15 @@
+{
+  "time_utc": "2026-11-03T02:40:20.187327+00:00",
+  "build": "81c3f43f76b490fa",
+  "url": "http://127.0.0.1:8148/build/81c3f43f76b490fa/index.html",
+  "server_source_sha256": "3a58113842a9e611f6bae93286dca936b75eeced1c1e132a7029dac514a8a79f",
+  "request": {
+    "method": "POST",
+    "path": "/motion",
+    "declared_content_length": 13631488,
+    "body_bytes_sent": 0
+  },
+  "http_status": 413,
+  "test_file_created": false,
+  "scope": "Actual loopback server header-cap rejection before body reads; not browser/encoder memory or failure-injection qualification."
+}

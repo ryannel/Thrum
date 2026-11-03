@@ -1113,7 +1113,7 @@
         "C13"
       ],
       "next_design_package": "D2",
-      "remaining_detailed_design": "Renderer/air/consumer baseline retained, but profiles2/3/4 fail actual source anatomy and breakup. Replacement source lifecycle is reopened: static CC0 3D ingredients are qualified only as inputs; local geometry-versus-fade falsification precedes closing authored growth, spatial phase, parent/material maps, ownership, filtering, recovery and full-sky costs. Five families, complete air/light/view, consumer accuracy and engine bindings remain open.",
+      "remaining_detailed_design": "Renderer/air/consumer baseline retained, but profiles2/3/4 fail actual source anatomy and breakup. Replacement source lifecycle is reopened: static CC0 3D ingredients are qualified only as inputs; local geometry-versus-fade contrast is witnessed but static remnants fail full breakup. Finish authored growth, spatial phase, parent/material maps, ownership, filtering, recovery and full-sky costs. Five families, complete air/light/view, consumer accuracy and engine bindings remain open.",
       "qualification": "D0/R0 then CF01-CF05 isolated, M1 combinations, CW01-CW04 weather and FS01-FS04 full skies; Q7 complete workload. Five families and storm development required for current commission. Engine bindings follow construction dependencies; no legacy qualification transfers.",
       "parent": "E1",
       "existing_candidate": {
@@ -1126,7 +1126,7 @@
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
       "current_design_sha256": "34edfd1f42b3e6d020cf4ece477e7859a6c56cbcce40d91e06e7dc22a5234227",
-      "current_design_delta": "3 November source reassessment rejects pulse/transport morphology after native and 1x/16x evidence; no Houdini or full cached lifecycle required. Retains Nubis3-style 3D optical/render lineage, Hillaire air, voxel light, BSM and independent views. Exact CC0 static masters/cooks and sampled R16 input path pass scoped checks; complete replacement live source and combined visuals/budgets are unfinished. Prior source/PDE and whole-GPU failures remain evidence, not a selected foundation.",
+      "current_design_delta": "3 November source reassessment rejects pulse/transport morphology after native and 1x/16x evidence; no Houdini or full cached lifecycle required. Retains Nubis3-style 3D optical/render lineage, Hillaire air, voxel light, BSM and independent views. Exact CC0 static masters/cooks and sampled R16 input path pass scoped checks; complete replacement live source and combined visuals/budgets are unfinished. Prior source/PDE and whole-GPU failures remain evidence, not a selected foundation. Local SDF removal now differs visibly from matched-integral fade in native stills/sampled1x16x contacts; no whole breakup/lifecycle acceptance.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -1213,7 +1213,7 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "source_reopened_static_inputs_local_geometry_falsification_active",
+        "status": "source_reopened_geometry_operator_scoped_result_full_lifecycle_unfinished",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
@@ -1302,6 +1302,15 @@
           "correctness": "selected_inputs_rights_hashes_exact_gzip_restore_cook_transforms_and_actual_03_128_256_08_256_GPU_readback_G0_B0_A1_alias_pass",
           "experienced_quality": "03_256_usable_static_Cu_ingredient_128_detail_loss_08_bank_comparator_no_full_art_lifecycle_or_reflection_acceptance",
           "performance": "logical_renderer_bytes_128_15548428_256_44908556_requested_staging_separate_no_process_or_timing_admission"
+        },
+        "local_geometry_operator": {
+          "record": "../evidence/cloud-geometry-operators-2026-11-03/README.md",
+          "build": "81c3f43f76b490fa",
+          "historical_motion_build": "173d261dc10b86c2",
+          "implementation": "one_frozen_Cu_analytic_local_exposure_shared_all_optical_readers_no_weather_or_independent_fragments",
+          "correctness": "exact_three_build_restore_CPU_matched_native_integral_scoped_tests_actual_GPU_tolerance_and_uniform_noisy_endpoint_checks_pass_reviewed_failure_capacity_fixes",
+          "experienced_quality": "native_views_and_sampled_1x16x_geometry_contracts_and_opens_vs_matched_alpha_but_static_horns_no_lobe_growth_or_drift_continuous_playback_unjudged_full_breakup_unaccepted",
+          "performance": "logical_renderer_78528524_bytes_not_process_residency_no_production_or_target_fullsky_admission"
         }
       }
     },

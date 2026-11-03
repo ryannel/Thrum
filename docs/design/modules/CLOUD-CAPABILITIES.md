@@ -121,3 +121,5 @@ independent findings/dispositions and work/memory account before combinations. F
 with their specific failed assumption/evidence/correction, but may not make the required behavior optional.
 
 The [2 November source/light correction](../../evidence/cloud-cu-correction-2026-11-02/README.md) supplies the current bounded evidence and explicit failures. It does not promote the full capability table.
+
+The [3 November geometry-operator checkpoint](../../evidence/cloud-geometry-operators-2026-11-03/README.md) distinguishes local support removal from matched-integral fade. Native stills and sampled1x/16xcontacts show changing shape, but static remnants/new growth/renewal/wind and continuous motion acceptance remain open. It closes no complete CF/CL lifecycle gate.

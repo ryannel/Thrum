@@ -1,0 +1,224 @@
+[
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op1-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-9.png",
+    "bytes": 353238,
+    "sha256": "29cb653edd33d74edc41157f93f6cb2c7b356b94c1fa3c27edbef9864bac2849",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op1-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-9.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op1-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-9.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op1-noisy-e100000mm-high-mode0-fd0181d8140a4ff9-b7cc4aa8-11.png",
+    "bytes": 141810,
+    "sha256": "561fc87cc74be3a733d4c9db32f875376dda193f6a330db3082bee28e96811e6",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op1-noisy-e100000mm-high-mode0-fd0181d8140a4ff9-b7cc4aa8-11.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op1-noisy-e100000mm-high-mode0-fd0181d8140a4ff9-b7cc4aa8-11.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op1-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-3.png",
+    "bytes": 347752,
+    "sha256": "31e96e12189e375948466f4d30a36aa9b1d802df48e470168bfb37ad3689a0d8",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op1-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-3.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op1-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-3.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op1-uniform-e60000mm-side-mode0-fd0181d8140a4ff9-b7cc4aa8-6.png",
+    "bytes": 298339,
+    "sha256": "f47f3c19bcb82a0e2b821a9303613e4d46ae71587166da0c92545c51e1c8c39c",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op1-uniform-e60000mm-side-mode0-fd0181d8140a4ff9-b7cc4aa8-6.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op1-uniform-e60000mm-side-mode0-fd0181d8140a4ff9-b7cc4aa8-6.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op1-uniform-e80000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-8.png",
+    "bytes": 348017,
+    "sha256": "efce4e5de759065a2ce243fc177e60dae6077c87cca362674e856ac6755562ed",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op1-uniform-e80000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-8.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op1-uniform-e80000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-8.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op2-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-5.png",
+    "bytes": 360583,
+    "sha256": "5bd82e659dbc7fbaef9b15be8277b58f4b2253d853bed2cf213640a255682b63",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op2-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-5.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op2-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-5.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op3-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-10.png",
+    "bytes": 358171,
+    "sha256": "2e085fe198fe251c059c4bf5cc6c8124761069a4853d5ea17f2e2611091744d3",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op3-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-10.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op3-noisy-e100000mm-front-mode0-fd0181d8140a4ff9-b7cc4aa8-10.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op3-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-4.png",
+    "bytes": 353649,
+    "sha256": "f136f849f61b848529986ecddd896061819ba01fd2415640e82d45d9822300c8",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op3-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-4.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op3-uniform-e60000mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-4.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op3-uniform-e60000mm-side-mode0-fd0181d8140a4ff9-b7cc4aa8-7.png",
+    "bytes": 307011,
+    "sha256": "0bae85f6ceb6645f094612876c5870a6176bda92e574e7f5a023257fd0ababe4",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op3-uniform-e60000mm-side-mode0-fd0181d8140a4ff9-b7cc4aa8-7.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op3-uniform-e60000mm-side-mode0-fd0181d8140a4ff9-b7cc4aa8-7.json"
+  },
+  {
+    "file": "observations/manual/geometry-03-256-i0001-op4-uniform-e0mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-2.png",
+    "bytes": 361813,
+    "sha256": "84da30dd81547ab55962813e32f1e31ee36b637550e35e511cddbf3f5da0cb25",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-03-256-i0001-op4-uniform-e0mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-2.png",
+    "receipt": "observations/manual/geometry-03-256-i0001-op4-uniform-e0mm-oblique-mode0-fd0181d8140a4ff9-b7cc4aa8-2.json"
+  },
+  {
+    "file": "observations/motion/geometry-motion-op1-16x-12s-173d261dc10b86c2-4a80a226-4.webm",
+    "bytes": 556601,
+    "sha256": "b712a851f6d30e6c7e463b1ef5311b5002d697f394a35148cadefcab191942d7",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-motion-op1-16x-12s-173d261dc10b86c2-4a80a226-4.webm",
+    "receipt": "observations/motion/geometry-motion-op1-16x-12s-173d261dc10b86c2-4a80a226-4.json",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "1000/1",
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "size": "556601"
+      }
+    }
+  },
+  {
+    "file": "observations/motion/geometry-motion-op1-1x-120s-173d261dc10b86c2-4a80a226-2.webm",
+    "bytes": 2683858,
+    "sha256": "e8f005998f1f036bff688f69aeee84e4ede8e3f5e4b6320a9441b2805438f212",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-motion-op1-1x-120s-173d261dc10b86c2-4a80a226-2.webm",
+    "receipt": "observations/motion/geometry-motion-op1-1x-120s-173d261dc10b86c2-4a80a226-2.json",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "120/1",
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "size": "2683858"
+      }
+    }
+  },
+  {
+    "file": "observations/motion/geometry-motion-op3-16x-12s-173d261dc10b86c2-4a80a226-5.webm",
+    "bytes": 579232,
+    "sha256": "e0b7e32648ffce354a85200a81b16968b275194e11bd4378f2eebf86861ced60",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-motion-op3-16x-12s-173d261dc10b86c2-4a80a226-5.webm",
+    "receipt": "observations/motion/geometry-motion-op3-16x-12s-173d261dc10b86c2-4a80a226-5.json",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "1000/1",
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "size": "579232"
+      }
+    }
+  },
+  {
+    "file": "observations/motion/geometry-motion-op3-1x-120s-173d261dc10b86c2-4a80a226-3.webm",
+    "bytes": 2780064,
+    "sha256": "571d793cc84f534252e1a90b3136aa4cd0a480666089a6846170384a726aabf7",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-motion-op3-1x-120s-173d261dc10b86c2-4a80a226-3.webm",
+    "receipt": "observations/motion/geometry-motion-op3-1x-120s-173d261dc10b86c2-4a80a226-3.json",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "1000/1",
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "size": "2780064"
+      }
+    }
+  },
+  {
+    "file": "observations/probes/geometry-probe-256-173d261dc10b86c2-4a80a226-1.json",
+    "bytes": 45892,
+    "sha256": "1e2adabdb85e3436b22e26d9867ac75366f0ddeee69cf5618b93c4dbc0c8074f",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-probe-256-173d261dc10b86c2-4a80a226-1.json"
+  },
+  {
+    "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-1.json",
+    "bytes": 45984,
+    "sha256": "83b43a3035212b8fe82f48b9f442782e73615065a0b79016a009b464495bd1d7",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-probe-256-81c3f43f76b490fa-ef7d4785-1.json"
+  },
+  {
+    "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-2.json",
+    "bytes": 45992,
+    "sha256": "18e1647528c374c4cf82619488328294907db126d39efdb00685e230db90cd6e",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-probe-256-81c3f43f76b490fa-ef7d4785-2.json"
+  },
+  {
+    "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-3.json",
+    "bytes": 45686,
+    "sha256": "0ca4469bf168a97df444b88e5c2ab60aec0c64f885d4e3cd7cdbda1f8a175fc8",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-probe-256-81c3f43f76b490fa-ef7d4785-3.json"
+  },
+  {
+    "file": "observations/probes/geometry-probe-256-81c3f43f76b490fa-ef7d4785-4.json",
+    "bytes": 45978,
+    "sha256": "87cd48c7c0389b092f7ef87c21ea25580ef0774dacb4cc81525a75cf643ec208",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-probe-256-81c3f43f76b490fa-ef7d4785-4.json"
+  },
+  {
+    "file": "observations/probes/geometry-probe-256-fd0181d8140a4ff9-b7cc4aa8-1.json",
+    "bytes": 44081,
+    "sha256": "b300bd95959f30eec03255f4d484e2d51a167dc3c6ab8335017ea89289b43e72",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-probe-256-fd0181d8140a4ff9-b7cc4aa8-1.json"
+  },
+  {
+    "file": "observations/motion/geometry-motion-op1-16x-12s-81c3f43f76b490fa-ef7d4785-5.webm",
+    "bytes": 615724,
+    "sha256": "33689c36438c3bcf0937aa4763fc0ed78d2b6d3985e06db8e2d287d42d5a0934",
+    "source_path": "tmp/cloud-geometry-proof/captures/geometry-motion-op1-16x-12s-81c3f43f76b490fa-ef7d4785-5.webm",
+    "receipt": "observations/motion/geometry-motion-op1-16x-12s-81c3f43f76b490fa-ef7d4785-5.json",
+    "inspection_scope": "Final81 actual happy-path capture and native contact prepared; continuous watching is not claimed.",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "120/1",
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "size": "615724"
+      }
+    }
+  }
+]
