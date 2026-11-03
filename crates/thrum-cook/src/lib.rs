@@ -1040,6 +1040,8 @@ mod tests {
         }
         let private_cache_before = private_cargo_home.as_ref().map(|path| tree_hashes(path));
         if let Some(cache) = &owned_cache {
+            assert!(!cache.path.join(".global-cache").exists());
+            assert!(!cache.path.join(".package-cache-mutate").exists());
             cache.assert_tool_bytes();
             cache.assert_reusable_source(checkout, a_materialized.path());
         }
