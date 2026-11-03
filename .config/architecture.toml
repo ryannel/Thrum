@@ -66,7 +66,7 @@ target_cost = "Small single-purpose native dependency; startup blocking must be 
 requirement = "=1.0.229"
 license = "MIT OR Apache-2.0"
 purpose = "Strict bounded editable-source JSON decoding through DeserializeSeed"
-target_cost = "Native tooling only; selected parser feature set has no derive macros or simulation runtime dependency"
+target_cost = "Native tooling only; serde derive adds a build-time proc macro for strict render-object visitors, with no reflection or simulation runtime dependency; clean-build cost remains to measure"
 
 [external_dependencies.fs4]
 requirement = "=1.1.0"

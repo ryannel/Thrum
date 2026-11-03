@@ -63,6 +63,31 @@ pub(crate) struct RecordHeader {
     pub(crate) schema: u64,
 }
 
+/// One checked header bound to the exact bytes traversed by `record_header`.
+/// The future render dispatch can inspect this header and pass the same token
+/// into typed decoding without repeating the whole-record shape walk.
+pub(crate) struct CheckedRecord<'a> {
+    bytes: &'a [u8],
+    header: RecordHeader,
+}
+
+impl<'a> CheckedRecord<'a> {
+    pub(crate) fn bytes(&self) -> &'a [u8] {
+        self.bytes
+    }
+
+    pub(crate) fn header(&self) -> &RecordHeader {
+        &self.header
+    }
+}
+
+pub(crate) fn checked_record(bytes: &[u8]) -> Result<CheckedRecord<'_>, serde_json::Error> {
+    Ok(CheckedRecord {
+        bytes,
+        header: record_header(bytes)?,
+    })
+}
+
 /// Read the checked top-level identity and discriminators before typed parsing.
 /// Skip fields with a bounded no-tree walk, so dispatch enforces whole-record
 /// limits without applying game-owned opaque limits to engine-owned sources.

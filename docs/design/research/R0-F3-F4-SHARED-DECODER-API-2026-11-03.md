@@ -16,8 +16,11 @@ a root-local decoder cannot reject a dangling or wrong-kind edge early and
 thereby hide a later global duplicate. A candidate Rust shape is:
 
 ```rust
+pub fn check_render_record(bytes: &[u8])
+    -> Result<CheckedRenderRecord<'_>, RenderHeaderError>;
+
 pub fn prepare_render_v1<P: RenderProjection>(
-    bytes: &[u8],
+    checked: CheckedRenderRecord<'_>,
     work: &mut RenderDecodeWork,
     projection: &mut P,
 ) -> Result<PreparedRender, RenderDecodeError<P::Error>>;
@@ -44,8 +47,17 @@ pub enum RenderDecodeError<E> {
 }
 ```
 
-Exact Rust names can change; the two phases, ownership and failure
-distinctions cannot. Structural preparation checks the complete typed record
+`CheckedRenderRecord<'_>` is an opaque borrow of the original bytes plus the
+already checked `record_header` result. F3 dispatch constructs it while
+classifying the record; F4 obtains it from a `thrum-source` wrapper after its
+accepted-pin copy succeeds. Its private constructor prevents a caller from
+pairing a header for one byte slice with another. Neither consumer repeats
+the header walk inside `prepare_render_v1`. Exact Rust names can change; the
+two phases, ownership and failure distinctions cannot. A private compiled
+[envelope slice](../../evidence/render/R0-F3-RENDER-ENVELOPE-2026-11-03.md)
+now proves the byte-bound token and fixed-count borrowed collection handoff;
+it is not wired into dispatch or the remaining typed grammar. Structural
+preparation checks the complete typed record
 grammar and per-object numeric rules. `RenderEvent<'_>` has closed typed
 variants for root/embedded identities, **edge declarations** and locally
 checked camera/mesh/instance/material/texture/local-light objects. It does
