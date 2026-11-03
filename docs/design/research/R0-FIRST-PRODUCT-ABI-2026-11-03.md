@@ -4,6 +4,8 @@
 [render-source grammar](R0-F3-RENDER-SOURCE-GRAMMAR-2026-11-03.md) and
 [first admitted handoff](R0-FIRST-ADMITTED-RENDER-SOURCE-2026-11-03.md).
 No F4 render cook, V1 pipeline or device-ready build exists yet. The
+[complete candidate source fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
+supplies reproducible bytes and CPU checks, not an F3-admitted source. The
 [governing render ABI](../RENDER-SPEC.md#2-material-closure-and-binding-abi)
 already fixes the 160-byte view, 128-byte auxiliary view, 64-byte material
 and 192-byte object record sizes. This note resolves candidate meanings and
@@ -44,7 +46,7 @@ alone is a ready R0 build.
 | --- | --- | --- |
 | Exact mesh facts | Immutable compact f64 decoded-position and UV bits with negative zero canonicalized to positive zero, plus u32 source triangle order, retained once per ready build and leased by view certificates. Preserve enough exact values to reconstruct predicates. | Moving-camera source signs must not reopen/decode up to 16 MiB of pinned JSON per view. This CPU product is distinct from the f32 GPU mesh. |
 | Flat GPU mesh | For the first at-most-six-triangle recipe only, expand corners to one nonindexed 32-byte stream: **mesh-local** f32 position XYZ at byte 0, geometric normal XYZ at 12, UV0 at 24. Shadow, depth and forward consume the same immutable stream. | Avoid an unproved normal-buffer lookup and avoid pretending a six-face layout is a scalable general mesh format. Broader scenes require measured corner sharing/indexing and a new geometry product profile. |
-| Material/texture | Existing 64-byte `MaterialRecord`, three possible authored RGBA8 textures, bound typed white base/ORM/emissive and flat-normal defaults, one sampler per material. A source absent map gets the neutral binding; a present map must have a verified texture product. | The R0 shader uses the same factor/texel equations and sampled alpha across roles. A schema-1 normal map is invalid source. |
+| Material/texture | Existing 64-byte `MaterialRecord`, three optional authored RGBA8 texture **slots per material** (base, ORM and emissive), bound typed white base/ORM/emissive and flat-normal defaults, one sampler per material. A source absent map gets the neutral binding; a present map must have a verified texture product. | The R0 shader uses the same factor/texel equations and sampled alpha across roles. A schema-1 normal map is invalid source. |
 | Camera | Typed authored initial pose, vertical FOV, near/far and fixed exposure from the selected camera ID; W1 consumes initial pose while V2 uses the committed presentation pose. | Projection/exposure depend on source semantics; current viewport supplies aspect and is not a second authored camera value. |
 | Sun/environment | The selected but unimplemented 160-byte `ConstantLightProductV1` remains a CPU f64 product contract with exact identity/units/provenance. | It is not a WGSL buffer; V3 packs target-range GPU light data from it after the admitted-source cooker exists. |
 | Local lights | Four stable W1 identities and authored descriptors, with coherent W1 positions from the packet sample. | V3 owns one registry and no renderer-local light state. |
@@ -73,7 +75,7 @@ byte offsets, not Rust struct-layout guesses:
 | 48 | 16 | Isotropic ambient RGB irradiance lux; fourth lane zero. |
 | 64 | 16 | Terminal background RGB radiance cd/m²; fourth lane zero. |
 | 80 | 64 | View-origin-relative world→Sun-shadow clip matrix, column major; the shadow camera looks along source-to-receiver `−Sun` while the lighting vector remains receiver-to-source `Sun`. |
-| 144 | 16 | Versioned shadow bias/texel parameters from the render preparation recipe; exact lane meanings remain to be pinned with the actual shadow projection. |
+| 144 | 16 | Versioned shadow bias/texel parameters from the [candidate fixed shadow recipe](R0-FIRST-SUN-SHADOW-RECIPE-2026-11-03.md#four-comparisons-and-receiver-side-bias); its lane formula is specified, while `b0_m`, grazing/contact limits and target proof remain open. |
 | 160 | 128 | Four 32-byte local-light entries, sorted by stable UUID: relative position XYZ/radius m, then photometric RGB luminous intensity cd/zero. |
 
 V2/V3 pack this record from one coherent W1 presentation sample and the
@@ -153,9 +155,11 @@ specifies a first light box, reverse-Z comparison and four-tap operator, but
 the render preparation recipe still needs an exact source/binding shape for
 Sun receiver volume, light-space projection, 2048² map, four comparison taps,
 dimensioned constant/slope bias, viewport/output extent, storage scale,
-shader/pass/operator revisions and target limits. The provisional six-face
-positions/texels need to be saved as admitted bytes and checked for offscreen
-caster visibility, mask consistency, visual cards and moving output. Then
+shader/pass/operator revisions and target limits. The [provisional six-face
+positions and texels](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
+are saved as candidate bytes and CPU checked; they still need F3 admission,
+offscreen-caster device visibility, mask consistency, visual cards and moving
+output. Then
 measure complete frame CPU/GPU time, overdraw, texture bandwidth, retained
 exact-facts bytes, packet-credit overlap and physical/device high-water.
 Neither the isolated GPU diagnostics nor the CPU predicate/index probes

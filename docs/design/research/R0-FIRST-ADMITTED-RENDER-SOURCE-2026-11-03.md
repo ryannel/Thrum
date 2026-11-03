@@ -146,7 +146,10 @@ storage scale `1/1024`, fixed exposure `1/10000`, bounded emission and actual
 roughness at least 0.32. Material cards should vary dielectric/metal,
 base/ORM/emission while the mask has exact cutoff 0.5. The offscreen caster
 must demonstrably shadow a visible receiver region; source coordinates,
-shadow receiver volume/bias and exact texels are still to be pinned.
+shadow receiver volume/bias and exact texels are still to be pinned in an
+admitted build. The [candidate source fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
+saves one exact byte choice and independently checks its CPU geometry and
+texture expectations; bias/contact limits and target proof remain open.
 
 These values are **provisional fixture inputs**, not engine-wide lux,
 roughness, resolution or disk/memory limits. The public 0.045 minimum

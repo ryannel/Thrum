@@ -87,7 +87,7 @@ root; the previous selected root remains available.
    with phase-local charges and explicit transfer/release. This requires an
    API integration; no current F3 object supplies that lifetime. The account
    charges **live reserved capacity** for identity chunks, merge state,
-   edges, decoder scratch, stage buffers,
+   edges, decoder scratch, compact mesh-bound summaries and stage buffers,
    and any other F3 allocation claimed under the selected work guarantee.
    It shares an atomic reservation owner with concurrent F3 work in that
    host. Peak accounting includes overlapped old/new work and live leases
@@ -149,7 +149,8 @@ initial implementation and has no implied zero-cost fallback.
   collision checks without changing existing source meaning; verify
   parse-before-collision-before-edge error precedence.
 - Audit every allocation in the chosen F3 guarantee, including generic
-  project/schema/history parsing, stage/capture buffers, summaries, merge
+  project/schema/history parsing, stage/capture buffers, compact mesh bounds,
+  summaries, merge
   state and overlapping operations. Inject reservation failure at each
   phase; prove no partially validated root is selected, the old root
   remains readable, and the same token/candidate can retry after the
