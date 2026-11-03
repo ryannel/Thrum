@@ -3021,8 +3021,14 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     );
     drop(store);
     observer.assert_closed();
-    assert_eq!(observer.counts.wal_writes.load(Ordering::Relaxed), wal_writes);
-    assert_eq!(observer.counts.main_writes.load(Ordering::Relaxed), main_writes);
+    assert_eq!(
+        observer.counts.wal_writes.load(Ordering::Relaxed),
+        wal_writes
+    );
+    assert_eq!(
+        observer.counts.main_writes.load(Ordering::Relaxed),
+        main_writes
+    );
 
     let reopened = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
     let selected = reopened.current_root().unwrap().unwrap();
@@ -4053,8 +4059,14 @@ fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
     );
     drop(store);
     observer.assert_closed();
-    assert_eq!(observer.counts.wal_writes.load(Ordering::Relaxed), wal_writes);
-    assert_eq!(observer.counts.main_writes.load(Ordering::Relaxed), main_writes);
+    assert_eq!(
+        observer.counts.wal_writes.load(Ordering::Relaxed),
+        wal_writes
+    );
+    assert_eq!(
+        observer.counts.main_writes.load(Ordering::Relaxed),
+        main_writes
+    );
 
     let reopened = NativeSourceStore::open(&database, plan).unwrap();
     let b = reopened.outcome(1, 2, [2; 32]).unwrap().unwrap();
@@ -4207,8 +4219,14 @@ fn accepted_reader_waiting_at_publication_sees_uncertain_commit_quarantine() {
     let main_writes = observer.counts.main_writes.load(Ordering::Relaxed);
     drop(store);
     observer.assert_closed();
-    assert_eq!(observer.counts.wal_writes.load(Ordering::Relaxed), wal_writes);
-    assert_eq!(observer.counts.main_writes.load(Ordering::Relaxed), main_writes);
+    assert_eq!(
+        observer.counts.wal_writes.load(Ordering::Relaxed),
+        wal_writes
+    );
+    assert_eq!(
+        observer.counts.main_writes.load(Ordering::Relaxed),
+        main_writes
+    );
 }
 
 #[test]
@@ -4791,6 +4809,78 @@ fn measure_native_phased_reader_progress() {
         samples.len(),
         samples[0],
         samples[samples.len() - 1]
+    );
+}
+
+#[test]
+#[ignore = "local release-only continuous multi-pin admission fairness probe"]
+fn measure_native_continuous_multi_pin_admission() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before multi-pin wait");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let pins: Vec<_> = (0..4)
+        .map(|_| store.pin_current(a.generation).unwrap())
+        .collect();
+    let stage = stage_n_mib_binary(&fixture, &first_stage, plan, 64, 7);
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let stop = std::sync::atomic::AtomicBool::new(false);
+    let done = std::sync::atomic::AtomicBool::new(false);
+    let (starved, writer_ms, samples) = std::thread::scope(|scope| {
+        let readers: Vec<_> = pins
+            .into_iter()
+            .map(|mut pin| {
+                let scene = scene.clone();
+                let stop = &stop;
+                scope.spawn(move || {
+                    let mut count = 0_u64;
+                    let mut max_ms = 0.0_f64;
+                    while !stop.load(Ordering::Acquire) {
+                        let start = Instant::now();
+                        pin.copy_file_to(&scene, &mut io::sink()).unwrap();
+                        max_ms = max_ms.max(start.elapsed().as_secs_f64() * 1000.0);
+                        count += 1;
+                    }
+                    pin.close().unwrap();
+                    (count, max_ms)
+                })
+            })
+            .collect();
+        let writer = scope.spawn(|| {
+            let start = Instant::now();
+            let b = store
+                .admit(a.generation, 1, 2, [2; 32], &candidate)
+                .unwrap();
+            done.store(true, Ordering::Release);
+            assert_eq!(b.generation, a.generation + 1);
+            start.elapsed().as_secs_f64() * 1000.0
+        });
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !done.load(Ordering::Acquire) && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let starved = !done.load(Ordering::Acquire);
+        stop.store(true, Ordering::Release);
+        let writer_ms = writer.join().unwrap();
+        let samples: Vec<_> = readers
+            .into_iter()
+            .map(|reader| reader.join().unwrap())
+            .collect();
+        (starved, writer_ms, samples)
+    });
+    assert_eq!(store.current_root().unwrap().unwrap().generation, 2);
+    assert!(
+        !starved,
+        "publication waited past the local five-second probe window"
+    );
+    eprintln!(
+        "native_multi_pin_admission readers=4 size_mib=64 writer_ms={writer_ms:.3} copies={samples:?}"
     );
 }
 
