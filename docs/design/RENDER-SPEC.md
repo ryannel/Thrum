@@ -100,6 +100,11 @@ alphaGGX = perceptualRoughness²
 AO = 1 + occlusionStrength * (ORM.r - 1)
 ```
 
+For `mask`, coverage uses `baseRGBA.a >= alphaCutoff`; equality is covered.
+Depth, shadow and forward evaluate that same sampled alpha, factor and cutoff.
+The source grammar keeps an opaque material's cutoff absent rather than
+inventing an authored value for the unused ABI lane.
+
 The BRDF's `base`, `m` and `roughness` are these effective values.
 Base/emissive RGB are decoded from sRGB before linear filtering and
 multiplication; base alpha and ORM remain linear. The roughness floor applies

@@ -90,6 +90,34 @@ but unresolved map is never an absence.
 | Texture | `id`, positive integer `width` and `height`, `format` (`rgba8-srgb` for base/emissive or `rgba8-linear` for data), and canonical padded RFC 4648 base64 `rgba8` bytes. Exactly `4×width×height` decoded bytes are present in upper-left-origin row-major order, with no row padding or mip levels. Validate checked dimension multiplication and encoded/decoded length before allocation. |
 | Point local light | `id`, authored initial `position_m` f64[3], nonnegative `luminous_intensity_cd` f64, nonnegative f64[3] `unit_luminance_linear_rec709` with `|Y(c)-1|≤1e-9`, and nonnegative `radius_m` f64. W1 owns its identity and committed position; R0 supports a static light at its authored position, and V3 applies inverse-square illumination outside the declared emitter radius. |
 
+Material field diagnostics use this schema order: `id`, `alpha_mode`,
+`two_sided`, `sampler`, `alpha_cutoff`, `base_factor_rgba`,
+`emissive_radiance_factor_cd_m2`, `metallic_factor`, `roughness_factor`,
+`occlusion_strength`, `base_texture`, `orm_texture`, `emissive_texture`, then
+unknown keys. Every recognized material-key duplicate outranks field meaning.
+Inside `sampler`, recognized duplicates outrank sampler values, then check
+`min_filter`, `mag_filter`, `address_u`, `address_v`, then unknown keys. A
+sampler error occupies the material `sampler` field and does not outrank an
+earlier material field error. An optional field is absent or present with its
+specified type; explicit `null` is invalid. An opaque material has no authored
+cutoff, while a masked material must provide one.
+
+For a masked material, a sample is covered when its linearly sampled base
+alpha multiplied by the authored base alpha factor is **greater than or equal
+to** `alpha_cutoff`. Equality is covered in depth, shadow and forward roles.
+This selects the boundary rule only; the shared target alpha evaluation and
+filtering proof remain F4/V3 work. A valid masked material with unequal
+min/mag filters remains source-valid and can receive F4 `Unsupported`.
+
+For render-v1 local lights, the normalization source predicate interprets
+`Y(c)=(1063r+3576g+361b)/5000` and tolerance `1/1,000,000,000` as exact
+rationals over the decoded finite binary64 components. Boundary equality is
+accepted. A certified interval shortcut may decide clear cases, but a boundary
+case must use an exact comparison. This does not revise the existing
+constant-light source predicate. Preserve the decoded colour in F3; the F4
+product must specify normalization and representation residual before it can
+claim `Y=1` at the V3 handoff.
+
 The one material sampler has explicit `min_filter`/`mag_filter` values
 `nearest|linear`, `address_u`/`address_v` values
 `clamp-to-edge|repeat|mirror-repeat`, and no mip choice in this one-level

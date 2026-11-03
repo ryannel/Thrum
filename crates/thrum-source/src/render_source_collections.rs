@@ -7,6 +7,9 @@
 use serde_json::value::RawValue;
 
 use crate::render_json::{RawArrayError, visit_raw_array};
+use crate::render_source_material::{
+    MaterialDecodeError, MaterialFacts, MaterialField, MaterialProblem, decode_material_v1,
+};
 use crate::render_source_objects::{
     CameraDecodeError, CameraFacts, CameraField, CameraProblem, InstanceDecodeError, InstanceFacts,
     InstanceField, InstanceProblem, MeshDecodeError, MeshEvent, MeshField, MeshProblem,
@@ -32,6 +35,7 @@ pub(crate) enum CollectionScanError<E, F, P> {
 pub(crate) type MeshScanError<E> = CollectionScanError<E, MeshField, MeshProblem>;
 pub(crate) type CameraScanError<E> = CollectionScanError<E, CameraField, CameraProblem>;
 pub(crate) type InstanceScanError<E> = CollectionScanError<E, InstanceField, InstanceProblem>;
+pub(crate) type MaterialScanError<E> = CollectionScanError<E, MaterialField, MaterialProblem>;
 
 struct Selected<'a, F, P> {
     ordinal: usize,
@@ -211,6 +215,23 @@ pub(crate) fn scan_instances<E>(
     )
 }
 
+/// Material facts carry optional but required-if-present texture edges.
+/// The caller retains them only provisionally until global typed closure.
+pub(crate) fn scan_materials<E>(
+    raw: &RawValue,
+    project: impl FnMut(MaterialFacts) -> Result<(), E>,
+) -> Result<(), MaterialScanError<E>> {
+    scan_copy_objects(
+        raw,
+        |item| {
+            decode_material_v1(item)
+                .map_err(|MaterialDecodeError { id, field, problem }| (id, field, problem))
+        },
+        |facts| facts.id,
+        project,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -235,6 +256,12 @@ mod tests {
     fn instance(id: &str, mesh_ref: &str) -> String {
         format!(
             r#"{{"id":"{id}","mesh":"{mesh_ref}","material":"a6b9c300-0000-4000-8000-000000000016","translation_m":[0,0,0],"orientation_xyzw":[0,0,0,1],"scale":[1,1,1]}}"#
+        )
+    }
+
+    fn material(id: &str, base_texture: &str) -> String {
+        format!(
+            r#"{{"id":"{id}","alpha_mode":"opaque","two_sided":false,"sampler":{{"min_filter":"nearest","mag_filter":"nearest","address_u":"repeat","address_v":"repeat"}},"base_factor_rgba":[0,0,0,0],"base_texture":"{base_texture}"}}"#
         )
     }
 
@@ -389,5 +416,45 @@ mod tests {
                 }) if id[15] == 1
             ));
         }
+    }
+
+    #[test]
+    fn material_collection_keeps_zero_factor_texture_edge_and_canonical_error() {
+        let valid = material(HIGH, LOW);
+        let mut edges = Vec::new();
+        scan_materials(raw(&format!("[{valid}]")), |facts| {
+            edges.push(facts.base_texture);
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(edges, [Some(crate::render_json::uuid_bytes(LOW).unwrap())]);
+
+        let low_bad = material(LOW, "invalid");
+        let high_bad = material(HIGH, "invalid");
+        for source in [
+            format!("[{high_bad},{low_bad}]"),
+            format!("[{low_bad},{high_bad}]"),
+        ] {
+            assert!(matches!(
+                scan_materials(raw(&source), |_| Ok::<_, ()>(())),
+                Err(CollectionScanError::Structural {
+                    id: Some(id),
+                    field: MaterialField::BaseTexture,
+                    problem: MaterialProblem::InvalidReference,
+                    ..
+                }) if id[15] == 1
+            ));
+        }
+
+        let source = format!("[{valid},{low_bad},{valid}]");
+        let mut calls = 0;
+        assert!(matches!(
+            scan_materials(raw(&source), |_| {
+                calls += 1;
+                Ok::<_, ()>(())
+            }),
+            Err(CollectionScanError::Structural { .. })
+        ));
+        assert_eq!(calls, 1);
     }
 }
