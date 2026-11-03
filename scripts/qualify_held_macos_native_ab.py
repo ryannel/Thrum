@@ -24,7 +24,7 @@ import time
 if sys.platform == "darwin":
     import fcntl
 
-from hold_macos_tool_root_clone import _names, _open_lock, open_sealed_clone, prepare_sealed_clone
+from hold_macos_tool_root_clone import _names, _open_lock, prepare_sealed_clone
 from inventory_headless_tool_roots import inventory_root
 from prepare_headless_cargo_home import collect_bounded
 from prepare_macos_tool_root_clone import _checked_parent
@@ -137,7 +137,9 @@ def main():
             "THRUM_TEST_RETAINED_RUST_ROOT": str(selected["rust"][0]),
             "THRUM_TEST_RETAINED_RUST_INVENTORY": json.dumps(selected["rust"][1], sort_keys=True),
             "THRUM_TEST_RETAINED_LINKER_ROOT": str(selected["linker"][0]),
+            "THRUM_TEST_RETAINED_LINKER_INVENTORY": json.dumps(selected["linker"][1], sort_keys=True),
             "THRUM_TEST_RETAINED_SDK_ROOT": str(selected["sdk"][0]),
+            "THRUM_TEST_RETAINED_SDK_INVENTORY": json.dumps(selected["sdk"][1], sort_keys=True),
             "RUSTC_WRAPPER": "",
         }
         command = [
@@ -150,73 +152,61 @@ def main():
         if log_path.is_symlink():
             raise ValueError("admitted A/B log path is aliased")
         log_path.unlink(missing_ok=True)
-        with ExitStack() as leases:
-            cold_open = {}
-            held_leases = []
-            for name, (root, expected) in selected.items():
-                started = time.perf_counter_ns()
-                lease = leases.enter_context(open_sealed_clone(owner, expected))
-                held_leases.append(lease)
-                if lease.root != root:
-                    raise ValueError("held root differs from selected clone")
-                cold_open[name] = (time.perf_counter_ns() - started) / 1e6
-            started = time.perf_counter_ns()
-            status, stdout, stderr = collect_bounded(
-                command, checkout, env,
-                stdout_limit=16 * 1024 * 1024, stderr_limit=4 * 1024 * 1024,
-                timeout_seconds=300, label="held admitted A/B qualification",
-            )
-            log_path.write_bytes(stdout + b"\n--- stderr ---\n" + stderr)
-            build_ms = (time.perf_counter_ns() - started) / 1e6
-            if status != 0:
-                raise RuntimeError(f"held A/B qualification failed; see {log_path}")
-            if b"test result: ok. 1 passed;" not in stdout:
-                raise ValueError(f"held A/B test did not report one passing case: {log_path}")
-            required = (
-                "admitted-headless-cache tree_sha256",
-                "admitted-headless-cache legacy_sha256",
-                "admitted-headless-cache fixture_cache_full_rehashes=0",
-                "admitted-headless-cache real_materialized_lock_drift_refused=true",
-                "admitted-headless-a rustc_receipts",
-                "admitted-headless-a candidate_sha256",
-                "admitted-headless-a retained_reload_ms",
-                "admitted-headless-b rustc_receipts",
-            )
-            lines = stderr.decode("utf-8", errors="replace").splitlines()
-            observations = {}
-            for marker in required:
-                matches = [line.strip()[:512] for line in lines if marker in line]
-                if len(matches) != 1:
-                    raise ValueError(f"held A/B result lacks one {marker} observation: {log_path}")
-                observations[marker] = matches[0]
-            reuse = [line.strip()[:512] for line in lines
-                     if "verified-held-private-cargo-reuse ms=" in line]
-            if len(reuse) != 2 or any("verified-private-cargo-reuse ms=" in line for line in lines):
-                raise ValueError("held A/B did not use exactly two fast-path cache checks")
-            observations["heldCacheReuse"] = reuse
-            cache_digest = observations["admitted-headless-cache tree_sha256"].split("=", 1)[1]
-            if (len(cache_digest) != 64
-                    or any(char not in "0123456789abcdef" for char in cache_digest)):
-                raise ValueError("held cache marker has an invalid digest")
-            cache_root = owner / f"root-{cache_digest}"
-            cache_expected = inventory_root(cache_root)
-            if cache_expected["sha256"] != cache_digest:
-                raise ValueError("held cache changed after admitted A/B build")
-            selected["cache"] = (cache_root, cache_expected)
-            for lease in held_leases:
-                lease.assert_live()
-            checked = time.perf_counter_ns()
-            for root, expected in selected.values():
-                if inventory_root(root) != expected:
-                    raise ValueError("held tool bytes changed during admitted A/B build")
-            postcheck_ms = (time.perf_counter_ns() - checked) / 1e6
+        started = time.perf_counter_ns()
+        status, stdout, stderr = collect_bounded(
+            command, checkout, env,
+            stdout_limit=16 * 1024 * 1024, stderr_limit=4 * 1024 * 1024,
+            timeout_seconds=300, label="held admitted A/B qualification",
+        )
+        log_path.write_bytes(stdout + b"\n--- stderr ---\n" + stderr)
+        build_ms = (time.perf_counter_ns() - started) / 1e6
+        if status != 0:
+            raise RuntimeError(f"held A/B qualification failed; see {log_path}")
+        if b"test result: ok. 1 passed;" not in stdout:
+            raise ValueError(f"held A/B test did not report one passing case: {log_path}")
+        required = (
+            "admitted-headless-cache tree_sha256",
+            "admitted-headless-cache legacy_sha256",
+            "admitted-headless-cache held_native_roots=4",
+            "admitted-headless-cache fixture_cache_full_rehashes=0",
+            "admitted-headless-cache real_materialized_lock_drift_refused=true",
+            "admitted-headless-a rustc_receipts",
+            "admitted-headless-a candidate_sha256",
+            "admitted-headless-a retained_reload_ms",
+            "admitted-headless-b rustc_receipts",
+        )
+        lines = stderr.decode("utf-8", errors="replace").splitlines()
+        observations = {}
+        for marker in required:
+            matches = [line.strip()[:512] for line in lines if marker in line]
+            if len(matches) != 1:
+                raise ValueError(f"held A/B result lacks one {marker} observation: {log_path}")
+            observations[marker] = matches[0]
+        reuse = [line.strip()[:512] for line in lines
+                 if "verified-held-private-cargo-reuse ms=" in line]
+        if len(reuse) != 2 or any("verified-private-cargo-reuse ms=" in line for line in lines):
+            raise ValueError("held A/B did not use exactly two fast-path cache checks")
+        observations["heldCacheReuse"] = reuse
+        cache_digest = observations["admitted-headless-cache tree_sha256"].split("=", 1)[1]
+        if (len(cache_digest) != 64
+                or any(char not in "0123456789abcdef" for char in cache_digest)):
+            raise ValueError("held cache marker has an invalid digest")
+        cache_root = owner / f"root-{cache_digest}"
+        cache_expected = inventory_root(cache_root)
+        if cache_expected["sha256"] != cache_digest:
+            raise ValueError("held cache changed after admitted A/B build")
+        selected["cache"] = (cache_root, cache_expected)
+        checked = time.perf_counter_ns()
+        for root, expected in selected.values():
+            if inventory_root(root) != expected:
+                raise ValueError("held tool bytes changed during admitted A/B build")
+        postcheck_ms = (time.perf_counter_ns() - checked) / 1e6
         print(json.dumps({
             "buildReady": False,
             "checkoutCommit": subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=checkout, text=True,
             ).strip(),
             "preparation": preparation,
-            "coldOpenMs": cold_open,
             "admittedAbMs": build_ms,
             "postBuildFullInventoryMs": postcheck_ms,
             "observations": observations,
