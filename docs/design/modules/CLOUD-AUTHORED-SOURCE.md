@@ -97,4 +97,22 @@ Build the complete interaction before expanding content regimes: birth, continui
 The [integrated Cu checkpoint](../../evidence/cloud-system-pilot-2026-11-03/README.md) now runs this programme through the shared optical query. Actual normal growth samples show a left head then a right head developing while the lower body persists; normal drying samples narrow the source into moving wisps before clear. Matched raw/effective diagnostics distinguish support loss from an uneroded ingredient. The accelerated0–640s recording covers repeated roles and retirement. Source/catalogue/clock/query tests and held main-off consumers pass their bounded scope. Broad/soft head anatomy and some size-change character remain; these results do not complete CF01, Cb or the production atmosphere/cost path. Next qualify the remaining forcing/view/cost cases rather than promoting the whole module from this first coupled prototype.
 
 
-The current prepared exterior-cue certificate bounds older loss-free q>.005 and a new q>=.041 patch; it is not separation from every strict-positive tail. Original native q>0 bounds remain authoritative for rendering. Treat this thresholded cue as engineering admission plus actual visual judgment, not a strict support theorem. The selected source clock is .25s; rejecting the presently accepted but unsupported .125s clock profile remains an explicit prototype hardening task.
+The current prepared exterior-cue certificate bounds older loss-free q>.005 and a new q>=.041 patch; it is not separation from every strict-positive tail. Original native q>0 bounds remain authoritative for rendering. Treat this thresholded cue as engineering admission plus actual visual judgment, not a strict support theorem. The selected source clock is .25s; the [hardened c3e0 lab](../../evidence/cloud-lab-hardening-2026-11-03/README.md) now rejects unsupported nonquarter SourceClock construction. Direct-model timestep refinement remains separate.
+
+
+## Crown anatomy gate after integration
+
+Native2km front/side/oblique384-ray views still reject the broad oval crown/upright side wall. The
+[one narrower v3 envelope screen](../../evidence/cloud-crown-screen-2026-11-03/README.md) is rejected before distance
+cooking: it trades the oval for a smaller mitten/peanut, loses substantial amount and retains the column in composite.
+Do not adopt its provisional certificate or search more primitive radii. Keep v2 as the integration/cost reference,
+not accepted source art.
+
+A [bounded next geometric-displacement proposal](../../evidence/cloud-crown-screen-2026-11-03/NEXT-OPERATOR.md)
+uses one fixed, material-space two-band surface-conditioned envelope displacement, preserving the existing rooted
+bridge neighbourhood and optical calibration. It has explicit native/world scales, hash/interpolation, support and
+resource bounds, and rejection criteria. This is a proposed pre-cook screen, not authored content or a disclosed
+Decima lifecycle. Maximum displacement does not imply typical visible structure: the expected perturbation can remain
+hidden by the broad density/distance profiles. If that single controlled screen remains a rippled oval, reject the
+recipe and return to natural component selection rather than tune a seed/amplitude search. No new runtime noise,
+κ compensation, crown asset, distance field, catalogue or final art acceptance is selected by this proposal.

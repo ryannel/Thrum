@@ -157,6 +157,9 @@ P8 owns actual engine browser/native frame and memory admission. Unavailable dev
 
 ## Evidence and reconciliation
 
+The [visible lab and causal changed-weather checkpoint](../../evidence/cloud-lab-hardening-2026-11-03/README.md) retains actual1x/16x wind/front recordings, analytic old/new shear checks and main-hidden mirror/shadow survival. Close front/side/oblique native views still reject the smooth crown anatomy. Keep v2 as a coupling/cost reference, not accepted CF01 content. The [CPU-only integrated build17f](../../evidence/cloud-source-integration-2026-11-03/README.md) selects independently reviewed exposure publication and immutable-frame reuse, with matched native pixels, actual drying query and lifecycle/retained-consumer checks. Original GPU optics remain unchanged; this is bounded execution adoption, not appearance or budget admission.
+
+
 [Q1 source](../../evidence/cloud-source-2026-11-01/REVIEW.md),
 [Q2/Q3 coupled instrument](../../evidence/cloud-coupled-2026-11-01/REVIEW.md),
 [Cu corrections](../../evidence/cloud-cu-correction-2026-11-02/README.md),

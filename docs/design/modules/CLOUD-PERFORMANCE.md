@@ -155,3 +155,29 @@ remain unqualified. A follow-up phase-age/source attribution correction has fres
 older birth/age telemetry is invalid for mixed Cb phases, while density/image observations remain historical.
 The wider chart again reaches its edge on the1060s trace; no indefinite-source or region-exchange
 admission follows. Organised source morphology must be accepted before optimizing an unacceptable visual workload.
+
+## Finite Cu CPU source cost and work removal
+
+The [isolated source cost checkpoint](../../evidence/cloud-source-cost-2026-11-03/README.md) separates ticks,
+first exposure publication and same-tick presentation for1/2/16/64 independent copies, with retained adverse memory
+stops. Source copies reuse IDs and are a kernel workload, not an admitted multi-cloud sky. Dry exposure publication
+is the largest measured CPU source kernel; hoisting slot-invariant selection and bulk F64→F32 writes improves its
+16-copy first-publication kernel8.4–10.0× in matched runs. An immutable birth-Q dual cache removes repeated affine
+allocations while preserving the eight-corner arithmetic. Further wet presentation improves1.3–1.4× against the
+publication-only candidate; dry accelerated totals show no consistent additional win. The two matched windows
+must not be compounded into a frame-speedup claim.
+
+These are independently reviewed private execution changes, with exact finite source/pose/bounds differentials.
+The [CPU-only integrated17f build](../../evidence/cloud-source-integration-2026-11-03/README.md) now adopts them for
+the bounded prototype after actual matched-pixel, drying-query, lifecycle and retained-consumer checks; they do not
+change weather, shrink optical support or accept GPU/device/full-sky budgets. The original and failed
+cache attempt remain recoverable. Matched integrated CPU cadence, whole-graph GPU and process
+memory remain unqualified; the observed integration images/motion have only the bounded scope recorded above. Keep the optional full-sky velocity-cache comparison in P7.
+
+
+The [GPU query work-removal screen](../../evidence/cloud-query-screen-2026-11-03/README.md) keeps two rejected
+strict-bit candidates, exact running instruments and actual drying receipts. Fewer theoretical texture/exposure
+loads did not pass the predeclared same-device bit gate, despite small observed differences and the older CPU
+oracle passing. Neither is adopted or timed for a gain. Preserve the original GPU path; any later whole-pipeline
+zero-exposure dispatch or independently justified precision contract is a separate decision and proof. Avoid making
+this optional query study a blocker for source anatomy or the required complete renderer path.
