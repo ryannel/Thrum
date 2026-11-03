@@ -667,7 +667,7 @@
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
       "current_design_sha256": "e52095ea1d50d25c26991db0425a62cc3b0aaf626ced1fca01d7aa296b889b4b",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. The first E1 constant-light CPU product, semantic cook key and exact-source build binding are selected; a production pure 160-byte typed-input codec, current accepted-pin source adapter, prior standalone goldens and historical provisional-lease bridge have independent correctness checks. Durable product publication and ready-build binding remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. The first E1 constant-light CPU product, semantic cook key and exact-source build binding are selected; a production pure 160-byte typed-input codec, current accepted-pin source adapter, private test-only identity byte proof, prior standalone goldens and historical provisional-lease bridge have independent correctness checks. Durable product publication and ready-build binding remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
         "A03",
@@ -710,6 +710,14 @@
         "experienced_quality": "not_applicable_to_cpu_source_adapter",
         "platform_performance": "bounded four-file temporary copies and three manifest scans are described but integrated CPU, charged allocation, peak RSS, old/new overlap, edit-to-ready and device costs are unmeasured",
         "scope": "One accepted source pin authenticates project, sole scene, environment and light before typed parse and pure cook; the returned root and exact file provenance do not own a pin or publish a persistent product. Semantic CookKey, trusted cache/manifest, exact-source build binding, stale-result admission and ready runtime remain open."
+      },
+      "i2a_constant_light_identity_byte_proof": {
+        "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-IDENTITY-BYTE-PROOF-2026-11-03.md",
+        "implementation": "private_test_only_candidate_identity_codec",
+        "functional_validation": "eight focused Rust tests include independent complete recipe/manifest/binding and distinct-component Python goldens, signed-zero/raw-bit semantic key checks, framing and exact-context refusal, and self-consistent wrong-product rejection; independent defect review found no correctness issue",
+        "experienced_quality": "not_applicable_to_identity_byte_proof",
+        "platform_performance": "fixed-array encoding only; no source-pin acquisition, store I/O, leases, integrated CPU/peak-memory, cross-target or device measurement",
+        "scope": "Candidate nonpublishing byte grammar uses fixture class/lock digests. No production CookKey API, trusted T2 execution class/profile lock, product store, exact-source binding publication, ready build or runtime capability is established."
       },
       "i2a_headless_scene_product": {
         "evidence": "../evidence/i2a/F4-HEADLESS-SCENE-COOK.md",
