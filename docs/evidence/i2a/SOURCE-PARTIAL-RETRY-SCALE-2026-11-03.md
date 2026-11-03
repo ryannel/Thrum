@@ -60,18 +60,35 @@ compiled only for tests.
 
 | Retained / total chunks | Retry elapsed (ms) | Max append call during retry (ms) | Sampled max main length (bytes) | Sampled max WAL length (bytes) | Logical stage copy (bytes) | Exact A reads |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 / 2 | 51.017 | 12.416 | 4,096 | 8,722,072 | 8,389,174 | 5 |
-| 16 / 17 | 143.016 | 13.038 | 54,718,464 | 33,985,912 | 71,303,734 | 35 |
-| 256 / 257 | 1,352.527 | 11.418 | 1,059,495,936 | 33,990,032 | 1,077,936,694 | 515 |
+| 1 / 2 | 62.917 | 17.113 | 4,096 | 8,722,072 | 8,389,174 | 5 |
+| 16 / 17 | 145.926 | 16.944 | 54,718,464 | 33,985,912 | 71,303,734 | 35 |
+| 256 / 257 | 1,619.838 | 11.684 | 1,059,495,936 | 33,990,032 | 1,077,936,694 | 515 |
 
 Main and WAL are apparent file lengths sampled only after each streamed
 chunk and after the retry. Their maxima can occur at different moments;
 checkpoint overlap or allocation peaks between samples are unknown. Stage
 copy is one logical provisional copy, not a measured temporary high-water.
 No physical APFS allocation, RSS or unallocated-container bound follows.
-The seed phase's maximum append calls were 10.870, 75.045 and 72.426 ms;
+The seed phase's maximum append calls were 15.914, 117.133 and 82.417 ms;
 these are separate from the retry values above. The 40 MiB stop is an
 operational checkpoint threshold, not a maximum physical WAL allocation.
+
+The same run also sampled Unix `st_blocks × 512` after each streamed chunk
+and measured the captured B stage's file blocks after staging. These are
+filesystem-reported allocated blocks at observation points, not a complete
+APFS container charge or a high-water guarantee.
+
+| Retained chunks | Max sampled main blocks (bytes) | Max sampled WAL blocks (bytes) | B stage file blocks after capture (bytes) |
+| ---: | ---: | ---: | ---: |
+| 1 | 4,096 | 8,724,480 | 8,400,896 |
+| 16 | 54,718,464 | 33,988,608 | 71,315,456 |
+| 256 | 1,073,807,360 | 34,619,392 | 1,077,948,416 |
+
+At 256 chunks, sampled main allocated blocks exceeded its sampled apparent
+length. The maxima are independent observations and must not be added as if
+they occurred at the same instant. Directory metadata, other provisional
+stages, SQLite internal transients, concurrent F4 work and APFS snapshot or
+clone accounting remain outside this table.
 
 An additional opt-in release probe seeded 256 four-MiB B chunks, removed
 index zero and retried the malformed B through the accepted owner. Cleanup
