@@ -328,22 +328,16 @@ def selected_file_in_root(path, root, label):
         raise ValueError(f"selected {label} escapes its release root")
 
 
-def verify_release_inputs(manifest_path, source, cache_manifest_path, private_home,
-                          rust_toolchain, linker_toolchain, sdk, cargo, rustc,
-                          linker, target):
-    """Cold exact-byte match; reviewed origin and compiler closure remain external."""
+def load_release_selection(manifest_path, source, cache_manifest_path, target):
+    """Validate canonical release records and their cache/source relationships."""
     if os.name != "posix":
         raise ValueError("first native release input verifier requires POSIX")
     if not source.is_absolute() or not source.is_dir() or source.is_symlink():
         raise ValueError("admitted source must be an ordinary absolute directory")
-    if not private_home.is_absolute() or not private_home.is_dir() or private_home.is_symlink():
-        raise ValueError("private Cargo home must be an ordinary absolute directory")
     manifest, manifest_hash = canonical_json_file(manifest_path, 64 * 1024)
     validate_manifest(manifest)
-    if manifest_path.resolve().is_relative_to(source.resolve()) or manifest_path.resolve().is_relative_to(
-        private_home.resolve()
-    ):
-        raise ValueError("reviewed release manifest must be outside source and cache")
+    if manifest_path.resolve().is_relative_to(source.resolve()):
+        raise ValueError("reviewed release manifest must be outside source")
     if target != manifest["target"]:
         raise ValueError("caller target differs from reviewed release manifest")
     evidence = manifest_path.parent / manifest["originEvidence"]["file"]
@@ -354,13 +348,29 @@ def verify_release_inputs(manifest_path, source, cache_manifest_path, private_ho
         raise ValueError("reviewed origin evidence bytes differ")
     record, _ = canonical_json_bytes(evidence_bytes, evidence)
     validate_origin_evidence(record)
-    candidate, _ = canonical_json_file(cache_manifest_path, 512 * 1024)
+    candidate, cache_manifest_hash = canonical_json_file(cache_manifest_path, 512 * 1024)
     if candidate["lockSha256"] != manifest["lockSha256"]:
         raise ValueError("admitted lockfile differs from reviewed release selection")
     lock_bytes = bounded_regular_bytes(source / "Cargo.lock", 4 * 1024 * 1024)
     if hashlib.sha256(lock_bytes).hexdigest() != manifest["lockSha256"]:
         raise ValueError("admitted lockfile bytes differ from reviewed release manifest")
     rust_files = verify_origin_proofs(record, evidence, manifest, candidate, lock_bytes)
+    if candidate["privateRoot"] != manifest["dependencyRoot"]:
+        raise ValueError("private dependency root differs from reviewed release manifest")
+    return manifest, manifest_hash, candidate, cache_manifest_hash, rust_files
+
+
+def verify_release_inputs(manifest_path, source, cache_manifest_path, private_home,
+                          rust_toolchain, linker_toolchain, sdk, cargo, rustc,
+                          linker, target):
+    """Cold exact-byte match; reviewed origin and compiler closure remain external."""
+    if not private_home.is_absolute() or not private_home.is_dir() or private_home.is_symlink():
+        raise ValueError("private Cargo home must be an ordinary absolute directory")
+    if manifest_path.resolve().is_relative_to(private_home.resolve()):
+        raise ValueError("reviewed release manifest must be outside cache")
+    manifest, manifest_hash, candidate, _, rust_files = load_release_selection(
+        manifest_path, source, cache_manifest_path, target,
+    )
     selected_file_in_root(cargo, rust_toolchain, "Cargo")
     selected_file_in_root(rustc, rust_toolchain, "Rustc")
     selected_file_in_root(linker, linker_toolchain, "linker")
@@ -369,8 +379,6 @@ def verify_release_inputs(manifest_path, source, cache_manifest_path, private_ho
         raise ValueError("admitted lockfile bytes differ from reviewed release manifest")
     if actual_key["sha256"] != manifest["selectionKey"]:
         raise ValueError("admitted build selection differs from reviewed release manifest")
-    if candidate["privateRoot"] != manifest["dependencyRoot"]:
-        raise ValueError("private dependency root differs from reviewed release manifest")
     roots, observed = inventory_roots({
         "rustToolchain": rust_toolchain,
         "linkerToolchain": linker_toolchain,

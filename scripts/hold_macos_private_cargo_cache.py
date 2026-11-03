@@ -243,7 +243,7 @@ def open_sealed_cache(owner_parent, tree, legacy, manifest_sha):
 class HeldNativeCacheSelection:
     """Cold-checked native roots; warm reuse hashes only source keys."""
 
-    def __init__(self, cache, rust_root, linker_root, sdk_root):
+    def __init__(self, cache, rust_root, linker_root, sdk_root, rust_witnesses=None):
         cache.assert_live()
         rust_root.assert_live()
         linker_root.assert_live()
@@ -261,6 +261,7 @@ class HeldNativeCacheSelection:
         for name in ("cargo", "rustc"):
             path = rust_root.root / "bin" / name
             identity = selected_tools[name]
+            witnessed = None if rust_witnesses is None else rust_witnesses.get(f"bin/{name}")
             if (not isinstance(identity, dict)
                     or set(identity) != {"path", "sha256", "bytes"}
                     or identity["path"] != str(path)
@@ -268,7 +269,9 @@ class HeldNativeCacheSelection:
                     or type(identity["bytes"]) is not int or identity["bytes"] < 0
                     or path.is_symlink() or not path.is_file()
                     or path.stat().st_size != identity["bytes"]
-                    or sha256_file(path) != identity["sha256"]):
+                    or (witnessed != {"sha256": identity["sha256"], "bytes": identity["bytes"]}
+                        if rust_witnesses is not None
+                        else sha256_file(path) != identity["sha256"])):
                 raise ValueError(f"held {name} differs from cache tool selection")
         cache.assert_live()
         rust_root.assert_live()
@@ -295,6 +298,38 @@ class HeldNativeCacheSelection:
         self.sdk_root.assert_live()
         return actual
 
+
+class HeldNativeReleaseSelection:
+    """An unready reviewed-record candidate bound to four held native roots."""
+
+    def __init__(self, release, cache, rust_root, linker_root, sdk_root):
+        release.assert_live()
+        expected = release.manifest["toolRoots"]
+        actual = {
+            "rustToolchain": rust_root.expected,
+            "linkerToolchain": linker_root.expected,
+            "sdk": sdk_root.expected,
+        }
+        if expected != actual or rust_root.witnesses != release.rust_witnesses:
+            raise ValueError("held release tool roots differ from reviewed selection")
+        if release.manifest["dependencyRoot"] != cache.legacy:
+            raise ValueError("held release cache root differs from reviewed selection")
+        if release.cache_manifest_sha256 != hashlib.sha256(cache.manifest_bytes).hexdigest():
+            raise ValueError("held cache manifest differs from reviewed release candidate")
+        self.native = HeldNativeCacheSelection(
+            cache, rust_root, linker_root, sdk_root, release.rust_witnesses,
+        )
+        if self.native.candidate["reuseKey"]["sha256"] != release.manifest["selectionKey"]:
+            raise ValueError("held release dependency key differs from reviewed selection")
+        self.release = release
+
+    def verify_reuse(self, source, target):
+        self.release.assert_live()
+        actual = self.native.verify_reuse(source, target)
+        if actual["sha256"] != self.release.manifest["selectionKey"]:
+            raise ValueError("held release dependency key changed")
+        self.release.assert_live()
+        return actual
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

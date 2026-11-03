@@ -16,7 +16,7 @@ import sys
 if sys.platform == "darwin":
     import fcntl
 
-from inventory_headless_tool_roots import inventory_root
+from inventory_headless_tool_roots import inventory_root, inventory_root_with_witness
 from prepare_macos_tool_root_clone import _checked_parent, prepare_clone
 
 _FIELDS = {"sha256", "files", "symlinks", "directories", "logicalBytes"}
@@ -156,7 +156,7 @@ def _seal_fd(fd, is_directory):
     _check_entry(os.fstat(fd), is_directory)
 
 
-def _check_root(root, expected):
+def _check_root(root, expected, expected_witnesses=None):
     root_fd = os.open(root, _NOFOLLOW_DIR)
     try:
         held = os.fstat(root_fd)
@@ -164,9 +164,17 @@ def _check_root(root, expected):
         if (held.st_dev, held.st_ino) != (named.st_dev, named.st_ino):
             raise ValueError("retained-root path changed")
         _walk_seal(root_fd, 0, False)
-        if inventory_root(root) != expected:
+        if expected_witnesses is None:
+            observed, witnesses = inventory_root(root), None
+        else:
+            if not isinstance(expected_witnesses, dict) or not expected_witnesses:
+                raise ValueError("retained-root witness selection is empty or invalid")
+            observed, witnesses = inventory_root_with_witness(root, expected_witnesses)
+        if observed != expected:
             raise ValueError("retained-root bytes differ from selected inventory")
-        return root_fd
+        if expected_witnesses is not None and witnesses != expected_witnesses:
+            raise ValueError("retained-root file witnesses differ from selected evidence")
+        return root_fd, witnesses
     except BaseException:
         os.close(root_fd)
         raise
@@ -191,7 +199,7 @@ def prepare_sealed_clone(source, owner_parent, expected):
             _walk_seal(root_fd, 0, True)
         finally:
             os.close(root_fd)
-        checked_fd = _check_root(root, expected)
+        checked_fd, _ = _check_root(root, expected)
         os.close(checked_fd)
         record_bytes = _canonical_record(root_name, expected)
         temp_record = parent / f"{record_name}.pending"
@@ -222,9 +230,10 @@ def prepare_sealed_clone(source, owner_parent, expected):
 class HeldToolRoot:
     """A cold-verified shared selection; caller owns every child lifetime."""
 
-    def __init__(self, root, expected, root_fd, lock_fd):
+    def __init__(self, root, expected, root_fd, lock_fd, witnesses=None):
         self.root = root
         self.expected = expected.copy()
+        self.witnesses = witnesses
         self._root_fd = root_fd
         self._lock_fd = lock_fd
 
@@ -254,7 +263,7 @@ class HeldToolRoot:
         self.close()
 
 
-def open_sealed_clone(owner_parent, expected):
+def open_sealed_clone(owner_parent, expected, expected_witnesses=None):
     """Cold-verify one sealed selection before sharing it across warm builds."""
     if sys.platform != "darwin":
         raise ValueError("retained APFS tool-root selection requires macOS")
@@ -279,8 +288,8 @@ def open_sealed_clone(owner_parent, expected):
         finally:
             os.close(fd)
         root = parent / root_name
-        root_fd = _check_root(root, expected)
-        return HeldToolRoot(root, expected, root_fd, lock_fd)
+        root_fd, witnesses = _check_root(root, expected, expected_witnesses)
+        return HeldToolRoot(root, expected, root_fd, lock_fd, witnesses)
     except BaseException:
         os.close(lock_fd)
         raise
