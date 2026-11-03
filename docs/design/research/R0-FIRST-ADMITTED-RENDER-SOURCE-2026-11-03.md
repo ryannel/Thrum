@@ -16,8 +16,8 @@ source-to-shader conformance.
 | Value | Authoritative source | Derived consumer |
 | --- | --- | --- |
 | Active environment and Sun identity | Entry `core.scene` `environment.source` and existing `thrum.environment.authored@1` → Sun-only `thrum.light.identity@1` | F4 constant-light product; one W1/V3 light registry |
-| Four local lights | Stable IDs and physical descriptors in the new render source, owned by W1 | Same W1/V3 registry; no E1 driver and no renderer-owned rival registry |
-| Camera pose/projection and authored fixed exposure | Render source camera | V2 view packet and V4 display metadata |
+| Four local lights | Stable IDs, physical descriptors and initial poses in the new render source, owned by W1 | W1 committed poses and the same W1/V3 registry; no E1 driver or renderer-owned rival registry |
+| Camera initial pose/projection and authored fixed exposure | Render source camera | W1 committed pose, V2 presentation pose/viewport-derived aspect and V4 display metadata |
 | Storage scale, target and display/shadow operator versions | Render preparation recipe | F4 product/ABI keys and V1/V4 preparation; no second exposure value |
 | Texture transfer and texels | Typed texture content | F4 texture product; the one material sampler owns sampling policy |
 | World geometry and material state | Render source data and one committed W1 endpoint | V2 packet and V3 shading; V1 only prepares/submits |
@@ -51,14 +51,21 @@ declared material/texture semantics. SourceRevision still hashes exact bytes;
 semantic cook keys normalize negative zero and hash only relevant decoded
 values plus built-in definition and evaluator versions. No second F4 parser or
 mutable checkout read is allowed.
+The [candidate exact grammar and refusal boundary](R0-F3-RENDER-SOURCE-GRAMMAR-2026-11-03.md)
+specifies embedded typed IDs, initial/runtime pose ownership, projection,
+texture sampling and source-versus-product geometry validation; it remains
+subject to F3/F4 and consumer review.
 
-Normal-map and two-sided fields can have source meaning without a prepared
-first-profile product. A required normal map, smooth shading normal, reflected
-or animated transform returns typed unsupported until its basis, filtering,
-source-error and shader path are proved. An absent map binds the neutral typed
-texture but the flat-normal shader path must not evaluate a nonexistent
-tangent basis. The geometric normal is derived from winding; an independently
-authored flat-normal vector cannot override the source plane predicate.
+Two-sided and nonidentity-transform fields can have source meaning without a
+prepared first-profile product. A reflected or animated transform returns
+typed F4 unsupported until its basis, source-error and shader path are
+proved. The first render-source schema has no authored normal-map or smooth-
+normal field; an attempted field is an F3 unknown-field refusal until a
+versioned source meaning specifies tangent basis and interpolation. The
+flat-normal shader path binds the neutral typed normal texture but does not
+evaluate a nonexistent tangent basis. The geometric normal is derived from
+winding; an independently authored flat-normal vector cannot override the
+source plane predicate.
 Material factor/texel composition follows [RENDER-SPEC §2](../RENDER-SPEC.md#2-material-closure-and-binding-abi):
 white bound emissive and ORM `(1,1,1)` are multiplicative identities, while
 native default emissive and metallic factors are zero. F3 validates authored
@@ -171,14 +178,14 @@ not turn the isolated integer compute timing into a fragment fallback budget.
 2. Prove strict typed F3 parse/closure on a complete A source, including
    opaque and masked content. Reject duplicate/unused UUID collisions,
    wrong-type edges, rival Sun selectors and malformed geometry/texture or
-   map references. Keep scene@1/@2 meanings intact. A well-formed normal map
-   remains valid source even when the first render preparation cannot use it.
+   map references. Keep scene@1/@2 meanings intact. An attempted schema-1
+   normal map or smooth-normal field is a typed F3 refusal.
 3. Cook from one accepted pin, reload exact product bytes and a complete
    binding, then edit checkout to B. Prove A remains readable/runnable;
    relevant edits invalidate only dependent products, while formatting-only
-   edits change source binding but can reuse semantic products. F4 refuses a
-   present normal map, smooth normal or other unsupported first-profile
-   requirement before publishing a ready product.
+   edits change source binding but can reuse semantic products. F4 refuses
+   valid but unsupported transforms or other first-profile requirements
+   before publishing a ready product.
 4. Prove physical and representation certificates against independent exact
    and interval oracles. Kill stale camera/light/origin/packing/normal-mode
    mutants. Refuse inside-radius, near-zero length, ambiguous sign/magnitude,
