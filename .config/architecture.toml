@@ -68,8 +68,8 @@ target_cost = "Native source/cook tooling only; sync OS filesystem bindings, no 
 [external_dependencies.rusqlite]
 requirement = "=0.40.2"
 license = "MIT"
-purpose = "Durable native admitted-source blobs, manifests, root/outcome transactions and verified reads"
-target_cost = "Native source tooling only; bundled SQLite C build and disk I/O stay outside the portable core and game callback"
+purpose = "Native source blobs, manifests, root/outcome transactions and verified reader leases, including provisional snapshot qualification"
+target_cost = "Native source tooling with a bundled SQLite C build and disk I/O; no portable core or game-callback dependency. A provisional root is not accepted-source or ready-build authority"
 
 [external_dependencies.serde_json]
 requirement = "=1.0.154"

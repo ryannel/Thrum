@@ -6,6 +6,7 @@
 mod bootstrap_json;
 mod budget;
 pub mod definition;
+pub(crate) mod environment_json;
 pub mod game_edit;
 pub mod game_json;
 pub mod history_json;
@@ -16,6 +17,9 @@ mod manifest_json;
 mod meaning;
 mod path;
 pub mod project_v2_json;
+pub mod provisional_store;
+#[cfg(test)]
+mod provisional_store_vfs_test;
 mod record;
 pub mod registry;
 pub mod registry_stage;

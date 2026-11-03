@@ -34,6 +34,171 @@ These are engine capabilities, not a requirement for every game to enable every 
 
 **One cause may have multiple representations.** Cloud optical depth in the Sun direction may be represented by a cheap authored 2D attenuation field, a layered cloud model, or a derived map from a volumetric cloud field. Visible cloud pixels and shadowing can select different fidelity, but when derived from the *same* source they must agree in world position, time, direction and broad mass/coverage. The visible path can be off while the light attenuation path remains. Conversely, a decorative cloud image with no causal shadow is allowed only as a labelled art-only presentation. Epic's [volumetric cloud documentation](https://dev.epicgames.com/documentation/unreal-engine/volumetric-cloud-component-in-unreal-engine) uses ray-marched and Beer shadow-map choices with different accuracy/reach, illustrating a provider tradeoff. Its platform table lists no mobile volumetric-cloud rendering, so mobile needs a separately qualified visible representation, not a promise to downsample the desktop one.
 
+### Selected bounded authored source and light handoff
+
+The first authored E1 source has two selected **semantic** profiles.
+`constant-light-v1` now has a bounded provisional F3 staged-source proof as
+`thrum.environment.authored` schema 1; its F4 product and runnable build remain
+open. The proposed `authored-vertical-rain-v1` uses schema 2 and is still
+refused by F3. `constant-light-v1` is
+the R0 provider: one geometric Sun direction and raw perpendicular illuminance,
+one isotropic ambient irradiance, and a separate terminal background radiance.
+It has no clock update, wind/rain/cloud grid, sky draw, GPU resource or weather
+job. `authored-vertical-rain-v1` adds prescribed day/weather phase maps,
+layered wind, a periodic planar cloud-optical-depth field, static vertical-rain
+cells and optional gas facts. Fog remains outside the first proposed source
+grammar. These are selectable
+profiles of one source contract, not simultaneous authorities for the same
+quantity. The [implementor recipe](../research/ENVIRONMENT-IMPLEMENTOR-DOGFOOD-2026-11-02.md)
+fixes the bounded first fixture, operator formulas, source records, cost and
+refusal cases. The isolated [schema-2 grammar proof](../research/E1-AUTHORED-RAIN-F3-SCHEMA-2026-11-03.md)
+narrows their meanings and tests a typed parser/reference closure; its five
+source decisions still need owner adoption. Its storm and fixture JSON spellings remain proposed until F3
+accepts them; the constant-light numeric/array source and typed light link
+pass provisional staged validation only. The semantic quantities and
+ownership below are selected now.
+
+| Source quantity | Producer and semantic handoff | Retained consumer rule |
+| --- | --- | --- |
+| Sun | E1 drives the one W1 light identity with geometric receiver-to-source unit direction, normalized linear-Rec.709 photometric colour, raw perpendicular illuminance in lux, angular radius, source epoch and valid time/support. No cloud, air, terrain or geometry attenuation is baked into this value. | V3 forms each direct source-to-receiver path and applies its selected geometric visibility and named cloud/air/fog factors once. P3/thermal consumers receive separately declared radiometric W/m² when required; RGB lux is no heat authority. |
+| Ambient and background | The R0 authored ambient is isotropic incident diffuse irradiance in RGB lux; terminal background is independent radiance in cd/m². The first fixture uses `[1000,1000,1000]` lux and black background. | V3's R0 Lambert fill uses `E_ambient/pi` with no second cosine or cloud factor. It does not invent environment specular or an HDRI. V4 alone converts scene light to display. |
+| Wind | E1 publishes point velocity `u(world_y,t)` in world m/s from the one layered, phase-driven source; requests carry sample height, world time, support and source epoch. | Vegetation, P3, water and audio name their own sample/filter/response, but do not privately advance a wind clock or add an independent prevailing-wind authority. |
+| Cloud | E1/F4 owns nonnegative periodic nodal vertical optical depth and its world-space advection displacement. A source-ray query below its plane returns path `tau_cloud`, receiver/source direction, approximation tag and validity; V3 computes `exp(-tau_cloud)` once. | A shadow-only projection may stay resident with visible clouds off. The first thin-plane model returns a tagged authored clear fallback below Sun `s_y=0.1`, fades to its ordinary projection by `s_y=0.2`, and refuses above-plane receivers. It supplies neither a 3D density nor a terminal sky. |
+| Precipitation | E1 publishes liquid/solid **cell-mean horizontal** flux in kg/(m²·world s) and exact identified interval mass in kg through the selected first-hit exposure product. The static footprint does not advect with the cloud map. | Surface/water owners receive each interval once by stable receiver identity and commit mass/ledger/cursor with X[n+1]. Visual particles and audio sample the same source but cannot create or erase physical mass. Moving wet support uses C09's separate bounded partition. |
+| Air facts and optics | Optional temperature K, local absolute pressure Pa and vapour gas mass fraction are independent source facts; RH/dew point are diagnostics derived from them. Optional air/fog coefficients declare their own units, support, source epoch and gameplay versus presentation role. | Missing thermal irradiance, pollutants, fog, Moon or terminal sky is typed unsupported. V3 jointly integrates overlapping optical coefficients under C08; gas facts alone do not synthesize haze, heat or breathing exposure. |
+
+F1 maps integer ticks to world seconds and advances each authored phase from
+its piecewise constant rational rate. A held phase freezes its controls, not
+physical time or cloud motion under a held nonzero wind. A pre-tick E1 plan
+binds one source revision, control epoch, interval `[n,n+1)`, wind integral and
+exposure product. P3 reads committed X[n]; E1 stages exact interval receipts
+and response candidates; W1/F1 publishes the source endpoint, receivers and
+cursors together as X[n+1] or publishes none. Two views extract from the same
+committed pair and may sample an admitted presentation time without advancing
+the source. No view-local cloud or weather phase is authoritative.
+
+Every point/interval query reports quantity, units, spatial and temporal
+support, source/product revision, sample/valid interval, authority role and a
+typed unavailable/outside/stale result. Required consumers refuse missing or
+mismatched input before staging effects. F2 may bind a separately admitted
+substitute; absence never silently becomes calm, clear, zero rain or a plausible
+temperature. Live rain gating is a discrete pre-tick control published with the
+next commit; editing source tracks or geometry remains source admission and
+restart work. Source-off stops new input but preserves existing surface/water
+stores and response tails; each disabled interval still advances a zero-mass
+receipt/cursor with the same world commit. A visible-cloud toggle releases only presentation
+work if source-ray attenuation remains required. Headless execution prepares
+no HDRI, GPU cloud map or view history. The first bounded storm has at most
+32,768 static exposure rows per tick (1,966,080 row visits/s at 60 Hz) and
+under 0.8 MiB of proposed CPU source/exposure product payload before allocator
+and old/new overlap; these are workload estimates, not measurements or
+engine-wide limits.
+
+### Selected first F4 constant-light product and binding
+
+The first F4 slice cooks **one immutable CPU `ConstantLightProductV1`** from
+an authenticated, pinned admitted-source lease. That lease supplies the
+selected committed authority root, verified `SourceRevision` and manifest,
+project ID, and hash-checked immutable record access. A provisional staged
+candidate may exercise the identical cooker for a labelled proof, but cannot
+authorize a ready build. F4 never reads the mutable checkout. The selected
+closure is the sole entry scene's schema-2 `environment.source` → authored
+environment schema 1 → `sun.light_ref` light identity schema 1. F3 checks the
+complete declared source namespace; F4 cooks only this reachable active
+closure. An unselected source stays valid content without a light product,
+environment tick job or GPU allocation.
+
+The product carries the stable environment and light UUIDs; normalized f64
+world-space geometric receiver-to-source direction; normalized nonnegative
+linear Rec.709/D65 photometric RGB colour with `Y=1`; raw nonnegative f64
+perpendicular Sun illuminance in lux; f64 angular radius in radians; three
+f64 isotropic ambient irradiance channels in lux; three f64 independent
+background-radiance channels in cd/m²; and the schema's exact seven unsupported
+quantities. It is constant over all positions and times. It contains no tick,
+view, world epoch, exposure/pre-exposure, visibility, cloud attenuation,
+weather state or GPU handle. Angular radius is retained as authored geometry;
+R0's fixed four-tap shadow filter does not claim a physical penumbra from it.
+
+Cook once from the F3-owned typed decoder over the lease's immutable bytes.
+First apply schema-1 source validation, then compute direction length using
+the ordered f64 expression `sqrt(((dx*dx)+(dy*dy))+(dz*dz))` and divide each
+component by that length. Compute colour luminance as
+`((0.2126*r)+(0.7152*g))+(0.0722*b)` and divide each channel by it. Replace
+every zero result with positive zero. Recheck finite, nonnegative colour and
+`1e-12` unit-length/`Y=1` residuals in the cooked result; refuse an invalid
+result rather than clamping. The cooker implementation/evaluator revision,
+compiler, target and floating-point mode are part of its cache class;
+cross-target bit identity is not assumed until independently proved. The
+same accepted decoded numeric value, including a signed-zero spelling,
+must yield the same cook key and product bytes within one pinned class.
+
+Serialize the product explicitly as **160 bytes**, not a Rust struct layout:
+
+| Byte offset | Fixed little-endian representation |
+| --- | --- |
+| 0–7 | ASCII `THRME1C` followed by one zero byte |
+| 8–9 | `u16` format version `1` |
+| 10–11 | `u16` reserved flags `0` |
+| 12–15 | `u32` unsupported mask exactly `0x7f`: bits 0–6 are wind, cloud tau, precipitation, air, thermal, Moon and air quality, respectively; all higher bits zero |
+| 16–31 | Environment UUID, 16 octets in canonical displayed hexadecimal order with hyphens removed |
+| 32–47 | Light UUID, same octet order |
+| 48–71 | Three IEEE-754 binary64 direction components, X/Y/Z |
+| 72–95 | Three binary64 normalized linear Rec.709 colour channels, R/G/B |
+| 96–103 | Binary64 raw perpendicular illuminance in lux |
+| 104–111 | Binary64 angular radius in radians |
+| 112–135 | Three binary64 ambient-irradiance channels in lux, R/G/B |
+| 136–159 | Three binary64 background-radiance channels in cd/m², R/G/B |
+
+Decode requires exact length, magic, version, zero reserved flags, exact mask,
+valid RFC-4122-form UUID octets, finite **signed** direction components,
+finite nonnegative colour, illuminance, radius, ambient and background,
+canonical positive zero and the cooked normalization residuals above. A wrong or corrupt
+product is unavailable, never accepted as a stale but plausible Sun. The
+serialized payload is 160 bytes; allocator residency, leases and old/new
+overlap are measured separately.
+
+Keep three identities separate. `BlobHash = SHA-256(the 160 product bytes)`.
+The domain-separated `CookKey` hashes a canonical recipe of decoded **known**
+source values after signed-zero normalization, source/light UUIDs, fixed light
+driver binding, environment and light built-in definition hashes, product
+format, cooker/normalizer/evaluator revisions and the declared toolchain/target
+cache class. A product manifest binds that key to `BlobHash`; its own digest is
+the product revision. The build binding pins the exact admitted
+`SourceRevision`, project/entry-scene/source/light IDs, scene definition hash,
+profile/target lock and product revision. Labels, documentation, opaque fields,
+file path and unrelated source content do not enter `CookKey`; a change to any
+of them still changes the exact source revision and produces a new binding.
+The cache hit is verified against the product manifest and bytes before that
+new binding is published. Changed light values, identity, fixed definition or
+cooker class invalidate the key. Rebinding a scene can change only the build
+binding if its selected product is already valid. A wider `BuildRevision`
+includes this binding alongside its other required products; this product
+revision alone is not a runnable build.
+
+The selected constant-light product performs no per-tick evaluation or
+allocation, weather-grid work, interval receipt, cloud upload or view-local
+advance. The first fixture reads one scene, one source and one light from a
+shared build lease, decodes bounded source bytes once, does constant-count
+normalization/hash work and emits 160 payload bytes plus a small binding.
+The full manifest/index acquisition cost is shared across the build, never
+repeated per light. Two views borrow the same immutable CPU product. V3 applies surface
+cosine, geometric shadow and later named cloud/air/fog factors on their own
+paths exactly once; V4 owns display conversion. F2/V1 must separately refuse
+f64→f32 overflow, an incompatible radiance/pre-exposure envelope or missing
+GPU pipeline before R0 view readiness. A failed cook, stale async result or
+source edit cannot mix a new Sun with old ambient/background; the prior
+identified ready build remains until a complete replacement is published.
+
+The first proof needs independent cardinal/non-cardinal normalization,
+negative direction components and signed-zero vectors; golden
+byte/UUID/endian/hash cases; a cache matrix for
+semantic versus formatting/opaque/label edits, identity and definition
+changes; corrupted-cache and stale-result refusal; source lease versus
+checkout isolation; and zero selected-source cost counters. Measure cook and
+decode elapsed work, allocations and simultaneous product/binding bytes. These
+are build/headless checks; the R0 image, ABI, device and assembled frame-cost
+gates remain separate.
+
 ### Selected mathematical relationships and domains
 
 The shared environment contract carries **fields and fluxes**, not a mandatory global fluid solver. For a physically driven provider, material transport follows `∂_t q + ∇·(q u) = S_q − D_q` for a conserved concentration/coverage proxy `q` with wind/flow `u`, source `S_q` and sink `D_q`. Authored/keyframed providers may publish the same query fields without solving this PDE; they are marked authored and cannot claim dynamical conservation. A front, gust or cloud cell must therefore be represented as a time-varying spatial field, not a camera-tied screen animation. `u(x,y,z,t)` uses C01's right-handed Y-up frame and is sampled at the consumer's height; plant drag, rain drift, cloud advection and water forcing use the same field with their own response laws. Grid spacing, timestep and numerical diffusion bound a simulated provider; the interface exposes interpolation support and a validity region rather than concealing that error.
@@ -41,6 +206,22 @@ The shared environment contract carries **fields and fluxes**, not a mandatory g
 For sunlight under cloud, optical depth is `τ_c(x,ω_s,t)=∫_ray σ_{t,c}(x+sω_s,t)ds`, and direct transmittance is `T_c=e^{-τ_c}`. An authored 2D field may store `τ_c` for one chosen light direction/altitude regime; it cannot predict side views, cloud self-shadowing or a rapidly moving Sun without reprojecting or recomputing. A volumetric `σ_{t,c}` can produce both view-ray cloud radiance and source-ray shadow attenuation, at greater sample/bandwidth cost. Thus the structural selection is **one cloud source field with independent shadow and visible projections**, with explicit approximation domain. A cloud-free source yields `τ_c=0`, `T_c=1`. Atmosphere and fog use the ordered `(transmittance, in-scattered radiance)` segment algebra only on **disjoint ordered ray intervals**; overlapping media require joint coefficient/source integration or one provider that precomposes the entire overlap with shared lighting. Independently lit preintegrated overlapping pairs cannot be composed exactly. A declared approximate layer policy may be selected for a named profile with its limits exposed. A display-only overlay is excluded from light/visibility authority.
 
 For a wet/snowy surface cell, keep liquid and solid mass per area `m_l,m_s` (kg/m²). A minimal balance is `dm_l/dt = P_l + C_l + M − F − E_l − R_l` and `dm_s/dt = P_s + C_s + F − M − E_s − R_s`, where precipitation `P`, contact deposition `C`, melting `M`, freezing `F`, evaporation/sublimation `E` and exported runoff/removal `R` use kg/(m²·s). Melting/freezing cancel in the total derivative: phase transfer alone cannot create or destroy water. Runoff must name its receiving domain or an explicitly exported boundary flux. Material, temperature, wind and slope choose constitutive rates; a simple game provider may author them, while a physical provider must state its approximations and boundary drainage. Coverage/roughness and friction are functions of the same `m_l,m_s`, material and temperature, with possible hysteresis, so the visible gloss and physics traction cannot silently disagree. If a region is unloaded, W2/P7 either integrates a reduced aggregate with these fluxes or records a last update and catches up on load; it cannot drop the mass while audio/gameplay assumes continuing rain.
+
+The selected [moving-shore exposure/response profile](../research/MOVING-SHORE-EXPOSURE-DESIGN-2026-11-02.md)
+refines this liquid balance into exposed film, submerged bound coating and absorbed
+mass, plus a separately identified pending water exchange. It allocates one
+interval rain mass to a geometry- and water-dependent first-hit receiver and
+moves real material between dry/wet subsets during inundation and recession.
+For the tide-only prescribed scalar-stage profile, F4's prepared affine-area
+polynomials let E1 integrate changing first-hit area against rain over source
+time; numerical partitions do not change the physical receipt identity. The
+[exact offline first-hit proof](../../evidence/water/MOVING-SHORE-FIRST-HIT-2026-11-02.md)
+supports that source operator only. Film/coating exchange, finite-water
+hydraulics, floating-point error and assembled runtime cost remain unproved.
+The initial bounded physical closure stays pinned while active; it has no
+unqualified unloaded-region catch-up. The original full-cell shallow solver,
+the prescribed sea and the provisional fine-bed capacity solver publish
+different wet supports, so they cannot share a pixel-derived shore mask.
 
 Water uses **authored physical domains with selected model families**, not one numerical solver or one compulsory free-surface payload. Static pool height is a prescribed bounded function; it does not claim finite mass storage. A deep-water wave component can use dispersion `ω²=gk tanh(kh)` and phase `φ=k·x−ωt` under small-amplitude, approximately irrotational conditions; it does not describe breaking, river flow or contact forcing by itself. A shallow-flow domain can use depth `h` and depth-averaged velocity `u` with continuity `∂_t h+∇·(hu)=S_h` and momentum terms from pressure gradient, friction, terrain slope and forcing; closure and wet/dry boundaries must be specified by its module. A local contact solver may add a displacement/impulse field only with a specified support and reaction/transfer rule. The common query envelope carries domain ID, time, support, units, scale/error and typed failure. A graph surface may offer height/normal/velocity/depth; volume occupancy, pressure, underwater flow and breaking are separate requested capabilities. E1's query router selects one physical owner at a point and vertical context; overlaps require authored layered topology, and boundary ties are stable. It never blends two heights into physical truth. Geometry, contact and optics agree at interaction scale within a declared error; decorative ripples cannot alter buoyancy. These equations identify valid families, not a universal sea/lake/river discretization.
 

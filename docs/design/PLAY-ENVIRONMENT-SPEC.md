@@ -60,6 +60,65 @@ Physical stage/depth/flow queries use the committed owning cell and a declared s
 
 The shallow grid state and edge flux ledger are E1 authority, independent of W2 stream cells. The initial N1 server profile preloads the entire finite authoritative physical closure before a match and does not stream new authoritative regions or switch physical sources during it; W2 client interest and visual residency may change independently. In standalone/offline worlds W2 pins required grid/ghost/bank support while P3/P5 use it; unload/entry is blocked unless a separately qualified transfer/reduced-state mechanism exists. P7 captures `h,q`, bed/product hash, tide/source phase and edge cumulative ledger at a committed barrier. Headless/offline and server authority execute the same CPU operator. N1's required gameplay/query content is verified **before** capturing a fresh baseline; a peer missing it remains content-loading with no pinned stale baseline, and an applied water query is one complete epoch/dependency group. The reference N1 baseline sends confirmed body outcomes and only bounded physical water **query projections** needed by client consumers, each with model/domain/source/edge epoch, tick and quantity-specific error (initial stage ≤5 mm, horizontal speed ≤0.02 m/s); it does not send the entire 8192-cell f64 grid within its 256 KiB baseline cap. A client wanting authoritative local water simulation is a different prediction/provider profile. No client recomputes server mass flux from shader pixels or just a seed. Distinct target visual grids may be finer/coarser only as bounded presentation residuals. F2 may turn water off only when no retained rule, contact, nav or audio consumer needs its state/query.
 
+## E1: moving-shore precipitation and the distinct capacity profile
+
+The [moving-shore design](research/MOVING-SHORE-EXPOSURE-DESIGN-2026-11-02.md)
+selects a bounded CPU/headless exposure and material-exchange operator for rain
+on changing physical wet support. It does **not** change the initial rectangular
+HLL state above. That solver retains `V=A*h`, a constant bed per cell, full-cell
+wet/dry support and its own four-substep admission. A triangulated 1:20 bank
+under a 2 m cell can differ by about 1 m in shore position at mid-stage; the
+original HLL must use matching terrace source geometry, not a smoothed render
+shore posing as its physical support.
+
+F4 prepares one static arrangement of rain cells, top solid receivers, source
+bed/response patches, water domains and boundary/halo ownership. E1 combines
+it with the committed provider wet support during each admitted F1 interval:
+each local horizontal rain area has one first-hit solid, water or named export
+recipient and one identified mass receipt. Prescribed sea rain enters its
+external-reservoir ledger; finite water receives volume under the selected
+zero-horizontal-momentum source policy. PLAY's analytic sea includes spatial
+waves. A tide-only exposure shortcut is admissible only when the entire wave
+envelope cannot change wet/receiver ordering; otherwise the bounded wave
+profile uses analytic phase extrema and certified space-time bands to account
+for interior wet and dry excursions, or refuses the work/error request.
+For an admitted tide-only prescribed scalar stage, F4 prepares per-triangle
+first-hit area polynomials and E1 integrates them against interval rain across
+stage/source/vertex events. This removes frozen-start direct-rain allocation
+bias in the exact offline fixture; film/water state timing and floating-point
+certification remain open. Durable receipt identity is the physical
+source/stream interval and aggregated receiver payload, independent of the
+number of internal algebraic or physical subdivisions.
+
+The selected surface response has exposed film, submerged bound coating and
+absorbed liquid as separate **mass** stores. Inundation and recession transfer
+real mass by source patch/response-cell overlap; finite water can refill a
+bounded coating under an explicit donor debit. Excess coating moves into an
+identified pending water-exchange inventory delivered at the next water
+substep or tick. Its stage/support effect and residence are bounded at
+admission, so the current endpoint's wet-set classification cannot
+recursively change after it is used. W1/F1 publishes source, water, material,
+transit and cursor results together, or leaves the entire interval uncommitted.
+P3 reads X[n] traction, P5 invalidates a stale moving wet-area generation,
+P7 saves every authoritative store and pending receipt. Rendering or rain
+particles do not create a second wetness authority.
+
+A separate **provisional** `CapacityHllShore` profile is the higher-quality
+numerical proof target for finite water on the admitted fine bed. It stores
+cell volume `V_i` and integrated momentum; `C_i(η)=∫cell max(η-b,0)dA`
+provides stage, partially wet area and source-correspondent shoreline.
+Pointwise shared-face HLL flux integrates over actual bed traces, with a
+hydrostatic bed reaction and one donor-limited face volume. Cook rejects
+disconnected within-cell wet pockets/protected sills over its stage interval.
+Tiny wet slivers may use a bounded connected-cell aggregate only with stage,
+shore, velocity and energy-loss limits. This profile has its **own** eight-step
+cap and explicit numerical/work refusal; the original HLL positivity/rest
+argument and device cost are not inherited. Independent non-rest stability,
+thin-overtopping accuracy, stage-seam visual quality and sustained workload
+remain required before it is treated as implementation ready. A failed
+ordinary required scene calls for a redesigned solver/profile, not a hidden
+physical timestep change or visual smoothing of the discrepancy.
+
 ## Body–water approximation and the hull crossing rule
 
 The first P3/E1 force law is **one-way sampled buoyancy and flow-relative drag**, not fluid–body conservative coupling. F4 cooks at most 16 **non-overlapping body-local tetrahedra** approximating the admitted hull interior; their union volume must match its validated convex hull within 5% and volume center within 0.10 m. The cooker assigns only **exterior** hull triangles to elements (no internal tetra faces); their body-local areas and normals define directional projected drag area. The reference drag coefficient is `C_D=1` (dimensionless, pinned source/profile data), or the hull is rejected. At each fixed tick P3 rotates/translates all tetra vertices and exterior face normals to world coordinates. For the analytic sea, E1 supplies a tangent water plane at each tetra's world centroid from its physical stage and gradient; for a shallow/pond cell the plane is horizontal at that centroid's physical stage. Every vertex and centroid of the **whole swept hull** must have valid samples under one physical domain authority, and actual stage at each vertex must differ from its tetra's chosen plane by at most 0.05 m; a domain seam or greater within-domain curvature/cell step rejects the hull contact rather than changing models mid-force. Clip each oriented tetra against its plane, compute the clipped polyhedron's volume `V_j,wet` and centroid `c_j,wet` by signed tetra decomposition, and apply `F_b,j=ρgV_j,wet up` at `c_j,wet`. This volume/centroid computation responds correctly to body roll and pitch within the piecewise-planar surface approximation; no unrotated vertical extent or linear immersion fraction is used.

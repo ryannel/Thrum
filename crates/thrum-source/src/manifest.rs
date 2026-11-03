@@ -109,6 +109,10 @@ impl ManifestEntry {
             .as_ref()
             .map(|record| (record.id.as_str(), record.record_type.as_str()))
     }
+
+    pub(crate) fn source_path(&self) -> &SourcePath {
+        &self.path
+    }
 }
 
 /// A tree description cannot have a portable v1 identity.

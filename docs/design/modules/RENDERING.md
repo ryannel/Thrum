@@ -2,6 +2,11 @@
 
 **Initial implementation specification:** [RENDER-SPEC.md](../RENDER-SPEC.md) now selects the concrete baseline mechanisms,
 limits and failure rules. This family document retains the wider responsibility; specification does not imply runtime qualification.
+The [R3 gap-closure decision](../research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
+selects bounded alpha events and a regional virtual-source water/media profile.
+Its complete visibility promise applies to the declared model; actual-interface
+focused caustics and filtered focused scattering remain open. Neither profile
+has device or visual qualification.
 
 Status: selected architectural boundaries with detailed rendering techniques still provisional, 1 November 2026. [Architecture decisions](../ARCHITECTURE-DECISIONS.md) govern the A03/A05/J02 closure applied here. No rendering code has been built for this design, no target device has been measured, and no image has passed user visual acceptance. This is a commission boundary for detailed module work. Its source ledger is [rendering evidence](../research/RENDERING-SOURCES.md); the whole-engine authority is the [architecture brief](../ARCHITECTURE-BRIEF.md). The brief's earlier Bevy evaluation is superseded by the user's decision to use a custom, Bevy-independent engine and to borrow suitable open-source work with attribution. Browser, Mac, PC and mobile app-store delivery are required product profiles; BASELINE-SPEC selects reference device/workload/budget targets, all unqualified. Structural recommendations below follow from models and constraints; measured qualification tests predictions rather than selecting a foundation by trial and error.
 
