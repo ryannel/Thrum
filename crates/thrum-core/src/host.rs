@@ -126,6 +126,13 @@ pub enum HostAdmissionError {
     Unavailable,
     /// An existing peer needs a new replica baseline before reconnecting.
     RequiresBaseline,
+    /// This match has registered every distinct peer ID in its selected profile.
+    PeerLimit {
+        /// Distinct peer IDs already registered for this host lifetime.
+        registered: usize,
+        /// Selected maximum distinct peer IDs.
+        limit: usize,
+    },
     /// Authority rejected the input envelope.
     Authority(AdmissionError),
 }
@@ -135,6 +142,13 @@ pub enum HostAdmissionError {
 pub enum HostError {
     /// CPU admission parameters cannot service a tick.
     InvalidBudget,
+    /// Initial authority membership exceeds the selected match-lifetime limit.
+    PeerLimit {
+        /// Distinct peer IDs already in the initial authority.
+        registered: usize,
+        /// Selected maximum distinct peer IDs.
+        limit: usize,
+    },
     /// The selected callback method does not match this host's storage path.
     WrongMode,
     /// Charged baseline could not be published during host construction.
@@ -520,11 +534,13 @@ pub struct HeadlessHost<G: GameRules> {
     callback_publication_bytes: usize,
     callback_leases: CallbackLeaseDirectory,
     callback_floor: Option<Arc<CallbackBufferFloor>>,
+    peer_limit: Option<usize>,
     faulted: bool,
 }
 
 impl<G: GameRules> HeadlessHost<G> {
-    /// Construct a local headless host at the monotonic start instant.
+    /// Construct a local headless prototype at the monotonic start instant.
+    /// Use `local_with_peer_limit` for finite controlled membership.
     pub fn local(
         origin: Instant,
         clock: ClockConfig,
@@ -534,7 +550,24 @@ impl<G: GameRules> HeadlessHost<G> {
         Self::build(origin, clock, budget, authority, None)
     }
 
-    /// Construct a match host with a complete initial in-memory replica.
+    /// Construct an ordinary local host with a finite match-lifetime count
+    /// of distinct controlled peer IDs. Reconnecting one existing ID uses
+    /// its authority epoch and does not consume another slot.
+    pub fn local_with_peer_limit(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        authority: Authority<G>,
+        max_registered_peers: usize,
+    ) -> Result<Self, HostError> {
+        Self::validate_peer_limit(&authority, max_registered_peers)?;
+        let mut host = Self::build(origin, clock, budget, authority, None)?;
+        host.peer_limit = Some(max_registered_peers);
+        Ok(host)
+    }
+
+    /// Construct a match prototype with a complete initial in-memory replica.
+    /// Use `with_replica_with_peer_limit` for finite controlled membership.
     pub fn with_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -551,6 +584,40 @@ impl<G: GameRules> HeadlessHost<G> {
             Self::build(origin, clock, budget, authority, Some(replica))?,
             initial_outcomes,
         ))
+    }
+
+    /// Construct an ordinary in-memory match with finite cumulative peer
+    /// membership. A disconnected ID still occupies its slot; reconnecting
+    /// that ID requires a fresh replica baseline through a later protocol.
+    pub fn with_replica_with_peer_limit(
+        origin: Instant,
+        clock: ClockConfig,
+        budget: HostBudget,
+        authority: Authority<G>,
+        max_registered_peers: usize,
+    ) -> Result<(Self, InitialOutcomes<G>), HostError> {
+        Self::validate_peer_limit(&authority, max_registered_peers)?;
+        let (mut host, initial) = Self::with_replica(origin, clock, budget, authority)?;
+        host.peer_limit = Some(max_registered_peers);
+        Ok((host, initial))
+    }
+
+    fn validate_peer_limit(
+        authority: &Authority<G>,
+        max_registered_peers: usize,
+    ) -> Result<(), HostError> {
+        if authority.is_faulted() {
+            return Err(HostError::Authority(StepError::TerminalGameContract));
+        }
+        let registered = authority.registered_peer_count();
+        if registered > max_registered_peers {
+            Err(HostError::PeerLimit {
+                registered,
+                limit: max_registered_peers,
+            })
+        } else {
+            Ok(())
+        }
     }
 
     /// Construct a sealed match host with a finite, precharged local replica.
@@ -771,6 +838,7 @@ impl<G: GameRules> HeadlessHost<G> {
             callback_publication_bytes,
             callback_leases: CallbackLeaseDirectory::new(),
             callback_floor: None,
+            peer_limit: None,
             faulted: false,
         })
     }
@@ -799,6 +867,12 @@ impl<G: GameRules> HeadlessHost<G> {
         }
         if self.replica.is_some() && self.authority.has_peer(id) {
             return Err(HostAdmissionError::RequiresBaseline);
+        }
+        if let Some(limit) = self.peer_limit {
+            let registered = self.authority.registered_peer_count();
+            if registered >= limit && !self.authority.has_peer(id) {
+                return Err(HostAdmissionError::PeerLimit { registered, limit });
+            }
         }
         if self.callback_floor.is_some() {
             let replica = self.replica.as_ref().expect("sealed host has replica");
@@ -3552,6 +3626,167 @@ mod tests {
         drop(initial);
         drop(host);
         assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn ordinary_match_peer_limit_refuses_before_join_and_keeps_existing_sequence() {
+        let mut world = World::new(WorldEpoch(401));
+        world.spawn(StableId(1), 7_u8).unwrap();
+        let mut authority = Authority::new(AuthorityId::Match(MatchId(401)), ReplaceRule, world);
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        let origin = Instant::now();
+        let clock = ClockConfig::default();
+        let budget = HostBudget {
+            callback_cpu: Duration::from_millis(20),
+            other_work: Duration::ZERO,
+            tick_cost_bound: Duration::from_millis(1),
+        };
+        assert!(matches!(
+            HeadlessHost::with_replica_with_peer_limit(origin, clock, budget, authority, 1),
+            Err(HostError::PeerLimit {
+                registered: 2,
+                limit: 1
+            })
+        ));
+
+        let mut world = World::new(WorldEpoch(402));
+        world.spawn(StableId(1), 7_u8).unwrap();
+        let mut authority = Authority::new(AuthorityId::Match(MatchId(402)), ReplaceRule, world);
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let (mut host, initial) =
+            HeadlessHost::with_replica_with_peer_limit(origin, clock, budget, authority, 2)
+                .unwrap();
+        host.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
+        for id in 3..=9 {
+            assert_eq!(
+                host.register_peer(PeerId(id), 1, ActorId(id)),
+                Err(HostAdmissionError::PeerLimit {
+                    registered: 2,
+                    limit: 2
+                })
+            );
+        }
+        assert_eq!(
+            host.register_peer(PeerId(1), 2, ActorId(1)),
+            Err(HostAdmissionError::RequiresBaseline)
+        );
+        let baseline = host.authority().try_baseline().unwrap();
+        assert_eq!(baseline.resolved_through, [(PeerId(1), 0), (PeerId(2), 0)]);
+        assert_eq!(
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 1,
+                    sequence: 1,
+                },
+                actor: ActorId(1),
+                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                action: 8,
+            }),
+            Ok(Admission::Queued)
+        );
+        assert_eq!(
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(2),
+                    connection_epoch: 1,
+                    sequence: 1,
+                },
+                actor: ActorId(2),
+                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                action: 8,
+            }),
+            Ok(Admission::Queued)
+        );
+        let report = host
+            .on_callback(origin + Duration::from_millis(17))
+            .unwrap();
+        assert_eq!(report.clock.completed, 1);
+        let HostPublication::Replicated { admitted, .. } = &report.publications[0] else {
+            panic!("ordinary match requires replica publication")
+        };
+        assert_eq!(admitted.results.len(), 2);
+        assert_eq!(admitted.resolved_through, [(PeerId(1), 1), (PeerId(2), 1)]);
+        assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&8));
+        drop(report);
+        drop(initial);
+    }
+
+    #[test]
+    fn ordinary_local_peer_reconnect_reuses_its_match_lifetime_slot() {
+        let mut world = World::new(WorldEpoch(403));
+        world.spawn(StableId(1), 7_u8).unwrap();
+        let mut authority = Authority::new(
+            AuthorityId::Standalone(crate::SessionId(403)),
+            ReplaceRule,
+            world,
+        );
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        let origin = Instant::now();
+        let mut host = HeadlessHost::local_with_peer_limit(
+            origin,
+            ClockConfig::default(),
+            HostBudget {
+                callback_cpu: Duration::from_millis(20),
+                other_work: Duration::ZERO,
+                tick_cost_bound: Duration::from_millis(1),
+            },
+            authority,
+            1,
+        )
+        .unwrap();
+        assert_eq!(
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 1,
+                    sequence: 1,
+                },
+                actor: ActorId(1),
+                schedule: crate::InputSchedule::Timed { intended_tick: 2 },
+                action: 8,
+            }),
+            Ok(Admission::Queued)
+        );
+        host.register_peer(PeerId(1), 2, ActorId(1)).unwrap();
+        assert_eq!(
+            host.register_peer(PeerId(1), 2, ActorId(1)),
+            Err(HostAdmissionError::Authority(AdmissionError::StaleEpoch))
+        );
+        assert_eq!(
+            host.register_peer(PeerId(2), 1, ActorId(2)),
+            Err(HostAdmissionError::PeerLimit {
+                registered: 1,
+                limit: 1
+            })
+        );
+        assert_eq!(
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 1,
+                    sequence: 1,
+                },
+                actor: ActorId(1),
+                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                action: 8,
+            }),
+            Err(HostAdmissionError::Authority(AdmissionError::StaleEpoch))
+        );
+        assert_eq!(
+            host.submit(Input {
+                origin: Origin {
+                    peer: PeerId(1),
+                    connection_epoch: 2,
+                    sequence: 1,
+                },
+                actor: ActorId(1),
+                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                action: 8,
+            }),
+            Ok(Admission::Queued)
+        );
     }
 
     #[test]
