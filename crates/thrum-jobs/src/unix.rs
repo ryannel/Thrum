@@ -948,6 +948,38 @@ mod tests {
     }
 
     #[test]
+    fn f3_admits_b_while_a_complete_input_has_a_live_reader() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let mut pin_a = store.pin_current(1).unwrap();
+        let original_scene = fs::read(fixture.project.join("scenes/main.scene.json")).unwrap();
+        let mut host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
+        let a = host.materialize(&mut pin_a, scratch()).unwrap();
+        let reader = host.input_lease(a).unwrap();
+        fs::write(
+            fixture.project.join("scenes/main.scene.json"),
+            br#"{"id":"3a5ef644-7225-4770-9f4d-e1d9c0a7d515","type":"core.scene","schema":1,"fields":{"scene.label":"B"}}"#,
+        )
+        .unwrap();
+        let staged =
+            stage_declared_tree_with_plan(&fixture.project, &declared_paths(), source_plan())
+                .unwrap();
+        let candidate = validate_staged_candidate(&staged, &[]).unwrap();
+        let b = store.admit(1, 2, 2, [2; 32], &candidate).unwrap();
+        assert_eq!(b.generation, 2);
+        assert_eq!(
+            fs::read(reader.join("scenes/main.scene.json")).unwrap(),
+            original_scene
+        );
+        assert_eq!(pin_a.root().generation, 1);
+        assert!(matches!(host.close(a), Err(JobError::ReadersActive(id)) if id == a));
+        drop(reader);
+        host.close(a).unwrap();
+        assert_eq!(store.current_root().unwrap(), Some(b));
+    }
+
+    #[test]
     fn process_kill_after_registration_child() {
         let Some(project) = std::env::var_os("THRUM_JOB_KILL_PROJECT") else {
             return;
