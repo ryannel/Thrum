@@ -633,11 +633,19 @@
       },
       "i2a_render_collection_order_candidate": {
         "evidence": "../evidence/render/R0-F3-COLLECTION-ORDER-2026-11-03.md",
-        "implementation": "private_inactive_camera_and_mesh_collection_structural_reducer",
-        "functional_validation": "four focused tests cover UUID and field order under array reorder, borrowed raw-byte tie, anonymous fallback, projection suppression and early refusal, camera order and collection syntax refusal",
+        "implementation": "private_inactive_camera_mesh_and_instance_collection_structural_reducer",
+        "functional_validation": "five focused tests cover UUID and field order under array reorder, borrowed raw-byte tie, anonymous fallback, projection suppression and early refusal, camera/instance order and collection syntax refusal",
         "experienced_quality": "not_applicable_to_inactive_source_scanner",
         "platform_performance": "one retained structural error and raw borrow rather than an array-wide index; no measured complete-record latency, charged high-water or RSS",
         "scope": "No other render object kinds, complete root reducer, global UUID/edge closure, F3 admission, F4 selected-pin projection or ready renderer. All emitted projections remain provisional."
+      },
+      "i2a_render_instance_object_candidate": {
+        "evidence": "../evidence/render/R0-F3-INSTANCE-OBJECT-DECODER-2026-11-03.md",
+        "implementation": "private_inactive_instance_structure_and_shared_identified_object_helper",
+        "functional_validation": "two focused instance object tests and one collection test cover typed unresolved UUIDs, signed/zero scale, reordered fields, exact quaternion, recognized duplicate and repeated unknown-key refusals; fifteen combined focused tests pass; independent adversarial review found no remaining semantic or lifetime defect",
+        "experienced_quality": "not_applicable_to_inactive_source_decoder",
+        "platform_performance": "no combined many-instance parse/deferred-bound timing, account charge, RSS or device cost; structural quaternion check repeats work later unless representation is improved",
+        "scope": "No typed-edge resolution, mesh-dependent transformed bound, complete root/global closure, F3 admission, F4 selected-pin product or renderer."
       },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",

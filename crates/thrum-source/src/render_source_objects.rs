@@ -11,7 +11,7 @@ use crate::render_bound::transformed_box_within_world;
 use crate::render_geometry_exact::{
     NonFinitePosition, TriangleSourceError, position_within_local_radius, triangle_is_nondegenerate,
 };
-use crate::render_json::{SourceText, parse_raw_object, uuid_bytes};
+use crate::render_json::{IdentifiedObjectError, SourceText, parse_identified_object, uuid_bytes};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct CameraFacts {
@@ -86,31 +86,22 @@ fn camera_error(
 /// The private exact transformed-box predicate supplies the same quaternion
 /// band that instances use; a zero box/translation isolates that check.
 pub(crate) fn decode_camera_v1(raw: &RawValue) -> Result<CameraFacts, CameraDecodeError> {
-    let fields = parse_raw_object(raw.get(), &CAMERA_FIELDS)
-        .map_err(|source| camera_error(None, CameraField::Id, CameraProblem::Json(source)))?;
-    let decoded_id: Option<Result<SourceText<'_>, _>> =
-        fields.values[0].map(|value| serde_json::from_str(value.get()));
-    let possible_id = if fields.duplicate[0] {
-        None
-    } else {
-        decoded_id
-            .as_ref()
-            .and_then(|value| value.as_ref().ok())
-            .and_then(|text| uuid_bytes(&text.0))
-    };
-    if let Some(index) = fields.duplicate.iter().position(|&duplicate| duplicate) {
-        return Err(camera_error(
-            possible_id,
-            CAMERA_FIELD_ORDER[index],
-            CameraProblem::Duplicate,
-        ));
-    }
-    let decoded_id =
-        decoded_id.ok_or_else(|| camera_error(None, CameraField::Id, CameraProblem::Missing))?;
-    let source_id = decoded_id
-        .map_err(|source| camera_error(None, CameraField::Id, CameraProblem::Json(source)))?;
-    let id = uuid_bytes(&source_id.0)
-        .ok_or_else(|| camera_error(None, CameraField::Id, CameraProblem::InvalidId))?;
+    let object = parse_identified_object(raw, &CAMERA_FIELDS).map_err(|error| match error {
+        IdentifiedObjectError::Json(source) => {
+            camera_error(None, CameraField::Id, CameraProblem::Json(source))
+        }
+        IdentifiedObjectError::MissingId => {
+            camera_error(None, CameraField::Id, CameraProblem::Missing)
+        }
+        IdentifiedObjectError::InvalidId => {
+            camera_error(None, CameraField::Id, CameraProblem::InvalidId)
+        }
+        IdentifiedObjectError::Duplicate { index, id } => {
+            camera_error(id, CAMERA_FIELD_ORDER[index], CameraProblem::Duplicate)
+        }
+    })?;
+    let id = object.id;
+    let fields = object.fields;
 
     let read = |index: usize, field| {
         fields.values[index].ok_or_else(|| camera_error(Some(id), field, CameraProblem::Missing))
@@ -251,6 +242,183 @@ pub(crate) fn decode_camera_v1(raw: &RawValue) -> Result<CameraFacts, CameraDeco
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct InstanceFacts {
+    pub(crate) id: [u8; 16],
+    pub(crate) mesh: [u8; 16],
+    pub(crate) material: [u8; 16],
+    pub(crate) translation_m: [f64; 3],
+    pub(crate) orientation_xyzw: [f64; 4],
+    pub(crate) scale: [f64; 3],
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub(crate) enum InstanceField {
+    Id,
+    Mesh,
+    Material,
+    Translation,
+    Orientation,
+    Scale,
+    Unknown,
+}
+
+#[derive(Debug)]
+pub(crate) enum InstanceProblem {
+    Json(serde_json::Error),
+    Missing,
+    Duplicate,
+    Unknown(String),
+    InvalidId,
+    InvalidReference,
+    Nonfinite,
+    OutOfRange,
+    InvalidOrientation,
+}
+
+#[derive(Debug)]
+pub(crate) struct InstanceDecodeError {
+    pub(crate) id: Option<[u8; 16]>,
+    pub(crate) field: InstanceField,
+    pub(crate) problem: InstanceProblem,
+}
+
+const INSTANCE_FIELDS: [&str; 6] = [
+    "id",
+    "mesh",
+    "material",
+    "translation_m",
+    "orientation_xyzw",
+    "scale",
+];
+const INSTANCE_FIELD_ORDER: [InstanceField; 6] = [
+    InstanceField::Id,
+    InstanceField::Mesh,
+    InstanceField::Material,
+    InstanceField::Translation,
+    InstanceField::Orientation,
+    InstanceField::Scale,
+];
+
+fn instance_error(
+    id: Option<[u8; 16]>,
+    field: InstanceField,
+    problem: InstanceProblem,
+) -> InstanceDecodeError {
+    InstanceDecodeError { id, field, problem }
+}
+
+/// Parses local instance meaning only. Mesh/material edge closure and the
+/// exact transformed-box check require the complete resolved namespace and
+/// happen after this structural phase.
+pub(crate) fn decode_instance_v1(raw: &RawValue) -> Result<InstanceFacts, InstanceDecodeError> {
+    let object = parse_identified_object(raw, &INSTANCE_FIELDS).map_err(|error| match error {
+        IdentifiedObjectError::Json(source) => {
+            instance_error(None, InstanceField::Id, InstanceProblem::Json(source))
+        }
+        IdentifiedObjectError::MissingId => {
+            instance_error(None, InstanceField::Id, InstanceProblem::Missing)
+        }
+        IdentifiedObjectError::InvalidId => {
+            instance_error(None, InstanceField::Id, InstanceProblem::InvalidId)
+        }
+        IdentifiedObjectError::Duplicate { index, id } => {
+            instance_error(id, INSTANCE_FIELD_ORDER[index], InstanceProblem::Duplicate)
+        }
+    })?;
+    let id = object.id;
+    let fields = object.fields;
+    let read = |index: usize, field| {
+        fields.values[index]
+            .ok_or_else(|| instance_error(Some(id), field, InstanceProblem::Missing))
+    };
+    let reference = |index, field| {
+        let text: SourceText<'_> = serde_json::from_str(read(index, field)?.get())
+            .map_err(|source| instance_error(Some(id), field, InstanceProblem::Json(source)))?;
+        uuid_bytes(&text.0)
+            .ok_or_else(|| instance_error(Some(id), field, InstanceProblem::InvalidReference))
+    };
+    let mesh = reference(1, InstanceField::Mesh)?;
+    let material = reference(2, InstanceField::Material)?;
+    let translation_m: [f64; 3] = serde_json::from_str(read(3, InstanceField::Translation)?.get())
+        .map_err(|source| {
+            instance_error(
+                Some(id),
+                InstanceField::Translation,
+                InstanceProblem::Json(source),
+            )
+        })?;
+    if translation_m.iter().any(|v| !v.is_finite()) {
+        return Err(instance_error(
+            Some(id),
+            InstanceField::Translation,
+            InstanceProblem::Nonfinite,
+        ));
+    }
+    if translation_m.iter().any(|v| v.abs() > 1_000_000.0) {
+        return Err(instance_error(
+            Some(id),
+            InstanceField::Translation,
+            InstanceProblem::OutOfRange,
+        ));
+    }
+    let orientation_xyzw: [f64; 4] =
+        serde_json::from_str(read(4, InstanceField::Orientation)?.get()).map_err(|source| {
+            instance_error(
+                Some(id),
+                InstanceField::Orientation,
+                InstanceProblem::Json(source),
+            )
+        })?;
+    if orientation_xyzw.iter().any(|v| !v.is_finite()) {
+        return Err(instance_error(
+            Some(id),
+            InstanceField::Orientation,
+            InstanceProblem::Nonfinite,
+        ));
+    }
+    if !matches!(
+        transformed_box_within_world([0.0; 3], [0.0; 3], [0.0; 3], orientation_xyzw, [1.0; 3]),
+        Ok(true)
+    ) {
+        return Err(instance_error(
+            Some(id),
+            InstanceField::Orientation,
+            InstanceProblem::InvalidOrientation,
+        ));
+    }
+    let scale: [f64; 3] =
+        serde_json::from_str(read(5, InstanceField::Scale)?.get()).map_err(|source| {
+            instance_error(
+                Some(id),
+                InstanceField::Scale,
+                InstanceProblem::Json(source),
+            )
+        })?;
+    if scale.iter().any(|v| !v.is_finite()) {
+        return Err(instance_error(
+            Some(id),
+            InstanceField::Scale,
+            InstanceProblem::Nonfinite,
+        ));
+    }
+    if let Some(unknown) = fields.unknown {
+        return Err(instance_error(
+            Some(id),
+            InstanceField::Unknown,
+            InstanceProblem::Unknown(unknown.0.into_owned()),
+        ));
+    }
+    Ok(InstanceFacts {
+        id,
+        mesh,
+        material,
+        translation_m,
+        orientation_xyzw,
+        scale,
+    })
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct MeshBounds {
     pub(crate) id: [u8; 16],
     pub(crate) local_min: [f64; 3],
@@ -335,33 +503,18 @@ pub(crate) fn decode_mesh_v1<E>(
     raw: &RawValue,
     project: impl FnOnce(MeshEvent<'_>) -> Result<(), E>,
 ) -> Result<MeshBounds, MeshDecodeError<E>> {
-    let fields = parse_raw_object(raw.get(), &MESH_FIELDS)
-        .map_err(|source| structural(None, MeshField::Id, MeshProblem::Json(source)))?;
-    let decoded_id: Option<Result<SourceText<'_>, _>> =
-        fields.values[0].map(|value| serde_json::from_str(value.get()));
-    // A repeated decoded ID has no unique semantic owner. Report its
-    // collection/ordinal fallback rather than whichever value appeared last.
-    let possible_id = if fields.duplicate[0] {
-        None
-    } else {
-        decoded_id
-            .as_ref()
-            .and_then(|value| value.as_ref().ok())
-            .and_then(|text| uuid_bytes(&text.0))
-    };
-    if let Some(index) = fields.duplicate.iter().position(|&duplicate| duplicate) {
-        return Err(structural(
-            possible_id,
-            MESH_FIELD_ORDER[index],
-            MeshProblem::Duplicate,
-        ));
-    }
-    let decoded_id =
-        decoded_id.ok_or_else(|| structural(None, MeshField::Id, MeshProblem::Missing))?;
-    let source_id =
-        decoded_id.map_err(|source| structural(None, MeshField::Id, MeshProblem::Json(source)))?;
-    let id = uuid_bytes(&source_id.0)
-        .ok_or_else(|| structural(None, MeshField::Id, MeshProblem::InvalidId))?;
+    let object = parse_identified_object(raw, &MESH_FIELDS).map_err(|error| match error {
+        IdentifiedObjectError::Json(source) => {
+            structural(None, MeshField::Id, MeshProblem::Json(source))
+        }
+        IdentifiedObjectError::MissingId => structural(None, MeshField::Id, MeshProblem::Missing),
+        IdentifiedObjectError::InvalidId => structural(None, MeshField::Id, MeshProblem::InvalidId),
+        IdentifiedObjectError::Duplicate { index, id } => {
+            structural(id, MESH_FIELD_ORDER[index], MeshProblem::Duplicate)
+        }
+    })?;
+    let id = object.id;
+    let fields = object.fields;
     let positions_raw = fields.values[1]
         .ok_or_else(|| structural(Some(id), MeshField::Positions, MeshProblem::Missing))?;
     let positions_m: Vec<[f64; 3]> = serde_json::from_str(positions_raw.get())
@@ -470,6 +623,7 @@ mod tests {
 
     const MESH: &str = r#"{"id":"a6b9c300-0000-4000-8000-000000000014","positions_m":[[0,0,0],[1,0,0],[0,1,0]],"uv0":[[0,0],[1,0],[0,1]],"triangles":[[0,1,2]]}"#;
     const CAMERA: &str = r#"{"id":"a6b9c300-0000-4000-8000-000000000013","position_m":[0,0,5],"orientation_xyzw":[0,0,0,1],"vertical_fov_rad":1.0471975511965976,"near_m":0.1,"far_m":20,"exposure":0.0001}"#;
+    const INSTANCE: &str = r#"{"id":"a6b9c300-0000-4000-8000-000000000015","mesh":"a6b9c300-0000-4000-8000-000000000014","material":"a6b9c300-0000-4000-8000-000000000016","translation_m":[0,0,0],"orientation_xyzw":[0,0,0,1],"scale":[1,1,1]}"#;
 
     fn raw(text: &str) -> &RawValue {
         serde_json::from_str(text).unwrap()
@@ -525,7 +679,8 @@ mod tests {
             decode_camera_v1(raw(&bad_fields)),
             Err(CameraDecodeError { id: Some(found), field: CameraField::Position, problem: CameraProblem::Json(_), .. }) if found[15] == 19
         ));
-        let unknown_and_bad = bad_fields.replacen('{', "{\"z_extra\":true,", 1);
+        let unknown_and_bad =
+            bad_fields.replacen('{', r#"{"z_extra":true,"z\u005fextra":false,"#, 1);
         assert!(matches!(
             decode_camera_v1(raw(&unknown_and_bad)),
             Err(CameraDecodeError {
@@ -534,7 +689,7 @@ mod tests {
                 ..
             })
         ));
-        let unknown_only = reordered.replacen('{', "{\"z_extra\":true,", 1);
+        let unknown_only = reordered.replacen('{', r#"{"z_extra":true,"z\u005fextra":false,"#, 1);
         assert!(matches!(
             decode_camera_v1(raw(&unknown_only)),
             Err(CameraDecodeError {
@@ -563,6 +718,94 @@ mod tests {
             decode_camera_v1(raw(positional)),
             Err(CameraDecodeError {
                 problem: CameraProblem::Json(_),
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn instance_keeps_typed_edges_and_defers_mesh_bound() {
+        let instance = decode_instance_v1(raw(INSTANCE)).unwrap();
+        assert_eq!(instance.id[15], 21);
+        assert_eq!(instance.mesh[15], 20);
+        assert_eq!(instance.material[15], 22);
+        assert_eq!(instance.scale, [1.0; 3]);
+        let signed_scale = INSTANCE.replace("[1,1,1]", "[-0.0,-2,1]");
+        assert_eq!(
+            decode_instance_v1(raw(&signed_scale)).unwrap().scale,
+            [-0.0, -2.0, 1.0]
+        );
+        let large_scale = INSTANCE.replace("[1,1,1]", "[1000000,1,1]");
+        assert!(decode_instance_v1(raw(&large_scale)).is_ok());
+        // Source structure accepts finite scale. The mesh-dependent bound is
+        // checked only after its typed mesh edge closes.
+        let invalid_q = INSTANCE.replace("[0,0,0,1]", "[0,0,0,2]");
+        assert!(matches!(
+            decode_instance_v1(raw(&invalid_q)),
+            Err(InstanceDecodeError {
+                field: InstanceField::Orientation,
+                problem: InstanceProblem::InvalidOrientation,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn instance_edges_and_field_order_refuse_without_resolution() {
+        let wrong_ref = INSTANCE.replace(
+            "a6b9c300-0000-4000-8000-000000000014",
+            "A6B9C300-0000-4000-8000-000000000014",
+        );
+        assert!(matches!(
+            decode_instance_v1(raw(&wrong_ref)),
+            Err(InstanceDecodeError {
+                field: InstanceField::Mesh,
+                problem: InstanceProblem::InvalidReference,
+                ..
+            })
+        ));
+        let reordered = r#"{"scale":[1,1,1],"orientation_xyzw":[0,0,0,1],"translation_m":[0,0,0],"material":"a6b9c300-0000-4000-8000-000000000016","mesh":"a6b9c300-0000-4000-8000-000000000014","id":"a6b9c300-0000-4000-8000-000000000015"}"#;
+        assert_eq!(decode_instance_v1(raw(reordered)).unwrap().id[15], 21);
+        let known_before_unknown = reordered.replace("[0,0,0]", "\"bad\"").replacen(
+            '{',
+            r#"{"z_extra":true,"z\u005fextra":false,"#,
+            1,
+        );
+        assert!(matches!(
+            decode_instance_v1(raw(&known_before_unknown)),
+            Err(InstanceDecodeError {
+                field: InstanceField::Translation,
+                problem: InstanceProblem::Json(_),
+                ..
+            })
+        ));
+        let repeated_unknown =
+            reordered.replacen('{', r#"{"z_extra":true,"z\u005fextra":false,"#, 1);
+        assert!(matches!(
+            decode_instance_v1(raw(&repeated_unknown)),
+            Err(InstanceDecodeError {
+                field: InstanceField::Unknown,
+                problem: InstanceProblem::Unknown(name),
+                ..
+            }) if name == "z_extra"
+        ));
+        let duplicate = INSTANCE.replace(
+            r#""scale":[1,1,1]"#,
+            r#""scale":[1,1,1],"sc\u0061le":[1,1,1]"#,
+        );
+        assert!(matches!(
+            decode_instance_v1(raw(&duplicate)),
+            Err(InstanceDecodeError {
+                id: Some(found),
+                field: InstanceField::Scale,
+                problem: InstanceProblem::Duplicate,
+            }) if found[15] == 21
+        ));
+        let positional = r#"["a6b9c300-0000-4000-8000-000000000015","a6b9c300-0000-4000-8000-000000000014","a6b9c300-0000-4000-8000-000000000016",[0,0,0],[0,0,0,1],[1,1,1]]"#;
+        assert!(matches!(
+            decode_instance_v1(raw(positional)),
+            Err(InstanceDecodeError {
+                problem: InstanceProblem::Json(_),
                 ..
             })
         ));
@@ -675,7 +918,7 @@ mod tests {
             }) if found[15] == 20
         ));
         let unknown_and_bad = format!(
-            r#"{{"id":"{id}","z_extra":true,"positions_m":"wrong","uv0":[],"triangles":[]}}"#
+            r#"{{"id":"{id}","z_extra":true,"z\u005fextra":false,"positions_m":"wrong","uv0":[],"triangles":[]}}"#
         );
         assert!(matches!(
             decode_mesh_v1(raw(&unknown_and_bad), |_| Ok::<_, ()>(())),
@@ -685,7 +928,7 @@ mod tests {
                 ..
             })
         ));
-        let unknown_only = MESH.replacen('{', "{\"z_extra\":true,", 1);
+        let unknown_only = MESH.replacen('{', r#"{"z_extra":true,"z\u005fextra":false,"#, 1);
         assert!(matches!(
             decode_mesh_v1(raw(&unknown_only), |_| Ok::<_, ()>(())),
             Err(MeshDecodeError::Structural {

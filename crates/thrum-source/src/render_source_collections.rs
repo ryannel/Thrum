@@ -8,8 +8,9 @@ use serde_json::value::RawValue;
 
 use crate::render_json::{RawArrayError, visit_raw_array};
 use crate::render_source_objects::{
-    CameraDecodeError, CameraFacts, CameraField, CameraProblem, MeshDecodeError, MeshEvent,
-    MeshField, MeshProblem, decode_camera_v1, decode_mesh_v1,
+    CameraDecodeError, CameraFacts, CameraField, CameraProblem, InstanceDecodeError, InstanceFacts,
+    InstanceField, InstanceProblem, MeshDecodeError, MeshEvent, MeshField, MeshProblem,
+    decode_camera_v1, decode_instance_v1, decode_mesh_v1,
 };
 
 #[derive(Debug)]
@@ -30,6 +31,7 @@ pub(crate) enum CollectionScanError<E, F, P> {
 
 pub(crate) type MeshScanError<E> = CollectionScanError<E, MeshField, MeshProblem>;
 pub(crate) type CameraScanError<E> = CollectionScanError<E, CameraField, CameraProblem>;
+pub(crate) type InstanceScanError<E> = CollectionScanError<E, InstanceField, InstanceProblem>;
 
 struct Selected<'a, F, P> {
     ordinal: usize,
@@ -130,29 +132,31 @@ pub(crate) fn scan_meshes<E>(
     }
 }
 
-/// Camera facts are small and copied into the provisional projection.
-pub(crate) fn scan_cameras<E>(
+fn scan_copy_objects<T, E, F: Ord, P>(
     raw: &RawValue,
-    mut project: impl FnMut(CameraFacts) -> Result<(), E>,
-) -> Result<(), CameraScanError<E>> {
+    mut decode: impl FnMut(&RawValue) -> Result<T, (Option<[u8; 16]>, F, P)>,
+    mut identity: impl FnMut(&T) -> [u8; 16],
+    mut project: impl FnMut(T) -> Result<(), E>,
+) -> Result<(), CollectionScanError<E, F, P>> {
     let mut best = None;
     let mut ordinal = 0;
     let walked = visit_raw_array(raw, |item| {
         let here = ordinal;
         ordinal += 1;
-        match decode_camera_v1(item) {
+        match decode(item) {
             Ok(facts) => {
                 if best.is_some() {
                     Ok(())
                 } else {
+                    let id = identity(&facts);
                     project(facts).map_err(|cause| CollectionScanError::Projection {
                         ordinal: here,
-                        id: facts.id,
+                        id,
                         cause,
                     })
                 }
             }
-            Err(CameraDecodeError { id, field, problem }) => {
+            Err((id, field, problem)) => {
                 retain_lowest(
                     &mut best,
                     Selected {
@@ -174,6 +178,39 @@ pub(crate) fn scan_cameras<E>(
     }
 }
 
+/// Camera facts are small and copied into the provisional projection.
+pub(crate) fn scan_cameras<E>(
+    raw: &RawValue,
+    project: impl FnMut(CameraFacts) -> Result<(), E>,
+) -> Result<(), CameraScanError<E>> {
+    scan_copy_objects(
+        raw,
+        |item| {
+            decode_camera_v1(item)
+                .map_err(|CameraDecodeError { id, field, problem }| (id, field, problem))
+        },
+        |facts| facts.id,
+        project,
+    )
+}
+
+/// Instance facts carry unresolved typed mesh/material edges and a deferred
+/// transformed-bound input; the projection may only retain them provisionally.
+pub(crate) fn scan_instances<E>(
+    raw: &RawValue,
+    project: impl FnMut(InstanceFacts) -> Result<(), E>,
+) -> Result<(), InstanceScanError<E>> {
+    scan_copy_objects(
+        raw,
+        |item| {
+            decode_instance_v1(item)
+                .map_err(|InstanceDecodeError { id, field, problem }| (id, field, problem))
+        },
+        |facts| facts.id,
+        project,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,6 +229,12 @@ mod tests {
     fn camera(id: &str, position: &str) -> String {
         format!(
             r#"{{"id":"{id}","position_m":{position},"orientation_xyzw":[0,0,0,1],"vertical_fov_rad":1,"near_m":0.1,"far_m":20,"exposure":1}}"#
+        )
+    }
+
+    fn instance(id: &str, mesh_ref: &str) -> String {
+        format!(
+            r#"{{"id":"{id}","mesh":"{mesh_ref}","material":"a6b9c300-0000-4000-8000-000000000016","translation_m":[0,0,0],"orientation_xyzw":[0,0,0,1],"scale":[1,1,1]}}"#
         )
     }
 
@@ -316,5 +359,35 @@ mod tests {
             scan_cameras(raw("null"), |_| Ok::<_, ()>(())),
             Err(CollectionScanError::Json(_))
         ));
+    }
+
+    #[test]
+    fn instance_collection_preserves_unresolved_edges_and_uuid_error_order() {
+        let valid = instance(HIGH, LOW);
+        let mut edges = Vec::new();
+        scan_instances(raw(&format!("[{valid}]")), |facts| {
+            edges.push((facts.id, facts.mesh, facts.material));
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].1[15], 1);
+        assert_eq!(edges[0].2[15], 22);
+        let low_bad = instance(LOW, "invalid");
+        let high_bad = instance(HIGH, "invalid");
+        for source in [
+            format!("[{high_bad},{low_bad}]"),
+            format!("[{low_bad},{high_bad}]"),
+        ] {
+            assert!(matches!(
+                scan_instances(raw(&source), |_| Ok::<_, ()>(())),
+                Err(CollectionScanError::Structural {
+                    id: Some(id),
+                    field: InstanceField::Mesh,
+                    problem: InstanceProblem::InvalidReference,
+                    ..
+                }) if id[15] == 1
+            ));
+        }
     }
 }

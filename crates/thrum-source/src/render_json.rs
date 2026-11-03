@@ -219,6 +219,50 @@ pub(crate) struct RawObject<'a, const N: usize> {
     pub(crate) unknown: Option<SourceText<'a>>,
 }
 
+pub(crate) struct IdentifiedObject<'a, const N: usize> {
+    pub(crate) id: [u8; 16],
+    pub(crate) fields: RawObject<'a, N>,
+}
+
+#[derive(Debug)]
+pub(crate) enum IdentifiedObjectError {
+    Json(serde_json::Error),
+    MissingId,
+    InvalidId,
+    Duplicate { index: usize, id: Option<[u8; 16]> },
+}
+
+/// All embedded render objects start with the same canonical ID field.
+/// Duplicate recognized decoded keys precede field semantics. Unknown keys
+/// are one final Unknown refusal even if repeated. A repeated ID has no
+/// unique diagnostic owner, regardless of which value appears last.
+pub(crate) fn parse_identified_object<'a, const N: usize>(
+    raw: &'a RawValue,
+    names: &'static [&'static str; N],
+) -> Result<IdentifiedObject<'a, N>, IdentifiedObjectError> {
+    let fields = parse_raw_object(raw.get(), names).map_err(IdentifiedObjectError::Json)?;
+    if fields.duplicate[0] {
+        return Err(IdentifiedObjectError::Duplicate { index: 0, id: None });
+    }
+    let decoded_id: Option<Result<SourceText<'_>, _>> =
+        fields.values[0].map(|value| serde_json::from_str(value.get()));
+    let possible_id = decoded_id
+        .as_ref()
+        .and_then(|value| value.as_ref().ok())
+        .and_then(|text| uuid_bytes(&text.0));
+    if let Some(index) = fields.duplicate.iter().position(|&duplicate| duplicate) {
+        return Err(IdentifiedObjectError::Duplicate {
+            index,
+            id: possible_id,
+        });
+    }
+    let source_id = decoded_id
+        .ok_or(IdentifiedObjectError::MissingId)?
+        .map_err(IdentifiedObjectError::Json)?;
+    let id = uuid_bytes(&source_id.0).ok_or(IdentifiedObjectError::InvalidId)?;
+    Ok(IdentifiedObject { id, fields })
+}
+
 pub(crate) fn parse_raw_object<'a, const N: usize>(
     text: &'a str,
     names: &'static [&'static str; N],
