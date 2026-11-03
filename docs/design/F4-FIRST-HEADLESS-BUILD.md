@@ -67,6 +67,16 @@ write-granted output child. Its [A/B and guard-loss proof](../evidence/integrati
 checks the real sandbox and retained A, but the fixture's external directory
 is not yet a durably registered T2 job or a composed space claim.
 
+The [next T2 compiler handoff](research/T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md#next-f4t2-compiler-handoff)
+keeps the supervised compiler process and terminal evidence with F4. T2
+registers and charges its output child before launch, holding an account-owned
+input lease while the F4 runner holds another through the process lifetime.
+An abandoned runner cannot make the input closable. T2 refunds only after an
+F4-created terminal capability and checked output retirement. An exit code or
+report file alone cannot release the claim. While A compiles, B admission
+must count A's remaining output growth; the existing local fixture has no
+such registered output claim yet.
+
 The [prepared native environment design](T2-PREPARED-NATIVE-ENVIRONMENT.md)
 owns the first macOS compiler selection, generated sandbox and invocation
 binding. Its current metadata-isolation fixture is a candidate only: the
