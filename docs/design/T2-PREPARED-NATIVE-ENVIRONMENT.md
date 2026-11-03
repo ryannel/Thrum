@@ -139,7 +139,11 @@ Prove in order:
    identifies interruption, escaped-descendant and inherited-stdin faults
    that the next supervisor proof must reject. A [Python supervisor candidate](../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
    now bounds the local A/B build and detects owner loss, but cannot yet
-   contain an escaped session or provide a release job identity.
+   contain an escaped session or provide a release job identity. The
+   [macOS job-containment analysis](research/T2-MACOS-COMPILER-JOB-CONTAINMENT-2026-11-03.md)
+   records why process-group cleanup does not close that lifetime, the
+   OS-owned job proof target and a weaker trusted-tool fallback that would
+   require an explicit design choice.
 4. Bind a candidate output report to F3 source root, F4 product bytes,
    environment selection, complete receipt set and streamed executable hash.
    The [local retained-output proof](../evidence/i2a/F4-RETAINED-NATIVE-CANDIDATE.md)
