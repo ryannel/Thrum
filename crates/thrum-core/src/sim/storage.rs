@@ -1,4 +1,5 @@
-//! Private narrow SoA candidate, replaceable by A0 storage adapters.
+//! Private hecs component backend with engine-owned stable identity and public
+//! handle generations. Hecs entity values never leave this module.
 use std::{collections::hash_map::RandomState, hash::BuildHasher};
 
 use crate::{Handle, StableId, WorldEpoch};
@@ -8,7 +9,15 @@ use super::{ChangeTicks, ComponentEntity, ComponentView, Ownership, Position, Si
 struct Slot {
     generation: u64,
     row: Option<usize>,
+    entity: Option<hecs::Entity>,
 }
+
+#[derive(Clone, Copy)]
+struct SlotKey(u32);
+#[derive(Clone, Copy)]
+struct Health(u16);
+#[derive(Clone, Copy)]
+struct Visual(u64);
 
 /// Fixed-capacity stable-ID index. Empty buckets are restored by backward-shift
 /// deletion, so long-running unique-ID churn cannot accumulate tombstones or
@@ -97,12 +106,8 @@ pub(super) struct Store {
     free: Vec<u32>,
     ids: IdIndex,
     stable_ids: Vec<StableId>,
-    pub(super) row_slots: Vec<u32>,
-    pub(super) positions: Vec<Position>,
-    pub(super) velocities: Vec<Velocity>,
-    pub(super) health: Vec<u16>,
-    pub(super) ownership: Vec<Option<Ownership>>,
-    pub(super) visuals: Vec<Option<u64>>,
+    row_slots: Vec<u32>,
+    world: hecs::World,
     pub(super) changes: Vec<ChangeTicks>,
 }
 
@@ -114,6 +119,7 @@ impl Store {
                 .map(|_| Slot {
                     generation: 1,
                     row: None,
+                    entity: None,
                 })
                 .collect(),
             free: (0..u32::try_from(capacity).expect("validated entity capacity"))
@@ -122,11 +128,7 @@ impl Store {
             ids: IdIndex::new(capacity),
             stable_ids: Vec::with_capacity(capacity),
             row_slots: Vec::with_capacity(capacity),
-            positions: Vec::with_capacity(capacity),
-            velocities: Vec::with_capacity(capacity),
-            health: Vec::with_capacity(capacity),
-            ownership: Vec::with_capacity(capacity),
-            visuals: Vec::with_capacity(capacity),
+            world: hecs::World::new(),
             changes: Vec::with_capacity(capacity),
         }
     }
@@ -170,16 +172,16 @@ impl Store {
         slot.row.ok_or(SimError::InvalidHandle)
     }
 
-    pub(super) fn view(&self, row: usize) -> ComponentView<'_> {
+    pub(super) fn view(&self, row: usize) -> ComponentView {
         let slot = self.row_slots[row];
         ComponentView {
             handle: self.slot_handle(slot),
             id: self.id_at(row),
-            position: &self.positions[row],
-            velocity: &self.velocities[row],
-            health: self.health[row],
-            ownership: self.ownership[row],
-            visual: self.visuals[row],
+            position: self.position(row),
+            velocity: self.velocity(row),
+            health: self.health(row),
+            ownership: self.ownership(row),
+            visual: self.visual(row),
             changes: self.changes[row],
         }
     }
@@ -189,6 +191,105 @@ impl Store {
         self.stable_ids[row]
     }
 
+    fn entity_at(&self, row: usize) -> hecs::Entity {
+        self.slots[self.row_slots[row] as usize]
+            .entity
+            .expect("live row has a private entity")
+    }
+
+    pub(super) fn position(&self, row: usize) -> Position {
+        *self
+            .world
+            .get::<&Position>(self.entity_at(row))
+            .expect("live position")
+    }
+
+    pub(super) fn velocity(&self, row: usize) -> Velocity {
+        *self
+            .world
+            .get::<&Velocity>(self.entity_at(row))
+            .expect("live velocity")
+    }
+
+    pub(super) fn health(&self, row: usize) -> u16 {
+        self.world
+            .get::<&Health>(self.entity_at(row))
+            .expect("live health")
+            .0
+    }
+
+    pub(super) fn ownership(&self, row: usize) -> Option<Ownership> {
+        self.world
+            .get::<&Ownership>(self.entity_at(row))
+            .ok()
+            .map(|v| *v)
+    }
+
+    pub(super) fn visual(&self, row: usize) -> Option<u64> {
+        self.world
+            .get::<&Visual>(self.entity_at(row))
+            .ok()
+            .map(|v| v.0)
+    }
+
+    pub(super) fn set_position(&mut self, row: usize, value: Position) {
+        *self
+            .world
+            .get::<&mut Position>(self.entity_at(row))
+            .expect("live position") = value;
+    }
+
+    pub(super) fn set_velocity(&mut self, row: usize, value: Velocity) {
+        *self
+            .world
+            .get::<&mut Velocity>(self.entity_at(row))
+            .expect("live velocity") = value;
+    }
+
+    pub(super) fn set_health(&mut self, row: usize, value: u16) {
+        self.world
+            .get::<&mut Health>(self.entity_at(row))
+            .expect("live health")
+            .0 = value;
+    }
+
+    pub(super) fn for_each_motion(&self, mut visit: impl FnMut(usize, Position, Velocity)) {
+        for (key, position, velocity) in self
+            .world
+            .query::<(&SlotKey, &Position, &Velocity)>()
+            .iter()
+        {
+            let row = self.slots[key.0 as usize].row.expect("live slot has a row");
+            visit(row, *position, *velocity);
+        }
+    }
+
+    pub(super) fn copy_snapshot_into(&self, output: &mut Vec<ComponentEntity>) {
+        output.clear();
+        for (key, position, velocity, health, ownership, visual) in self
+            .world
+            .query::<(
+                &SlotKey,
+                &Position,
+                &Velocity,
+                &Health,
+                Option<&Ownership>,
+                Option<&Visual>,
+            )>()
+            .iter()
+        {
+            let row = self.slots[key.0 as usize].row.expect("live slot has a row");
+            output.push(ComponentEntity {
+                id: self.id_at(row),
+                position: *position,
+                velocity: *velocity,
+                health: health.0,
+                ownership: ownership.copied(),
+                visual: visual.map(|v| v.0),
+            });
+        }
+    }
+
     pub(super) fn spawn(&mut self, entity: ComponentEntity, tick: u64) -> Handle {
         let slot = self.free.pop().expect("prevalidated physical capacity");
         let row = self.len();
@@ -196,11 +297,25 @@ impl Store {
         self.ids.insert(entity.id, slot);
         self.row_slots.push(slot);
         self.stable_ids.push(entity.id);
-        self.positions.push(entity.position);
-        self.velocities.push(entity.velocity);
-        self.health.push(entity.health);
-        self.ownership.push(entity.ownership);
-        self.visuals.push(entity.visual);
+        let base = (
+            SlotKey(slot),
+            entity.position,
+            entity.velocity,
+            Health(entity.health),
+        );
+        let private = match (entity.ownership, entity.visual) {
+            (Some(owner), Some(visual)) => {
+                self.world
+                    .spawn((base.0, base.1, base.2, base.3, owner, Visual(visual)))
+            }
+            (Some(owner), None) => self.world.spawn((base.0, base.1, base.2, base.3, owner)),
+            (None, Some(visual)) => {
+                self.world
+                    .spawn((base.0, base.1, base.2, base.3, Visual(visual)))
+            }
+            (None, None) => self.world.spawn(base),
+        };
+        self.slots[slot as usize].entity = Some(private);
         self.changes.push(ChangeTicks {
             position: tick,
             velocity: tick,
@@ -212,20 +327,19 @@ impl Store {
 
     pub(super) fn despawn(&mut self, handle: Handle) {
         let row = self.row(handle).expect("prevalidated handle");
+        self.world
+            .despawn(self.entity_at(row))
+            .expect("live private entity");
         self.ids.remove(self.stable_ids[row]);
         self.row_slots.swap_remove(row);
         self.stable_ids.swap_remove(row);
-        self.positions.swap_remove(row);
-        self.velocities.swap_remove(row);
-        self.health.swap_remove(row);
-        self.ownership.swap_remove(row);
-        self.visuals.swap_remove(row);
         self.changes.swap_remove(row);
         if row < self.len() {
             self.slots[self.row_slots[row] as usize].row = Some(row);
         }
         let slot = &mut self.slots[handle.slot as usize];
         slot.row = None;
+        slot.entity = None;
         // Generation overflow retires the slot permanently.
         if let Some(next) = slot.generation.checked_add(1) {
             slot.generation = next;

@@ -57,16 +57,17 @@ pub struct ChangeTicks {
     pub structural: u64,
 }
 
-/// Tick-bounded typed view. It cannot outlive its immutable world borrow.
-pub struct ComponentView<'a> {
+/// Copied component sample at one committed tick. Its handle must be checked
+/// again after structural edits; it is not a retained world authority.
+pub struct ComponentView {
     /// Checked public runtime identity.
     pub handle: Handle,
     /// Stable identity.
     pub id: StableId,
     /// Borrowed position component.
-    pub position: &'a Position,
+    pub position: Position,
     /// Borrowed velocity component.
-    pub velocity: &'a Velocity,
+    pub velocity: Velocity,
     /// Health component.
     pub health: u16,
     /// Optional control component.
@@ -224,11 +225,11 @@ impl Work {
         self.health_marks[row] = tick;
     }
 
-    fn velocity(&self, row: usize, store: &Store, tick: u64) -> Velocity {
+    fn velocity(&self, row: usize, base: Velocity, tick: u64) -> Velocity {
         if self.velocity_marks[row] == tick {
             self.velocities[row]
         } else {
-            store.velocities[row]
+            base
         }
     }
 }
@@ -236,8 +237,8 @@ impl Work {
 /// One provisional A1 world authority. It is independent of the legacy I1
 /// authority; a game must choose one, never mirror gameplay into both.
 ///
-/// Numeric columns and reusable candidate columns allocate at setup. `step`
-/// neither clones whole records nor allocates; it scans dense columns. Input
+/// Private hecs components and reusable candidate columns allocate at setup. `step`
+/// neither clones whole records nor allocates after warmup. Input
 /// action vectors are caller-owned allocations moved into pending admission.
 pub struct Simulation {
     epoch: WorldEpoch,
@@ -332,12 +333,12 @@ impl Simulation {
     /// # Errors
     ///
     /// The handle is stale or belongs to another world.
-    pub fn get(&self, handle: Handle) -> Result<ComponentView<'_>, SimError> {
+    pub fn get(&self, handle: Handle) -> Result<ComponentView, SimError> {
         self.store.row(handle).map(|row| self.store.view(row))
     }
 
     /// Query typed component columns without producing temporary records.
-    pub fn query(&self) -> impl ExactSizeIterator<Item = ComponentView<'_>> {
+    pub fn query(&self) -> impl ExactSizeIterator<Item = ComponentView> {
         (0..self.len()).map(|row| self.store.view(row))
     }
 
@@ -348,7 +349,7 @@ impl Simulation {
     /// Peer capacity is full, the peer already exists, or the handle and ownership do not match.
     pub fn register_peer(&mut self, binding: Ownership, handle: Handle) -> Result<(), SimError> {
         let row = self.store.row(handle)?;
-        if self.store.ownership[row] != Some(binding)
+        if self.store.ownership(row) != Some(binding)
             || self.peers.iter().any(|p| p.active && p.handle == handle)
         {
             return Err(SimError::InvalidOwnership);
@@ -434,7 +435,7 @@ impl Simulation {
             .store
             .row(peer.handle)
             .map_err(|_| FrameError::InvalidControl)?;
-        if self.store.ownership[row] != Some(peer.binding) {
+        if self.store.ownership(row) != Some(peer.binding) {
             return Err(FrameError::InvalidControl);
         }
         peer.last_sequence = Some(frame.origin.sequence);
@@ -485,16 +486,15 @@ impl Simulation {
                 Stage::Input => apply_input(store, peers, work, config.movement_speed, next),
                 Stage::Simulate => {
                     let dt = 1.0 / f64::from(config.tick_hz.get());
-                    for row in 0..store.len() {
-                        let velocity = work.velocity(row, store, next);
+                    store.for_each_motion(|row, mut position, base_velocity| {
+                        let velocity = work.velocity(row, base_velocity, next);
                         if velocity.0 != [0.0; 3] {
-                            let mut position = store.positions[row];
                             for (p, v) in position.0.iter_mut().zip(velocity.0) {
                                 *p += v * dt;
                             }
                             work.set_position(row, position, next);
                         }
-                    }
+                    });
                 }
                 Stage::Resolve => {
                     for command in commands {
@@ -521,20 +521,20 @@ impl Simulation {
                 Stage::Publish => {
                     for &row in &work.touched {
                         if work.position_marks[row] == next
-                            && store.positions[row] != work.positions[row]
+                            && store.position(row) != work.positions[row]
                         {
-                            store.positions[row] = work.positions[row];
+                            store.set_position(row, work.positions[row]);
                             store.changes[row].position = next;
                             changed_positions += 1;
                         }
                         if work.velocity_marks[row] == next
-                            && store.velocities[row] != work.velocities[row]
+                            && store.velocity(row) != work.velocities[row]
                         {
-                            store.velocities[row] = work.velocities[row];
+                            store.set_velocity(row, work.velocities[row]);
                             store.changes[row].velocity = next;
                         }
-                        if work.health_marks[row] == next && store.health[row] != work.health[row] {
-                            store.health[row] = work.health[row];
+                        if work.health_marks[row] == next && store.health(row) != work.health[row] {
+                            store.set_health(row, work.health[row]);
                             store.changes[row].health = next;
                         }
                     }
@@ -581,17 +581,7 @@ impl Simulation {
     /// O(live entities); insufficient consumer capacity may allocate. Retained
     /// copies remain valid through all subsequent ticks and slot reuse.
     pub fn copy_snapshot_into(&self, output: &mut SimulationSnapshot) {
-        output.entities.clear();
-        output
-            .entities
-            .extend(self.query().map(|view| ComponentEntity {
-                id: view.id,
-                position: *view.position,
-                velocity: *view.velocity,
-                health: view.health,
-                ownership: view.ownership,
-                visual: view.visual,
-            }));
+        self.store.copy_snapshot_into(&mut output.entities);
         output.epoch = self.epoch;
         output.tick = self.tick;
     }
@@ -693,7 +683,7 @@ fn apply_input(
         };
         let axes = peer.pending.as_ref().map_or(peer.axes, |frame| frame.axes);
         let mut velocity = Velocity(axes.map(|axis| f64::from(axis) * movement_speed));
-        let mut health = store.health[row];
+        let mut health = store.health(row);
         let mut damaged = false;
         if let Some(frame) = &peer.pending {
             for action in &frame.actions {
