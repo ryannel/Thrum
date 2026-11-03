@@ -607,6 +607,14 @@
         "platform_performance": "fixed bounded fallback and no per-predicate heap allocation by inspection; no measurement of this production module in complete F3 decoding, combined memory, charged work, target latency or device path",
         "scope": "Source geometry predicate only. Caller must check all vertices including unreferenced positions, then all indexed triangles. Shared decoder, global UUID/edge closure, source admission, F4 product and ready renderer remain open."
       },
+      "i2a_render_no_tree_prewalk_candidate": {
+        "evidence": "../evidence/render/R0-F3-NO-TREE-PREWALK-2026-11-03.md",
+        "implementation": "private_compiled_bounded_render_json_shape_prewalk_without_decoder_caller",
+        "functional_validation": "focused Rust tests check exact 1000000-node and 64-container boundaries, escaped string, syntax, nonfinite and byte-limit refusal; independent defect-first review found no issue; full repository gate passes",
+        "experienced_quality": "not_applicable_to_inactive_source_shape_pass",
+        "platform_performance": "one linear serde pass without retained Value tree; escaped scalar scratch and combined typed-decoder latency/RSS are not measured or charged",
+        "scope": "The pass does not check duplicate decoded keys or source semantics and is not called by F3/F4. Strict typed grammar, global UUID/edge closure, allocation account, source admission, product binding and ready renderer remain open."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."
