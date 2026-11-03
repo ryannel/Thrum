@@ -162,6 +162,15 @@
         "scope": "The original I1 fixture proved fixed-tick coordination, bounded pending/results, count backpressure and a native authority/replica callback. Later selected fixed-slot and bounded structural hosts charge engine-owned storage through the shared pool; see FOUNDATION-STATUS-2026-11-02.md. A general F1 registry, real transport and named-device/visible phone qualification remain open.",
         "clock_evidence": "../evidence/i1-headless/CLOCK.md",
         "host_evidence": "../evidence/i1-headless/HOST.md"
+      },
+      "i1_ordinary_peer_profile": {
+        "design": "I1-HEADLESS.md",
+        "evidence": "../evidence/i1-headless/ORDINARY-PEER-PROFILE.md",
+        "implementation": "finite controlled membership in ordinary local and in-memory replica host constructors; unrestricted constructors remain prototype paths",
+        "functional_validation": "two focused tests cover initial over-capacity, repeated P+1 fresh-ID refusal, two independent same-tick peer sequences and replica watermarks, replicated reconnect refusal, and local newer/stale epoch behavior with a pending old-epoch action; full repository gate recorded in evidence",
+        "experienced_quality": "not_applicable_to_headless_membership",
+        "platform_performance": "one optional usize per host and count/existing-ID checks only during registration; no isolated CPU, allocator, RSS or network measurement",
+        "scope": "Counts distinct registered controlled PeerIds for one host lifetime; no retirement or replicated reconnect. N1 sockets, spectators, projection and queue bytes, remote ACK ownership and slow-peer snapshot isolation remain open."
       }
     },
     {
@@ -2101,8 +2110,9 @@
       "i1_headless": {
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
-        "scope": "In-memory replica baseline/groups, individual results, contiguous watermark and event cursor, with two independently controlled peers and a slow replica fixture; no wire codec, real WSS or four-peer qualification.",
-        "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md"
+        "scope": "In-memory replica baseline/groups, individual results, contiguous watermark and event cursor, with two independently controlled peers, a finite cumulative ordinary host membership option and a slow replica fixture; no wire codec, remote projection/queue ownership, real WSS or four-peer qualification.",
+        "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md",
+        "ordinary_peer_profile_evidence": "../evidence/i1-headless/ORDINARY-PEER-PROFILE.md"
       }
     }
   ],
@@ -3353,7 +3363,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "2da3c0502586c6032e680736d42c4781f2dce6ed166d36d043e551c919c33c45",
+    "design_sha256": "406d1d96c3ba614a57383fdfa9166fd96b83df4d32d6ac2e3f6c67059809e014",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",

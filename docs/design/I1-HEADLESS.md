@@ -18,6 +18,16 @@ One preloaded world contains a controlled actor, a collectible and a door. The g
 
 This slice uses caller-supplied fresh 128-bit local session/world/match IDs; the future host generates them. Match and local session identities are distinct types. A connection epoch and sequence are checked before a command enters the authority. Timing follows the selected `nextTick` 18-past/2-future and `timed` 6-past/12-future admission windows, with timed one-shots over two ticks late rejected. Pending future input may leave a sequence gap while a later due input resolves; group results identify each resolved sequence and a contiguous watermark. The in-memory baseline carries outstanding results, matching event IDs and an event cursor. The initial fixture had one controlled peer; the later [two-player in-memory fixture](../evidence/i1-headless/TWO-PEER.md) exercises independent peers and a slow replica. I2n adds the exact wire envelope, bounded reliable queues, wire result acknowledgement/resync, interest and compatibility manifests. Disconnect/reconnect uses a new epoch and baseline, with no automatic replay of uncertain one-shots.
 
+The [finite ordinary host profile](../evidence/i1-headless/ORDINARY-PEER-PROFILE.md)
+selects a maximum cumulative count of controlled `PeerId` rows per local or
+in-memory match. It refuses an overfull initial authority and any fresh ID
+after the count is reached, before authority queue or sequence work. The
+replicated host requires a new baseline for same-ID reconnect; no retirement
+API reclaims a slot. The local host allows the authority's newer-epoch
+same-ID reconnect without consuming another slot. Unrestricted constructors
+remain prototype paths; this profile does not provide N1 socket, spectator,
+projection or queue-byte ownership.
+
 ## Representation and cost account
 
 Select a dense slot table with a free list, generation check and stable-ID index for the finite preloaded I1 world. The `hecs` 0.11.2 private ordinary-component store remains selected for the broader W1 capability; this slice does not have heterogeneous component queries or enough dependency need to add it. Replacing the slot payload with the selected private store must preserve the public identity/barrier interface and be qualified with its actual license, dependency, Wasm and target costs before I2b. Do not expose a backend entity or Rust `TypeId` as durable/wire identity.
