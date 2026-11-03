@@ -786,7 +786,7 @@
       },
       "i2a_constant_light_pinned_cook_cost": {
         "evidence": "../evidence/i2a/E1-PINNED-COOK-PERF-2026-11-03.md",
-        "implementation": "measurement_of_existing_public_accepted_pin_and_constant_light_cook_apis",
+        "implementation": "historical_measurement_of_removed_constant_light_cook_apis",
         "functional_validation": "both fixture revisions were durably admitted through production source store; every fresh process verified A and B lux and retained A through B work; no production code changed",
         "experienced_quality": "not_applicable_to_authoring_cost_probe",
         "platform_performance": "five fresh release processes on Apple M3 Max: repeated B cook medians 34.0 us small and 627.5 us at 4099 manifest entries; repeated B pin 4.14 and 10.17 ms; full B pin+cook+close with A held 8.49 and 15.48 ms; process peak RSS ranges 4.28-4.36 and 14.17-17.20 MiB",
@@ -864,7 +864,7 @@
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
       "current_design_sha256": "e52095ea1d50d25c26991db0425a62cc3b0aaf626ced1fca01d7aa296b889b4b",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. The first E1 constant-light CPU product, semantic cook key and exact-source build binding are selected; a production pure 160-byte typed-input codec, current accepted-pin source adapter, private test-only identity byte proof, prior standalone goldens and historical provisional-lease bridge have independent correctness checks. Durable product publication and ready-build binding remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. The first E1 constant-light CPU product, semantic cook key and exact-source build binding are selected; historical pure codec, accepted-pin adapter, test-only identity byte proof, standalone goldens and provisional-lease bridge have retained correctness evidence. The codec and adapter were removed from the active tree during the code-quality reset; E1 runtime work remains parked. Durable product publication and ready-build binding remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
         "A03",
@@ -894,23 +894,23 @@
       },
       "i2a_constant_light_production_codec": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F4-PRODUCTION-CODEC-2026-11-03.md",
-        "implementation": "pure_160_byte_codec_in_thrum_cook",
+        "implementation": "parked_removed_from_active_tree_retained_in_git",
         "functional_validation": "eight focused Rust tests match four independent complete payload goldens, cover all 4096 zero-sign combinations, strict malformed payload and numeric refusal; a defect-first review found no actionable issue and the full repository check passed",
         "experienced_quality": "not_applicable_to_cpu_payload_codec",
         "platform_performance": "no integrated cook latency, process memory, cross-target byte identity or device measurement; isolated prior proof timings are not promoted",
-        "scope": "Public typed-input cook and strict load implement the selected constant-light payload bytes only. F3 validated numeric projection and selected admitted-pin closure are separately implemented; semantic CookKey, manifest/cache and exact-source build binding remain unimplemented."
+        "scope": "Historical typed-input cook and strict load implemented the selected constant-light payload bytes only; the code is parked in Git. F3 validated numeric projection remains; the accepted-pin adapter is parked in Git. Semantic CookKey, manifest/cache and exact-source build binding remain unimplemented."
       },
       "i2a_constant_light_pinned_cook": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F4-PINNED-COOK-2026-11-03.md",
-        "implementation": "selected_four_record_cook_from_accepted_pin",
+        "implementation": "parked_removed_from_active_tree_retained_in_git",
         "functional_validation": "six focused real-store Rust tests cover A/B pin and checkout isolation, unrelated/opaque semantic reuse, selected schema/type/path/identity refusal, corrupt/truncated blobs and a valid 4 MiB JSON prefix with a failing later chunk; independent defect-first review and full repository gate pass",
         "experienced_quality": "not_applicable_to_cpu_source_adapter",
         "platform_performance": "a separate five-process selected pin/cook probe measures two warm local fixtures with A/B overlap, but does not isolate manifest scan time or qualify maximum source, complete product publication, edit-to-ready or device cost",
-        "scope": "One accepted source pin authenticates project, sole scene, environment and light before typed parse and pure cook; the returned root and exact file provenance do not own a pin or publish a persistent product. Semantic CookKey, trusted cache/manifest, exact-source build binding, stale-result admission and ready runtime remain open."
+        "scope": "The removed adapter used one accepted source pin to authenticate project, sole scene, environment and light before typed parse and pure cook; the returned root and exact file provenance do not own a pin or publish a persistent product. Semantic CookKey, trusted cache/manifest, exact-source build binding, stale-result admission and ready runtime remain open."
       },
       "i2a_constant_light_identity_byte_proof": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-IDENTITY-BYTE-PROOF-2026-11-03.md",
-        "implementation": "private_test_only_candidate_identity_codec",
+        "implementation": "parked_removed_from_active_tree_retained_in_git",
         "functional_validation": "eight focused Rust tests include independent complete recipe/manifest/binding and distinct-component Python goldens, signed-zero/raw-bit semantic key checks, framing and exact-context refusal, and self-consistent wrong-product rejection; independent defect review found no correctness issue",
         "experienced_quality": "not_applicable_to_identity_byte_proof",
         "platform_performance": "fixed-array encoding only; no source-pin acquisition, store I/O, leases, integrated CPU/peak-memory, cross-target or device measurement",
@@ -1828,7 +1828,7 @@
         "A05"
       ],
       "current_design_sha256": "698976ba423fbeee448a6b91b24806b55203e6aab2c7adfca0d8d6fc1c0f649b",
-      "current_design_delta": "C4 source/run/network consumers, bounded authored source quantities and V3 light handoff, and moving-shore rain exposure reconciled. The constant-light subset has provisional staged F3 and test-only exact-root proofs; its selected F4 160-byte pure codec is now implemented and golden-tested, while admitted pin-to-product cooking and publication remain open. A restricted exact-rational moving-shore first-hit proof selects affine-area source integration for prescribed tide. Adversarial material review found opposite-direction transitions within one homogenized cell require a whole-cell chronology bound. Fixed columns fail general stocked-coast coverage under the studied 8192-column/local-error profile. Source-height density cohorts close a restricted tide law; exact Q(sqrt401) validation carries canonical true-area cap/refill on the 1:20 bank, while eight bands refuse some weather/deposition histories. Nine named fresh-history f64 episodes pass a conditional mass+density-L1 certificate, but its rational source predicates and verifier cost do not qualify incremental runtime or saved-state receipts. General metrics, film/water response, authored rain schema 2, admitted lease/F4 integration, smooth finite-shore numerics, visuals and device cost remain open. Prior reviewed hash retained.",
+      "current_design_delta": "C4 source/run/network consumers, bounded authored source quantities and V3 light handoff, and moving-shore rain exposure reconciled. The constant-light subset has provisional staged F3 and test-only exact-root proofs; its historical F4 160-byte pure codec was golden-tested and is now parked in Git, while admitted pin-to-product cooking and publication remain open. A restricted exact-rational moving-shore first-hit proof selects affine-area source integration for prescribed tide. Adversarial material review found opposite-direction transitions within one homogenized cell require a whole-cell chronology bound. Fixed columns fail general stocked-coast coverage under the studied 8192-column/local-error profile. Source-height density cohorts close a restricted tide law; exact Q(sqrt401) validation carries canonical true-area cap/refill on the 1:20 bank, while eight bands refuse some weather/deposition histories. Nine named fresh-history f64 episodes pass a conditional mass+density-L1 certificate, but its rational source predicates and verifier cost do not qualify incremental runtime or saved-state receipts. General metrics, film/water response, authored rain schema 2, admitted lease/F4 integration, smooth finite-shore numerics, visuals and device cost remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",

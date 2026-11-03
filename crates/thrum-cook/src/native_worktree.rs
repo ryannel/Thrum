@@ -81,6 +81,10 @@ impl MaterializedSource {
     }
 
     /// Remove the temporary tree and report a cleanup failure.
+    ///
+    /// # Errors
+    ///
+    /// Returns the filesystem error if the tree cannot be removed.
     pub fn close(mut self) -> io::Result<()> {
         let result = fs::remove_dir_all(&self.path);
         // A failed explicit close belongs to the caller's recovery path.
@@ -100,7 +104,7 @@ impl MaterializedSource {
 impl Drop for MaterializedSource {
     fn drop(&mut self) {
         if self.live {
-            let _ = fs::remove_dir_all(&self.path);
+            drop(fs::remove_dir_all(&self.path));
         }
     }
 }
@@ -111,43 +115,20 @@ impl Drop for MaterializedSource {
 /// the build tool. No mutable checkout path is read. A copy error cleans up the
 /// partial tree before returning. These files are temporary build inputs, not
 /// a durable product or a ready build; no per-file sync is performed.
+///
+/// # Errors
+///
+/// Returns an error for an invalid destination, insufficient space, or a
+/// failed verified source copy or filesystem operation.
 pub fn materialize_pinned_source(
     pin: &mut PinnedSource,
     destination: &Path,
     plan: BuildScratchPlan,
 ) -> Result<MaterializedSource, MaterializeError> {
-    materialize_pinned_source_with(pin, destination, plan, || {}, |_| {})
-}
-
-#[cfg(test)]
-pub(crate) fn materialize_pinned_source_after_preflight(
-    pin: &mut PinnedSource,
-    destination: &Path,
-    plan: BuildScratchPlan,
-    after_preflight: impl FnOnce(),
-    before_failed_copy_cleanup: impl FnOnce(&Path),
-) -> Result<MaterializedSource, MaterializeError> {
-    materialize_pinned_source_with(
-        pin,
-        destination,
-        plan,
-        after_preflight,
-        before_failed_copy_cleanup,
-    )
-}
-
-fn materialize_pinned_source_with(
-    pin: &mut PinnedSource,
-    destination: &Path,
-    plan: BuildScratchPlan,
-    after_preflight: impl FnOnce(),
-    before_failed_copy_cleanup: impl FnOnce(&Path),
-) -> Result<MaterializedSource, MaterializeError> {
     if !destination.is_absolute() {
         return Err(MaterializeError::InvalidDestination);
     }
     preflight(pin, destination, plan)?;
-    after_preflight();
     fs::create_dir(destination).map_err(MaterializeError::Destination)?;
     let result = materialize_files(pin, destination);
     match result {
@@ -158,17 +139,14 @@ fn materialize_pinned_source_with(
             copied_bytes,
             live: true,
         }),
-        Err(cause) => {
-            before_failed_copy_cleanup(destination);
-            match fs::remove_dir_all(destination) {
-                Ok(()) => Err(cause),
-                Err(source) => Err(MaterializeError::Cleanup {
-                    path: destination.to_owned(),
-                    cause: Box::new(cause),
-                    source,
-                }),
-            }
-        }
+        Err(cause) => match fs::remove_dir_all(destination) {
+            Ok(()) => Err(cause),
+            Err(source) => Err(MaterializeError::Cleanup {
+                path: destination.to_owned(),
+                cause: Box::new(cause),
+                source,
+            }),
+        },
     }
 }
 
@@ -251,7 +229,7 @@ fn materialize_files(
                 path: parent.to_owned(),
                 source,
             })?;
-            previous_parent = parent.to_owned();
+            parent.clone_into(&mut previous_parent);
         }
         let mut output = new_file(&path)?;
         let copied = pin
