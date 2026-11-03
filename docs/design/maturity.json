@@ -732,7 +732,7 @@
         "implementation": "selected_four_record_cook_from_accepted_pin",
         "functional_validation": "six focused real-store Rust tests cover A/B pin and checkout isolation, unrelated/opaque semantic reuse, selected schema/type/path/identity refusal, corrupt/truncated blobs and a valid 4 MiB JSON prefix with a failing later chunk; independent defect-first review and full repository gate pass",
         "experienced_quality": "not_applicable_to_cpu_source_adapter",
-        "platform_performance": "bounded four-file temporary copies and three manifest scans are described but integrated CPU, charged allocation, peak RSS, old/new overlap, edit-to-ready and device costs are unmeasured",
+        "platform_performance": "a separate five-process selected pin/cook probe measures two warm local fixtures with A/B overlap, but does not isolate manifest scan time or qualify maximum source, complete product publication, edit-to-ready or device cost",
         "scope": "One accepted source pin authenticates project, sole scene, environment and light before typed parse and pure cook; the returned root and exact file provenance do not own a pin or publish a persistent product. Semantic CookKey, trusted cache/manifest, exact-source build binding, stale-result admission and ready runtime remain open."
       },
       "i2a_constant_light_identity_byte_proof": {
@@ -742,6 +742,10 @@
         "experienced_quality": "not_applicable_to_identity_byte_proof",
         "platform_performance": "fixed-array encoding only; no source-pin acquisition, store I/O, leases, integrated CPU/peak-memory, cross-target or device measurement",
         "scope": "Candidate nonpublishing byte grammar uses fixture class/lock digests. No production CookKey API, trusted T2 execution class/profile lock, product store, exact-source binding publication, ready build or runtime capability is established."
+      },
+      "i2a_e1_product_store_layout_candidate": {
+        "design": "research/E1-PRODUCT-STORE-LAYOUT-2026-11-03.md",
+        "scope": "An implementor and adversarial review provisionally prefer a separate no-GC SQLite product CAS over three synced files or one packed closure for the first fixed-size E1 storage proof. The proposal distinguishes immutable historical source associations from a ready selector, locates product authority outside F3's stage scan, and requires independent product WAL/space accounting and uncertain-COMMIT recovery. No product store, trusted cooker class/target, ready commit gate, layout benchmark, native fault proof or power-loss qualification exists."
       },
       "i2a_headless_scene_product": {
         "evidence": "../evidence/i2a/F4-HEADLESS-SCENE-COOK.md",
