@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "command": [
+    "node",
+    "--expose-gc",
+    "tests/observed/f57-differential.mjs"
+  ],
+  "exitCode": 0,
+  "sampledTreePeakBytes": 188497920,
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "stopped": null,
+  "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+}

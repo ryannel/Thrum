@@ -1,0 +1,102 @@
+{
+  "pass": true,
+  "scope": "Read-only checks of retained data, not a timing run",
+  "checks": [
+    {
+      "receipt": "cost.json",
+      "receiptSHA256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "case": "single-wet1200",
+      "mode": "legacy",
+      "samples": 4800,
+      "rawSHA256": "1186296e7e9b6b3802906c6379901b3ac6479137307993e0cc4e00b187ffdef3",
+      "maxMs": 1.8316250000000025,
+      "firstObservedOpportunity70Ms": null,
+      "gcEventsInProtocol": 616,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost.json",
+      "receiptSHA256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "case": "single-wet1200",
+      "mode": "observed",
+      "samples": 4800,
+      "rawSHA256": "729a8294398c650ca1462f9136867ecaee178d1a0e89f68407472445e1c5cbaf",
+      "maxMs": 1.8687909999999874,
+      "firstObservedOpportunity70Ms": 1.8687909999999874,
+      "gcEventsInProtocol": 616,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost.json",
+      "receiptSHA256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "case": "single-dry900",
+      "mode": "legacy",
+      "samples": 3600,
+      "rawSHA256": "3e46855bb6b8b281090008107fc9d87290a74dfe9d31198a9479de6a09ff4d06",
+      "maxMs": 1.9933750000000146,
+      "firstObservedOpportunity70Ms": null,
+      "gcEventsInProtocol": 616,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost.json",
+      "receiptSHA256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "case": "single-dry900",
+      "mode": "observed",
+      "samples": 3600,
+      "rawSHA256": "800d9c75daf584e54d1a47b27945a5e8422843526247059752656d62f391390b",
+      "maxMs": 2.6784999999999854,
+      "firstObservedOpportunity70Ms": 0.6920000000000073,
+      "gcEventsInProtocol": 616,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost.json",
+      "receiptSHA256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "case": "two-wet1200",
+      "mode": "legacy",
+      "samples": 4800,
+      "rawSHA256": "b6fae3903c3a312be770e2114b42c7a2001038cf7e351277ec68e0b5c7c5e663",
+      "maxMs": 2.7382500000001073,
+      "firstObservedOpportunity70Ms": null,
+      "gcEventsInProtocol": 616,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost.json",
+      "receiptSHA256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "case": "two-wet1200",
+      "mode": "observed",
+      "samples": 4800,
+      "rawSHA256": "a45e37578d9f14b83c7b0999e441aca6026f2e91e36144a6cdcf0079804c6a50",
+      "maxMs": 3.1876660000000356,
+      "firstObservedOpportunity70Ms": 1.415083999999979,
+      "gcEventsInProtocol": 616,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost-two-dry.json",
+      "receiptSHA256": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e",
+      "case": "two-dry900",
+      "mode": "legacy",
+      "samples": 3600,
+      "rawSHA256": "c54fa200a3b32eb5167716a80a3a99cb42e2fff511643fa77e613528f7a803eb",
+      "maxMs": 3.2013749999999987,
+      "firstObservedOpportunity70Ms": null,
+      "gcEventsInProtocol": 279,
+      "rawCountAndMaximumMatchExactly": true
+    },
+    {
+      "receipt": "cost-two-dry.json",
+      "receiptSHA256": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e",
+      "case": "two-dry900",
+      "mode": "observed",
+      "samples": 3600,
+      "rawSHA256": "ca445f6a76a9eb0f1bcc7709e98a0d8d95a2dab2ca8a4631a160fee0a93fb782",
+      "maxMs": 3.9796669999999494,
+      "firstObservedOpportunity70Ms": 2.4524999999999864,
+      "gcEventsInProtocol": 279,
+      "rawCountAndMaximumMatchExactly": true
+    }
+  ]
+}

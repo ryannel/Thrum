@@ -1454,6 +1454,14 @@
           "correctness": "independent_review_and_10010_midpoint_cases_six_f57_differentials_two_dry_publication_capture_native_checks_pass_no_default_physics_change",
           "experienced_quality": "CPU_only_natural_optical_assembly_still_gated_no_lifecycle_or_art_acceptance",
           "performance": "4ms_whole_step_gate_FAIL_single_dry4_203417_coupled_dry7_425500_wet_passes_do_not_override_no_runtime_adoption"
+        },
+        "observed_policy_weather_zero": {
+          "record": "../evidence/cloud-observed-policy-weather-zero-2026-11-03/README.md",
+          "source": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+          "implementation": "bounded_held_front_whole_domain_zero_certificate_original_fallback_lazy_shared_healthy_profile_selected_for_fresh_optical_integration_only",
+          "correctness": "independent_functional_review_six_exact_f57_trajectories_two_dry3600_publications_502oracle_cases_and_fresh11phase_restore_pass",
+          "experienced_quality": "CPU_only_no_new_source_art_lifecycle_GPU_or_provider_acceptance",
+          "performance": "first_unchanged_original_and_two_dry4ms_CPU_host_screens_PASS_hardest3_979667ms_margin20_333us_not_statistical_device_GPU_frame_or_full_sky_admission"
         }
       }
     },

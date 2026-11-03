@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "scope": "Exact first CPU screen pass only; next optical integration selected, runtime/art/GPUunqualified",
+  "files": {
+    "PREFLIGHT.json": {
+      "bytes": 618,
+      "sha256": "a3c48a23e9cfa3c020d86ecb79a5857d543e474167a8df393171c7179e948d7c"
+    },
+    "README.md": {
+      "bytes": 6628,
+      "sha256": "49f9dedc47ac426626c3e9c37df03004d6ff750845c98c2435499c43bfd24731"
+    },
+    "restore-spec.json": {
+      "bytes": 30672,
+      "sha256": "06ce677b10499e78535fb4112a91740440dc79f22354c61ebb4a7e15f6781f44"
+    },
+    "restore-verification.json": {
+      "bytes": 729,
+      "sha256": "4584258c25d35a603d7237958ab5a3129b89a97bf0de9866ceae85186fbdfdff"
+    },
+    "restore.py": {
+      "bytes": 4275,
+      "sha256": "ee5a88e2f5b23e4382056f44f4921c0f3673b79967bb7018085c833637b9658e"
+    },
+    "source-91b967209009f0a1.zip": {
+      "bytes": 428287,
+      "sha256": "244b69c44ffd18e1e537ac960e594e4b2df195b82c3f38283f1cc69f2f41ad7d"
+    },
+    "verification/capture.guard.json": {
+      "bytes": 307,
+      "sha256": "76be37222ca82dbd02e6fc22d7735b5d876659050822649c50039f6b8af27ef2"
+    },
+    "verification/capture.log": {
+      "bytes": 421,
+      "sha256": "efb915e62dd3387b9cc1b1387e0e1005fa42b2d4a4f99028cf3f099f8552f025"
+    },
+    "verification/f57-differential.guard.json": {
+      "bytes": 335,
+      "sha256": "97f845ea3ab3123d18bc8bdcbe6efff17082394fcf51f5afadd675d31a843c5a"
+    },
+    "verification/f57-differential.log": {
+      "bytes": 200,
+      "sha256": "13e9daeb7989ba5af41cf53ff69e95c8c6dd4e5e1be17256de09dd1cfff7c611"
+    },
+    "verification/fresh-functional-results.json": {
+      "bytes": 4881,
+      "sha256": "7822778bdcdc9fa86f52c1c5792a76c213e8732579e16bd4c0afc1ddcb7d42b5"
+    },
+    "verification/health-x-exact.guard.json": {
+      "bytes": 314,
+      "sha256": "c860aa08fd59081404f383b156e9b77c1aba2960ca0d2736428814ece707dbea"
+    },
+    "verification/health-x-exact.log": {
+      "bytes": 26,
+      "sha256": "5cb5269f38306ec71eece8350b2998d8acefea130170686c41ce3def81b14b3a"
+    },
+    "verification/legacy-source8.guard.json": {
+      "bytes": 301,
+      "sha256": "49ee9a7c3d86b109ae68fbddae22a2a189fc6b36b607e0da7719960bf47fd1d7"
+    },
+    "verification/legacy-source8.log": {
+      "bytes": 222,
+      "sha256": "009cba8220d1f02b374b702468e32dd31846025e8f520ad95a90de8d1f869dbe"
+    },
+    "verification/legacy-world12.guard.json": {
+      "bytes": 306,
+      "sha256": "839c5439e0d8977e82f20c6dcc0829feea9503cf0b9c58af9778878b91b6ad09"
+    },
+    "verification/legacy-world12.log": {
+      "bytes": 822,
+      "sha256": "5a36179cf171969245f5db65e9c962be839b1f17a95a6760516fa0b36abb0889"
+    },
+    "verification/observed-contracts.guard.json": {
+      "bytes": 309,
+      "sha256": "1a0b0a8be254a2ec3e215c11cf62c30134ce375fe6457ec13e1a569b83e524d6"
+    },
+    "verification/observed-contracts.log": {
+      "bytes": 711,
+      "sha256": "0230e5564d05de6d63bc1ce9484e31238c1cc08ddc12bb0f80840d84b2e6d326"
+    },
+    "verification/observed-native.guard.json": {
+      "bytes": 306,
+      "sha256": "4c44c89ac3bd91c73192c63590120312e3b459af6d1af2befadb81454791afe4"
+    },
+    "verification/observed-native.log": {
+      "bytes": 92,
+      "sha256": "92a1bdcab1e9d9ed7be532fefeafb73d9eddec2b2a4716005553cea6dae8d13e"
+    },
+    "verification/raw-cost-integrity.json": {
+      "bytes": 3822,
+      "sha256": "699301d9dca4dd94165c87791b2d1853097a858569adf19e854481d36e90dfc6"
+    },
+    "verification/shared-profile.guard.json": {
+      "bytes": 313,
+      "sha256": "1fa7da0f7db08b6d8471b72d8685075040d46e5784278da7b0d1dd7decc7f1d9"
+    },
+    "verification/shared-profile.log": {
+      "bytes": 20,
+      "sha256": "64dcbda34b4493abbf1edefeef3720dbb06493dd0a99bab1832930e8b1859e0e"
+    },
+    "verification/two-dry-functional.guard.json": {
+      "bytes": 337,
+      "sha256": "50c00fb570e489ea2dbf81b40c4c6e1d40cd59d141e3e2295b436c23783b9b26"
+    },
+    "verification/two-dry-functional.log": {
+      "bytes": 24,
+      "sha256": "f105f39e43dfe8a96868bc4e5b7ef733908b96dd4e9436057a72dfd104931846"
+    },
+    "verification/weather-zero-420.guard.json": {
+      "bytes": 316,
+      "sha256": "69f5821c7421d9625bf885cbd9ee550cbeb1a4678265a45d7146e2174d2b1d50"
+    },
+    "verification/weather-zero-420.log": {
+      "bytes": 24,
+      "sha256": "d09dfea3af9f63b2e88ec5b9a32ba3e10adb9d29711d0554f4bb2440fefc720d"
+    },
+    "verification/weather-zero-oracle.guard.json": {
+      "bytes": 319,
+      "sha256": "2e0a59e412792da741f84743bde2ff54ed65b1c9105899be7a6dcd6f34691adf"
+    },
+    "verification/weather-zero-oracle.log": {
+      "bytes": 60,
+      "sha256": "e84ad022de0684cda3ba6f681ab4a0a8fcabcc5aeadd893c9929254f24e28070"
+    },
+    "verification/checkpoint-review.md": {
+      "bytes": 5704,
+      "sha256": "c723fd39f17b188c1046c733b3036272bb7fc58dbb42e77862d23dab066ab525"
+    }
+  }
+}

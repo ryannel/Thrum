@@ -1,0 +1,15 @@
+{
+  "pass": true,
+  "sourcePinsSHA256": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+  "archiveSHA256": "244b69c44ffd18e1e537ac960e594e4b2df195b82c3f38283f1cc69f2f41ad7d",
+  "phases": 11,
+  "maxSampledProcessTreeBytes": 191627264,
+  "costReceiptHashesUnchanged": {
+    "cost.json": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+    "cost-two-dry.json": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e"
+  },
+  "all8RawArraysCountAndMAXExact": true,
+  "sourceAndArchiveBytesUnchanged": true,
+  "costEvaluatorsExecuted": 0,
+  "scope": "Fresh CPUfunctional relocation only; original first CPU cost screen evidence retained, not repeated; noGPU/browser/sourceadoption"
+}

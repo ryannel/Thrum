@@ -1,0 +1,14 @@
+{
+  "scope": "Retention only: exact91b96720 CPU implementation, no optical integration/adoption",
+  "plannedNonNativeArchiveBytes": 500000,
+  "plannedPackageBytes": 1500000,
+  "nativePayloadsExternal": 7,
+  "nativeUniqueDecodedBytesPerRestore": 17956864,
+  "nativeCopiesRetainedHere": 0,
+  "functionalPhases": 11,
+  "serialGuardEarlyBytes": 234881024,
+  "serialGuardHardBytes": 268435456,
+  "costEvaluatorsToExecuteDuringRetention": 0,
+  "current7bfReferenceModified": false,
+  "firstPassScope": "Original plus coupled-dry maximum4ms CPU protocols only; narrow20.333microsecond margin, not GPU/art/target admission"
+}
