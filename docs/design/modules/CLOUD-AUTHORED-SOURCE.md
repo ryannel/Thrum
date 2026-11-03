@@ -125,3 +125,30 @@ identify a connected natural head, distinct from the neighbouring bank aboveY300
 measured structure plus a compact selector and protected root, rather than redefining the visible upper shape with
 an enclosing primitive. It must still qualify the actual selected halo/lower joins under birthQ and the complete
 new rho/d/metadata/lifecycle. No new source asset is adopted by a component-label pass.
+
+
+## Natural-crown integration and remaining admission correction
+
+The [natural-core screen](../../evidence/cloud-natural-crown-screen-2026-11-03/README.md) and
+[fresh optical cook](../../evidence/cloud-natural-crown-cook-2026-11-03/README.md) now produce a fixed rho/d input,
+closed-cell support, positive root/head chains and a frame derived from its actual crest. The
+[actual ae5533ec5335b4ca diagnostic](../../evidence/cloud-natural-integration-2026-11-03/README.md) changes prepared
+inputs only; source and GPU equations remain17f. Actual native views show more irregular crests but still large tall
+masses; sampled normal renewal shows local emergence and retirement, while default drying breaks into moving remnants.
+Repeated large shapes remain noticeable. None of this accepts the artwork or full lifecycle.
+
+[Unchanged-source replays](../../evidence/cloud-natural-admission-2026-11-03/README.md) fail healthy renewal first at370s.
+Attachment passes, but all eight sites fail the exterior certificate. Many head samples really overlap older potential;
+two sites have a nominal certified head that fails only after independent future-motion inflation. Removing uncertainty
+is a diagnostic ablation, not a permissible fix. No threshold, cadence, scale, reference membership or lease changed.
+
+The next **proposed** correction is a pairwise shared-cause bound, derived before implementation. For a fixed material
+point in each of two poses, let `v_i` be its constant birth-frame offset, `b_i` its growth scale, `C_i` its centre and
+`u_i` its internal centre velocity. Subtracting the implemented horizontal equations gives
+`d(x_i-x_j)/dt = S(t)*(Ciy-Cjy + b_i*viy-b_j*vjy) + (uih-ujh) + b_i'*vih-b_j'*vjh`.
+Common mean wind cancels exactly. Relative future shear uncertainty can therefore be bounded by
+`.002 * integral_0^45 abs(Ciy-Cjy + b_i*viy-b_j*vjy) dt`, retaining known initial deformation/internal motion and
+all growth residuals. Two crown centres share the same future uplift target; a BODY/crown pair retains a bounded
+uplift response difference. The full leaf/head-ball domains and admitted arbitrary future controls must be bounded,
+not just their centres or current wind. The runtime uses stepwise five-node Simpson growth quadrature: a strict certificate must include its numerical/roundoff residual or bound those exact discrete updates. Independent equation review found no continuous-model error. This is not yet an executable certificate or evidence that all births can pass.
+Independent review, unchanged replay cases and actual motion must qualify the correction before adopting this input.

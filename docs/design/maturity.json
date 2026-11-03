@@ -1408,6 +1408,21 @@
           "correctness": "analytical_MAX_within_ADD_between_shared_clock_plan_not_executed",
           "experienced_quality": "actual_two_cell_fog_air_env_and_mainhidden_motion_unrun",
           "performance": "dense512_controls482967552_CPU_plus160989184_GPU_bytes_rules_out_naive_topology_no_timing_or_capacity_admission"
+        },
+        "natural_crown_diagnostic": {
+          "record": "../evidence/cloud-natural-integration-2026-11-03/README.md",
+          "build": "ae5533ec5335b4ca",
+          "implementation": "fresh_natural_rho_d_frame_and_admission_inputs_with_unchanged17f_source_and_GPU_equations_diagnostic_only",
+          "correctness": "independent_cook_review_native220_GPU_CPU1776points202positive_zero_invalid_maxqdelta0_0001778701_pass_0_002_envelope_healthy_renewal_FAIL_first370s",
+          "experienced_quality": "actual_native_front_side_oblique_and_sampled_normal_growth_breakup_16x_more_irregular_crest_still_large_tall_repeated_shapes_no_art_or_CF01_acceptance",
+          "performance": "no_GPU_time_frame_speed_residency_or_device_admission_from_recorded_motion"
+        },
+        "two_cell_cpu_source": {
+          "record": "../evidence/cloud-two-cell-source-2026-11-03/README.md",
+          "implementation": "bounded_two_cell_source_shared_causal_barrier_qualified_IDs_borrowed_exposure_leases_owned_probe_copy_and_fault_quarantine",
+          "correctness": "independent_review_no_findings_12focused_6native_source8_render8_serial_checks_pass_MAXwithin_ADDbetween_and_remote_positive_Sun_chord",
+          "experienced_quality": "CPU_only_no_two_cell_render_or_motion_acceptance",
+          "performance": "functional_guarded_RSS_only_concurrent_test_scheduler_overshoot_preserved_serial_recovery_not_production_capacity_or_throughput"
         }
       }
     },
