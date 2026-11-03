@@ -280,7 +280,11 @@ root rather than reconstructing claims. A process kill after registration has
 been exercised. The [focused proof](../../evidence/integration/T2-F4-JOB-HOST-2026-11-03.md)
 records the exact cases and limitations.
 
-This slice does not yet account F3 main/WAL/project temporary work, compiler
-output, cache or retained ready roots; it does not perform F3 scan races,
-native ENOSPC, sync-fault injection, recovery of retained jobs, or readiness
-publication. The complete design and proof queue above remain open.
+One [bounded same-volume APFS fault](../../evidence/integration/T2-REGISTERED-F4-NATIVE-FAULT-2026-11-03.md)
+now reaches native `ENOSPC` during a registered F4 copy after its own
+preflight. Checked input/root retirement precedes refund, and the same pin
+retries after external filler removal. This slice still does not account F3
+main/WAL/project temporary work, compiler output, cache or retained ready
+roots; it does not perform F3 scan races, uncertain cleanup/sync faults,
+recovery of retained jobs, or readiness publication. The complete design and
+proof queue above remain open.
