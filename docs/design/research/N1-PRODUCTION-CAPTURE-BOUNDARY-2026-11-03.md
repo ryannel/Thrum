@@ -56,6 +56,14 @@ submission, known-offset write, validated disposition and teardown; the
 game-specific projection hook remains narrow. The current separate types
 are useful construction slices, not proof that a public split is safe.
 
+An [ordinary-only peer owner](../../evidence/integration/N1-ORDINARY-PEER-OWNER-2026-11-03.md)
+now holds one queue and ordinary ledger under a single identity, stops after
+capture fault/unwind, exact Reject or uncertain write, and keeps frame/journal
+pressure retryable. It has no baseline/sync storage or game projection; its
+constructor still relies on an externally admitted baseline. The production
+owner remains incomplete until those states and the unified cross-kind
+sequence/supersession transaction join this same boundary.
+
 ## Cost and alternatives
 
 The selected fixture copies 48 group payloads and retains 16 framed messages
