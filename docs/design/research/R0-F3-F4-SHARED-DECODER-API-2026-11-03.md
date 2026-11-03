@@ -98,8 +98,11 @@ the parser may retain only the smallest error locator while visiting all
 object slices. An object with missing/invalid UUID uses its collection and
 source array ordinal as a fallback locator; reordering such malformed
 anonymous objects can change which structural error is first. Within one
-object, field checks use fixed schema field order after decoded duplicate-key
-checks. Syntax failure reports the parser's byte offset rather than a
+object, recognized schema-field duplicate errors precede semantic checks;
+unknown decoded keys produce one final Unknown refusal, whether repeated or
+not. Every duplicate is still invalid source. This avoids retaining an
+unbounded unknown-key set solely to distinguish two diagnostics. Known field
+checks use fixed schema order. Syntax failure reports the parser's byte offset rather than a
 reorder-invariant semantic locator. Exact per-vertex radius,
 triangle and quaternion checks belong to shared structural preparation.
 Within one collection, valid-ID object errors sort before anonymous object
