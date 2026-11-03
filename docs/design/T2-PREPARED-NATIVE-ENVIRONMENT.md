@@ -79,8 +79,12 @@ then hashes the entire cloned root against an independently supplied exact
 inventory. Final digest equality can establish the selected **byte set** even
 if the installed tree changed while files were copied; it does not establish
 one instantaneous source snapshot or prevent a later write to the clone. The
-current caller uses unreviewed local digests, and the native A/B compiler
-still reads installed roots. A ready preparer must bind the expected digest
+current caller uses unreviewed local digests. An opt-in A/B qualification now
+launches Cargo/Rustc and Clang/SDK from the clones; explicit sandbox controls
+deny reads and metadata from the corresponding installed tool files. The
+private-cache metadata phase and selected Xcode support files still use the
+installed tools/paths, and same-user writes to the clones remain possible.
+A ready preparer must bind the expected digest
 to the reviewed release manifest and hold the selected clone under a no-writer
 lifecycle through compiler shutdown and artifact publication.
 

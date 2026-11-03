@@ -1024,6 +1024,17 @@ mod tests {
         }
         let native_tools =
             std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").map(|_| select_native_sandbox_tools());
+        #[cfg(target_os = "macos")]
+        if let (Some(cache), Some(tools)) = (&owned_cache, &native_tools) {
+            assert_eq!(
+                file_sha256_hex(&tools.toolchain.join("bin/cargo")),
+                cache.cargo_hash
+            );
+            assert_eq!(
+                file_sha256_hex(&tools.toolchain.join("bin/rustc")),
+                cache.rustc_hash
+            );
+        }
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
         let built_a = cargo_build_headless(
@@ -1055,6 +1066,7 @@ mod tests {
                 &a_output,
                 &built_a.stdout,
                 ReceiptOutcome::Success,
+                native_tools.as_ref(),
             );
             assert_eq!(receipt["compiles"], 5);
             assert!(receipt["probes"].as_u64().unwrap() > 0);
@@ -1096,7 +1108,11 @@ mod tests {
                 "selectedFiles":selected_files,
                 "sourcePath":fs::canonicalize(a_materialized.path()).unwrap(),
                 "outputPath":fs::canonicalize(&a_output).unwrap(),
-                "closure":"local-candidate; installed roots and host runtime remain mutable"
+                "closure":if native_tools.as_ref().unwrap().retained_roots() {
+                    "local-candidate; cloned roots and host runtime remain mutable"
+                } else {
+                    "local-candidate; installed roots and host runtime remain mutable"
+                }
             });
             fs::write(
                 a_output.join("environment.json"),
@@ -1304,6 +1320,7 @@ mod tests {
                 &b_output,
                 &built_b.stdout,
                 ReceiptOutcome::CompileFailure,
+                native_tools.as_ref(),
             );
             assert_eq!(receipt["failedCompile"]["crate"], "i1_mobile_game");
             assert_eq!(receipt["compiles"], 3);
@@ -1391,11 +1408,17 @@ mod tests {
         output: &Path,
         cargo_stdout: &[u8],
         outcome: ReceiptOutcome,
+        native_tools: Option<&NativeSandboxTools>,
     ) -> serde_json::Value {
         let transcript = output.join("cargo-transcript.jsonl");
         fs::write(&transcript, cargo_stdout).unwrap();
+        #[cfg(target_os = "macos")]
+        let rustc = native_tools.unwrap().toolchain.join("bin/rustc");
+        #[cfg(not(target_os = "macos"))]
         let rustc = Path::new(env!("CARGO"))
             .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+        #[cfg(not(target_os = "macos"))]
+        let _ = native_tools;
         let mut command =
             Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()));
         command
@@ -1403,7 +1426,7 @@ mod tests {
             .arg("--receipt-dir")
             .arg(output.join("rustc-receipts"))
             .arg("--rustc")
-            .arg(rustc)
+            .arg(&rustc)
             .arg("--source")
             .arg(fs::canonicalize(input).unwrap())
             .arg("--cache")
@@ -1412,6 +1435,12 @@ mod tests {
             .arg(fs::canonicalize(output).unwrap())
             .arg("--transcript")
             .arg(transcript);
+        #[cfg(target_os = "macos")]
+        command
+            .arg("--selected-linker")
+            .arg(&native_tools.unwrap().linker)
+            .arg("--selected-sdk")
+            .arg(&native_tools.unwrap().sdk);
         if matches!(outcome, ReceiptOutcome::CompileFailure) {
             command.arg("--expect-failure");
         }
@@ -1975,8 +2004,11 @@ mod tests {
             selected
         });
         if let Some(wrapper) = &selected_wrapper {
-            let cargo = Path::new(env!("CARGO"));
-            let rustc = cargo.with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            #[cfg(target_os = "macos")]
+            let rustc = native_tools.unwrap().toolchain.join("bin/rustc");
+            #[cfg(not(target_os = "macos"))]
+            let rustc = Path::new(env!("CARGO"))
+                .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
             command
                 .env("THRUM_SELECTED_RUSTC", rustc)
                 .env("THRUM_RECEIPT_DIR", output.join("rustc-receipts"))
@@ -2129,10 +2161,16 @@ mod tests {
         linker_variable: String,
         support: Vec<PathBuf>,
         selected_files: Vec<(PathBuf, String)>,
+        denied_installed_files: Vec<PathBuf>,
+        retained_roots: bool,
     }
 
     #[cfg(target_os = "macos")]
     impl NativeSandboxTools {
+        fn retained_roots(&self) -> bool {
+            self.retained_roots
+        }
+
         fn assert_files_unchanged(&self) {
             for (path, hash) in &self.selected_files {
                 assert!(path.is_file() && !path.is_symlink());
@@ -2151,6 +2189,10 @@ mod tests {
 
     #[cfg(not(target_os = "macos"))]
     impl NativeSandboxTools {
+        fn retained_roots(&self) -> bool {
+            false
+        }
+
         fn assert_files_unchanged(&self) {
             panic!("macOS sandbox qualification only");
         }
@@ -2158,9 +2200,9 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     fn select_native_sandbox_tools() -> NativeSandboxTools {
-        let toolchain =
+        let installed_toolchain =
             fs::canonicalize(Path::new(env!("CARGO")).parent().unwrap().parent().unwrap()).unwrap();
-        let rustc_version = Command::new(toolchain.join("bin/rustc"))
+        let rustc_version = Command::new(installed_toolchain.join("bin/rustc"))
             .arg("-vV")
             .output()
             .unwrap();
@@ -2205,9 +2247,9 @@ mod tests {
             assert!(path.starts_with(&developer));
             path
         };
-        let linker = xcrun_path(&["--sdk", "macosx", "--find", "clang"]);
-        let sdk = xcrun_path(&["--sdk", "macosx", "--show-sdk-path"]);
-        let linker_root = linker
+        let installed_linker = xcrun_path(&["--sdk", "macosx", "--find", "clang"]);
+        let installed_sdk = xcrun_path(&["--sdk", "macosx", "--show-sdk-path"]);
+        let installed_linker_root = installed_linker
             .ancestors()
             .find(|path| {
                 path.extension()
@@ -2215,6 +2257,50 @@ mod tests {
             })
             .unwrap_or(&developer)
             .to_path_buf();
+        let retained = [
+            std::env::var_os("THRUM_TEST_RETAINED_RUST_ROOT"),
+            std::env::var_os("THRUM_TEST_RETAINED_LINKER_ROOT"),
+            std::env::var_os("THRUM_TEST_RETAINED_SDK_ROOT"),
+        ];
+        assert!(
+            retained.iter().all(Option::is_none) || retained.iter().all(Option::is_some),
+            "retained tool-root override needs all three selected roots"
+        );
+        let retained_roots = retained[0].is_some();
+        let denied_installed_files = if retained[0].is_some() {
+            vec![
+                installed_toolchain.join("bin/rustc"),
+                installed_linker.clone(),
+                installed_sdk.join("usr/include/stdio.h"),
+            ]
+        } else {
+            Vec::new()
+        };
+        assert!(denied_installed_files.iter().all(|path| path.is_file()));
+        let (toolchain, linker_root, linker, sdk) = if retained[0].is_some() {
+            let selected = retained.map(|value| PathBuf::from(value.unwrap()));
+            for root in &selected {
+                assert!(root.is_absolute() && root.is_dir() && !root.is_symlink());
+            }
+            let relative_linker = installed_linker
+                .strip_prefix(&installed_linker_root)
+                .unwrap();
+            let linker = selected[1].join(relative_linker);
+            assert!(linker.is_file() && !linker.is_symlink());
+            (
+                selected[0].clone(),
+                selected[1].clone(),
+                linker,
+                selected[2].clone(),
+            )
+        } else {
+            (
+                installed_toolchain,
+                installed_linker_root,
+                installed_linker,
+                installed_sdk,
+            )
+        };
         let mut support = vec![developer.join("usr/lib/libxcrun.dylib")];
         let command_line_tools =
             PathBuf::from("/Library/Developer/CommandLineTools/usr/lib/libxcrun.dylib");
@@ -2230,10 +2316,15 @@ mod tests {
                 file.display()
             );
         }
-        let selected_files = std::iter::once(&linker)
-            .chain(support.iter())
-            .map(|path| (path.clone(), file_sha256_hex(path)))
-            .collect();
+        let selected_files = [
+            toolchain.join("bin/cargo"),
+            toolchain.join("bin/rustc"),
+            linker.clone(),
+        ]
+        .iter()
+        .chain(support.iter())
+        .map(|path| (path.clone(), file_sha256_hex(path)))
+        .collect();
         NativeSandboxTools {
             toolchain,
             linker,
@@ -2242,6 +2333,8 @@ mod tests {
             linker_variable,
             support,
             selected_files,
+            denied_installed_files,
+            retained_roots,
         }
     }
 
@@ -2264,6 +2357,8 @@ mod tests {
             linker_variable: String::new(),
             support: Vec::new(),
             selected_files: vec![(file.clone(), file_sha256_hex(&file))],
+            denied_installed_files: Vec::new(),
+            retained_roots: false,
         };
         selection.assert_files_unchanged();
         fs::write(&file, b"changed tool bytes").unwrap();
@@ -2307,6 +2402,44 @@ mod tests {
             sdk: &selected.sdk,
         };
         fs::write(&profile, headless_sandbox_profile(paths, &selected.support)).unwrap();
+        for (allowed, denied) in [
+            (
+                selected.toolchain.join("bin/rustc"),
+                selected.denied_installed_files.first(),
+            ),
+            (
+                selected.linker.clone(),
+                selected.denied_installed_files.get(1),
+            ),
+            (
+                selected.sdk.join("usr/include/stdio.h"),
+                selected.denied_installed_files.get(2),
+            ),
+        ] {
+            if let Some(denied) = denied {
+                let selected_read = sandbox_command(&profile, paths, "/usr/bin/head")
+                    .args(["-c", "1"])
+                    .arg(&allowed)
+                    .output()
+                    .unwrap();
+                assert!(selected_read.status.success(), "{}", allowed.display());
+                let installed_read = sandbox_command(&profile, paths, "/usr/bin/head")
+                    .args(["-c", "1"])
+                    .arg(denied)
+                    .output()
+                    .unwrap();
+                assert!(!installed_read.status.success(), "{}", denied.display());
+                let installed_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
+                    .arg(denied)
+                    .output()
+                    .unwrap();
+                assert!(
+                    !installed_metadata.status.success(),
+                    "{} metadata",
+                    denied.display()
+                );
+            }
+        }
         let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
             .output()
@@ -2384,7 +2517,7 @@ mod tests {
                 assert!(!blocked_shared.status.success());
             }
         }
-        let mut command = sandbox_command(&profile, paths, env!("CARGO"));
+        let mut command = sandbox_command(&profile, paths, selected.toolchain.join("bin/cargo"));
         command
             .env_clear()
             .env("HOME", cargo_home.parent().unwrap())
@@ -2483,7 +2616,11 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
-    fn sandbox_command(profile: &Path, paths: SandboxPaths<'_>, program: &str) -> Command {
+    fn sandbox_command(
+        profile: &Path,
+        paths: SandboxPaths<'_>,
+        program: impl AsRef<std::ffi::OsStr>,
+    ) -> Command {
         fn parameter(name: &str, path: &Path) -> OsString {
             let mut value = OsString::from(name);
             value.push("=");
