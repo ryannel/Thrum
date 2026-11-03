@@ -43,9 +43,12 @@ registration, recovery and reconciliation before it can claim this policy.
 Unrelated OS writers can always consume space between observation and write.
 Direct F3/F4 calls that bypass this first host are outside its cooperating-job
 promise, even if they write to the same volume.
-Before registering or copying a materialization root, bind the F3 pin's
-read-only canonical source-store path to the selected project's expected store
-path. Two projects can have identical accepted root bytes and generations;
+At host open, derive the expected canonical source-store path from the selected
+live F3 store and validate its placement under the selected project. Before
+charging, registering or copying a materialization root, compare the F3 pin's
+read-only source-store path with that binding. Do not infer a fixed database
+basename from the project directory: F3's native store API does not require
+one. Two projects can have identical accepted root bytes and generations;
 neither proves store ownership. This path is an operational binding held by the
 live F3 owner, not a source-content identity or protection against external
 path replacement. Preserve the F3 pin while F4 reads or copies its bytes.
