@@ -7,6 +7,10 @@
 use serde_json::value::RawValue;
 
 use crate::render_json::{RawArrayError, visit_raw_array};
+use crate::render_source_light::{
+    LocalLightDecodeError, LocalLightFacts, LocalLightField, LocalLightProblem,
+    decode_local_light_v1,
+};
 use crate::render_source_material::{
     MaterialDecodeError, MaterialFacts, MaterialField, MaterialProblem, decode_material_v1,
 };
@@ -36,6 +40,7 @@ pub(crate) type MeshScanError<E> = CollectionScanError<E, MeshField, MeshProblem
 pub(crate) type CameraScanError<E> = CollectionScanError<E, CameraField, CameraProblem>;
 pub(crate) type InstanceScanError<E> = CollectionScanError<E, InstanceField, InstanceProblem>;
 pub(crate) type MaterialScanError<E> = CollectionScanError<E, MaterialField, MaterialProblem>;
+pub(crate) type LocalLightScanError<E> = CollectionScanError<E, LocalLightField, LocalLightProblem>;
 
 struct Selected<'a, F, P> {
     ordinal: usize,
@@ -232,6 +237,23 @@ pub(crate) fn scan_materials<E>(
     )
 }
 
+/// Authored light descriptors and IDs are provisional; W1 owns committed
+/// positions and V3 owns transport after the complete source is accepted.
+pub(crate) fn scan_local_lights<E>(
+    raw: &RawValue,
+    project: impl FnMut(LocalLightFacts) -> Result<(), E>,
+) -> Result<(), LocalLightScanError<E>> {
+    scan_copy_objects(
+        raw,
+        |item| {
+            decode_local_light_v1(item)
+                .map_err(|LocalLightDecodeError { id, field, problem }| (id, field, problem))
+        },
+        |facts| facts.id,
+        project,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -262,6 +284,12 @@ mod tests {
     fn material(id: &str, base_texture: &str) -> String {
         format!(
             r#"{{"id":"{id}","alpha_mode":"opaque","two_sided":false,"sampler":{{"min_filter":"nearest","mag_filter":"nearest","address_u":"repeat","address_v":"repeat"}},"base_factor_rgba":[0,0,0,0],"base_texture":"{base_texture}"}}"#
+        )
+    }
+
+    fn local_light(id: &str, colour: &str) -> String {
+        format!(
+            r#"{{"id":"{id}","position_m":[0,0,0],"luminous_intensity_cd":0,"unit_luminance_linear_rec709":{colour},"radius_m":0}}"#
         )
     }
 
@@ -450,6 +478,68 @@ mod tests {
         let mut calls = 0;
         assert!(matches!(
             scan_materials(raw(&source), |_| {
+                calls += 1;
+                Ok::<_, ()>(())
+            }),
+            Err(CollectionScanError::Structural { .. })
+        ));
+        assert_eq!(calls, 1);
+    }
+
+    #[test]
+    fn light_collection_preserves_authored_zero_and_canonical_errors() {
+        let mut empty_calls = 0;
+        scan_local_lights(raw("[]"), |_| {
+            empty_calls += 1;
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(empty_calls, 0);
+        let five = (1..=5)
+            .map(|index| local_light(&format!("a6b9c300-0000-4000-8000-{index:012}"), "[1,1,1]"))
+            .collect::<Vec<_>>()
+            .join(",");
+        let mut count = 0;
+        scan_local_lights(raw(&format!("[{five}]")), |_| {
+            count += 1;
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(count, 5);
+
+        let valid = local_light(HIGH, "[1,1,1]");
+        let mut descriptors = Vec::new();
+        scan_local_lights(raw(&format!("[{valid}]")), |facts| {
+            descriptors.push((facts.id, facts.luminous_intensity_cd, facts.radius_m));
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(
+            descriptors,
+            [(crate::render_json::uuid_bytes(HIGH).unwrap(), 0.0, 0.0)]
+        );
+
+        let low_bad = local_light(LOW, "[0,0,0]");
+        let high_bad = local_light(HIGH, "[0,0,0]");
+        for source in [
+            format!("[{high_bad},{low_bad}]"),
+            format!("[{low_bad},{high_bad}]"),
+        ] {
+            assert!(matches!(
+                scan_local_lights(raw(&source), |_| Ok::<_, ()>(())),
+                Err(CollectionScanError::Structural {
+                    id: Some(id),
+                    field: LocalLightField::UnitLuminance,
+                    problem: LocalLightProblem::InvalidUnitLuminance,
+                    ..
+                }) if id[15] == 1
+            ));
+        }
+
+        let source = format!("[{valid},{low_bad},{valid}]");
+        let mut calls = 0;
+        assert!(matches!(
+            scan_local_lights(raw(&source), |_| {
                 calls += 1;
                 Ok::<_, ()>(())
             }),

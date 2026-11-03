@@ -663,6 +663,14 @@
         "platform_performance": "no measured material-heavy parse cost, combined allocation/RSS, charged source peak, F4 product or device path",
         "scope": "No global texture namespace/slot-format closure, F3 source admission, F4 selected-pin material product, target alpha evaluation or ready renderer."
       },
+      "i2a_render_local_light_object_candidate": {
+        "evidence": "../evidence/render/R0-F3-LOCAL-LIGHT-OBJECT-DECODER-2026-11-03.md",
+        "implementation": "private_inactive_local_light_facts_exact_unit_luminance_predicate_and_collection_scanner",
+        "functional_validation": "six exact-predicate tests and independent integer/Python rational oracles including boundary disagreement vectors; eight object and one collection tests cover signed zero, extent, escaped grammar, canonical errors, zero/five-light source counts and provisional projection; independent arithmetic and object/scanner reviews found no blocker",
+        "experienced_quality": "not_applicable_to_inactive_source_decoder",
+        "platform_performance": "standalone Darwin arm64 optimized predicate median 3.92-3.93 ns on ordinary fixtures with no fallback and 22.88 ns on deliberate all-boundary fallback; no measured JSON/combined F3/F4 CPU, allocation/RSS, charged peak or device path",
+        "scope": "No root-wide structural/global closure, F3 admission, F4 selected-pin normalization/product, W1 runtime registry, V3 transport or ready renderer."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."
