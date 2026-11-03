@@ -241,11 +241,13 @@ def open_sealed_cache(owner_parent, tree, legacy, manifest_sha):
 
 
 class HeldNativeCacheSelection:
-    """A cold-checked Rust/cache pair; warm reuse hashes only source keys."""
+    """Cold-checked native roots; warm reuse hashes only source keys."""
 
-    def __init__(self, cache, rust_root):
+    def __init__(self, cache, rust_root, linker_root, sdk_root):
         cache.assert_live()
         rust_root.assert_live()
+        linker_root.assert_live()
+        sdk_root.assert_live()
         candidate = json.loads(cache.manifest_bytes)
         if (not isinstance(candidate, dict) or candidate.get("format") != 2
                 or candidate.get("privateRoot") != cache.legacy
@@ -272,12 +274,16 @@ class HeldNativeCacheSelection:
         rust_root.assert_live()
         self.cache = cache
         self.rust_root = rust_root
+        self.linker_root = linker_root
+        self.sdk_root = sdk_root
         self.candidate = candidate
         self.selected_tools = selected_tools
 
     def verify_reuse(self, source, target):
         self.cache.assert_live()
         self.rust_root.assert_live()
+        self.linker_root.assert_live()
+        self.sdk_root.assert_live()
         if target != self.candidate["target"]:
             raise ValueError("held private cache target differs from selected target")
         actual = cargo_reuse_key(Path(source), target, self.selected_tools)
@@ -285,6 +291,8 @@ class HeldNativeCacheSelection:
             raise ValueError("held private cache cannot be reused for this source")
         self.cache.assert_live()
         self.rust_root.assert_live()
+        self.linker_root.assert_live()
+        self.sdk_root.assert_live()
         return actual
 
 
@@ -299,12 +307,15 @@ def main():
     parser.add_argument("--tree-json")
     parser.add_argument("--legacy-json")
     parser.add_argument("--rust-tree-json")
+    parser.add_argument("--linker-tree-json")
+    parser.add_argument("--sdk-tree-json")
     parser.add_argument("--manifest-sha")
     args = parser.parse_args()
     if args.prepare:
         if (args.source is None or args.manifest is None
                 or any(value is not None for value in (
                     args.tree_json, args.legacy_json, args.rust_tree_json,
+                    args.linker_tree_json, args.sdk_tree_json,
                     args.manifest_sha,
                 ))):
             parser.error("preparation needs source and manifest only")
@@ -322,6 +333,7 @@ def main():
         if (args.source is not None or args.manifest is not None
                 or any(value is None for value in (
                     args.tree_json, args.legacy_json, args.rust_tree_json,
+                    args.linker_tree_json, args.sdk_tree_json,
                     args.manifest_sha,
                 ))):
             parser.error("holding needs tree, legacy and manifest digest only")
@@ -329,8 +341,12 @@ def main():
                 args.owner, json.loads(args.tree_json), json.loads(args.legacy_json),
                 args.manifest_sha,
               ) as cache_lease,
-              open_sealed_clone(args.owner, json.loads(args.rust_tree_json)) as rust_lease):
-            selected = HeldNativeCacheSelection(cache_lease, rust_lease)
+              open_sealed_clone(args.owner, json.loads(args.rust_tree_json)) as rust_lease,
+              open_sealed_clone(args.owner, json.loads(args.linker_tree_json)) as linker_lease,
+              open_sealed_clone(args.owner, json.loads(args.sdk_tree_json)) as sdk_lease):
+            selected = HeldNativeCacheSelection(
+                cache_lease, rust_lease, linker_lease, sdk_lease,
+            )
             print("READY", flush=True)
             while raw := sys.stdin.buffer.readline(4097):
                 if len(raw) > 4096 or not raw.endswith(b"\n"):
@@ -350,6 +366,8 @@ def main():
                 print(json.dumps(response, sort_keys=True, separators=(",", ":")), flush=True)
             selected.cache.assert_live()
             selected.rust_root.assert_live()
+            selected.linker_root.assert_live()
+            selected.sdk_root.assert_live()
 
 
 if __name__ == "__main__":
