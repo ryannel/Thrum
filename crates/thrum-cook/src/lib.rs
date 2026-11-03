@@ -1456,7 +1456,14 @@ mod tests {
         if let Some((candidate, digest)) = &candidate_a {
             let retained = candidate_output::verify(candidate, digest, a, &product).unwrap();
             assert_eq!(file_sha256_hex(&retained), binary_a_hash);
-            assert!(Command::new(&retained).output().unwrap().status.success());
+            let rerun = Command::new(&retained).output().unwrap();
+            assert!(
+                rerun.status.success(),
+                "retained A rerun exited {}: stdout={} stderr={}",
+                rerun.status,
+                String::from_utf8_lossy(&rerun.stdout),
+                String::from_utf8_lossy(&rerun.stderr),
+            );
             assert!(candidate_output::verify(candidate, digest, b, &b_product).is_err());
             assert!(!fixture.root().join(".engine/candidate-b").exists());
             let environment_path = candidate.join("environment.json");
@@ -2500,13 +2507,22 @@ mod tests {
         native_tools: Option<&NativeSandboxTools>,
         cache_guard: Option<&mut SealedCacheGuard>,
     ) -> std::process::Output {
+        #[cfg(target_os = "macos")]
+        let mut cache_guard = cache_guard;
         fs::create_dir_all(output).unwrap();
         let output = fs::canonicalize(output).unwrap();
         let input = fs::canonicalize(input).unwrap();
         let sandbox = std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some();
+        assert!(sandbox || cache_guard.is_none());
         let mut command = if sandbox {
             let selected = native_tools.expect("sandbox needs one selected tool environment");
-            selected.assert_files_unchanged();
+            #[cfg(target_os = "macos")]
+            if let Some(guard) = cache_guard.as_deref_mut() {
+                guard
+                    .ensure_live()
+                    .expect("held tool guard exited before Cargo");
+            }
+            selected.assert_files_unchanged_for_build(cache_guard.is_some());
             sandboxed_cargo_command(&input, &output, checkout, private_cargo_home, selected)
         } else {
             Command::new(env!("CARGO"))
@@ -2549,7 +2565,7 @@ mod tests {
             .env("CARGO_NET_OFFLINE", "true");
         #[cfg(target_os = "macos")]
         let result = if sandbox {
-            supervised_headless_build(command, checkout, &output, cache_guard)
+            supervised_headless_build(command, checkout, &output, cache_guard.as_deref_mut())
         } else {
             command.output().unwrap()
         };
@@ -2558,7 +2574,13 @@ mod tests {
         #[cfg(not(target_os = "macos"))]
         let result = command.output().unwrap();
         if let Some(selected) = native_tools {
-            selected.assert_files_unchanged();
+            #[cfg(target_os = "macos")]
+            if let Some(guard) = cache_guard.as_deref_mut() {
+                guard
+                    .ensure_live()
+                    .expect("held tool guard exited after Cargo");
+            }
+            selected.assert_files_unchanged_for_build(cache_guard.is_some());
         }
         result
     }
@@ -2833,7 +2855,19 @@ mod tests {
         }
 
         fn assert_files_unchanged(&self) {
+            self.assert_files_unchanged_for_build(false);
+        }
+
+        fn assert_files_unchanged_for_build(&self, held_roots: bool) {
+            let cargo = self.toolchain.join("bin/cargo");
+            let rustc = self.toolchain.join("bin/rustc");
             for (path, hash) in &self.selected_files {
+                if held_roots
+                    && self.retained_roots
+                    && (path == &cargo || path == &rustc || path == &self.linker)
+                {
+                    continue;
+                }
                 assert!(path.is_file() && !path.is_symlink());
                 assert_eq!(
                     file_sha256_hex(path),
@@ -2856,6 +2890,10 @@ mod tests {
 
         fn assert_files_unchanged(&self) {
             panic!("macOS sandbox qualification only");
+        }
+
+        fn assert_files_unchanged_for_build(&self, _held_roots: bool) {
+            self.assert_files_unchanged();
         }
     }
 
@@ -3030,6 +3068,51 @@ mod tests {
         fs::write(&other, b"initial tool bytes").unwrap();
         std::os::unix::fs::symlink(&other, &file).unwrap();
         assert!(std::panic::catch_unwind(|| selection.assert_files_unchanged()).is_err());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn held_tool_recheck_keeps_unheld_support_and_unheld_fallback() {
+        let fixture = Fixture::new();
+        let toolchain = fixture.root().join("rust");
+        let linker_root = fixture.root().join("linker");
+        fs::create_dir_all(toolchain.join("bin")).unwrap();
+        fs::create_dir_all(&linker_root).unwrap();
+        let cargo = toolchain.join("bin/cargo");
+        let rustc = toolchain.join("bin/rustc");
+        let linker = linker_root.join("clang");
+        let support = fixture.root().join("support");
+        for path in [&cargo, &rustc, &linker, &support] {
+            fs::write(path, b"selected").unwrap();
+        }
+        let selected_files = [&cargo, &rustc, &linker, &support]
+            .map(|path| (path.clone(), file_sha256_hex(path)))
+            .to_vec();
+        let mut selection = NativeSandboxTools {
+            toolchain,
+            linker: linker.clone(),
+            linker_root,
+            sdk: PathBuf::new(),
+            linker_variable: String::new(),
+            support: vec![support.clone()],
+            selected_files,
+            denied_installed_files: Vec::new(),
+            retained_roots: true,
+        };
+        fs::write(&cargo, b"changed").unwrap();
+        selection.assert_files_unchanged_for_build(true);
+        assert!(
+            std::panic::catch_unwind(|| selection.assert_files_unchanged_for_build(false)).is_err()
+        );
+        selection.retained_roots = false;
+        assert!(
+            std::panic::catch_unwind(|| selection.assert_files_unchanged_for_build(true)).is_err()
+        );
+        selection.retained_roots = true;
+        fs::write(&support, b"changed").unwrap();
+        assert!(
+            std::panic::catch_unwind(|| selection.assert_files_unchanged_for_build(true)).is_err()
+        );
     }
 
     #[cfg(target_os = "macos")]
