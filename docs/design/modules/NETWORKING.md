@@ -11,6 +11,9 @@ reopens the 60-to-20 Hz outbound burst and same-tick multi-group replica
 consumer before a production queue/codec can qualify. Transport, runtime,
 latency and device proof remain unrun. The authority model and early I2n
 milestone stand.
+The [first R4 payload codec](../../evidence/integration/N1-R4-PAYLOAD-CODEC-2026-11-03.md)
+now checks fixed framing and local result shape in a registered crate; it
+does not validate the envelope or admit a semantic group to a replica.
 
 Selected architectural direction, 1 November 2026. The user requires future multiplayer as a first-class citizen to
 avoid rebuilding the engine around it later. N1 is an optional runtime responsibility with contracts designed now;

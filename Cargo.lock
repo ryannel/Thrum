@@ -1618,6 +1618,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-network"
+version = "0.1.0"
+
+[[package]]
 name = "thrum-source"
 version = "0.1.0"
 dependencies = [
