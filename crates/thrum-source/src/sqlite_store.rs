@@ -3542,6 +3542,16 @@ fn native_store_multichunk_pin_survives_same_owner_root_advance_during_copy() {
                     .admit(first.generation, 1, 2, [2; 32], &next_candidate)
                     .unwrap(),
             );
+            let (busy, _, _): (i64, i64, i64) = store
+                .owner
+                .lock()
+                .unwrap()
+                .conn
+                .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+                    Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                })
+                .unwrap();
+            assert_eq!(busy, 0, "pinned output held a WAL read transaction");
         }),
     };
     assert_eq!(
