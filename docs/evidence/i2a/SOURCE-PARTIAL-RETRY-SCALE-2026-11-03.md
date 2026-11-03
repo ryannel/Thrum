@@ -132,10 +132,48 @@ free-space reservation, other APFS allocations, a cleanup/final-COMMIT space
 fault, power-loss recovery, or cross-volume staging behavior. The test is
 opt-in because it requires a separately mounted bounded volume.
 
+## Cleanup pressure after a competing native out-of-space write
+
+A separate opt-in test used an exclusive task-owned **384 MiB APFS** image
+for the accepted SQLite database; the validated A/B source stages stayed on
+the host volume. It seeded the first 64 MiB—sixteen four-MiB chunks—of a
+68 MiB B master,
+removed index zero to make the incomplete prefix malformed, and truncated
+the WAL. The ordinary cleanup's descending index-15 deletion committed.
+After the **index-14 live guard** succeeded, a test-only hook wrote four-KiB
+filler blocks until its own filesystem write returned native errno 28. The
+filler completed 300,972 KiB of whole writes; the image's observed available
+space fell from 316,866,560 to 8,523,776 bytes. The selected SQLite
+`secure_delete` setting was 0; the test did not change it.
+
+The index-14 deletion **also committed** with the filler present. The next
+bounded slice, index 13, returned typed `AvailableLive` pressure with a
+9,437,184-byte incoming allowance, zero checkpoint debt and 8,523,776
+bytes observed available. B's header remained `state=0` with exactly indices
+1–13 retained; A stayed selected and B had no keyed outcome. A's old pin
+returned exact scene bytes **before filler removal**. After removing the
+filler, a fresh owner found the same incomplete B rows, reacquired A's pin,
+completed B cleanup/retry and authenticated the full 68 MiB master through
+B's pin. A second reopen found B's exact selected root and keyed outcome.
+
+This is native `ENOSPC` in the **competing filler**, followed by successful
+ordinary cleanup SQL and a live *planning refusal*. It does not establish
+`SQLITE_FULL` in a cleanup DELETE, a physical free-space floor, concurrent
+A reads during the cleanup loop, process-kill recovery or a latency result.
+The test-only cleanup timer includes filler execution and was not used for
+cost evidence. The run requires its own mounted image; it should not run
+concurrently with the separate append-fault probe on the same volume.
+After mounting an exclusive 384 MiB APFS image, run the ignored test with
+`THRUM_TEST_ENOSPC_VOLUME_DIR` set to its mountpoint:
+
+```sh
+RUSTC_WRAPPER= rustup run 1.99.1 cargo test --offline --locked -p thrum-source measure_accepted_cleanup_pressure_after_native_enospc -- --ignored --nocapture --test-threads=1
+```
+
 ## Still open for the full F3 gate
 
-An interrupted hundreds-chunk cleanup, native space faults during cleanup
-and final publication,
+An interrupted hundreds-chunk cleanup, native-volume-induced SQLite
+`SQLITE_FULL` during ordinary cleanup and final publication,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
