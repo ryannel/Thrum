@@ -106,7 +106,9 @@ preservation on rejection, exact opaque neighboring edits, bounded peak work,
 and source/save compatibility before this extension is called admitted.
 The [first constant-light product](modules/ENVIRONMENT.md#selected-first-f4-constant-light-product-and-binding)
 selects the initial binary payload, normalization, cook key and binding;
-the admitted-source lease and F4 builder remain unimplemented.
+the first native accepted-source pin and verified immutable reads are implemented,
+while the constant-light cooker, product/build binding and ready F4 builder remain
+unimplemented.
 
 Parsing is strict I-JSON: no duplicate keys, NaN/Infinity, invalid Unicode, out-of-range integer IDs or implicit units. JSON numbers are finite f64 and negative zero normalizes to zero on semantic write. SourceRevision hashes **exact file bytes**, so formatting changes yield a new source revision; recipes may separately hash schema-validated canonical values using [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html). Registry and root JSON are JCS encoded for their own hashes. Records may use comments only in a separate documentation field, not JSON comments. Version 1 has no automatic major-version coercion; an admitted migration creates a new file tree and records old/new revision and migration ID. Client writes use stable field IDs and schema version, never array positions or human labels.
 
