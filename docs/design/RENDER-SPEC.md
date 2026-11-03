@@ -513,6 +513,12 @@ native-resolution output, then record cold preparation, per-pass CPU/GPU,
 allocation/bytes and sustained whole-frame pacing against BASELINE-SPEC's
 named target. These are unrun gates.
 
+The [bounded first resource-lifetime schedule](research/R0-RESOURCE-LIFETIME-SCHEDULE-2026-11-03.md)
+selects one queue and four scratch textures for an isolated 720p spatial proof.
+Its [logical oracle](../evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
+tests frame credits, held submissions and resize retirement. It does not
+establish a real output surface, F4 leases, GPU allocation or target viability.
+
 **Spatial implementation input.** The selected spatial operator is FXAA 3.11
 Quality on the encoded scene image. Its exact reference bytes, provenance and
 first port configuration are [pinned here](../evidence/render/FXAA-SOURCE-SELECTION-2026-11-02.md).
