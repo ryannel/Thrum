@@ -477,6 +477,10 @@ pub struct RuleContext<'a> {
 impl RuleContext<'_> {
     /// Copy one immutable output from preadmitted credit. Both callbacks spend
     /// the same non-refunding allowance, even if an owner is dropped early.
+    ///
+    /// # Errors
+    ///
+    /// The output credit is absent or cannot cover the retained payload.
     pub fn try_copy_payload(
         &mut self,
         source: &[u8],
@@ -486,6 +490,10 @@ impl RuleContext<'_> {
 
     /// Allocate a zeroed temporary range. The cumulative length of all
     /// ranges requested by one action cannot exceed the configured capacity.
+    ///
+    /// # Errors
+    ///
+    /// Scratch is unconfigured, its per-action allowance is exhausted, or the requested range cannot be represented.
     pub fn try_scratch_allocate(
         &mut self,
         len: usize,
@@ -497,6 +505,10 @@ impl RuleContext<'_> {
     }
 
     /// Read a temporary range allocated by this authority and action.
+    ///
+    /// # Errors
+    ///
+    /// The scratch owner is absent or the handle is stale, foreign, or out of range.
     pub fn scratch_view(&mut self, handle: RuleScratchHandle) -> Result<&[u8], RuleScratchError> {
         self.scratch
             .as_mut()
@@ -505,6 +517,10 @@ impl RuleContext<'_> {
     }
 
     /// Mutate a temporary range allocated by this authority and action.
+    ///
+    /// # Errors
+    ///
+    /// The scratch owner is absent or the handle is stale, foreign, or out of range.
     pub fn scratch_view_mut(
         &mut self,
         handle: RuleScratchHandle,
@@ -517,6 +533,10 @@ impl RuleContext<'_> {
 
     /// Copy an existing temporary range directly into the admitted immutable
     /// output allowance, without a game-owned staging allocation.
+    ///
+    /// # Errors
+    ///
+    /// The scratch handle is invalid or the remaining output credit cannot hold its bytes.
     pub fn try_copy_scratch_payload(
         &mut self,
         handle: RuleScratchHandle,
@@ -564,6 +584,10 @@ pub trait GameRules {
     }
 
     /// Validate against the current authoritative world without mutating it.
+    ///
+    /// # Errors
+    ///
+    /// Returns the game-defined rejection when the action is not valid for the current world.
     fn decide(
         &self,
         world: &World<Self::Entity>,
@@ -628,6 +652,10 @@ impl DueScratch {
         }
     }
 
+    #[expect(
+        clippy::used_underscore_binding,
+        reason = "the reassigned charge retains its allocation reservation through Drop"
+    )]
     fn try_grow(
         &mut self,
         peer_count: usize,
@@ -681,16 +709,16 @@ impl<A> PendingQueue<A> {
         })
     }
 
-    fn get(&self, sequence: &u64) -> Option<&Pending<A>> {
+    fn get(&self, sequence: u64) -> Option<&Pending<A>> {
         self.values
-            .binary_search_by_key(sequence, |(key, _)| *key)
+            .binary_search_by_key(&sequence, |(key, _)| *key)
             .ok()
             .map(|index| &self.values[index].1)
     }
 
-    fn get_mut(&mut self, sequence: &u64) -> Option<&mut Pending<A>> {
+    fn get_mut(&mut self, sequence: u64) -> Option<&mut Pending<A>> {
         self.values
-            .binary_search_by_key(sequence, |(key, _)| *key)
+            .binary_search_by_key(&sequence, |(key, _)| *key)
             .ok()
             .map(|index| &mut self.values[index].1)
     }
@@ -711,10 +739,10 @@ impl<A> PendingQueue<A> {
         self.values.push((sequence, pending));
     }
 
-    fn remove(&mut self, sequence: &u64) -> Option<Pending<A>> {
+    fn remove(&mut self, sequence: u64) -> Option<Pending<A>> {
         let index = self
             .values
-            .binary_search_by_key(sequence, |(key, _)| *key)
+            .binary_search_by_key(&sequence, |(key, _)| *key)
             .ok()?;
         Some(self.values.remove(index).1)
     }
@@ -757,7 +785,7 @@ struct Peer<A, R, E> {
     pending: PendingQueue<A>,
     completed: Vec<Completed<A, R, E>>,
     completed_limit: usize,
-    _completed_charge: Option<PublicationCharge>,
+    completed_charge: Option<PublicationCharge>,
     resolved_through: u64,
     out_of_order_resolved: [u64; MAX_RESULTS / 64],
 }
@@ -771,7 +799,7 @@ impl<A, R, E> Peer<A, R, E> {
             pending,
             completed: Vec::new(),
             completed_limit: 0,
-            _completed_charge: None,
+            completed_charge: None,
             resolved_through: 0,
             out_of_order_resolved: [0; MAX_RESULTS / 64],
         }
@@ -805,7 +833,7 @@ impl<A, R, E> Peer<A, R, E> {
         let mut values = Vec::with_capacity(limit);
         values.append(&mut self.completed);
         let old_values = std::mem::replace(&mut self.completed, values);
-        let old_charge = self._completed_charge.replace(charge);
+        let old_charge = self.completed_charge.replace(charge);
         self.completed_limit = limit;
         drop(old_values);
         drop(old_charge);
@@ -851,7 +879,7 @@ impl<A, R, E> Peer<A, R, E> {
 struct PeerRegistry<A, R, E> {
     entries: Vec<(PeerId, Peer<A, R, E>)>,
     limit: usize,
-    _charge: Option<PublicationCharge>,
+    charge: Option<PublicationCharge>,
 }
 
 struct PreparedPeerGrowth<A, R, E> {
@@ -865,7 +893,7 @@ impl<A, R, E> PeerRegistry<A, R, E> {
         Self {
             entries: Vec::new(),
             limit: 0,
-            _charge: None,
+            charge: None,
         }
     }
 
@@ -877,12 +905,12 @@ impl<A, R, E> PeerRegistry<A, R, E> {
         self.entries.binary_search_by_key(&id, |(key, _)| *key)
     }
 
-    fn get(&self, id: &PeerId) -> Option<&Peer<A, R, E>> {
-        self.index(*id).ok().map(|index| &self.entries[index].1)
+    fn get(&self, id: PeerId) -> Option<&Peer<A, R, E>> {
+        self.index(id).ok().map(|index| &self.entries[index].1)
     }
 
-    fn get_mut(&mut self, id: &PeerId) -> Option<&mut Peer<A, R, E>> {
-        self.index(*id).ok().map(|index| &mut self.entries[index].1)
+    fn get_mut(&mut self, id: PeerId) -> Option<&mut Peer<A, R, E>> {
+        self.index(id).ok().map(|index| &mut self.entries[index].1)
     }
 
     fn iter(&self) -> impl Iterator<Item = (&PeerId, &Peer<A, R, E>)> {
@@ -930,14 +958,14 @@ impl<A, R, E> PeerRegistry<A, R, E> {
         };
         candidate.entries.append(&mut self.entries);
         let old_entries = std::mem::replace(&mut self.entries, candidate.entries);
-        let old_charge = self._charge.replace(candidate.charge);
+        let old_charge = self.charge.replace(candidate.charge);
         self.limit = candidate.limit;
         drop(old_entries);
         drop(old_charge);
     }
 
     fn insert(&mut self, id: PeerId, peer: Peer<A, R, E>) {
-        assert!(self._charge.is_none() || self.entries.len() < self.limit);
+        assert!(self.charge.is_none() || self.entries.len() < self.limit);
         let index = self.index(id).expect_err("new peer is absent");
         self.entries.insert(index, (id, peer));
     }
@@ -1026,6 +1054,10 @@ impl<G: GameRules> Authority<G> {
 
     /// Start with pool-charged immutable snapshot pages and roots. The pool
     /// guards only snapshot allocations; this is not a whole-process byte cap.
+    ///
+    /// # Errors
+    ///
+    /// The tick-zero snapshot or its charged owners cannot be reserved.
     pub fn try_new_snapshot_charged(
         id: AuthorityId,
         rules: G,
@@ -1039,6 +1071,10 @@ impl<G: GameRules> Authority<G> {
     /// Start a charged authority whose closed world states are checked against
     /// the selected pool before tick-zero publication and before every edit.
     /// Snapshot pages/roots remain the only pre-edit byte reservation here.
+    ///
+    /// # Errors
+    ///
+    /// The closed value profile is invalid, an initial state fails its profile, or tick-zero publication cannot be charged.
     pub fn try_new_closed_snapshot_charged(
         id: AuthorityId,
         rules: G,
@@ -1164,6 +1200,10 @@ impl<G: GameRules> Authority<G> {
     /// Install one reusable, charged temporary byte buffer before accepting
     /// work. The same rule callbacks use it for local and multiplayer play.
     /// This does not meter allocations game code makes outside `RuleContext`.
+    ///
+    /// # Errors
+    ///
+    /// Scratch is already configured, the authority has started work, or the pool cannot reserve the buffer.
     pub fn try_enable_rule_scratch(
         &mut self,
         capacity: usize,
@@ -1197,40 +1237,6 @@ impl<G: GameRules> Authority<G> {
     /// it may contain unpublished effects and is only suitable for diagnosis.
     pub fn world(&self) -> &World<G::Entity> {
         &self.world
-    }
-    #[cfg(test)]
-    pub(crate) fn pending_credit_bytes(&self, peer_id: PeerId, sequence: u64) -> Option<usize> {
-        self.peers
-            .get(&peer_id)?
-            .pending
-            .get(&sequence)?
-            .credit
-            .as_ref()
-            .map(PublicationReservation::remaining_bytes)
-    }
-    #[cfg(test)]
-    pub(crate) fn structural_credit_quote(&self, spawn_bound: usize) -> Option<(usize, usize)> {
-        let profile = self.structural_credits?;
-        let horizon = self.structural_horizon(profile.pending_spawns.checked_add(spawn_bound)?)?;
-        let snapshot = self
-            .world
-            .conservative_charged_publication_peak_at(
-                self.snapshot_admission
-                    .as_ref()?
-                    .bounds
-                    .max_edits_per_action,
-                horizon,
-            )
-            .ok()?;
-        let per_input = profile
-            .funded_per_input
-            .max(snapshot.checked_add(profile.group_per_input)?);
-        let candidate = per_input.checked_add(profile.output_allowance.unwrap_or(0))?;
-        let total = profile
-            .pending_count
-            .checked_mul(per_input - profile.funded_per_input)?
-            .checked_add(candidate)?;
-        Some((candidate, total))
     }
     fn structural_horizon(&self, pending_spawns: usize) -> Option<usize> {
         let high_water = self.world.slot_high_water();
@@ -1287,7 +1293,7 @@ impl<G: GameRules> Authority<G> {
             self.faulted = true;
             return Err(StepError::TerminalGameContract);
         };
-        let snapshot_peak = match self.structural_credits.map_or_else(
+        let Ok(snapshot_peak) = self.structural_credits.map_or_else(
             || {
                 self.world
                     .conservative_charged_publication_peak(max_edits, max_spawns)
@@ -1299,25 +1305,21 @@ impl<G: GameRules> Authority<G> {
                 self.world
                     .conservative_charged_publication_peak_at(max_edits, horizon)
             },
-        ) {
-            Ok(peak) => peak,
-            Err(_) => {
-                self.faulted = true;
-                return Err(StepError::TerminalGameContract);
-            }
+        ) else {
+            self.faulted = true;
+            return Err(StepError::TerminalGameContract);
         };
         let group_peak = if charged_group {
-            match self.charged_group_peak(
+            if let Ok(peak) = self.charged_group_peak(
                 due,
                 max_edits,
                 self.peers.len(),
                 due == 0 && self.cached_watermarks.is_some(),
             ) {
-                Ok(peak) => peak,
-                Err(_) => {
-                    self.faulted = true;
-                    return Err(StepError::TerminalGameContract);
-                }
+                peak
+            } else {
+                self.faulted = true;
+                return Err(StepError::TerminalGameContract);
             }
         } else {
             0
@@ -1343,8 +1345,8 @@ impl<G: GameRules> Authority<G> {
             for (peer_id, sequence) in &self.due_scratch.values {
                 let Some(credit) = self
                     .peers
-                    .get(peer_id)
-                    .and_then(|peer| peer.pending.get(sequence))
+                    .get(*peer_id)
+                    .and_then(|peer| peer.pending.get(*sequence))
                     .and_then(|pending| pending.credit.as_ref())
                 else {
                     self.faulted = true;
@@ -1371,8 +1373,8 @@ impl<G: GameRules> Authority<G> {
             for (peer_id, sequence) in &self.due_scratch.values {
                 let credit = self
                     .peers
-                    .get_mut(peer_id)
-                    .and_then(|peer| peer.pending.get_mut(sequence))
+                    .get_mut(*peer_id)
+                    .and_then(|peer| peer.pending.get_mut(*sequence))
                     .and_then(|pending| pending.credit.as_mut())
                     .expect("validated due credit");
                 credit
@@ -1393,7 +1395,7 @@ impl<G: GameRules> Authority<G> {
     }
 
     pub(crate) fn has_peer(&self, id: PeerId) -> bool {
-        self.peers.get(&id).is_some()
+        self.peers.get(id).is_some()
     }
 
     fn charged_group_peak(
@@ -1629,6 +1631,10 @@ impl<G: GameRules> Authority<G> {
 
     /// Register or reconnect one controlled actor. Reconnect requires a newer
     /// connection epoch and loses old pending input.
+    ///
+    /// # Errors
+    ///
+    /// The authority is faulted, the epoch is stale, or peer and publication capacity cannot be admitted.
     pub fn register_peer(
         &mut self,
         id: PeerId,
@@ -1638,10 +1644,10 @@ impl<G: GameRules> Authority<G> {
         if self.faulted {
             return Err(AdmissionError::Faulted);
         }
-        if self.peers.get(&id).is_some_and(|old| epoch <= old.epoch) {
+        if self.peers.get(id).is_some_and(|old| epoch <= old.epoch) {
             return Err(AdmissionError::StaleEpoch);
         }
-        if let Some(peer) = self.peers.get_mut(&id) {
+        if let Some(peer) = self.peers.get_mut(id) {
             if let Some(profile) = &mut self.structural_credits {
                 let canceled = peer
                     .pending
@@ -1785,6 +1791,10 @@ impl<G: GameRules> Authority<G> {
         Ok(())
     }
     /// Admit a typed one-shot input; duplicate detection precedes scheduling.
+    ///
+    /// # Errors
+    ///
+    /// The peer, actor, epoch, sequence, payload, or publication capacity fails admission; a faulted authority also refuses input.
     pub fn submit(
         &mut self,
         input: Input<G::Action>,
@@ -1822,6 +1832,10 @@ impl<G: GameRules> Authority<G> {
             .is_some_and(|spawns| replica.can_admit_charged_spawns(spawns) == Ok(true))
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "admission validates and reserves one transaction before consuming its sequence; keeping the order visible protects rollback semantics"
+    )]
     fn submit_inner(
         &mut self,
         input: Input<G::Action>,
@@ -1832,7 +1846,7 @@ impl<G: GameRules> Authority<G> {
         }
         let peer = self
             .peers
-            .get_mut(&input.origin.peer)
+            .get_mut(input.origin.peer)
             .ok_or(AdmissionError::UnknownPeer)?;
         if input.origin.connection_epoch != peer.epoch {
             return Err(AdmissionError::StaleEpoch);
@@ -1845,7 +1859,7 @@ impl<G: GameRules> Authority<G> {
             return Err(AdmissionError::SequenceConflict);
         }
         if seq < peer.next_sequence {
-            if let Some(old) = peer.pending.get(&seq) {
+            if let Some(old) = peer.pending.get(seq) {
                 return if old.input == input {
                     Ok(Admission::PendingDuplicate)
                 } else {
@@ -2039,7 +2053,7 @@ impl<G: GameRules> Authority<G> {
         {
             let peer = self
                 .peers
-                .get_mut(&input.origin.peer)
+                .get_mut(input.origin.peer)
                 .expect("validated peer remains registered");
             peer.try_grow_completed(
                 peer.completed.len() + peer.pending.len() + 1,
@@ -2089,7 +2103,7 @@ impl<G: GameRules> Authority<G> {
         };
         let peer = self
             .peers
-            .get_mut(&input.origin.peer)
+            .get_mut(input.origin.peer)
             .expect("validated peer");
         peer.pending.insert(
             seq,
@@ -2108,6 +2122,10 @@ impl<G: GameRules> Authority<G> {
         Ok(Admission::Queued)
     }
     /// Release retained results only after the caller has admitted their group.
+    ///
+    /// # Errors
+    ///
+    /// The authority is faulted, the peer is unknown, or the acknowledgement exceeds its contiguous resolved sequence.
     pub fn acknowledge_results(
         &mut self,
         peer_id: PeerId,
@@ -2118,7 +2136,7 @@ impl<G: GameRules> Authority<G> {
         }
         let peer = self
             .peers
-            .get_mut(&peer_id)
+            .get_mut(peer_id)
             .ok_or(AdmissionError::UnknownPeer)?;
         if through > peer.resolved_through {
             return Err(AdmissionError::SequenceConflict);
@@ -2133,6 +2151,10 @@ impl<G: GameRules> Authority<G> {
     /// current match authority and connection incarnation. The checks and
     /// underlying ACK run under one mutable authority borrow, so a reconnect
     /// cannot slip between them. A refusal changes no result history.
+    ///
+    /// # Errors
+    ///
+    /// The authority or connection incarnation differs, or the underlying result acknowledgement is invalid.
     pub fn acknowledge_results_for_incarnation(
         &mut self,
         authority_id: AuthorityId,
@@ -2146,10 +2168,7 @@ impl<G: GameRules> Authority<G> {
         if self.id != authority_id {
             return Err(AdmissionError::WrongAuthority);
         }
-        let peer = self
-            .peers
-            .get(&peer_id)
-            .ok_or(AdmissionError::UnknownPeer)?;
+        let peer = self.peers.get(peer_id).ok_or(AdmissionError::UnknownPeer)?;
         if peer.epoch != connection_epoch {
             return Err(AdmissionError::StaleEpoch);
         }
@@ -2157,12 +2176,20 @@ impl<G: GameRules> Authority<G> {
     }
     /// Prototype baseline at the current committed tick. Use
     /// `try_baseline_charged` for a protected sealed authority.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the authority is faulted or requires the charged baseline path.
     pub fn baseline(&self) -> GameStateGroup<G> {
         self.try_baseline()
             .expect("prototype baseline requires a coherent unprotected authority")
     }
     /// Fallible prototype baseline. Protected sealed authorities return
     /// `Unqualified` so callers cannot bypass charged baseline admission.
+    ///
+    /// # Errors
+    ///
+    /// The authority is faulted or protected credits require the charged baseline path.
     pub fn try_baseline(&self) -> Result<GameStateGroup<G>, StepError> {
         if self.faulted {
             return Err(StepError::TerminalGameContract);
@@ -2204,6 +2231,10 @@ impl<G: GameRules> Authority<G> {
     /// Build a read-only baseline with shared charged column owners. The
     /// complete column peak is reserved before copying records or outcomes.
     /// Live tick and replica storage are not admitted by this method.
+    ///
+    /// # Errors
+    ///
+    /// The authority is faulted or unqualified, or the pool cannot reserve complete baseline columns.
     pub fn try_baseline_charged(&self) -> Result<ChargedGameStateGroup<G>, ChargedBaselineError>
     where
         G::Action: ClosedPublicationValue,
@@ -2306,6 +2337,10 @@ impl<G: GameRules> Authority<G> {
         })
     }
     /// Execute exactly one fixed 1/60-second authority step and publish after all decisions.
+    ///
+    /// # Errors
+    ///
+    /// Snapshot readers or publication capacity block the tick, or game preparation violates the world contract.
     pub fn step(&mut self) -> Result<GameTick<G>, StepError> {
         self.cached_watermarks = None;
         self.step_inner(false, None).map(|(tick, _)| tick)
@@ -2314,6 +2349,10 @@ impl<G: GameRules> Authority<G> {
     /// Publish one sealed tick with shared charged group columns. This admits
     /// the group's requested storage before edits; replica and host storage
     /// still require their own precommit admission.
+    ///
+    /// # Errors
+    ///
+    /// The authority is unqualified, snapshot readers or publication capacity block the tick, or game preparation violates the world contract.
     pub fn step_charged(&mut self) -> Result<ChargedGameTick<G>, StepError>
     where
         G::Action: ClosedPublicationValue,
@@ -2416,6 +2455,10 @@ impl<G: GameRules> Authority<G> {
         })
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "the tick transaction applies due inputs in order and publishes exactly once; splitting the commit path would obscure fault and replay boundaries"
+    )]
     fn step_inner(
         &mut self,
         charged_group: bool,
@@ -2443,7 +2486,13 @@ impl<G: GameRules> Authority<G> {
                     .values
                     .iter()
                     .try_fold(0_usize, |sum, (peer_id, sequence)| {
-                        sum.checked_add(self.peers.get(peer_id)?.pending.get(sequence)?.spawn_bound)
+                        sum.checked_add(
+                            self.peers
+                                .get(*peer_id)?
+                                .pending
+                                .get(*sequence)?
+                                .spawn_bound,
+                        )
                     })
             } else {
                 self.snapshot_admission.as_ref().and_then(|admission| {
@@ -2489,10 +2538,10 @@ impl<G: GameRules> Authority<G> {
             let (peer_id, sequence) = self.due_scratch.values[index];
             let mut pending = self
                 .peers
-                .get_mut(&peer_id)
+                .get_mut(peer_id)
                 .expect("admitted peer")
                 .pending
-                .remove(&sequence)
+                .remove(sequence)
                 .expect("pending key");
             if let Some(profile) = &mut self.structural_credits {
                 profile.pending_spawns -= pending.spawn_bound;
@@ -2646,7 +2695,7 @@ impl<G: GameRules> Authority<G> {
                 disposition,
                 event_id,
             };
-            let peer = self.peers.get_mut(&peer_id).expect("admitted peer");
+            let peer = self.peers.get_mut(peer_id).expect("admitted peer");
             peer.mark_resolved(origin.sequence);
             peer.completed.push(Completed {
                 input: pending.input,
@@ -2915,7 +2964,7 @@ mod tests {
         authority.enable_fixed_output_credits(1, allowance).unwrap();
         authority
             .peers
-            .get_mut(&PeerId(1))
+            .get_mut(PeerId(1))
             .unwrap()
             .try_grow_completed(1, Some(&pool))
             .unwrap();
@@ -2940,7 +2989,7 @@ mod tests {
             Err(AdmissionError::PublicationCapacity)
         );
         assert_eq!(pool.used_bytes(), pool.limit_bytes() - available);
-        assert_eq!(authority.peers.get(&PeerId(1)).unwrap().next_sequence, 1);
+        assert_eq!(authority.peers.get(PeerId(1)).unwrap().next_sequence, 1);
         drop(occupied);
         assert_eq!(authority.submit(input).unwrap(), Admission::Queued);
         let tick = authority.step_charged().unwrap();
@@ -3024,8 +3073,146 @@ mod tests {
             peers.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
             [PeerId(3), PeerId(5), PeerId(8)]
         );
-        assert_eq!(peers.get(&PeerId(5)).unwrap().actor, ActorId(5));
+        assert_eq!(peers.get(PeerId(5)).unwrap().actor, ActorId(5));
         drop(peers);
         assert_eq!(pool.used_bytes(), 0);
+    }
+
+    #[test]
+    fn structural_spawn_admission_tops_up_older_pending_credits() {
+        use crate::{MatchId, StableId, WorldEdit, WorldEpoch};
+
+        struct CreditRule;
+        impl GameRules for CreditRule {
+            type Entity = u8;
+            type Action = u8;
+            type Change = u8;
+            type Rejection = ();
+            type Event = ();
+
+            fn spawn_bound(&self, action: &u8, _configured_max: usize) -> usize {
+                usize::from(*action == 2)
+            }
+
+            fn decide(
+                &self,
+                _world: &World<u8>,
+                _actor: ActorId,
+                action: &u8,
+                _context: &mut RuleContext<'_>,
+            ) -> Result<u8, ()> {
+                Ok(*action)
+            }
+
+            fn prepare(
+                &self,
+                _world: &World<u8>,
+                action: u8,
+                _context: &mut RuleContext<'_>,
+            ) -> PreparedCommit<u8, ()> {
+                PreparedCommit {
+                    edits: if action == 2 {
+                        PreparedEdits::One(WorldEdit::Spawn(StableId(33), 33))
+                    } else {
+                        PreparedEdits::None
+                    },
+                    event: None,
+                }
+            }
+        }
+
+        let pool = PublicationPool::new(1_000_000);
+        let mut world = World::new(WorldEpoch(375));
+        for id in 1..=32_u128 {
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
+        }
+        let inline = |bytes| ClosedValueLimits {
+            max_inline_bytes: bytes,
+            max_payload_slots: 0,
+            max_payload_bytes: 0,
+        };
+        let mut authority = Authority::try_new_closed_snapshot_charged(
+            AuthorityId::Match(MatchId(375)),
+            CreditRule,
+            world,
+            pool.clone(),
+            SnapshotWriteBounds {
+                max_edits_per_action: 1,
+                max_spawns_per_action: 1,
+            },
+            ClosedGameLimits {
+                action: inline(1),
+                entity: inline(1),
+                event: inline(0),
+                rejection: inline(0),
+            },
+        )
+        .unwrap();
+        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
+        authority
+            .enable_structural_credits(1, 33, 33, Some(0))
+            .unwrap();
+        let input = |sequence, action| Input {
+            origin: Origin {
+                peer: PeerId(1),
+                connection_epoch: 1,
+                sequence,
+            },
+            actor: ActorId(1),
+            schedule: InputSchedule::Timed { intended_tick: 3 },
+            action,
+        };
+        assert_eq!(authority.submit(input(1, 0)), Ok(Admission::Queued));
+        let older_credit = authority
+            .peers
+            .get(PeerId(1))
+            .unwrap()
+            .pending
+            .get(1)
+            .unwrap()
+            .credit
+            .as_ref()
+            .unwrap()
+            .remaining_bytes();
+        let occupied = pool
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
+            .unwrap();
+        assert_eq!(
+            authority.submit(input(2, 2)),
+            Err(AdmissionError::PublicationCapacity)
+        );
+        assert_eq!(
+            authority
+                .peers
+                .get(PeerId(1))
+                .unwrap()
+                .pending
+                .get(1)
+                .unwrap()
+                .credit
+                .as_ref()
+                .unwrap()
+                .remaining_bytes(),
+            older_credit
+        );
+        drop(occupied);
+        assert_eq!(authority.submit(input(2, 2)), Ok(Admission::Queued));
+        let upgraded_credit = authority
+            .peers
+            .get(PeerId(1))
+            .unwrap()
+            .pending
+            .get(1)
+            .unwrap()
+            .credit
+            .as_ref()
+            .unwrap()
+            .remaining_bytes();
+        assert!(
+            upgraded_credit > older_credit,
+            "older pending input must gain a second-page horizon"
+        );
     }
 }

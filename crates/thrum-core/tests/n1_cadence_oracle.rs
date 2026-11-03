@@ -172,17 +172,26 @@ fn next_result(
 }
 
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the oracle checks one ordered multi-partition release sequence as a single scenario"
+)]
 fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
     let mut world = World::new(WorldEpoch(900));
-    let controller = world.spawn(CONTROLLER, 0).unwrap();
-    world.spawn(STATIC, 0).unwrap();
+    let controller = world
+        .spawn(CONTROLLER, 0)
+        .expect("test setup or assertion requires a value");
+    world
+        .spawn(STATIC, 0)
+        .expect("test setup or assertion requires a value");
     world.publish(0);
-    let (mut controller_replica, _) = Replica::from_baseline(baseline(CONTROLLER, 6)).unwrap();
+    let (mut controller_replica, _) = Replica::from_baseline(baseline(CONTROLLER, 6))
+        .expect("test setup or assertion requires a value");
     let (mut static_replica, _) = Replica::from_baseline(Group {
         resolved_through: Vec::new(),
         ..baseline(STATIC, 0)
     })
-    .unwrap();
+    .expect("test setup or assertion requires a value");
     let mut per_partition_id = [0_u64; 2];
     let mut model = CadenceModel::new();
     let mut transient = None;
@@ -191,21 +200,39 @@ fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
     for tick in 1..=6 {
         match tick {
             1 => {
-                *world.get_mut(controller).unwrap() = 1;
-                transient = Some(world.spawn(TRANSIENT, 7).unwrap());
+                *world
+                    .get_mut(controller)
+                    .expect("test setup or assertion requires a value") = 1;
+                transient = Some(
+                    world
+                        .spawn(TRANSIENT, 7)
+                        .expect("test setup or assertion requires a value"),
+                );
             }
             2 => {
-                *world.get_mut(controller).unwrap() = 2;
-                *world.get_mut(transient.unwrap()).unwrap() = 8;
+                *world
+                    .get_mut(controller)
+                    .expect("test setup or assertion requires a value") = 2;
+                *world
+                    .get_mut(transient.expect("test setup or assertion requires a value"))
+                    .expect("test setup or assertion requires a value") = 8;
             }
             3 => {
-                *world.get_mut(controller).unwrap() = 3;
-                world.despawn(transient.unwrap()).unwrap();
+                *world
+                    .get_mut(controller)
+                    .expect("test setup or assertion requires a value") = 3;
+                world
+                    .despawn(transient.expect("test setup or assertion requires a value"))
+                    .expect("test setup or assertion requires a value");
             }
             _ => {}
         }
         let publication = world.publish(tick);
-        expected_controller[tick as usize] = publication.snapshot.get(controller).unwrap().state;
+        expected_controller[usize::try_from(tick).expect("test tick fits usize")] = publication
+            .snapshot
+            .get(controller)
+            .expect("test setup or assertion requires a value")
+            .state;
         let mut left = group(
             tick,
             publication
@@ -319,7 +346,8 @@ fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
                     .collect();
                 assert_eq!(
                     controllers,
-                    [expected_controller[unit.group.commit_tick as usize]]
+                    [expected_controller
+                        [usize::try_from(unit.group.commit_tick).expect("test tick fits usize")]]
                 );
             }
             per_partition_id[unit.partition] += 1;
@@ -327,10 +355,14 @@ fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
             local.group_id = per_partition_id[unit.partition];
             match unit.partition {
                 0 => {
-                    controller_replica.apply(local).unwrap();
+                    controller_replica
+                        .apply(local)
+                        .expect("test setup or assertion requires a value");
                 }
                 1 => {
-                    static_replica.apply(local).unwrap();
+                    static_replica
+                        .apply(local)
+                        .expect("test setup or assertion requires a value");
                 }
                 _ => unreachable!(),
             }
@@ -385,7 +417,13 @@ fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
             assert_eq!(batch.iter().filter(|unit| unit.partition == 0).count(), 3);
             assert_eq!(controller_replica.get(CONTROLLER), Some(&3));
             assert_eq!(static_replica.get(STATIC), Some(&0));
-            assert_eq!(batch.last().unwrap().envelope_sequence, 8);
+            assert_eq!(
+                batch
+                    .last()
+                    .expect("test setup or assertion requires a value")
+                    .envelope_sequence,
+                8
+            );
         }
     }
 }

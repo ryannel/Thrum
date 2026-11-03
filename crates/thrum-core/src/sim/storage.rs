@@ -34,7 +34,10 @@ impl IdIndex {
     }
 
     fn home(&self, id: StableId) -> usize {
-        self.hash.hash_one(id) as usize & self.mask
+        usize::try_from(
+            self.hash.hash_one(id) & u64::try_from(self.mask).expect("index mask fits u64"),
+        )
+        .expect("masked hash fits usize")
     }
 
     fn find(&self, id: StableId) -> Option<usize> {
@@ -49,7 +52,8 @@ impl IdIndex {
     }
 
     fn get(&self, id: StableId) -> Option<u32> {
-        self.find(id).map(|bucket| self.buckets[bucket].unwrap().1)
+        self.find(id)
+            .map(|bucket| self.buckets[bucket].expect("found occupied bucket").1)
     }
 
     fn contains(&self, id: StableId) -> bool {
@@ -112,7 +116,9 @@ impl Store {
                     row: None,
                 })
                 .collect(),
-            free: (0..capacity as u32).rev().collect(),
+            free: (0..u32::try_from(capacity).expect("validated entity capacity"))
+                .rev()
+                .collect(),
             ids: IdIndex::new(capacity),
             stable_ids: Vec::with_capacity(capacity),
             row_slots: Vec::with_capacity(capacity),
@@ -244,12 +250,15 @@ mod tests {
             .collect();
         assert_eq!(ids.len(), 5);
         for (slot, &id) in ids[..4].iter().enumerate() {
-            index.insert(id, slot as u32);
+            index.insert(id, u32::try_from(slot).expect("small fixture slot"));
         }
         index.remove(ids[0]);
         assert_eq!(index.get(ids[0]), None);
         for (slot, &id) in ids[1..4].iter().enumerate() {
-            assert_eq!(index.get(id), Some((slot + 1) as u32));
+            assert_eq!(
+                index.get(id),
+                Some(u32::try_from(slot + 1).expect("small fixture slot"))
+            );
         }
         index.insert(ids[4], 4);
         index.remove(ids[2]);

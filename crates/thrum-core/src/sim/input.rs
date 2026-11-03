@@ -19,6 +19,10 @@ pub struct InputFrame<A, const AXES: usize = 3> {
 
 impl<A, const AXES: usize> InputFrame<A, AXES> {
     /// Check normalized axes without copying or allocating.
+    ///
+    /// # Errors
+    ///
+    /// A movement axis is nonfinite or outside the normalized range [-1, 1].
     pub fn validate_axes(&self) -> Result<(), FrameError> {
         if self
             .axes

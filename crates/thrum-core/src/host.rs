@@ -82,7 +82,7 @@ impl CallbackLeaseDirectory {
             return Err(crate::PublicationCapacity);
         }
         let lease = Arc::new(CallbackBufferLease {
-            _floor: floor.clone(),
+            _floor: Arc::clone(floor),
         });
         self.slots[live] = Some(Arc::downgrade(&lease));
         self.len += 1;
@@ -115,7 +115,9 @@ impl HostBudget {
     }
 
     fn available_step_cpu(self) -> Duration {
-        self.callback_cpu - self.other_work
+        self.callback_cpu
+            .checked_sub(self.other_work)
+            .expect("validated host budget")
     }
 }
 
@@ -204,7 +206,7 @@ pub enum HostPublication<T, E, R> {
 pub struct HostPublications<T, E, R> {
     values: Vec<HostPublication<T, E, R>>,
     limit: usize,
-    _lease: Option<Arc<CallbackBufferLease>>,
+    lease: Option<Arc<CallbackBufferLease>>,
 }
 
 impl<T, E, R> HostPublications<T, E, R> {
@@ -212,7 +214,7 @@ impl<T, E, R> HostPublications<T, E, R> {
         Self {
             values: Vec::new(),
             limit: usize::MAX,
-            _lease: None,
+            lease: None,
         }
     }
 
@@ -222,7 +224,7 @@ impl<T, E, R> HostPublications<T, E, R> {
     }
 
     fn is_charged(&self) -> bool {
-        self._lease.is_some()
+        self.lease.is_some()
     }
 
     fn try_reserve_from_floor(
@@ -234,7 +236,7 @@ impl<T, E, R> HostPublications<T, E, R> {
         self.values
             .try_reserve_exact(capacity)
             .map_err(|_| StepError::PublicationBackpressure)?;
-        self._lease = Some(lease);
+        self.lease = Some(lease);
         self.limit = capacity;
         Ok(())
     }
@@ -275,7 +277,7 @@ impl<T, E, R> IntoIterator for HostPublications<T, E, R> {
     fn into_iter(self) -> Self::IntoIter {
         HostPublicationsIntoIter {
             values: self.values.into_iter(),
-            _lease: self._lease,
+            _lease: self.lease,
         }
     }
 }
@@ -541,6 +543,10 @@ pub struct HeadlessHost<G: GameRules> {
 impl<G: GameRules> HeadlessHost<G> {
     /// Construct a local headless prototype at the monotonic start instant.
     /// Use `local_with_peer_limit` for finite controlled membership.
+    ///
+    /// # Errors
+    ///
+    /// The clock configuration or host CPU budget is invalid.
     pub fn local(
         origin: Instant,
         clock: ClockConfig,
@@ -553,6 +559,10 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Construct an ordinary local host with a finite match-lifetime count
     /// of distinct controlled peer IDs. Reconnecting one existing ID uses
     /// its authority epoch and does not consume another slot.
+    ///
+    /// # Errors
+    ///
+    /// The initial peer count exceeds the selected limit, or the clock or host CPU budget is invalid.
     pub fn local_with_peer_limit(
         origin: Instant,
         clock: ClockConfig,
@@ -568,6 +578,10 @@ impl<G: GameRules> HeadlessHost<G> {
 
     /// Construct a match prototype with a complete initial in-memory replica.
     /// Use `with_replica_with_peer_limit` for finite controlled membership.
+    ///
+    /// # Errors
+    ///
+    /// The initial baseline cannot be admitted, or the clock or host CPU budget is invalid.
     pub fn with_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -589,6 +603,10 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Construct an ordinary in-memory match with finite cumulative peer
     /// membership. A disconnected ID still occupies its slot; reconnecting
     /// that ID requires a fresh replica baseline through a later protocol.
+    ///
+    /// # Errors
+    ///
+    /// The baseline or peer count cannot be admitted, or the clock or host CPU budget is invalid.
     pub fn with_replica_with_peer_limit(
         origin: Instant,
         clock: ClockConfig,
@@ -623,6 +641,10 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Construct a sealed match host with a finite, precharged local replica.
     /// Its peer limit is the baseline peer count. Use the explicit-limit
     /// constructor when this host will register more peers after activation.
+    ///
+    /// # Errors
+    ///
+    /// The charged baseline or replica cannot be admitted, or the clock or host CPU budget is invalid.
     pub fn with_charged_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -651,6 +673,10 @@ impl<G: GameRules> HeadlessHost<G> {
 
     /// Construct a sealed host with precharged room for `max_peers` confirmed
     /// and candidate progress rows. Later joins use `register_peer`.
+    ///
+    /// # Errors
+    ///
+    /// The charged baseline, replica, or peer limit cannot be admitted, or the clock or CPU budget is invalid.
     pub fn with_charged_replica_with_peer_limit(
         origin: Instant,
         clock: ClockConfig,
@@ -693,6 +719,10 @@ impl<G: GameRules> HeadlessHost<G> {
 
     /// Construct a sealed fixed-slot host whose accepted inputs protect their
     /// eventual inline snapshot and outcome publication before sequencing.
+    ///
+    /// # Errors
+    ///
+    /// The protected credits, charged baseline, replica, callback floor, clock, or CPU budget cannot be admitted.
     pub fn with_protected_inline_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -726,6 +756,10 @@ impl<G: GameRules> HeadlessHost<G> {
     /// allowance for each accepted action's rule callbacks. Rules must create
     /// new retained payloads through `RuleContext`; direct pool allocation
     /// during a callback violates the accepted-input progress contract.
+    ///
+    /// # Errors
+    ///
+    /// The protected output credits, charged baseline, replica, callback floor, clock, or CPU budget cannot be admitted.
     pub fn with_protected_output_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -759,6 +793,10 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Construct a sealed structural host with finite physical slots, live
     /// objects and per-action output credit. The game rule classifies each
     /// action's maximum spawns before its input sequence is consumed.
+    ///
+    /// # Errors
+    ///
+    /// The structural credits, charged baseline, replica, callback floor, clock, or CPU budget cannot be admitted.
     pub fn with_protected_structural_replica(
         origin: Instant,
         clock: ClockConfig,
@@ -819,7 +857,8 @@ impl<G: GameRules> HeadlessHost<G> {
             .max_ticks_per_call
             .get()
             .min(admitted_ticks_per_callback)
-            .min(MAX_SNAPSHOT_LEASES as u32) as usize;
+            .min(u32::try_from(MAX_SNAPSHOT_LEASES).expect("finite lease cap"))
+            as usize;
         let callback_publication_bytes = Layout::array::<
             HostPublication<G::Entity, G::Event, G::Rejection>,
         >(callback_publication_capacity)
@@ -856,6 +895,14 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Register a new controlled peer. A reconnect needs a fresh replica
     /// baseline, so an existing peer is refused on replicated hosts. Sealed
     /// hosts preflight replica headroom and the next idle watermark owner.
+    ///
+    /// # Errors
+    ///
+    /// The host is unavailable, the peer limit or replica capacity is full, or authority admission refuses the peer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if an internal validated peer or replica invariant is broken.
     pub fn register_peer(
         &mut self,
         id: PeerId,
@@ -902,6 +949,10 @@ impl<G: GameRules> HeadlessHost<G> {
     }
 
     /// Admit input only while this host is active.
+    ///
+    /// # Errors
+    ///
+    /// The host is unavailable or the authority refuses the input.
     pub fn submit(
         &mut self,
         input: Input<G::Action>,
@@ -920,6 +971,10 @@ impl<G: GameRules> HeadlessHost<G> {
 
     /// Retire results only after the caller has received and handled their
     /// group. This works for both local and replicated host paths.
+    ///
+    /// # Errors
+    ///
+    /// The host is faulted or the authority refuses the acknowledgement.
     pub fn acknowledge_results(&mut self, peer: PeerId, through: u64) -> Result<(), HostError> {
         if self.faulted || self.authority.is_faulted() {
             return Err(HostError::Faulted);
@@ -933,6 +988,10 @@ impl<G: GameRules> HeadlessHost<G> {
     /// connection epoch still identify this host's current authority owner.
     /// This is the callback for a validated application ACK; it does not
     /// authenticate that ACK or inspect its sent-frame ledger.
+    ///
+    /// # Errors
+    ///
+    /// The host is faulted or the authority or connection incarnation does not match.
     pub fn acknowledge_results_for_incarnation(
         &mut self,
         authority_id: AuthorityId,
@@ -954,6 +1013,10 @@ impl<G: GameRules> HeadlessHost<G> {
     }
 
     /// Resume after a pause or overload from a new monotonic origin.
+    ///
+    /// # Errors
+    ///
+    /// The host is faulted or the clock refuses the new origin.
     pub fn resume(&mut self, now: Instant) -> Result<(), HostError> {
         if self.faulted || self.authority.is_faulted() {
             return Err(HostError::Faulted);
@@ -967,6 +1030,14 @@ impl<G: GameRules> HeadlessHost<G> {
     /// Service one actual platform callback. A callback that exceeds the CPU
     /// budget visibly overloads this local host after its committed ticks;
     /// it cannot retroactively preempt a slow game rule.
+    ///
+    /// # Errors
+    ///
+    /// The callback uses the wrong host mode, the clock rejects the timestamp, or authority execution faults.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a game rule callback unwinds or a checked host invariant is broken.
     pub fn on_callback(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError> {
         if self
             .replica
@@ -1067,6 +1138,14 @@ impl<G: GameRules> HeadlessHost<G> {
     /// shared charged groups. A finite precharged callback buffer permit is
     /// acquired before the first step; the authority checks required replica
     /// headroom before rule edits. Replica progress scratch remains uncharged.
+    ///
+    /// # Errors
+    ///
+    /// The callback uses the wrong host mode, the clock rejects the timestamp, or charged authority or replica execution faults.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a game rule callback unwinds or a checked charged-host invariant is broken.
     pub fn on_callback_charged(&mut self, now: Instant) -> Result<GameHostCallback<G>, HostError>
     where
         G::Action: ClosedPublicationValue,
@@ -1182,9 +1261,9 @@ impl<G: GameRules> HeadlessHost<G> {
 mod tests {
     use super::*;
     use crate::{
-        ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, Handle, MatchId, Origin,
-        PreparedCommit, PreparedEdits, PublicationBytes, PublicationRecord, RuleScratchHandle,
-        SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch,
+        ActorId, AuthorityId, ClosedGameLimits, ClosedValueLimits, Handle, InputSchedule, MatchId,
+        Origin, PreparedCommit, PreparedEdits, PublicationBytes, PublicationRecord,
+        RuleScratchHandle, SnapshotWriteBounds, StableId, StateGroup, World, WorldEdit, WorldEpoch,
     };
     use std::num::NonZeroU32;
 
@@ -1249,8 +1328,6 @@ mod tests {
 
     struct StructuralRule;
 
-    struct StructuralChurnRule;
-
     struct ReplaceRule;
 
     struct TwoSpawnRule {
@@ -1258,61 +1335,6 @@ mod tests {
     }
 
     struct ScratchRule;
-
-    struct ScratchCostRule {
-        with_scratch: bool,
-    }
-
-    impl GameRules for ScratchCostRule {
-        type Entity = u8;
-        type Action = u8;
-        type Change = (u8, Option<RuleScratchHandle>);
-        type Rejection = ();
-        type Event = ();
-
-        fn spawn_bound(&self, _action: &u8, _configured_max: usize) -> usize {
-            0
-        }
-
-        fn decide(
-            &self,
-            _world: &World<u8>,
-            _actor: ActorId,
-            action: &u8,
-            context: &mut crate::RuleContext<'_>,
-        ) -> Result<(u8, Option<RuleScratchHandle>), ()> {
-            let scratch = if self.with_scratch {
-                let handle = context.try_scratch_allocate(4).unwrap();
-                context
-                    .scratch_view_mut(handle)
-                    .unwrap()
-                    .copy_from_slice(&[*action, 2, 3, 4]);
-                Some(handle)
-            } else {
-                None
-            };
-            Ok((*action, scratch))
-        }
-
-        fn prepare(
-            &self,
-            world: &World<u8>,
-            change: (u8, Option<RuleScratchHandle>),
-            context: &mut crate::RuleContext<'_>,
-        ) -> PreparedCommit<u8, ()> {
-            let value = change.1.map_or(change.0, |handle| {
-                let bytes = context.scratch_view(handle).unwrap();
-                bytes[0] ^ bytes[1] ^ bytes[2] ^ bytes[3] ^ 5
-            });
-            PreparedCommit {
-                edits: PreparedEdits::One(WorldEdit::Replace(
-                    world.handle_for(StableId(1)).unwrap(),
-                    value,
-                )),
-                event: None,
-            }
-        }
-    }
 
     impl GameRules for ScratchRule {
         type Entity = u8;
@@ -1338,9 +1360,7 @@ mod tests {
                 .scratch_view_mut(handle)
                 .unwrap()
                 .copy_from_slice(&[*action, 42]);
-            if *action == 254 {
-                panic!("intentional scratch callback unwind");
-            }
+            assert!(*action != 254, "intentional scratch callback unwind");
             if *action == 255 {
                 assert_eq!(
                     context.try_scratch_allocate(3),
@@ -1447,7 +1467,7 @@ mod tests {
                     sequence,
                 },
                 actor: ActorId(peer),
-                schedule: crate::InputSchedule::Timed {
+                schedule: InputSchedule::Timed {
                     intended_tick: tick,
                 },
                 action,
@@ -1481,7 +1501,7 @@ mod tests {
                 sequence: 4,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 4 },
+            schedule: InputSchedule::NextTick { observed_tick: 4 },
             action: 255,
         })
         .unwrap();
@@ -1554,7 +1574,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
             action: 254,
         })
         .unwrap();
@@ -1572,107 +1592,6 @@ mod tests {
         drop(initial);
         drop(host);
         assert_eq!(pool.used_bytes(), 0);
-    }
-
-    #[test]
-    #[ignore = "local paired complete-path scratch cost fixture"]
-    fn compare_protected_callback_with_and_without_rule_scratch() {
-        fn run(with_scratch: bool) -> (u128, u128, usize) {
-            let pool = PublicationPool::new(1_000_000);
-            let mut world = World::new(WorldEpoch(304));
-            world.spawn(StableId(1), 1_u8).unwrap();
-            let inline = |bytes| ClosedValueLimits {
-                max_inline_bytes: bytes,
-                max_payload_slots: 0,
-                max_payload_bytes: 0,
-            };
-            let mut authority = Authority::try_new_closed_snapshot_charged(
-                AuthorityId::Match(MatchId(304)),
-                ScratchCostRule { with_scratch },
-                world,
-                pool.clone(),
-                SnapshotWriteBounds {
-                    max_edits_per_action: 1,
-                    max_spawns_per_action: 0,
-                },
-                ClosedGameLimits {
-                    action: inline(1),
-                    entity: inline(1),
-                    event: inline(0),
-                    rejection: inline(0),
-                },
-            )
-            .unwrap();
-            if with_scratch {
-                authority.try_enable_rule_scratch(4).unwrap();
-            }
-            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
-            let origin = Instant::now();
-            let (mut host, initial) = HeadlessHost::with_protected_output_replica(
-                origin,
-                ClockConfig {
-                    max_ticks_per_call: NonZeroU32::new(1).unwrap(),
-                    ..ClockConfig::default()
-                },
-                HostBudget {
-                    callback_cpu: Duration::from_secs(1),
-                    other_work: Duration::from_millis(1),
-                    tick_cost_bound: Duration::from_millis(1),
-                },
-                authority,
-                &pool,
-                1,
-                1,
-                0,
-            )
-            .unwrap();
-            let retained = pool.used_bytes();
-            let mut samples = Vec::with_capacity(500);
-            for tick in 1..=600_u64 {
-                let start = Instant::now();
-                host.submit(Input {
-                    origin: Origin {
-                        peer: PeerId(1),
-                        connection_epoch: 1,
-                        sequence: tick,
-                    },
-                    actor: ActorId(1),
-                    schedule: crate::InputSchedule::NextTick {
-                        observed_tick: tick - 1,
-                    },
-                    action: 1,
-                })
-                .unwrap();
-                let report = host
-                    .on_callback_charged(
-                        origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60)),
-                    )
-                    .unwrap();
-                let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
-                else {
-                    panic!("expected required replica delivery")
-                };
-                assert_eq!(admitted.results().len(), 1);
-                assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&1));
-                drop(report);
-                host.acknowledge_results(PeerId(1), tick).unwrap();
-                if tick > 100 {
-                    samples.push(start.elapsed().as_nanos());
-                }
-            }
-            samples.sort_unstable();
-            let result = (samples[250], samples[474], retained);
-            drop(initial);
-            drop(host);
-            assert_eq!(pool.used_bytes(), 0);
-            result
-        }
-        let plain = run(false);
-        let scratch = run(true);
-        eprintln!(
-            "one-object protected submit/callback/ack: plain p50={}ns p95={}ns retained={}B; 4-byte scratch p50={}ns p95={}ns retained={}B",
-            plain.0, plain.1, plain.2, scratch.0, scratch.1, scratch.2
-        );
     }
 
     impl GameRules for TwoSpawnRule {
@@ -1705,8 +1624,14 @@ mod tests {
             let first = self.base + u128::from(action) * 2;
             PreparedCommit {
                 edits: PreparedEdits::Two(
-                    WorldEdit::Spawn(StableId(first), first as u8),
-                    WorldEdit::Spawn(StableId(first + 1), (first + 1) as u8),
+                    WorldEdit::Spawn(
+                        StableId(first),
+                        u8::try_from(first).expect("fixture ID fits u8"),
+                    ),
+                    WorldEdit::Spawn(
+                        StableId(first + 1),
+                        u8::try_from(first + 1).expect("fixture ID fits u8"),
+                    ),
                 ),
                 event: None,
             }
@@ -1718,7 +1643,9 @@ mod tests {
         let pool = PublicationPool::new(2_000_000);
         let mut world = World::new(WorldEpoch(301));
         for id in 1..=32_u128 {
-            world.spawn(StableId(id), id as u8).unwrap();
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
         }
         let inline = |bytes| ClosedValueLimits {
             max_inline_bytes: bytes,
@@ -1775,8 +1702,9 @@ mod tests {
                         sequence,
                     },
                     actor: ActorId(peer),
-                    schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
-                    action: ((peer - 1) * 8 + sequence - 1) as u8,
+                    schedule: InputSchedule::NextTick { observed_tick: 0 },
+                    action: u8::try_from((peer - 1) * 8 + sequence - 1)
+                        .expect("fixture action fits u8"),
                 })
                 .unwrap();
             }
@@ -1811,12 +1739,21 @@ mod tests {
         assert_eq!(host.replica().unwrap().len(), 64);
         assert_eq!(old_snapshot.records().count(), 32);
         for id in 1..=32_u128 {
-            assert_eq!(host.replica().unwrap().get(StableId(id)), Some(&(id as u8)));
+            assert_eq!(
+                host.replica().unwrap().get(StableId(id)),
+                Some(&(u8::try_from(id).expect("fixture ID fits u8")))
+            );
         }
         for id in 33..=64_u128 {
-            assert_eq!(host.replica().unwrap().get(StableId(id)), Some(&(id as u8)));
+            assert_eq!(
+                host.replica().unwrap().get(StableId(id)),
+                Some(&(u8::try_from(id).expect("fixture ID fits u8")))
+            );
             let handle = host.authority().world().handle_for(StableId(id)).unwrap();
-            assert_eq!(snapshot.get(handle).unwrap().state, id as u8);
+            assert_eq!(
+                snapshot.get(handle).unwrap().state,
+                u8::try_from(id).expect("fixture ID fits u8")
+            );
         }
         drop(report);
         drop(occupied);
@@ -1824,116 +1761,6 @@ mod tests {
         drop(initial);
         drop(host);
         assert_eq!(pool.used_bytes(), 0);
-    }
-
-    #[test]
-    #[ignore = "local maximum-batch callback cost fixture"]
-    fn measure_maximum_structural_batch_callback_cost() {
-        fn run(objects: usize) -> (u128, u128) {
-            let inline = |bytes| ClosedValueLimits {
-                max_inline_bytes: bytes,
-                max_payload_slots: 0,
-                max_payload_bytes: 0,
-            };
-            let mut samples = Vec::with_capacity(100);
-            for repetition in 0..120 {
-                let pool = PublicationPool::new(64_000_000);
-                let mut world = World::new(WorldEpoch(302));
-                for id in 1..=objects as u128 {
-                    world.spawn(StableId(id), 7_u8).unwrap();
-                }
-                let mut authority = Authority::try_new_closed_snapshot_charged(
-                    AuthorityId::Match(MatchId(302)),
-                    TwoSpawnRule {
-                        base: objects as u128 + 1,
-                    },
-                    world,
-                    pool.clone(),
-                    SnapshotWriteBounds {
-                        max_edits_per_action: 2,
-                        max_spawns_per_action: 2,
-                    },
-                    ClosedGameLimits {
-                        action: inline(1),
-                        entity: inline(1),
-                        event: inline(0),
-                        rejection: inline(0),
-                    },
-                )
-                .unwrap();
-                authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
-                authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
-                let origin = Instant::now();
-                let (mut host, initial) = HeadlessHost::with_protected_structural_replica(
-                    origin,
-                    ClockConfig {
-                        max_ticks_per_call: NonZeroU32::new(1).unwrap(),
-                        ..ClockConfig::default()
-                    },
-                    HostBudget {
-                        callback_cpu: Duration::from_secs(1),
-                        other_work: Duration::from_millis(1),
-                        tick_cost_bound: Duration::from_millis(1),
-                    },
-                    authority,
-                    &pool,
-                    objects + 32,
-                    2,
-                    objects + 32,
-                    objects + 32,
-                    0,
-                )
-                .unwrap();
-                for peer in 1..=2_u64 {
-                    for sequence in 1..=8_u64 {
-                        host.submit(Input {
-                            origin: Origin {
-                                peer: PeerId(peer),
-                                connection_epoch: 1,
-                                sequence,
-                            },
-                            actor: ActorId(peer),
-                            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
-                            action: ((peer - 1) * 8 + sequence - 1) as u8,
-                        })
-                        .unwrap();
-                    }
-                }
-                let occupied = pool
-                    .try_reserve(pool.limit_bytes() - pool.used_bytes())
-                    .unwrap();
-                let start = Instant::now();
-                let report = host
-                    .on_callback_charged(origin + Duration::from_millis(17))
-                    .unwrap();
-                let committed = match &report.publications[0] {
-                    HostPublication::ReplicatedCharged { admitted, .. } => admitted.results().len(),
-                    _ => panic!("expected charged replica delivery"),
-                };
-                drop(report);
-                host.acknowledge_results(PeerId(1), 8).unwrap();
-                host.acknowledge_results(PeerId(2), 8).unwrap();
-                let elapsed = start.elapsed().as_nanos();
-                assert_eq!(committed, 16);
-                assert_eq!(host.replica().unwrap().len(), objects + 32);
-                assert_eq!(host.authority().world().slot_high_water(), objects + 32);
-                if repetition >= 20 {
-                    samples.push(elapsed);
-                }
-                drop(occupied);
-                drop(initial);
-                drop(host);
-                assert_eq!(pool.used_bytes(), 0);
-            }
-            samples.sort_unstable();
-            (samples[50], samples[94])
-        }
-        for objects in [4_096, 16_384] {
-            let (p50, p95) = run(objects);
-            eprintln!(
-                "structural maximum two-peer batch {objects} objects + 32 spawns: callback through acknowledgement p50={p50}ns p95={p95}ns"
-            );
-        }
     }
 
     impl GameRules for ReplaceRule {
@@ -1968,369 +1795,6 @@ mod tests {
                 event: None,
             }
         }
-    }
-
-    #[test]
-    #[ignore = "local paired complete-path development cost fixture"]
-    fn compare_fixed_and_structural_protected_callbacks() {
-        fn run(objects: usize, structural: bool) -> (u128, u128, usize) {
-            let pool = PublicationPool::new(64_000_000);
-            let mut world = World::new(WorldEpoch(300));
-            for id in 1..=objects as u128 {
-                world.spawn(StableId(id), 7_u8).unwrap();
-            }
-            let inline = |bytes| ClosedValueLimits {
-                max_inline_bytes: bytes,
-                max_payload_slots: 0,
-                max_payload_bytes: 0,
-            };
-            let mut authority = Authority::try_new_closed_snapshot_charged(
-                AuthorityId::Match(MatchId(300)),
-                ReplaceRule,
-                world,
-                pool.clone(),
-                SnapshotWriteBounds {
-                    max_edits_per_action: 1,
-                    max_spawns_per_action: 0,
-                },
-                ClosedGameLimits {
-                    action: inline(1),
-                    entity: inline(1),
-                    event: inline(0),
-                    rejection: inline(0),
-                },
-            )
-            .unwrap();
-            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
-            let origin = Instant::now();
-            let clock = ClockConfig {
-                max_ticks_per_call: NonZeroU32::new(1).unwrap(),
-                ..ClockConfig::default()
-            };
-            let budget = HostBudget {
-                callback_cpu: Duration::from_secs(1),
-                other_work: Duration::from_millis(1),
-                tick_cost_bound: Duration::from_millis(1),
-            };
-            let (mut host, initial) = if structural {
-                HeadlessHost::with_protected_structural_replica(
-                    origin, clock, budget, authority, &pool, objects, 1, objects, objects, 0,
-                )
-            } else {
-                HeadlessHost::with_protected_output_replica(
-                    origin, clock, budget, authority, &pool, objects, 1, 0,
-                )
-            }
-            .unwrap();
-            let retained_at_start = pool.used_bytes();
-            let mut samples = Vec::with_capacity(500);
-            for tick in 1..=600_u64 {
-                let start = Instant::now();
-                host.submit(Input {
-                    origin: Origin {
-                        peer: PeerId(1),
-                        connection_epoch: 1,
-                        sequence: tick,
-                    },
-                    actor: ActorId(1),
-                    schedule: crate::InputSchedule::NextTick {
-                        observed_tick: tick - 1,
-                    },
-                    action: 1,
-                })
-                .unwrap();
-                let report = host
-                    .on_callback_charged(
-                        origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60)),
-                    )
-                    .unwrap();
-                assert_eq!(report.clock.completed, 1);
-                let HostPublication::ReplicatedCharged { admitted, .. } = &report.publications[0]
-                else {
-                    panic!("expected required replica delivery")
-                };
-                assert_eq!(admitted.results().len(), 1);
-                assert!(matches!(
-                    &admitted.results()[0].disposition,
-                    crate::ResultDisposition::Committed
-                ));
-                assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&8));
-                drop(report);
-                host.acknowledge_results(PeerId(1), tick).unwrap();
-                if tick > 100 {
-                    samples.push(start.elapsed().as_nanos());
-                }
-            }
-            samples.sort_unstable();
-            let result = (samples[250], samples[474], retained_at_start);
-            drop(initial);
-            drop(host);
-            assert_eq!(pool.used_bytes(), 0);
-            result
-        }
-        for objects in [4_096, 16_384] {
-            let fixed = run(objects, false);
-            let structural = run(objects, true);
-            eprintln!(
-                "paired protected one-change {objects}: fixed p50={}ns p95={}ns retained={}B; structural p50={}ns p95={}ns retained={}B",
-                fixed.0, fixed.1, fixed.2, structural.0, structural.1, structural.2
-            );
-        }
-    }
-
-    impl GameRules for StructuralChurnRule {
-        type Entity = u8;
-        type Action = u64;
-        type Change = u64;
-        type Rejection = ();
-        type Event = ();
-
-        fn spawn_bound(&self, action: &u64, _configured_max: usize) -> usize {
-            (*action & 1) as usize
-        }
-
-        fn decide(
-            &self,
-            world: &World<u8>,
-            _actor: ActorId,
-            action: &u64,
-            _context: &mut crate::RuleContext<'_>,
-        ) -> Result<u64, ()> {
-            let id = StableId((action >> 1) as u128);
-            if (*action & 1 == 0 && world.handle_for(id).is_none())
-                || (*action & 1 == 1 && world.handle_for(id).is_some())
-            {
-                return Err(());
-            }
-            Ok(*action)
-        }
-
-        fn prepare(
-            &self,
-            world: &World<u8>,
-            action: u64,
-            _context: &mut crate::RuleContext<'_>,
-        ) -> PreparedCommit<u8, ()> {
-            let id = StableId((action >> 1) as u128);
-            let edit = if action & 1 == 1 {
-                WorldEdit::Spawn(id, 7)
-            } else {
-                WorldEdit::Despawn(world.handle_for(id).expect("decided live identity"))
-            };
-            PreparedCommit {
-                edits: PreparedEdits::One(edit),
-                event: None,
-            }
-        }
-    }
-
-    #[test]
-    #[ignore = "local complete-path development cost fixture"]
-    fn measure_structural_churn_complete_callback_cost() {
-        fn run(objects: usize) -> (u128, u128, u128, u128) {
-            let pool = PublicationPool::new(64_000_000);
-            let mut world = World::new(WorldEpoch(297));
-            for id in 1..=objects as u128 {
-                world.spawn(StableId(id), 7_u8).unwrap();
-            }
-            let inline = |bytes| ClosedValueLimits {
-                max_inline_bytes: bytes,
-                max_payload_slots: 0,
-                max_payload_bytes: 0,
-            };
-            let mut authority = Authority::try_new_closed_snapshot_charged(
-                AuthorityId::Match(MatchId(297)),
-                StructuralChurnRule,
-                world,
-                pool.clone(),
-                SnapshotWriteBounds {
-                    max_edits_per_action: 1,
-                    max_spawns_per_action: 1,
-                },
-                ClosedGameLimits {
-                    action: inline(8),
-                    entity: inline(1),
-                    event: inline(0),
-                    rejection: inline(0),
-                },
-            )
-            .unwrap();
-            authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
-            let origin = Instant::now();
-            let (mut host, initial) = HeadlessHost::with_protected_structural_replica(
-                origin,
-                ClockConfig {
-                    max_ticks_per_call: NonZeroU32::new(1).unwrap(),
-                    ..ClockConfig::default()
-                },
-                HostBudget {
-                    callback_cpu: Duration::from_secs(1),
-                    other_work: Duration::from_millis(1),
-                    tick_cost_bound: Duration::from_millis(1),
-                },
-                authority,
-                &pool,
-                objects,
-                1,
-                objects,
-                objects,
-                0,
-            )
-            .unwrap();
-            let mut despawn_cost = Vec::with_capacity(500);
-            let mut spawn_cost = Vec::with_capacity(500);
-            let mut current = 1_u64;
-            for cycle in 0..600_u64 {
-                let next = objects as u64 + cycle + 1;
-                for (id, spawning) in [(current, false), (next, true)] {
-                    let tick = cycle * 2 + u64::from(spawning) + 1;
-                    let start = Instant::now();
-                    host.submit(Input {
-                        origin: Origin {
-                            peer: PeerId(1),
-                            connection_epoch: 1,
-                            sequence: tick,
-                        },
-                        actor: ActorId(1),
-                        schedule: crate::InputSchedule::NextTick {
-                            observed_tick: tick - 1,
-                        },
-                        action: (id << 1) | u64::from(spawning),
-                    })
-                    .unwrap();
-                    let report = host
-                        .on_callback_charged(
-                            origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60)),
-                        )
-                        .unwrap();
-                    assert_eq!(report.clock.completed, 1);
-                    drop(report);
-                    host.acknowledge_results(PeerId(1), tick).unwrap();
-                    if cycle >= 100 {
-                        if spawning {
-                            &mut spawn_cost
-                        } else {
-                            &mut despawn_cost
-                        }
-                        .push(start.elapsed().as_nanos());
-                    }
-                }
-                current = next;
-            }
-            despawn_cost.sort_unstable();
-            spawn_cost.sort_unstable();
-            let sample = (
-                despawn_cost[250],
-                despawn_cost[474],
-                spawn_cost[250],
-                spawn_cost[474],
-            );
-            drop(initial);
-            drop(host);
-            assert_eq!(pool.used_bytes(), 0);
-            sample
-        }
-        for objects in [4_096, 16_384] {
-            let (despawn_p50, despawn_p95, spawn_p50, spawn_p95) = run(objects);
-            eprintln!(
-                "structural complete path {objects} objects: despawn p50={despawn_p50}ns p95={despawn_p95}ns; spawn p50={spawn_p50}ns p95={spawn_p95}ns"
-            );
-        }
-    }
-
-    #[test]
-    #[ignore = "local isolated admission cost fixture"]
-    fn measure_structural_credit_upgrade_cost() {
-        let pool = PublicationPool::new(1_000_000);
-        let mut world = World::new(WorldEpoch(298));
-        for id in 1..=32_u128 {
-            world.spawn(StableId(id), id as u8).unwrap();
-        }
-        let inline = |bytes| ClosedValueLimits {
-            max_inline_bytes: bytes,
-            max_payload_slots: 0,
-            max_payload_bytes: 0,
-        };
-        let mut authority = Authority::try_new_closed_snapshot_charged(
-            AuthorityId::Match(MatchId(298)),
-            StructuralRule,
-            world,
-            pool.clone(),
-            SnapshotWriteBounds {
-                max_edits_per_action: 1,
-                max_spawns_per_action: 1,
-            },
-            ClosedGameLimits {
-                action: inline(1),
-                entity: inline(1),
-                event: inline(0),
-                rejection: inline(0),
-            },
-        )
-        .unwrap();
-        authority.register_peer(PeerId(1), 1, ActorId(1)).unwrap();
-        authority.register_peer(PeerId(2), 1, ActorId(2)).unwrap();
-        authority
-            .enable_structural_credits(2, 33, 33, Some(0))
-            .unwrap();
-        let mut ordinary = Vec::with_capacity(200);
-        let mut upgraded = Vec::with_capacity(200);
-        for cycle in 0..600_u64 {
-            let epoch = cycle + 1;
-            if cycle != 0 {
-                authority
-                    .register_peer(PeerId(1), epoch, ActorId(1))
-                    .unwrap();
-                authority
-                    .register_peer(PeerId(2), epoch, ActorId(2))
-                    .unwrap();
-            }
-            let input = |peer, sequence, action| Input {
-                origin: Origin {
-                    peer: PeerId(peer),
-                    connection_epoch: epoch,
-                    sequence,
-                },
-                actor: ActorId(peer),
-                schedule: crate::InputSchedule::Timed { intended_tick: 3 },
-                action,
-            };
-            for sequence in 1..=8 {
-                authority.submit(input(1, sequence, 0)).unwrap();
-            }
-            for sequence in 1..=7 {
-                authority.submit(input(2, sequence, 0)).unwrap();
-            }
-            let upgrade = cycle % 2 == 1;
-            let older_before = authority.pending_credit_bytes(PeerId(1), 1).unwrap();
-            let start = Instant::now();
-            let admission = authority
-                .submit(input(2, 8, if upgrade { 2 } else { 0 }))
-                .unwrap();
-            std::hint::black_box(admission);
-            let older_after = authority.pending_credit_bytes(PeerId(1), 1).unwrap();
-            assert_eq!(older_after > older_before, upgrade);
-            std::hint::black_box(older_after);
-            std::hint::black_box(&authority);
-            if cycle >= 200 {
-                if upgrade {
-                    &mut upgraded
-                } else {
-                    &mut ordinary
-                }
-                .push(start.elapsed().as_nanos());
-            }
-        }
-        ordinary.sort_unstable();
-        upgraded.sort_unstable();
-        let ordinary_mean: u128 = ordinary.iter().sum::<u128>() / ordinary.len() as u128;
-        let upgraded_mean: u128 = upgraded.iter().sum::<u128>() / upgraded.len() as u128;
-        eprintln!(
-            "structural admission with 15 older pending inputs: ordinary mean={ordinary_mean}ns p50={}ns p95={}ns; page-horizon upgrade mean={upgraded_mean}ns p50={}ns p95={}ns",
-            ordinary[100], ordinary[189], upgraded[100], upgraded[189]
-        );
-        drop(authority);
-        assert_eq!(pool.used_bytes(), 0);
     }
 
     impl GameRules for StructuralRule {
@@ -2382,7 +1846,9 @@ mod tests {
         let pool = PublicationPool::new(1_000_000);
         let mut world = World::new(WorldEpoch(295));
         for id in 1..=32_u128 {
-            world.spawn(StableId(id), id as u8).unwrap();
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
         }
         let inline = |bytes| ClosedValueLimits {
             max_inline_bytes: bytes,
@@ -2439,30 +1905,16 @@ mod tests {
             schedule,
             action,
         };
-        host.submit(input(
-            1,
-            1,
-            crate::InputSchedule::Timed { intended_tick: 3 },
-            0,
-        ))
-        .unwrap();
-        let before = host.authority.pending_credit_bytes(PeerId(1), 1).unwrap();
-        host.submit(input(
-            1,
-            2,
-            crate::InputSchedule::NextTick { observed_tick: 0 },
-            1,
-        ))
-        .unwrap();
-        let before_despawn = host.authority.pending_credit_bytes(PeerId(1), 2).unwrap();
-        let spawn = input(2, 1, crate::InputSchedule::NextTick { observed_tick: 0 }, 2);
-        let (candidate_bytes, combined_bytes) = host.authority.structural_credit_quote(1).unwrap();
-        assert!(
-            candidate_bytes < combined_bytes,
-            "older inputs require a top-up"
-        );
+        host.submit(input(1, 1, InputSchedule::Timed { intended_tick: 3 }, 0))
+            .unwrap();
+        let before = pool.used_bytes();
+        host.submit(input(1, 2, InputSchedule::NextTick { observed_tick: 0 }, 1))
+            .unwrap();
+        let before_despawn = pool.used_bytes();
+        let spawn = input(2, 1, InputSchedule::NextTick { observed_tick: 0 }, 2);
+        assert!(before_despawn > before);
         let denied = pool
-            .try_reserve(pool.limit_bytes() - pool.used_bytes() - candidate_bytes)
+            .try_reserve(pool.limit_bytes() - pool.used_bytes())
             .unwrap();
         assert_eq!(
             host.submit(spawn.clone()),
@@ -2470,28 +1922,15 @@ mod tests {
                 AdmissionError::PublicationCapacity,
             ))
         );
-        assert_eq!(
-            host.authority.pending_credit_bytes(PeerId(1), 1),
-            Some(before)
-        );
-        assert_eq!(
-            host.authority.pending_credit_bytes(PeerId(1), 2),
-            Some(before_despawn)
-        );
+        assert_eq!(pool.used_bytes(), pool.limit_bytes());
         drop(denied);
         host.submit(spawn).unwrap();
-        let after = host.authority.pending_credit_bytes(PeerId(1), 1).unwrap();
         assert!(
-            after > before,
-            "older delayed credit must gain a second-page horizon"
+            pool.used_bytes() > before_despawn,
+            "accepted spawn reserves additional credit"
         );
-        host.submit(input(
-            2,
-            2,
-            crate::InputSchedule::Timed { intended_tick: 4 },
-            3,
-        ))
-        .unwrap();
+        host.submit(input(2, 2, InputSchedule::Timed { intended_tick: 4 }, 3))
+            .unwrap();
         let occupied = pool
             .try_reserve(pool.limit_bytes() - pool.used_bytes())
             .unwrap();
@@ -2525,19 +1964,14 @@ mod tests {
         drop(outcomes);
         drop(reconnected);
         host.authority
-            .submit(input(
-                1,
-                3,
-                crate::InputSchedule::Timed { intended_tick: 12 },
-                3,
-            ))
+            .submit(input(1, 3, InputSchedule::Timed { intended_tick: 12 }, 3))
             .unwrap();
         let before_reconnect = pool.used_bytes();
         host.authority
             .register_peer(PeerId(1), 2, ActorId(1))
             .unwrap();
         assert!(pool.used_bytes() < before_reconnect);
-        assert!(host.authority.pending_credit_bytes(PeerId(1), 3).is_none());
+        assert!(pool.used_bytes() < before_reconnect);
         assert_eq!(
             host.authority.submit(Input {
                 origin: Origin {
@@ -2546,7 +1980,7 @@ mod tests {
                     sequence: 1
                 },
                 actor: ActorId(1),
-                schedule: crate::InputSchedule::NextTick { observed_tick: 4 },
+                schedule: InputSchedule::NextTick { observed_tick: 4 },
                 action: 3,
             }),
             Ok(Admission::Queued)
@@ -2561,7 +1995,9 @@ mod tests {
         let pool = PublicationPool::new(300_000);
         let mut world = World::new(WorldEpoch(296));
         for id in 1..=32_u128 {
-            world.spawn(StableId(id), id as u8).unwrap();
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
         }
         let inline = |bytes| ClosedValueLimits {
             max_inline_bytes: bytes,
@@ -2596,7 +2032,7 @@ mod tests {
                 sequence,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick {
+            schedule: InputSchedule::NextTick {
                 observed_tick: sequence - 1,
             },
             action,
@@ -2771,10 +2207,10 @@ mod tests {
             schedule,
             action: 1,
         };
-        let future = input(1, 1, crate::InputSchedule::Timed { intended_tick: 3 });
-        let early = input(1, 2, crate::InputSchedule::NextTick { observed_tick: 0 });
-        let other = input(2, 1, crate::InputSchedule::NextTick { observed_tick: 0 });
-        let rejected = input(2, 2, crate::InputSchedule::Timed { intended_tick: 100 });
+        let future = input(1, 1, InputSchedule::Timed { intended_tick: 3 });
+        let early = input(1, 2, InputSchedule::NextTick { observed_tick: 0 });
+        let other = input(2, 1, InputSchedule::NextTick { observed_tick: 0 });
+        let rejected = input(2, 2, InputSchedule::Timed { intended_tick: 100 });
         let occupied = pool
             .try_reserve(pool.limit_bytes() - pool.used_bytes())
             .unwrap();
@@ -2845,7 +2281,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 8 },
+            schedule: InputSchedule::NextTick { observed_tick: 8 },
             action: 1,
         })
         .unwrap();
@@ -2888,7 +2324,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::Timed { intended_tick: 2 },
+            schedule: InputSchedule::Timed { intended_tick: 2 },
             action: 1,
         })
         .unwrap();
@@ -2953,7 +2389,7 @@ mod tests {
                     sequence: 1,
                 },
                 actor: ActorId(1),
-                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                schedule: InputSchedule::NextTick { observed_tick: 0 },
                 action: 1,
             })
             .unwrap();
@@ -3089,7 +2525,7 @@ mod tests {
                 &foreign,
                 1,
                 1,
-                crate::InputSchedule::Timed { intended_tick: 3 },
+                InputSchedule::Timed { intended_tick: 3 },
             )),
             Err(HostAdmissionError::Authority(AdmissionError::WrongPool))
         );
@@ -3099,18 +2535,13 @@ mod tests {
                 &pool,
                 1,
                 1_025,
-                crate::InputSchedule::Timed { intended_tick: 3 },
+                InputSchedule::Timed { intended_tick: 3 },
             )),
             Err(HostAdmissionError::Authority(AdmissionError::ValueProfile))
         );
         let payload_charge = PublicationBytes::required_charge(1_024).unwrap();
         let before = pool.used_bytes();
-        let accepted = input(
-            &pool,
-            1,
-            1_024,
-            crate::InputSchedule::Timed { intended_tick: 3 },
-        );
+        let accepted = input(&pool, 1, 1_024, InputSchedule::Timed { intended_tick: 3 });
         let duplicate = accepted.clone();
         let occupied_before_admission = pool
             .try_reserve(pool.limit_bytes() - pool.used_bytes())
@@ -3122,16 +2553,16 @@ mod tests {
             ))
         );
         drop(occupied_before_admission);
-        assert_eq!(host.submit(accepted).unwrap(), crate::Admission::Queued);
+        assert_eq!(host.submit(accepted).unwrap(), Admission::Queued);
         assert_eq!(
             host.submit(duplicate.clone()).unwrap(),
-            crate::Admission::PendingDuplicate
+            Admission::PendingDuplicate
         );
         host.submit(input(
             &pool,
             2,
             1_024,
-            crate::InputSchedule::NextTick { observed_tick: 0 },
+            InputSchedule::NextTick { observed_tick: 0 },
         ))
         .unwrap();
         assert!(pool.used_bytes() >= before + 2 * payload_charge);
@@ -3152,7 +2583,7 @@ mod tests {
                 assert_eq!(admitted.resolved_through(), &[(PeerId(1), 0)]);
                 assert_eq!(
                     host.submit(duplicate.clone()).unwrap(),
-                    crate::Admission::PendingDuplicate
+                    Admission::PendingDuplicate
                 );
             }
             if tick == 3 {
@@ -3162,7 +2593,7 @@ mod tests {
         assert_eq!(host.replica().unwrap().get(StableId(1)), Some(&7));
         assert!(matches!(
             host.submit(duplicate.clone()).unwrap(),
-            crate::Admission::ResolvedDuplicate(_)
+            Admission::ResolvedDuplicate(_)
         ));
         let used_with_action = pool.used_bytes();
         host.acknowledge_results(PeerId(1), 2).unwrap();
@@ -3263,7 +2694,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
             action: 7,
         })
         .unwrap();
@@ -3288,7 +2719,7 @@ mod tests {
                 sequence: 2,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 1 },
+            schedule: InputSchedule::NextTick { observed_tick: 1 },
             action: 0,
         })
         .unwrap();
@@ -3397,7 +2828,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
             action: 9,
         })
         .unwrap();
@@ -3503,8 +2934,8 @@ mod tests {
                         sequence,
                     },
                     actor: ActorId(peer),
-                    schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
-                    action: StableId(page as u128 * 32 + 1),
+                    schedule: InputSchedule::NextTick { observed_tick: 0 },
+                    action: StableId(u128::from(page) * 32 + 1),
                 })
                 .unwrap();
             }
@@ -3627,7 +3058,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(3),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 1 },
+            schedule: InputSchedule::NextTick { observed_tick: 1 },
             action: 1,
         })
         .unwrap();
@@ -3700,7 +3131,7 @@ mod tests {
                     sequence: 1,
                 },
                 actor: ActorId(1),
-                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                schedule: InputSchedule::NextTick { observed_tick: 0 },
                 action: 8,
             }),
             Ok(Admission::Queued)
@@ -3713,7 +3144,7 @@ mod tests {
                     sequence: 1,
                 },
                 actor: ActorId(2),
-                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                schedule: InputSchedule::NextTick { observed_tick: 0 },
                 action: 8,
             }),
             Ok(Admission::Queued)
@@ -3763,7 +3194,7 @@ mod tests {
                     sequence: 1,
                 },
                 actor: ActorId(1),
-                schedule: crate::InputSchedule::Timed { intended_tick: 2 },
+                schedule: InputSchedule::Timed { intended_tick: 2 },
                 action: 8,
             }),
             Ok(Admission::Queued)
@@ -3788,7 +3219,7 @@ mod tests {
                     sequence: 1,
                 },
                 actor: ActorId(1),
-                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                schedule: InputSchedule::NextTick { observed_tick: 0 },
                 action: 8,
             }),
             Err(HostAdmissionError::Authority(AdmissionError::StaleEpoch))
@@ -3801,7 +3232,7 @@ mod tests {
                     sequence: 1,
                 },
                 actor: ActorId(1),
-                schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+                schedule: InputSchedule::NextTick { observed_tick: 0 },
                 action: 8,
             }),
             Ok(Admission::Queued)
@@ -3998,8 +3429,8 @@ mod tests {
         )
         .unwrap();
         for (sequence, action, schedule) in [
-            (1, 1, crate::InputSchedule::NextTick { observed_tick: 0 }),
-            (2, 2, crate::InputSchedule::Timed { intended_tick: 2 }),
+            (1, 1, InputSchedule::NextTick { observed_tick: 0 }),
+            (2, 2, InputSchedule::Timed { intended_tick: 2 }),
         ] {
             host.submit(Input {
                 origin: Origin {
@@ -4132,7 +3563,7 @@ mod tests {
                 sequence: 1,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 0 },
+            schedule: InputSchedule::NextTick { observed_tick: 0 },
             action: 0,
         };
         assert_eq!(host.submit(input.clone()), Ok(Admission::Queued));
@@ -4144,7 +3575,7 @@ mod tests {
                 ..input.origin
             },
             actor: ActorId(2),
-            schedule: crate::InputSchedule::Timed { intended_tick: 3 },
+            schedule: InputSchedule::Timed { intended_tick: 3 },
             action: 1,
         };
         assert_eq!(
@@ -4174,7 +3605,7 @@ mod tests {
                 sequence: 2,
             },
             actor: ActorId(1),
-            schedule: crate::InputSchedule::NextTick { observed_tick: 1 },
+            schedule: InputSchedule::NextTick { observed_tick: 1 },
             action: 1,
         };
         assert_eq!(

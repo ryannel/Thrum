@@ -19,9 +19,9 @@ pub struct ClockConfig {
 impl Default for ClockConfig {
     fn default() -> Self {
         Self {
-            tick_hz: NonZeroU32::new(60).unwrap(),
-            max_ticks_per_call: NonZeroU32::new(4).unwrap(),
-            max_queued_ticks: NonZeroU32::new(8).unwrap(),
+            tick_hz: NonZeroU32::new(60).expect("nonzero clock rate"),
+            max_ticks_per_call: NonZeroU32::new(4).expect("nonzero callback limit"),
+            max_queued_ticks: NonZeroU32::new(8).expect("nonzero queue limit"),
         }
     }
 }
@@ -83,6 +83,10 @@ pub struct TickClock {
 
 impl TickClock {
     /// Begin at a host-supplied monotonic timestamp.
+    ///
+    /// # Errors
+    ///
+    /// The callback limit exceeds the queue limit.
     pub fn new(config: ClockConfig, start: Duration) -> Result<Self, ClockError> {
         if config.max_ticks_per_call > config.max_queued_ticks {
             return Err(ClockError::InvalidConfig);
@@ -109,6 +113,11 @@ impl TickClock {
     /// Delay from the last host callback until the next world update is due.
     /// Pending work is ready now; a stopped clock with no pending work has no
     /// deadline. The host may choose a later bounded retry for backpressure.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the remaining fraction of one second no longer fits a
+    /// `u64` nanosecond count.
     pub fn next_due_in(&self) -> Option<Duration> {
         if self.queued != 0 {
             return Some(Duration::ZERO);
@@ -119,7 +128,9 @@ impl TickClock {
         let remaining = NANOS_PER_SECOND - self.fractional_tick;
         let hz = u128::from(self.config.tick_hz.get());
         let nanos = remaining.div_ceil(hz);
-        Some(Duration::from_nanos(nanos as u64))
+        Some(Duration::from_nanos(
+            u64::try_from(nanos).expect("one second fits u64 nanos"),
+        ))
     }
 
     pub(crate) fn report_cpu_overload(&mut self) {
@@ -134,6 +145,10 @@ impl TickClock {
     }
 
     /// Restart from a new wall-time origin after prior work is complete.
+    ///
+    /// # Errors
+    ///
+    /// The clock is already active, has pending ticks, or receives a timestamp before its last origin.
     pub fn resume(&mut self, now: Duration) -> Result<(), ClockError> {
         if self.state == ClockState::Active {
             return Err(ClockError::AlreadyActive);
@@ -156,6 +171,10 @@ impl TickClock {
     /// must leave its authoritative world unchanged, as `Authority::step` does
     /// on backpressure. A terminal error must stop the host. This method does
     /// not preempt a slow callback.
+    ///
+    /// # Errors
+    ///
+    /// The timestamp moves backwards, time arithmetic overflows, or the step callback reports a retryable or terminal error.
     pub fn advance<E>(
         &mut self,
         now: Duration,
@@ -179,7 +198,10 @@ impl TickClock {
         let mut admitted = 0;
         let mut refused_on_overload = 0;
         if self.state == ClockState::Active {
-            let elapsed = (now - self.last_time).as_nanos();
+            let elapsed = now
+                .checked_sub(self.last_time)
+                .expect("checked monotonic time")
+                .as_nanos();
             let numerator = elapsed
                 .checked_mul(u128::from(self.config.tick_hz.get()))
                 .and_then(|value| value.checked_add(self.fractional_tick))

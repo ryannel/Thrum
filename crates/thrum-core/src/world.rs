@@ -13,18 +13,18 @@ const PAGE_SIZE: usize = 32;
 pub(crate) const MAX_SNAPSHOT_LEASES: usize = 8;
 
 pub(crate) struct SnapshotLeaseFloor {
-    _charge: PublicationCharge,
+    charge: PublicationCharge,
 }
 
 impl SnapshotLeaseFloor {
     pub(crate) fn required_charge() -> Result<usize, PublicationCapacity> {
-        let arc_header = 2 * std::mem::size_of::<usize>();
-        let token = std::mem::size_of::<SnapshotLease>()
+        let arc_header = 2 * size_of::<usize>();
+        let token = size_of::<SnapshotLease>()
             .checked_add(arc_header)
             .ok_or(PublicationCapacity)?;
         MAX_SNAPSHOT_LEASES
             .checked_mul(token)
-            .and_then(|bytes| bytes.checked_add(std::mem::size_of::<Self>()))
+            .and_then(|bytes| bytes.checked_add(size_of::<Self>()))
             .and_then(|bytes| bytes.checked_add(arc_header))
             .ok_or(PublicationCapacity)
     }
@@ -33,11 +33,11 @@ impl SnapshotLeaseFloor {
         reservation: &mut PublicationReservation,
     ) -> Result<Arc<Self>, PublicationCapacity> {
         let charge = reservation.charge(Self::required_charge()?)?;
-        Ok(Arc::new(Self { _charge: charge }))
+        Ok(Arc::new(Self { charge }))
     }
 
     fn belongs_to(&self, reservation: &PublicationReservation) -> bool {
-        self._charge.belongs_to(reservation)
+        self.charge.belongs_to(reservation)
     }
 }
 
@@ -483,7 +483,7 @@ impl<T> Snapshot<T> {
     pub fn logical_bytes(&self) -> usize {
         self.pages
             .iter()
-            .map(|p| p.len() * std::mem::size_of::<Option<SnapshotEntry<T>>>())
+            .map(|p| p.len() * size_of::<Option<SnapshotEntry<T>>>())
             .sum()
     }
 }
@@ -511,6 +511,10 @@ impl<T: Clone> World<T> {
 
     /// Select allocation-free change recording for an already published
     /// fixed-slot world. The caller bounds all first touches before edits.
+    #[expect(
+        clippy::used_underscore_binding,
+        reason = "the free-list charge is reassigned to retain the reservation through Drop"
+    )]
     pub(crate) fn activate_fixed_slot_journal(
         &mut self,
         pool: &PublicationPool,
@@ -610,6 +614,10 @@ impl<T: Clone> World<T> {
 
     /// Precharge a bounded mutable world and identity-keyed journal. The
     /// caller supplies the maximum same-barrier distinct identity count.
+    #[expect(
+        clippy::used_underscore_binding,
+        reason = "the free-list charge is reassigned to retain the reservation through Drop"
+    )]
     pub(crate) fn activate_structural_journal(
         &mut self,
         pool: &PublicationPool,
@@ -833,6 +841,10 @@ impl<T: Clone> World<T> {
     }
     /// Apply one complete game-prepared decision through the matching small
     /// or large atomic edit path.
+    ///
+    /// # Errors
+    ///
+    /// An edit has a duplicate ID, stale handle, or no representable free slot.
     pub fn apply_edits(&mut self, edits: PreparedEdits<T>) -> Result<(), WorldError> {
         match edits {
             PreparedEdits::None => Ok(()),
@@ -842,6 +854,10 @@ impl<T: Clone> World<T> {
         }
     }
     /// Apply one prepared edit without allocating a validation collection.
+    ///
+    /// # Errors
+    ///
+    /// The edit has a duplicate ID, stale handle, or no representable free slot.
     pub fn apply_one(&mut self, edit: WorldEdit<T>) -> Result<(), WorldError> {
         match edit {
             WorldEdit::Spawn(id, state) => self.spawn(id, state).map(|_| ()),
@@ -856,6 +872,14 @@ impl<T: Clone> World<T> {
     /// Validate a complete prepared batch before applying its ordered edits.
     /// A structural peak may exceed final live objects, so admission callers
     /// must reserve for every possible new slot before invoking this method.
+    ///
+    /// # Errors
+    ///
+    /// A prepared edit has a duplicate ID, stale handle, or no representable free slot.
+    ///
+    /// # Panics
+    ///
+    /// Panics if an edit validated as a single-item batch is unexpectedly absent.
     pub fn apply_prepared(&mut self, mut edits: Vec<WorldEdit<T>>) -> Result<(), WorldError> {
         if edits.len() == 1 {
             return self.apply_one(edits.pop().expect("one prepared edit"));
@@ -869,6 +893,10 @@ impl<T: Clone> World<T> {
 
     /// Validate two ordered edits without allocating a batch vector or
     /// validation map. A later invalid edit leaves both unapplied.
+    ///
+    /// # Errors
+    ///
+    /// Either prepared edit has a duplicate ID, stale handle, or no representable free slot.
     pub fn apply_pair(
         &mut self,
         first: WorldEdit<T>,
@@ -1074,6 +1102,14 @@ impl<T: Clone> World<T> {
         Ok(())
     }
     /// Insert a complete game-owned object; stable IDs cannot alias.
+    ///
+    /// # Errors
+    ///
+    /// The stable ID already exists or no representable free slot remains.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called on a world with an active fixed-slot journal or if an internal slot invariant fails.
     pub fn spawn(&mut self, id: StableId, state: T) -> Result<Handle, WorldError> {
         assert!(
             self.fixed_journal.is_none(),
@@ -1127,6 +1163,14 @@ impl<T: Clone> World<T> {
         })
     }
     /// Destroy an object and invalidate its runtime handle.
+    ///
+    /// # Errors
+    ///
+    /// The handle is stale or belongs to another world.
+    ///
+    /// # Panics
+    ///
+    /// Panics if cloning the game-owned state unwinds or an internal charged-index invariant fails.
     pub fn despawn(&mut self, handle: Handle) -> Result<EntityRecord<T>, WorldError> {
         let record = self.get(handle).ok_or(WorldError::InvalidHandle)?.clone();
         let index = handle.slot as usize;
@@ -1194,6 +1238,10 @@ impl<T: Clone> World<T> {
     /// Conservative logical page/root peak for the current dirty set,
     /// including possible Vec-to-Box staging overlap and initial empty root.
     /// A caller preparing a tick must reserve its possible peak earlier.
+    ///
+    /// # Errors
+    ///
+    /// The page, root, or owner size calculation overflows `usize`.
     pub fn required_charged_publication_bytes(&self) -> Result<usize, PublicationCapacity> {
         let first = matches!(self.publication_mode, PublicationMode::Unselected);
         if self.dirty_count == 0 && !first {
@@ -1228,6 +1276,10 @@ impl<T: Clone> World<T> {
     /// counts every possible touched slot, including structural edits;
     /// `max_spawns` bounds slot high-water even if objects retire before the
     /// barrier. Game payloads and all non-snapshot outputs need other bounds.
+    ///
+    /// # Errors
+    ///
+    /// The proposed edit and spawn bounds cannot be represented in the charged publication layout.
     pub fn conservative_charged_publication_peak(
         &self,
         max_edits: usize,
@@ -1296,6 +1348,10 @@ impl<T: Clone> World<T> {
     /// Publish only page/root owners from a pre-existing reservation. This is
     /// a partial accounting primitive: game payload, groups and replica still
     /// require separate bounds. Do not mix charged and prototype publication.
+    ///
+    /// # Errors
+    ///
+    /// The reservation cannot cover the next immutable snapshot publication.
     pub fn try_publish_charged(
         &mut self,
         tick: u64,
@@ -1346,6 +1402,10 @@ impl<T: Clone> World<T> {
 
     /// Build an uncharged prototype publication. Charged worlds must use
     /// `try_publish_charged` so later ticks cannot silently bypass the pool.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called on a charged world or if cloning game-owned state unwinds.
     pub fn publish(&mut self, tick: u64) -> WorldPublication<T> {
         assert!(
             !matches!(self.publication_mode, PublicationMode::Charged(_)),
@@ -1474,7 +1534,7 @@ impl<T: Clone> World<T> {
             snapshot: Snapshot {
                 epoch: self.epoch,
                 tick,
-                pages: self.pages.clone(),
+                pages: Arc::clone(&self.pages),
                 lease: Arc::new(SnapshotLease {
                     _floor: floor.cloned(),
                 }),
@@ -1488,54 +1548,6 @@ impl<T: Clone> World<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{hint::black_box, time::Instant};
-
-    #[test]
-    #[ignore = "local development cost fixture; run explicitly in release mode"]
-    fn compare_fixed_and_structural_one_change_publication_cost() {
-        fn run(structural: bool) -> u128 {
-            let pool = PublicationPool::new(8_000_000);
-            let mut world = World::new(WorldEpoch(299));
-            for id in 0..4_096_u128 {
-                world.spawn(StableId(id), id as u64).unwrap();
-            }
-            let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
-            let mut reservation = pool.try_reserve(peak).unwrap();
-            let initial = world.try_publish_charged(0, &mut reservation).unwrap();
-            drop(initial);
-            drop(reservation);
-            if structural {
-                world
-                    .activate_structural_journal(&pool, 4_096, 4_096, 2)
-                    .unwrap();
-            } else {
-                world.activate_fixed_slot_journal(&pool, 2).unwrap();
-            }
-            let handle = world.handle_for(StableId(2_048)).unwrap();
-            let mut elapsed = 0_u128;
-            for tick in 1..=6_000_u64 {
-                let start = Instant::now();
-                *world.get_mut(handle).unwrap() = black_box(tick);
-                let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
-                let mut reservation = pool.try_reserve(peak).unwrap();
-                let publication = world.try_publish_charged(tick, &mut reservation).unwrap();
-                black_box(&publication.changes);
-                drop(publication);
-                drop(reservation);
-                if tick > 1_000 {
-                    elapsed += start.elapsed().as_nanos();
-                }
-            }
-            drop(world);
-            assert_eq!(pool.used_bytes(), 0);
-            elapsed / 5_000
-        }
-        let fixed = run(false);
-        let structural = run(true);
-        eprintln!(
-            "one-change 4096-object world-only publication: fixed={fixed} ns structural={structural} ns"
-        );
-    }
 
     #[test]
     fn structural_journal_preserves_reused_identity_and_neutral_touches() {
@@ -1647,7 +1659,10 @@ mod tests {
             let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
             let mut reservation = pool.try_reserve(peak).unwrap();
             let publication = world
-                .try_publish_charged(n as u64, &mut reservation)
+                .try_publish_charged(
+                    u64::try_from(n).expect("fixture tick fits u64"),
+                    &mut reservation,
+                )
                 .unwrap();
             assert_eq!(publication.changes.len(), 2);
             drop(publication);
@@ -1682,7 +1697,7 @@ mod tests {
         world.slots[0].generation = u64::MAX;
         let exhausted = world.handle_for(StableId(1)).unwrap();
         world.despawn(exhausted).unwrap();
-        assert!(world.free.is_empty());
+        assert_eq!(world.free, []);
         let new = world.spawn(StableId(2), 2).unwrap();
         assert_eq!(new.slot, 1);
         assert_eq!(world.spawn(StableId(3), 3), Err(WorldError::SlotExhausted));
@@ -1751,7 +1766,9 @@ mod tests {
         let pool = PublicationPool::new(200_000);
         let mut world = World::new(WorldEpoch(294));
         for id in 0..32 {
-            world.spawn(StableId(id), id as u8).unwrap();
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
         }
         let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
         let mut reservation = pool.try_reserve(peak).unwrap();
@@ -1782,7 +1799,9 @@ mod tests {
         let pool = PublicationPool::new(100_000);
         let mut world = World::new(WorldEpoch(251));
         for id in [4, 2, 1, 3] {
-            world.spawn(StableId(id), id as u8).unwrap();
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
         }
         let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
         let mut reservation = pool.try_reserve(peak).unwrap();
@@ -1817,7 +1836,7 @@ mod tests {
             ),
             Err(WorldError::InvalidHandle)
         );
-        assert!(world.fixed_journal.as_ref().unwrap().touched.is_empty());
+        assert_eq!(world.fixed_journal.as_ref().unwrap().touched, []);
         *world
             .get_mut(world.handle_for(StableId(3)).unwrap())
             .unwrap() = 33;
@@ -1847,7 +1866,7 @@ mod tests {
         ));
         assert_eq!(publication.snapshot.get(first).unwrap().state, 12);
         assert_eq!(initial.snapshot.get(first).unwrap().state, 1);
-        assert!(world.fixed_journal.as_ref().unwrap().touched.is_empty());
+        assert_eq!(world.fixed_journal.as_ref().unwrap().touched, []);
         drop(occupied);
         drop(reservation);
         drop(publication);
@@ -1904,7 +1923,7 @@ mod tests {
         drop(reservation);
         world.activate_fixed_slot_journal(&pool, 1).unwrap();
         world.despawn(handle).unwrap();
-        assert!(world.free.is_empty());
+        assert_eq!(world.free, []);
         let peak = world.conservative_charged_publication_peak(0, 0).unwrap();
         let mut reservation = pool.try_reserve(peak).unwrap();
         let publication = world.try_publish_charged(1, &mut reservation).unwrap();
@@ -1925,7 +1944,9 @@ mod tests {
         let foreign = PublicationPool::new(100_000);
         let mut world = World::new(WorldEpoch(253));
         for id in 1..=3 {
-            world.spawn(StableId(id), id as u8).unwrap();
+            world
+                .spawn(StableId(id), u8::try_from(id).expect("fixture ID fits u8"))
+                .unwrap();
         }
         world
             .despawn(world.handle_for(StableId(2)).unwrap())
@@ -2082,7 +2103,7 @@ mod tests {
         assert_ne!(new_handle.slot, retiring.slot);
         assert_eq!(world.get(retiring), None);
         assert_eq!(world.get(new_handle).unwrap().state, 20);
-        assert!(world.free.is_empty());
+        assert_eq!(world.free, []);
     }
 
     #[test]
@@ -2123,7 +2144,12 @@ mod tests {
         let mut world = World::new(WorldEpoch(2));
         let first = world.spawn(StableId(1), 10_u64).unwrap();
         for id in 2..=64 {
-            world.spawn(StableId(id), id as u64).unwrap();
+            world
+                .spawn(
+                    StableId(id),
+                    u64::try_from(id).expect("fixture ID fits u64"),
+                )
+                .unwrap();
         }
         let initial_peak = world.required_charged_publication_bytes().unwrap();
         let mut reservation = pool.try_reserve(initial_peak).unwrap();
@@ -2247,7 +2273,12 @@ mod tests {
         let pool = PublicationPool::new(peak);
         let mut reservation = pool.try_reserve(peak).unwrap();
         let edits = (1..=65)
-            .map(|id| WorldEdit::Spawn(StableId(id), id as u64))
+            .map(|id| {
+                WorldEdit::Spawn(
+                    StableId(id),
+                    u64::try_from(id).expect("fixture ID fits u64"),
+                )
+            })
             .chain((1..=65).map(|id| WorldEdit::DespawnNew(StableId(id))))
             .collect();
         world.apply_prepared(edits).unwrap();
@@ -2267,7 +2298,12 @@ mod tests {
         let pool = PublicationPool::new(usize::MAX);
         let mut world = World::new(WorldEpoch(8));
         for id in 1..=31 {
-            world.spawn(StableId(id), id as u64).unwrap();
+            world
+                .spawn(
+                    StableId(id),
+                    u64::try_from(id).expect("fixture ID fits u64"),
+                )
+                .unwrap();
         }
         let mut reservation = pool
             .try_reserve(world.required_charged_publication_bytes().unwrap())
@@ -2298,7 +2334,12 @@ mod tests {
         assert_eq!(world.conservative_change_count(130).unwrap(), 131);
         assert!(world.conservative_change_count(usize::MAX).is_err());
         let edits = (2..=66)
-            .map(|id| WorldEdit::Spawn(StableId(id), id as u64))
+            .map(|id| {
+                WorldEdit::Spawn(
+                    StableId(id),
+                    u64::try_from(id).expect("fixture ID fits u64"),
+                )
+            })
             .chain((2..=66).map(|id| WorldEdit::DespawnNew(StableId(id))))
             .collect();
         world.apply_prepared(edits).unwrap();
