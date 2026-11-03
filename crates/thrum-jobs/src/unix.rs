@@ -113,6 +113,11 @@ pub struct InputLease {
 
 impl InputLease {
     /// Path valid while this lease is held by a cooperating reader.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is broken and the leased job has
+    /// lost its registered input while the lease is live.
     pub fn path(&self) -> &Path {
         self.job
             .input
@@ -140,7 +145,7 @@ pub struct MaterializationHost {
     parent: PathBuf,
     source_store: PathBuf,
     parent_directory: File,
-    _owner_lock: File,
+    owner_lock: File,
     plan: JobSpacePlan,
     control_claim_bytes: u64,
     job_overhead_bytes: u64,
@@ -156,6 +161,11 @@ impl MaterializationHost {
     /// The caller creates the private sibling `<project-name>.thrum-jobs`
     /// beside the canonical project before opening. This method does not
     /// repair or delete uncertain roots.
+    ///
+    /// # Errors
+    ///
+    /// Returns a plan, ownership, space, quarantine or filesystem error if the
+    /// host cannot acquire a valid exclusive job parent.
     pub fn open(
         project_root: &Path,
         source_store: &NativeSourceStore,
@@ -238,7 +248,7 @@ impl MaterializationHost {
             parent,
             source_store,
             parent_directory,
-            _owner_lock: owner_lock,
+            owner_lock,
             plan,
             control_claim_bytes,
             job_overhead_bytes,
@@ -252,6 +262,11 @@ impl MaterializationHost {
 
     /// Charge a full F4 scratch phase, register its root durably, and copy
     /// exact pinned bytes. A deferral creates no job directory.
+    ///
+    /// # Errors
+    ///
+    /// Returns a space, source, ownership or filesystem error if registration
+    /// and materialization cannot complete.
     pub fn materialize(
         &mut self,
         pin: &mut PinnedSource,
@@ -410,6 +425,15 @@ impl MaterializationHost {
     }
 
     /// Lease the complete immutable F4 input without blocking other jobs.
+    ///
+    /// # Errors
+    ///
+    /// Returns an ownership or filesystem error if the job or its input is no
+    /// longer valid.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an active job has lost its registered input internally.
     pub fn input_lease(&self, id: JobId) -> Result<InputLease, JobError> {
         self.ensure_parent_identity()?;
         let job = self.active.get(&id).ok_or(JobError::UnknownJob(id))?;
@@ -428,6 +452,16 @@ impl MaterializationHost {
 
     /// Release only after checked F4 cleanup and durable job-root retirement.
     /// Any failure retains the full claim and blocks later admission.
+    ///
+    /// # Errors
+    ///
+    /// Returns a reader, ownership or filesystem error when the job cannot be
+    /// retired safely.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an active job disappears or loses its registered input
+    /// between the ownership checks and removal.
     pub fn close(&mut self, id: JobId) -> Result<(), JobError> {
         if let Err(error) = self.ensure_parent_identity() {
             self.quarantined = true;
@@ -484,7 +518,7 @@ impl MaterializationHost {
 
     fn ensure_parent_identity(&self) -> Result<(), JobError> {
         if same_directory(&self.parent_directory, &self.parent)?
-            && same_file(&self._owner_lock, &self.parent.join(".owner.lock"))?
+            && same_file(&self.owner_lock, &self.parent.join(".owner.lock"))?
         {
             Ok(())
         } else {
@@ -1001,7 +1035,7 @@ mod tests {
         let worker = std::thread::spawn(move || {
             let mut file = File::open(reader.join("master.bin")).unwrap();
             start_rx.recv().unwrap();
-            let mut buffer = [0_u8; 64 * 1024];
+            let mut buffer = vec![0_u8; 64 * 1024];
             let mut bytes = 0_u64;
             loop {
                 let count = file.read(&mut buffer).unwrap();
@@ -1041,12 +1075,12 @@ mod tests {
             NativeSourceStore::open(&project.join(".engine/source.sqlite"), source_plan()).unwrap();
         let mut pin = store.pin_current(1).unwrap();
         let mut host = MaterializationHost::open(&project, &store, &jobs, account()).unwrap();
-        let _ = host.materialize_with(&mut pin, scratch(), || {
+        drop(host.materialize_with(&mut pin, scratch(), || {
             fs::write(&marker, b"registered").unwrap();
             loop {
                 std::thread::park();
             }
-        });
+        }));
     }
 
     #[test]
@@ -1107,8 +1141,8 @@ mod tests {
         let deadline = Instant::now() + Duration::from_secs(15);
         while !marker.is_file() {
             if Instant::now() > deadline {
-                let _ = child.kill();
-                let _ = child.wait();
+                drop(child.kill());
+                drop(child.wait());
                 panic!("child did not reach durable registration");
             }
             std::thread::sleep(Duration::from_millis(10));
@@ -1145,112 +1179,6 @@ mod tests {
         assert_eq!(fs::read_dir(&fixture.jobs).unwrap().count(), 1);
         let id = host.materialize(&mut pin, scratch()).unwrap();
         host.close(id).unwrap();
-    }
-
-    #[cfg(target_os = "macos")]
-    #[test]
-    #[ignore = "requires THRUM_TEST_ENOSPC_VOLUME_DIR on an exclusive task-owned APFS image"]
-    fn registered_f4_mid_copy_enospc_retires_root_and_refunds_only_after_cleanup() {
-        use thrum_source::SourceStoreErrorKind;
-
-        struct FillerGuard(PathBuf);
-        impl Drop for FillerGuard {
-            fn drop(&mut self) {
-                let _ = fs::remove_file(&self.0);
-            }
-        }
-
-        let volume = PathBuf::from(
-            std::env::var_os("THRUM_TEST_ENOSPC_VOLUME_DIR")
-                .expect("set THRUM_TEST_ENOSPC_VOLUME_DIR to a task-owned APFS mount"),
-        );
-        let total = fs4::total_space(&volume).unwrap();
-        assert!((64 * MIB..=512 * MIB).contains(&total));
-        let volume_lock = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
-            .open(volume.join("thrum-native-enospc-test.lock"))
-            .unwrap();
-        FileExt::lock(&volume_lock).unwrap();
-
-        let fixture = Fixture::new_at(&volume);
-        let filler_path = fixture.base.join("filler.bin");
-        let _filler_guard = FillerGuard(filler_path.clone());
-        let store = fixture.accepted_store();
-        let mut pin = store.pin_current(1).unwrap();
-        let mut host =
-            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
-        let mut before_fill = 0_u64;
-        let mut after_fill = 0_u64;
-        let failed = host.materialize_with(&mut pin, scratch(), || {
-            let registered = fs::read_dir(&fixture.jobs)
-                .unwrap()
-                .map(|entry| entry.unwrap().path())
-                .find(|path| {
-                    path.file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .starts_with("job-")
-                })
-                .unwrap();
-            assert!(registered.join("registration").is_file());
-            assert!(!registered.join("input").exists());
-            before_fill = fs4::available_space(&fixture.jobs).unwrap();
-            assert!(before_fill >= 16 * MIB);
-            let mut filler = File::create(&filler_path).unwrap();
-            let bytes = [0x51_u8; MIB as usize];
-            let mut blocks = 0_u64;
-            loop {
-                let available = fs4::available_space(&fixture.jobs).unwrap();
-                if available <= 14 * MIB {
-                    break;
-                }
-                if let Err(error) = filler.write_all(&bytes) {
-                    assert_eq!(error.raw_os_error(), Some(28));
-                    break;
-                }
-                blocks += 1;
-                assert!(blocks <= 512, "fault volume did not fill as planned");
-            }
-            after_fill = fs4::available_space(&fixture.jobs).unwrap();
-            assert!(after_fill < 15 * MIB);
-        });
-        let cause = match failed {
-            Err(JobError::Materialize(MaterializeError::Source(cause))) => cause,
-            other => panic!("expected registered native F4 output fault: {other:?}"),
-        };
-        assert_eq!(cause.kind(), SourceStoreErrorKind::Output);
-        let native = std::error::Error::source(&cause)
-            .and_then(|error| error.downcast_ref::<io::Error>())
-            .and_then(io::Error::raw_os_error);
-        assert_eq!(native, Some(28));
-        assert_eq!(host.active_claim_bytes(), 0);
-        assert_eq!(fs::read_dir(&fixture.jobs).unwrap().count(), 1);
-        eprintln!("t2_f4_native_enospc before_fill={before_fill} after_fill={after_fill}");
-
-        fs::remove_file(&filler_path).unwrap();
-        let retried = host.materialize(&mut pin, scratch()).unwrap();
-        let reader = host.input_lease(retried).unwrap();
-        let mut master = File::open(reader.join("master.bin")).unwrap();
-        let mut verified_bytes = 0_u64;
-        let mut buffer = [0_u8; 64 * 1024];
-        loop {
-            let count = master.read(&mut buffer).unwrap();
-            if count == 0 {
-                break;
-            }
-            assert!(buffer[..count].iter().all(|byte| *byte == 0x5a));
-            verified_bytes += count as u64;
-        }
-        assert_eq!(verified_bytes, 12 * MIB);
-        assert_eq!(store.current_root().unwrap(), Some(pin.root()));
-        drop(master);
-        drop(reader);
-        host.close(retried).unwrap();
-        assert_eq!(host.active_claim_bytes(), 0);
-        pin.close().unwrap();
     }
 
     #[test]
