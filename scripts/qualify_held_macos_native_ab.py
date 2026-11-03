@@ -175,6 +175,7 @@ def main():
             required = (
                 "admitted-headless-cache tree_sha256",
                 "admitted-headless-cache legacy_sha256",
+                "admitted-headless-cache fixture_cache_full_rehashes=0",
                 "admitted-headless-a rustc_receipts",
                 "admitted-headless-a candidate_sha256",
                 "admitted-headless-a retained_reload_ms",
