@@ -2,13 +2,14 @@
 //! nothing and still encode the same rendering work. Readback is asynchronous;
 //! the owning host polls its device/event loop and bounds outstanding batches.
 
+use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 
 /// One pass duration, separate from CPU encode time or display latency.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PassTiming {
     /// Caller-assigned diagnostic name in encoding order.
-    pub name: String,
+    pub name: Arc<str>,
     /// GPU timestamp delta in nanoseconds; may be zero at backend precision.
     pub nanoseconds: f64,
 }
@@ -41,9 +42,53 @@ struct Enabled {
     readback: wgpu::Buffer,
     period: f64,
     capacity: u32,
-    names: Vec<String>,
+    names: PassNames,
     render_pending: Option<Receiver<()>>,
     pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
+}
+
+// Keep the owned labels across batches. A static graph records the same pass
+// names every frame, so only its first batch allocates label storage.
+struct PassNames {
+    slots: Vec<Arc<str>>,
+    active: usize,
+}
+impl PassNames {
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            slots: Vec::with_capacity(capacity),
+            active: 0,
+        }
+    }
+
+    fn push(&mut self, name: &str) -> usize {
+        let index = self.active;
+        if let Some(slot) = self.slots.get_mut(index) {
+            if slot.as_ref() != name {
+                *slot = Arc::from(name);
+            }
+        } else {
+            self.slots.push(Arc::from(name));
+        }
+        self.active += 1;
+        index
+    }
+
+    fn clear(&mut self) {
+        self.active = 0;
+    }
+
+    fn is_empty(&self) -> bool {
+        self.active == 0
+    }
+
+    fn len(&self) -> usize {
+        self.active
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &Arc<str>> {
+        self.slots[..self.active].iter()
+    }
 }
 
 /// A single bounded reusable timestamp batch; it may be reused after results
@@ -110,7 +155,7 @@ impl GpuTimings {
                 readback,
                 period,
                 capacity: max_passes,
-                names: Vec::with_capacity(max_passes as usize),
+                names: PassNames::with_capacity(max_passes as usize),
                 render_pending: None,
                 pending: None,
             }),
@@ -135,7 +180,7 @@ impl GpuTimings {
     pub fn pass_writes(
         &mut self,
         generation: u64,
-        name: impl Into<String>,
+        name: impl AsRef<str>,
     ) -> Result<Option<wgpu::RenderPassTimestampWrites<'_>>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
@@ -148,7 +193,7 @@ impl GpuTimings {
         if index >= enabled.capacity {
             return Err(TimingError::Capacity);
         }
-        enabled.names.push(name.into());
+        enabled.names.push(name.as_ref());
         Ok(Some(wgpu::RenderPassTimestampWrites {
             query_set: &enabled.query,
             beginning_of_pass_write_index: Some(index * 2),
@@ -274,14 +319,13 @@ impl GpuTimings {
             .ok()
             .and_then(|n| n.checked_mul(2 * u64::from(wgpu::QUERY_SIZE)))
             .ok_or(TimingError::InvalidCapacity)?;
-        let values = enabled
-            .readback
-            .slice(0..bytes)
-            .get_mapped_range()
-            .map_err(|_| TimingError::MapFailed)?;
+        let Ok(values) = enabled.readback.slice(0..bytes).get_mapped_range() else {
+            enabled.names.clear();
+            return Err(TimingError::MapFailed);
+        };
         let mut timings = Vec::with_capacity(enabled.names.len());
         let mut invalid = None;
-        for (index, name) in enabled.names.drain(..).enumerate() {
+        for (index, name) in enabled.names.iter().enumerate() {
             let base = index * 16;
             let start =
                 u64::from_le_bytes(values[base..base + 8].try_into().expect("query scalar"));
@@ -293,7 +337,7 @@ impl GpuTimings {
             if start != 0 && start != u64::MAX && end != u64::MAX && end >= start {
                 let delta = end - start;
                 timings.push(PassTiming {
-                    name,
+                    name: Arc::clone(name),
                     nanoseconds: delta as f64 * enabled.period,
                 });
             } else {
@@ -302,9 +346,34 @@ impl GpuTimings {
         }
         drop(values);
         enabled.readback.unmap();
+        enabled.names.clear();
         if let Some((start, end)) = invalid {
             return Err(TimingError::InvalidTimestamp { start, end });
         }
         Ok(Some(timings))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PassNames;
+    use std::sync::Arc;
+
+    #[test]
+    fn pass_names_reuse_slots_across_batches_and_replace_changed_roles() {
+        let mut names = PassNames::with_capacity(2);
+        assert_eq!(names.push("depth"), 0);
+        assert_eq!(names.push("forward"), 1);
+        let first = Arc::clone(&names.slots[0]);
+        let second = Arc::clone(&names.slots[1]);
+        names.clear();
+        assert_eq!(names.push("depth"), 0);
+        assert_eq!(names.push("forward"), 1);
+        assert!(Arc::ptr_eq(&first, &names.slots[0]));
+        assert!(Arc::ptr_eq(&second, &names.slots[1]));
+        names.clear();
+        assert_eq!(names.push("shadow"), 0);
+        assert!(!Arc::ptr_eq(&first, &names.slots[0]));
+        assert_eq!(names.slots[1].as_ref(), "forward");
     }
 }

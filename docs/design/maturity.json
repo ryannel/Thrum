@@ -9,7 +9,8 @@
     "active": [
       "A1 simulation core",
       "M1 thrum-render core",
-      "A1 hecs backend integration"
+      "A1 hecs backend integration",
+      "M2 profiler and lit-renderer continuation"
     ],
     "next_parallel": [
       "A2 consumer publication",
@@ -63,6 +64,23 @@
         "../evidence/render/M1-LIT-SCENE-2026-11-03.md"
       ],
       "scope": "Offscreen 10k-instance directional-lit/depth Metal diagnostic with isolated 1080p GPU pass timing and inspected native crop. Wasm/iOS device and simulator/Android compile checks only; clustered forward, CSM, cooked product, visual acceptance and named-device frame budget remain open."
+    },
+    "M2_profiler_labels": {
+      "implementation": "partial_reusable_gpu_pass_label_storage",
+      "functional_validation": "strict_clippy_workspace_check_unit_slot_reuse_and_real_metal_repeated_timestamp_diagnostic_pass",
+      "experienced_quality": "read_only_review_no_findings",
+      "platform_performance": {
+        "mac": "not_qualified_isolated_diagnostic_only",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Metal debug 10k cubes 1080p, 32 sequential samples: GPU pass median 0.122666 ms p95 0.125375 ms; CPU encode plus timing finish median 5.584 us p95 7.833 us; no allocation or speedup inference",
+      "evidence": [
+        "../evidence/render/M2-PROFILER-LABELS-2026-11-03.md"
+      ],
+      "scope": "GPU pass label reuse and callback lifecycle only. Whole-frame profiler, clustered forward, CSM, exposure, sustained allocation and device frame budgets remain open."
     }
   },
   "user_selected": [
