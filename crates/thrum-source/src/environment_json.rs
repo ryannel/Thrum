@@ -1,7 +1,8 @@
 //! Direct bounded parsers for the first constant-light engine-owned records.
 //!
-//! Staged validation uses these private parsers. The immutable staged bytes
-//! retain opaque source values exactly; those values have no runtime meaning.
+//! Staged validation and public source projections share the same parsers.
+//! Immutable source bytes retain opaque values exactly; those values have no
+//! runtime meaning and are omitted from public projections.
 
 use std::cell::Cell;
 use std::collections::BTreeSet;
@@ -271,35 +272,129 @@ pub(crate) struct SceneRecord {
     pub(crate) environment_source: Option<String>,
 }
 
-// Production retains only the checked identity/edge summary. Detailed decoded
-// projections below exist only for parser tests; source bytes remain the authority.
+/// Checked numeric source values for `thrum.environment.authored@1`.
+///
+/// This is the constant-light-v1 source projection, before cook normalization.
+/// Labels, documentation and opaque extensions have no product meaning here.
+/// The value alone establishes neither accepted-source authority nor reference
+/// closure; consumers must establish those separately from an exact source pin.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AuthoredEnvironment {
+    id: String,
+    sun: AuthoredSun,
+    ambient_irradiance_lux: [f64; 3],
+    background_radiance_cd_m2: [f64; 3],
+}
+
+impl AuthoredEnvironment {
+    /// Stable authored environment UUID.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Raw, unattenuated authored Sun quantities and its light identity edge.
+    pub fn sun(&self) -> &AuthoredSun {
+        &self.sun
+    }
+
+    /// Isotropic hemispherical incident RGB irradiance in lux.
+    /// A Lambert BRDF divides this quantity by pi.
+    pub fn ambient_irradiance_lux(&self) -> [f64; 3] {
+        self.ambient_irradiance_lux
+    }
+
+    /// Independent linear Rec.709 RGB background radiance in cd/m².
+    pub fn background_radiance_cd_m2(&self) -> [f64; 3] {
+        self.background_radiance_cd_m2
+    }
+}
+
+/// Checked geometric, unattenuated Sun source quantities.
+///
+/// Directions and colours retain their authored f64 values within the source
+/// schema's unit tolerances. Parsing does not normalize them.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AuthoredSun {
+    pub(crate) light_ref: String,
+    pub(crate) toward_source_unit: [f64; 3],
+    pub(crate) perpendicular_illuminance_lux: f64,
+    pub(crate) unit_luminance_linear_rec709: [f64; 3],
+    pub(crate) angular_radius_rad: f64,
+}
+
+impl AuthoredSun {
+    /// Required stable authored `thrum.light.identity@1` UUID.
+    pub fn light_ref(&self) -> &str {
+        &self.light_ref
+    }
+
+    /// Geometric receiver-to-source world direction.
+    pub fn toward_source_unit(&self) -> [f64; 3] {
+        self.toward_source_unit
+    }
+
+    /// Raw, unattenuated perpendicular illuminance in lux.
+    pub fn perpendicular_illuminance_lux(&self) -> f64 {
+        self.perpendicular_illuminance_lux
+    }
+
+    /// Nonnegative linear Rec.709 RGB colour with unit photometric luminance.
+    pub fn unit_luminance_linear_rec709(&self) -> [f64; 3] {
+        self.unit_luminance_linear_rec709
+    }
+
+    /// Geometric angular radius in radians.
+    pub fn angular_radius_rad(&self) -> f64 {
+        self.angular_radius_rad
+    }
+}
+
+/// Checked `core.scene@2` identity and optional environment source edge.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EnvironmentScene {
+    id: String,
+    environment_source: Option<String>,
+}
+
+impl EnvironmentScene {
+    /// Stable authored scene UUID.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Required authored environment UUID when the scene selects a source.
+    pub fn environment_source(&self) -> Option<&str> {
+        self.environment_source.as_deref()
+    }
+}
+
+/// Checked `thrum.light.identity@1` identity with incoming-environment-sun driver.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EnvironmentLightIdentity {
+    id: String,
+}
+
+impl EnvironmentLightIdentity {
+    /// Stable authored light UUID; this record owns no transform or intensity.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+// Source bytes remain the authority. The internal summary also carries labels
+// for staged authoring inspection; public product projections omit them.
 #[derive(Debug)]
 pub(crate) struct EnvironmentRecord {
     pub(crate) id: String,
     pub(crate) label: Option<String>,
-    pub(crate) sun: Sun,
-    #[cfg(test)]
+    pub(crate) sun: AuthoredSun,
     pub(crate) ambient_irradiance_lux: [f64; 3],
-    #[cfg(test)]
     pub(crate) background_radiance_cd_m2: [f64; 3],
     #[cfg(test)]
     pub(crate) unsupported: Vec<String>,
     /// Exact raw values, including internal whitespace and number spellings.
     #[cfg(test)]
     pub(crate) extensions: Vec<(String, String)>,
-}
-
-#[derive(Debug)]
-pub(crate) struct Sun {
-    pub(crate) light_ref: String,
-    #[cfg(test)]
-    pub(crate) toward_source_unit: [f64; 3],
-    #[cfg(test)]
-    pub(crate) perpendicular_illuminance_lux: f64,
-    #[cfg(test)]
-    pub(crate) unit_luminance_linear_rec709: [f64; 3],
-    #[cfg(test)]
-    pub(crate) angular_radius_rad: f64,
 }
 
 #[derive(Debug)]
@@ -659,20 +754,14 @@ pub(crate) fn parse_environment(bytes: &[u8]) -> Result<EnvironmentRecord, serde
     Ok(EnvironmentRecord {
         id: record.id.0,
         label: fields.label.map(|x| x.0),
-        sun: Sun {
+        sun: AuthoredSun {
             light_ref: required::<_, serde_json::Error>(sun.light_ref)?.0,
-            #[cfg(test)]
             toward_source_unit: direction,
-            #[cfg(test)]
             perpendicular_illuminance_lux: illuminance,
-            #[cfg(test)]
             unit_luminance_linear_rec709: colour,
-            #[cfg(test)]
             angular_radius_rad: radius,
         },
-        #[cfg(test)]
         ambient_irradiance_lux: ambient,
-        #[cfg(test)]
         background_radiance_cd_m2: background,
         #[cfg(test)]
         unsupported: _unsupported.values,
@@ -680,6 +769,57 @@ pub(crate) fn parse_environment(bytes: &[u8]) -> Result<EnvironmentRecord, serde
         extensions: fields.extensions,
     })
 }
+
+/// Validate and project a constant-light `thrum.environment.authored@1` record.
+///
+/// Uses the same whole-record bounds and strict typed parser as F3 staging;
+/// invalid source returns an error, including invalid opaque extension values.
+/// Raw numeric values are retained without normalization or attenuation.
+///
+/// Before using this as a build input, the caller must authenticate these exact
+/// bytes against its accepted source pin, check the built-in definition identity
+/// and establish the typed scene-to-environment-to-light reference closure.
+/// Successful parsing alone supplies none of those authority guarantees.
+pub fn parse_authored_environment(bytes: &[u8]) -> Result<AuthoredEnvironment, serde_json::Error> {
+    record_header(bytes)?;
+    let record = parse_environment(bytes)?;
+    Ok(AuthoredEnvironment {
+        id: record.id,
+        sun: record.sun,
+        ambient_irradiance_lux: record.ambient_irradiance_lux,
+        background_radiance_cd_m2: record.background_radiance_cd_m2,
+    })
+}
+
+/// Validate and project the identity and environment edge of `core.scene@2`.
+///
+/// Uses F3's existing whole-record bounds and strict typed parser. Labels and
+/// documentation are checked but omitted. The caller must authenticate the exact
+/// bytes and built-in definition against its accepted pin and establish typed
+/// reference closure before treating this source projection as a build input.
+pub fn parse_environment_scene(bytes: &[u8]) -> Result<EnvironmentScene, serde_json::Error> {
+    record_header(bytes)?;
+    let record = parse_scene(bytes)?;
+    Ok(EnvironmentScene {
+        id: record.id,
+        environment_source: record.environment_source,
+    })
+}
+
+/// Validate and project a `thrum.light.identity@1` record.
+///
+/// F3's existing parser requires the incoming-environment-sun driver and refuses
+/// independent transform or intensity. Whole-record bounds also apply. The
+/// caller must authenticate the exact bytes and built-in definition against its
+/// accepted pin and establish typed reference closure before build use.
+pub fn parse_environment_light_identity(
+    bytes: &[u8],
+) -> Result<EnvironmentLightIdentity, serde_json::Error> {
+    record_header(bytes)?;
+    let record = parse_light(bytes)?;
+    Ok(EnvironmentLightIdentity { id: record.id })
+}
+
 fn nonnegative(values: &[f64]) -> bool {
     values.iter().all(|x| x.is_finite() && *x >= 0.0)
 }
@@ -906,6 +1046,138 @@ mod tests {
         assert!(validate_closure(&selected, &[source], &[light]).is_ok());
         // Absence of a binding is legal, but does not activate declared content.
         assert!(scene(None).environment_source.is_none());
+    }
+
+    #[test]
+    fn public_projection_retains_exact_raw_quantities_and_decoded_identities() {
+        let authored = ENVIRONMENT
+            .replace("[0,1,0]", "[-0.0,0.9999999995,0]")
+            .replace(":100000", ":1.25e5")
+            .replace("[1,1,1]", "[1.0000000005,1.0000000005,1.0000000005]")
+            .replace("[1000,1000,1000]", "[1.5,2.5,3.5]")
+            .replace("[0,0,0]", "[4.5,5.5,6.5]");
+        let escaped = authored
+            .replace(
+                "thrum.environment.authored",
+                r"thrum.environment.auth\u006fred",
+            )
+            .replace("constant-light-v1", r"constant-light-v\u0031")
+            .replace("toward_source_unit", r"toward_source_\u0075nit")
+            .replace(SOURCE, &SOURCE.replacen('1', r"\u0031", 1))
+            .replace(LIGHT, &LIGHT.replacen('1', r"\u0031", 1));
+        let source = parse_authored_environment(escaped.as_bytes()).unwrap();
+        assert_eq!(
+            source,
+            parse_authored_environment(authored.as_bytes()).unwrap()
+        );
+        assert_eq!(source.id(), SOURCE);
+        assert_eq!(source.sun().light_ref(), LIGHT);
+        assert_eq!(source.sun().toward_source_unit(), [-0.0, 0.9999999995, 0.0]);
+        assert_eq!(
+            source.sun().toward_source_unit()[0].to_bits(),
+            (-0.0_f64).to_bits()
+        );
+        assert_eq!(source.sun().perpendicular_illuminance_lux(), 125000.0);
+        assert_eq!(
+            source.sun().unit_luminance_linear_rec709(),
+            [1.0000000005; 3]
+        );
+        assert_eq!(source.sun().angular_radius_rad(), 0.00465);
+        assert_eq!(source.ambient_irradiance_lux(), [1.5, 2.5, 3.5]);
+        assert_eq!(source.background_radiance_cd_m2(), [4.5, 5.5, 6.5]);
+    }
+
+    #[test]
+    fn public_projection_checks_but_omits_labels_documentation_and_opaque_meaning() {
+        let annotated = with_extension(
+            "x.thrum.environment.example",
+            r#"{"perpendicular_illuminance_lux":0,"label":"ignored"}"#,
+        )
+        .replace(
+            r#""profile":"constant-light-v1""#,
+            r#""label":"ignored","profile":"constant-light-v1""#,
+        )
+        .replacen('{', r#"{"documentation":"ignored","#, 1);
+        assert_eq!(
+            parse_authored_environment(annotated.as_bytes()).unwrap(),
+            parse_authored_environment(ENVIRONMENT.as_bytes()).unwrap()
+        );
+        for invalid in [
+            ENVIRONMENT.replace("thrum.environment.authored", "game.weather"),
+            ENVIRONMENT.replace("\"schema\":1", "\"schema\":2"),
+            ENVIRONMENT.replace("[0,1,0]", "[0,2,0]"),
+            ENVIRONMENT.replace(":100000", ":-1"),
+            ENVIRONMENT.replace("[0,0,0]", "[0,1e400,0]"),
+            ENVIRONMENT.replace(LIGHT, "not-a-uuid"),
+            ENVIRONMENT.replace("\"air_quality\"", "\"unknown\""),
+            ENVIRONMENT.replace("\"applied_attenuation\":[]", "\"applied_attenuation\":[0]"),
+            ENVIRONMENT.replace(
+                "\"profile\":",
+                "\"prof\\u0069le\":\"constant-light-v1\",\"profile\":",
+            ),
+            with_extension("x.thrum.environment.example", r#"{"a":0,"\u0061":1}"#),
+            with_extension("x.thrum.environment.example", "1e400"),
+            ENVIRONMENT.replace(
+                "\"profile\":",
+                &format!(
+                    "\"label\":\"{}\",\"profile\":",
+                    "x".repeat(MAX_STRING_BYTES + 1)
+                ),
+            ),
+            format!("{ENVIRONMENT} trailing"),
+        ] {
+            assert!(parse_environment(invalid.as_bytes()).is_err());
+            assert!(parse_authored_environment(invalid.as_bytes()).is_err());
+        }
+    }
+
+    #[test]
+    fn public_scene_and_light_projections_check_existing_typed_grammars() {
+        let scene = format!(
+            r#"{{"id":"{SCENE}","type":"core.scene","schema":2,"fields":{{"scene.label":"ignored","environment.source":"{SOURCE}"}}}}"#
+        );
+        let escaped = scene.replace("environment.source", r"environment.\u0073ource");
+        let projected = parse_environment_scene(escaped.as_bytes()).unwrap();
+        assert_eq!(projected.id(), SCENE);
+        assert_eq!(projected.environment_source(), Some(SOURCE));
+        assert_eq!(
+            projected,
+            parse_environment_scene(scene.as_bytes()).unwrap()
+        );
+        let unbound = format!(r#"{{"id":"{SCENE}","type":"core.scene","schema":2,"fields":{{}}}}"#);
+        assert!(
+            parse_environment_scene(unbound.as_bytes())
+                .unwrap()
+                .environment_source()
+                .is_none()
+        );
+        for invalid in [
+            scene.replace("\"schema\":2", "\"schema\":1"),
+            scene.replace(SOURCE, "not-a-uuid"),
+            scene.replace("\"scene.label\":", "\"unknown\":"),
+            format!("{scene} trailing"),
+        ] {
+            assert!(parse_environment_scene(invalid.as_bytes()).is_err());
+        }
+        let light = format!(
+            r#"{{"id":"{LIGHT}","type":"thrum.light.identity","schema":1,"fields":{{"label":"ignored","driver_binding":"incoming-environment-sun"}}}}"#
+        );
+        let escaped = light.replace("incoming-environment-sun", r"incoming-environment-\u0073un");
+        assert_eq!(
+            parse_environment_light_identity(escaped.as_bytes())
+                .unwrap()
+                .id(),
+            LIGHT
+        );
+        for invalid in [
+            light.replace("incoming-environment-sun", "independent-transform"),
+            light.replace("\"schema\":1", "\"schema\":2"),
+            light.replace("\"label\":", "\"intensity\":"),
+            light.replace(LIGHT, "not-a-uuid"),
+            format!("{light} trailing"),
+        ] {
+            assert!(parse_environment_light_identity(invalid.as_bytes()).is_err());
+        }
     }
 
     #[test]
