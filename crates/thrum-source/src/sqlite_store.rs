@@ -2331,7 +2331,7 @@ impl SourceStoreError {
             StoreError::Budget(
                 BudgetError::MainLimit
                 | BudgetError::WalLimit
-                | BudgetError::TemporaryLimit
+                | BudgetError::StagePressure(_)
                 | BudgetError::FreeSpace,
             )
             | StoreError::WalBackpressure

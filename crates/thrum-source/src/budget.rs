@@ -69,6 +69,67 @@ impl From<SourceSpacePlan> for Limits {
     }
 }
 
+/// Which bounded managed-temporary scan stopped at its first excess charge.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StageScanPhase {
+    /// Existing managed temporary use before the stage projection is computed.
+    Preflight,
+    /// Managed temporary use after all stage writes have completed.
+    FinalVerification,
+}
+
+/// One stage-local space refusal with its actual estimate or observation.
+///
+/// These bytes do not describe APFS physical allocation or reserve space.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StageSpacePressure {
+    /// A scan stopped early; the complete managed-temporary charge is unknown.
+    TemporaryScan {
+        /// Scan boundary.
+        phase: StageScanPhase,
+        /// Rounded/allocated-size charge accumulated through the first excess entry.
+        charged_at_least_bytes: u64,
+        /// Selected managed-temporary target.
+        target_bytes: u64,
+    },
+    /// Complete existing charge plus projected full-stage copy exceeds policy.
+    TemporaryPreflight {
+        /// Complete rounded/allocated-size charge of existing managed files.
+        existing_charge_bytes: u64,
+        /// Rounded full-stage copy estimate.
+        projected_stage_bytes: u64,
+        /// Selected managed-temporary target.
+        target_bytes: u64,
+    },
+    /// Raw copied bytes crossed the initial rounded stage projection.
+    CopyProjection {
+        /// Raw bytes written through the refusing chunk.
+        written_raw_bytes: u64,
+        /// Initial rounded full-stage copy estimate.
+        projected_stage_bytes: u64,
+    },
+    /// Initial volume availability sample could not cover projected copy and policy headroom.
+    AvailablePreflight {
+        /// Rounded full-stage copy estimate.
+        projected_stage_bytes: u64,
+        /// Non-atomic filesystem available-space observation.
+        observed_available_bytes: u64,
+        /// Selected desired free-space headroom.
+        headroom_bytes: u64,
+    },
+    /// A live availability sample refused before or after a copy chunk.
+    AvailableLive {
+        /// True before the next copy chunk; false after a completed chunk.
+        before_write: bool,
+        /// Bounded allowance for the next write, zero after a completed write.
+        next_write_allowance_bytes: u64,
+        /// Non-atomic filesystem available-space observation.
+        observed_available_bytes: u64,
+        /// Selected desired free-space headroom.
+        headroom_bytes: u64,
+    },
+}
+
 /// Native source work cannot fit the selected plan or actual volume.
 #[derive(Debug)]
 pub enum BudgetError {
@@ -82,10 +143,10 @@ pub enum BudgetError {
     MainLimit,
     /// Accepted-store WAL reached its selected stop-and-checkpoint target.
     WalLimit,
-    /// Existing managed temporary use plus stage projection exceeds its target.
-    TemporaryLimit,
     /// Observed available space cannot preserve the selected planned headroom.
     FreeSpace,
+    /// Structured staging estimate or availability refusal.
+    StagePressure(StageSpacePressure),
     /// A named filesystem operation failed.
     Io {
         /// Path associated with the failed operation.
@@ -203,25 +264,32 @@ impl StageBudget {
         if granularity == 0 {
             return Err(BudgetError::Overflow);
         }
-        let temporary = scan_store_usage(&window.engine_dir, granularity, limits.temporary)?;
+        let temporary = scan_store_usage(
+            &window.engine_dir,
+            granularity,
+            limits.temporary,
+            StageScanPhase::Preflight,
+        )?;
         let projected_stage = projected_stage_bytes(inventory, granularity)?;
         if temporary
             .checked_add(projected_stage)
             .ok_or(BudgetError::Overflow)?
             > limits.temporary
         {
-            return Err(BudgetError::TemporaryLimit);
+            return Err(BudgetError::StagePressure(
+                StageSpacePressure::TemporaryPreflight {
+                    existing_charge_bytes: temporary,
+                    projected_stage_bytes: projected_stage,
+                    target_bytes: limits.temporary,
+                },
+            ));
         }
-        let required_free = projected_stage
-            .checked_add(limits.free_floor)
-            .ok_or(BudgetError::Overflow)?;
-        let available = fs4::available_space(project_root).map_err(|source| BudgetError::Io {
-            path: project_root.to_owned(),
-            source,
+        assess_preflight_available(projected_stage, limits.free_floor, || {
+            fs4::available_space(project_root).map_err(|source| BudgetError::Io {
+                path: project_root.to_owned(),
+                source,
+            })
         })?;
-        if available < required_free {
-            return Err(BudgetError::FreeSpace);
-        }
         Ok(Self {
             window,
             granularity,
@@ -246,13 +314,18 @@ impl StageBudget {
             .checked_add(raw_bytes)
             .ok_or(BudgetError::Overflow)?;
         if self.written_raw > self.projected_stage {
-            return Err(BudgetError::TemporaryLimit);
+            return Err(BudgetError::StagePressure(
+                StageSpacePressure::CopyProjection {
+                    written_raw_bytes: self.written_raw,
+                    projected_stage_bytes: self.projected_stage,
+                },
+            ));
         }
         // The initial preflight charged the entire stage. During copying,
         // available_space already reflects actual stage allocations, including
         // rounded blocks and directory metadata. Subtracting only raw bytes
         // from projected_stage here would charge those allocations twice.
-        self.check_free(project_root, 0)
+        self.check_free(project_root, 0, false)
     }
 
     pub(crate) fn before_write(
@@ -267,21 +340,21 @@ impl StageBudget {
                     .ok_or(BudgetError::Overflow)?,
             )
             .ok_or(BudgetError::Overflow)?;
-        self.check_free(project_root, incoming_physical)
+        self.check_free(project_root, incoming_physical, true)
     }
 
-    fn check_free(&self, project_root: &Path, incoming: u64) -> Result<(), BudgetError> {
-        let required_free = incoming
-            .checked_add(self.free_floor)
-            .ok_or(BudgetError::Overflow)?;
-        let available = fs4::available_space(project_root).map_err(|source| BudgetError::Io {
-            path: project_root.to_owned(),
-            source,
-        })?;
-        if available < required_free {
-            return Err(BudgetError::FreeSpace);
-        }
-        Ok(())
+    fn check_free(
+        &self,
+        project_root: &Path,
+        incoming: u64,
+        before_write: bool,
+    ) -> Result<(), BudgetError> {
+        assess_live_available(incoming, self.free_floor, before_write, || {
+            fs4::available_space(project_root).map_err(|source| BudgetError::Io {
+                path: project_root.to_owned(),
+                source,
+            })
+        })
     }
 
     pub(crate) fn verify_temp_cap(&self) -> Result<(), BudgetError> {
@@ -289,9 +362,54 @@ impl StageBudget {
             &self.window.engine_dir,
             self.granularity,
             self.temporary_limit,
+            StageScanPhase::FinalVerification,
         )
         .map(|_| ())
     }
+}
+
+fn assess_preflight_available(
+    projected_stage: u64,
+    headroom: u64,
+    read_available: impl FnOnce() -> Result<u64, BudgetError>,
+) -> Result<(), BudgetError> {
+    let required = projected_stage
+        .checked_add(headroom)
+        .ok_or(BudgetError::Overflow)?;
+    let available = read_available()?;
+    if available < required {
+        return Err(BudgetError::StagePressure(
+            StageSpacePressure::AvailablePreflight {
+                projected_stage_bytes: projected_stage,
+                observed_available_bytes: available,
+                headroom_bytes: headroom,
+            },
+        ));
+    }
+    Ok(())
+}
+
+fn assess_live_available(
+    incoming: u64,
+    headroom: u64,
+    before_write: bool,
+    read_available: impl FnOnce() -> Result<u64, BudgetError>,
+) -> Result<(), BudgetError> {
+    let required = incoming
+        .checked_add(headroom)
+        .ok_or(BudgetError::Overflow)?;
+    let available = read_available()?;
+    if available < required {
+        return Err(BudgetError::StagePressure(
+            StageSpacePressure::AvailableLive {
+                before_write,
+                next_write_allowance_bytes: incoming,
+                observed_available_bytes: available,
+                headroom_bytes: headroom,
+            },
+        ));
+    }
+    Ok(())
 }
 
 fn projected_stage_bytes(inventory: &Inventory, granularity: u64) -> Result<u64, BudgetError> {
@@ -311,14 +429,16 @@ fn scan_store_usage(
     engine_dir: &Path,
     granularity: u64,
     temporary_limit: u64,
+    phase: StageScanPhase,
 ) -> Result<u64, BudgetError> {
-    scan_store_usage_with(engine_dir, granularity, temporary_limit, |_, _| {})
+    scan_store_usage_with(engine_dir, granularity, temporary_limit, phase, |_, _| {})
 }
 
 fn scan_store_usage_with(
     engine_dir: &Path,
     granularity: u64,
     temporary_limit: u64,
+    phase: StageScanPhase,
     mut visit: impl FnMut(&Path, bool),
 ) -> Result<u64, BudgetError> {
     let mut temporary = 0_u64;
@@ -350,7 +470,13 @@ fn scan_store_usage_with(
                     .checked_add(granularity)
                     .ok_or(BudgetError::Overflow)?;
                 if temporary > temporary_limit {
-                    return Err(BudgetError::TemporaryLimit);
+                    return Err(BudgetError::StagePressure(
+                        StageSpacePressure::TemporaryScan {
+                            phase,
+                            charged_at_least_bytes: temporary,
+                            target_bytes: temporary_limit,
+                        },
+                    ));
                 }
                 directories.push(path);
             } else if kind.is_file() {
@@ -388,7 +514,13 @@ fn scan_store_usage_with(
                     .ok_or(BudgetError::Overflow)?;
                 temporary = temporary.checked_add(charge).ok_or(BudgetError::Overflow)?;
                 if temporary > temporary_limit {
-                    return Err(BudgetError::TemporaryLimit);
+                    return Err(BudgetError::StagePressure(
+                        StageSpacePressure::TemporaryScan {
+                            phase,
+                            charged_at_least_bytes: temporary,
+                            target_bytes: temporary_limit,
+                        },
+                    ));
                 }
             } else {
                 return Err(BudgetError::UnsafeStore(path));
@@ -483,10 +615,196 @@ mod tests {
         };
         assert!(matches!(
             StageBudget::reserve_with_limits(&root, &inventory, window, limits),
-            Err(BudgetError::TemporaryLimit)
+            Err(BudgetError::StagePressure(
+                StageSpacePressure::TemporaryScan {
+                    phase: StageScanPhase::Preflight,
+                    charged_at_least_bytes: 1..,
+                    target_bytes: 0,
+                }
+            ))
         ));
         assert!(!root.join(".engine/staging").exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stage_preflight_reports_complete_projection_and_observed_availability() {
+        let root = std::env::temp_dir().join(format!("thrum-budget-detail-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("project.json"), b"{}").unwrap();
+        let inventory =
+            scan_declared_tree(&root, &[SourcePath::parse("project.json").unwrap()]).unwrap();
+        let window = SourceWriterWindow::acquire(&root).unwrap();
+        let granularity = fs4::allocation_granularity(&root).unwrap();
+        let existing = scan_store_usage(
+            &window.engine_dir,
+            granularity,
+            u64::MAX,
+            StageScanPhase::Preflight,
+        )
+        .unwrap();
+        let projected = projected_stage_bytes(&inventory, granularity).unwrap();
+        let target = existing + projected - 1;
+        let error = StageBudget::reserve_with_limits(
+            &root,
+            &inventory,
+            window,
+            Limits {
+                temporary: target,
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .err()
+        .unwrap();
+        assert!(matches!(
+            error,
+            BudgetError::StagePressure(StageSpacePressure::TemporaryPreflight {
+                existing_charge_bytes,
+                projected_stage_bytes,
+                target_bytes,
+            }) if existing_charge_bytes == existing
+                && projected_stage_bytes == projected
+                && target_bytes == target
+        ));
+
+        let window = SourceWriterWindow::acquire(&root).unwrap();
+        let error = StageBudget::reserve_with_limits(
+            &root,
+            &inventory,
+            window,
+            Limits {
+                temporary: u64::MAX,
+                free_floor: u64::MAX - projected,
+                ..Limits::V1
+            },
+        )
+        .err()
+        .unwrap();
+        assert!(matches!(
+            error,
+            BudgetError::StagePressure(StageSpacePressure::AvailablePreflight {
+                projected_stage_bytes,
+                observed_available_bytes,
+                headroom_bytes,
+            }) if projected_stage_bytes == projected
+                && observed_available_bytes < u64::MAX
+                && headroom_bytes == u64::MAX - projected
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stage_live_and_final_pressure_keep_their_distinct_bases() {
+        let root = std::env::temp_dir().join(format!("thrum-budget-live-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("project.json"), b"{}").unwrap();
+        let inventory =
+            scan_declared_tree(&root, &[SourcePath::parse("project.json").unwrap()]).unwrap();
+        let window = SourceWriterWindow::acquire(&root).unwrap();
+        let mut budget = StageBudget::reserve_with_limits(
+            &root,
+            &inventory,
+            window,
+            Limits {
+                temporary: u64::MAX,
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+        let incoming = budget.granularity * 3;
+        budget.free_floor = u64::MAX - incoming;
+        assert!(matches!(
+            budget.before_write(&root, 1),
+            Err(BudgetError::StagePressure(StageSpacePressure::AvailableLive {
+                before_write: true,
+                next_write_allowance_bytes,
+                observed_available_bytes,
+                headroom_bytes,
+            })) if next_write_allowance_bytes == incoming
+                && observed_available_bytes < u64::MAX
+                && headroom_bytes == u64::MAX - incoming
+        ));
+        budget.free_floor = u64::MAX;
+        assert!(matches!(
+            budget.after_write(&root, 0),
+            Err(BudgetError::StagePressure(StageSpacePressure::AvailableLive {
+                before_write: false,
+                next_write_allowance_bytes: 0,
+                observed_available_bytes,
+                headroom_bytes: u64::MAX,
+            })) if observed_available_bytes < u64::MAX
+        ));
+        budget.free_floor = 0;
+        assert!(matches!(
+            budget.after_write(&root, budget.projected_stage + 1),
+            Err(BudgetError::StagePressure(StageSpacePressure::CopyProjection {
+                written_raw_bytes,
+                projected_stage_bytes,
+            })) if written_raw_bytes == budget.projected_stage + 1
+                && projected_stage_bytes == budget.projected_stage
+        ));
+        budget.temporary_limit = 0;
+        assert!(matches!(
+            budget.verify_temp_cap(),
+            Err(BudgetError::StagePressure(
+                StageSpacePressure::TemporaryScan {
+                    phase: StageScanPhase::FinalVerification,
+                    charged_at_least_bytes: 1..,
+                    target_bytes: 0,
+                }
+            ))
+        ));
+        drop(budget);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn availability_decisions_preserve_exact_sample_equality_and_overflow() {
+        assert!(assess_preflight_available(40, 60, || Ok(100)).is_ok());
+        assert!(matches!(
+            assess_preflight_available(40, 60, || Ok(99)),
+            Err(BudgetError::StagePressure(
+                StageSpacePressure::AvailablePreflight {
+                    projected_stage_bytes: 40,
+                    observed_available_bytes: 99,
+                    headroom_bytes: 60,
+                }
+            ))
+        ));
+        assert!(matches!(
+            assess_preflight_available(u64::MAX, 1, || panic!("overflow must precede I/O")),
+            Err(BudgetError::Overflow)
+        ));
+
+        assert!(assess_live_available(4, 6, true, || Ok(10)).is_ok());
+        assert!(matches!(
+            assess_live_available(4, 6, true, || Ok(9)),
+            Err(BudgetError::StagePressure(
+                StageSpacePressure::AvailableLive {
+                    before_write: true,
+                    next_write_allowance_bytes: 4,
+                    observed_available_bytes: 9,
+                    headroom_bytes: 6,
+                }
+            ))
+        ));
+        assert!(matches!(
+            assess_live_available(0, 10, false, || Ok(9)),
+            Err(BudgetError::StagePressure(
+                StageSpacePressure::AvailableLive {
+                    before_write: false,
+                    next_write_allowance_bytes: 0,
+                    observed_available_bytes: 9,
+                    headroom_bytes: 10,
+                }
+            ))
+        ));
+        assert!(matches!(
+            assess_live_available(u64::MAX, 1, true, || panic!("overflow must precede I/O")),
+            Err(BudgetError::Overflow)
+        ));
     }
 
     #[test]
@@ -569,24 +887,36 @@ mod tests {
         fs::write(&staged_file, b"old").unwrap();
 
         let mut removed_at_entry = false;
-        scan_store_usage_with(&engine, 4096, Limits::V1.temporary, |path, queued| {
-            if !queued && path == staged_file {
-                fs::remove_dir_all(&stage).unwrap();
-                removed_at_entry = true;
-            }
-        })
+        scan_store_usage_with(
+            &engine,
+            4096,
+            Limits::V1.temporary,
+            StageScanPhase::Preflight,
+            |path, queued| {
+                if !queued && path == staged_file {
+                    fs::remove_dir_all(&stage).unwrap();
+                    removed_at_entry = true;
+                }
+            },
+        )
         .unwrap();
         assert!(removed_at_entry);
 
         fs::create_dir(&stage).unwrap();
         fs::write(&staged_file, b"old").unwrap();
         let mut removed_when_queued = false;
-        scan_store_usage_with(&engine, 4096, Limits::V1.temporary, |path, queued| {
-            if queued && path == stage {
-                fs::remove_dir_all(&stage).unwrap();
-                removed_when_queued = true;
-            }
-        })
+        scan_store_usage_with(
+            &engine,
+            4096,
+            Limits::V1.temporary,
+            StageScanPhase::Preflight,
+            |path, queued| {
+                if queued && path == stage {
+                    fs::remove_dir_all(&stage).unwrap();
+                    removed_when_queued = true;
+                }
+            },
+        )
         .unwrap();
         assert!(removed_when_queued);
         fs::remove_dir_all(root).unwrap();
