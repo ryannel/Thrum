@@ -2293,6 +2293,14 @@
         "result_traffic_cost_samples": "../evidence/integration/N1-W1-RESULT-BURST-COST-SAMPLES-2026-11-03.csv",
         "current_atomic_batch_cost_samples": "../evidence/integration/N1-ATOMIC-CAPTURE-BATCH-COST-SAMPLES-2026-11-03.csv"
       },
+      "w1_callback_capture_tails": {
+        "implementation": "four ignored release-only integration probes time real W1 host callbacks through test-only atomic four-peer N1 capture for one, two or four due ticks",
+        "functional_validation": "focused fixture checks exact completed/queued ticks, publication count, final controlled cell values, empty queues and ledgers, retired authority results and a complete encoded-frame checksum outside timing; independent read-only review checked percentile rank and measurement boundaries",
+        "platform_performance": "seven fresh Apple M3 Max Rust 1.99.1 release processes per profile: median per-process p99 elapsed time is 7958 ns for one idle tick, 9250 ns for one tick with four results, 18708 ns for two due ticks with eight results, and 36750 ns for four due ticks with sixteen results; synthetic 60 Hz timestamps run back-to-back with hot caches and OS scheduling noise",
+        "scope": "No-socket local 128-cell/four-peer fixture. Input submission, queue-to-sent transfer, full encoded-byte checksum and ACK are outside timing; two/four-due probes drain after every callback rather than a normal 20 Hz release. No production projection, full game-schema closure, lifecycle/event burst, simultaneous game systems, allocator/RSS or whole-game callback budget claim. F1's reported elapsed time still omits later N1 capture.",
+        "evidence": "../evidence/integration/N1-W1-CALLBACK-CAPTURE-TAILS-2026-11-03.md",
+        "raw_samples": "../evidence/integration/N1-W1-CALLBACK-CAPTURE-TAIL-SAMPLES-2026-11-03.csv"
+      },
       "baseline_physical_staging_oracle": {
         "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",
         "functional_validation": "two focused tests cover eight distinct 32 KiB chunks across two credits, out-of-order exact ACK and slot reuse, duplicate/wrong/premature refusal, exact Begin fields and decoded chunk/End bytes, one-byte final chunk and uncertain-write quarantine; independent read-only review found no storage or credit defect",

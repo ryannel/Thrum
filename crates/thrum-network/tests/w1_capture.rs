@@ -122,6 +122,10 @@ fn callback_at(origin: Instant, tick: u64) -> Instant {
     origin + Duration::from_nanos((tick * 1_000_000_000).div_ceil(60))
 }
 
+fn percentile_index(count: usize, numerator: usize, denominator: usize) -> usize {
+    (count * numerator).div_ceil(denominator) - 1
+}
+
 fn host(origin: Instant) -> HeadlessHost<Rules> {
     let mut world = World::new(WorldEpoch(1));
     for id in 1..=128 {
@@ -171,6 +175,22 @@ fn submit_input(host: &mut HeadlessHost<Rules>, peer: u64, sequence: u64, observ
             },
             actor: controlled_actor(peer),
             schedule: InputSchedule::NextTick { observed_tick },
+            action: Action::Increment,
+        })
+        .unwrap();
+    assert!(matches!(admitted, thrum_core::Admission::Queued));
+}
+
+fn submit_timed_input(host: &mut HeadlessHost<Rules>, peer: u64, intended_tick: u64) {
+    let admitted = host
+        .submit(Input {
+            origin: Origin {
+                peer: PeerId(peer),
+                connection_epoch: peer + 100,
+                sequence: intended_tick,
+            },
+            actor: controlled_actor(peer),
+            schedule: InputSchedule::Timed { intended_tick },
             action: Action::Increment,
         })
         .unwrap();
@@ -270,13 +290,21 @@ fn capture_publication(
     }
 }
 
-fn submit_and_write(queue: &mut UnsentQueue, ledger: &mut OrdinaryLedger, key: PeerKey) {
+fn submit_and_write(
+    queue: &mut UnsentQueue,
+    ledger: &mut OrdinaryLedger,
+    key: PeerKey,
+    checksum: &mut u64,
+) {
     while ledger
         .submit_next_from_queue(queue, key, 0)
         .unwrap()
         .is_some()
     {}
     while let Some(frame) = ledger.next_write().unwrap() {
+        for byte in frame.first.iter().chain(frame.second) {
+            *checksum = checksum.wrapping_mul(0x100_0000_01b3) ^ u64::from(*byte);
+        }
         ledger
             .accept_written(
                 frame.sequence,
@@ -293,6 +321,7 @@ fn real_w1_snapshots_feed_four_peer_queues_without_waiting_for_slow_ack() {
     let mut queues = queues();
     let mut ledgers: [_; 4] =
         std::array::from_fn(|index| OrdinaryLedger::new(key(index as u64 + 1), 0, 0).unwrap());
+    let mut checksum = 0xcbf2_9ce4_8422_2325u64;
     for tick in 1..=9 {
         submit_input(&mut host, 1, tick, tick - 1);
         if tick == 2 {
@@ -311,7 +340,12 @@ fn real_w1_snapshots_feed_four_peer_queues_without_waiting_for_slow_ack() {
         if tick % 3 == 0 {
             for index in 0..4 {
                 let peer_key = key(index as u64 + 1);
-                submit_and_write(&mut queues[index], &mut ledgers[index], peer_key);
+                submit_and_write(
+                    &mut queues[index],
+                    &mut ledgers[index],
+                    peer_key,
+                    &mut checksum,
+                );
                 if index != 3 {
                     let peer = PeerId(index as u64 + 1);
                     ledgers[index]
@@ -392,6 +426,7 @@ fn real_w1_snapshots_feed_four_peer_queues_without_waiting_for_slow_ack() {
     assert_eq!(ledgers[3].outstanding_entries(), 0);
     assert_eq!(host.authority().snapshot().tick(), 9);
     assert!(host.authority().try_baseline().unwrap().results.is_empty());
+    assert_ne!(checksum, 0);
 }
 
 #[test]
@@ -522,5 +557,215 @@ fn measure_real_w1_to_n1_path<const RESULTS: bool>(kind: &str) {
     println!(
         "w1_to_n1_{kind},windows={WINDOWS},ns_per_window={:.1},reserved_queue_ledger_bytes={reserved},frames={written_frames},bytes={written_bytes},checksum={checksum}",
         elapsed.as_nanos() as f64 / WINDOWS as f64,
+    );
+}
+
+#[test]
+#[ignore = "local release-only per-tick W1 callback-plus-N1 capture tail probe"]
+fn measure_w1_capture_idle_callback_tails() {
+    measure_w1_capture_callback_tails::<false>("idle");
+}
+
+#[test]
+#[ignore = "local release-only per-tick four-result W1 callback-plus-N1 capture tail probe"]
+fn measure_w1_capture_result_callback_tails() {
+    measure_w1_capture_callback_tails::<true>("results");
+}
+
+#[test]
+#[ignore = "local release-only two-due-tick W1 callback-plus-N1 capture tail probe"]
+fn measure_two_due_tick_capture_tails() {
+    measure_due_tick_capture_tails::<2>("two_due");
+}
+
+#[test]
+#[ignore = "local release-only four-due-tick W1 callback-plus-N1 capture tail probe"]
+fn measure_four_due_tick_capture_tails() {
+    measure_due_tick_capture_tails::<4>("four_due");
+}
+
+fn measure_due_tick_capture_tails<const DUE: u64>(kind: &str) {
+    const WARMUP_CALLBACKS: u64 = 10;
+    const MEASURED_TICKS: u64 = 10_000;
+    let callbacks = MEASURED_TICKS / DUE;
+    assert_eq!(callbacks * DUE, MEASURED_TICKS);
+    let origin = Instant::now();
+    let mut host = host(origin);
+    let mut queues = queues();
+    let mut ledgers: [_; 4] =
+        std::array::from_fn(|index| OrdinaryLedger::new(key(index as u64 + 1), 0, 0).unwrap());
+    let mut checksum = 0xcbf2_9ce4_8422_2325u64;
+    let mut samples = Vec::with_capacity(callbacks as usize);
+    for callback in 0..WARMUP_CALLBACKS + callbacks {
+        let first_tick = callback * DUE + 1;
+        let last_tick = first_tick + DUE - 1;
+        for tick in first_tick..=last_tick {
+            for peer in 1..=4 {
+                submit_timed_input(&mut host, peer, tick);
+            }
+        }
+        let started = Instant::now();
+        let report = host.on_callback(callback_at(origin, last_tick)).unwrap();
+        assert_eq!(report.clock.completed, DUE as u32);
+        assert_eq!(report.clock.queued, 0);
+        assert_eq!(report.publications.len(), DUE as usize);
+        for publication in &report.publications {
+            let HostPublication::Local(publication) = publication else {
+                panic!("authority-only host must publish local group");
+            };
+            capture_publication(publication, &mut queues);
+        }
+        drop(report);
+        let elapsed_ns = started.elapsed().as_nanos() as u64;
+        if callback >= WARMUP_CALLBACKS {
+            samples.push(elapsed_ns);
+        }
+        for index in 0..4 {
+            let peer_key = key(index as u64 + 1);
+            submit_and_write(
+                &mut queues[index],
+                &mut ledgers[index],
+                peer_key,
+                &mut checksum,
+            );
+            ledgers[index]
+                .acknowledge_through(peer_key, ledgers[index].last_sequence(), |id, through| {
+                    host.acknowledge_results_for_incarnation(
+                        AUTHORITY,
+                        PeerId(index as u64 + 1),
+                        id.connection_epoch,
+                        through,
+                    )
+                })
+                .unwrap();
+        }
+    }
+    assert_eq!(samples.len(), callbacks as usize);
+    assert_eq!(
+        host.authority().snapshot().tick(),
+        (WARMUP_CALLBACKS + callbacks) * DUE
+    );
+    for peer in 1..=4 {
+        let id = StableId(u128::from(controlled_actor(peer).0));
+        let value = host
+            .authority()
+            .snapshot()
+            .records()
+            .find(|record| record.id == id)
+            .unwrap()
+            .state
+            .value;
+        assert_eq!(value, ((WARMUP_CALLBACKS + callbacks) * DUE) as u16);
+    }
+    assert!(queues.iter().all(UnsentQueue::is_empty));
+    assert!(
+        ledgers
+            .iter()
+            .all(|ledger| ledger.outstanding_entries() == 0)
+    );
+    assert!(host.authority().try_baseline().unwrap().results.is_empty());
+    std::hint::black_box(checksum);
+    samples.sort_unstable();
+    let count = samples.len();
+    let sum: u128 = samples.iter().map(|&ns| u128::from(ns)).sum();
+    println!(
+        "w1_capture_tail_{kind},callbacks={callbacks},due={DUE},mean_ns={:.1},p50_ns={},p99_ns={},p999_ns={},max_ns={}",
+        sum as f64 / callbacks as f64,
+        samples[count / 2],
+        samples[percentile_index(count, 99, 100)],
+        samples[percentile_index(count, 999, 1000)],
+        samples[count - 1],
+    );
+}
+
+fn measure_w1_capture_callback_tails<const RESULTS: bool>(kind: &str) {
+    const WARMUP_TICKS: u64 = 30;
+    const TICKS: u64 = 9_990;
+    let origin = Instant::now();
+    let mut host = host(origin);
+    let mut queues = queues();
+    let mut ledgers: [_; 4] =
+        std::array::from_fn(|index| OrdinaryLedger::new(key(index as u64 + 1), 0, 0).unwrap());
+    let mut checksum = 0xcbf2_9ce4_8422_2325u64;
+    let mut samples = Vec::with_capacity(TICKS as usize);
+    for tick in 1..=WARMUP_TICKS + TICKS {
+        if RESULTS {
+            for peer in 1..=4 {
+                submit_input(&mut host, peer, tick, tick - 1);
+            }
+        }
+        let started = Instant::now();
+        let report = host.on_callback(callback_at(origin, tick)).unwrap();
+        assert_eq!(report.publications.len(), 1);
+        let HostPublication::Local(publication) = &report.publications[0] else {
+            panic!("authority-only host must publish local group");
+        };
+        capture_publication(publication, &mut queues);
+        drop(report);
+        let elapsed_ns = started.elapsed().as_nanos() as u64;
+        if tick > WARMUP_TICKS {
+            samples.push(elapsed_ns);
+        }
+        if tick % 3 == 0 {
+            for index in 0..4 {
+                let peer_key = key(index as u64 + 1);
+                submit_and_write(
+                    &mut queues[index],
+                    &mut ledgers[index],
+                    peer_key,
+                    &mut checksum,
+                );
+                ledgers[index]
+                    .acknowledge_through(peer_key, ledgers[index].last_sequence(), |id, through| {
+                        host.acknowledge_results_for_incarnation(
+                            AUTHORITY,
+                            PeerId(index as u64 + 1),
+                            id.connection_epoch,
+                            through,
+                        )
+                    })
+                    .unwrap();
+            }
+        }
+    }
+    assert_eq!(samples.len(), TICKS as usize);
+    assert_eq!(host.authority().snapshot().tick(), WARMUP_TICKS + TICKS);
+    for peer in 1..=4 {
+        let id = StableId(u128::from(controlled_actor(peer).0));
+        let value = host
+            .authority()
+            .snapshot()
+            .records()
+            .find(|record| record.id == id)
+            .unwrap()
+            .state
+            .value;
+        assert_eq!(
+            value,
+            if RESULTS {
+                (WARMUP_TICKS + TICKS) as u16
+            } else {
+                0
+            }
+        );
+    }
+    assert!(queues.iter().all(UnsentQueue::is_empty));
+    assert!(
+        ledgers
+            .iter()
+            .all(|ledger| ledger.outstanding_entries() == 0)
+    );
+    assert!(host.authority().try_baseline().unwrap().results.is_empty());
+    std::hint::black_box(checksum);
+    samples.sort_unstable();
+    let count = samples.len();
+    let sum: u128 = samples.iter().map(|&ns| u128::from(ns)).sum();
+    println!(
+        "w1_capture_tail_{kind},ticks={TICKS},mean_ns={:.1},p50_ns={},p99_ns={},p999_ns={},max_ns={}",
+        sum as f64 / TICKS as f64,
+        samples[count / 2],
+        samples[percentile_index(count, 99, 100)],
+        samples[percentile_index(count, 999, 1000)],
+        samples[count - 1],
     );
 }
