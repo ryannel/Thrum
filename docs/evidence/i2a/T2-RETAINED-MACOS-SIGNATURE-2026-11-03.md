@@ -43,10 +43,13 @@ inventory; the second took 28.502 s with 11.531 s postinventory. Each saw
 five successful A compiles and three probes, one expected failed B game
 compile after three successful compiles and three probes, a runnable retained
 A after B, 1 ms held-cache reuse checks, and unchanged selected roots. These
-are uncontrolled correctness runs, not speed measurements. The first
-qualifier's output labels the prior `HEAD` because the source correction was
-still uncommitted; an exact committed-source rerun is recorded separately
-when available.
+are uncontrolled correctness runs, not speed measurements. Those qualifiers
+label the prior `HEAD` because the source correction was still uncommitted.
+An exact committed-source rerun at `422d499` also passed: the admitted A/B
+process took 28.046 s, the four-root postinventory 10.019 s, A's retained
+reload 24 ms, and the two held dependency-key checks 1 ms each. It again
+observed five A compiles/three probes, expected invalid B, and retained A
+runnable after B. No paired performance claim follows from these runs.
 
 The previous failed scratch was quarantined by the qualifier. The selected
 failure log and crash reason are summarized here without retaining the full

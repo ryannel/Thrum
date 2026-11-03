@@ -95,7 +95,7 @@ stale kernel code-signature cache and kill a later launch. Binary and wrapper
 tamper tests therefore use disposable candidate copies with distinct inodes;
 the selected A artifact remains untouched. The [native signature fault
 proof](../evidence/i2a/T2-RETAINED-MACOS-SIGNATURE-2026-11-03.md) records the
-earlier failure and two corrected A/B runs. These extra copies are fixture
+earlier failure and three corrected A/B runs. These extra copies are fixture
 work and are not part of candidate publication cost.
 
 The opt-in candidate now uses one exclusively owned, same-volume staging
