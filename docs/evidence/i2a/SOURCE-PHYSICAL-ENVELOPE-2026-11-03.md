@@ -8,7 +8,7 @@ It is **57,651 bytes**, SHA-256
 The promoted archive matches the owned source byte-for-byte; its 54 members
 were enumerated/read, and the source archive's own hash manifest records its
 member identities. Owned run databases and build output were removed after
-verification. The [current provisional store](../../../crates/thrum-source/src/provisional_store.rs)
+verification. The current provisional store (historical source: `git show 1a6273a:crates/thrum-source/src/provisional_store.rs`)
 remains a development path, not accepted-source authority.
 
 The actual format-2 public publication path was exercised with 1,000 distinct
@@ -29,7 +29,7 @@ physical bound or an edit-latency qualification.
 The old `prepare_write` ordering checkpointed **before** checking available
 space. With a test oracle reporting zero availability, it wrote 33,705,984 B
 and grew main before refusing; the old selected generation remained intact.
-The scoped [source correction](../../../crates/thrum-source/src/provisional_store.rs)
+The scoped source correction (historical source: `git show 1a6273a:crates/thrum-source/src/provisional_store.rs`)
 checks free space before checkpoint work and again afterward. Replaying the
 same WAL debt and zero availability produced **zero writes, syncs and
 truncates**, unchanged main/WAL lengths and the old selection. Restoring

@@ -143,7 +143,16 @@ const fn cap(dimension: SourceDimension, unit: SourceCapacityUnit, maximum: u64)
 /// fit a device or that an F4 consumer supports every accepted source shape.
 pub fn first_source_profile() -> &'static [SourceCapacity] {
     use SourceCapacityUnit::{Bytes, Items, Levels};
-    use SourceDimension::*;
+    use SourceDimension::{
+        AcceptedManifestBytes, EnvironmentExtensionBytes, EnvironmentExtensionDepth,
+        EnvironmentExtensionNodes, EnvironmentExtensions, EnvironmentStringBytes,
+        EnvironmentTotalExtensionBytes, FileBytes, GameOpaqueDepth, GameOpaqueFields,
+        GameOpaqueKeyBytes, GameOpaqueNodes, GameOpaqueObjectMembers, GameOpaqueStringBytes,
+        GameRecordFields, GenericJsonDepth, GenericJsonNodes, HistoryFields, HistoryVersions,
+        InventoryEntries, ManifestFiles, ProjectEntryScenes, ProjectRecords, ProjectSchemas,
+        RecordBytes, RecordHeaderDepth, RecordHeaderNodes, RequiredReferences, SchemaFields,
+        SchemaSymbolBytes, SchemaTextLimitBytes,
+    };
     const CAPACITIES: &[SourceCapacity] = &[
         cap(InventoryEntries, Items, inventory::MAX_ENTRIES as u64),
         cap(ManifestFiles, Items, manifest::MAX_ENTRIES as u64),

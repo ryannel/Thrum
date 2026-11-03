@@ -43,6 +43,14 @@ pub enum GameTextEditError {
 /// untouched optional extension values keep their exact JSON spelling. The
 /// caller must still apply, capture and admit the resulting file through the
 /// source transaction; these returned bytes have no accepted-source authority.
+///
+/// # Errors
+///
+/// The original record or replacement is invalid for the descriptor, or the requested field is not a known text field.
+///
+/// # Panics
+///
+/// Panics only if a field found in a checked descriptor is absent while emitting the edited record.
 pub fn replace_game_text_field(
     bytes: &[u8],
     descriptor: &SchemaDescriptor,
@@ -258,31 +266,5 @@ mod tests {
         let text = std::str::from_utf8(&edited).unwrap();
         assert!(text.contains(&format!("\"marker.alt-scene\":\"{OTHER_SCENE_ID}\"")));
         assert!(text.contains(&format!("\"marker.scene\":\"{SCENE_ID}\"")));
-    }
-
-    #[test]
-    #[ignore = "local large optional-value edit cost probe"]
-    fn measure_large_opaque_text_edit() {
-        let mut source = format!(
-            "{{\"id\":\"{RECORD_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.caption\":\"before\",\"marker.scene\":\"{SCENE_ID}\""
-        );
-        let large_value = "v".repeat(32 * 1024);
-        for index in 0..128 {
-            source.push_str(&format!(
-                ",\"x.game.marker.note{index:03}\":\"{large_value}\""
-            ));
-        }
-        source.push_str("}}");
-        let descriptor = schema();
-        let start = std::time::Instant::now();
-        let edited =
-            replace_game_text_field(source.as_bytes(), &descriptor, "marker.caption", "after")
-                .unwrap();
-        eprintln!(
-            "input_bytes={} output_bytes={} elapsed={:?}",
-            source.len(),
-            edited.len(),
-            start.elapsed()
-        );
     }
 }

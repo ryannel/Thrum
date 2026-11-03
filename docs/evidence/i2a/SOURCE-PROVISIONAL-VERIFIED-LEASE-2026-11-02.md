@@ -5,7 +5,7 @@ This records the first verified-lease and tiny-batch slice. The later
 adds durable intent, public restart tokens and selected-history integrity;
 its source hash and test count supersede the ones below.
 
-The production-compiled [provisional store](../../../crates/thrum-source/src/provisional_store.rs)
+The production-compiled provisional store (historical source: `git show 1a6273a:crates/thrum-source/src/provisional_store.rs`)
 is a **development path**, not an admitted-source authority or a ready-build
 capability. It accepts only a previously F3-validated `StagedCandidate`,
 rehashes every staged file before copying, writes verified immutable SQLite

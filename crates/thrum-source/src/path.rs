@@ -25,6 +25,10 @@ pub enum PathError {
 
 impl SourcePath {
     /// Validate a portable file path without changing its exact spelling.
+    ///
+    /// # Errors
+    ///
+    /// The path is empty, nonportable, aliased, or exceeds source path bounds.
     pub fn parse(path: &str) -> Result<Self, PathError> {
         if path.is_empty() || path.starts_with('/') || path.ends_with('/') || path.contains("//") {
             return Err(PathError::NotRelativeFile);
@@ -82,6 +86,10 @@ fn is_windows_device_name(component: &str) -> bool {
 /// Reject aliases and file/directory conflicts across a declared tree.
 /// The caller retains the original paths; a temporary folded index and borrowed
 /// directory-prefix map are allocated once, outside a game callback.
+///
+/// # Errors
+///
+/// The set contains duplicate, aliased, or conflicting source paths.
 pub fn validate_paths(paths: &[SourcePath]) -> Result<(), PathError> {
     validate_path_refs(paths.iter())
 }

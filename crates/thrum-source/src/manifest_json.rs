@@ -101,7 +101,7 @@ struct ManifestVisitor;
 impl<'de> Visitor<'de> for ManifestVisitor {
     type Value = RawManifest;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a canonical v1 source manifest")
     }
 
@@ -113,10 +113,10 @@ impl<'de> Visitor<'de> for ManifestVisitor {
         while let Some(key) = map.next_key::<&str>()? {
             match key {
                 "projectId" if project_id.is_none() => {
-                    project_id = Some(map.next_value::<String>()?)
+                    project_id = Some(map.next_value::<String>()?);
                 }
                 "dependencyRoots" if dependency_roots.is_none() => {
-                    dependency_roots = Some(map.next_value_seed(EmptyRootsSeed)?)
+                    dependency_roots = Some(map.next_value_seed(EmptyRootsSeed)?);
                 }
                 "files" if files.is_none() => files = Some(map.next_value_seed(FilesSeed)?),
                 "format" if format.is_none() => format = Some(map.next_value::<u64>()?),
@@ -150,7 +150,7 @@ struct FilesVisitor;
 impl<'de> Visitor<'de> for FilesVisitor {
     type Value = Vec<ManifestEntry>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("at most 100000 source files")
     }
 
@@ -182,7 +182,7 @@ struct EmptyRootsVisitor;
 impl<'de> Visitor<'de> for EmptyRootsVisitor {
     type Value = Vec<String>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("no dependency roots in the first source profile")
     }
 
@@ -222,7 +222,7 @@ struct FileVisitor;
 impl<'de> Visitor<'de> for FileVisitor {
     type Value = ManifestEntry;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a canonical source file entry")
     }
 
@@ -246,10 +246,10 @@ impl<'de> Visitor<'de> for FileVisitor {
                 "length" if length.is_none() => length = Some(map.next_value::<u64>()?),
                 "path" if path.is_none() => path = Some(map.next_value::<&str>()?),
                 "recordId" if record_id.is_none() => {
-                    record_id = Some(map.next_value::<Option<String>>()?)
+                    record_id = Some(map.next_value::<Option<String>>()?);
                 }
                 "recordType" if record_type.is_none() => {
-                    record_type = Some(map.next_value::<Option<String>>()?)
+                    record_type = Some(map.next_value::<Option<String>>()?);
                 }
                 _ => return Err(A::Error::custom("duplicate or unknown file entry key")),
             }
@@ -303,7 +303,6 @@ fn hex_digit(value: u8) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sha2::Digest;
 
     const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const RECORD_ID: &str = "82b0ec04-6866-4271-a2cf-1f1576ad604a";
@@ -383,34 +382,5 @@ mod tests {
         manifest.write_jcs(&mut bytes).unwrap();
         let decoded = decode_manifest_jcs(&bytes, bytes.len()).unwrap();
         assert_eq!(decoded.revision(), manifest.revision());
-    }
-
-    #[test]
-    #[ignore = "local maximum-manifest decode cost and memory probe"]
-    fn measure_maximum_stored_manifest_decode() {
-        let files = (0_u32..100_000)
-            .map(|index| {
-                ManifestEntry::new(
-                    SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
-                    1,
-                    sha2::Sha256::digest(index.to_le_bytes()).into(),
-                    None,
-                )
-                .unwrap()
-            })
-            .collect();
-        let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
-        let mut bytes = Vec::new();
-        manifest.write_jcs(&mut bytes).unwrap();
-        let expected = manifest.revision();
-        let start = std::time::Instant::now();
-        let decoded = decode_manifest_jcs(&bytes, 64 * 1024 * 1024).unwrap();
-        let elapsed = start.elapsed();
-        assert_eq!(decoded.revision(), expected);
-        eprintln!(
-            "maximum_stored_manifest_decode entries=100000 bytes={} elapsed_ms={:.3}",
-            bytes.len(),
-            elapsed.as_secs_f64() * 1000.0
-        );
     }
 }

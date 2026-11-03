@@ -92,6 +92,10 @@ pub enum DefinitionError {
 }
 
 /// Hash one field's interpretation-bearing attributes in fixed JCS form.
+///
+/// # Errors
+///
+/// The field definition has an invalid identifier, type, or bound.
 pub fn field_meaning_signature(field: FieldDefinition<'_>) -> Result<[u8; 32], DefinitionError> {
     if !field.type_id.starts_with("game.") || !valid_symbol(field.type_id) {
         return Err(DefinitionError::TypeId);
@@ -134,6 +138,10 @@ pub fn field_meaning_signature(field: FieldDefinition<'_>) -> Result<[u8; 32], D
 /// Hash one immutable type/version definition, including its optional prefix.
 ///
 /// Field signatures must already have been derived from the active descriptor.
+///
+/// # Errors
+///
+/// The type-version definition has invalid or duplicate fields.
 pub fn type_version_definition_hash(
     type_id: &str,
     version: u64,
@@ -401,42 +409,6 @@ mod tests {
                 Some("x.game.marker.")
             ),
             Err(DefinitionError::ExtensionOverlap(0))
-        );
-    }
-
-    #[test]
-    #[ignore = "local first-profile descriptor hash cost probe"]
-    fn measure_definition_hashes_at_first_profile_bound() {
-        let types: Vec<_> = (0..256)
-            .map(|index| format!("game.type{index:03}"))
-            .collect();
-        let field_ids: Vec<_> = (0..128).map(|index| format!("field.f{index:03}")).collect();
-        let mut version_fields = Vec::with_capacity(field_ids.len());
-        let start = std::time::Instant::now();
-        let mut checksum = 0_u8;
-        for type_id in &types {
-            version_fields.clear();
-            for field_id in &field_ids {
-                let signature = field_meaning_signature(FieldDefinition {
-                    type_id,
-                    field_id,
-                    presence: Presence::Optional,
-                    kind: FieldKind::Text {
-                        max_utf8_bytes: 4096,
-                    },
-                })
-                .unwrap();
-                version_fields.push(VersionField {
-                    field_id,
-                    signature,
-                });
-            }
-            checksum ^= type_version_definition_hash(type_id, 1, &version_fields, None).unwrap()[0];
-        }
-        std::hint::black_box(checksum);
-        eprintln!(
-            "definition_fields=32768 versions=256 elapsed={:?}",
-            start.elapsed()
         );
     }
 }

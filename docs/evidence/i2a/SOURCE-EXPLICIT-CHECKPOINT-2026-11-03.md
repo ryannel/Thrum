@@ -1,7 +1,7 @@
 # Provisional source explicit checkpoint gate — 3 November 2026
 
 The production-compiled but explicitly provisional
-[`ProvisionalSourceStore`](../../../crates/thrum-source/src/provisional_store.rs)
+`ProvisionalSourceStore` (historical source: `git show 1a6273a:crates/thrum-source/src/provisional_store.rs`)
 now owns checkpoints on its private SQLite writer. The writer disables and
 reads back automatic and last-close checkpointing and verifies the pinned
 SQLite source ID and disabled data mmap. At the provisional 32 MiB WAL trigger,

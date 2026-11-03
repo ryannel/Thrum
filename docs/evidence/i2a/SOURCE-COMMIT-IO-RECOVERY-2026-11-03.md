@@ -9,7 +9,7 @@ released A's pin through the old connection. That `DELETE` could overwrite
 the uncertain B commit frame, leaving A selected and B pending after reopen.
 The new lease-drop regression failed with that exact result before the fix.
 
-The [provisional store](../../../crates/thrum-source/src/provisional_store.rs)
+The provisional store (historical source: `git show 1a6273a:crates/thrum-source/src/provisional_store.rs`)
 now quarantines its owner on an actual final `COMMIT` error. The original
 SQLite error is returned; every subsequent connection acquisition returns
 `StoreError::RecoveryRequired`, including selection, exact status, retry,

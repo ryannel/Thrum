@@ -35,6 +35,10 @@ pub(crate) fn parse_project(
 }
 
 /// Decode the fixed scene record without constructing a generic JSON tree.
+///
+/// # Errors
+///
+/// The record is malformed, exceeds the selected bounds, or is not the supported scene schema.
 pub fn parse_scene(bytes: &[u8]) -> Result<SceneRecord, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let record = SceneSeed.deserialize(&mut deserializer)?;
@@ -66,7 +70,7 @@ struct ProjectVisitor {
 impl<'de> Visitor<'de> for ProjectVisitor {
     type Value = ProjectRecord;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a core.project schema 1 record")
     }
 
@@ -87,7 +91,7 @@ impl<'de> Visitor<'de> for ProjectVisitor {
                     })?);
                 }
                 "documentation" if !documentation_seen => {
-                    let _: String = map.next_value()?;
+                    drop(map.next_value::<String>()?);
                     documentation_seen = true;
                 }
                 _ => {
@@ -142,7 +146,7 @@ struct ProjectFieldsVisitor {
 impl<'de> Visitor<'de> for ProjectFieldsVisitor {
     type Value = ProjectFields;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("fixed core.project fields")
     }
 
@@ -206,7 +210,7 @@ struct PathArrayVisitor {
 impl<'de> Visitor<'de> for PathArrayVisitor {
     type Value = Vec<SourcePath>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("sorted portable scene paths")
     }
 
@@ -256,7 +260,7 @@ struct EntryArrayVisitor {
 impl<'de> Visitor<'de> for EntryArrayVisitor {
     type Value = Vec<String>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("sorted stable entry-scene IDs")
     }
 
@@ -315,7 +319,7 @@ struct SceneVisitor;
 impl<'de> Visitor<'de> for SceneVisitor {
     type Value = SceneRecord;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a core.scene schema 1 record")
     }
 
@@ -334,7 +338,7 @@ impl<'de> Visitor<'de> for SceneVisitor {
                     fields = Some(map.next_value_seed(SceneFieldsSeed)?);
                 }
                 "documentation" if !documentation_seen => {
-                    let _: String = map.next_value()?;
+                    drop(map.next_value::<String>()?);
                     documentation_seen = true;
                 }
                 _ => {
@@ -377,7 +381,7 @@ struct SceneFieldsVisitor;
 impl<'de> Visitor<'de> for SceneFieldsVisitor {
     type Value = Option<String>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("empty scene fields or an optional scene.label string")
     }
 
@@ -469,32 +473,5 @@ mod tests {
         );
         let error = parse_project(project.as_bytes(), 1).err().unwrap();
         assert!(error.to_string().contains("exceeds staged membership"));
-    }
-
-    #[test]
-    #[ignore = "local dense unsupported scene record refusal cost probe"]
-    fn measure_dense_unsupported_scene_refusal() {
-        let mut bytes =
-            format!("{{\"id\":\"{SCENE_ID}\",\"type\":\"core.scene\",\"schema\":1,\"fields\":{{")
-                .into_bytes();
-        for index in 0..900_000 {
-            if index != 0 {
-                bytes.push(b',');
-            }
-            bytes.push(b'"');
-            bytes.push(b'k');
-            bytes.extend_from_slice(index.to_string().as_bytes());
-            bytes.extend_from_slice(b"\":0");
-        }
-        bytes.extend_from_slice(b"}}");
-        assert!(bytes.len() <= crate::MAX_RECORD_BYTES);
-        let start = std::time::Instant::now();
-        let rejected = parse_scene(&bytes);
-        let elapsed = start.elapsed();
-        assert!(rejected.is_err());
-        eprintln!(
-            "unsupported_scene_input_bytes={} refusal_elapsed={elapsed:?}",
-            bytes.len()
-        );
     }
 }

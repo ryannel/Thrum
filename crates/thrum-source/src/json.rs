@@ -50,6 +50,10 @@ impl JsonError {
 /// Parse one bounded source record, rejecting duplicate keys at every depth.
 /// Schema identity, field units and dependency closure are checked by the
 /// later F3 validator before a candidate revision can be returned.
+///
+/// # Errors
+///
+/// Input JSON is malformed or exceeds the record byte, node, or nesting bounds.
 pub fn parse_record_json(bytes: &[u8]) -> Result<Value, JsonError> {
     parse_record_json_with_limit(bytes, MAX_RECORD_NODES)
 }
@@ -154,7 +158,7 @@ impl<T> ExcessValueVisitor<'_, T> {
 impl<'de, T> Visitor<'de> for ExcessValueVisitor<'_, T> {
     type Value = T;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str("one more valid JSON value token")
     }
 
@@ -209,7 +213,7 @@ struct StrictVisitor<'a> {
 impl<'de> Visitor<'de> for StrictVisitor<'_> {
     type Value = Value;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str("a finite JSON value with unique object keys and bounded nesting")
     }
 
@@ -251,8 +255,8 @@ impl<'de> Visitor<'de> for StrictVisitor<'_> {
         if self.depth >= MAX_CONTAINER_DEPTH {
             self.limit.set(Some(LimitExceeded {
                 dimension: SourceDimension::GenericJsonDepth,
-                allowed: MAX_CONTAINER_DEPTH as u64,
-                observed: ObservedQuantity::AtLeast(self.depth as u64 + 1),
+                allowed: u64::from(MAX_CONTAINER_DEPTH),
+                observed: ObservedQuantity::AtLeast(u64::from(self.depth) + 1),
             }));
             return Err(serde::de::Error::custom("source JSON nesting limit"));
         }
@@ -272,8 +276,8 @@ impl<'de> Visitor<'de> for StrictVisitor<'_> {
         if self.depth >= MAX_CONTAINER_DEPTH {
             self.limit.set(Some(LimitExceeded {
                 dimension: SourceDimension::GenericJsonDepth,
-                allowed: MAX_CONTAINER_DEPTH as u64,
-                observed: ObservedQuantity::AtLeast(self.depth as u64 + 1),
+                allowed: u64::from(MAX_CONTAINER_DEPTH),
+                observed: ObservedQuantity::AtLeast(u64::from(self.depth) + 1),
             }));
             return Err(serde::de::Error::custom("source JSON nesting limit"));
         }
@@ -312,10 +316,10 @@ mod tests {
         let valid = parse_record_json(br#"{"fields":{"x":1},"id":"a"}"#).unwrap();
         assert_eq!(valid["fields"]["x"], 1);
         let precise = parse_record_json(br#"{"value":51.248178375505404}"#).unwrap();
-        assert_eq!(precise["value"].as_f64(), Some(51.248178375505404));
-        assert!(parse_record_json_with_limit(br#"[0,1]"#, 2).is_err());
+        assert_eq!(precise["value"].as_f64(), Some(51.248_178_375_505_404));
+        assert!(parse_record_json_with_limit(br"[0,1]", 2).is_err());
         assert!(parse_record_json_with_limit(br#"{"a":0,"b":1}"#, 2).is_err());
-        assert!(parse_record_json_with_limit(br#"[0,1]"#, 3).is_ok());
+        assert!(parse_record_json_with_limit(br"[0,1]", 3).is_ok());
     }
 
     #[test]
@@ -329,7 +333,7 @@ mod tests {
                 (MAX_RECORD_BYTES + 1) as u64,
             ))
         );
-        for input in [br#"[0,1]"#.as_slice(), br#"{"a":0,"b":1}"#] {
+        for input in [br"[0,1]".as_slice(), br#"{"a":0,"b":1}"#] {
             let error = parse_record_json_with_limit(input, 2).unwrap_err();
             assert_eq!(
                 error.limit_exceeded(),
@@ -340,7 +344,7 @@ mod tests {
                 })
             );
         }
-        for input in [br#"[0,?]"#.as_slice(), br#"{"a":0,"b":}"#, br#"[0,1e999]"#] {
+        for input in [br"[0,?]".as_slice(), br#"{"a":0,"b":}"#, br"[0,1e999]"] {
             assert_eq!(
                 parse_record_json_with_limit(input, 2)
                     .unwrap_err()
@@ -349,7 +353,7 @@ mod tests {
                 "invalid next token must remain a syntax refusal"
             );
         }
-        for input in [br#"[0,true]"#.as_slice(), br#"[0,"x"]"#, br#"[0,[]]"#] {
+        for input in [br"[0,true]".as_slice(), br#"[0,"x"]"#, br"[0,[]]"] {
             assert_eq!(
                 parse_record_json_with_limit(input, 2)
                     .unwrap_err()
@@ -365,65 +369,12 @@ mod tests {
             error.limit_exceeded(),
             Some(LimitExceeded {
                 dimension: SourceDimension::GenericJsonDepth,
-                allowed: MAX_CONTAINER_DEPTH as u64,
+                allowed: u64::from(MAX_CONTAINER_DEPTH),
                 observed: ObservedQuantity::AtLeast(65),
             })
         );
-        for input in [br#"{"a":1,"a":2}"#.as_slice(), br#"[0,]"#] {
+        for input in [br#"{"a":1,"a":2}"#.as_slice(), br"[0,]"] {
             assert_eq!(parse_record_json(input).unwrap_err().limit_exceeded(), None);
         }
-    }
-
-    #[test]
-    #[ignore = "local dense-array parser time and process-memory probe"]
-    fn measure_dense_array_at_value_limit() {
-        let mut bytes = Vec::with_capacity(2 * MAX_RECORD_NODES);
-        bytes.push(b'[');
-        for index in 0..MAX_RECORD_NODES - 1 {
-            if index != 0 {
-                bytes.push(b',');
-            }
-            bytes.push(b'0');
-        }
-        bytes.push(b']');
-        let start = std::time::Instant::now();
-        let value = parse_record_json(&bytes).unwrap();
-        let elapsed = start.elapsed();
-        assert_eq!(value.as_array().unwrap().len(), MAX_RECORD_NODES - 1);
-        eprintln!(
-            "dense_array_values={} input_bytes={} elapsed={elapsed:?} value_size={}",
-            MAX_RECORD_NODES,
-            bytes.len(),
-            std::mem::size_of::<Value>()
-        );
-        std::hint::black_box(value);
-    }
-
-    #[test]
-    #[ignore = "local dense-map parser time and process-memory probe"]
-    fn measure_dense_map_at_value_limit() {
-        let mut bytes = Vec::with_capacity(14 * MAX_RECORD_NODES);
-        bytes.push(b'{');
-        for index in 0..MAX_RECORD_NODES - 1 {
-            if index != 0 {
-                bytes.push(b',');
-            }
-            bytes.push(b'"');
-            bytes.push(b'k');
-            bytes.extend_from_slice(index.to_string().as_bytes());
-            bytes.extend_from_slice(b"\":0");
-        }
-        bytes.push(b'}');
-        let start = std::time::Instant::now();
-        let value = parse_record_json(&bytes).unwrap();
-        let elapsed = start.elapsed();
-        assert_eq!(value.as_object().unwrap().len(), MAX_RECORD_NODES - 1);
-        eprintln!(
-            "dense_map_values={} input_bytes={} elapsed={elapsed:?} value_size={}",
-            MAX_RECORD_NODES,
-            bytes.len(),
-            std::mem::size_of::<Value>()
-        );
-        std::hint::black_box(value);
     }
 }

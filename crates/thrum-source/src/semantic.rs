@@ -99,6 +99,14 @@ impl BootstrapProfile<'_> {
     ///
     /// This does not reread binary staged files. Durable admission must stream
     /// and verify every stage hash again before publishing a source root.
+    ///
+    /// # Errors
+    ///
+    /// The staged bootstrap records cannot form a valid provisional manifest.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the fixed, built-in project path fails portable-path parsing.
     pub fn provisional_manifest(&self) -> Result<TreeManifest, BootstrapError> {
         let project_path = SourcePath::parse("project.json").expect("fixed portable project path");
         let mut scene_index = 0;
@@ -135,6 +143,14 @@ impl BootstrapProfile<'_> {
 /// Every parsed byte is read from the provisional stage and rehashed. This
 /// proof refuses nonempty dependency roots because their closure cannot yet
 /// be resolved. It does not construct a manifest or authorize admission.
+///
+/// # Errors
+///
+/// The staged bootstrap project or scene is malformed, missing, or outside the first profile.
+///
+/// # Panics
+///
+/// Panics only if the fixed, built-in project or scene path fails portable-path parsing.
 pub fn validate_bootstrap_profile<'a>(
     stage: &'a StagedTree,
     dependency_roots: &[String],
@@ -211,7 +227,10 @@ fn read_record_bytes(stage: &StagedTree, file: &StagedFile) -> Result<Vec<u8>, B
     if file.length() > MAX_RECORD_BYTES as u64 {
         return Err(BootstrapError::RecordTooLarge(path.clone()));
     }
-    let mut bytes = Vec::with_capacity(file.length() as usize + 1);
+    let mut bytes = Vec::with_capacity(
+        usize::try_from(file.length()).map_err(|_| BootstrapError::RecordTooLarge(path.clone()))?
+            + 1,
+    );
     stage
         .open(path)
         .map_err(BootstrapError::Stage)?
@@ -522,49 +541,5 @@ mod tests {
             validate_bootstrap_profile(&stage, &[]),
             Err(BootstrapError::StagedDrift(_))
         ));
-    }
-
-    #[test]
-    #[ignore = "local 1,000-scene staged semantic validation cost probe"]
-    fn measure_bootstrap_validation_1000_scenes() {
-        let fixture = Fixture::new();
-        let mut record_paths = Vec::with_capacity(1000);
-        let mut scene_ids = Vec::with_capacity(1000);
-        let mut declared = Vec::with_capacity(1001);
-        declared.push(SourcePath::parse("project.json").unwrap());
-        for index in 0..1000_u64 {
-            let path = format!("scenes/{index:04}.scene.json");
-            let id = format!("00000000-0000-4000-8000-{index:012x}");
-            fixture.write(&path, &scene(&id, "small scene"));
-            declared.push(SourcePath::parse(&path).unwrap());
-            record_paths.push(path);
-            scene_ids.push(id);
-        }
-        fixture.write(
-            "project.json",
-            &format!(
-                "{{\"id\":\"{PROJECT_ID}\",\"type\":\"core.project\",\"schema\":1,\"fields\":{{\"project.format\":1,\"project.records\":{},\"project.entryScenes\":{}}}}}",
-                serde_json::to_string(&record_paths).unwrap(),
-                serde_json::to_string(&scene_ids).unwrap()
-            ),
-        );
-        let limits = Limits {
-            main: 2 * 1024 * 1024 * 1024,
-            wal: 4 * 1024 * 1024,
-            temporary: 32 * 1024 * 1024,
-            free_floor: 0,
-        };
-        let stage = stage_declared_tree_with(&fixture.0, &declared, limits, |_| {}).unwrap();
-        let start = std::time::Instant::now();
-        let proof = validate_bootstrap_profile(&stage, &[]).unwrap();
-        let elapsed = start.elapsed();
-        assert_eq!(proof.scenes().len(), 1000);
-        let manifest_start = std::time::Instant::now();
-        let revision = proof.provisional_manifest().unwrap().revision();
-        let manifest_elapsed = manifest_start.elapsed();
-        eprintln!(
-            "staged_scene_records=1000 validation_elapsed={elapsed:?} manifest_elapsed={manifest_elapsed:?}"
-        );
-        std::hint::black_box(revision);
     }
 }

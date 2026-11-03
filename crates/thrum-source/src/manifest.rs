@@ -83,6 +83,10 @@ impl ManifestEntry {
     }
 
     /// Describe one file whose bytes and optional F3 envelope were checked.
+    ///
+    /// # Errors
+    ///
+    /// The file is too large, or a tree manifest has invalid project identity, duplicate paths, unsupported roots, or size bounds.
     pub fn new(
         path: SourcePath,
         length: u64,
@@ -109,11 +113,6 @@ impl ManifestEntry {
         self.record
             .as_ref()
             .map(|record| (record.id.as_str(), record.record_type.as_str()))
-    }
-
-    #[cfg(test)]
-    pub(crate) fn source_path(&self) -> &SourcePath {
-        &self.path
     }
 }
 
@@ -188,6 +187,10 @@ impl TreeManifest {
     ///
     /// F3 must validate the meaning and closure of `dependency_roots` before
     /// this manifest can describe a candidate for durable admission.
+    ///
+    /// # Errors
+    ///
+    /// The file is too large, or a tree manifest has invalid project identity, duplicate paths, unsupported roots, or size bounds.
     pub fn new(
         project_id: &str,
         mut dependency_roots: Vec<String>,
@@ -226,6 +229,10 @@ impl TreeManifest {
     ///
     /// The known object keys and already-sorted arrays stream directly to
     /// SHA-256. A separate JCS library checks the emitted form in tests.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the infallible SHA-256 sink unexpectedly reports a write failure.
     pub fn revision(&self) -> SourceRevision {
         let mut digest = Sha256::new();
         self.emit_jcs(&mut digest)
@@ -238,6 +245,10 @@ impl TreeManifest {
     /// This avoids constructing a second whole-manifest byte vector when a
     /// native store writes the manifest in bounded chunks. A failed writer
     /// returns its I/O error; it does not create an admitted source root.
+    ///
+    /// # Errors
+    ///
+    /// The supplied writer reports an I/O error.
     pub fn write_jcs(&self, writer: &mut impl Write) -> io::Result<()> {
         self.emit_jcs(&mut IoSink(writer))
     }
@@ -564,65 +575,6 @@ mod tests {
                 MAX_BLOB_BYTES,
                 MAX_BLOB_BYTES + 1,
             ))
-        );
-    }
-
-    #[test]
-    #[ignore = "local 100k-entry metadata and revision cost probe"]
-    fn measure_maximum_manifest_metadata_cost() {
-        let start = std::time::Instant::now();
-        let files = (0..MAX_ENTRIES)
-            .map(|index| file(&format!("scenes/{index:06}.scene.json"), b"{}"))
-            .collect();
-        let generated = start.elapsed();
-        let manifest = TreeManifest::new(PROJECT_ID, vec!["game-code".to_owned()], files).unwrap();
-        let validated = start.elapsed();
-        std::hint::black_box(manifest.revision());
-        let hashed = start.elapsed();
-        eprintln!(
-            "entries={MAX_ENTRIES} generation={generated:?} validate_sort={:?} jcs_sha256={:?} entry_struct_bytes={}",
-            validated - generated,
-            hashed - validated,
-            std::mem::size_of::<ManifestEntry>() * MAX_ENTRIES
-        );
-    }
-
-    #[test]
-    #[ignore = "local 100k-entry canonical manifest writer cost probe"]
-    fn measure_maximum_manifest_writer() {
-        struct HashingWriter {
-            digest: Sha256,
-            length: usize,
-        }
-
-        impl Write for HashingWriter {
-            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-                self.digest.update(bytes);
-                self.length += bytes.len();
-                Ok(bytes.len())
-            }
-
-            fn flush(&mut self) -> io::Result<()> {
-                Ok(())
-            }
-        }
-
-        let files = (0..MAX_ENTRIES)
-            .map(|index| file(&format!("scenes/{index:06}.scene.json"), b"{}"))
-            .collect();
-        let manifest = TreeManifest::new(PROJECT_ID, vec!["game-code".to_owned()], files).unwrap();
-        let revision = manifest.revision();
-        let mut writer = HashingWriter {
-            digest: Sha256::new(),
-            length: 0,
-        };
-        let start = std::time::Instant::now();
-        manifest.write_jcs(&mut writer).unwrap();
-        let elapsed = start.elapsed();
-        assert_eq!(writer.digest.finalize().as_slice(), revision.as_bytes());
-        eprintln!(
-            "entries={MAX_ENTRIES} jcs_bytes={} write_elapsed={elapsed:?}",
-            writer.length
         );
     }
 }

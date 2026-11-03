@@ -140,6 +140,10 @@ impl InventoryError {
 /// roots and rejects case-fold aliases of those names. All other regular files
 /// must be declared, including code and binary masters. This cannot prove a single filesystem instant against a writer;
 /// staging must reread the tree and every file before returning a candidate.
+///
+/// # Errors
+///
+/// A declared path, file type, identity, or size violates the portable source inventory rules.
 pub fn scan_declared_tree(
     project_root: &Path,
     declared: &[SourcePath],

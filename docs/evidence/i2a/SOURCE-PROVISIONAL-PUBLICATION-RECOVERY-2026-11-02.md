@@ -4,7 +4,7 @@ The later [physical-space ordering probe and correction](SOURCE-PHYSICAL-ENVELOP
 updates the current source hash and source-test count; the recovery protocol
 described below is unchanged.
 
-The production-compiled [format-2 provisional store](../../../crates/thrum-source/src/provisional_store.rs)
+The production-compiled format-2 provisional store (historical source: `git show 1a6273a:crates/thrum-source/src/provisional_store.rs`)
 records an exact keyed **pending publication intent before blob staging**.
 Its final SQLite transaction checks the expected selection and complete
 closure, then advances the selected revision, writes the keyed outcome and

@@ -146,6 +146,10 @@ impl SchemaDescriptor {
 ///
 /// This checks fixed keys, duplicate keys, at most 128 sorted fields and the
 /// canonical first-profile hash inputs. It does not validate a project tree.
+///
+/// # Errors
+///
+/// The descriptor record is malformed or violates field identity, ordering, or bound rules.
 pub fn parse_schema_descriptor(bytes: &[u8]) -> Result<SchemaDescriptor, SchemaError> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(SchemaError::TooLarge {
@@ -241,7 +245,7 @@ struct SchemaVisitor<'a> {
 impl<'de> Visitor<'de> for SchemaVisitor<'_> {
     type Value = RawSchema;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a core.schema schema 1 record")
     }
 
@@ -257,10 +261,10 @@ impl<'de> Visitor<'de> for SchemaVisitor<'_> {
                 "type" if record_type.is_none() => record_type = Some(map.next_value()?),
                 "schema" if schema.is_none() => schema = Some(map.next_value()?),
                 "fields" if fields.is_none() => {
-                    fields = Some(map.next_value_seed(SchemaFieldsSeed { limit: self.limit })?)
+                    fields = Some(map.next_value_seed(SchemaFieldsSeed { limit: self.limit })?);
                 }
                 "documentation" if !documentation_seen => {
-                    let _: String = map.next_value()?;
+                    drop(map.next_value::<String>()?);
                     documentation_seen = true;
                 }
                 _ => {
@@ -302,7 +306,7 @@ struct SchemaFieldsVisitor<'a> {
 impl<'de> Visitor<'de> for SchemaFieldsVisitor<'_> {
     type Value = RawSchemaFields;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("fixed core.schema fields")
     }
 
@@ -362,7 +366,7 @@ struct FieldArrayVisitor<'a> {
 impl<'de> Visitor<'de> for FieldArrayVisitor<'_> {
     type Value = Vec<SchemaField>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("at most 128 strictly sorted field descriptors")
     }
 
@@ -430,7 +434,7 @@ struct FieldVisitor;
 impl<'de> Visitor<'de> for FieldVisitor {
     type Value = SchemaField;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a text or required record-ref field descriptor")
     }
 
@@ -591,34 +595,6 @@ mod tests {
                 .unwrap()
                 .limit_exceeded(),
             None
-        );
-    }
-
-    #[test]
-    #[ignore = "local maximum first-profile descriptor parse cost probe"]
-    fn measure_256_maximum_schema_records() {
-        let fields = (0..128)
-            .map(|index| {
-                format!(
-                    "{{\"id\":\"field.f{index:03}\",\"kind\":\"text\",\"presence\":\"optional\",\"maxUtf8Bytes\":4096}}"
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(",");
-        let bytes = format!(
-            "{{\"id\":\"{SCHEMA_ID}\",\"type\":\"core.schema\",\"schema\":1,\"fields\":{{\"schema.targetType\":\"game.large\",\"schema.targetVersion\":1,\"schema.fields\":[{fields}]}}}}"
-        );
-        let start = std::time::Instant::now();
-        let mut checksum = 0_u8;
-        for _ in 0..256 {
-            let descriptor = parse_schema_descriptor(bytes.as_bytes()).unwrap();
-            checksum ^= descriptor.definition_hash()[0];
-            std::hint::black_box(descriptor);
-        }
-        std::hint::black_box(checksum);
-        eprintln!(
-            "schema_records=256 fields_per_record=128 elapsed={:?}",
-            start.elapsed()
         );
     }
 }

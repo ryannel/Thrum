@@ -98,11 +98,6 @@ pub struct StagedTree {
 }
 
 impl StagedTree {
-    #[cfg(test)]
-    pub(crate) fn test_directory(&self) -> &Path {
-        &self.owner.path
-    }
-
     /// Files in portable path order.
     pub fn files(&self) -> &[StagedFile] {
         &self.files
@@ -118,6 +113,10 @@ impl StagedTree {
     /// The returned lease keeps the stage alive. The consumer must compare
     /// length and SHA-256 on read; this provisional directory is not a durable
     /// accepted-source store and external tampering is outside its guarantee.
+    ///
+    /// # Errors
+    ///
+    /// The staged path is absent or its exact-byte reader cannot be opened.
     pub fn open(&self, path: &SourcePath) -> Result<StagedLease, StageError> {
         if self
             .files
@@ -177,7 +176,7 @@ impl StageDirectory {
             let path = parent.join(format!("{}-{nonce:x}-{sequence:x}", std::process::id()));
             match create_private_directory(&path) {
                 Ok(()) => return Ok(Self { path }),
-                Err(source) if source.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(source) if source.kind() == std::io::ErrorKind::AlreadyExists => {}
                 Err(source) => return Err(StageError::Io { path, source }),
             }
         }
@@ -192,7 +191,7 @@ impl Drop for StageDirectory {
     fn drop(&mut self) {
         // A failed cleanup remains charged as temporary use by the next
         // preflight. Accepted-source authority never depends on this tree.
-        let _ = fs::remove_dir_all(&self.path);
+        drop(fs::remove_dir_all(&self.path));
     }
 }
 
@@ -202,6 +201,10 @@ impl Drop for StageDirectory {
 /// writing. A cooperative cross-process source lock spans scan/copy/reread.
 /// Ordinary drift refuses this attempt without modifying working files or a
 /// previously returned stage. No F3 schema or dependency closure is implied.
+///
+/// # Errors
+///
+/// The declared tree changes, contains an unsafe entry, or exceeds staging space limits.
 pub fn stage_declared_tree(
     project_root: &Path,
     declared: &[SourcePath],
@@ -215,6 +218,10 @@ pub fn stage_declared_tree(
 /// headroom. Main and WAL targets apply when a later accepted store can price
 /// missing blobs from authenticated staged hashes. Neither phase can promise
 /// a physical peak; that store owns SQLite failures and root/outcome publication.
+///
+/// # Errors
+///
+/// The declared tree changes, contains an unsafe entry, or exceeds the selected staging plan.
 pub fn stage_declared_tree_with_plan(
     project_root: &Path,
     declared: &[SourcePath],
@@ -600,29 +607,5 @@ mod tests {
             .unwrap();
         assert_eq!(old_bytes, b"first");
         drop(old);
-    }
-
-    #[test]
-    #[ignore = "local 64 MiB provisional capture throughput probe"]
-    fn measure_provisional_stage_64_mib() {
-        let fixture = Fixture::new();
-        let bytes = vec![0x5a_u8; COPY_CHUNK];
-        let declared: Vec<_> = (0..16)
-            .map(|index| {
-                let path = format!("blobs/{index:03}.bin");
-                fixture.write(&path, &bytes);
-                SourcePath::parse(&path).unwrap()
-            })
-            .collect();
-        let limits = Limits {
-            temporary: 256 * 1024 * 1024,
-            ..small_limits()
-        };
-        let start = std::time::Instant::now();
-        let stage = stage_declared_tree_with(&fixture.0, &declared, limits, |_| {}).unwrap();
-        let elapsed = start.elapsed();
-        assert_eq!(stage.copied_bytes(), 64 * 1024 * 1024);
-        std::hint::black_box(stage.files().len());
-        eprintln!("captured_mib=64 elapsed={elapsed:?} chunk_mib=4 source_reads=2 stage_writes=1");
     }
 }
