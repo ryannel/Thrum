@@ -264,7 +264,7 @@
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
       "current_design_sha256": "e52095ea1d50d25c26991db0425a62cc3b0aaf626ced1fca01d7aa296b889b4b",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 consumers reconciled. The E1 constant-light subset has provisional staged F3 typed parsing, source binding, built-in meaning hashes and declared UUID closure; its production read-only numeric projection now exposes the same checked parser values for F4. Authored rain schema 2, fixture records, authenticated selected-pin cooking, exact F4 build identity and runtime remain open. Prior reviewed hash retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 consumers reconciled. The E1 constant-light subset has provisional staged F3 typed parsing, source binding, built-in meaning hashes and declared UUID closure; its production read-only numeric projection and immutable built-in definition lookup expose the checked values/meanings for F4. Authored rain schema 2, fixture records, persistent E1 identity, exact F4 build binding and runtime remain open. Prior reviewed hash retained; no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
         "A01",
@@ -582,6 +582,14 @@
         "experienced_quality": "not_applicable_to_source_projection",
         "platform_performance": "no assembled latency or peak memory measurement; the projection retains a few decoded f64 values during one record parse and runs no tick/view work",
         "scope": "Byte-slice parsing exposes F3-valid raw numeric values and checked IDs/edges without source authority. Authenticated selected pin traversal, complete typed closure, F4 cook/product identity and build publication remain separate gates."
+      },
+      "i2a_builtin_definition_lookup": {
+        "evidence": "../evidence/i2a/E1-F3-BUILTIN-DEFINITION-LOOKUP-2026-11-03.md",
+        "implementation": "read_only_lookup_of_f3_immutable_builtin_schema",
+        "functional_validation": "existing staged E1 fixture confirms lookup pointer identity for scene, environment and light definitions plus refusal of unsupported versions; full repository gate passes",
+        "experienced_quality": "not_applicable_to_read_only_definition_lookup",
+        "platform_performance": "three-element immutable lookup; no integrated cook/cache or device measurement",
+        "scope": "F4 can retrieve F3's exact built-in meaning hashes after separate source authentication. Lookup grants no source authority, product identity, build readiness or runtime capability."
       },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",

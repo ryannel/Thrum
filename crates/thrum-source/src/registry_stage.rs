@@ -410,6 +410,17 @@ static BUILTIN_SCHEMAS: LazyLock<[BuiltinSchema; 3]> = LazyLock::new(|| {
     })
 });
 
+/// The immutable F3 meaning used for an engine-owned record type and version.
+///
+/// F4 may use this read-only identity when keying a product from separately
+/// authenticated pinned bytes. A lookup does not validate a record or grant
+/// source authority.
+pub fn builtin_schema(record_type: &str, schema: u64) -> Option<&'static BuiltinSchema> {
+    BUILTIN_SCHEMAS
+        .iter()
+        .find(|definition| definition.record_type() == record_type && definition.schema() == schema)
+}
+
 /// A checked fixed built-in identity and its required typed source edge.
 pub struct StagedBuiltin {
     path: SourcePath,
@@ -1214,11 +1225,25 @@ mod tests {
         );
         assert_eq!(source.definition().schema(), 1);
         assert_eq!(source.definition().descriptor(), ENVIRONMENT_DEFINITION);
+        assert!(std::ptr::eq(
+            source.definition(),
+            builtin_schema("thrum.environment.authored", 1).unwrap()
+        ));
         assert_eq!(source.path().as_str(), ENVIRONMENT_PATH);
         let light = &candidate.records().builtins()[1];
         assert_eq!(light.required_light(), None);
         assert_eq!(light.definition().descriptor(), LIGHT_DEFINITION);
+        assert!(std::ptr::eq(
+            light.definition(),
+            builtin_schema("thrum.light.identity", 1).unwrap()
+        ));
         assert_eq!(scene.definition().unwrap().descriptor(), SCENE_DEFINITION);
+        assert!(std::ptr::eq(
+            scene.definition().unwrap(),
+            builtin_schema("core.scene", 2).unwrap()
+        ));
+        assert!(builtin_schema("core.scene", 3).is_none());
+        assert!(builtin_schema("thrum.light.identity", 2).is_none());
         let identities: Vec<_> = candidate
             .provisional_manifest()
             .unwrap()
