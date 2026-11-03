@@ -29,6 +29,20 @@ and hashes those files independently, including the 4 KiB report, and accepts
 only Cargo exit 0 or the first-profile compile failure 101 as completed. A
 SIGTERM handler routes ordinary termination through collector cleanup.
 
+A branch-wide review found a launch gap: SIGTERM or SIGINT could raise after
+`Popen` created Cargo but before the collector entered its cleanup guard. The
+collector now installs temporary handlers that record these signals through
+launch, supervision and cleanup, then restores the prior handlers. It checks
+the recorded signal inside the guarded lifetime and kills/reaps the process
+group before reporting interruption. An ignored prior disposition remains
+ignored, and no signal mask is inherited by Cargo. A subprocess fixture sends
+SIGTERM from inside the `Popen` return path; the launched child is gone before
+the wrapper exits. Separate child fixtures confirm self-SIGTERM still exits by
+signal and an intentionally ignored SIGINT remains ignored after exec. The
+older SIGINT test now publishes its PID marker atomically, avoiding a partial
+marker read. This closes the ordinary early-signal window in this candidate;
+host SIGKILL and escaped-session containment remain open.
+
 The first fault-report extension catches that resulting `KeyboardInterrupt`
 after collector cleanup and writes a bounded `interrupted` report instead of
 leaving no supervisor record. A timeout or other collector error writes
@@ -42,7 +56,8 @@ the directory contains every invocation, or publish the raw fault receipts.
 Successful and invalid-code B verification keep their strict completed-receipt
 rules.
 
-Sixteen focused metadata-collector tests cover Ctrl-C cleanup, closed stdin,
+Nineteen focused metadata-collector tests cover Ctrl-C cleanup, early-launch
+interruption, child signal inheritance, closed stdin,
 parent disappearance, output limit, retained pipes, an escaped-session child
 and a same-group child with closed pipes, plus a fast-exit observation race.
 The escaped-session case returns in

@@ -23,6 +23,10 @@ arguments refuse because their file bytes are not captured. The wrapper gives
 the child only its recorded environment and inherits stdio; it uses no unsafe
 code or additional dependency.
 
+The verifier now streams directory names with `os.scandir` and stops on the
+65th entry before sorting or parsing. This puts the 64-receipt limit on name
+allocation as well as accepted receipts; an oversized-set fixture refuses.
+
 The Python verifier runs after Cargo exits. It requires the selected compiler,
 source/cache/output roots, known fixed environment values, successful probes
 and compiles, one of the two observed dep-info/metadata/link emission sets,
@@ -99,7 +103,7 @@ A's fresh-output compile took 1,300 ms in that run.
 The exact emission/crate-type check passed a later sandboxed A/B run with a
 1,389 ms A compile.
 
-Thirteen Python fixtures cover valid one- and two-unit receipts plus refusal of
+Fourteen Python fixtures cover valid one- and two-unit receipts plus refusal of
 incomplete or malformed receipts, mismatched source/manifest/extern identity,
 unsupported hooks, escaped paths, changed child environment, unrecognized
 probes, extra codegen/linker options and mismatched emit/crate-type records.

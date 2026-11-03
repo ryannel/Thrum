@@ -1249,6 +1249,17 @@ mod tests {
             assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
             fs::rename(&withheld, &receipt_path).unwrap();
             assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
+            let extras = (0..150)
+                .map(|index| candidate.join(format!("unexpected-{index}")))
+                .collect::<Vec<_>>();
+            for path in &extras {
+                fs::write(path, b"extra").unwrap();
+            }
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
+            for path in extras {
+                fs::remove_file(path).unwrap();
+            }
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
             #[cfg(unix)]
             {
                 let relocated = candidate.with_file_name("candidate-a-relocated");

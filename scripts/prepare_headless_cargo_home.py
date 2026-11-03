@@ -183,16 +183,45 @@ def collect_bounded(
     timeout_seconds=120, parent_pid=None, label="Cargo metadata",
 ):
     """Drain both pipes while limiting retained bytes and killing overproducing Cargo."""
-    process = subprocess.Popen(
-        command, cwd=cwd, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        stdin=subprocess.DEVNULL,
-        start_new_session=os.name == "posix",
-    )
-    output = bytearray()
-    error = bytearray()
-    exceeded = threading.Event()
-    read_failed = threading.Event()
-    read_errors = []
+    # Python delivers handlers between bytecodes. A handler that only records
+    # interruption covers launch and cleanup without changing the signal mask
+    # inherited by Cargo, rustc and their descendants.
+    pending_signal = [0]
+    previous_handlers = {}
+
+    def defer_interrupt(signum, _frame):
+        pending_signal[0] = signum
+
+    if os.name == "posix":
+        try:
+            for signum in (signal.SIGINT, signal.SIGTERM):
+                handler = signal.getsignal(signum)
+                previous_handlers[signum] = handler
+                if handler != signal.SIG_IGN:
+                    signal.signal(signum, defer_interrupt)
+        except BaseException:
+            for signum, handler in previous_handlers.items():
+                signal.signal(signum, handler)
+            raise
+
+    def restore_signals():
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
+
+    def check_interruption():
+        signum = pending_signal[0]
+        if signum and previous_handlers[signum] != signal.SIG_IGN:
+            raise KeyboardInterrupt(f"{label} interrupted by signal {signum}")
+
+    try:
+        process = subprocess.Popen(
+            command, cwd=cwd, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+            start_new_session=os.name == "posix",
+        )
+    except BaseException:
+        restore_signals()
+        raise
 
     def terminate_group():
         try:
@@ -205,36 +234,47 @@ def collect_bounded(
             # exited leader: there is no live member to signal.
             pass
 
-    def drain(pipe, retained, limit):
-        try:
-            for chunk in iter(lambda: os.read(pipe.fileno(), 64 * 1024), b""):
-                if len(retained) + len(chunk) > limit:
-                    exceeded.set()
-                    break
-                retained.extend(chunk)
-        except OSError as failure:
-            read_errors.append(failure)
-            read_failed.set()
+    try:
+        output = bytearray()
+        error = bytearray()
+        exceeded = threading.Event()
+        read_failed = threading.Event()
+        read_errors = []
 
-    readers = [
-        threading.Thread(target=drain, args=(process.stdout, output, stdout_limit), daemon=True),
-        threading.Thread(target=drain, args=(process.stderr, error, stderr_limit), daemon=True),
-    ]
+        def drain(pipe, retained, limit):
+            try:
+                for chunk in iter(lambda: os.read(pipe.fileno(), 64 * 1024), b""):
+                    if len(retained) + len(chunk) > limit:
+                        exceeded.set()
+                        break
+                    retained.extend(chunk)
+            except OSError as failure:
+                read_errors.append(failure)
+                read_failed.set()
+
+        readers = [
+            threading.Thread(target=drain, args=(process.stdout, output, stdout_limit), daemon=True),
+            threading.Thread(target=drain, args=(process.stderr, error, stderr_limit), daemon=True),
+        ]
+        observer = ChildExitObserver(process)
+    except BaseException:
+        try:
+            terminate_group()
+            process.wait()
+            process.stdout.close()
+            process.stderr.close()
+        finally:
+            restore_signals()
+        raise
     readers_joined = False
     group_released = False
     try:
-        observer = ChildExitObserver(process)
-    except BaseException:
-        terminate_group()
-        process.wait()
-        process.stdout.close()
-        process.stderr.close()
-        raise
-    try:
+        check_interruption()
         for reader in readers:
             reader.start()
         deadline = time.monotonic() + timeout_seconds
         while True:
+            check_interruption()
             if parent_pid is not None and os.getppid() != parent_pid:
                 raise ValueError(f"{label} supervisor lost its parent")
             if exceeded.is_set():
@@ -246,6 +286,7 @@ def collect_bounded(
                 raise ValueError(f"{label} timed out")
             if observer.exited(min(0.1, remaining)):
                 break
+        check_interruption()
         for reader in readers:
             reader.join(timeout=0.2)
         held_pipes = any(reader.is_alive() for reader in readers)
@@ -266,6 +307,7 @@ def collect_bounded(
             raise ValueError(f"{label} exceeds the first-profile output limit")
         if read_failed.is_set():
             raise OSError(f"{label} diagnostic reader failed: {read_errors[0]}")
+        check_interruption()
         return status, bytes(output), bytes(error)
     except BaseException:
         # Ctrl-C also lands here. The child starts a new session, so terminal
@@ -287,6 +329,7 @@ def collect_bounded(
         observer.close()
         process.stdout.close()
         process.stderr.close()
+        restore_signals()
 
 
 def root_inventory(root):

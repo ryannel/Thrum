@@ -27,6 +27,9 @@ distinct `SceneProductRevision`, scene codec and content hash, complete file
 membership, all retained bytes, raw receipt-set digest, and the relationship
 between the cache manifest, wrapper, environment, supervisor request and scene
 declaration. It refuses nonordinary files and bounded-file violations.
+The reload verifier also stops its directory scan after one more name than the
+bounded report allows, before sorting or hashing; an opt-in A/B mutation adds
+150 unexpected files and refuses, then A verifies again after their removal.
 
 The fixture removes A's materialized source and original Cargo output before
 reloading and executing the candidate. A fresh child test process also reopens
