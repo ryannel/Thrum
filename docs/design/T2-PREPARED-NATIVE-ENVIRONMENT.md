@@ -98,10 +98,13 @@ lifecycle through compiler shutdown and artifact publication.
 
 ## macOS runtime boundary
 
-The local profile still permits named system-library, preferences and
-configuration subtrees. The initial global file-metadata grant has been
+The local profile still permits named system-library and configuration
+subtrees. The initial global file-metadata grant has been
 removed in the local candidate, but metadata and data reads remain available
-within those selected subtrees. `dyld` can resolve libraries
+within those selected subtrees. `/Library/Preferences` and broad
+`/private/etc` are now denied in the compiler fixture. A bounded refusal
+diagnostic identified one LibreSSL read of `/private/etc/ssl/openssl.cnf`;
+the profile grants and hashes only that file for this need. `dyld` can resolve libraries
 through the OS shared cache; visible library paths alone are not a complete
 runtime-byte inventory. The first ready build therefore needs a human-reviewed
 host-runtime trust policy and exact selected OS/runtime evidence alongside the

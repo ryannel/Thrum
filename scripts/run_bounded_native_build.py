@@ -165,21 +165,19 @@ def run(request_path, timeout_seconds=120):
         return 125
     finally:
         signal.signal(signal.SIGTERM, previous_term)
-    if status not in (0, 101):
-        write_json(report_path, {
-            "format": 1, "kind": "refusedStatus", "cargoStatus": status,
-        })
-        return 125
     with stdout_path.open("xb") as stream:
         stream.write(stdout)
     with stderr_path.open("xb") as stream:
         stream.write(stderr)
     write_json(report_path, {
-        "format": 1, "kind": "completed", "cargoStatus": status,
+        "format": 1,
+        "kind": "completed" if status in (0, 101) else "refusedStatus",
+        "buildReady": False,
+        "cargoStatus": status,
         "stdoutBytes": len(stdout), "stdoutSha256": hashlib.sha256(stdout).hexdigest(),
         "stderrBytes": len(stderr), "stderrSha256": hashlib.sha256(stderr).hexdigest(),
     })
-    return status
+    return status if status in (0, 101) else 125
 
 
 def main():

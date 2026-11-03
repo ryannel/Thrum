@@ -28,6 +28,13 @@ exclusive diagnostic files and a small hash/length/status report. Rust caps
 and hashes those files independently, including the 4 KiB report, and accepts
 only Cargo exit 0 or the first-profile compile failure 101 as completed. A
 SIGTERM handler routes ordinary termination through collector cleanup.
+An unexpected exit now retains the same bounded, hashed stdout/stderr files
+with a `refusedStatus`, `buildReady:false` report and still returns failure.
+Previously it discarded those bytes, hiding the native sandbox's first
+LibreSSL configuration denial. The Rust fixture prints at most 4 KiB of that
+retained stderr on refusal. Focused status cases check the retained bytes and
+hashes; this improves fault diagnosis without treating the refused build as a
+compiler product.
 
 A branch-wide review found a launch gap: SIGTERM or SIGINT could raise after
 `Popen` created Cargo but before the collector entered its cleanup guard. The

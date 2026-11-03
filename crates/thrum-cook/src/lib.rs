@@ -421,6 +421,8 @@ mod tests {
     const SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const OTHER_ID: &str = "4a5ef644-7225-4770-9f4d-e1d9c0a7d515";
     const HISTORY_ID: &str = "6a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    #[cfg(target_os = "macos")]
+    const MACOS_OPENSSL_CONFIG: &str = "/private/etc/ssl/openssl.cnf";
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
     struct Fixture(PathBuf);
@@ -2096,7 +2098,15 @@ mod tests {
         let report: serde_json::Value =
             serde_json::from_slice(&read_supervisor_file(output, "cargo-supervisor.json", 4096))
                 .unwrap();
-        assert_eq!(report["kind"], "completed", "{report}");
+        if report["kind"] != "completed" {
+            let diagnostic = if report["kind"] == "refusedStatus" {
+                let bytes = read_supervisor_file(output, "cargo.stderr", 1024 * 1024);
+                String::from_utf8_lossy(&bytes[..bytes.len().min(4096)]).into_owned()
+            } else {
+                String::new()
+            };
+            panic!("native supervisor refused build: {report}; cargo stderr: {diagnostic}");
+        }
         assert_eq!(report["cargoStatus"].as_i64(), status.code().map(i64::from));
         let stdout = read_supervisor_file(output, "cargo.stdout", 4 * 1024 * 1024);
         let stderr = read_supervisor_file(output, "cargo.stderr", 1024 * 1024);
@@ -2320,6 +2330,7 @@ mod tests {
             toolchain.join("bin/cargo"),
             toolchain.join("bin/rustc"),
             linker.clone(),
+            PathBuf::from(MACOS_OPENSSL_CONFIG),
         ]
         .iter()
         .chain(support.iter())
@@ -2440,7 +2451,15 @@ mod tests {
                 );
             }
         }
-        for support in &selected.support {
+        for support in selected.support.iter().map(PathBuf::as_path).chain([
+            Path::new("/Library/Preferences/com.apple.loginwindow.plist"),
+            Path::new("/private/etc/hosts"),
+        ]) {
+            assert!(
+                support.is_file(),
+                "missing denial control: {}",
+                support.display()
+            );
             let denied_read = sandbox_command(&profile, paths, "/usr/bin/head")
                 .args(["-c", "1"])
                 .arg(support)
@@ -2467,7 +2486,7 @@ mod tests {
             .output()
             .unwrap();
         assert!(!blocked_project.status.success());
-        let readable_system_file = Path::new("/private/etc/hosts");
+        let readable_system_file = Path::new("/System/Library/CoreServices/SystemVersion.plist");
         assert!(readable_system_file.is_file());
         let allowed_system = sandbox_command(&profile, paths, "/bin/cat")
             .arg(readable_system_file)
@@ -2482,6 +2501,18 @@ mod tests {
             allowed_system.stdout,
             fs::read(readable_system_file).unwrap()
         );
+        let selected_ssl_config = Path::new(MACOS_OPENSSL_CONFIG);
+        assert!(selected_ssl_config.is_file() && !selected_ssl_config.is_symlink());
+        let allowed_ssl = sandbox_command(&profile, paths, "/bin/cat")
+            .arg(selected_ssl_config)
+            .output()
+            .unwrap();
+        assert!(
+            allowed_ssl.status.success(),
+            "{}",
+            String::from_utf8_lossy(&allowed_ssl.stderr)
+        );
+        assert_eq!(allowed_ssl.stdout, fs::read(selected_ssl_config).unwrap());
         let allowed_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
             .arg(readable_system_file)
             .output()
@@ -2587,13 +2618,12 @@ mod tests {
             format!("(literal \"{value}\")")
         }
 
-        const SYSTEM_READS: [&str; 8] = [
+        const SYSTEM_READS: [&str; 7] = [
             "/System/Library",
             "/System/Cryptexes",
             "/usr/lib",
             "/usr/bin",
-            "/Library/Preferences",
-            "/private/etc",
+            MACOS_OPENSSL_CONFIG,
             "/dev",
             "/",
         ];
@@ -2620,7 +2650,9 @@ mod tests {
             profile.push(' ');
             profile.push_str(&literal(&ancestor));
         }
-        profile.push_str(")\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") (subpath \"/Library/Preferences\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\"))");
+        profile.push_str(")\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") ");
+        profile.push_str(&literal(Path::new(MACOS_OPENSSL_CONFIG)));
+        profile.push_str(" (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\"))");
         profile.push_str(
             ")\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         );
