@@ -8,6 +8,10 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-mobile-shell/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core"]
 
+[packages.thrum-network]
+manifest = "crates/thrum-network/Cargo.toml"
+allowed_workspace_dependencies = []
+
 [packages.thrum-source]
 manifest = "crates/thrum-source/Cargo.toml"
 allowed_workspace_dependencies = []
