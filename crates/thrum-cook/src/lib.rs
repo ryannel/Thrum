@@ -401,6 +401,8 @@ fn read_record(pin: &mut PinnedSource<'_>, path: &SourcePath) -> Result<Vec<u8>,
 mod tests {
     use super::*;
     #[cfg(target_os = "macos")]
+    use std::collections::BTreeSet;
+    #[cfg(target_os = "macos")]
     use std::ffi::OsString;
     use std::fs;
     use std::io::Read;
@@ -1052,11 +1054,11 @@ mod tests {
                     .arg("--rustc")
                     .arg(rustc)
                     .arg("--source")
-                    .arg(a_materialized.path())
+                    .arg(fs::canonicalize(a_materialized.path()).unwrap())
                     .arg("--cache")
                     .arg(private_cargo_home.as_deref().unwrap())
                     .arg("--output")
-                    .arg(&a_output)
+                    .arg(fs::canonicalize(&a_output).unwrap())
                     .arg("--transcript")
                     .arg(transcript)
                     .output()
@@ -1665,15 +1667,18 @@ mod tests {
         private_cargo_home: Option<&Path>,
         rustc_wrapper: Option<&Path>,
     ) -> std::process::Output {
+        fs::create_dir_all(output).unwrap();
+        let output = fs::canonicalize(output).unwrap();
+        let input = fs::canonicalize(input).unwrap();
         let sandbox = std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some();
         let mut command = if sandbox {
-            sandboxed_cargo_command(input, output, checkout, private_cargo_home)
+            sandboxed_cargo_command(&input, &output, checkout, private_cargo_home)
         } else {
             Command::new(env!("CARGO"))
         };
         let selected_wrapper = rustc_wrapper.map(|wrapper| {
             assert!(wrapper.is_absolute() && wrapper.is_file() && !wrapper.is_symlink());
-            assert!(!wrapper.starts_with(input) && !wrapper.starts_with(output));
+            assert!(!wrapper.starts_with(&input) && !wrapper.starts_with(&output));
             let selected = output.join("rustc-receipt-wrapper");
             fs::copy(wrapper, &selected).unwrap();
             fs::create_dir(output.join("rustc-receipts")).unwrap();
@@ -1771,11 +1776,21 @@ mod tests {
             })
             .unwrap_or(&developer);
         let profile = output.join("build.sb");
-        fs::write(
-            &profile,
-            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") (subpath \"/Library/Preferences\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\")))\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
-        )
-        .unwrap();
+        let mut support = vec![developer.join("usr/lib/libxcrun.dylib")];
+        let command_line_tools =
+            PathBuf::from("/Library/Developer/CommandLineTools/usr/lib/libxcrun.dylib");
+        if command_line_tools.exists() {
+            support.push(command_line_tools);
+        }
+        support.sort_unstable();
+        support.dedup();
+        for file in &support {
+            assert!(
+                file.is_file() && !file.is_symlink(),
+                "missing Xcode support: {}",
+                file.display()
+            );
+        }
         let paths = SandboxPaths {
             input: &input,
             output: &output,
@@ -1784,6 +1799,7 @@ mod tests {
             linker_root,
             sdk: &sdk,
         };
+        fs::write(&profile, headless_sandbox_profile(paths, &support)).unwrap();
         let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
             .output()
@@ -1809,6 +1825,11 @@ mod tests {
             allowed_system.stdout,
             fs::read(readable_system_file).unwrap()
         );
+        let allowed_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
+            .arg(readable_system_file)
+            .output()
+            .unwrap();
+        assert!(allowed_metadata.status.success());
         let mut system_read_probes = 0;
         for denied in [
             Path::new("/usr/share/misc/ascii"),
@@ -1820,10 +1841,26 @@ mod tests {
                     .output()
                     .unwrap();
                 assert!(!blocked_system.status.success(), "{}", denied.display());
+                let blocked_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
+                    .arg(denied)
+                    .output()
+                    .unwrap();
+                assert!(
+                    !blocked_metadata.status.success(),
+                    "{} metadata",
+                    denied.display()
+                );
                 system_read_probes += 1;
             }
         }
         assert!(system_read_probes > 0, "no system read boundary was probed");
+        let unrelated_directory = Path::new("/usr/share");
+        assert!(unrelated_directory.is_dir());
+        let blocked_directory_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
+            .arg(unrelated_directory)
+            .output()
+            .unwrap();
+        assert!(!blocked_directory_metadata.status.success());
         let blocked_write = sandbox_command(&profile, paths, "/usr/bin/touch")
             .arg(input.join("should-not-exist"))
             .output()
@@ -1892,6 +1929,64 @@ mod tests {
         toolchain: &'a Path,
         linker_root: &'a Path,
         sdk: &'a Path,
+    }
+
+    #[cfg(target_os = "macos")]
+    fn headless_sandbox_profile(paths: SandboxPaths<'_>, support: &[PathBuf]) -> String {
+        fn literal(path: &Path) -> String {
+            let value = path.to_str().expect("sandbox path must be UTF-8");
+            assert!(
+                !value.chars().any(|character| {
+                    character.is_control() || character == '"' || character == '\\'
+                }),
+                "sandbox path cannot be represented as a literal"
+            );
+            format!("(literal \"{value}\")")
+        }
+
+        const SYSTEM_READS: [&str; 8] = [
+            "/System/Library",
+            "/System/Cryptexes",
+            "/usr/lib",
+            "/usr/bin",
+            "/Library/Preferences",
+            "/private/etc",
+            "/dev",
+            "/",
+        ];
+        let mut ancestors = BTreeSet::new();
+        for path in [
+            paths.input,
+            paths.output,
+            paths.cargo_home,
+            paths.toolchain,
+            paths.linker_root,
+            paths.sdk,
+        ]
+        .into_iter()
+        .chain(SYSTEM_READS.iter().map(Path::new))
+        .chain(support.iter().map(PathBuf::as_path))
+        {
+            for ancestor in path.ancestors() {
+                ancestors.insert(ancestor.to_path_buf());
+            }
+        }
+        let mut profile = String::from(
+            "(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata",
+        );
+        for ancestor in ancestors {
+            profile.push(' ');
+            profile.push_str(&literal(&ancestor));
+        }
+        profile.push_str(")\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") (subpath \"/Library/Preferences\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\"))");
+        for file in support {
+            profile.push(' ');
+            profile.push_str(&literal(file));
+        }
+        profile.push_str(
+            ")\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
+        );
+        profile
     }
 
     #[cfg(target_os = "macos")]
