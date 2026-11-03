@@ -671,6 +671,14 @@
         "platform_performance": "standalone Darwin arm64 optimized predicate median 3.92-3.93 ns on ordinary fixtures with no fallback and 22.88 ns on deliberate all-boundary fallback; no measured JSON/combined F3/F4 CPU, allocation/RSS, charged peak or device path",
         "scope": "No root-wide structural/global closure, F3 admission, F4 selected-pin normalization/product, W1 runtime registry, V3 transport or ready renderer."
       },
+      "i2a_render_root_structural_candidate": {
+        "evidence": "../evidence/render/R0-F3-RENDER-ROOT-STRUCTURAL-SCAN-2026-11-03.md",
+        "implementation": "private_inactive_complete_render_root_structural_coordinator_and_texture_collection_scanner",
+        "functional_validation": "two texture collection and nine root tests cover borrowed replay, checked dispatch-token equivalence, canonical collection/UUID ordering, raw tie, anonymous fallback, complete header refusal, provisional output and operational abort; independent review found no blocker and targeted Clippy passes",
+        "experienced_quality": "not_applicable_to_inactive_source_coordinator",
+        "platform_performance": "no combined parser allocation/RSS, charged peak, full authored fixture, F3/F4 latency or device measurement; no array-wide object index is retained",
+        "scope": "No operation-wide global UUID or typed/same-root/slot-format edge closure, deferred instance bounds, F3 admission, F4 selected-pin publication or ready renderer."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."

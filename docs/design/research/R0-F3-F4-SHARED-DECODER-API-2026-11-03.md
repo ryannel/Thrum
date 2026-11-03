@@ -118,6 +118,16 @@ and continues checking later objects, but stops projecting valid objects
 after the first structural error. Earlier projection output is provisional
 and discarded if any error wins. Resource-pressure projection refusal may
 stop early as validation incomplete, with no semantic source result.
+Render-v1 collection rank is `cameras`, `meshes`, `instances`, `materials`,
+`textures`, `local_lights`. Once a complete collection has selected a
+structural error, later collections cannot outrank it and need not be walked;
+the current collection still scans all remaining objects to choose its
+canonical error. The bounded record-header pass has already checked complete
+JSON syntax, so skipping later collection semantics cannot hide malformed
+JSON. A non-array collection value is a structural error at its rank.
+The current derived envelope parser reports envelope-field errors in source
+encounter order; this collection/object ordering starts only after a valid
+envelope. Canonical envelope diagnostics require a separate parser change.
 F4 target-support refusal runs after source structural/global closure and
 must not hide a later source error.
 The private scanner's generic callback error is only a mechanism; its F3/F4
@@ -137,7 +147,7 @@ source validity and cannot redefine it.
 | --- | --- | --- |
 | F3 declared validation | Authenticated provisional staged bytes for every declared render root, including unselected roots. An operation-scoped charged work account starts before inventory/capture. | The F3 projection emits identity and edge declarations to temporary charged sinks; compact mesh extrema/instance/texture facts remain only through closure. Retain top-level summary/counts after success. |
 | F3 global closure | One complete namespace of project, history, schema, scene, game, built-in and embedded IDs, and all actual typed edges. | Complete structural parse, one deterministic collision pass, then typed/same-root/slot-format edges, then deferred transformed bounds. Release chunks and merge scratch after closure; no `EmbeddedIdentities` validity cap. Pressure leaves admission incomplete and same-token retryable. |
-| F4 selected cook | One accepted `PinnedSource` and its authenticated manifest. Follow the selected entry scene's `render.source` and unchanged `environment.source` edges. `copy_file_to` can write a partial prefix, so decode only after its successful full length/hash return. | Run the same structural preparation and local closure on the selected root. The accepted F3 pin attests the complete tree; F4 rechecks selected local closure before feeding product projections. Exact build binding names admitted source and selected closure. Discard all partial work on failure. |
+| F4 selected cook | One accepted `PinnedSource` and its authenticated manifest. Follow the selected entry scene's `render.source` and unchanged `environment.source` edges. `copy_file_to` can write a partial prefix, so decode only after its successful full length/hash return. | Run the same structural preparation and local closure on the selected root. The accepted F3 pin attests the complete tree; provisional product preparation may consume checked objects while the root is scanned, but source closure and target support must succeed before any product is accepted or published. Exact build binding names admitted source and selected closure. Discard all partial work on failure. |
 | V2/V3/V4 | Verified F4 product bytes, W1 committed/presentation sample, selected target and recipe. | Packet and representation certificates are per-view; unchanged exact CPU mesh facts and semantic products can be reused under their keys and leases. |
 
 F3's complete-candidate order is: registry structure; all declared-record

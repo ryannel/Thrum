@@ -19,6 +19,9 @@ use crate::render_source_objects::{
     InstanceField, InstanceProblem, MeshDecodeError, MeshEvent, MeshField, MeshProblem,
     decode_camera_v1, decode_instance_v1, decode_mesh_v1,
 };
+use crate::render_source_texture::{
+    CheckedTexture, TextureField, TextureProblem, TextureSourceError, check_texture_v1,
+};
 
 #[derive(Debug)]
 pub(crate) enum CollectionScanError<E, F, P> {
@@ -41,6 +44,7 @@ pub(crate) type CameraScanError<E> = CollectionScanError<E, CameraField, CameraP
 pub(crate) type InstanceScanError<E> = CollectionScanError<E, InstanceField, InstanceProblem>;
 pub(crate) type MaterialScanError<E> = CollectionScanError<E, MaterialField, MaterialProblem>;
 pub(crate) type LocalLightScanError<E> = CollectionScanError<E, LocalLightField, LocalLightProblem>;
+pub(crate) type TextureScanError<E> = CollectionScanError<E, TextureField, TextureProblem>;
 
 struct Selected<'a, F, P> {
     ordinal: usize,
@@ -254,6 +258,52 @@ pub(crate) fn scan_local_lights<E>(
     )
 }
 
+/// A checked texture borrows its original raw base64 token for later verified
+/// pin replay. The projection may retain it only while that input stays pinned.
+pub(crate) fn scan_textures<'a, E>(
+    raw: &'a RawValue,
+    mut project: impl FnMut(CheckedTexture<'a>) -> Result<(), E>,
+) -> Result<(), TextureScanError<E>> {
+    let mut best = None;
+    let mut ordinal = 0;
+    let walked = visit_raw_array(raw, |item| {
+        let here = ordinal;
+        ordinal += 1;
+        match check_texture_v1(item) {
+            Ok(checked) => {
+                if best.is_some() {
+                    Ok(())
+                } else {
+                    let id = checked.facts.id;
+                    project(checked).map_err(|cause| CollectionScanError::Projection {
+                        ordinal: here,
+                        id,
+                        cause,
+                    })
+                }
+            }
+            Err(TextureSourceError { id, field, problem }) => {
+                retain_lowest(
+                    &mut best,
+                    Selected {
+                        ordinal: here,
+                        id,
+                        field,
+                        problem,
+                        raw: item.get(),
+                    },
+                );
+                Ok(())
+            }
+        }
+    });
+    match walked {
+        Err(RawArrayError::Json(source)) => Err(CollectionScanError::Json(source)),
+        Err(RawArrayError::Visit(cause)) => Err(cause),
+        Ok(()) => finish(best),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -291,6 +341,10 @@ mod tests {
         format!(
             r#"{{"id":"{id}","position_m":[0,0,0],"luminous_intensity_cd":0,"unit_luminance_linear_rec709":{colour},"radius_m":0}}"#
         )
+    }
+
+    fn texture(id: &str, body: &str) -> String {
+        format!(r#"{{"id":"{id}","width":1,"height":1,"format":"rgba8-srgb","rgba8":"{body}"}}"#)
     }
 
     #[test]
@@ -544,6 +598,91 @@ mod tests {
                 Ok::<_, ()>(())
             }),
             Err(CollectionScanError::Structural { .. })
+        ));
+        assert_eq!(calls, 1);
+    }
+
+    #[test]
+    fn texture_collection_borrows_checked_tokens_and_orders_source_errors() {
+        let valid = texture(HIGH, "AAECAw==");
+        let mut bytes = Vec::new();
+        scan_textures(raw(&format!("[{valid}]")), |checked| {
+            crate::render_source_texture::emit_texture_chunks(&checked, |chunk| {
+                bytes.extend_from_slice(chunk);
+                Ok::<_, ()>(())
+            })
+            .unwrap();
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(bytes, [0, 1, 2, 3]);
+
+        let low_bad = texture(LOW, "AA==AAAw");
+        let high_bad = texture(HIGH, "AA==AAAw");
+        for source in [
+            format!("[{high_bad},{low_bad}]"),
+            format!("[{low_bad},{high_bad}]"),
+        ] {
+            assert!(matches!(
+                scan_textures(raw(&source), |_| Ok::<_, ()>(())),
+                Err(CollectionScanError::Structural {
+                    id: Some(id),
+                    field: TextureField::Rgba8,
+                    problem: TextureProblem::Base64(_),
+                    ..
+                }) if id[15] == 1
+            ));
+        }
+        let source = format!("[{valid},{low_bad},{valid}]");
+        let mut calls = 0;
+        assert!(matches!(
+            scan_textures(raw(&source), |_| {
+                calls += 1;
+                Ok::<_, ()>(())
+            }),
+            Err(CollectionScanError::Structural { .. })
+        ));
+        assert_eq!(calls, 1);
+    }
+
+    #[test]
+    fn texture_collection_raw_tie_anonymous_fallback_and_pressure() {
+        let short = texture(LOW, "AAEC");
+        let longer = texture(LOW, "AAECAw");
+        for source in [format!("[{longer},{short}]"), format!("[{short},{longer}]")] {
+            assert!(matches!(
+                scan_textures(raw(&source), |_| Ok::<_, ()>(())),
+                Err(CollectionScanError::Structural {
+                    id: Some(id),
+                    field: TextureField::Rgba8,
+                    problem: TextureProblem::EncodedLength { actual: 4, .. },
+                    ..
+                }) if id[15] == 1
+            ));
+        }
+        let anonymous = texture("invalid", "AAECAw==");
+        let source = format!("[{anonymous},{short}]");
+        assert!(matches!(
+            scan_textures(raw(&source), |_| Ok::<_, ()>(())),
+            Err(CollectionScanError::Structural {
+                id: Some(id),
+                field: TextureField::Rgba8,
+                ..
+            }) if id[15] == 1
+        ));
+
+        let valid = texture(HIGH, "AAECAw==");
+        let source = format!("[{valid},{short}]");
+        let mut calls = 0;
+        assert!(matches!(
+            scan_textures(raw(&source), |_| {
+                calls += 1;
+                Err("pressure")
+            }),
+            Err(CollectionScanError::Projection {
+                cause: "pressure",
+                ..
+            })
         ));
         assert_eq!(calls, 1);
     }

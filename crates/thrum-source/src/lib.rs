@@ -49,6 +49,9 @@ mod render_light_luminance_exact;
 // Authored point-light facts remain inactive until shared F3/F4 closure.
 #[allow(dead_code)]
 mod render_source_light;
+// One local structural pass remains inactive until global F3/F4 closure.
+#[allow(dead_code)]
+mod render_source_root;
 // Material source meaning stays independent of target support and admission.
 #[allow(dead_code)]
 mod render_source_material;
