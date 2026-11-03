@@ -8,10 +8,12 @@ use std::io;
 mod build_declaration;
 #[cfg(test)]
 mod candidate_output;
+mod constant_light;
 mod native_worktree;
 pub use build_declaration::{
     BuildDeclaration, BuildDeclarationError, read_pinned_build_declaration,
 };
+pub use constant_light::{ConstantLightError, ConstantLightInputV1, ConstantLightProductV1};
 pub use native_worktree::{
     BuildScratchPlan, MaterializeError, MaterializedSource, materialize_pinned_source,
 };
