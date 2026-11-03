@@ -218,6 +218,10 @@ oracle matches, but its predicate-only 50,000-instance fallback families
 take 1.47–3.61 s on the named Mac. This is an implementation pressure to
 optimize and measure in the complete F3 path, not an admitted edit-latency
 or memory qualification.
+The independently reproduced [normalized-dyadic follow-up](../../evidence/render/R0-F3-TRANSFORMED-BOUND-OPT-2026-11-03.md)
+keeps the 84-limb argument and lowers selected all-fallback medians to
+119–312 ms per 50,000 instances, including unique transforms. It remains
+predicate-only and does not select a host work allowance or prove F3 peak.
 
 The exact-dyadic triangle rule needs a bounded adaptive implementation: a
 proved fast filter may accept clear cases, with a fixed-width/exact fallback
