@@ -561,6 +561,30 @@ pub fn validate_staged_registry<'a>(
     stage: &'a StagedTree,
     dependency_roots: &[String],
 ) -> Result<StagedRegistry<'a>, StagedRegistryError> {
+    let registry = prepare_staged_registry(stage, dependency_roots)?;
+    let mut ids = HashSet::with_capacity(registry.schemas.len() + 2);
+    for id in std::iter::once(registry.project.id())
+        .chain(std::iter::once(registry.history_id.as_str()))
+        .chain(
+            registry
+                .schemas
+                .iter()
+                .map(|item| item.descriptor.record_id()),
+        )
+    {
+        if !ids.insert(id) {
+            return Err(StagedRegistryError::DuplicateRecordId(id.to_owned()));
+        }
+    }
+    Ok(registry)
+}
+
+// Prepare registry structure and descriptor meanings without a UUID collision
+// pass. Complete candidates check all top-level IDs after declared structure.
+fn prepare_staged_registry<'a>(
+    stage: &'a StagedTree,
+    dependency_roots: &[String],
+) -> Result<StagedRegistry<'a>, StagedRegistryError> {
     if !dependency_roots.is_empty() {
         return Err(StagedRegistryError::UnsupportedDependencyRoots);
     }
@@ -636,15 +660,6 @@ pub fn validate_staged_registry<'a>(
     drop(history);
     drop(history_bytes);
 
-    let mut ids = HashSet::with_capacity(schemas.len() + 2);
-    for id in std::iter::once(project.id())
-        .chain(std::iter::once(history_id.as_str()))
-        .chain(schemas.iter().map(|item| item.descriptor.record_id()))
-    {
-        if !ids.insert(id) {
-            return Err(StagedRegistryError::DuplicateRecordId(id.to_owned()));
-        }
-    }
     Ok(StagedRegistry {
         stage,
         project,
@@ -910,8 +925,8 @@ pub fn validate_staged_candidate<'a>(
     stage: &'a StagedTree,
     dependency_roots: &[String],
 ) -> Result<StagedCandidate<'a>, StagedCandidateError> {
-    let registry = validate_staged_registry(stage, dependency_roots)
-        .map_err(StagedCandidateError::Registry)?;
+    let registry =
+        prepare_staged_registry(stage, dependency_roots).map_err(StagedCandidateError::Registry)?;
     let records = validate_staged_records(&registry).map_err(StagedCandidateError::Records)?;
     Ok(StagedCandidate { registry, records })
 }
@@ -1976,6 +1991,55 @@ mod tests {
                 RegistryConsistencyError::DescriptorOrder(1)
             ))
         ));
+        assert!(matches!(
+            validate_staged_candidate(&duplicate_type, &[]),
+            Err(StagedCandidateError::Registry(
+                StagedRegistryError::Registry(RegistryConsistencyError::DescriptorOrder(1))
+            ))
+        ));
+    }
+
+    #[test]
+    fn candidate_registry_identity_collision_follows_declared_scene_structure() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let history_path = "schemas/history.registry.json";
+        let history = fs::read_to_string(fixture.0.join(history_path)).unwrap();
+        fixture.write(
+            history_path,
+            history.replace(HISTORY_ID, PROJECT_ID).as_bytes(),
+        );
+
+        for schema in [1, 2] {
+            let scene_path = "scenes/main.scene.json";
+            let mut scene = json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":schema, "fields":[]
+            });
+            fixture.write(scene_path, &serde_json::to_vec(&scene).unwrap());
+            let malformed = fixture.stage(PATHS);
+            assert!(matches!(
+                validate_staged_candidate(&malformed, &[]),
+                Err(StagedCandidateError::Records(StagedRecordError::Scene { path, .. }))
+                    if path.as_str() == scene_path
+            ));
+            assert!(matches!(
+                validate_staged_registry(&malformed, &[]),
+                Err(StagedRegistryError::DuplicateRecordId(id)) if id == PROJECT_ID
+            ));
+
+            scene["fields"] = json!({});
+            fixture.write(scene_path, &serde_json::to_vec(&scene).unwrap());
+            let valid_structure = fixture.stage(PATHS);
+            assert!(matches!(
+                validate_staged_candidate(&valid_structure, &[]),
+                Err(StagedCandidateError::Records(StagedRecordError::DuplicateRecordId(id)))
+                    if id == PROJECT_ID
+            ));
+            assert!(matches!(
+                validate_staged_registry(&valid_structure, &[]),
+                Err(StagedRegistryError::DuplicateRecordId(id)) if id == PROJECT_ID
+            ));
+        }
     }
 
     #[test]
