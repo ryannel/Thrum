@@ -110,3 +110,16 @@ This proves refusal on a real changed materialized dependency input between
 jobs. It does not prove that a write during an active compiler is observed or
 contained, and it does not turn the cooperating guard into one reviewed T2
 release owner. The retained A candidate remains unready.
+
+## Bounded-memory fallback hashing
+
+At exact local source commit `b68a22a7c2509ebbb5f2d75bfe6bea22949a2d43`,
+the test-only unheld native verifier changed from `fs::read` per cache file to
+a shared 64 KiB streaming SHA-256 helper. The per-file digest, sorted path
+result and symlink refusal are unchanged. A 131,089-byte golden crosses two
+buffer boundaries and compares both raw and hex digests with an independent
+in-memory SHA-256 calculation. `RUSTC_WRAPPER= ./dev check` passed, and an
+independent review found no issue. This bounds the helper's per-file buffer
+regardless of cache-file size; it does not reduce bytes read in the unheld
+fallback or establish elapsed or peak-RSS improvement. Concurrent file
+mutation remains outside this helper's proof.
