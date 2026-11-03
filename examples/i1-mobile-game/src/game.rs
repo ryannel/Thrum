@@ -10,45 +10,45 @@ use thrum_core::{
 };
 use thrum_mobile_shell::LocalReceiptCursor;
 
-pub const ACTOR: ActorId = ActorId(1);
-pub const PEER: PeerId = PeerId(1);
-pub const COUNTER: StableId = StableId(1);
+pub(crate) const ACTOR: ActorId = ActorId(1);
+pub(crate) const PEER: PeerId = PeerId(1);
+pub(crate) const COUNTER: StableId = StableId(1);
 #[cfg(any(target_os = "ios", target_os = "android"))]
-pub const BUNDLED_GAME_ID: &str = "i1-tap-counter-v1";
+pub(crate) const BUNDLED_GAME_ID: &str = "i1-tap-counter-v1";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Counter {
+pub(crate) struct Counter {
     pub taps: u64,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Action {
+pub(crate) enum Action {
     Tap,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Rejection {
+pub(crate) enum Rejection {
     WrongActor,
     Overflow,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Event {
+pub(crate) enum Event {
     Tapped,
 }
 
-pub struct Rules;
+pub(crate) struct Rules;
 
 /// Finite local outcome view updated before the receipt cursor acknowledges.
 #[derive(Default)]
-pub struct LocalView {
+pub(crate) struct LocalView {
     pub handled_results: u64,
     pub rejected_results: u64,
     pub last_event_id: Option<u64>,
 }
 
 impl LocalView {
-    pub fn observe(&mut self, admitted: &AdmittedGroup<Event, Rejection>) {
+    pub(crate) fn observe(&mut self, admitted: &AdmittedGroup<Event, Rejection>) {
         for result in &admitted.results {
             self.handled_results = self.handled_results.saturating_add(1);
             if matches!(result.disposition, ResultDisposition::Rejected(_)) {
@@ -97,7 +97,7 @@ impl GameRules for Rules {
     }
 }
 
-pub fn create_host(origin: Instant) -> (HeadlessHost<Rules>, LocalReceiptCursor) {
+pub(crate) fn create_host(origin: Instant) -> (HeadlessHost<Rules>, LocalReceiptCursor) {
     let mut world = World::new(WorldEpoch(1));
     world
         .spawn(COUNTER, Counter { taps: 0 })
@@ -120,7 +120,7 @@ pub fn create_host(origin: Instant) -> (HeadlessHost<Rules>, LocalReceiptCursor)
     (host, receipts)
 }
 
-pub fn tap_input(sequence: u64, observed_tick: u64) -> Input<Action> {
+pub(crate) fn tap_input(sequence: u64, observed_tick: u64) -> Input<Action> {
     Input {
         origin: Origin {
             peer: PEER,
@@ -217,7 +217,13 @@ mod tests {
                 stage_declared_tree_with_plan(&self.0, &Self::paths(), Self::plan()).unwrap();
             let candidate = validate_staged_candidate(&stage, &[]).unwrap();
             store
-                .admit(generation, 1, key, [key as u8; 32], &candidate)
+                .admit(
+                    generation,
+                    1,
+                    key,
+                    [u8::try_from(key).unwrap(); 32],
+                    &candidate,
+                )
                 .unwrap()
                 .generation
         }
