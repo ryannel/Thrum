@@ -47,8 +47,8 @@ prepared tool roots during that earlier phase under the trusted-local-user
 development policy, but this is not one held selection through metadata.
 Installed Xcode support and host-runtime bytes are outside the four-root
 selection. The exact official-origin release manifest has not been reviewed,
-compiler helper/no-detach and complete read closure remain open, and the
-cooperating guard's death during a compiler job has not been qualified. The
+compiler helper/no-detach and complete read closure remain open. A later
+section qualifies one observed guard-death path during a compiler job. The
 runner reports `buildReady:false`; no `BuildRevision`, device or frame-time
 claim follows.
 
@@ -73,3 +73,37 @@ source-key checks reported **3 ms and 1 ms**. Guard cold open took 13.054 s,
 the A/B process 34.592 s and outer post-build inventory 10.356 s. These are
 uncontrolled local observations, not a protocol-overhead or end-to-end
 speedup measurement. `buildReady:false` remains unchanged.
+
+## Guard loss during an admitted build
+
+At exact local source commit `f300d23e6a539ec28f546d3c8d6f72968f87a3ce`,
+the Rust test fixture polls its owned guard and native Cargo supervisor while
+the supervisor runs. A guard exit or unexpected response is a sticky build
+fault. If the supervisor is still running, the fixture sends it SIGTERM and
+waits for its bounded collector to stop and reap Cargo's process group. It
+requires a completed unready supervisor report before normal fixture cleanup;
+unknown child or cleanup state exits the fixture process and preserves its
+compiler input/output and outer held-root scratch for investigation. A live
+guard is checked again before retaining A. The poll sleeps 20 ms between
+checks, so this is detection with bounded polling, not instantaneous revocation.
+
+The opt-in `--fault-guard` qualification killed the real guard after a
+**pending compile-kind Rustc wrapper receipt** appeared during the admitted A
+build. The supervisor reported `interrupted`, retained one pending receipt,
+and no A candidate was published. The A/B test failed as required. The outer
+owner re-inventoried the private cache, Rust, linker and SDK roots unchanged,
+then cleaned only its owned scratch. The qualifier requires a positive pending
+count and the intended terminal panic, so an unrelated failure cannot pass.
+The admitted test process took 24.319 s and the post-build four-root inventory
+9.886 s on this uncontrolled macOS ARM64 run.
+
+The normal exact-commit A/B run also passed: five A compiles and three probes,
+retained runnable A, expected invalid B with three successful compiles and
+three probes, materialized lockfile drift refusal, and unchanged four-root
+inventories. Its two held source-key checks were 3 ms and 2 ms; guard cold
+open was 12.129 s, A/B process 30.878 s and post-build inventory 9.614 s.
+These runs do not establish a watcher speedup or CPU/RSS bound. A pending
+wrapper receipt does not prove Rustc had started. Guard loss during candidate
+staging, external SIGKILL of the supervisor, detached compiler descendants,
+the reviewed helper family and durable ready publication remain open.
+`buildReady:false` remains the only publication status.
