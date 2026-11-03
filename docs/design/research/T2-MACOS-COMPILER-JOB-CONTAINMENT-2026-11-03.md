@@ -1,9 +1,10 @@
 # MacOS native compiler job containment
 
-3 November 2026. Scoped T2 research for the first CPU-only ARM64 headless
-development build. The governing design is
+3 November 2026. **Selected first-profile boundary: reviewed compiler family.**
+The user chose option 2 below for the first CPU-only ARM64 headless development
+build. The governing design is
 [T2 prepared native environment](../T2-PREPARED-NATIVE-ENVIRONMENT.md); this
-note does not select a release-ready process backend.
+does not make any current build ready.
 
 ## Observed boundary
 
@@ -93,15 +94,20 @@ The choices for a ready profile are:
    when untrusted build-time processes must be supported. That changes the
    cost and platform model and is outside the selected initial profile.
 
-For now, keep option 1 as the **readiness target pending feasibility** and
-option 2 as a reviewable fallback, not a silent promotion. The next proof
-should run successful, failed, timed-out and interrupted compiler jobs with
-retained receipt audits; then test same-group and new-session descendants with
-both open and closed pipes against any selected job backend. Under option 1, a
-success must leave no live owned process and no writable output claimant
-before candidate publication or scratch removal. Under option 2, success
-cannot establish that fact; the explicit trusted-tool assumption carries the
-residual risk. In either case, a refused build must keep the previous
-candidate verifiable.
+Option 2 is selected **only for this development profile**. The release
+manifest must identify the reviewed Rust/Xcode compiler family and its
+controlled helper set. The adapter refuses build scripts, proc macros and
+unreviewed executable hooks; any observed detached child is a breach of the
+trusted compiler-family assumption and refuses publication. The existing
+process-group supervisor must still prove bounded successful, failed,
+timed-out and interrupted paths, complete retained receipt audits, and
+cleanup of all same-group children before releasing scratch. The assumption
+that a reviewed compiler child never escapes its group covers the otherwise
+unobservable closed-pipe case; it is **not** an OS-enforced transitive lifetime
+guarantee. A refused build must keep the previous candidate verifiable.
+
+Option 1 remains a possible stronger future tier if a supported transitive
+job primitive is found and qualified. Option 3 remains the route for
+untrusted build-time processes. Neither is silently implied by option 2.
 No per-frame work belongs to this boundary; measured overhead is edit-to-ready
 latency, launch/teardown tail and compiler-job RSS.

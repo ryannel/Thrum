@@ -246,9 +246,12 @@ Prove in order:
    now bounds the local A/B build and detects owner loss, but cannot yet
    contain an escaped session or provide a release job identity. The
    [macOS job-containment analysis](research/T2-MACOS-COMPILER-JOB-CONTAINMENT-2026-11-03.md)
-   records why process-group cleanup does not close that lifetime, the
-   OS-owned job proof target and a weaker trusted-tool fallback that would
-   require an explicit design choice.
+   records why process-group cleanup does not close that lifetime. The user
+   selected the reviewed-compiler-family assumption for this first development
+   profile: reviewed Rust/Xcode helpers must remain in the build group, and an
+   observed escape is a release fault. This is an explicit trust assumption,
+   not OS transitive containment; successful, failed, timed-out and interrupted
+   same-group paths plus retained receipt closure still need qualification.
 4. Bind a candidate output report to F3 source root, F4 product bytes,
    environment selection, complete receipt set and streamed executable hash.
    The [local retained-output proof](../evidence/i2a/F4-RETAINED-NATIVE-CANDIDATE.md)

@@ -73,6 +73,13 @@ or Cargo provide publisher signatures. Signing the project's release manifest
 can be added later without changing BuildRevision semantics. The first profile stays
 macOS ARM64; other platforms need their own selected adapter and evidence.
 
+The first development profile also uses the user-selected
+[reviewed compiler-family assumption](research/T2-MACOS-COMPILER-JOB-CONTAINMENT-2026-11-03.md):
+the reviewed Rust/Xcode helper set must not detach from its build process
+group. The supervisor still bounds and reaps that group, and an observed
+detached child refuses publication. This is not OS-enforced transitive job
+containment and does not authorize arbitrary build-time processes.
+
 ### First exact-input matcher
 
 The first [release-input verifier](../../scripts/verify_headless_release_inputs.py)
