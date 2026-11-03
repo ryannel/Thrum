@@ -170,6 +170,61 @@ input even if another peer stalls: admission credit or a documented explicit
 close path is needed before sequence consumption. No preallocated network
 pool may borrow the authority's required execution reserve.
 
+## First production storage candidate
+
+The first no-socket owner should be admitted per peer, only when N1 is on.
+This is a **candidate layout**, not a selected runtime or a measured cost:
+
+- Reserve sixteen complete 8 KiB unsent-frame slots (128 KiB) plus a small
+  ordered index/free-slot table at peer admission. Each slot owns its encoded
+  scalar bytes, partition ID, generation, tick, completeness/mandatory tags
+  and exact journal-ID references. A replaceable candidate may overwrite a
+  same-incarnation slot only after proving complete state and no intervening
+  mandatory unit; an attempted 17th live slot closes or resynchronizes the
+  peer before an application sequence is assigned. Control's 64 KiB is a
+  separate reserve. This avoids per-tick `Vec` growth and moving 8 KiB slots
+  merely to reorder a three-tick batch.
+- Keep the baseline-bound partition table and entity assignment in compact
+  sorted rows, plus explicit per-partition admitted sample tick/generation on
+  the client. The first profile bounds 128 visible entities and **256 distinct
+  assigned wire IDs per baseline incarnation**, counting departed IDs until
+  atomic replacement. Before a 257th assignment, recapture a baseline or
+  close that peer; do not let churn grow an invisible ownership map. The
+  256-row table makes bounded binary lookup or sorted merge plausible;
+  compare it with a direct-index/hash alternative
+  under the actual four-peer change pattern before selecting. An entity that
+  leaves visibility retains its partition assignment until atomic baseline
+  replacement. The [composite replica oracle](../../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md)
+  proves this semantic need using clone-backed trees; it is not this layout.
+- On final submission, reserve the exact framed bytes and ACK metadata in
+  the 256 KiB/128-entry sent ledger **before** assigning the envelope
+  sequence or freeing the unsent slot. Ordinary entries use the 160 KiB/112
+  sublimit; baseline framing has the independent 96 KiB/16 reserve. A
+  contiguous ordinary frame arena may suit cumulative ACK, while two
+  32 KiB baseline chunk slots permit out-of-order staging ACK without arena
+  compaction. Two outstanding chunk frames occupy 65,688 bytes including
+  their 76-byte per-frame overhead, plus Begin/End and sequence tombstones.
+  The [credit oracle](../../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md)
+  proves counts and disposition logic only; a concrete allocator must show
+  that released holes and partial writes never require more than the charged
+  bytes. The immutable 256 KiB baseline image, 256 KiB sync closure,
+  transport buffer and mandatory journals remain simultaneous owners.
+- The 60 Hz extraction path should walk W1's changed IDs and committed
+  result/event lists once per peer, lookup selected partition membership,
+  copy schema-declared scalars directly into owned bounded records, and
+  release every W1 lease before any send/ACK work. At the 20 Hz boundary it
+  samples full current state. No generic `T: Clone` or retained `Arc` proves
+  ownership; the codec's fixed schema and byte-count checks must do so.
+
+The first implementation gate is one fixed-schema no-socket slice with a
+production partition consumer and owned journal. Measure one/two/four peers,
+idle and maximum selected changed sets, a three-tick mandatory burst,
+slow ACK and failed admission. Record encoded bytes, slot/ledger high-water,
+allocation counts, callback tails and RSS while W1 snapshot lease count
+returns to baseline. Compare the sorted-membership and contiguous-ledger
+candidates before promoting this layout; do not preallocate per-peer network
+storage for a networking-off standalone game.
+
 ## Minimum executable oracle and rejection gates
 
 - Use one selected fixed-schema game with two and four peers, a three-tick

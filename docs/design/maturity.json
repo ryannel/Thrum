@@ -1044,7 +1044,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
+        "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Action/context schemas and exact touch/controller/IME adapters."
@@ -1254,7 +1254,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
+        "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Event/action semantics, rule graph/scripting choice, sequence interruption and game policies.",
@@ -2109,7 +2109,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
+        "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
       },
       "initial_specification_stage": "specified_with_outbound_construction_gap",
       "prior_remaining_detailed_design": "The initial finite four-player WSS protocol still needs exact outbound mandatory burst and multi-group replica admission. Datagram/streamed-server/full-physics prediction and online-service extensions require separate specifications before their claims.",
@@ -2128,9 +2128,9 @@
         "design": "research/N1-OUTBOUND-CADENCE-2026-11-03.md",
         "decision": "provisional",
         "implementation": "private selected-inline cadence, sent-frame ACK and composite replica models only",
-        "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two cadence model tests preserve mandatory chronology and reject partial-update coalescing. Two sent-frame model tests stage an eight-chunk replacement behind a rejected sequence and refuse omitted mandatory IDs. Three composite replica model tests admit same-tick partitions with distinct sample ages and atomically refuse stale, colliding or cross-partition reassigned state; no production N1 owner is run",
+        "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two cadence model tests preserve mandatory chronology and reject partial-update coalescing. Two sent-frame model tests stage an eight-chunk replacement behind a rejected sequence and refuse omitted mandatory IDs. Four composite replica model tests admit same-tick partitions with distinct sample ages and atomically refuse stale, colliding, cross-partition reassigned or over-capacity state; no production N1 owner is run",
         "platform_performance": "ordinary 20 Hz R4 byte model is a lower-bound scenario; mandatory burst and four-peer CPU/RSS unmeasured",
-        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. Stable baseline partition identity, per-partition interest generation, envelope submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are specified but unimplemented. The private ledger model verifies two chunk credits and exact supersession arithmetic, not wire validation, concurrent queues or a runtime ACK owner. The cadence model supplies its own completeness marker and separate replica reference lanes. A private clone-backed composite replica model verifies same-tick partitions, independent sample ages and assignment retained after visibility loss; schema-checked completeness, a production multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
+        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. Stable baseline partition identity, per-partition interest generation, 256 cumulative assigned IDs per baseline incarnation, envelope submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are specified but unimplemented. The private ledger model verifies two chunk credits and exact supersession arithmetic, not wire validation, concurrent queues or a runtime ACK owner. The cadence model supplies its own completeness marker and separate replica reference lanes. A private clone-backed composite replica model verifies same-tick partitions, independent sample ages and finite assignment retained after visibility loss; schema-checked completeness, a production multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
         "model_oracle_evidence": "../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md",
         "baseline_ack_oracle_evidence": "../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md",
         "multi_group_replica_oracle_evidence": "../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md"
@@ -2899,7 +2899,7 @@
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
-      "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
+      "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
     },
     "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
     "closed_architectural_findings": [
@@ -3285,7 +3285,7 @@
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
       "MATURITY.md": "9ed4aff909e59d256c8cef5f1eee7a056e84140a43a4ff1eda66f1d018abbdbc",
-      "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b",
+      "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
