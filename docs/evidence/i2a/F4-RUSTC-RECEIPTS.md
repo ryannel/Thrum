@@ -121,6 +121,11 @@ missing completion, mismatched artifact and success transcript shapes refuse
 in the focused verifier fixture. The failure report remains `buildReady:false`;
 it is diagnostic evidence, not a B candidate.
 
+The supervisor's fault report may now parse a receipt that ends exactly at
+the wrapper's `PEND` marker. This optional parser mode is used only to count
+observed pending receipts after interruption; successful and failed Cargo
+verification still requires completed receipts and artifact reconciliation.
+
 ## Remaining release boundary
 
 The wrapper and Cargo transcript describe invocations and reported outputs,

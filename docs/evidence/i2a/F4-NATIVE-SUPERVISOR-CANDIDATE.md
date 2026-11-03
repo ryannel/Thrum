@@ -29,13 +29,35 @@ and hashes those files independently, including the 4 KiB report, and accepts
 only Cargo exit 0 or the first-profile compile failure 101 as completed. A
 SIGTERM handler routes ordinary termination through collector cleanup.
 
+The first fault-report extension catches that resulting `KeyboardInterrupt`
+after collector cleanup and writes a bounded `interrupted` report instead of
+leaving no supervisor record. A timeout or other collector error writes
+`supervisorError`. Either report has `buildReady:false` and a diagnostic
+`receiptInventory`: a sorted, domain-separated digest binds the observed
+receipt names, lengths, byte hashes and parse states. The inventory streams at
+most 64 entries and reads at most 1 MiB per receipt, one at a time. It counts
+completed zero/nonzero, well-formed pending and unparsed files; an aliased or
+otherwise unreadable set is reported as unavailable. It does not assert that
+the directory contains every invocation, or publish the raw fault receipts.
+Successful and invalid-code B verification keep their strict completed-receipt
+rules.
+
 Sixteen focused metadata-collector tests cover Ctrl-C cleanup, closed stdin,
 parent disappearance, output limit, retained pipes, an escaped-session child
 and a same-group child with closed pipes, plus a fast-exit observation race.
 The escaped-session case returns in
 a bounded interval but leaves that escaped process for fixture cleanup; it
-does **not** prove containment. Three supervisor protocol tests cover output
-binding, wrong-parent/aliased-request refusal and unexpected Cargo status.
+does **not** prove containment. Seven routine supervisor protocol tests cover output
+binding, wrong-parent/aliased-request refusal, unexpected Cargo status, caught
+interruption and timeout inventories, aliased and 65th-entry refusal, and an
+actual SIGTERM delivered to a supervisor process with a mocked collector. An
+eighth opt-in macOS sandbox process test exercises both SIGTERM and a
+two-second test-only timeout through the real collector, observes same-group
+child exit and records one pending receipt in each case. The command-line
+supervisor retains its 120-second deadline.
+
+No test here proves a real interrupted Cargo compiler job's complete receipt
+closure or detached-child containment.
 The real sandboxed admitted A/B build passed: five compile receipts and three
 probes reconciled, invalid B failed and A remained executable. A's fresh
 Cargo step took 3,671 and 3,470 ms in two uncontrolled runs. Neither is an
@@ -43,7 +65,7 @@ overhead or tail-performance comparison.
 
 An escaped session can still outlive the group; a complete release adapter
 needs a retained job identity or equivalent containment. Python and its
-script are not yet bound to reviewed release inputs. Host SIGKILL, interrupted
-rustc receipt audit, compiler/system reads and retained
+script are not yet bound to reviewed release inputs. Host SIGKILL, complete
+interrupted rustc invocation/child audit, compiler/system reads and retained
 target publication remain unqualified. Compiler-job RSS has no hard process
 memory ceiling.
