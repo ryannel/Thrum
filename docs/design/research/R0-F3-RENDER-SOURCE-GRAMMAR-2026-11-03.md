@@ -52,16 +52,17 @@ limit is introduced solely for this schema; the first render recipe declares
 its own finite preparation capacity and refuses over-capacity content before
 publication. Parser peak memory and adversarial near-limit latency still need
 measurement.
-The global collision index also needs a separate `EmbeddedIdentities`
-source-profile dimension: unreferenced embedded IDs can outnumber required
-edges across many legal records. Derive the first admitted count from measured
-compact-index bytes per ID, concurrent old/new peak and admission latency on
-dense near-limit records. Report observed and allowed identity counts in its
-own typed refusal; do not charge containment as a `RequiredReferences` edge
-or copy the existing 65,536 edge allowance. Until that capacity and its
-measurement are selected, the new schema cannot be an active admission
-profile. A bounded external sort is a future alternative if in-memory
-indexing proves disproportionate.
+Unreferenced embedded IDs can outnumber required edges across many legal
+records, but the first design does **not** add a fixed `EmbeddedIdentities`
+source-capacity dimension. The [candidate F3 identity-work
+policy](F3-RENDER-IDENTITY-WORK-POLICY-2026-11-03.md) uses a selected
+operational allowance for charged live work in the native host, with a
+separate retryable pressure result when validation cannot finish. Source
+meaning and source validity remain independent of that host allowance.
+Containment does not spend a `RequiredReferences` edge. The account,
+complete allocation audit and combined stage/pin measurements must be
+proved before this schema becomes an active admission profile; a bounded
+external sort is a separately owned future path.
 The [isolated embedded-index microprobe](../../evidence/render/R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.md)
 shows this dimension is independent: four bounded source-shaped roots can
 carry 332,016 embedded IDs with only four edges. Its generic JSON parser
@@ -69,7 +70,7 @@ dominates peak memory, so it does not yet justify a numeric capacity.
 An [isolated strict typed-decoder prototype](../../evidence/render/R0-F3-TYPED-DECODER-PROTOTYPE-2026-11-03.md)
 reduces that fixture's measured peak by releasing per-object scratch and
 preserves escaped-string semantics, but it is outside F3 and does not measure
-combined stage/pin work or select the capacity.
+combined stage/pin work or select a host work allowance.
 
 ## Field meanings
 
@@ -194,19 +195,20 @@ all-fallback timing. It does not replace the actual typed parser, combined
 peak measurement or target/compiler verification of the interval filter.
 
 The minimal F3 extension is a `StagedScene.render_source` typed edge and a
-`StagedRender` summary containing its top-level path/ID/definition hash,
-compact embedded `(UUID, kind, owner)` identities, and typed
-`(source, field, target, expected kind)` edges. Parse every declared root,
-including unselected ones. A single global compact UUID index includes
-project/history/schema IDs, top-level records and emitted embedded IDs; sort
-it, reject adjacent duplicates and resolve type plus same-root ownership for
-every render edge. Check the separate embedded-ID and required-edge capacities
-before appending. Source errors name source path/ID, field, target and the
-observed/allowed dimension. Only the top-level render record enters the
-accepted manifest's record identity. The decoder may project into an F3
-summary sink and release geometry/texel scratch per object; F4 can project the
-same grammar into cook inputs from verified pinned bytes. Measure both peak
-forms, including simultaneous old/new pins, before selecting the profile.
+`StagedRender` top-level path/ID/definition summary that emits compact
+embedded identities and typed edges to account-charged sinks. Parse every
+declared root, including unselected ones. A global sorted/merged UUID view
+includes project/history/schema IDs, top-level records and emitted embedded
+IDs; reject duplicates and resolve type plus same-root ownership for every
+render edge. Check the existing required-edge capacity before appending;
+failure to reserve identity work is a retryable incomplete validation, not a
+new source-dimension refusal. Source errors name source path/ID, field and
+target; pressure receipts name the owner, stage and charged bytes. Only the
+top-level render record enters the accepted manifest's record identity. The
+decoder may project into an F3 summary sink and release geometry/texel
+scratch per object; F4 can project the same grammar into cook inputs from
+verified pinned bytes. Measure both peak forms, including simultaneous
+old/new pins, before selecting the host profile.
 
 ## Required implementation proof
 
@@ -228,7 +230,7 @@ forms, including simultaneous old/new pins, before selecting the profile.
    Prove a stale pose/origin/material/product mutant refuses. Measure complete
    frame, overdraw and memory high-water with the named device.
 
-The immediate next decision is the minimal typed F3 summary API and a measured
-exact-predicate implementation. Until those are pinned and implemented,
+The immediate next decision is the minimal typed F3 summary/sink API and a
+measured exact-predicate implementation. Until those are pinned and implemented,
 this is a reviewable contract candidate, not a source profile that tooling
 should accept.
