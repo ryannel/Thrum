@@ -31,3 +31,10 @@ the sealed tree, bind a dependency-selection key to a real A/B job, authenticate
 registry origin, measure a full cache or the complete warm edit path, or
 provide an OS-enforced same-user mutation boundary. No release selection,
 ready build or `BuildRevision` is claimed; `buildReady:false` remains required.
+
+A later [held reuse check](T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md) added a
+sixth tiny fixture for a held Rust/cache pair: a code-only edit preserves the
+key, while a dependency manifest/target change, malformed selection, wrong
+tool path/hash or closed lease refuses. The six fixtures pass in the later
+full repository check; the five-fixture claim above remains the result at
+the original source commit.
