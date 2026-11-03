@@ -1102,7 +1102,9 @@ mod tests {
             }
             #[cfg(target_os = "macos")]
             if let Some(guard) = &mut cache_guard {
-                guard.verify_reuse(a_materialized.path(), &cache.target);
+                guard
+                    .verify_reuse(a_materialized.path(), &cache.target)
+                    .unwrap();
             } else {
                 cache.assert_reusable_source(checkout, a_materialized.path());
             }
@@ -1394,7 +1396,9 @@ mod tests {
         if let Some(cache) = &owned_cache {
             #[cfg(target_os = "macos")]
             if let Some(guard) = &mut cache_guard {
-                guard.verify_reuse(b_materialized.path(), &cache.target);
+                guard
+                    .verify_reuse(b_materialized.path(), &cache.target)
+                    .unwrap();
             } else {
                 cache.assert_reusable_source(checkout, b_materialized.path());
             }
@@ -1466,6 +1470,18 @@ mod tests {
         } else {
             assert_eq!(file_sha256_hex(&binary_a), binary_a_hash);
             assert!(Command::new(&binary_a).output().unwrap().status.success());
+        }
+        #[cfg(target_os = "macos")]
+        if let Some(guard) = &mut cache_guard {
+            let lockfile = b_materialized.path().join("Cargo.lock");
+            let mut changed = fs::read(&lockfile).unwrap();
+            changed.push(b'\n');
+            fs::write(&lockfile, changed).unwrap();
+            assert_eq!(
+                guard.verify_reuse(b_materialized.path(), &owned_cache.as_ref().unwrap().target),
+                Err("held-cache owner refused reuse")
+            );
+            eprintln!("admitted-headless-cache real_materialized_lock_drift_refused=true");
         }
         b_pin.close().unwrap();
         b_materialized.close().unwrap();
@@ -1811,7 +1827,7 @@ mod tests {
             }
         }
 
-        fn verify_reuse(&mut self, source: &Path, target: &str) {
+        fn verify_reuse(&mut self, source: &Path, target: &str) -> Result<(), &'static str> {
             let started = Instant::now();
             let request_id = self.next_request_id;
             self.next_request_id = self.next_request_id.checked_add(1).unwrap();
@@ -1830,12 +1846,14 @@ mod tests {
                 .recv_timeout(Duration::from_secs(10))
                 .expect("held cache reuse response exceeded ten seconds")
                 .expect("held cache reuse response failed");
-            held_cache_response(&line, request_id, &self.expected_reuse_sha256)
-                .unwrap_or_else(|error| panic!("{error}: {line}"));
-            eprintln!(
-                "verified-held-private-cargo-reuse ms={}",
-                started.elapsed().as_millis()
-            );
+            let result = held_cache_response(&line, request_id, &self.expected_reuse_sha256);
+            if result.is_ok() {
+                eprintln!(
+                    "verified-held-private-cargo-reuse ms={}",
+                    started.elapsed().as_millis()
+                );
+            }
+            result
         }
 
         fn close(mut self) {
