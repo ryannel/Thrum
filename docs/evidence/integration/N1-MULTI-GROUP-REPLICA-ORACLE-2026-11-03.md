@@ -25,9 +25,15 @@ generation. Each refusal leaves the entire composite replica unchanged.
 A third test removes an entity from visible partition 20, refuses its attempted
 reassignment to partition 10 without a replacement baseline, then permits it
 to re-enter partition 20.
+A fourth test cycles 254 fresh wire IDs through one partition while only two
+entities remain visible. It fills the first-profile 256-entry persistent
+assignment table, refuses ID 257 without changing replica state, and permits
+another partition to advance. The actual N1 producer must trigger a
+replacement baseline or close at this pressure point; the private model has
+neither lifecycle.
 
 Command: `RUSTC_WRAPPER= rustup run 1.99.1 cargo test -p thrum-core --test n1_multi_group_replica_oracle`.
-All three tests passed locally. The model does not parse the wire schema, validate
+All four tests passed locally. The model does not parse the wire schema, validate
 dependency closure or lifecycle generations, carry results/events, apply a
 whole replacement baseline, or establish bounded allocation and throughput.
 Those remain production N1 gates; this proof selects the need for explicit

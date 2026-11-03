@@ -2,6 +2,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+const ASSIGNMENT_CAP: usize = 256;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Partition {
     generation: u32,
@@ -45,6 +47,7 @@ enum Refusal {
     UnknownEntity,
     CrossPartitionEntity,
     RepeatedEntity,
+    AssignmentCapacity,
 }
 
 impl CompositeReplica {
@@ -70,6 +73,7 @@ impl CompositeReplica {
                 .is_none()
             );
         }
+        assert!(owner.len() <= ASSIGNMENT_CAP);
         Self {
             partitions: rows,
             entity_home: owner.clone(),
@@ -110,6 +114,9 @@ impl CompositeReplica {
                 {
                     return Err(Refusal::CrossPartitionEntity);
                 }
+                if !home.contains_key(entity) && home.len() == ASSIGNMENT_CAP {
+                    return Err(Refusal::AssignmentCapacity);
+                }
                 if owner.insert(*entity, group.partition).is_some() {
                     return Err(Refusal::CrossPartitionEntity);
                 }
@@ -143,6 +150,9 @@ impl CompositeReplica {
                             .is_some_and(|assigned| *assigned != group.partition)
                         {
                             return Err(Refusal::CrossPartitionEntity);
+                        }
+                        if !home.contains_key(&id) && home.len() == ASSIGNMENT_CAP {
+                            return Err(Refusal::AssignmentCapacity);
                         }
                         if owner.contains_key(&id) {
                             return Err(Refusal::DuplicateEntity);
@@ -288,4 +298,37 @@ fn leaving_visibility_does_not_transfer_baseline_partition_assignment() {
         .apply(group(20, 2, 2, vec![Change::Spawn(2, 5)]))
         .unwrap();
     assert_eq!(replica.state(2), Some((5, 2)));
+}
+
+#[test]
+fn invisible_id_churn_refuses_before_assignment_table_growth() {
+    let mut replica = CompositeReplica::baseline(0, [(10, 1, &[(1, 0)]), (20, 1, &[(2, 0)])]);
+    let mut tick = 0;
+    for entity in 3..=ASSIGNMENT_CAP as u64 {
+        tick += 1;
+        replica
+            .apply(group(20, 1, tick, vec![Change::Spawn(entity, entity)]))
+            .unwrap();
+        tick += 1;
+        replica
+            .apply(group(20, 1, tick, vec![Change::Despawn(entity)]))
+            .unwrap();
+    }
+    assert_eq!(replica.entity_home.len(), ASSIGNMENT_CAP);
+    assert_eq!(replica.entity_owner.len(), 2);
+    let before = replica.clone();
+    assert_eq!(
+        replica.apply(group(
+            20,
+            1,
+            tick + 1,
+            vec![Change::Spawn(ASSIGNMENT_CAP as u64 + 1, 1)]
+        )),
+        Err(Refusal::AssignmentCapacity)
+    );
+    assert_eq!(replica, before);
+    replica
+        .apply(group(10, 1, 1, vec![Change::Update(1, 1)]))
+        .unwrap();
+    assert_eq!(replica.state(1), Some((1, 1)));
 }

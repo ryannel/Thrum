@@ -235,6 +235,17 @@ transition group carries the ordered lifecycle and complete current
 partition state under the new generation. A repartition requires a
 replacement baseline. Reused group IDs in a same-epoch replacement baseline
 advance their interest generation; exhaustion requires a new connection.
+The first profile admits at most 128 currently visible entities and **256
+distinct wire-ID-to-partition assignments per admitted baseline incarnation**,
+including IDs that later leave visibility or despawn. A new live spawn binds
+its wire ID to its containing partition at first admission; a leave retains
+that assignment, and a later group cannot silently move the ID to another
+partition. Before the 257th distinct assignment, N1 captures an atomic
+replacement baseline with a fresh bounded assignment table or closes that
+peer explicitly; authority ticks and other peers continue. A replacement
+baseline may change partition assignment, but no rejected ordinary group may
+partially publish that change. The 256-row cap is a first-profile admission
+limit, not a process-memory limit or a claim that every game fits it.
 The server retains any still-pending future input in the same epoch; the client keeps its matching unresolved local
 intent for later reconciliation. During sync retain at most two seconds/256 KiB of subsequent publications: coalesce replaceable full
 state per group while preserving ordered lifecycle, outcomes and mandatory events. If that closure cannot be
