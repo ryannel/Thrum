@@ -181,3 +181,11 @@ loads did not pass the predeclared same-device bit gate, despite small observed 
 oracle passing. Neither is adopted or timed for a gain. Preserve the original GPU path; any later whole-pipeline
 zero-exposure dispatch or independently justified precision contract is a separate decision and proof. Avoid making
 this optional query study a blocker for source anatomy or the required complete renderer path.
+
+
+The [two-cell sentinel readiness brief](../../evidence/cloud-sentinel-readiness-2026-11-03/README.md) derives actual
+prototype scaling terms and missing cost-recorder/consumer work. Dense control banks copied to512 cells would require
+460.594MiB CPU plus153.531MiB GPU before shared inputs, views, heap and driver costs. This rules out promoting the
+prototype's per-virtual-cell allocation topology. Shared zeros/lazy exposure pages are a candidate exact reduction,
+not a proven bound on retained nonzero histories. Two-cell integration can proceed with an explicit small ledger,
+while P7 still requires a measured resident/virtual/cause recovery strategy and all-positive burst coverage.

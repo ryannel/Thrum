@@ -116,3 +116,12 @@ Decima lifecycle. Maximum displacement does not imply typical visible structure:
 hidden by the broad density/distance profiles. If that single controlled screen remains a rippled oval, reject the
 recipe and return to natural component selection rather than tune a seed/amplitude search. No new runtime noise,
 κ compensation, crown asset, distance field, catalogue or final art acceptance is selected by this proposal.
+
+
+The [single middle-scale displacement](../../evidence/cloud-midshape-screen-2026-11-03/README.md) has now been
+executed and rejected: its completed front remains an oval with modest scallops; the reservation guard stops the
+remaining views. Do not recook this recipe. [Native source inspection and a3D upper-core gate](../../evidence/cloud-natural-head-selection-2026-11-03/README.md)
+identify a connected natural head, distinct from the neighbouring bank aboveY300. The next candidate uses that
+measured structure plus a compact selector and protected root, rather than redefining the visible upper shape with
+an enclosing primitive. It must still qualify the actual selected halo/lower joins under birthQ and the complete
+new rho/d/metadata/lifecycle. No new source asset is adopted by a component-label pass.
