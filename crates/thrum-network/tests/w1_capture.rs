@@ -395,6 +395,16 @@ fn real_w1_snapshots_feed_four_peer_queues_without_waiting_for_slow_ack() {
 #[test]
 #[ignore = "local release-only real W1-to-N1 state-only path probe"]
 fn measure_real_w1_to_n1_state_only_path() {
+    measure_real_w1_to_n1_path::<false>("state_only");
+}
+
+#[test]
+#[ignore = "local release-only real W1-to-N1 four-peer result-burst probe"]
+fn measure_real_w1_to_n1_result_burst_path() {
+    measure_real_w1_to_n1_path::<true>("result_burst");
+}
+
+fn measure_real_w1_to_n1_path<const RESULTS: bool>(kind: &str) {
     use std::hint::black_box;
 
     const WINDOWS: u64 = 2_000;
@@ -425,6 +435,11 @@ fn measure_real_w1_to_n1_state_only_path() {
         }
         for within in 1..=3 {
             let tick = window * 3 + within;
+            if RESULTS {
+                for peer in 1..=4 {
+                    submit_input(&mut host, peer, tick, tick - 1);
+                }
+            }
             let report = host.on_callback(callback_at(origin, tick)).unwrap();
             assert_eq!(report.publications.len(), 1);
             let HostPublication::Local(publication) = &report.publications[0] else {
@@ -470,17 +485,40 @@ fn measure_real_w1_to_n1_state_only_path() {
         host.authority().snapshot().tick(),
         (WARMUP_WINDOWS + WINDOWS) * 3
     );
+    for peer in 1..=4 {
+        let id = StableId(u128::from(controlled_actor(peer).0));
+        let value = host
+            .authority()
+            .snapshot()
+            .records()
+            .find(|record| record.id == id)
+            .unwrap()
+            .state
+            .value;
+        assert_eq!(
+            value,
+            if RESULTS {
+                (WARMUP_WINDOWS + WINDOWS) as u16 * 3
+            } else {
+                0
+            }
+        );
+    }
+    assert!(host.authority().try_baseline().unwrap().results.is_empty());
     assert!(queues.iter().all(UnsentQueue::is_empty));
     assert!(
         ledgers
             .iter()
             .all(|ledger| ledger.outstanding_entries() == 0)
     );
-    assert_eq!(written_frames, WINDOWS * 16);
-    assert_eq!(written_bytes, WINDOWS * 30_208);
+    assert_eq!(written_frames, WINDOWS * if RESULTS { 24 } else { 16 });
+    assert_eq!(
+        written_bytes,
+        WINDOWS * if RESULTS { 45_696 } else { 30_208 }
+    );
     black_box(checksum);
     println!(
-        "w1_to_n1_state_only,windows={WINDOWS},ns_per_window={:.1},reserved_queue_ledger_bytes={reserved},frames={written_frames},bytes={written_bytes},checksum={checksum}",
+        "w1_to_n1_{kind},windows={WINDOWS},ns_per_window={:.1},reserved_queue_ledger_bytes={reserved},frames={written_frames},bytes={written_bytes},checksum={checksum}",
         elapsed.as_nanos() as f64 / WINDOWS as f64,
     );
 }
