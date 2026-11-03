@@ -1,0 +1,13 @@
+# Exact render-source geometry predicates: private production module
+
+3 November 2026. `thrum-source` now compiles private, heap-free decoded-binary64 predicates for the candidate render grammar. This is a correctness slice, not render-source admission: no decoder calls the module yet.
+
+`position_within_local_radius` checks the closed local sphere of radius 1000 for **every** mesh position, including unreferenced vertices. `triangle_is_nondegenerate` refuses repeated or out-of-range indices, guards the referenced coordinate range, and tests the exact sign of each cross-product component. Either winding is valid; no arbitrary minimum triangle area is introduced. Nonfinite source coordinates are distinct from finite coordinates outside the sphere. The triangle caller must still run the all-vertex radius pass.
+
+The implementation converts finite binary64 values to exact dyadic integers. A checked `i128` path handles small aligned numerators; a fixed 36×`u64`-limb fallback handles the complete source domain. The documented maximum cross-product width is below 2²¹⁷¹, within 2304 bits. The predicate uses no floating-point arithmetic after source-value guards and makes no rounding-mode or subnormal-execution assumption. The fallback has bounded fixed work and no per-predicate heap allocation.
+
+The [reproduction script](R0-F3-GEOMETRY-PRODUCTION-VERIFY.py) compiles the current production source as a standalone Rust harness in both debug and release modes. It checks all 8,009 independently generated archived rational-oracle triangle sign vectors, 16,018 indexed calls with both windings, and 6,108 independently evaluated Python `Fraction` radius vectors. Both builds matched; 169 archived triangles used the integer fast path and 7,840 used the fixed-width fallback. The production-source SHA-256 for this run is `a5f0432631441b18218a25f295d1c094c7cb28577ffddbfa4084d60e33bdf957`. The archive and original workload measurement are in the [triangle probe](R0-F3-EXACT-TRIANGLE-PROBE-2026-11-03.md).
+
+Seven focused module tests and targeted Clippy with warnings denied pass. An independent defect-first reviewer found no actionable issue and separately matched 20,009 rational triangle vectors and 5,000 radius vectors. This includes 12,000 new broad-exponent, near-coincident and fast-path triangles; 4,169 of its triangle cases exercised the `i128` path. The full repository gate passed after integration.
+
+The earlier 27.47 ms/39,000-triangle predicate-only median belongs to an isolated prototype, not this production module. Complete JSON decoding, global UUID and edge closure, operation-wide charged work, peak memory, admitted-source transaction, F4 product binding, record latency and target qualification remain open.
