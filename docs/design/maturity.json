@@ -660,6 +660,15 @@
         "platform_performance": "uncontrolled local A fresh-output builds took 3924 ms installed and 5620 ms cloned; private-cache preparation took 1264 and 1726 ms respectively; no speed or tail conclusion",
         "scope": "The opt-in fixture selects the Rust tool root before private-cache metadata, passes its Cargo/Rustc paths to preparation and reuse, verifies path equality with the compiler root and rechecks executable hashes. Xcode discovery/support, broad metadata sandbox system reads, writable clone ownership, reviewed release inputs, implicit compiler read closure and ready BuildRevision remain open; buildReady stays false."
       },
+      "i2a_metadata_sandbox_read_reduction": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../evidence/i2a/T2-METADATA-SANDBOX-READS-2026-11-03.md",
+        "implementation": "macos_opt_in_private_cache_metadata_sandbox_only",
+        "functional_validation": "focused real sandbox-exec test passed selected source/tool reads and denied /usr/bin/uname and /private/etc/hosts data/metadata; installed-root and exact-inventory APFS-clone sandboxed A/B builds prepared equal private-cache digests and retained runnable A after invalid B",
+        "experienced_quality": "not_applicable_to_headless_build_preparation",
+        "platform_performance": "uncontrolled local preparation samples took 1274 ms installed and 1693 ms cloned; A compiler stages took 4115 and 6193 ms; no speed or tail conclusion",
+        "scope": "The private-cache metadata policy now permits metadata reads inside selected source/cache/tool and named runtime subtrees plus their path ancestors, and data reads inside those selected subtrees and named runtime paths. It canonicalizes materialized source/cache paths to align Cargo and sandbox selection. Process/mach/sysctl permission, system-library/cryptex reads, exact implicit-read closure, authenticated roots, same-user clone ownership and ready BuildRevision remain open; buildReady stays false."
+      },
       "i2a_narrowed_macos_metadata": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/F4-NARROW-METADATA.md",

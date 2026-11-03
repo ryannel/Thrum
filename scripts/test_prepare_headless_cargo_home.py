@@ -13,12 +13,47 @@ import unittest
 from unittest import mock
 
 from prepare_headless_cargo_home import (
-    ChildExitObserver, cargo_reuse_key, collect_bounded, possible_headless_packages, prepare,
-    root_inventory,
+    ChildExitObserver, cargo_reuse_key, collect_bounded, metadata_sandbox_profile,
+    possible_headless_packages, prepare, root_inventory,
 )
 
 
 class PrepareHeadlessCargoHome(unittest.TestCase):
+    @unittest.skipUnless(
+        sys.platform == "darwin" and os.environ.get("THRUM_TEST_NATIVE_SANDBOX"),
+        "opt-in macOS sandbox-exec probe",
+    )
+    def test_metadata_sandbox_reads_selected_inputs_and_denies_host_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source = root / "source"
+            home = root / "home"
+            toolchain = root / "toolchain"
+            for path in (source, home, toolchain / "bin"):
+                path.mkdir(parents=True)
+            (source / "selected").write_bytes(b"selected")
+            (toolchain / "bin/cargo").write_bytes(b"cargo")
+            profile = root / "metadata.sb"
+            profile.write_text(metadata_sandbox_profile(
+                source, home, toolchain / "bin/cargo"))
+            prefix = [
+                "/usr/bin/sandbox-exec", "-D", f"SOURCE={source}",
+                "-D", f"CARGO_HOME={home}", "-D", f"TOOLCHAIN={toolchain}",
+                "-f", str(profile),
+            ]
+            for path in (source / "selected", toolchain / "bin/cargo"):
+                result = subprocess.run([*prefix, "/bin/cat", str(path)],
+                                        capture_output=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+            for path in (Path("/usr/bin/uname"), Path("/private/etc/hosts")):
+                self.assertTrue(path.exists())
+                result = subprocess.run([*prefix, "/bin/cat", str(path)],
+                                        capture_output=True, check=False)
+                self.assertNotEqual(result.returncode, 0)
+                result = subprocess.run([*prefix, "/usr/bin/stat", str(path)],
+                                        capture_output=True, check=False)
+                self.assertNotEqual(result.returncode, 0)
+
     @unittest.skipUnless(sys.platform == "darwin", "kqueue fast-exit race is macOS")
     def test_fast_child_exits_before_kqueue_registration(self):
         def delayed_observer(process):
