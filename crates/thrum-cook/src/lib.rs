@@ -1082,6 +1082,13 @@ mod tests {
             assert!(!cache.path.join(".global-cache").exists());
             assert!(!cache.path.join(".package-cache-mutate").exists());
             cache.assert_tool_bytes();
+            #[cfg(target_os = "macos")]
+            if let Some(guard) = &mut cache_guard {
+                guard.verify_reuse(a_materialized.path(), &cache.target);
+            } else {
+                cache.assert_reusable_source(checkout, a_materialized.path());
+            }
+            #[cfg(not(target_os = "macos"))]
             cache.assert_reusable_source(checkout, a_materialized.path());
         }
         #[cfg(target_os = "macos")]
@@ -1365,6 +1372,13 @@ mod tests {
             materialize_pinned_source(&mut b_pin, &b_input, Fixture::build_plan()).unwrap();
         let b_files = tree_hashes(b_materialized.path());
         if let Some(cache) = &owned_cache {
+            #[cfg(target_os = "macos")]
+            if let Some(guard) = &mut cache_guard {
+                guard.verify_reuse(b_materialized.path(), &cache.target);
+            } else {
+                cache.assert_reusable_source(checkout, b_materialized.path());
+            }
+            #[cfg(not(target_os = "macos"))]
             cache.assert_reusable_source(checkout, b_materialized.path());
         }
         let b_output = fixture.root().join(".engine/output-b");
@@ -1603,6 +1617,54 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
+    fn held_cache_response(
+        line: &str,
+        expected_id: u64,
+        expected_reuse_sha256: &str,
+    ) -> Result<(), &'static str> {
+        let parsed: serde_json::Value =
+            serde_json::from_str(line).map_err(|_| "malformed held-cache response")?;
+        let fields = parsed
+            .as_object()
+            .ok_or("held-cache response is not an object")?;
+        if fields.get("id").and_then(serde_json::Value::as_u64) != Some(expected_id)
+            || fields.len() != 2
+        {
+            return Err("held-cache response has wrong request identity or fields");
+        }
+        if fields.contains_key("error") {
+            return Err("held-cache owner refused reuse");
+        }
+        if fields.get("reuseKey").and_then(serde_json::Value::as_str) != Some(expected_reuse_sha256)
+        {
+            return Err("held-cache response has wrong reuse key");
+        }
+        if serde_json::to_string(&parsed).map_err(|_| "invalid held-cache response")? != line {
+            return Err("held-cache response is not canonical");
+        }
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn held_cache_response_requires_matching_key_and_request() {
+        let key = "a".repeat(64);
+        let accepted = format!("{{\"id\":7,\"reuseKey\":\"{key}\"}}");
+        assert!(held_cache_response(&accepted, 7, &key).is_ok());
+        for rejected in [
+            "{\"id\":7,\"reuseKey\":null}".to_owned(),
+            format!("{{\"id\":7,\"reuseKey\":\"{}\"}}", "b".repeat(64)),
+            format!("{{\"id\":6,\"reuseKey\":\"{key}\"}}"),
+            format!("{{\"id\":7,\"reuseKey\":\"{key}\",\"extra\":0}}"),
+            format!("{{\"reuseKey\":\"{key}\",\"id\":7}}"),
+            "{\"id\":7,\"error\":\"refused\"}".to_owned(),
+            "{\"id\":7,\"reuseKey\":\"unterminated".to_owned(),
+        ] {
+            assert!(held_cache_response(&rejected, 7, &key).is_err());
+        }
+    }
+
+    #[cfg(target_os = "macos")]
     struct SealedCacheGuard {
         root: PathBuf,
         manifest_path: PathBuf,
@@ -1612,7 +1674,11 @@ mod tests {
         bytes: u64,
         prepare_ms: u128,
         cold_open_ms: u128,
+        expected_reuse_sha256: String,
+        next_request_id: u64,
         child: Option<Child>,
+        responses: mpsc::Receiver<Result<String, String>>,
+        reader: Option<std::thread::JoinHandle<()>>,
     }
 
     #[cfg(target_os = "macos")]
@@ -1644,6 +1710,7 @@ mod tests {
             let legacy_sha256 = selected["legacy"]["sha256"].as_str().unwrap().to_owned();
             let files = selected["legacy"]["files"].as_u64().unwrap();
             let bytes = selected["legacy"]["bytes"].as_u64().unwrap();
+            let expected_reuse_sha256 = selected["reuseKeySha256"].as_str().unwrap().to_owned();
             let manifest_path = owner.join(format!(".cargo-manifest-{tree_sha256}.json"));
             let open_started = Instant::now();
             let mut child = Command::new(&python)
@@ -1655,6 +1722,8 @@ mod tests {
                 .arg(serde_json::to_string(&selected["tree"]).unwrap())
                 .arg("--legacy-json")
                 .arg(serde_json::to_string(&selected["legacy"]).unwrap())
+                .arg("--rust-tree-json")
+                .arg(std::env::var_os("THRUM_TEST_RETAINED_RUST_INVENTORY").unwrap())
                 .arg("--manifest-sha")
                 .arg(selected["manifestSha256"].as_str().unwrap())
                 .stdin(Stdio::piped())
@@ -1663,11 +1732,16 @@ mod tests {
                 .spawn()
                 .unwrap();
             let stdout = child.stdout.take().unwrap();
-            let (sender, receiver) = mpsc::sync_channel(1);
+            let (sender, receiver) = mpsc::channel();
             let reader = std::thread::spawn(move || {
-                let mut ready = String::new();
-                let result = BufReader::new(stdout).read_line(&mut ready);
-                let _ = sender.send((result, ready));
+                for line in BufReader::new(stdout).lines() {
+                    if sender
+                        .send(line.map_err(|error| error.to_string()))
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
             });
             let response = receiver.recv_timeout(Duration::from_secs(10));
             if response.is_err() {
@@ -1677,18 +1751,12 @@ mod tests {
                 reader.join().unwrap();
                 panic!("sealed cache lease did not report readiness within ten seconds");
             }
-            let (read_result, ready) = response.unwrap();
-            reader.join().unwrap();
-            if let Err(error) = read_result {
+            let ready = response.unwrap();
+            if ready.as_deref() != Ok("READY") {
                 drop(child.stdin.take());
                 let _ = child.kill();
                 let _ = child.wait();
-                panic!("sealed cache lease readiness pipe failed: {error}");
-            }
-            if ready != "READY\n" {
-                drop(child.stdin.take());
-                let _ = child.kill();
-                let _ = child.wait();
+                reader.join().unwrap();
                 let mut stderr = String::new();
                 child
                     .stderr
@@ -1697,7 +1765,7 @@ mod tests {
                     .take(16 * 1024)
                     .read_to_string(&mut stderr)
                     .unwrap();
-                panic!("sealed cache lease did not open: {ready} {}", stderr);
+                panic!("sealed cache lease did not open: {ready:?} {}", stderr);
             }
             assert!(
                 child.try_wait().unwrap().is_none(),
@@ -1713,8 +1781,39 @@ mod tests {
                 bytes,
                 prepare_ms,
                 cold_open_ms,
+                expected_reuse_sha256,
+                next_request_id: 0,
                 child: Some(child),
+                responses: receiver,
+                reader: Some(reader),
             }
+        }
+
+        fn verify_reuse(&mut self, source: &Path, target: &str) {
+            let started = Instant::now();
+            let request_id = self.next_request_id;
+            self.next_request_id = self.next_request_id.checked_add(1).unwrap();
+            let request = serde_json::to_vec(&serde_json::json!({
+                "id": request_id,
+                "source": source.to_str().expect("fixture path must be UTF-8"),
+                "target": target,
+            }))
+            .unwrap();
+            let input = self.child.as_mut().unwrap().stdin.as_mut().unwrap();
+            input.write_all(&request).unwrap();
+            input.write_all(b"\n").unwrap();
+            input.flush().unwrap();
+            let line = self
+                .responses
+                .recv_timeout(Duration::from_secs(10))
+                .expect("held cache reuse response exceeded ten seconds")
+                .expect("held cache reuse response failed");
+            held_cache_response(&line, request_id, &self.expected_reuse_sha256)
+                .unwrap_or_else(|error| panic!("{error}: {line}"));
+            eprintln!(
+                "verified-held-private-cargo-reuse ms={}",
+                started.elapsed().as_millis()
+            );
         }
 
         fn close(mut self) {
@@ -1723,6 +1822,7 @@ mod tests {
             let deadline = Instant::now() + Duration::from_secs(5);
             loop {
                 if let Some(status) = child.try_wait().unwrap() {
+                    self.reader.take().unwrap().join().unwrap();
                     assert!(
                         status.success(),
                         "sealed cache lease guard failed: {status}"
@@ -1732,6 +1832,7 @@ mod tests {
                 if Instant::now() >= deadline {
                     child.kill().unwrap();
                     child.wait().unwrap();
+                    self.reader.take().unwrap().join().unwrap();
                     panic!("sealed cache lease guard did not exit after input closed");
                 }
                 std::thread::sleep(Duration::from_millis(10));
@@ -1746,6 +1847,9 @@ mod tests {
                 drop(child.stdin.take());
                 let _ = child.kill();
                 let _ = child.wait();
+            }
+            if let Some(reader) = self.reader.take() {
+                let _ = reader.join();
             }
         }
     }

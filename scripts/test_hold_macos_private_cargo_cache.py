@@ -15,8 +15,11 @@ if sys.platform == "darwin":
     import fcntl
 
 import hold_macos_private_cargo_cache as cache
-from hold_macos_tool_root_clone import _names, _open_lock, _seal_fd
-from prepare_headless_cargo_home import root_inventory
+from hold_macos_tool_root_clone import (
+    _names, _open_lock, _seal_fd, open_sealed_clone, prepare_sealed_clone,
+)
+from inventory_headless_tool_roots import inventory_root
+from prepare_headless_cargo_home import cargo_reuse_key, root_inventory
 
 
 @contextmanager
@@ -144,6 +147,63 @@ class HeldMacosPrivateCargoCache(unittest.TestCase):
                 cache.open_sealed_cache(owner, tree, legacy, manifest_sha)
             with self.assertRaisesRegex(ValueError, "already exists or is incomplete"):
                 cache.prepare_sealed_cache(source, manifest, owner)
+
+    def test_held_rust_and_cache_reuse_checks_only_source_selection(self):
+        with fixture() as (cache_source, manifest, owner):
+            base = owner.parent
+            rust_source = base / "rust-source"
+            (rust_source / "bin").mkdir(parents=True)
+            (rust_source / "bin/cargo").write_bytes(b"selected cargo")
+            (rust_source / "bin/rustc").write_bytes(b"selected rustc")
+            rust_tree = inventory_root(rust_source)
+            rust_root, _ = prepare_sealed_clone(rust_source, owner, rust_tree)
+            source = base / "game"
+            source.mkdir()
+            (source / "Cargo.toml").write_text("[workspace]\n")
+            (source / "Cargo.lock").write_text("version = 4\n")
+            (source / "rust-toolchain.toml").write_text(
+                '[toolchain]\nchannel = "1.99.1"\n',
+            )
+            (source / "game.rs").write_text("fn a() {}\n")
+            tools = {
+                name: {"path": str(rust_root / "bin" / name),
+                       "sha256": hashlib.sha256((rust_root / "bin" / name).read_bytes()).hexdigest(),
+                       "bytes": (rust_root / "bin" / name).stat().st_size}
+                for name in ("cargo", "rustc")
+            }
+            target = "aarch64-apple-darwin"
+            reuse = cargo_reuse_key(source, target, tools)
+            manifest.write_text(json.dumps({
+                "format": 2, "privateRoot": root_inventory(cache_source),
+                "target": target, "toolExecutables": tools, "reuseKey": reuse,
+            }, sort_keys=True, separators=(",", ":")) + "\n")
+            _, tree, legacy, manifest_sha = cache.prepare_sealed_cache(
+                cache_source, manifest, owner,
+            )
+            with (cache.open_sealed_cache(owner, tree, legacy, manifest_sha) as cache_lease,
+                  open_sealed_clone(owner, rust_tree) as rust_lease):
+                selected = cache.HeldNativeCacheSelection(cache_lease, rust_lease)
+                for field, value in (("path", "/wrong/cargo"), ("sha256", "0" * 64)):
+                    changed = json.loads(cache_lease.manifest_bytes)
+                    changed["toolExecutables"]["cargo"][field] = value
+                    with patch.object(cache_lease, "manifest_bytes", json.dumps(changed).encode()):
+                        with self.assertRaisesRegex(ValueError, "held cargo differs"):
+                            cache.HeldNativeCacheSelection(cache_lease, rust_lease)
+                with patch.object(cache_lease, "manifest_bytes", b"[]"):
+                    with self.assertRaisesRegex(ValueError, "incompatible dependency selection"):
+                        cache.HeldNativeCacheSelection(cache_lease, rust_lease)
+                with (patch.object(cache, "root_inventory", side_effect=AssertionError("cache scan")),
+                      patch.object(cache, "sha256_file", side_effect=AssertionError("tool hash"))):
+                    self.assertEqual(selected.verify_reuse(source, target), reuse)
+                    with self.assertRaisesRegex(ValueError, "target differs"):
+                        selected.verify_reuse(source, "x86_64-apple-darwin")
+                    (source / "game.rs").write_text("fn b() {}\n")
+                    self.assertEqual(selected.verify_reuse(source, target), reuse)
+                    (source / "Cargo.toml").write_text("[workspace]\nresolver = '3'\n")
+                    with self.assertRaisesRegex(ValueError, "cannot be reused"):
+                        selected.verify_reuse(source, target)
+            with self.assertRaisesRegex(ValueError, "closed"):
+                selected.verify_reuse(source, target)
 
 
 if __name__ == "__main__":

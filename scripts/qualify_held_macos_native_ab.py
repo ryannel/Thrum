@@ -135,6 +135,7 @@ def main():
             "THRUM_TEST_SEALED_CACHE_OWNER": str(owner),
             "THRUM_TEST_RUSTC_RECEIPT_WRAPPER": str(wrapper),
             "THRUM_TEST_RETAINED_RUST_ROOT": str(selected["rust"][0]),
+            "THRUM_TEST_RETAINED_RUST_INVENTORY": json.dumps(selected["rust"][1], sort_keys=True),
             "THRUM_TEST_RETAINED_LINKER_ROOT": str(selected["linker"][0]),
             "THRUM_TEST_RETAINED_SDK_ROOT": str(selected["sdk"][0]),
             "RUSTC_WRAPPER": "",
@@ -186,6 +187,11 @@ def main():
                 if len(matches) != 1:
                     raise ValueError(f"held A/B result lacks one {marker} observation: {log_path}")
                 observations[marker] = matches[0]
+            reuse = [line.strip()[:512] for line in lines
+                     if "verified-held-private-cargo-reuse ms=" in line]
+            if len(reuse) != 2 or any("verified-private-cargo-reuse ms=" in line for line in lines):
+                raise ValueError("held A/B did not use exactly two fast-path cache checks")
+            observations["heldCacheReuse"] = reuse
             cache_digest = observations["admitted-headless-cache tree_sha256"].split("=", 1)[1]
             if (len(cache_digest) != 64
                     or any(char not in "0123456789abcdef" for char in cache_digest)):
