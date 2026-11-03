@@ -647,6 +647,14 @@
         "platform_performance": "no combined many-instance parse/deferred-bound timing, account charge, RSS or device cost; structural quaternion check repeats work later unless representation is improved",
         "scope": "No typed-edge resolution, mesh-dependent transformed bound, complete root/global closure, F3 admission, F4 selected-pin product or renderer."
       },
+      "i2a_render_texture_stream_candidate": {
+        "evidence": "../evidence/render/R0-F3-TEXTURE-STREAM-IMPLEMENTATION-2026-11-03.md",
+        "implementation": "private_inactive_borrowed_texture_object_and_fixed_chunk_scalar_base64_decoder",
+        "functional_validation": "five focused tests cover canonical padding, equivalent JSON escapes, invalid alphabet and tail bits, dimension and field priority, callback refusal and chunk-boundary replay against independent Python byte/hash goldens; independent code review found no remaining correctness or linear-time defect; full repository gate passes",
+        "experienced_quality": "not_applicable_to_inactive_source_decoder",
+        "platform_performance": "five fresh Apple M3 Max release processes: 1x1 check medians 528-589 ns, 1280 squared plain check 2.344-2.904 ms and replay 1.633-1.991 ms, one-escape check 4.703-5.269 ms and replay 1.836-2.008 ms; no chunk-size or feature-profile comparison, allocation/RSS/charged peak or device measurement",
+        "scope": "No root-wide error ordering, global UUID/typed-edge closure, F3 source admission, F4 selected-pin sink and atomic publication, combined work account or ready renderer."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."

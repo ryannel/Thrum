@@ -40,6 +40,9 @@ mod render_source_objects;
 // Canonical collection-wide structural error selection stays inactive.
 #[allow(dead_code)]
 mod render_source_collections;
+// Chunked canonical texture source path remains inactive until F3/F4 binding.
+#[allow(dead_code)]
+mod render_source_texture;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;
