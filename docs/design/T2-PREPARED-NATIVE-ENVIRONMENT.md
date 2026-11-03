@@ -84,6 +84,14 @@ launches Cargo/Rustc and Clang/SDK from the clones; explicit sandbox controls
 deny reads and metadata from the corresponding installed tool files. The
 private-cache metadata phase and selected Xcode support files still use the
 installed tools/paths, and same-user writes to the clones remain possible.
+The compiler sandbox itself now denies installed support-file data and
+metadata reads in both installed-root and retained-clone A/B fixtures; direct
+selected Cargo/Rustc/Clang does not need those exceptions in this bounded
+build. This does not remove their earlier preparation dependency or close
+other system reads. Apple's
+[file-flag rules](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemDetails/FileSystemDetails.html)
+permit an owner to clear `UF_IMMUTABLE`, so that flag alone cannot provide the
+required protection from a same-user clone writer.
 A ready preparer must bind the expected digest
 to the reviewed release manifest and hold the selected clone under a no-writer
 lifecycle through compiler shutdown and artifact publication.
@@ -110,9 +118,11 @@ by immutable hashes. Unsupported Xcode discovery must fail rather than widen
 the read grant. The selected release matcher and this policy generator must
 consume one cold environment identity before publication is possible.
 
-The [first local metadata proof](../evidence/i2a/F4-NARROW-METADATA.md) passes
-the A/B fixture with ancestor grants and explicit Xcode support paths. It does
-not select immutable support bytes, close system reads or join the release
+The [first local metadata proof](../evidence/i2a/F4-NARROW-METADATA.md) passed
+the A/B fixture with ancestor grants and explicit Xcode support paths. The
+[subsequent grant reduction](../evidence/i2a/T2-COMPILER-SUPPORT-GRANTS-2026-11-03.md)
+removes those compiler-time exceptions. It does not select immutable support
+bytes for metadata preparation, close system reads or join the release
 matcher to the compiler launch, so the candidate remains unready.
 
 ## Cost and proof queue

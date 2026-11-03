@@ -2401,7 +2401,7 @@ mod tests {
             linker_root: &selected.linker_root,
             sdk: &selected.sdk,
         };
-        fs::write(&profile, headless_sandbox_profile(paths, &selected.support)).unwrap();
+        fs::write(&profile, headless_sandbox_profile(paths)).unwrap();
         for (allowed, denied) in [
             (
                 selected.toolchain.join("bin/rustc"),
@@ -2439,6 +2439,23 @@ mod tests {
                     denied.display()
                 );
             }
+        }
+        for support in &selected.support {
+            let denied_read = sandbox_command(&profile, paths, "/usr/bin/head")
+                .args(["-c", "1"])
+                .arg(support)
+                .output()
+                .unwrap();
+            assert!(!denied_read.status.success(), "{}", support.display());
+            let denied_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
+                .arg(support)
+                .output()
+                .unwrap();
+            assert!(
+                !denied_metadata.status.success(),
+                "{} metadata",
+                support.display()
+            );
         }
         let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
@@ -2558,7 +2575,7 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
-    fn headless_sandbox_profile(paths: SandboxPaths<'_>, support: &[PathBuf]) -> String {
+    fn headless_sandbox_profile(paths: SandboxPaths<'_>) -> String {
         fn literal(path: &Path) -> String {
             let value = path.to_str().expect("sandbox path must be UTF-8");
             assert!(
@@ -2591,7 +2608,6 @@ mod tests {
         ]
         .into_iter()
         .chain(SYSTEM_READS.iter().map(Path::new))
-        .chain(support.iter().map(PathBuf::as_path))
         {
             for ancestor in path.ancestors() {
                 ancestors.insert(ancestor.to_path_buf());
@@ -2605,10 +2621,6 @@ mod tests {
             profile.push_str(&literal(&ancestor));
         }
         profile.push_str(")\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") (subpath \"/Library/Preferences\") (subpath \"/private/etc\") (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\"))");
-        for file in support {
-            profile.push(' ');
-            profile.push_str(&literal(file));
-        }
         profile.push_str(
             ")\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         );
