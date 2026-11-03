@@ -175,14 +175,18 @@ pool may borrow the authority's required execution reserve.
 The first no-socket owner should be admitted per peer, only when N1 is on.
 This is a **candidate layout**, not a selected runtime or a measured cost:
 
-- Reserve sixteen complete 8 KiB unsent-frame slots (128 KiB) plus a small
-  ordered index/free-slot table at peer admission. Each slot owns its encoded
+- Reserve sixteen complete **6,944-byte R4 payload** slots (111,104 bytes)
+  plus a small ordered index/free-slot table at peer admission; the complete
+  64-byte envelope is added only at final submission. The 128 KiB unsent
+  profile leaves 19,968 bytes for slot metadata and exact journal references,
+  but the implementation must measure their actual layout/alignment and
+  charge every retained allocation within the per-peer reserve. Each slot owns its encoded
   scalar bytes, partition ID, generation, tick, completeness/mandatory tags
   and exact journal-ID references. A replaceable candidate may overwrite a
   same-incarnation slot only after proving complete state and no intervening
   mandatory unit; an attempted 17th live slot closes or resynchronizes the
   peer before an application sequence is assigned. Control's 64 KiB is a
-  separate reserve. This avoids per-tick `Vec` growth and moving 8 KiB slots
+  separate reserve. This avoids per-tick `Vec` growth and moving payload slots
   merely to reorder a three-tick batch.
 - Keep the baseline-bound partition table and entity assignment in compact
   sorted rows, plus explicit per-partition admitted sample tick/generation on
@@ -220,6 +224,12 @@ This is a **candidate layout**, not a selected runtime or a measured cost:
   release every W1 lease before any send/ACK work. At the 20 Hz boundary it
   samples full current state. No generic `T: Clone` or retained `Arc` proves
   ownership; the codec's fixed schema and byte-count checks must do so.
+  `HeadlessHost::on_callback` currently returns its publication list **after**
+  its internal clock/tick timer stops. The first integration fixture must
+  time callback plus synchronous N1 capture as one whole update path and
+  include that capture in F1's budget account. A later synchronous
+  publication sink may bring capture inside the host callback; a host
+  `observed_elapsed` reading alone cannot qualify N1 cost.
 
 The first implementation gate is one fixed-schema no-socket slice with a
 production partition consumer and owned journal. Measure one/two/four peers,
