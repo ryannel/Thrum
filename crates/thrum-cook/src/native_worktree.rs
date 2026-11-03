@@ -83,10 +83,17 @@ impl MaterializedSource {
     /// Remove the temporary tree and report a cleanup failure.
     pub fn close(mut self) -> io::Result<()> {
         let result = fs::remove_dir_all(&self.path);
-        if result.is_ok() {
-            self.live = false;
-        }
+        // A failed explicit close belongs to the caller's recovery path.
+        // Do not attempt a second, unreported path-based removal in Drop.
+        self.live = false;
         result
+    }
+
+    /// Leave this registered input tree for an outer owner to inspect after
+    /// restart, without an implicit path-based removal in `Drop`.
+    /// The caller remains responsible for its lifetime and cleanup.
+    pub fn retain_for_recovery(mut self) {
+        self.live = false;
     }
 }
 

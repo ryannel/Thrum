@@ -1602,6 +1602,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-jobs"
+version = "0.1.0"
+dependencies = [
+ "fs4",
+ "thrum-cook",
+ "thrum-source",
+]
+
+[[package]]
 name = "thrum-mobile-shell"
 version = "0.1.0"
 dependencies = [

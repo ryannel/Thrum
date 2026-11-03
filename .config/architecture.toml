@@ -16,6 +16,10 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-cook/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-source"]
 
+[packages.thrum-jobs]
+manifest = "crates/thrum-jobs/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-source", "thrum-cook"]
+
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
@@ -62,8 +66,8 @@ target_cost = "Native tooling only; selected parser feature set has no derive ma
 [external_dependencies.fs4]
 requirement = "=1.1.0"
 license = "MIT OR Apache-2.0"
-purpose = "Cross-platform native available-space, allocation-granularity and cooperative lock probes before source staging or build-input materialization"
-target_cost = "Native source/cook tooling only; sync OS filesystem bindings, no game callback or portable core dependency"
+purpose = "Native available-space, allocation-granularity and cooperative lock probes for source staging, build-input materialization and the first T2 job owner"
+target_cost = "Native source/cook/job tooling only; sync OS filesystem bindings, no game callback or portable core dependency"
 
 [external_dependencies.rusqlite]
 requirement = "=0.40.2"
