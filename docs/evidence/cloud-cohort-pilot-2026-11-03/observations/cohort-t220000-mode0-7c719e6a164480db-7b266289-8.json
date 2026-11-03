@@ -1,0 +1,1655 @@
+{
+  "name": "cohort-t220000-mode0-7c719e6a164480db-7b266289-8",
+  "build": "7c719e6a164480db",
+  "identity": {
+    "build": "7c719e6a164480db",
+    "files": {
+      "assets/asset-index.json": "66bf5fd1a0162e239aa8af644e5f7206f19d94ecbe341453deed8354c68f890f",
+      "assets/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+      "assets/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "assets/cloud-03-256-iso0p001.distance.json": "758b48420fe5bf244249c52d1db0295732049c45111c39b27f52212898d52c4c",
+      "assets/cloud-03-256-iso0p001.distance.r16f": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766",
+      "assets/cloud-03-256.density.r16f": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+      "assets/cloud-03-256.json": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3",
+      "assets/renderer-baseline.json": "550ac5add2d54c71c2ea8021b3fc3d3ae3ec80f80cca232828dad78cba143e21",
+      "assets/renderer-qualification.json": "dcc0211afae2e8bbaaebbf5a4381dfadaddc59ecaef5c64138e19974895371dd",
+      "assets/sockets.json": "96104c1548ef256acc4ffb3dc65abeead3c38865c95504f83a75e688e1ef84ce",
+      "index.html": "8fb236a2e4139dd2582299563efee1ac05226e1d2a53893790d1dacd79d09147",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/carriers.wgsl": "83b727c6a1f032c42c1a1a0b93ec093379c85b29d93b30a5a707c89d94386a5a",
+      "shaders/cohort-source.wgsl": "1cd00325f28fa30a121e848426fc7c0e16673c62141a2bada8c26d54352010f2",
+      "shaders/curl.wgsl": "f27eb31d9464f3a89c132165e7463a456413c7afbddc19e7f309370623a1d571",
+      "shaders/dilate.wgsl": "a45494291cdecb39b7c7d4dd00f29336699f086b87f3c20e5764c41b8b0f8711",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/field-noise.wgsl": "a7f4786bace511415cb076f8829516b13e74856a29c18c22cacbf4f84608ec26",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/mip.wgsl": "2d33a9f334ea442af19da3744675cbbc001b9b586b5e0e5fd8260d6bf07f0e5c",
+      "shaders/mix.wgsl": "0a9c31287bd2962819c73e105cb3e0565d8bce9abb78893420a45f012717c133",
+      "shaders/noise.wgsl": "fbee893c4f62881b2718c9e7ef1b2c6216e1880b8f8192ba7c9bf918aea7d162",
+      "shaders/normal-stencil.wgsl": "485f307d54810f94d7406269b2275de1167ced49054e0ce046bcce1fd494ec87",
+      "shaders/optics.wgsl": "409c8e09308676fb34ee2697c07e270cf5a470884cb8fea8e7a363c959f903c8",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/source.wgsl": "0b46857971717fff08d94995462a09e61d0becd711039e0ccef19b468532e911",
+      "shaders/support.wgsl": "39f5e3540fa31c86ea2c10053cd6c23fbf3016c0540505a678acfd1e7916fd1c",
+      "shaders/thermal-shape.wgsl": "b40201a66ff04f4bdba98b86a9cd41199ab95ff999756d171edc60b3b13baba0",
+      "shaders/velocity.wgsl": "f13be5bd75ec3a467816fc8ae75480882004cfab8f6d1af6da4133c9f9bb81da",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "shaders/witness.wgsl": "9ce5f8c73d64a7195cd35d143f9d9e98e8439a6807328ce5b8bf43d35b7cdcc6",
+      "src/bench.js": "5ccf147bf2b38c8bbee14243b71b3b2bbdbe924e1d54091309facafa3dd062dc",
+      "src/cirrus.js": "91097d67c46ae156bf4d67b23b5ec9ffac106b839d7fbc430cf9961e42abc7dc",
+      "src/cohort-adapter.js": "429b57c1924ed687357e26a3a26479daf8514f96edfa27a074b75e0ca580587d",
+      "src/cohort-clock.js": "c9df451ddfc8199ce296964093bf31f1c3a725b3bc4c7b3baa7e11d60c2da135",
+      "src/cohort-lab.js": "5424baf9bb250812e0a9ea9190da7a29a1765e25f4baf25fdab082b9f93ec22f",
+      "src/cohort-model.js": "6ac3c62cea8e356a81518946d64dc354d26baf23953abbe8e30e88885cdf0b85",
+      "src/cohort-oracle.js": "7125d2b474c7d929489589db338bcb3f67e910e9a7d3172ba4edc7488cded3a2",
+      "src/core-reference.js": "a1713aec77fca17fb4f37a0152454d387869bfea60138024347059c6d3aec8d7",
+      "src/feed-reference.js": "681598c1e268b857bc4dc8cd037856641fce4e3ac104aca3c98bf8ae806ab6af",
+      "src/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/front-mask-reference.js": "412af2b725546f53275ba9ba119f6b3eb70e67e179ca58bb6e9ed5599a04d20a",
+      "src/gpu-reference.js": "f46064fd076564498ed1c1bf0efa74989e711f715b4b598866cce6f480ff1997",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/master-adapter.js": "238bc6e951d8186aa4dfa8bd16bc1885d85d5b67c510816ef95e444800c72065",
+      "src/master-lab.js": "6eb369bd09fc54acbcfe829e95bd30a417c664e10644efc9992b84bae9e1574f",
+      "src/material-observer.js": "27fa82be643924abe3ec13e11ee3412f3563b45507f17f9b73e5a5a9456a2ae3",
+      "src/morphology.js": "187c830317b8f5eca63ef7dc15cf0e725758248ded5e3a7229beb6104a240a8c",
+      "src/motion.js": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf",
+      "src/normal-reference.js": "f02910836d1e03dc7f474a326fd889c7ecd301d52ee740c335c8d0543c106f6f",
+      "src/optical-topology.js": "fce6f59d30257de4381e30a435607683ec98c9e29d4be6442e12e20d6b5a1f40",
+      "src/profile.js": "118a69abffd8050437fa76d2827142e9945f5da5b6214ee469aec259b6fc1eb1",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/requests.js": "50c31ed49f35f9b95b8cbc54c396b7c710089db7c842288d70b52f83e3a66e53",
+      "src/scene.js": "603da4af431759136bab375f264f846c234e15f27dcd049b39fdcf767a85ddfb",
+      "src/source-mask-reference.js": "d6f43dd6f814c98b92686f6291c0496d7e52be39140a8256e253b4563e592419",
+      "src/source-slices.js": "7c63f8bae8af77af718f565502fa8d62ab59827553ac1de37a82c9dbd6ad03e8",
+      "src/source.js": "11b0966f0da6ad791d45e582d9f1e66db042f884c7e25615a052285c97e9d0c2",
+      "src/thermals.js": "9013e5ca8c9225116c826efd7d5b64a29853a304ec6e03282613cdf8f860d607",
+      "src/weather.js": "d54566b4371c3d4006113955be350faf064f30a3d17c68906c1a7077553cac15",
+      "src/witness.js": "c66aa61b41f61f5ab03c2f5dcde147558fcdb359b76c83103e983d9bab72e739",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "observation": "7b266289",
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "devicePixelRatio": 2,
+    "screen": [
+      1728,
+      1117
+    ]
+  },
+  "lightingProfile": {
+    "id": "selected-production",
+    "name": "SelectedProduction",
+    "a": 0.5,
+    "b": 0.5,
+    "c": 0.5,
+    "abc": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "uniformMap": {
+      "a": "p.sun.w",
+      "b": "p.domain.y",
+      "c": "p.domain.z"
+    },
+    "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+    "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+  },
+  "source": {
+    "cellId": "cu-cell-71",
+    "forcingRevision": 0,
+    "committedRevision": 0,
+    "queuedRevision": 0,
+    "sourceMode": "Finite liquidCu cohorts direct shared point field",
+    "sourceTime": 220,
+    "committedSourceTime": 220.25,
+    "previousSourceTime": 220,
+    "requestedTime": 220.25,
+    "interpolationFraction": 0,
+    "sourceBacklog": 0,
+    "sourceLag": 0.25,
+    "sourceTick": 881,
+    "sourceStep": 0.25,
+    "ids": [
+      {
+        "id": 1,
+        "slot": 0,
+        "parentId": 0,
+        "birth": 0,
+        "age": 220,
+        "g": 1,
+        "Aseed": 1,
+        "C": [
+          843.2599999999819,
+          1432.99999999992,
+          0
+        ],
+        "K": [
+          1.350500000000001,
+          0
+        ],
+        "scale": 1,
+        "yaw": 0,
+        "ageExposure": 7.067464192708334,
+        "establishment": "parentless-condensation"
+      },
+      {
+        "id": 2,
+        "slot": 1,
+        "parentId": 1,
+        "birth": 130,
+        "age": 90,
+        "g": 0.9701817830403646,
+        "Aseed": 1,
+        "C": [
+          811.2599999999821,
+          1432.99999999992,
+          16
+        ],
+        "K": [
+          0.24068983852354708,
+          0
+        ],
+        "scale": 0.7731516760657542,
+        "yaw": 0.7102289266185835,
+        "ageExposure": 0,
+        "establishment": "completed"
+      }
+    ],
+    "bounds": [
+      [
+        -683.4065000000182,
+        484.99999999991996,
+        -964.8407681511301
+      ],
+      [
+        2088.0494999999823,
+        2564.99999999992,
+        1396
+      ]
+    ],
+    "supportCenter": [
+      702.321499999982,
+      1524.99999999992,
+      215.57961592443496
+    ],
+    "cameraFocusMode": "region",
+    "cameraFocusWorld": [
+      666.0000000000113,
+      1480,
+      155
+    ],
+    "fixedWorldFocus": [
+      666.0000000000113,
+      1480,
+      155
+    ],
+    "controls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "committedControls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "stats": {
+      "births": 2,
+      "recoveryBirths": 0,
+      "failedBirths": 0,
+      "weatherCancelledSlots": 0,
+      "capacityFailures": 0,
+      "healthyEstablishments": 1,
+      "cancelledEstablishments": 0,
+      "retired": 0,
+      "maxCohorts": 2,
+      "controlPointUpdates": 0,
+      "sourceSteps": 881,
+      "maxK": 1.352500000000001,
+      "maxProjectedPitch": 135.119052690581
+    },
+    "events": [
+      {
+        "time": 0,
+        "type": "birth",
+        "id": 1,
+        "parentId": 0,
+        "site": null,
+        "s": 1,
+        "yaw": 0,
+        "center": [
+          0,
+          1400,
+          0
+        ],
+        "internalVelocity": [
+          0,
+          0.15,
+          0
+        ],
+        "freshK": [
+          0,
+          0
+        ],
+        "cert": null
+      },
+      {
+        "time": 130,
+        "type": "birth",
+        "id": 2,
+        "parentId": 1,
+        "site": {
+          "id": "socket-1",
+          "local_xyz": [
+            291,
+            233,
+            171
+          ]
+        },
+        "s": 0.7731516760657542,
+        "yaw": 0.7102289266185835,
+        "center": [
+          464.53499999999383,
+          1419.4999999999527,
+          16
+        ],
+        "internalVelocity": [
+          -2.7755575615628914e-17,
+          0.15,
+          0
+        ],
+        "freshK": [
+          0,
+          0
+        ],
+        "cert": {
+          "pass": true,
+          "parentFutureAge": 210,
+          "parentRadiusWorldLower": 74.4130025443305,
+          "seedSupportWorldUpper": 16.46527951069815,
+          "minSeedBurialMargin": 57.94772303363234,
+          "minPositiveNeck": 1.2113868310988,
+          "minResolvedNeck": 8.107112543072223,
+          "resolvedStartAge": 22,
+          "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+        }
+      },
+      {
+        "time": 210,
+        "type": "establishment-completed",
+        "id": 2,
+        "minSeedMargin": 67.94564362235417,
+        "minPositive": 1.2113868310988,
+        "minResolved": 8.037656080781694,
+        "resolvedStart": 151.75
+      }
+    ],
+    "eventCount": 3,
+    "overwrittenEvents": 0,
+    "sourceHashes": {
+      "channels-32.json": {
+        "file": "channels-32.json",
+        "bytes": 526,
+        "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+      },
+      "channels-32.r16f": {
+        "file": "channels-32.r16f",
+        "bytes": 65536,
+        "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11"
+      },
+      "cloud-03-256-iso0p001.distance.json": {
+        "file": "cloud-03-256-iso0p001.distance.json",
+        "bytes": 2186,
+        "sha256": "758b48420fe5bf244249c52d1db0295732049c45111c39b27f52212898d52c4c"
+      },
+      "cloud-03-256-iso0p001.distance.r16f": {
+        "file": "cloud-03-256-iso0p001.distance.r16f",
+        "bytes": 33554432,
+        "sha256": "3d8f3b682104a2b88788adbe63ebc6d9744774591555bf3f48bad2645cae9766"
+      },
+      "cloud-03-256.density.r16f": {
+        "file": "cloud-03-256.density.r16f",
+        "bytes": 33554432,
+        "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9"
+      },
+      "cloud-03-256.json": {
+        "file": "cloud-03-256.json",
+        "bytes": 7054,
+        "sha256": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3"
+      },
+      "renderer-baseline.json": {
+        "file": "renderer-baseline.json",
+        "bytes": 5588,
+        "sha256": "550ac5add2d54c71c2ea8021b3fc3d3ae3ec80f80cca232828dad78cba143e21"
+      },
+      "sockets.json": {
+        "file": "sockets.json",
+        "bytes": 5701,
+        "sha256": "96104c1548ef256acc4ffb3dc65abeead3c38865c95504f83a75e688e1ef84ce"
+      }
+    },
+    "controlGrid": {
+      "dimensions": [
+        17,
+        17,
+        17
+      ],
+      "nodesPerCohort": 4913,
+      "slots": 8,
+      "cpuPreviousCurrentBytes": 628864,
+      "gpuPresentedBytes": 314432,
+      "maxAdmittedYpitchM": 157.7259192396735,
+      "actualMaxProjectedPitch": 135.119052690581
+    },
+    "logicalSourceGpuBytes": 67489344,
+    "mapUploadCount": 3877,
+    "mapUploadBytes": 1985024,
+    "controlUploadCount": 341,
+    "controlUploadBytes": 107221312,
+    "controlSnapshotReuse": "Tick-keyed, zero-weather skips; camera/paused redraw does not upload or clone17cube controls",
+    "scope": "Direct8loopproof, no fullPDE/readback frame loop, no ice/Cb/fullsky/device budget claim"
+  },
+  "sourceClock": {
+    "requestedTime": 220.25,
+    "committedSourceTime": 220.25,
+    "presentationTime": 220,
+    "sourceBacklog": 0,
+    "maxBacklog": 188.25,
+    "sourceStepCount": 881,
+    "sourceStepSeconds": 0.25,
+    "rate": 16,
+    "playing": false,
+    "epoch": 5,
+    "seeking": false,
+    "sourceCpuMs": 221.60500812530518,
+    "missedDeadlineBacklogStepObservations": 6416,
+    "scope": "Backlog observations are not dropped steps. No source stepping by a view; no displayed-FPS claim."
+  },
+  "cohortState": {
+    "cellId": "cu-cell-71",
+    "lastActualBirthTime": 130,
+    "time": 220.25,
+    "tick": 881,
+    "initialControls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "controls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "region": [
+      836.9500000000113,
+      1400,
+      0
+    ],
+    "nextAdmission": 260,
+    "stats": {
+      "births": 2,
+      "recoveryBirths": 0,
+      "failedBirths": 0,
+      "weatherCancelledSlots": 0,
+      "capacityFailures": 0,
+      "healthyEstablishments": 1,
+      "cancelledEstablishments": 0,
+      "retired": 0,
+      "maxCohorts": 2,
+      "controlPointUpdates": 0,
+      "sourceSteps": 881,
+      "maxK": 1.352500000000001,
+      "maxProjectedPitch": 135.119052690581
+    },
+    "cohorts": [
+      {
+        "id": 1,
+        "parentId": 0,
+        "born": 0,
+        "age": 220.25,
+        "tau": 100,
+        "mu": 1,
+        "g": 1,
+        "A": 1,
+        "C": [
+          844.2265093749819,
+          1433.0374999999199,
+          0
+        ],
+        "K": [
+          1.352500000000001,
+          0
+        ],
+        "targetScale": 1,
+        "weatherMax": 0,
+        "establishment": "parentless-condensation",
+        "cancelReason": null,
+        "minSeedMargin": null,
+        "minPositive": null,
+        "minResolved": null,
+        "cert": null
+      },
+      {
+        "id": 2,
+        "parentId": 1,
+        "born": 130,
+        "age": 90.25,
+        "tau": 90.25,
+        "mu": 1,
+        "g": 0.9716011732816696,
+        "A": 1,
+        "C": [
+          812.2265093749821,
+          1433.0374999999199,
+          16
+        ],
+        "K": [
+          0.2421911353702886,
+          0
+        ],
+        "targetScale": 0.7731516760657542,
+        "weatherMax": 0,
+        "establishment": "completed",
+        "cancelReason": null,
+        "minSeedMargin": 67.94564362235417,
+        "minPositive": 1.2113868310988,
+        "minResolved": 8.037656080781694,
+        "cert": {
+          "pass": true,
+          "parentFutureAge": 210,
+          "parentRadiusWorldLower": 74.4130025443305,
+          "seedSupportWorldUpper": 16.46527951069815,
+          "minSeedBurialMargin": 57.94772303363234,
+          "minPositiveNeck": 1.2113868310988,
+          "minResolvedNeck": 8.107112543072223,
+          "resolvedStartAge": 22,
+          "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+        }
+      }
+    ]
+  },
+  "sourceCommands": [],
+  "publishedMapsFloat32": [
+    843.260009765625,
+    1433,
+    0,
+    4,
+    1,
+    0,
+    1.3504999876022339,
+    0,
+    299,
+    233,
+    167,
+    1,
+    7.067464351654053,
+    0,
+    1,
+    1,
+    811.260009765625,
+    1433,
+    16,
+    3.0003907680511475,
+    0.7582126259803772,
+    0.6520073413848877,
+    0.24068984389305115,
+    0,
+    299,
+    233,
+    167,
+    1,
+    0,
+    1,
+    1,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "presentation": {
+    "frame": 3887,
+    "presented": true,
+    "time": 220,
+    "committedSourceTime": 220,
+    "sourceSteps": 0,
+    "worldTime": 220,
+    "weatherInput": {
+      "time": 220,
+      "wind": 4,
+      "windIntegral": 836.0000000000113,
+      "moist": 1,
+      "lift": 1,
+      "dry": 0,
+      "storm": 0,
+      "frontX": -2500
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.05,
+      "distance": 8000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        3027.2070668399083,
+        1080.1666458345733,
+        7788.1405382320945
+      ],
+      "target": [
+        666.0000000000113,
+        1480,
+        155
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -683.4065000000182,
+        484.99999999991996,
+        -964.8407681511301
+      ],
+      [
+        2088.0494999999823,
+        2564.99999999992,
+        1396
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "MS": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "lightingProfile": {
+        "id": "selected-production",
+        "name": "SelectedProduction",
+        "a": 0.5,
+        "b": 0.5,
+        "c": 0.5,
+        "abc": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "uniformMap": {
+          "a": "p.sun.w",
+          "b": "p.domain.y",
+          "c": "p.domain.z"
+        },
+        "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+        "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+      },
+      "exposure": 0.5
+    },
+    "epoch": 1,
+    "family": 0,
+    "controls": {
+      "lightingProfile": "selected-production",
+      "family": 0,
+      "provider": 0,
+      "cohorts": true,
+      "sourceAlpha": 0,
+      "forceZero": false,
+      "explicitForceZero": false,
+      "autoCertifiedZero": false,
+      "sun": 30,
+      "mode": 0,
+      "mirror": true,
+      "main": false,
+      "fog": false,
+      "resolved": true,
+      "viewSteps": 96,
+      "extinctionScale": 4.222222222222222,
+      "preparedDensity": false,
+      "materialStructure": false,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": false,
+      "materialCore": false,
+      "connectedFeed": false,
+      "frontMorph": false,
+      "neckMix": false,
+      "dualRest": false,
+      "emptyWork": false,
+      "cachedVelocity": false,
+      "alpha": 1
+    },
+    "lightBuilt": true
+  },
+  "underlyingTemplatesFrozen": true,
+  "effectiveSourceFrozen": true,
+  "sourceMode": "finite material cohorts fixed source intervals",
+  "sourceTime": 220,
+  "sourceSteps": 881,
+  "legacyPdeSteps": 0,
+  "fixtureRevision": 7,
+  "submittedPerformanceMs": 818097.4899997711,
+  "logicalGpuBytes": 78843452,
+  "logicalGpuAllocations": [
+    {
+      "label": "timestamp resolve",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp readback",
+      "bytes": 256
+    },
+    {
+      "label": "optical q 0",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "optical q 1",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "raw source support",
+      "bytes": 4
+    },
+    {
+      "label": "guarded source support",
+      "bytes": 4
+    },
+    {
+      "label": "float32 shared velocity",
+      "bytes": 16
+    },
+    {
+      "label": "advection forward",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "advection reverse",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "material coordinates 0",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "material coordinates 1",
+      "bytes": 8,
+      "format": "rgba16float",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "native basis",
+      "bytes": 1198372,
+      "format": "rgba8unorm",
+      "size": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "label": "coherent curl field",
+      "bytes": 2097152,
+      "format": "rgba16float",
+      "size": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "label": "current voxel light",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "receiver Beer field",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "label": "air transmittance",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        256,
+        64
+      ]
+    },
+    {
+      "label": "current optical image",
+      "bytes": 7372800,
+      "format": "rgba16float",
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "uniform 0/0",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/1",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/2",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/3",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/4",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/5",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/6",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/7",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/8",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/9",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/10",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/11",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/12",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/13",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/14",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/15",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/16",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/17",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/18",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/19",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/20",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/21",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/22",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/23",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/24",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/25",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/26",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/27",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/28",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/29",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/30",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/31",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 0/32",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/0",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/1",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/2",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/3",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/4",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/5",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/6",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/7",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/8",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/9",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/10",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/11",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/12",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/13",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/14",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/15",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/16",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/17",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/18",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/19",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/20",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/21",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/22",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/23",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/24",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/25",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/26",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/27",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/28",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/29",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/30",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/31",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 1/32",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/0",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/1",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/2",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/3",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/4",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/5",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/6",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/7",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/8",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/9",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/10",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/11",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/12",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/13",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/14",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/15",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/16",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/17",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/18",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/19",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/20",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/21",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/22",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/23",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/24",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/25",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/26",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/27",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/28",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/29",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/30",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/31",
+      "bytes": 176
+    },
+    {
+      "label": "uniform 2/32",
+      "bytes": 176
+    },
+    {
+      "label": "empty thermal heads",
+      "bytes": 3072
+    },
+    {
+      "label": "empty thermal bands",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/0",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/0",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/1",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/1",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/2",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/2",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/3",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/3",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/4",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/4",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/5",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/5",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/6",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/6",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 0/7",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 0/7",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/0",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/0",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/1",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/1",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/2",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/2",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/3",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/3",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/4",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/4",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/5",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/5",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/6",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/6",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 1/7",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 1/7",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/0",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/0",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/1",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/1",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/2",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/2",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/3",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/3",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/4",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/4",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/5",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/5",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/6",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/6",
+      "bytes": 6272
+    },
+    {
+      "label": "heads 2/7",
+      "bytes": 3072
+    },
+    {
+      "label": "head bands 2/7",
+      "bytes": 6272
+    },
+    {
+      "label": "emitters 0/0",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/1",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/2",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/3",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/4",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/5",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/6",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 0/7",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/0",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/1",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/2",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/3",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/4",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/5",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/6",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 1/7",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/0",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/1",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/2",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/3",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/4",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/5",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/6",
+      "bytes": 1024
+    },
+    {
+      "label": "emitters 2/7",
+      "bytes": 1024
+    },
+    {
+      "label": "Shared immutable cohort rho",
+      "bytes": 33554432,
+      "format": "r16float",
+      "size": [
+        256,
+        256,
+        256
+      ],
+      "role": "Shared by all8cohorts, not percohort"
+    },
+    {
+      "label": "Shared immutable cohort distance",
+      "bytes": 33554432,
+      "format": "r16float",
+      "size": [
+        256,
+        256,
+        256
+      ],
+      "role": "Shared by all8cohorts, not percohort"
+    },
+    {
+      "label": "Shared immutable cohort channels",
+      "bytes": 65536,
+      "format": "r16float",
+      "size": [
+        32,
+        32,
+        32
+      ],
+      "role": "Shared by all8cohorts, not percohort"
+    },
+    {
+      "label": "8immutable presented cohort maps",
+      "bytes": 512,
+      "role": "Bounded map tuple"
+    },
+    {
+      "label": "8shared materialcontrol17cube presentation",
+      "bytes": 314432,
+      "role": "Retained previous/current CPU exposure, no GPU solver"
+    }
+  ],
+  "cameraPreset": "oblique",
+  "gpuQueueCompletedPerformanceMs": 818163.4949998856,
+  "completionScope": "Queue fence completed; browser displayed time unmeasured",
+  "fieldPin": {
+    "mapsSha256": "e82eca999dd07567a2c084652dc1cf255e69c7a55c0bc00231e43f5346393ca9",
+    "retainedControlSnapshotsSha256": "8a3337ce32bbce1812d7afc62b9c2436d726a861ea1679a76acbb2780a6963b6",
+    "shaderControlInterpolationFraction": 0,
+    "scope": "Exact current GPU upload inputs; no per-frame grid hash/clone. Causal commands and template pins retained separately."
+  },
+  "capture": {
+    "file": "cohort-t220000-mode0-7c719e6a164480db-7b266289-8.png",
+    "bytes": 336744
+  }
+}

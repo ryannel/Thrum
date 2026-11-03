@@ -1,0 +1,44 @@
+{
+  "rows": [
+    {
+      "receipt": "light-probe-high-daab547852af225b-976f7489-11.json",
+      "profile": "high",
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "samples": 16,
+      "mean_abs_T_error": 0.007988308933022381,
+      "max_abs_T_error": 0.029159247875213623,
+      "max_abs_direct256_512": 0.0004590153694152832,
+      "logical_renderer_bytes": 65732812
+    },
+    {
+      "receipt": "light-probe-high-daab547852af225b-976f7489-4.json",
+      "profile": "high",
+      "kappa": [
+        0.0045,
+        0.0018
+      ],
+      "samples": 16,
+      "mean_abs_T_error": 0.0027577043510973454,
+      "max_abs_T_error": 0.008816778659820557,
+      "max_abs_direct256_512": 0.00011169910430908203,
+      "logical_renderer_bytes": 65732812
+    },
+    {
+      "receipt": "light-probe-low-daab547852af225b-976f7489-8.json",
+      "profile": "low",
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "samples": 16,
+      "mean_abs_T_error": 0.044513406489500085,
+      "max_abs_T_error": 0.17483285069465637,
+      "max_abs_direct256_512": 0.0004590153694152832,
+      "logical_renderer_bytes": 44908556
+    }
+  ],
+  "scope": "16selectedq\u2248.03outercrossings, notfullfield/image/ambientaccuracy; only\u03ba=.019 low/higharematched. \u03ba=.0045 highisaseparateearlierprobe."
+}

@@ -1213,13 +1213,13 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "finite_material_Cu_pilot_commissioned_Cb_authoring_rejected_complete_source_unselected",
+        "status": "finite_material_Cu_pilot_failed_billowing_source_revision_active_Cb_authoring_unaccepted",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
         "implementation": "Standalone source/consumer instruments only, no engine binding. Pulse/transport source profiles2/3/4 rejected as default morphology. Exact static CC0 master/cook/sampled-R16 adapter implemented; no replacement full lifecycle.",
         "functional_validation": "Historical R0/phase/transport/operator checks retained; current normal-front and exact masked q checks pass without art acceptance. Static master hashes/cooks/transforms and actual GPU scalar input checks pass; complete SKY_G unproven.",
-        "experienced_quality": "Coarse/hierarchy and later pulse/transport Cb morphology rejected.03/256 is a usable static Cu ingredient with native multi-angle review;08 weaker bank comparator. No replacement lifecycle, reflection-specific image, full families/weather/skies or user acceptance.",
+        "experienced_quality": "Earlier transport and frozen Cb skeletal/bulk sources rejected.03/256 usable static Cu ingredient; first finite whole-Cu cohort pilot fails billowing/size stability in actual1x16x samples. Held independent mirror/main-off/shared-zero images witnessed; complete lifecycle/families/weather/skies remain unaccepted.",
         "performance": "Prior bounded coupled cloud5ms failure and rejected whole-GPU totals retained in records. Latest static input14.83/42.83MiB logical renderer at128/256 only, requested staging separate; no timing/process/target-device/full-sky admission.",
         "review": "../evidence/cloud-sky-design-2026-11-01/README.md",
         "R0_record": "../evidence/cloud-sky-r0-2026-11-01/README.md",
@@ -1326,9 +1326,19 @@
           "design": "modules/CLOUD-AUTHORED-SOURCE.md",
           "review": "../evidence/cloud-cohort-design-2026-11-03/README.md",
           "decision": "provisional_liquid_Cu_coupling_pilot_only",
-          "correctness": "independent_analytical_review_closes_fresh_rest_wind_seed_burial_scale_units_endpoint_control_pitch_clock_and_front_coupling_no_runtime_pass",
-          "experienced_quality": "unproved_new_pilot_no_general_family_or_lifecycle_acceptance",
-          "performance": "sparse_template_core_counts_independently_reproduced_actual_atlas_query_and_fullsky_cost_unproved"
+          "correctness": "independent_design_and_code_reviews_bounded_fresh_rest_wind_burial_neck_lifetime_clock_publication_recovery_and_actual_GPU_CPU_point_queries_pass_not_art_acceptance",
+          "experienced_quality": "first_actual_pilot_failed_visible_billowing_whole_template_growth_hidden_then_size_pulse_no_family_or_lifecycle_acceptance",
+          "performance": "logical_GPU78843452_bytes_latest240_submission_records_only_actual1x16x_clips_no_M2_5ms_fullsky_or_process_residency_admission",
+          "pilot_record": "../evidence/cloud-cohort-pilot-2026-11-03/README.md",
+          "pilot_build": "7c719e6a164480db"
+        },
+        "covered_cb_light_discrimination": {
+          "record": "../evidence/cloud-light-diagnosis-2026-11-03/README.md",
+          "build": "daab547852af225b",
+          "source_sha256": "377e8f9def4ff30ac38c02266b8666ae5c592d59f9a36820c62731fb52d89eef",
+          "correctness": "exact3viewer_restore_and_actual_source_upload_named_profiles_matched16point_low_high_T_probe_pass_scoped_not_fullfield",
+          "experienced_quality": "normals_show_small_lobes_calibrated_019_reveals_contrast_highcache_does_not_repair_club_body_ribbon_cap_rejected",
+          "performance": "highreference264x_coefficient_query_count_staged_only_logical_bytes_not_timing_residency_or_device_admission"
         }
       }
     },

@@ -1,0 +1,113 @@
+{
+  "files": {
+    "OWNER.md": {
+      "bytes": 409,
+      "sha256": "96d52e27d9c256d1261cdef7de01b23b2e36091fa28b2db70eb55bd57fec9cf3"
+    },
+    "README.md": {
+      "bytes": 7605,
+      "sha256": "08f32eca1133a560fd11b6a21ba8bcc6091c1a182b6388116deb39c9b075def7"
+    },
+    "cb-covered-256.density.r16f.gz": {
+      "bytes": 1105951,
+      "sha256": "49825817211d87ea8e5c69bc78a918c25fe3058862119bb82911ec4e858d6835"
+    },
+    "observations/light-high-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-3.json": {
+      "bytes": 61329,
+      "sha256": "63910e107340cfa5414b18518af887834018f4048f2f61cce40802dec7bf07fa"
+    },
+    "observations/light-high-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-3.png": {
+      "bytes": 414119,
+      "sha256": "6e31616e72b5fdc5ae6064cdf807f4826efb42aa94c92e81e41503080b5e3a3e"
+    },
+    "observations/light-high-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-5.json": {
+      "bytes": 61346,
+      "sha256": "242c1c182bc1993a1908cb16deede2584538ab9db9e250721e89b95c2b5b72a9"
+    },
+    "observations/light-high-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-5.png": {
+      "bytes": 426706,
+      "sha256": "bba0ff02b29b4cac50ebec19cf494a6ae8ba49ddfe70fb2e8118e666f8921e84"
+    },
+    "observations/light-high-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-6.json": {
+      "bytes": 61345,
+      "sha256": "8de45bf8552ecb97b19e59ee7aef33d073ff36248ca4f1d08888ddae0cf810cb"
+    },
+    "observations/light-high-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-6.png": {
+      "bytes": 433978,
+      "sha256": "b9effd47ee1f74ae4cd214189368b898757eeaf7bdb8fec7a8a557ddeb57dec2"
+    },
+    "observations/light-low-legacy-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-9.json": {
+      "bytes": 61169,
+      "sha256": "70e3171f37142d33ebb1e7f29d7228fa351b8c4e6679a4f99b5d937ae2ff77c8"
+    },
+    "observations/light-low-legacy-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-9.png": {
+      "bytes": 429661,
+      "sha256": "71c88d5c9bde880a0523f764eb46d29ad32f424844c9da1fc06c1d84fc475081"
+    },
+    "observations/light-low-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-1.json": {
+      "bytes": 61165,
+      "sha256": "49f15afc8205993ff59eb87b75dad1c6d7043d075a4eb8bfff029a1027b1c75c"
+    },
+    "observations/light-low-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-1.png": {
+      "bytes": 413992,
+      "sha256": "d536517c50f7d5287d900ba6c4379af509b99584ce38baa6670e079c2e7eefac"
+    },
+    "observations/light-low-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-7.json": {
+      "bytes": 61169,
+      "sha256": "1a1040dfc4d08236c6d9ed245ad9ea4ec052e01d903c4e91b09254e3d5294769"
+    },
+    "observations/light-low-selected-cb-covered-256-oblique-mode0-daab547852af225b-976f7489-7.png": {
+      "bytes": 425360,
+      "sha256": "d49b9e76d37f60c134e67ba6961254b758aec67734eaa8521751ddaf094b2832"
+    },
+    "observations/light-low-selected-cb-covered-256-oblique-mode7-daab547852af225b-976f7489-2.json": {
+      "bytes": 61163,
+      "sha256": "6e8d46f549d60a06db80f88994d12cff7e1c42581c878d014fcb8dfbc70ef424"
+    },
+    "observations/light-low-selected-cb-covered-256-oblique-mode7-daab547852af225b-976f7489-2.png": {
+      "bytes": 126571,
+      "sha256": "254d994a094b930a6bd352631583c8c6bf3995ee19c9609d86ed8500abc6a780"
+    },
+    "observations/light-probe-high-daab547852af225b-976f7489-11.json": {
+      "bytes": 74493,
+      "sha256": "87e3703a2aba89d3215b26a0097c935fc028e2690dd887ece7cb5bbdb48f862d"
+    },
+    "observations/light-probe-high-daab547852af225b-976f7489-4.json": {
+      "bytes": 74365,
+      "sha256": "b85bec0c349df701eaf54462a836ffc351fe7976b39c118f5f8d6b5f0a398f4c"
+    },
+    "observations/light-probe-low-daab547852af225b-976f7489-8.json": {
+      "bytes": 74285,
+      "sha256": "d3189ccbf0302fd9a91aadf057c609579a4ec14973d086f7f142a565303294d2"
+    },
+    "observations/upload-cb-covered-daab547852af225b-976f7489-10.json": {
+      "bytes": 61548,
+      "sha256": "89e78ee047ad0aeb1d59d265979d6abb09939148bd1bfda6cca5944bf7f1c26d"
+    },
+    "point-comparison.json": {
+      "bytes": 1309,
+      "sha256": "3e9b8b0cb89af4fbdd7cd511b6f2fbb87bddf7e90a60a0dadfa4c697d385019c"
+    },
+    "research/lighting-coupling-review.md": {
+      "bytes": 13129,
+      "sha256": "9b565630649cf2c63650e05863f40012218e9c5cde65c1a34aecebbdcd1afbbc"
+    },
+    "research/next-cb-anatomy-decision.md": {
+      "bytes": 11369,
+      "sha256": "6e01ef89de831ec0fda8d467c60651c204f0de22dec567d5f955e7bac70234ad"
+    },
+    "research/optical-calibration.md": {
+      "bytes": 4875,
+      "sha256": "d166330acb01b7427738476bd69151fb39d6ca540633573a853c077b17178b09"
+    },
+    "restore.py": {
+      "bytes": 1726,
+      "sha256": "240b9a89556259d8e2fde6c42948f6fee5421ea1e2132ce1150af00bdc6992c3"
+    },
+    "source-and-research.zip": {
+      "bytes": 1554568,
+      "sha256": "0efd9420a08e9fb8f0348aaed10d8a5621ca4cdee9c63b69b71e5227fec4e23b"
+    }
+  },
+  "scalar_sha256": "377e8f9def4ff30ac38c02266b8666ae5c592d59f9a36820c62731fb52d89eef"
+}

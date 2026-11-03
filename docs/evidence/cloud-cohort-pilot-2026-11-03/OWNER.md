@@ -1,0 +1,1 @@
+Owner: root cloud campaign. Exact finite Cu source/consumer proof and failed billowing evidence. This package is selected historical evidence, not an accepted production source. Shared CC0 masters and notices are retained by cloud-authored-masters; derived distance/noise bytes by cloud-geometry-operators. No full lifecycle, Cb or budget promotion.

@@ -1,0 +1,451 @@
+{
+  "sampling": "8m world; scalar moments streaming; side image axes corrected",
+  "snapshots": [
+    {
+      "time": 100,
+      "cohorts": []
+    },
+    {
+      "time": 170,
+      "cohorts": [
+        {
+          "id": 2,
+          "age": 40,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 6424576.0,
+              "outside_parent_uneroded_fraction": 0.0007172457762193178,
+              "outside_all_older_uneroded_fraction": 0.0007172457762193178
+            },
+            "0.001": {
+              "child_volume_m3": 5365248.0,
+              "outside_parent_uneroded_fraction": 0.002576581734898368,
+              "outside_all_older_uneroded_fraction": 0.002576581734898368
+            },
+            "0.005": {
+              "child_volume_m3": 4681216.0,
+              "outside_parent_uneroded_fraction": 0.004484304932735426,
+              "outside_all_older_uneroded_fraction": 0.004484304932735426
+            },
+            "0.01": {
+              "child_volume_m3": 4291584.0,
+              "outside_parent_uneroded_fraction": 0.0054879503698401335,
+              "outside_all_older_uneroded_fraction": 0.0054879503698401335
+            },
+            "0.04": {
+              "child_volume_m3": 3162624.0,
+              "outside_parent_uneroded_fraction": 0.007446980734984621,
+              "outside_all_older_uneroded_fraction": 0.007446980734984621
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "time": 200,
+      "cohorts": [
+        {
+          "id": 2,
+          "age": 70,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 83771392.0,
+              "outside_parent_uneroded_fraction": 0.10742836886368082,
+              "outside_all_older_uneroded_fraction": 0.10742836886368082
+            },
+            "0.001": {
+              "child_volume_m3": 70324224.0,
+              "outside_parent_uneroded_fraction": 0.12023123070650592,
+              "outside_all_older_uneroded_fraction": 0.12023123070650592
+            },
+            "0.005": {
+              "child_volume_m3": 61329920.0,
+              "outside_parent_uneroded_fraction": 0.1273114329840965,
+              "outside_all_older_uneroded_fraction": 0.1273114329840965
+            },
+            "0.01": {
+              "child_volume_m3": 56083456.0,
+              "outside_parent_uneroded_fraction": 0.13325969070094396,
+              "outside_all_older_uneroded_fraction": 0.13325969070094396
+            },
+            "0.04": {
+              "child_volume_m3": 41610240.0,
+              "outside_parent_uneroded_fraction": 0.2074566260612772,
+              "outside_all_older_uneroded_fraction": 0.2074566260612772
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.00027731558513588466,
+              "max_distance_m": 8.0,
+              "area_ge32m_m2": 0.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.09022309711286089,
+              "max_distance_m": 73.7563556583431,
+              "area_ge32m_m2": 15040.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "time": 220,
+      "cohorts": [
+        {
+          "id": 2,
+          "age": 90,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 166486528.0,
+              "outside_parent_uneroded_fraction": 0.2589238211514628,
+              "outside_all_older_uneroded_fraction": 0.2589238211514628
+            },
+            "0.001": {
+              "child_volume_m3": 139805184.0,
+              "outside_parent_uneroded_fraction": 0.2733202225176428,
+              "outside_all_older_uneroded_fraction": 0.2733202225176428
+            },
+            "0.005": {
+              "child_volume_m3": 122022912.0,
+              "outside_parent_uneroded_fraction": 0.2773176237590527,
+              "outside_all_older_uneroded_fraction": 0.2773176237590527
+            },
+            "0.01": {
+              "child_volume_m3": 111460864.0,
+              "outside_parent_uneroded_fraction": 0.28021975498054635,
+              "outside_all_older_uneroded_fraction": 0.28021975498054635
+            },
+            "0.04": {
+              "child_volume_m3": 82808832.0,
+              "outside_parent_uneroded_fraction": 0.33507073255181286,
+              "outside_all_older_uneroded_fraction": 0.33507073255181286
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.045556514236410696,
+              "max_distance_m": 141.7603611733548,
+              "area_ge32m_m2": 13440.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.022237786727368238,
+              "max_distance_m": 67.88225099390856,
+              "area_ge32m_m2": 3072.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.18768085985944605,
+              "max_distance_m": 248.90158697766472,
+              "area_ge32m_m2": 83136.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "time": 280,
+      "cohorts": [
+        {
+          "id": 2,
+          "age": 150,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 182500864.0,
+              "outside_parent_uneroded_fraction": 0.27718286309044543,
+              "outside_all_older_uneroded_fraction": 0.27718286309044543
+            },
+            "0.001": {
+              "child_volume_m3": 153046016.0,
+              "outside_parent_uneroded_fraction": 0.2918961052863996,
+              "outside_all_older_uneroded_fraction": 0.2918961052863996
+            },
+            "0.005": {
+              "child_volume_m3": 133515776.0,
+              "outside_parent_uneroded_fraction": 0.2960352490480226,
+              "outside_all_older_uneroded_fraction": 0.2960352490480226
+            },
+            "0.01": {
+              "child_volume_m3": 121990144.0,
+              "outside_parent_uneroded_fraction": 0.29958616984663944,
+              "outside_all_older_uneroded_fraction": 0.29958616984663944
+            },
+            "0.04": {
+              "child_volume_m3": 90646016.0,
+              "outside_parent_uneroded_fraction": 0.3529255604570641,
+              "outside_all_older_uneroded_fraction": 0.3529255604570641
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.05205124047348792,
+              "max_distance_m": 163.1686244349691,
+              "area_ge32m_m2": 17024.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.02316792638843247,
+              "max_distance_m": 73.7563556583431,
+              "area_ge32m_m2": 3712.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.19994215752434205,
+              "max_distance_m": 277.2435752186153,
+              "area_ge32m_m2": 96896.0
+            }
+          }
+        },
+        {
+          "id": 3,
+          "age": 20,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 79360.0,
+              "outside_parent_uneroded_fraction": 0.0,
+              "outside_all_older_uneroded_fraction": 0.0
+            },
+            "0.001": {
+              "child_volume_m3": 67584.0,
+              "outside_parent_uneroded_fraction": 0.0,
+              "outside_all_older_uneroded_fraction": 0.0
+            },
+            "0.005": {
+              "child_volume_m3": 58880.0,
+              "outside_parent_uneroded_fraction": 0.0,
+              "outside_all_older_uneroded_fraction": 0.0
+            },
+            "0.01": {
+              "child_volume_m3": 56832.0,
+              "outside_parent_uneroded_fraction": 0.0,
+              "outside_all_older_uneroded_fraction": 0.0
+            },
+            "0.04": {
+              "child_volume_m3": 44032.0,
+              "outside_parent_uneroded_fraction": 0.0,
+              "outside_all_older_uneroded_fraction": 0.0
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "time": 350,
+      "cohorts": [
+        {
+          "id": 2,
+          "age": 220,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 176679424.0,
+              "outside_parent_uneroded_fraction": 0.27202624341813564,
+              "outside_all_older_uneroded_fraction": 0.27202624341813564
+            },
+            "0.001": {
+              "child_volume_m3": 142189568.0,
+              "outside_parent_uneroded_fraction": 0.2834282751319703,
+              "outside_all_older_uneroded_fraction": 0.2834282751319703
+            },
+            "0.005": {
+              "child_volume_m3": 121410560.0,
+              "outside_parent_uneroded_fraction": 0.2828870239952769,
+              "outside_all_older_uneroded_fraction": 0.2828870239952769
+            },
+            "0.01": {
+              "child_volume_m3": 110564352.0,
+              "outside_parent_uneroded_fraction": 0.28937326924323675,
+              "outside_all_older_uneroded_fraction": 0.28937326924323675
+            },
+            "0.04": {
+              "child_volume_m3": 77132288.0,
+              "outside_parent_uneroded_fraction": 0.33683595642851927,
+              "outside_all_older_uneroded_fraction": 0.33683595642851927
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.048689771766694846,
+              "max_distance_m": 155.3319027115808,
+              "area_ge32m_m2": 14784.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.024462694391053644,
+              "max_distance_m": 73.7563556583431,
+              "area_ge32m_m2": 3520.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.17344145970603142,
+              "max_distance_m": 277.2435752186153,
+              "area_ge32m_m2": 80384.0
+            }
+          }
+        },
+        {
+          "id": 3,
+          "age": 90,
+          "thresholds": {
+            "1e-07": {
+              "child_volume_m3": 105521664.0,
+              "outside_parent_uneroded_fraction": 0.3181366055789264,
+              "outside_all_older_uneroded_fraction": 0.030359490919324397
+            },
+            "0.001": {
+              "child_volume_m3": 88485888.0,
+              "outside_parent_uneroded_fraction": 0.33153960098134516,
+              "outside_all_older_uneroded_fraction": 0.04916562514465583
+            },
+            "0.005": {
+              "child_volume_m3": 77219840.0,
+              "outside_parent_uneroded_fraction": 0.3298037395570879,
+              "outside_all_older_uneroded_fraction": 0.05371966582681342
+            },
+            "0.01": {
+              "child_volume_m3": 70485504.0,
+              "outside_parent_uneroded_fraction": 0.33097982813600935,
+              "outside_all_older_uneroded_fraction": 0.05383279943632098
+            },
+            "0.04": {
+              "child_volume_m3": 52362752.0,
+              "outside_parent_uneroded_fraction": 0.3819460061992158,
+              "outside_all_older_uneroded_fraction": 0.07564216640103255
+            }
+          },
+          "projection_vs_all_older": {
+            "front_Z": {
+              "novel_fraction_child": 0.0,
+              "max_distance_m": 0.0,
+              "area_ge32m_m2": 0.0
+            },
+            "side_X": {
+              "novel_fraction_child": 0.0034482758620689655,
+              "max_distance_m": 22.627416997969522,
+              "area_ge32m_m2": 0.0
+            },
+            "top_Y": {
+              "novel_fraction_child": 0.013526842327744117,
+              "max_distance_m": 33.94112549695428,
+              "area_ge32m_m2": 640.0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "candidate_component_screen": [
+    {
+      "candidate": "crownA",
+      "roi_local_xyz": [
+        [
+          208,
+          232,
+          52
+        ],
+        [
+          368,
+          344,
+          220
+        ]
+      ],
+      "edge_taper_local_m": 12,
+      "q_attach": 0.04,
+      "numerical_threshold": 0.041,
+      "candidate_root_local_xyz": [
+        237,
+        261,
+        181
+      ],
+      "native_EDT_radius_local_m": 24.0,
+      "actual_lower_bound_radius_NOT_CERTIFIED": "EDT centre-distance requires interpolation guard and post-distance-taper witness; old wholemaster distance invalid",
+      "threshold_bbox_local_xyz": [
+        [
+          210,
+          234,
+          58
+        ],
+        [
+          360,
+          334,
+          216
+        ]
+      ],
+      "positive_root_component_fraction": 0.9931743845756584,
+      "scope": "masked density candidate only; no retained/cooked/adopted rho or distance"
+    },
+    {
+      "candidate": "crownB",
+      "roi_local_xyz": [
+        [
+          116,
+          232,
+          156
+        ],
+        [
+          284,
+          344,
+          292
+        ]
+      ],
+      "edge_taper_local_m": 12,
+      "q_attach": 0.04,
+      "numerical_threshold": 0.041,
+      "candidate_root_local_xyz": [
+        225,
+        265,
+        197
+      ],
+      "native_EDT_radius_local_m": 27.202941017470888,
+      "actual_lower_bound_radius_NOT_CERTIFIED": "EDT centre-distance requires interpolation guard and post-distance-taper witness; old wholemaster distance invalid",
+      "threshold_bbox_local_xyz": [
+        [
+          120,
+          234,
+          160
+        ],
+        [
+          280,
+          336,
+          290
+        ]
+      ],
+      "positive_root_component_fraction": 0.9980961038738283,
+      "scope": "masked density candidate only; no retained/cooked/adopted rho or distance"
+    }
+  ],
+  "peak_rss_bytes": 2048540672
+}

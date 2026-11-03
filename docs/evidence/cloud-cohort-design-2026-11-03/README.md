@@ -25,3 +25,5 @@ Final independent prebuild review found no remaining representation or birth-mec
 The local callback/recorder failure review and geometry proof remain [separate evidence](../cloud-geometry-operators-2026-11-03/README.md). No previous numerical pass transfers automatically to the new combined source.
 
 [The measured template counts](template-brick-counts.json) can be reproduced with [the retained script](count-template-bricks.py), NumPy/SciPy and the pinned compressed masters. They establish useful slot payload only; exact GPU atlas addressing, rounded allocation and performance are unproved.
+
+[The early implementation addendum](INTERACTION-ADDENDUM.md) records the causal presentation-controls finding, explicit clear-to-wet reseeding and fixed-world camera witness. These were identified after the prebuild review and remain pending actual implementation/visual closure.

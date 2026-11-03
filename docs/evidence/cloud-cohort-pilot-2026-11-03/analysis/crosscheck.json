@@ -1,0 +1,9 @@
+{
+  "samples": 55,
+  "max_abs_error": 2.92421397263265e-7,
+  "mean_abs_error": 2.4994947893753792e-8,
+  "tolerance": 0.000002,
+  "pass": true,
+  "source_pins_unchanged": true,
+  "scope": "Python scipy field versus existing frozen JS oracle at requested world points; neither is independent GPU qualification"
+}

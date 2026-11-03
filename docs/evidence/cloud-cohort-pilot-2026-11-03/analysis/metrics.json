@@ -1,0 +1,2362 @@
+{
+  "build": "7c719e6a164480db",
+  "method": {
+    "world_grid_pitch_m": 8.0,
+    "world_grid_dimensions_xyz": [
+      244,
+      91,
+      255
+    ],
+    "world_grid_registered_min_corner_xyz_m": [
+      -1208.0,
+      1160.0,
+      -744.0
+    ],
+    "registration": "Subtract only common condensation-region XZ; retain actualCheight/internalmotion/shear/yaw",
+    "field": "Native\u03c1,dseparate trilinear samples then exactkernelandpointmax; Eweather0verifiedbefore420; parentpotentialremovesage/weatherlossatSAMEactualmap",
+    "native_material": "Full boundednative256lattice plus .5cell shiftedphase, physicalvoxeldeterminantweights; no8mworldundersamplingblindspot",
+    "thresholds": [
+      1e-07,
+      0.001,
+      0.005,
+      0.01,
+      0.04
+    ],
+    "limits": "Volume/contour quadrature, not continuousglobalinequality or renderedbeautyproof. Positive-tailnewvolume is not automatically outside projected silhouette."
+  },
+  "sourcePins": {
+    "src/cohort-model.js": "6ac3c62cea8e356a81518946d64dc354d26baf23953abbe8e30e88885cdf0b85",
+    "src/cohort-oracle.js": "7125d2b474c7d929489589db338bcb3f67e910e9a7d3172ba4edc7488cded3a2",
+    "shaders/cohort-source.wgsl": "1cd00325f28fa30a121e848426fc7c0e16673c62141a2bada8c26d54352010f2",
+    "assets/sockets.json": "96104c1548ef256acc4ffb3dc65abeead3c38865c95504f83a75e688e1ef84ce"
+  },
+  "snapshots": [
+    {
+      "time": 100,
+      "cohorts": [
+        {
+          "slot": 0,
+          "id": 1,
+          "parentId": 0,
+          "born": 0,
+          "s": 1,
+          "yaw": 0,
+          "C": [
+            381.49999999999693,
+            1414.9999999999636,
+            0
+          ],
+          "K": [
+            0.3905000000000002,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 100,
+          "ageE": 0,
+          "establishment": "parentless-condensation",
+          "cert": null,
+          "world_linear_map": [
+            [
+              4.0,
+              0.3905000000000002,
+              -0.0
+            ],
+            [
+              0.0,
+              4.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              4.0
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            8.0,
+            8.038032159676895,
+            8.0
+          ],
+          "template_extent_world_m_estimate": [
+            1336.823,
+            664.0,
+            1864.0
+          ],
+          "parent_site": null,
+          "actual_min_resolved_neck_during_healthy_establishment_m": null,
+          "actual_min_seed_burial_margin_m": null
+        }
+      ],
+      "actual_joint": {
+        "1e-07": {
+          "voxels": 772702,
+          "volume_m3": 395623424.0
+        },
+        "0.001": {
+          "voxels": 653269,
+          "volume_m3": 334473728.0
+        },
+        "0.005": {
+          "voxels": 568877,
+          "volume_m3": 291265024.0
+        },
+        "0.01": {
+          "voxels": 519018,
+          "volume_m3": 265737216.0
+        },
+        "0.04": {
+          "voxels": 383728,
+          "volume_m3": 196468736.0
+        }
+      },
+      "all_current_uneroded_potential": {
+        "1e-07": {
+          "voxels": 772702,
+          "volume_m3": 395623424.0
+        },
+        "0.001": {
+          "voxels": 653269,
+          "volume_m3": 334473728.0
+        },
+        "0.005": {
+          "voxels": 568877,
+          "volume_m3": 291265024.0
+        },
+        "0.01": {
+          "voxels": 519018,
+          "volume_m3": 265737216.0
+        },
+        "0.04": {
+          "voxels": 383728,
+          "volume_m3": 196468736.0
+        }
+      },
+      "actual_density_sum_proxy": 20476453.861349087
+    },
+    {
+      "time": 170,
+      "cohorts": [
+        {
+          "slot": 0,
+          "id": 1,
+          "parentId": 0,
+          "born": 0,
+          "s": 1,
+          "yaw": 0,
+          "C": [
+            650.334999999989,
+            1425.4999999999382,
+            0
+          ],
+          "K": [
+            0.9505000000000007,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 170,
+          "ageE": 0,
+          "establishment": "parentless-condensation",
+          "cert": null,
+          "world_linear_map": [
+            [
+              4.0,
+              0.9505000000000007,
+              -0.0
+            ],
+            [
+              0.0,
+              4.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              4.0
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            8.0,
+            8.22276115425956,
+            8.0
+          ],
+          "template_extent_world_m_estimate": [
+            1429.7830000000001,
+            664.0,
+            1864.0
+          ],
+          "parent_site": null,
+          "actual_min_resolved_neck_during_healthy_establishment_m": null,
+          "actual_min_seed_burial_margin_m": null
+        },
+        {
+          "slot": 1,
+          "id": 2,
+          "parentId": 1,
+          "born": 130,
+          "s": 0.7731516760657542,
+          "yaw": 0.7102289266185835,
+          "C": [
+            618.3349999999892,
+            1425.4999999999382,
+            16
+          ],
+          "K": [
+            0.02890975693429658,
+            0
+          ],
+          "g": 0.32708740234375,
+          "A": 1,
+          "age": 40,
+          "ageE": 0,
+          "establishment": "healthy",
+          "cert": {
+            "pass": true,
+            "parentFutureAge": 210,
+            "parentRadiusWorldLower": 74.4130025443305,
+            "seedSupportWorldUpper": 16.46527951069815,
+            "minSeedBurialMargin": 57.94772303363234,
+            "minPositiveNeck": 1.2113868310988,
+            "minResolvedNeck": 8.107112543072223,
+            "resolvedStartAge": 22,
+            "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+          },
+          "world_linear_map": [
+            [
+              0.7669720320876047,
+              0.02890975693429658,
+              -0.6595398042999248
+            ],
+            [
+              0.0,
+              1.011552693368256,
+              0.0
+            ],
+            [
+              0.6595398042999248,
+              0.0,
+              0.7669720320876047
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            2.023105386736512,
+            2.0239314469680765,
+            2.023105386736512
+          ],
+          "template_extent_world_m_estimate": [
+            556.0416746587164,
+            167.91774709913048,
+            567.1426247201998
+          ],
+          "parent_site": {
+            "id": "socket-1",
+            "local_xyz": [
+              291,
+              233,
+              171
+            ]
+          },
+          "actual_min_resolved_neck_during_healthy_establishment_m": 8.037656080781694,
+          "actual_min_seed_burial_margin_m": 67.94564362235417,
+          "distance_from_actual_parent_socket_m": 2.2737367544323206e-13,
+          "socket_offset_from_parent_anchor_world_m": 35.77708763999664,
+          "linear_scale_ratio_to_parent": 0.252888173342064,
+          "exact_uneroded_support_volume_ratio_to_parent": 0.016172812752405986,
+          "world8m": {
+            "density_mass_proxy": 331457.1713794977,
+            "increase_over_actual_parent_mass_proxy": 27774.516750746967,
+            "thresholds": {
+              "1e-07": {
+                "child_volume_m3": 6424576.0,
+                "outside_parent_uneroded_volume_m3": 4608.0,
+                "outside_parent_uneroded_fraction": 0.0007172457762193178,
+                "outside_all_older_uneroded_fraction": 0.0007172457762193178,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0007172457762193178,
+                "child_total_mass_fraction_strictly_outside_parent_support": 7.395028754949918e-07
+              },
+              "0.001": {
+                "child_volume_m3": 5365248.0,
+                "outside_parent_uneroded_volume_m3": 13824.0,
+                "outside_parent_uneroded_fraction": 0.002576581734898368,
+                "outside_all_older_uneroded_fraction": 0.002576581734898368,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 7.395028754949918e-07
+              },
+              "0.005": {
+                "child_volume_m3": 4681216.0,
+                "outside_parent_uneroded_volume_m3": 20992.0,
+                "outside_parent_uneroded_fraction": 0.004484304932735426,
+                "outside_all_older_uneroded_fraction": 0.004484304932735426,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 7.395028754949918e-07
+              },
+              "0.01": {
+                "child_volume_m3": 4291584.0,
+                "outside_parent_uneroded_volume_m3": 23552.0,
+                "outside_parent_uneroded_fraction": 0.0054879503698401335,
+                "outside_all_older_uneroded_fraction": 0.0054879503698401335,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 7.395028754949918e-07
+              },
+              "0.04": {
+                "child_volume_m3": 3162624.0,
+                "outside_parent_uneroded_volume_m3": 23552.0,
+                "outside_parent_uneroded_fraction": 0.007446980734984621,
+                "outside_all_older_uneroded_fraction": 0.007446980734984621,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 7.395028754949918e-07
+              }
+            },
+            "projection_novelty": {
+              "front_Z": {
+                "0.001": {
+                  "child_pixels": 684,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 648,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 625,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 550,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                }
+              },
+              "side_X": {
+                "0.001": {
+                  "child_pixels": 672,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 640,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 599,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 485,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                }
+              },
+              "top_Y": {
+                "0.001": {
+                  "child_pixels": 1158,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 1067,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 991,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 825,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                }
+              }
+            },
+            "increase_over_uneroded_parent_mass_proxy": 27774.516750746967
+          },
+          "material_native": [
+            {
+              "material_lattice_phase_native_cells": 0,
+              "voxel_volume_world_m3": 8.280480129231865,
+              "native_mass_fraction_outside_parent_strict_support": 2.0787483975551654e-05,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 5737677.169226827,
+                  "outside_parent_uneroded_fraction": 0.0002193628087675851,
+                  "strict_outside_parent_support_fraction": 0.0002193628087675851,
+                  "outside_all_older_uneroded_fraction": 0.0002193628087675851
+                },
+                "0.001": {
+                  "child_volume_m3": 5167301.136965077,
+                  "outside_parent_uneroded_fraction": 0.0028411913453433627,
+                  "strict_outside_parent_support_fraction": 0.00012499318947365047,
+                  "outside_all_older_uneroded_fraction": 0.0028411913453433627
+                },
+                "0.005": {
+                  "child_volume_m3": 4537106.916249758,
+                  "outside_parent_uneroded_fraction": 0.005325517221240747,
+                  "strict_outside_parent_support_fraction": 7.482734957877677e-05,
+                  "outside_all_older_uneroded_fraction": 0.005325517221240747
+                },
+                "0.01": {
+                  "child_volume_m3": 4162531.1171238245,
+                  "outside_parent_uneroded_fraction": 0.006238412387704598,
+                  "strict_outside_parent_support_fraction": 5.5700110604505344e-05,
+                  "outside_all_older_uneroded_fraction": 0.006238412387704598
+                },
+                "0.04": {
+                  "child_volume_m3": 3147692.033445426,
+                  "outside_parent_uneroded_fraction": 0.009457191411449647,
+                  "strict_outside_parent_support_fraction": 2.6306512966480243e-06,
+                  "outside_all_older_uneroded_fraction": 0.009457191411449647
+                }
+              }
+            },
+            {
+              "material_lattice_phase_native_cells": 0.5,
+              "voxel_volume_world_m3": 8.280480129231865,
+              "native_mass_fraction_outside_parent_strict_support": 1.714138873301061e-05,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 6405282.599166017,
+                  "outside_parent_uneroded_fraction": 0.00036197223155880757,
+                  "strict_outside_parent_support_fraction": 0.00036197223155880757,
+                  "outside_all_older_uneroded_fraction": 0.00036197223155880757
+                },
+                "0.001": {
+                  "child_volume_m3": 5434677.840337975,
+                  "outside_parent_uneroded_fraction": 0.003067082721338851,
+                  "strict_outside_parent_support_fraction": 0.00014474558297426272,
+                  "outside_all_older_uneroded_fraction": 0.003067082721338851
+                },
+                "0.005": {
+                  "child_volume_m3": 4731093.7242372725,
+                  "outside_parent_uneroded_fraction": 0.005339937516955308,
+                  "strict_outside_parent_support_fraction": 7.000901366050879e-05,
+                  "outside_all_older_uneroded_fraction": 0.005339937516955308
+                },
+                "0.01": {
+                  "child_volume_m3": 4312871.514350158,
+                  "outside_parent_uneroded_fraction": 0.006234064448745124,
+                  "strict_outside_parent_support_fraction": 4.607870242373975e-05,
+                  "outside_all_older_uneroded_fraction": 0.006234064448745124
+                },
+                "0.04": {
+                  "child_volume_m3": 3181078.9293264886,
+                  "outside_parent_uneroded_fraction": 0.00875923428934367,
+                  "strict_outside_parent_support_fraction": 2.6030413935642404e-06,
+                  "outside_all_older_uneroded_fraction": 0.00875923428934367
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "actual_joint": {
+        "1e-07": {
+          "voxels": 772549,
+          "volume_m3": 395545088.0
+        },
+        "0.001": {
+          "voxels": 651391,
+          "volume_m3": 333512192.0
+        },
+        "0.005": {
+          "voxels": 567993,
+          "volume_m3": 290812416.0
+        },
+        "0.01": {
+          "voxels": 518587,
+          "volume_m3": 265516544.0
+        },
+        "0.04": {
+          "voxels": 383864,
+          "volume_m3": 196538368.0
+        }
+      },
+      "all_current_uneroded_potential": {
+        "1e-07": {
+          "voxels": 772549,
+          "volume_m3": 395545088.0
+        },
+        "0.001": {
+          "voxels": 651391,
+          "volume_m3": 333512192.0
+        },
+        "0.005": {
+          "voxels": 567993,
+          "volume_m3": 290812416.0
+        },
+        "0.01": {
+          "voxels": 518587,
+          "volume_m3": 265516544.0
+        },
+        "0.04": {
+          "voxels": 383864,
+          "volume_m3": 196538368.0
+        }
+      },
+      "actual_density_sum_proxy": 20507287.87552786
+    },
+    {
+      "time": 220,
+      "cohorts": [
+        {
+          "slot": 0,
+          "id": 1,
+          "parentId": 0,
+          "born": 0,
+          "s": 1,
+          "yaw": 0,
+          "C": [
+            843.2599999999819,
+            1432.99999999992,
+            0
+          ],
+          "K": [
+            1.350500000000001,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 220,
+          "ageE": 7.067464192708334,
+          "establishment": "parentless-condensation",
+          "cert": null,
+          "world_linear_map": [
+            [
+              4.0,
+              1.350500000000001,
+              -0.0
+            ],
+            [
+              0.0,
+              4.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              4.0
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            8.0,
+            8.443660402929526,
+            8.0
+          ],
+          "template_extent_world_m_estimate": [
+            1496.1830000000002,
+            664.0,
+            1864.0
+          ],
+          "parent_site": null,
+          "actual_min_resolved_neck_during_healthy_establishment_m": null,
+          "actual_min_seed_burial_margin_m": null
+        },
+        {
+          "slot": 1,
+          "id": 2,
+          "parentId": 1,
+          "born": 130,
+          "s": 0.7731516760657542,
+          "yaw": 0.7102289266185835,
+          "C": [
+            811.2599999999821,
+            1432.99999999992,
+            16
+          ],
+          "K": [
+            0.24068983852354708,
+            0
+          ],
+          "g": 0.9701817830403646,
+          "A": 1,
+          "age": 90,
+          "ageE": 0,
+          "establishment": "completed",
+          "cert": {
+            "pass": true,
+            "parentFutureAge": 210,
+            "parentRadiusWorldLower": 74.4130025443305,
+            "seedSupportWorldUpper": 16.46527951069815,
+            "minSeedBurialMargin": 57.94772303363234,
+            "minPositiveNeck": 1.2113868310988,
+            "minResolvedNeck": 8.107112543072223,
+            "resolvedStartAge": 22,
+            "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+          },
+          "world_linear_map": [
+            [
+              2.274934125560836,
+              0.24068983852354708,
+              -1.9562768200082623
+            ],
+            [
+              0.0,
+              3.0003906865844794,
+              0.0
+            ],
+            [
+              1.9562768200082623,
+              0.0,
+              2.274934125560836
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            6.00078137316896,
+            6.020058428457775,
+            6.00078137316896
+          ],
+          "template_extent_world_m_estimate": [
+            1675.008563247105,
+            498.06485397302356,
+            1682.215331273977
+          ],
+          "parent_site": {
+            "id": "socket-1",
+            "local_xyz": [
+              291,
+              233,
+              171
+            ]
+          },
+          "actual_min_resolved_neck_during_healthy_establishment_m": 8.037656080781694,
+          "actual_min_seed_burial_margin_m": 67.94564362235417,
+          "distance_from_actual_parent_socket_m": 2.2737367544323206e-13,
+          "socket_offset_from_parent_anchor_world_m": 35.77708763999664,
+          "linear_scale_ratio_to_parent": 0.7500976716461198,
+          "exact_uneroded_support_volume_ratio_to_parent": 0.4220398423681975,
+          "world8m": {
+            "density_mass_proxy": 8649506.082478372,
+            "increase_over_actual_parent_mass_proxy": 3855434.572369893,
+            "thresholds": {
+              "1e-07": {
+                "child_volume_m3": 166486528.0,
+                "outside_parent_uneroded_volume_m3": 43107328.0,
+                "outside_parent_uneroded_fraction": 0.2589238211514628,
+                "outside_all_older_uneroded_fraction": 0.2589238211514628,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.2589238211514628,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18782964016739878
+              },
+              "0.001": {
+                "child_volume_m3": 139805184.0,
+                "outside_parent_uneroded_volume_m3": 38211584.0,
+                "outside_parent_uneroded_fraction": 0.2733202225176428,
+                "outside_all_older_uneroded_fraction": 0.2733202225176428,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.24042232940375086,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18782964016739878
+              },
+              "0.005": {
+                "child_volume_m3": 122022912.0,
+                "outside_parent_uneroded_volume_m3": 33839104.0,
+                "outside_parent_uneroded_fraction": 0.2773176237590527,
+                "outside_all_older_uneroded_fraction": 0.2773176237590527,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.22061378112333527,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18782964016739878
+              },
+              "0.01": {
+                "child_volume_m3": 111460864.0,
+                "outside_parent_uneroded_volume_m3": 31233536.0,
+                "outside_parent_uneroded_fraction": 0.28021975498054635,
+                "outside_all_older_uneroded_fraction": 0.28021975498054635,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.2065347708052936,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18782964016739878
+              },
+              "0.04": {
+                "child_volume_m3": 82808832.0,
+                "outside_parent_uneroded_volume_m3": 27746816.0,
+                "outside_parent_uneroded_fraction": 0.33507073255181286,
+                "outside_all_older_uneroded_fraction": 0.33507073255181286,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.18625414255329673,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18782964016739878
+              }
+            },
+            "projection_novelty": {
+              "front_Z": {
+                "0.001": {
+                  "child_pixels": 6076,
+                  "novel_pixels": 297,
+                  "novel_fraction_of_child_projection": 0.048880842659644506,
+                  "novel_area_m2": 19008.0,
+                  "max_distance_from_parent_projection_m": 136.7040599250805,
+                  "novel_area_ge_32m_from_parent_m2": 14912.0
+                },
+                "0.005": {
+                  "child_pixels": 5795,
+                  "novel_pixels": 264,
+                  "novel_fraction_of_child_projection": 0.045556514236410696,
+                  "novel_area_m2": 16896.0,
+                  "max_distance_from_parent_projection_m": 141.7603611733548,
+                  "novel_area_ge_32m_from_parent_m2": 13440.0
+                },
+                "0.01": {
+                  "child_pixels": 5583,
+                  "novel_pixels": 248,
+                  "novel_fraction_of_child_projection": 0.04442056242163711,
+                  "novel_area_m2": 15872.0,
+                  "max_distance_from_parent_projection_m": 145.98630072715727,
+                  "novel_area_ge_32m_from_parent_m2": 12736.0
+                },
+                "0.04": {
+                  "child_pixels": 4933,
+                  "novel_pixels": 157,
+                  "novel_fraction_of_child_projection": 0.03182647476180823,
+                  "novel_area_m2": 10048.0,
+                  "max_distance_from_parent_projection_m": 139.71399357258383,
+                  "novel_area_ge_32m_from_parent_m2": 8000.0
+                }
+              },
+              "side_X": {
+                "0.001": {
+                  "child_pixels": 5986,
+                  "novel_pixels": 113,
+                  "novel_fraction_of_child_projection": 0.018877380554627465,
+                  "novel_area_m2": 7232.0,
+                  "max_distance_from_parent_projection_m": 64.4980619863884,
+                  "novel_area_ge_32m_from_parent_m2": 2560.0
+                },
+                "0.005": {
+                  "child_pixels": 5711,
+                  "novel_pixels": 127,
+                  "novel_fraction_of_child_projection": 0.022237786727368238,
+                  "novel_area_m2": 8128.0,
+                  "max_distance_from_parent_projection_m": 67.88225099390856,
+                  "novel_area_ge_32m_from_parent_m2": 3072.0
+                },
+                "0.01": {
+                  "child_pixels": 5333,
+                  "novel_pixels": 142,
+                  "novel_fraction_of_child_projection": 0.026626664166510407,
+                  "novel_area_m2": 9088.0,
+                  "max_distance_from_parent_projection_m": 65.96969000988257,
+                  "novel_area_ge_32m_from_parent_m2": 3072.0
+                },
+                "0.04": {
+                  "child_pixels": 4480,
+                  "novel_pixels": 166,
+                  "novel_fraction_of_child_projection": 0.03705357142857143,
+                  "novel_area_m2": 10624.0,
+                  "max_distance_from_parent_projection_m": 65.96969000988257,
+                  "novel_area_ge_32m_from_parent_m2": 2944.0
+                }
+              },
+              "top_Y": {
+                "0.001": {
+                  "child_pixels": 10374,
+                  "novel_pixels": 2008,
+                  "novel_fraction_of_child_projection": 0.19356082513977252,
+                  "novel_area_m2": 128512.0,
+                  "max_distance_from_parent_projection_m": 248.90158697766472,
+                  "novel_area_ge_32m_from_parent_m2": 92480.0
+                },
+                "0.005": {
+                  "child_pixels": 9676,
+                  "novel_pixels": 1816,
+                  "novel_fraction_of_child_projection": 0.18768085985944605,
+                  "novel_area_m2": 116224.0,
+                  "max_distance_from_parent_projection_m": 248.90158697766472,
+                  "novel_area_ge_32m_from_parent_m2": 83136.0
+                },
+                "0.01": {
+                  "child_pixels": 9021,
+                  "novel_pixels": 1586,
+                  "novel_fraction_of_child_projection": 0.17581199423567231,
+                  "novel_area_m2": 101504.0,
+                  "max_distance_from_parent_projection_m": 248.90158697766472,
+                  "novel_area_ge_32m_from_parent_m2": 72384.0
+                },
+                "0.04": {
+                  "child_pixels": 7629,
+                  "novel_pixels": 1317,
+                  "novel_fraction_of_child_projection": 0.1726307510813999,
+                  "novel_area_m2": 84288.0,
+                  "max_distance_from_parent_projection_m": 243.3105012119288,
+                  "novel_area_ge_32m_from_parent_m2": 57408.0
+                }
+              }
+            },
+            "increase_over_uneroded_parent_mass_proxy": 3540003.9239826156
+          },
+          "material_native": [
+            {
+              "material_lattice_phase_native_cells": 0,
+              "voxel_volume_world_m3": 216.08439929251713,
+              "native_mass_fraction_outside_parent_strict_support": 0.1897227301838202,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 149728337.6201738,
+                  "outside_parent_uneroded_fraction": 0.25144461954984443,
+                  "strict_outside_parent_support_fraction": 0.25144461954984443,
+                  "outside_all_older_uneroded_fraction": 0.25144461954984443
+                },
+                "0.001": {
+                  "child_volume_m3": 134844012.02810663,
+                  "outside_parent_uneroded_fraction": 0.2746933660665925,
+                  "strict_outside_parent_support_fraction": 0.24041638756862607,
+                  "outside_all_older_uneroded_fraction": 0.2746933660665925
+                },
+                "0.005": {
+                  "child_volume_m3": 118398692.73555033,
+                  "outside_parent_uneroded_fraction": 0.27957505365668484,
+                  "strict_outside_parent_support_fraction": 0.22149077981048604,
+                  "outside_all_older_uneroded_fraction": 0.27957505365668484
+                },
+                "0.01": {
+                  "child_volume_m3": 108623898.84915403,
+                  "outside_parent_uneroded_fraction": 0.282942636843236,
+                  "strict_outside_parent_support_fraction": 0.2080836774804453,
+                  "outside_all_older_uneroded_fraction": 0.282942636843236
+                },
+                "0.04": {
+                  "child_volume_m3": 82141027.04066171,
+                  "outside_parent_uneroded_fraction": 0.33946187397075767,
+                  "strict_outside_parent_support_fraction": 0.18938058684569126,
+                  "outside_all_older_uneroded_fraction": 0.33946187397075767
+                }
+              }
+            },
+            {
+              "material_lattice_phase_native_cells": 0.5,
+              "voxel_volume_world_m3": 216.08439929251713,
+              "native_mass_fraction_outside_parent_strict_support": 0.18815409154760904,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 167149926.2287337,
+                  "outside_parent_uneroded_fraction": 0.25968663546810766,
+                  "strict_outside_parent_support_fraction": 0.25968663546810766,
+                  "outside_all_older_uneroded_fraction": 0.25968663546810766
+                },
+                "0.001": {
+                  "child_volume_m3": 141821377.281262,
+                  "outside_parent_uneroded_fraction": 0.2775885081148945,
+                  "strict_outside_parent_support_fraction": 0.241911007368312,
+                  "outside_all_older_uneroded_fraction": 0.2775885081148945
+                },
+                "0.005": {
+                  "child_volume_m3": 123460901.95777613,
+                  "outside_parent_uneroded_fraction": 0.28100567948123323,
+                  "strict_outside_parent_support_fraction": 0.22141925772943266,
+                  "outside_all_older_uneroded_fraction": 0.28100567948123323
+                },
+                "0.01": {
+                  "child_volume_m3": 112547127.20270896,
+                  "outside_parent_uneroded_fraction": 0.28308834823211376,
+                  "strict_outside_parent_support_fraction": 0.2071160876109729,
+                  "outside_all_older_uneroded_fraction": 0.28308834823211376
+                },
+                "0.04": {
+                  "child_volume_m3": 83012279.33860914,
+                  "outside_parent_uneroded_fraction": 0.33642227578702955,
+                  "strict_outside_parent_support_fraction": 0.18601073494270706,
+                  "outside_all_older_uneroded_fraction": 0.33642227578702955
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "actual_joint": {
+        "1e-07": {
+          "voxels": 835274,
+          "volume_m3": 427660288.0
+        },
+        "0.001": {
+          "voxels": 682937,
+          "volume_m3": 349663744.0
+        },
+        "0.005": {
+          "voxels": 586157,
+          "volume_m3": 300112384.0
+        },
+        "0.01": {
+          "voxels": 534756,
+          "volume_m3": 273795072.0
+        },
+        "0.04": {
+          "voxels": 387642,
+          "volume_m3": 198472704.0
+        }
+      },
+      "all_current_uneroded_potential": {
+        "1e-07": {
+          "voxels": 856916,
+          "volume_m3": 438740992.0
+        },
+        "0.001": {
+          "voxels": 726894,
+          "volume_m3": 372169728.0
+        },
+        "0.005": {
+          "voxels": 634714,
+          "volume_m3": 324973568.0
+        },
+        "0.01": {
+          "voxels": 579952,
+          "volume_m3": 296935424.0
+        },
+        "0.04": {
+          "voxels": 438184,
+          "volume_m3": 224350208.0
+        }
+      },
+      "actual_density_sum_proxy": 21165797.63024129
+    },
+    {
+      "time": 280,
+      "cohorts": [
+        {
+          "slot": 0,
+          "id": 1,
+          "parentId": 0,
+          "born": 0,
+          "s": 1,
+          "yaw": 0,
+          "C": [
+            1075.7599999999711,
+            1441.9999999998981,
+            0
+          ],
+          "K": [
+            1.8305000000000013,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 280,
+          "ageE": 82.23958333333334,
+          "establishment": "parentless-condensation",
+          "cert": null,
+          "world_linear_map": [
+            [
+              4.0,
+              1.8305000000000013,
+              -0.0
+            ],
+            [
+              0.0,
+              4.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              4.0
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            8.0,
+            8.797892986391686,
+            8.0
+          ],
+          "template_extent_world_m_estimate": [
+            1575.8630000000003,
+            664.0,
+            1864.0
+          ],
+          "parent_site": null,
+          "actual_min_resolved_neck_during_healthy_establishment_m": null,
+          "actual_min_seed_burial_margin_m": null
+        },
+        {
+          "slot": 1,
+          "id": 2,
+          "parentId": 1,
+          "born": 130,
+          "s": 0.7731516760657542,
+          "yaw": 0.7102289266185835,
+          "C": [
+            1043.7599999999713,
+            1441.9999999998981,
+            16
+          ],
+          "K": [
+            0.6111763999299766,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 150,
+          "ageE": 0,
+          "establishment": "completed",
+          "cert": {
+            "pass": true,
+            "parentFutureAge": 210,
+            "parentRadiusWorldLower": 74.4130025443305,
+            "seedSupportWorldUpper": 16.46527951069815,
+            "minSeedBurialMargin": 57.94772303363234,
+            "minPositiveNeck": 1.2113868310988,
+            "minResolvedNeck": 8.107112543072223,
+            "resolvedStartAge": 22,
+            "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+          },
+          "world_linear_map": [
+            [
+              2.344853475223608,
+              0.6111763999299766,
+              -2.016402342535915
+            ],
+            [
+              0.0,
+              3.0926067042630168,
+              0.0
+            ],
+            [
+              2.016402342535915,
+              0.0,
+              2.344853475223608
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            6.1852134085260335,
+            6.3048403053793285,
+            6.1852134085260335
+          ],
+          "template_extent_world_m_estimate": [
+            1786.76217913122,
+            513.3727129076608,
+            1733.9176643806222
+          ],
+          "parent_site": {
+            "id": "socket-1",
+            "local_xyz": [
+              291,
+              233,
+              171
+            ]
+          },
+          "actual_min_resolved_neck_during_healthy_establishment_m": 8.037656080781694,
+          "actual_min_seed_burial_margin_m": 67.94564362235417,
+          "distance_from_actual_parent_socket_m": 2.2737367544323206e-13,
+          "socket_offset_from_parent_anchor_world_m": 35.77708763999664,
+          "linear_scale_ratio_to_parent": 0.7731516760657542,
+          "exact_uneroded_support_volume_ratio_to_parent": 0.462161862897225,
+          "world8m": {
+            "density_mass_proxy": 9474090.042924624,
+            "increase_over_actual_parent_mass_proxy": 9474086.388662081,
+            "thresholds": {
+              "1e-07": {
+                "child_volume_m3": 182500864.0,
+                "outside_parent_uneroded_volume_m3": 50586112.0,
+                "outside_parent_uneroded_fraction": 0.27718286309044543,
+                "outside_all_older_uneroded_fraction": 0.27718286309044543,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.27718286309044543,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.20670045391130304
+              },
+              "0.001": {
+                "child_volume_m3": 153046016.0,
+                "outside_parent_uneroded_volume_m3": 44673536.0,
+                "outside_parent_uneroded_fraction": 0.2918961052863996,
+                "outside_all_older_uneroded_fraction": 0.2918961052863996,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.2584387691607732,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.20670045391130304
+              },
+              "0.005": {
+                "child_volume_m3": 133515776.0,
+                "outside_parent_uneroded_volume_m3": 39525376.0,
+                "outside_parent_uneroded_fraction": 0.2960352490480226,
+                "outside_all_older_uneroded_fraction": 0.2960352490480226,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.23819950685078592,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.20670045391130304
+              },
+              "0.01": {
+                "child_volume_m3": 121990144.0,
+                "outside_parent_uneroded_volume_m3": 36546560.0,
+                "outside_parent_uneroded_fraction": 0.29958616984663944,
+                "outside_all_older_uneroded_fraction": 0.29958616984663944,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.22443780376224493,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.20670045391130304
+              },
+              "0.04": {
+                "child_volume_m3": 90646016.0,
+                "outside_parent_uneroded_volume_m3": 31991296.0,
+                "outside_parent_uneroded_fraction": 0.3529255604570641,
+                "outside_all_older_uneroded_fraction": 0.3529255604570641,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.20355506854267041,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.20670045391130304
+              }
+            },
+            "projection_novelty": {
+              "front_Z": {
+                "0.001": {
+                  "child_pixels": 6470,
+                  "novel_pixels": 362,
+                  "novel_fraction_of_child_projection": 0.055950540958268936,
+                  "novel_area_m2": 23168.0,
+                  "max_distance_from_parent_projection_m": 160.79800993793424,
+                  "novel_area_ge_32m_from_parent_m2": 18880.0
+                },
+                "0.005": {
+                  "child_pixels": 6167,
+                  "novel_pixels": 321,
+                  "novel_fraction_of_child_projection": 0.05205124047348792,
+                  "novel_area_m2": 20544.0,
+                  "max_distance_from_parent_projection_m": 163.1686244349691,
+                  "novel_area_ge_32m_from_parent_m2": 17024.0
+                },
+                "0.01": {
+                  "child_pixels": 5921,
+                  "novel_pixels": 296,
+                  "novel_fraction_of_child_projection": 0.04999155548049316,
+                  "novel_area_m2": 18944.0,
+                  "max_distance_from_parent_projection_m": 164.92422502470643,
+                  "novel_area_ge_32m_from_parent_m2": 15488.0
+                },
+                "0.04": {
+                  "child_pixels": 5258,
+                  "novel_pixels": 180,
+                  "novel_fraction_of_child_projection": 0.034233548877900345,
+                  "novel_area_m2": 11520.0,
+                  "max_distance_from_parent_projection_m": 161.78998732925348,
+                  "novel_area_ge_32m_from_parent_m2": 9920.0
+                }
+              },
+              "side_X": {
+                "0.001": {
+                  "child_pixels": 6382,
+                  "novel_pixels": 128,
+                  "novel_fraction_of_child_projection": 0.02005640864932623,
+                  "novel_area_m2": 8192.0,
+                  "max_distance_from_parent_projection_m": 68.81860213634101,
+                  "novel_area_ge_32m_from_parent_m2": 3200.0
+                },
+                "0.005": {
+                  "child_pixels": 6086,
+                  "novel_pixels": 141,
+                  "novel_fraction_of_child_projection": 0.02316792638843247,
+                  "novel_area_m2": 9024.0,
+                  "max_distance_from_parent_projection_m": 73.7563556583431,
+                  "novel_area_ge_32m_from_parent_m2": 3712.0
+                },
+                "0.01": {
+                  "child_pixels": 5681,
+                  "novel_pixels": 157,
+                  "novel_fraction_of_child_projection": 0.027635979581059674,
+                  "novel_area_m2": 10048.0,
+                  "max_distance_from_parent_projection_m": 79.19595949289332,
+                  "novel_area_ge_32m_from_parent_m2": 3968.0
+                },
+                "0.04": {
+                  "child_pixels": 4757,
+                  "novel_pixels": 195,
+                  "novel_fraction_of_child_projection": 0.040992221988648304,
+                  "novel_area_m2": 12480.0,
+                  "max_distance_from_parent_projection_m": 73.7563556583431,
+                  "novel_area_ge_32m_from_parent_m2": 4224.0
+                }
+              },
+              "top_Y": {
+                "0.001": {
+                  "child_pixels": 11135,
+                  "novel_pixels": 2305,
+                  "novel_fraction_of_child_projection": 0.2070049393803323,
+                  "novel_area_m2": 147520.0,
+                  "max_distance_from_parent_projection_m": 277.7048793233565,
+                  "novel_area_ge_32m_from_parent_m2": 107072.0
+                },
+                "0.005": {
+                  "child_pixels": 10373,
+                  "novel_pixels": 2074,
+                  "novel_fraction_of_child_projection": 0.19994215752434205,
+                  "novel_area_m2": 132736.0,
+                  "max_distance_from_parent_projection_m": 277.2435752186153,
+                  "novel_area_ge_32m_from_parent_m2": 96896.0
+                },
+                "0.01": {
+                  "child_pixels": 9699,
+                  "novel_pixels": 1799,
+                  "novel_fraction_of_child_projection": 0.18548303948860706,
+                  "novel_area_m2": 115136.0,
+                  "max_distance_from_parent_projection_m": 277.2435752186153,
+                  "novel_area_ge_32m_from_parent_m2": 83904.0
+                },
+                "0.04": {
+                  "child_pixels": 8192,
+                  "novel_pixels": 1499,
+                  "novel_fraction_of_child_projection": 0.1829833984375,
+                  "novel_area_m2": 95936.0,
+                  "max_distance_from_parent_projection_m": 271.7646040234085,
+                  "novel_area_ge_32m_from_parent_m2": 66624.0
+                }
+              }
+            },
+            "increase_over_uneroded_parent_mass_proxy": 4029969.0611603735
+          },
+          "material_native": [
+            {
+              "material_lattice_phase_native_cells": 0,
+              "voxel_volume_world_m3": 236.6268738033792,
+              "native_mass_fraction_outside_parent_strict_support": 0.20712336957489028,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 163962546.8883423,
+                  "outside_parent_uneroded_fraction": 0.26802382972827876,
+                  "strict_outside_parent_support_fraction": 0.26802382972827876,
+                  "outside_all_older_uneroded_fraction": 0.26802382972827876
+                },
+                "0.001": {
+                  "child_volume_m3": 147663214.56701794,
+                  "outside_parent_uneroded_fraction": 0.29184467512988077,
+                  "strict_outside_parent_support_fraction": 0.2568337622629536,
+                  "outside_all_older_uneroded_fraction": 0.29184467512988077
+                },
+                "0.005": {
+                  "child_volume_m3": 129654489.70933795,
+                  "outside_parent_uneroded_fraction": 0.29710837920310695,
+                  "strict_outside_parent_support_fraction": 0.2377082390387058,
+                  "outside_all_older_uneroded_fraction": 0.29710837920310695
+                },
+                "0.01": {
+                  "child_volume_m3": 118950436.4459683,
+                  "outside_parent_uneroded_fraction": 0.30108296929332473,
+                  "strict_outside_parent_support_fraction": 0.22448537076380767,
+                  "outside_all_older_uneroded_fraction": 0.30108296929332473
+                },
+                "0.04": {
+                  "child_volume_m3": 89949920.04637375,
+                  "outside_parent_uneroded_fraction": 0.3567926047130749,
+                  "strict_outside_parent_support_fraction": 0.20568273293101907,
+                  "outside_all_older_uneroded_fraction": 0.3567926047130749
+                }
+              }
+            },
+            {
+              "material_lattice_phase_native_cells": 0.5,
+              "voxel_volume_world_m3": 236.6268738033792,
+              "native_mass_fraction_outside_parent_strict_support": 0.20636728537778354,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 183040351.96186593,
+                  "outside_parent_uneroded_fraction": 0.27752928096801716,
+                  "strict_outside_parent_support_fraction": 0.27752928096801716,
+                  "outside_all_older_uneroded_fraction": 0.27752928096801716
+                },
+                "0.001": {
+                  "child_volume_m3": 155303896.32212904,
+                  "outside_parent_uneroded_fraction": 0.29539526209615985,
+                  "strict_outside_parent_support_fraction": 0.25944198292306847,
+                  "outside_all_older_uneroded_fraction": 0.29539526209615985
+                },
+                "0.005": {
+                  "child_volume_m3": 135197947.48192972,
+                  "outside_parent_uneroded_fraction": 0.29880197075373455,
+                  "strict_outside_parent_support_fraction": 0.2387184850049444,
+                  "outside_all_older_uneroded_fraction": 0.29880197075373455
+                },
+                "0.01": {
+                  "child_volume_m3": 123246633.96674244,
+                  "outside_parent_uneroded_fraction": 0.3016657450926182,
+                  "strict_outside_parent_support_fraction": 0.22453767701901514,
+                  "outside_all_older_uneroded_fraction": 0.3016657450926182
+                },
+                "0.04": {
+                  "child_volume_m3": 90903999.60154897,
+                  "outside_parent_uneroded_fraction": 0.3537741497165288,
+                  "strict_outside_parent_support_fraction": 0.20291488575251324,
+                  "outside_all_older_uneroded_fraction": 0.3537741497165288
+                }
+              }
+            }
+          ]
+        },
+        {
+          "slot": 2,
+          "id": 3,
+          "parentId": 2,
+          "born": 260,
+          "s": 0.6637165042106062,
+          "yaw": 0.07470558327622712,
+          "C": [
+            1073.3948890571164,
+            1435.814786591372,
+            18.062097888945672
+          ],
+          "K": [
+            0.0037887150448688775,
+            0
+          ],
+          "g": 0.08854166666666666,
+          "A": 1,
+          "age": 20,
+          "ageE": 0,
+          "establishment": "healthy",
+          "cert": {
+            "pass": true,
+            "parentFutureAge": 210,
+            "parentRadiusWorldLower": 47.66112953755096,
+            "seedSupportWorldUpper": 14.134713919654855,
+            "minSeedBurialMargin": 33.526415617896106,
+            "minPositiveNeck": 1.039921994187439,
+            "minResolvedNeck": 8.056981114636335,
+            "resolvedStartAge": 23.75,
+            "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+          },
+          "world_linear_map": [
+            [
+              0.23441062342379082,
+              0.0037887150448688775,
+              -0.017544432548075795
+            ],
+            [
+              0.0,
+              0.235066261907923,
+              0.0
+            ],
+            [
+              0.017544432548075795,
+              0.0,
+              0.23441062342379082
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            0.470132523815846,
+            0.4701935850224053,
+            0.470132523815846
+          ],
+          "template_extent_world_m_estimate": [
+            83.34721051361704,
+            39.02099947671522,
+            114.81448006577462
+          ],
+          "parent_site": {
+            "id": "socket-2",
+            "local_xyz": [
+              307,
+              231,
+              161
+            ]
+          },
+          "actual_min_resolved_neck_during_healthy_establishment_m": null,
+          "actual_min_seed_burial_margin_m": 39.93092728003602,
+          "distance_from_actual_parent_socket_m": 6.821302781254924e-13,
+          "socket_offset_from_parent_anchor_world_m": 30.34362803031078,
+          "linear_scale_ratio_to_parent": 0.07600910312452434,
+          "exact_uneroded_support_volume_ratio_to_parent": 0.00043913375783615995,
+          "world8m": {
+            "density_mass_proxy": 4384.70019320205,
+            "increase_over_actual_parent_mass_proxy": 476.31059646606445,
+            "thresholds": {
+              "1e-07": {
+                "child_volume_m3": 79360.0,
+                "outside_parent_uneroded_volume_m3": 0.0,
+                "outside_parent_uneroded_fraction": 0.0,
+                "outside_all_older_uneroded_fraction": 0.0,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.0
+              },
+              "0.001": {
+                "child_volume_m3": 67584.0,
+                "outside_parent_uneroded_volume_m3": 0.0,
+                "outside_parent_uneroded_fraction": 0.0,
+                "outside_all_older_uneroded_fraction": 0.0,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.0
+              },
+              "0.005": {
+                "child_volume_m3": 58880.0,
+                "outside_parent_uneroded_volume_m3": 0.0,
+                "outside_parent_uneroded_fraction": 0.0,
+                "outside_all_older_uneroded_fraction": 0.0,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.0
+              },
+              "0.01": {
+                "child_volume_m3": 56832.0,
+                "outside_parent_uneroded_volume_m3": 0.0,
+                "outside_parent_uneroded_fraction": 0.0,
+                "outside_all_older_uneroded_fraction": 0.0,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.0
+              },
+              "0.04": {
+                "child_volume_m3": 44032.0,
+                "outside_parent_uneroded_volume_m3": 0.0,
+                "outside_parent_uneroded_fraction": 0.0,
+                "outside_all_older_uneroded_fraction": 0.0,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.0,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.0
+              }
+            },
+            "projection_novelty": {
+              "front_Z": {
+                "0.001": {
+                  "child_pixels": 32,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 32,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 32,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 27,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                }
+              },
+              "side_X": {
+                "0.001": {
+                  "child_pixels": 40,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 33,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 32,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 26,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                }
+              },
+              "top_Y": {
+                "0.001": {
+                  "child_pixels": 57,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 51,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 49,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 39,
+                  "novel_pixels": 0,
+                  "novel_fraction_of_child_projection": 0.0,
+                  "novel_area_m2": 0.0,
+                  "max_distance_from_parent_projection_m": 0.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                }
+              }
+            },
+            "increase_over_uneroded_parent_mass_proxy": 476.31059646606445
+          },
+          "material_native": [
+            {
+              "material_lattice_phase_native_cells": 0,
+              "voxel_volume_world_m3": 0.1039108482983007,
+              "native_mass_fraction_outside_parent_strict_support": 0.0,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 72001.48935946533,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.001": {
+                  "child_volume_m3": 64843.902306981785,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.005": {
+                  "child_volume_m3": 56935.66328639131,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.01": {
+                  "child_volume_m3": 52235.15215276938,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.04": {
+                  "child_volume_m3": 39500.04640702624,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                }
+              }
+            },
+            {
+              "material_lattice_phase_native_cells": 0.5,
+              "voxel_volume_world_m3": 0.1039108482983007,
+              "native_mass_fraction_outside_parent_strict_support": 0.0,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 80379.19759266752,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.001": {
+                  "child_volume_m3": 68199.18359853391,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.005": {
+                  "child_volume_m3": 59369.982729475596,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.01": {
+                  "child_volume_m3": 54121.75751447333,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                },
+                "0.04": {
+                  "child_volume_m3": 39919.01494736499,
+                  "outside_parent_uneroded_fraction": 0.0,
+                  "strict_outside_parent_support_fraction": 0.0,
+                  "outside_all_older_uneroded_fraction": 0.0
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "actual_joint": {
+        "1e-07": {
+          "voxels": 356447,
+          "volume_m3": 182500864.0
+        },
+        "0.001": {
+          "voxels": 298918,
+          "volume_m3": 153046016.0
+        },
+        "0.005": {
+          "voxels": 260773,
+          "volume_m3": 133515776.0
+        },
+        "0.01": {
+          "voxels": 238262,
+          "volume_m3": 121990144.0
+        },
+        "0.04": {
+          "voxels": 177043,
+          "volume_m3": 90646016.0
+        }
+      },
+      "all_current_uneroded_potential": {
+        "1e-07": {
+          "voxels": 870935,
+          "volume_m3": 445918720.0
+        },
+        "0.001": {
+          "voxels": 737383,
+          "volume_m3": 377540096.0
+        },
+        "0.005": {
+          "voxels": 644357,
+          "volume_m3": 329910784.0
+        },
+        "0.01": {
+          "voxels": 589231,
+          "volume_m3": 301686272.0
+        },
+        "0.04": {
+          "voxels": 446376,
+          "volume_m3": 228544512.0
+        }
+      },
+      "actual_density_sum_proxy": 9474566.35352872
+    },
+    {
+      "time": 350,
+      "cohorts": [
+        {
+          "slot": 0,
+          "id": 1,
+          "parentId": 0,
+          "born": 0,
+          "s": 1,
+          "yaw": 0,
+          "C": [
+            1348.3749999999552,
+            1452.4999999998727,
+            0
+          ],
+          "K": [
+            2.3904999999999585,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 350,
+          "ageE": 162.63198852539065,
+          "establishment": "parentless-condensation",
+          "cert": null,
+          "world_linear_map": [
+            [
+              4.0,
+              2.3904999999999585,
+              -0.0
+            ],
+            [
+              0.0,
+              4.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              4.0
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            8.0,
+            9.319761853180541,
+            8.0
+          ],
+          "template_extent_world_m_estimate": [
+            1668.822999999993,
+            664.0,
+            1864.0
+          ],
+          "parent_site": null,
+          "actual_min_resolved_neck_during_healthy_establishment_m": null,
+          "actual_min_seed_burial_margin_m": null
+        },
+        {
+          "slot": 1,
+          "id": 2,
+          "parentId": 1,
+          "born": 130,
+          "s": 0.7731516760657542,
+          "yaw": 0.7102289266185835,
+          "C": [
+            1316.3749999999554,
+            1452.4999999998727,
+            16
+          ],
+          "K": [
+            1.044141338526786,
+            0
+          ],
+          "g": 1,
+          "A": 1,
+          "age": 220,
+          "ageE": 7.067464192708334,
+          "establishment": "completed",
+          "cert": {
+            "pass": true,
+            "parentFutureAge": 210,
+            "parentRadiusWorldLower": 74.4130025443305,
+            "seedSupportWorldUpper": 16.46527951069815,
+            "minSeedBurialMargin": 57.94772303363234,
+            "minPositiveNeck": 1.2113868310988,
+            "minResolvedNeck": 8.107112543072223,
+            "resolvedStartAge": 22,
+            "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+          },
+          "world_linear_map": [
+            [
+              2.344853475223608,
+              1.044141338526786,
+              -2.016402342535915
+            ],
+            [
+              0.0,
+              3.0926067042630168,
+              0.0
+            ],
+            [
+              2.016402342535915,
+              0.0,
+              2.344853475223608
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            6.1852134085260335,
+            6.528230192654994,
+            6.1852134085260335
+          ],
+          "template_extent_world_m_estimate": [
+            1858.6343589382905,
+            513.3727129076608,
+            1733.9176643806222
+          ],
+          "parent_site": {
+            "id": "socket-1",
+            "local_xyz": [
+              291,
+              233,
+              171
+            ]
+          },
+          "actual_min_resolved_neck_during_healthy_establishment_m": 8.037656080781694,
+          "actual_min_seed_burial_margin_m": 67.94564362235417,
+          "distance_from_actual_parent_socket_m": 2.2737367544323206e-13,
+          "socket_offset_from_parent_anchor_world_m": 35.77708763999664,
+          "linear_scale_ratio_to_parent": 0.7731516760657542,
+          "exact_uneroded_support_volume_ratio_to_parent": 0.462161862897225,
+          "world8m": {
+            "density_mass_proxy": 8011749.807152123,
+            "increase_over_actual_parent_mass_proxy": 8011749.807152123,
+            "thresholds": {
+              "1e-07": {
+                "child_volume_m3": 176679424.0,
+                "outside_parent_uneroded_volume_m3": 48061440.0,
+                "outside_parent_uneroded_fraction": 0.27202624341813564,
+                "outside_all_older_uneroded_fraction": 0.27202624341813564,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.27202624341813564,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.1903218042248516
+              },
+              "0.001": {
+                "child_volume_m3": 142189568.0,
+                "outside_parent_uneroded_volume_m3": 40300544.0,
+                "outside_parent_uneroded_fraction": 0.2834282751319703,
+                "outside_all_older_uneroded_fraction": 0.2834282751319703,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.24794212751247685,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.1903218042248516
+              },
+              "0.005": {
+                "child_volume_m3": 121410560.0,
+                "outside_parent_uneroded_volume_m3": 34345472.0,
+                "outside_parent_uneroded_fraction": 0.2828870239952769,
+                "outside_all_older_uneroded_fraction": 0.2828870239952769,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.2237928562391937,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.1903218042248516
+              },
+              "0.01": {
+                "child_volume_m3": 110564352.0,
+                "outside_parent_uneroded_volume_m3": 31994368.0,
+                "outside_parent_uneroded_fraction": 0.28937326924323675,
+                "outside_all_older_uneroded_fraction": 0.28937326924323675,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.2146138386448464,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.1903218042248516
+              },
+              "0.04": {
+                "child_volume_m3": 77132288.0,
+                "outside_parent_uneroded_volume_m3": 25980928.0,
+                "outside_parent_uneroded_fraction": 0.33683595642851927,
+                "outside_all_older_uneroded_fraction": 0.33683595642851927,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.1907480301893806,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.1903218042248516
+              }
+            },
+            "projection_novelty": {
+              "front_Z": {
+                "0.001": {
+                  "child_pixels": 6312,
+                  "novel_pixels": 334,
+                  "novel_fraction_of_child_projection": 0.05291508238276299,
+                  "novel_area_m2": 21376.0,
+                  "max_distance_from_parent_projection_m": 152.21038072352357,
+                  "novel_area_ge_32m_from_parent_m2": 16960.0
+                },
+                "0.005": {
+                  "child_pixels": 5915,
+                  "novel_pixels": 288,
+                  "novel_fraction_of_child_projection": 0.048689771766694846,
+                  "novel_area_m2": 18432.0,
+                  "max_distance_from_parent_projection_m": 155.3319027115808,
+                  "novel_area_ge_32m_from_parent_m2": 14784.0
+                },
+                "0.01": {
+                  "child_pixels": 5663,
+                  "novel_pixels": 267,
+                  "novel_fraction_of_child_projection": 0.04714815468832774,
+                  "novel_area_m2": 17088.0,
+                  "max_distance_from_parent_projection_m": 160.1998751560063,
+                  "novel_area_ge_32m_from_parent_m2": 13696.0
+                },
+                "0.04": {
+                  "child_pixels": 4889,
+                  "novel_pixels": 60,
+                  "novel_fraction_of_child_projection": 0.012272448353446513,
+                  "novel_area_m2": 3840.0,
+                  "max_distance_from_parent_projection_m": 144.88616221019868,
+                  "novel_area_ge_32m_from_parent_m2": 3200.0
+                }
+              },
+              "side_X": {
+                "0.001": {
+                  "child_pixels": 6227,
+                  "novel_pixels": 121,
+                  "novel_fraction_of_child_projection": 0.019431507949253253,
+                  "novel_area_m2": 7744.0,
+                  "max_distance_from_parent_projection_m": 68.35202996254024,
+                  "novel_area_ge_32m_from_parent_m2": 3008.0
+                },
+                "0.005": {
+                  "child_pixels": 5723,
+                  "novel_pixels": 140,
+                  "novel_fraction_of_child_projection": 0.024462694391053644,
+                  "novel_area_m2": 8960.0,
+                  "max_distance_from_parent_projection_m": 73.7563556583431,
+                  "novel_area_ge_32m_from_parent_m2": 3520.0
+                },
+                "0.01": {
+                  "child_pixels": 5336,
+                  "novel_pixels": 150,
+                  "novel_fraction_of_child_projection": 0.02811094452773613,
+                  "novel_area_m2": 9600.0,
+                  "max_distance_from_parent_projection_m": 73.7563556583431,
+                  "novel_area_ge_32m_from_parent_m2": 3584.0
+                },
+                "0.04": {
+                  "child_pixels": 4287,
+                  "novel_pixels": 150,
+                  "novel_fraction_of_child_projection": 0.03498950314905528,
+                  "novel_area_m2": 9600.0,
+                  "max_distance_from_parent_projection_m": 73.7563556583431,
+                  "novel_area_ge_32m_from_parent_m2": 3584.0
+                }
+              },
+              "top_Y": {
+                "0.001": {
+                  "child_pixels": 10948,
+                  "novel_pixels": 2048,
+                  "novel_fraction_of_child_projection": 0.18706613080014614,
+                  "novel_area_m2": 131072.0,
+                  "max_distance_from_parent_projection_m": 277.7048793233565,
+                  "novel_area_ge_32m_from_parent_m2": 95232.0
+                },
+                "0.005": {
+                  "child_pixels": 9865,
+                  "novel_pixels": 1711,
+                  "novel_fraction_of_child_projection": 0.17344145970603142,
+                  "novel_area_m2": 109504.0,
+                  "max_distance_from_parent_projection_m": 277.2435752186153,
+                  "novel_area_ge_32m_from_parent_m2": 80384.0
+                },
+                "0.01": {
+                  "child_pixels": 9196,
+                  "novel_pixels": 1552,
+                  "novel_fraction_of_child_projection": 0.16876903001304916,
+                  "novel_area_m2": 99328.0,
+                  "max_distance_from_parent_projection_m": 277.2435752186153,
+                  "novel_area_ge_32m_from_parent_m2": 73280.0
+                },
+                "0.04": {
+                  "child_pixels": 7434,
+                  "novel_pixels": 1279,
+                  "novel_fraction_of_child_projection": 0.1720473500134517,
+                  "novel_area_m2": 81856.0,
+                  "max_distance_from_parent_projection_m": 254.62128740543278,
+                  "novel_area_ge_32m_from_parent_m2": 56256.0
+                }
+              }
+            },
+            "increase_over_uneroded_parent_mass_proxy": 3193474.6014081677
+          },
+          "material_native": [
+            {
+              "material_lattice_phase_native_cells": 0,
+              "voxel_volume_world_m3": 236.6268738033792,
+              "native_mass_fraction_outside_parent_strict_support": 0.19166386876792277,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 163047984.02109224,
+                  "outside_parent_uneroded_fraction": 0.2672704923147924,
+                  "strict_outside_parent_support_fraction": 0.2672704923147924,
+                  "outside_all_older_uneroded_fraction": 0.2672704923147924
+                },
+                "0.001": {
+                  "child_volume_m3": 139769342.05693722,
+                  "outside_parent_uneroded_fraction": 0.2833576558304581,
+                  "strict_outside_parent_support_fraction": 0.24936089958251081,
+                  "outside_all_older_uneroded_fraction": 0.2833576558304581
+                },
+                "0.005": {
+                  "child_volume_m3": 119389852.55062117,
+                  "outside_parent_uneroded_fraction": 0.2825315281568292,
+                  "strict_outside_parent_support_fraction": 0.22523084972916407,
+                  "outside_all_older_uneroded_fraction": 0.2825315281568292
+                },
+                "0.01": {
+                  "child_volume_m3": 109030801.26925683,
+                  "outside_parent_uneroded_fraction": 0.289673178216511,
+                  "strict_outside_parent_support_fraction": 0.2158794715813278,
+                  "outside_all_older_uneroded_fraction": 0.289673178216511
+                },
+                "0.04": {
+                  "child_volume_m3": 77123560.35186158,
+                  "outside_parent_uneroded_fraction": 0.33884987221143253,
+                  "strict_outside_parent_support_fraction": 0.19307886073347263,
+                  "outside_all_older_uneroded_fraction": 0.33884987221143253
+                }
+              }
+            },
+            {
+              "material_lattice_phase_native_cells": 0.5,
+              "voxel_volume_world_m3": 236.6268738033792,
+              "native_mass_fraction_outside_parent_strict_support": 0.19067773677236308,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 177973224.08624038,
+                  "outside_parent_uneroded_fraction": 0.27352863748893136,
+                  "strict_outside_parent_support_fraction": 0.27352863748893136,
+                  "outside_all_older_uneroded_fraction": 0.27352863748893136
+                },
+                "0.001": {
+                  "child_volume_m3": 143391626.24111933,
+                  "outside_parent_uneroded_fraction": 0.2830562623972329,
+                  "strict_outside_parent_support_fraction": 0.24872520965969286,
+                  "outside_all_older_uneroded_fraction": 0.2830562623972329
+                },
+                "0.005": {
+                  "child_volume_m3": 121932881.56338608,
+                  "outside_parent_uneroded_fraction": 0.2819893808607092,
+                  "strict_outside_parent_support_fraction": 0.22426721728870397,
+                  "outside_all_older_uneroded_fraction": 0.2819893808607092
+                },
+                "0.01": {
+                  "child_volume_m3": 110894947.78107986,
+                  "outside_parent_uneroded_fraction": 0.28893692294233,
+                  "strict_outside_parent_support_fraction": 0.2152165053163455,
+                  "outside_all_older_uneroded_fraction": 0.28893692294233
+                },
+                "0.04": {
+                  "child_volume_m3": 77119064.44125931,
+                  "outside_parent_uneroded_fraction": 0.3358197048264858,
+                  "strict_outside_parent_support_fraction": 0.1911171795894572,
+                  "outside_all_older_uneroded_fraction": 0.3358197048264858
+                }
+              }
+            }
+          ]
+        },
+        {
+          "slot": 2,
+          "id": 3,
+          "parentId": 2,
+          "born": 260,
+          "s": 0.6637165042106062,
+          "yaw": 0.07470558327622712,
+          "C": [
+            1345.1439591799067,
+            1446.3147865913465,
+            18.062097888945672
+          ],
+          "K": [
+            0.2066215765537289,
+            0
+          ],
+          "g": 0.9701817830403646,
+          "A": 1,
+          "age": 90,
+          "ageE": 0,
+          "establishment": "completed",
+          "cert": {
+            "pass": true,
+            "parentFutureAge": 210,
+            "parentRadiusWorldLower": 47.66112953755096,
+            "seedSupportWorldUpper": 14.134713919654855,
+            "minSeedBurialMargin": 33.526415617896106,
+            "minPositiveNeck": 1.039921994187439,
+            "minResolvedNeck": 8.056981114636335,
+            "resolvedStartAge": 23.75,
+            "assumptions": "Parent mature/no weather exposure; wet establishment; affinewindadmission. Centers naturally share material-site velocity, not recursive attachment. Radius table certifies age\u2264210. Destructive drying/globaloff cancels healthy claim."
+          },
+          "world_linear_map": [
+            [
+              2.568518587447306,
+              0.2066215765537289,
+              -0.19224043879819577
+            ],
+            [
+              0.0,
+              2.5757026459534544,
+              0.0
+            ],
+            [
+              0.19224043879819577,
+              0.0,
+              2.568518587447306
+            ]
+          ],
+          "native_mapped_voxel_edge_lengths_m": [
+            5.151405291906909,
+            5.167953790919255,
+            5.151405291906909
+          ],
+          "template_extent_world_m_estimate": [
+            940.6721369961215,
+            427.56663922827346,
+            1258.0621212882709
+          ],
+          "parent_site": {
+            "id": "socket-2",
+            "local_xyz": [
+              307,
+              231,
+              161
+            ]
+          },
+          "actual_min_resolved_neck_during_healthy_establishment_m": 8.011690709729999,
+          "actual_min_seed_burial_margin_m": 39.93092728003602,
+          "distance_from_actual_parent_socket_m": 4.547612284625202e-13,
+          "socket_offset_from_parent_anchor_world_m": 29.498510554098843,
+          "linear_scale_ratio_to_parent": 0.8328581330445175,
+          "exact_uneroded_support_volume_ratio_to_parent": 0.5777142675329828,
+          "world8m": {
+            "density_mass_proxy": 5474097.6461026445,
+            "increase_over_actual_parent_mass_proxy": 2666844.7748122285,
+            "thresholds": {
+              "1e-07": {
+                "child_volume_m3": 105521664.0,
+                "outside_parent_uneroded_volume_m3": 33570304.0,
+                "outside_parent_uneroded_fraction": 0.3181366055789264,
+                "outside_all_older_uneroded_fraction": 0.030359490919324397,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.3181366055789264,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18151110409129634
+              },
+              "0.001": {
+                "child_volume_m3": 88485888.0,
+                "outside_parent_uneroded_volume_m3": 29336576.0,
+                "outside_parent_uneroded_fraction": 0.33153960098134516,
+                "outside_all_older_uneroded_fraction": 0.04916562514465583,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.28088112762116374,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18151110409129634
+              },
+              "0.005": {
+                "child_volume_m3": 77219840.0,
+                "outside_parent_uneroded_volume_m3": 25467392.0,
+                "outside_parent_uneroded_fraction": 0.3298037395570879,
+                "outside_all_older_uneroded_fraction": 0.05371966582681342,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.24555761835300358,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18151110409129634
+              },
+              "0.01": {
+                "child_volume_m3": 70485504.0,
+                "outside_parent_uneroded_volume_m3": 23329280.0,
+                "outside_parent_uneroded_fraction": 0.33097982813600935,
+                "outside_all_older_uneroded_fraction": 0.05383279943632098,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.22247888019641598,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18151110409129634
+              },
+              "0.04": {
+                "child_volume_m3": 52362752.0,
+                "outside_parent_uneroded_volume_m3": 19999744.0,
+                "outside_parent_uneroded_fraction": 0.3819460061992158,
+                "outside_all_older_uneroded_fraction": 0.07564216640103255,
+                "strict_outside_parent_support_fraction_of_child_threshold_voxels": 0.1719646820701861,
+                "child_total_mass_fraction_strictly_outside_parent_support": 0.18151110409129634
+              }
+            },
+            "projection_novelty": {
+              "front_Z": {
+                "0.001": {
+                  "child_pixels": 4068,
+                  "novel_pixels": 21,
+                  "novel_fraction_of_child_projection": 0.005162241887905605,
+                  "novel_area_m2": 1344.0,
+                  "max_distance_from_parent_projection_m": 16.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.005": {
+                  "child_pixels": 3921,
+                  "novel_pixels": 26,
+                  "novel_fraction_of_child_projection": 0.0066309614894159655,
+                  "novel_area_m2": 1664.0,
+                  "max_distance_from_parent_projection_m": 16.0,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.01": {
+                  "child_pixels": 3814,
+                  "novel_pixels": 36,
+                  "novel_fraction_of_child_projection": 0.009438909281594127,
+                  "novel_area_m2": 2304.0,
+                  "max_distance_from_parent_projection_m": 17.88854381999832,
+                  "novel_area_ge_32m_from_parent_m2": 0.0
+                },
+                "0.04": {
+                  "child_pixels": 3534,
+                  "novel_pixels": 60,
+                  "novel_fraction_of_child_projection": 0.01697792869269949,
+                  "novel_area_m2": 3840.0,
+                  "max_distance_from_parent_projection_m": 40.0,
+                  "novel_area_ge_32m_from_parent_m2": 512.0
+                }
+              },
+              "side_X": {
+                "0.001": {
+                  "child_pixels": 5272,
+                  "novel_pixels": 335,
+                  "novel_fraction_of_child_projection": 0.0635432473444613,
+                  "novel_area_m2": 21440.0,
+                  "max_distance_from_parent_projection_m": 98.95453501482385,
+                  "novel_area_ge_32m_from_parent_m2": 9152.0
+                },
+                "0.005": {
+                  "child_pixels": 4930,
+                  "novel_pixels": 354,
+                  "novel_fraction_of_child_projection": 0.0718052738336714,
+                  "novel_area_m2": 22656.0,
+                  "max_distance_from_parent_projection_m": 93.637599285757,
+                  "novel_area_ge_32m_from_parent_m2": 8768.0
+                },
+                "0.01": {
+                  "child_pixels": 4562,
+                  "novel_pixels": 401,
+                  "novel_fraction_of_child_projection": 0.08790004384042087,
+                  "novel_area_m2": 25664.0,
+                  "max_distance_from_parent_projection_m": 107.33126291998991,
+                  "novel_area_ge_32m_from_parent_m2": 11840.0
+                },
+                "0.04": {
+                  "child_pixels": 3817,
+                  "novel_pixels": 387,
+                  "novel_fraction_of_child_projection": 0.10138852501964894,
+                  "novel_area_m2": 24768.0,
+                  "max_distance_from_parent_projection_m": 224.1428116179504,
+                  "novel_area_ge_32m_from_parent_m2": 8384.0
+                }
+              },
+              "top_Y": {
+                "0.001": {
+                  "child_pixels": 7603,
+                  "novel_pixels": 2038,
+                  "novel_fraction_of_child_projection": 0.2680520847034065,
+                  "novel_area_m2": 130432.0,
+                  "max_distance_from_parent_projection_m": 301.8873962258113,
+                  "novel_area_ge_32m_from_parent_m2": 102784.0
+                },
+                "0.005": {
+                  "child_pixels": 7097,
+                  "novel_pixels": 1861,
+                  "novel_fraction_of_child_projection": 0.2622234747076229,
+                  "novel_area_m2": 119104.0,
+                  "max_distance_from_parent_projection_m": 302.4169307429728,
+                  "novel_area_ge_32m_from_parent_m2": 91584.0
+                },
+                "0.01": {
+                  "child_pixels": 6609,
+                  "novel_pixels": 1623,
+                  "novel_fraction_of_child_projection": 0.24557421697684975,
+                  "novel_area_m2": 103872.0,
+                  "max_distance_from_parent_projection_m": 304.1052449399714,
+                  "novel_area_ge_32m_from_parent_m2": 76160.0
+                },
+                "0.04": {
+                  "child_pixels": 5606,
+                  "novel_pixels": 1347,
+                  "novel_fraction_of_child_projection": 0.24027827327863005,
+                  "novel_area_m2": 86208.0,
+                  "max_distance_from_parent_projection_m": 314.85869846647086,
+                  "novel_area_ge_32m_from_parent_m2": 58432.0
+                }
+              }
+            },
+            "increase_over_uneroded_parent_mass_proxy": 2424920.137656001
+          },
+          "material_native": [
+            {
+              "material_lattice_phase_native_cells": 0,
+              "voxel_volume_world_m3": 136.70272107793878,
+              "native_mass_fraction_outside_parent_strict_support": 0.18149038572853674,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 94723502.67844102,
+                  "outside_parent_uneroded_fraction": 0.2999497774622032,
+                  "strict_outside_parent_support_fraction": 0.2999497774622032,
+                  "outside_all_older_uneroded_fraction": 0.027476634974513504
+                },
+                "0.001": {
+                  "child_volume_m3": 85307145.84515044,
+                  "outside_parent_uneroded_fraction": 0.32784111122150394,
+                  "strict_outside_parent_support_fraction": 0.27702496979331254,
+                  "outside_all_older_uneroded_fraction": 0.04827140828865094
+                },
+                "0.005": {
+                  "child_volume_m3": 74903248.55479284,
+                  "outside_parent_uneroded_fraction": 0.32751200887707876,
+                  "strict_outside_parent_support_fraction": 0.24314690981296813,
+                  "outside_all_older_uneroded_fraction": 0.053295323473157054
+                },
+                "0.01": {
+                  "child_volume_m3": 68719364.2641112,
+                  "outside_parent_uneroded_fraction": 0.32932292536980895,
+                  "strict_outside_parent_support_fraction": 0.22088674576082373,
+                  "outside_all_older_uneroded_fraction": 0.0536670565674409
+                },
+                "0.04": {
+                  "child_volume_m3": 51965352.17424118,
+                  "outside_parent_uneroded_fraction": 0.38435130769675957,
+                  "strict_outside_parent_support_fraction": 0.17283115953847852,
+                  "outside_all_older_uneroded_fraction": 0.07744637417331783
+                }
+              }
+            },
+            {
+              "material_lattice_phase_native_cells": 0.5,
+              "voxel_volume_world_m3": 136.70272107793878,
+              "native_mass_fraction_outside_parent_strict_support": 0.1808481146853112,
+              "thresholds": {
+                "1e-07": {
+                  "child_volume_m3": 105745022.86262876,
+                  "outside_parent_uneroded_fraction": 0.3186738888745249,
+                  "strict_outside_parent_support_fraction": 0.3186738888745249,
+                  "outside_all_older_uneroded_fraction": 0.03129379217622877
+                },
+                "0.001": {
+                  "child_volume_m3": 89721276.70875709,
+                  "outside_parent_uneroded_fraction": 0.33307329916321815,
+                  "strict_outside_parent_support_fraction": 0.2822721704523985,
+                  "outside_all_older_uneroded_fraction": 0.04965687678646522
+                },
+                "0.005": {
+                  "child_volume_m3": 78105783.20148571,
+                  "outside_parent_uneroded_fraction": 0.33086434878490606,
+                  "strict_outside_parent_support_fraction": 0.24586990575036535,
+                  "outside_all_older_uneroded_fraction": 0.05341862764830972
+                },
+                "0.01": {
+                  "child_volume_m3": 71201338.86800225,
+                  "outside_parent_uneroded_fraction": 0.33172249869443676,
+                  "strict_outside_parent_support_fraction": 0.22252941357171382,
+                  "outside_all_older_uneroded_fraction": 0.05342249562252327
+                },
+                "0.04": {
+                  "child_volume_m3": 52516537.54562743,
+                  "outside_parent_uneroded_fraction": 0.38077549809197064,
+                  "strict_outside_parent_support_fraction": 0.17026754059443053,
+                  "outside_all_older_uneroded_fraction": 0.0747801731543135
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "actual_joint": {
+        "1e-07": {
+          "voxels": 412150,
+          "volume_m3": 211020800.0
+        },
+        "0.001": {
+          "voxels": 338606,
+          "volume_m3": 173366272.0
+        },
+        "0.005": {
+          "voxels": 291102,
+          "volume_m3": 149044224.0
+        },
+        "0.01": {
+          "voxels": 266186,
+          "volume_m3": 136287232.0
+        },
+        "0.04": {
+          "voxels": 195645,
+          "volume_m3": 100170240.0
+        }
+      },
+      "all_current_uneroded_potential": {
+        "1e-07": {
+          "voxels": 875387,
+          "volume_m3": 448198144.0
+        },
+        "0.001": {
+          "voxels": 742402,
+          "volume_m3": 380109824.0
+        },
+        "0.005": {
+          "voxels": 649485,
+          "volume_m3": 332536320.0
+        },
+        "0.01": {
+          "voxels": 594224,
+          "volume_m3": 304242688.0
+        },
+        "0.04": {
+          "voxels": 453748,
+          "volume_m3": 232318976.0
+        }
+      },
+      "actual_density_sum_proxy": 10678594.581760813
+    }
+  ],
+  "peak_process_rss_bytes": 635240448,
+  "tools": {
+    "python": "3.14.10",
+    "numpy": "2.4.6"
+  },
+  "recipe_sha256": "c5d4688e12b0bc602cf7afcbdb9dbd72f6e0ffdcc24b84c975f4976f1055e854"
+}

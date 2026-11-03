@@ -1,0 +1,11 @@
+# Early implementation interaction addendum
+
+3 November 2026, after the prebuild commission. This records a timing correction and a narrow recovery requirement; it does not promote the pilot or extend it to complete weather/families.
+
+Independent review reproduced a P2 causal publication fault: commit a control change at source2s, then request a presentation tuple whose actual time is1.75s. That tuple incorrectly contains the newly committed forcing. Presentation-time forcing and committed/UI target controls must be retained separately. Readers receive the half-open presentation interval's WeatherFrame; actual source tick, requested time, committed time, presentation time and activation revision remain distinct. A boundary regression must close this finding before browser acceptance.
+
+The temporary-off case also exposed a persistent empty state: with dry gain0, lift off at150s and on at200s, later fixed slots find no eligible mature parent; once old cohorts retire there is no t0 path to seed again. Clear-to-wet recovery is now explicit. After all prior active/retained contribution is zero, a wet region can start another tiny parentless condensation seed. It gets a fresh cohortID, rest and differential-wind state under the same persistent weather-cell ID. Surviving material is never reset or replaced. Apply the same minimum130s cooldown from the last actual birth and preserve the finite population bound, event history and failed-admission counters.
+
+Do not weaken the actual age210 parent/socket certificate to conceal a failed attached admission. The parentless route applies only after real clear; it is not a detached full lobe inserted among surviving material. Initial-off→on and off150→on200 must eventually produce new material under sustained wet forcing. A weather-cancelled establishment is not healthy renewal.
+
+Camera observation is independent of support calculation. Do not aim automatically at the changing optical bounds or density centroid: that can turn growth into camera wobble. Hold a world focus for the normal motion windows. A recorded optional follow mode may follow the stable horizontal E1 weather region at fixed focus height, while source bounds continue changing independently for all consumers.

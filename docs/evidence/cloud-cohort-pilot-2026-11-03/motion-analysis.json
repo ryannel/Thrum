@@ -1,0 +1,98 @@
+[
+  {
+    "file": "cohort-accelerated-16x-40s-7c719e6a164480db-7b266289-4.webm",
+    "build": "7c719e6a164480db",
+    "source_window": [
+      0,
+      640
+    ],
+    "wall_ms": 40002.240000247955,
+    "outcome": "recorded-fixed-fixture",
+    "numerical_purpose_gate": true,
+    "decoded_frames": 600,
+    "first_last_pts": [
+      0.0,
+      39.942
+    ],
+    "encoded_fps_from_pts": 14.996745280656953,
+    "full_ffmpeg_decode_exit": 0,
+    "dropped_encoded_bytes": 0,
+    "retained_submission_count": 240,
+    "overwritten_submission_records": 3640,
+    "retained_submission_wall_span_ms": 7703.920000076294,
+    "retained_submission_cadence_ms": {
+      "p50": 33.31500005722046,
+      "p95": 35.61999988555908,
+      "max": 41.96999979019165
+    },
+    "retained_queue_fence_elapsed_ms": {
+      "p50": 27.65999984741211,
+      "p95": 32.50500011444092,
+      "max": 35.31500005722046
+    },
+    "source_cpu_delta_ms": 168.28500127792358,
+    "logical_gpu_bytes_at_end": 78843452,
+    "host": {
+      "adapter": {
+        "vendor": "apple",
+        "architecture": "metal-3",
+        "device": "",
+        "description": ""
+      },
+      "devicePixelRatio": 2,
+      "screen": [
+        1728,
+        1117
+      ]
+    },
+    "limits": "Only latest240 submissions retained, not full60s/90s timing campaign; elapsed fence is not timestamp GPU execution or display latency. MediaRecorder15fps is separate from callback cadence. Logical bytes are not process/device residency. Source endpoint is stop-request tuple, not proven encoded-frame source endpoint. No M2/5ms/512MiB admission."
+  },
+  {
+    "file": "cohort-renewal-1x-90s-7c719e6a164480db-7b266289-3.webm",
+    "build": "7c719e6a164480db",
+    "source_window": [
+      130,
+      220
+    ],
+    "wall_ms": 90002.6749997139,
+    "outcome": "recorded-fixed-fixture",
+    "numerical_purpose_gate": true,
+    "decoded_frames": 1350,
+    "first_last_pts": [
+      0.0,
+      89.933
+    ],
+    "encoded_fps_from_pts": 15.00005559694439,
+    "full_ffmpeg_decode_exit": 0,
+    "dropped_encoded_bytes": 0,
+    "retained_submission_count": 240,
+    "overwritten_submission_records": 2347,
+    "retained_submission_wall_span_ms": 8583.08999967575,
+    "retained_submission_cadence_ms": {
+      "p50": 33.77500009536743,
+      "p95": 41.84499979019165,
+      "max": 46.4399995803833
+    },
+    "retained_queue_fence_elapsed_ms": {
+      "p50": 32.72499990463257,
+      "p95": 37.99499988555908,
+      "max": 40.885000228881836
+    },
+    "source_cpu_delta_ms": 19.23500680923462,
+    "logical_gpu_bytes_at_end": 78843452,
+    "host": {
+      "adapter": {
+        "vendor": "apple",
+        "architecture": "metal-3",
+        "device": "",
+        "description": ""
+      },
+      "devicePixelRatio": 2,
+      "screen": [
+        1728,
+        1117
+      ]
+    },
+    "limits": "Only latest240 submissions retained, not full60s/90s timing campaign; elapsed fence is not timestamp GPU execution or display latency. MediaRecorder15fps is separate from callback cadence. Logical bytes are not process/device residency. Source endpoint is stop-request tuple, not proven encoded-frame source endpoint. No M2/5ms/512MiB admission."
+  }
+]
