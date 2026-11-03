@@ -2,6 +2,8 @@
 
 import os
 from pathlib import Path
+import stat
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -57,6 +59,68 @@ class PrepareMacosToolRootClone(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "destination absent"):
                 prepare_clone(source, clone, inventory_root(source))
             self.assertEqual(marker.read_bytes(), b"untouched")
+
+    def test_nonprivate_destination_parent_refuses_before_clone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            os.chmod(base, 0o755)
+            try:
+                with self.assertRaisesRegex(ValueError, "mode-private and locally owned"):
+                    prepare_clone(source, base / "clone", expected)
+                self.assertFalse((base / "clone").exists())
+            finally:
+                os.chmod(base, 0o700)
+
+    def test_writable_nonsticky_ancestor_refuses_before_clone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            private = base / "private"
+            private.mkdir(mode=0o700)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            os.chmod(base, 0o777)
+            try:
+                with self.assertRaisesRegex(ValueError, "ancestor is writable"):
+                    prepare_clone(source, private / "clone", expected)
+                self.assertFalse((private / "clone").exists())
+            finally:
+                os.chmod(base, 0o700)
+
+    def test_extended_acl_parent_refuses_even_with_mode_0700(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            subprocess.run(
+                ["/bin/chmod", "+a", "everyone allow list,search,add_file,add_subdirectory,delete_child", str(base)],
+                check=True,
+            )
+            try:
+                self.assertEqual(stat.S_IMODE(os.stat(base).st_mode), 0o700)
+                with self.assertRaisesRegex(ValueError, "extended ACL"):
+                    prepare_clone(source, base / "clone", expected)
+                self.assertFalse((base / "clone").exists())
+            finally:
+                subprocess.run(["/bin/chmod", "-N", str(base)], check=True)
+
+    def test_acl_query_error_refuses_before_clone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            with patch.object(clone_module, "_has_extended_acl", side_effect=OSError("ACL unavailable")):
+                with self.assertRaisesRegex(OSError, "ACL unavailable"):
+                    prepare_clone(source, base / "clone", inventory_root(source))
+            self.assertFalse((base / "clone").exists())
 
     def test_source_alias_and_absolute_link_refuse(self):
         with tempfile.TemporaryDirectory() as directory:

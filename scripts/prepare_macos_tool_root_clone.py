@@ -6,6 +6,7 @@ the clone later, or publish a ready compiler environment.
 """
 
 import ctypes
+import errno
 import os
 from pathlib import Path
 import shutil
@@ -35,11 +36,67 @@ def _clone_function():
     return clone
 
 
+def _has_extended_acl(fd):
+    if sys.platform != "darwin":
+        raise ValueError("APFS tool-root cloning requires macOS")
+    libc = ctypes.CDLL(None, use_errno=True)
+    get_acl = libc.acl_get_fd_np
+    get_acl.argtypes = [ctypes.c_int, ctypes.c_int]
+    get_acl.restype = ctypes.c_void_p
+    free_acl = libc.acl_free
+    free_acl.argtypes = [ctypes.c_void_p]
+    free_acl.restype = ctypes.c_int
+    ctypes.set_errno(0)
+    acl = get_acl(fd, 0x100)  # ACL_TYPE_EXTENDED from the macOS SDK.
+    if acl:
+        if free_acl(acl) != 0:
+            error = ctypes.get_errno()
+            raise OSError(error, os.strerror(error), "destination parent ACL")
+        return True
+    error = ctypes.get_errno()
+    if error == errno.ENOENT:
+        return False
+    raise OSError(error, os.strerror(error), "destination parent ACL")
+
+
+def _checked_parent(parent):
+    """Check POSIX path ownership; ACL-free ancestry remains a caller duty."""
+    if not parent.is_dir() or parent.is_symlink():
+        raise ValueError("destination parent must be an ordinary directory")
+    before = os.stat(parent, follow_symlinks=False)
+    resolved = parent.resolve(strict=True)
+    after = os.stat(resolved, follow_symlinks=False)
+    if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+        raise ValueError("destination parent changed during selection")
+    for depth, directory in enumerate((resolved, *resolved.parents)):
+        info = os.stat(directory, follow_symlinks=False)
+        mode = stat.S_IMODE(info.st_mode)
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid not in (0, os.geteuid()):
+            raise ValueError("destination ancestor has an untrusted owner")
+        if depth == 0 and (info.st_uid != os.geteuid() or mode & 0o077):
+            raise ValueError("destination parent must be mode-private and locally owned")
+        if mode & 0o022 and not mode & stat.S_ISVTX:
+            raise ValueError("destination ancestor is writable without sticky protection")
+    parent_fd = os.open(resolved, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        held = os.fstat(parent_fd)
+        if (held.st_dev, held.st_ino) != (after.st_dev, after.st_ino):
+            raise ValueError("destination parent changed during selection")
+        if _has_extended_acl(parent_fd):
+            raise ValueError("destination parent has an extended ACL")
+    finally:
+        os.close(parent_fd)
+    return resolved
+
+
 def prepare_clone(source, destination, expected):
     """Clone and inventory a root on one volume; return only on an exact match.
 
-    `destination` must be absent under a private, ordinary parent controlled by
-    the caller. The complete clone is deleted on a failed preparation unless
+    `destination` must be absent under an ordinary, mode-private parent with
+    trusted POSIX ancestors and no extended ACL on the parent. The caller must
+    also establish that ancestor ACLs grant no other user replacement authority;
+    this unready helper does not prove that remaining precondition. The clone
+    is deleted on failure unless
     its directory identity changed, in which case the caller must quarantine
     that parent. Successful preparation does not make the root immutable.
     """
@@ -59,9 +116,7 @@ def prepare_clone(source, destination, expected):
             or destination.exists() or destination.is_symlink()):
         raise ValueError("source must be an ordinary absolute directory; destination absent")
     parent = destination.parent
-    if not parent.is_dir() or parent.is_symlink():
-        raise ValueError("destination parent must be an ordinary directory")
-    parent = parent.resolve(strict=True)
+    parent = _checked_parent(parent)
     destination = parent / destination.name
     source = source.resolve(strict=True)
     if destination.is_relative_to(source) or source.is_relative_to(destination):
