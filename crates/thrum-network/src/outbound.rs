@@ -66,6 +66,10 @@ pub enum OutboundError {
     Watermark,
     /// Sixteen unsent slots are occupied; caller must resync/close the peer.
     Capacity,
+    /// Queued plus submitted result identities exceed this peer's journal reserve.
+    AggregateResultCapacity,
+    /// Queued plus submitted event identities exceed this peer's journal reserve.
+    AggregateEventCapacity,
     /// An atomic capture plan exceeds the four-partition first profile.
     BatchCapacity,
 }
@@ -85,6 +89,8 @@ struct Slot {
     header: GroupHeader,
     len: u16,
     mandatory: bool,
+    result_count: u8,
+    event_count: u8,
 }
 
 #[derive(Clone, Copy)]
@@ -102,6 +108,8 @@ struct QueueState {
     slots: [Option<Slot>; MAX_UNSENT_GROUPS],
     order: [u8; MAX_UNSENT_GROUPS],
     len: usize,
+    pending_results: usize,
+    pending_events: usize,
     partitions: [Option<Partition>; MAX_PARTITIONS],
     last_barrier_tick: u64,
 }
@@ -111,6 +119,8 @@ impl QueueState {
         &mut self,
         payload: &[u8],
         validator: &impl OutboundValidator,
+        result_credit: usize,
+        event_credit: usize,
     ) -> Result<usize, OutboundError> {
         let group = r4::decode(payload).map_err(OutboundError::Framing)?;
         let index = self
@@ -175,11 +185,26 @@ impl QueueState {
                 .position(Option::is_none)
                 .expect("free slot under capacity")
         };
+        let old = self.slots[slot];
+        let old_results = old.map_or(0, |value| usize::from(value.result_count));
+        let old_events = old.map_or(0, |value| usize::from(value.event_count));
+        let pending_results = self.pending_results - old_results + group.results().len();
+        let pending_events = self.pending_events - old_events + group.events().len();
+        if pending_results > result_credit {
+            return Err(OutboundError::AggregateResultCapacity);
+        }
+        if pending_events > event_credit {
+            return Err(OutboundError::AggregateEventCapacity);
+        }
         self.slots[slot] = Some(Slot {
             header: group.header,
             len: payload.len() as u16,
             mandatory,
+            result_count: group.results().len() as u8,
+            event_count: group.events().len() as u8,
         });
+        self.pending_results = pending_results;
+        self.pending_events = pending_events;
         if let Some((position, _)) = coalesced {
             self.order.copy_within(position + 1..self.len, position);
             self.order[self.len - 1] = slot as u8;
@@ -252,6 +277,8 @@ impl UnsentQueue {
                 slots: [None; MAX_UNSENT_GROUPS],
                 order: [0; MAX_UNSENT_GROUPS],
                 len: 0,
+                pending_results: 0,
+                pending_events: 0,
                 partitions,
                 last_barrier_tick: seeds[0].sample_tick,
             },
@@ -288,7 +315,9 @@ impl UnsentQueue {
         if self.transfer_in_progress {
             return Err(OutboundError::Poisoned);
         }
-        let slot = self.state.plan_capture(payload, validator)?;
+        let slot = self
+            .state
+            .plan_capture(payload, validator, usize::MAX, usize::MAX)?;
         let start = slot * r4::MAX_PAYLOAD_BYTES;
         self.payloads[start..start + payload.len()].copy_from_slice(payload);
         Ok(())
@@ -303,6 +332,19 @@ impl UnsentQueue {
         payloads: &[&[u8]],
         validator: &impl OutboundValidator,
     ) -> Result<(), OutboundError> {
+        self.capture_batch_with_credits(payloads, validator, usize::MAX, usize::MAX)
+    }
+
+    /// Preflight a complete peer batch against the sent owner's remaining
+    /// result/event journal credit as well as this queue's retained units.
+    /// The peer owner calls this before any new payload bytes are committed.
+    pub(crate) fn capture_batch_with_credits(
+        &mut self,
+        payloads: &[&[u8]],
+        validator: &impl OutboundValidator,
+        result_credit: usize,
+        event_credit: usize,
+    ) -> Result<(), OutboundError> {
         if self.transfer_in_progress {
             return Err(OutboundError::Poisoned);
         }
@@ -312,7 +354,8 @@ impl UnsentQueue {
         let mut candidate = self.state;
         let mut destinations = [0usize; MAX_PARTITIONS];
         for (index, payload) in payloads.iter().enumerate() {
-            destinations[index] = candidate.plan_capture(payload, validator)?;
+            destinations[index] =
+                candidate.plan_capture(payload, validator, result_credit, event_credit)?;
         }
         for (payload, slot) in payloads.iter().zip(destinations) {
             let start = slot * r4::MAX_PAYLOAD_BYTES;
@@ -368,8 +411,11 @@ impl UnsentQueue {
             return Err(TransferError::Sink(error));
         }
         let slot = self.state.order[0] as usize;
+        let meta = self.state.slots[slot].expect("transferred occupied slot");
         self.state.order.copy_within(1..self.state.len, 0);
         self.state.len -= 1;
+        self.state.pending_results -= usize::from(meta.result_count);
+        self.state.pending_events -= usize::from(meta.event_count);
         self.state.slots[slot] = None;
         self.transfer_in_progress = false;
         Ok(true)
