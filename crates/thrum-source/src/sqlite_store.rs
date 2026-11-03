@@ -3783,6 +3783,79 @@ fn measure_native_store_small_admission_and_read() {
 }
 
 #[test]
+#[ignore = "local release-only 12 MiB accepted admission and pinned-read cost probe"]
+fn measure_native_store_large_admission_and_read() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before 12 MiB edit");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+
+    let root = fixture.source_root();
+    let mut master = File::create(root.join("master.bin")).unwrap();
+    let block = [7_u8; 4096];
+    for _ in 0..(12 * MIB / block.len() as u64) {
+        master.write_all(&block).unwrap();
+    }
+    drop(master);
+    let mut declared: Vec<_> = first_stage
+        .files()
+        .iter()
+        .map(|file| file.path().clone())
+        .collect();
+    let master_path = SourcePath::parse("master.bin").unwrap();
+    declared.push(master_path.clone());
+    declared.sort_unstable();
+    let stage = stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            temporary: 64 * MIB,
+            free_floor: 0,
+            ..plan.into()
+        },
+        |_| {},
+    )
+    .unwrap();
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let start = Instant::now();
+    let b = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate)
+        .unwrap();
+    let admission_ms = start.elapsed().as_secs_f64() * 1000.0;
+    assert_eq!(b.generation, a.generation + 1);
+    let mut old_scene = Vec::new();
+    old_pin
+        .copy_file_to(
+            &SourcePath::parse("scenes/main.scene.json").unwrap(),
+            &mut old_scene,
+        )
+        .unwrap();
+    old_pin.close().unwrap();
+    let mut pin_b = store.pin_current(b.generation).unwrap();
+    let start = Instant::now();
+    assert_eq!(
+        pin_b.copy_file_to(&master_path, &mut io::sink()).unwrap(),
+        12 * MIB
+    );
+    let copy_ms = start.elapsed().as_secs_f64() * 1000.0;
+    pin_b.close().unwrap();
+    let usage = store.space_usage().unwrap();
+    eprintln!(
+        "native_large_admission bytes={} admission_ms={admission_ms:.3} pinned_copy_ms={copy_ms:.3} main_bytes={} wal_bytes={} logical_bytes={}",
+        12 * MIB,
+        usage.main_file_bytes,
+        usage.wal_file_bytes,
+        usage.logical_main_bytes
+    );
+}
+
+#[test]
 fn sqlite_full_inside_root_outcome_transaction_rolls_back_both() {
     let fixture = Fixture::new();
     let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();

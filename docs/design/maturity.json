@@ -502,7 +502,7 @@
       },
       "i2a_native_owner_local_cost": {
         "evidence": "../evidence/i2a/SOURCE-OWNER-LOCAL-COST-2026-11-03.md",
-        "scope": "Three local optimized runs each time ten public three-file accepted admissions, pin/scene-copy/releases and fresh owner opens after ten edits with the cooperative lock and indexed selected-head audit. The record reports per-run min/median/max and post-admission SQLite lengths. It does not isolate the lock syscall or mutex wait, concurrent-reader tails, transient allocated-block peak, RSS, cook/compiler path or device performance."
+        "scope": "Three local optimized runs each time ten public three-file accepted admissions, pin/scene-copy/releases and fresh owner opens after ten edits with the cooperative lock and indexed selected-head audit. Three further runs time one 12 MiB public admission with an A lease live and a pinned B copy. The record reports per-run timing and post-admission SQLite lengths. It does not isolate the lock syscall or mutex wait, concurrent-reader tails, transient allocated-block peak, RSS, cook/compiler path or device performance."
       },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
