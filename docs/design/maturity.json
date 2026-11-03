@@ -705,6 +705,15 @@
         "platform_performance": "one uncontrolled fresh run: installed-root inventories 0.600 s Rust, 5.879 s linker, 5.714 s SDK; clone/seal/fsync/rehash 1.105, 14.544 and 22.934 s; shared cold verification 0.471, 5.339 and 7.108 s. Admitted A/B test process 22.536 s and post-build full root inventory 10.707 s. A retained reload reported 26 ms. No build speed, physical allocation, peak RSS, concurrency or edit-to-ready tail claim",
         "scope": "Three caller-selected local sealed APFS tool-root leases span private Cargo preparation, real admitted A/B build, receipt reconciliation and retained output verification. The opt-in runner uses a nonblocking owner-wide lock, explicit ARM64 wrapper target, bounded outer process-group collector and per-root exclusive cleanup locks; a successful test cleans only its owned scratch. The private dependency cache, Xcode support and host runtime are outside a complete reviewed held selection. An outer timeout can kill the test's supervisor before its separately sessioned inner Cargo is cleaned; failed scratch is preserved. Compiler-family review, exact release manifest, complete read closure, durable ready publication and BuildRevision remain open; buildReady stays false."
       },
+      "i2a_held_macos_private_cache_candidate": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../evidence/i2a/T2-HELD-CARGO-CACHE-CANDIDATE-2026-11-03.md",
+        "implementation": "macos_synthetic_append_only_sealed_private_cache_candidate_only",
+        "functional_validation": "five macOS fixtures passed: distinct legacy and whole-tree digests plus exact sealed manifest under two shared leases; write refusal; extra empty directory and manifest-copy drift refusal; interrupted record publication refusal; injected sidecar-close error still releases the root lease. Full repository check passed",
+        "experienced_quality": "not_applicable_to_headless_cache_selection",
+        "platform_performance": "not_measured_for_full_private_cache_or_complete_warm_edit_path",
+        "scope": "The cold candidate verifies the file-only thrum.cargo-home.v1 digest against its source manifest, inventories directory-complete tree membership, seals an APFS clone with the existing permanent per-digest lock, copies the exact manifest into a sealed file and publishes a canonical unready cache record last. Cold open verifies both digest domains and the copied manifest while holding the root lease; warm checks inspect held descriptor identity and flags. Five fixtures use a tiny synthetic cache. Real Cargo consumption, dependency-selection-key admission, full-cache cold/warm cost, origin authentication, complete tool/dependency/support/runtime selection and ready publication remain open; buildReady stays false."
+      },
       "i2a_apfs_tool_root_retention_probe": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/T2-APFS-CLONE-CANDIDATE.md",

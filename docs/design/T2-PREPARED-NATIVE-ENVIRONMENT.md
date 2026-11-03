@@ -176,6 +176,13 @@ the second offline resolution and exact private-root inventory have completed.
 A dependency-selection change creates a new private home; a code-only edit may
 reuse the held selection.
 
+The [cold retained-cache candidate](../evidence/i2a/T2-HELD-CARGO-CACHE-CANDIDATE-2026-11-03.md)
+now binds the two digest domains and a sealed manifest under a held APFS root
+lease. Five synthetic macOS fixtures cover extra-directory drift, manifest
+drift, interrupted publication, concurrent readers and lease release after a
+sidecar-close error. It has not yet been used by real Cargo or measured with a
+full private cache.
+
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
 existing `thrum.cargo-home.v1` digest used by the cache manifest and origin
