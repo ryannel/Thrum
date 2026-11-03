@@ -61,9 +61,16 @@ The native adapter must then:
    ready revision; an admitted newer source remains a separate state.
 
 This policy trusts the project's reviewed release manifest, its preparation
-job and official HTTPS distribution. It does **not** claim that rustup or Cargo
-provide publisher signatures. Signing the project's release manifest can be
-added later without changing BuildRevision semantics. The first profile stays
+job and official HTTPS distribution. For this first macOS development profile,
+it also trusts the local user account against deliberate same-user mutation of
+retained roots. Private ownership, exact hashes, read-only modes and
+owner-clearable flags must still prevent accidental or compiler writes; the
+release preparer must hold one no-writer selection through verified child
+shutdown and output publication. The [retained-root decision](research/T2-MACOS-RETAINED-ROOT-TRUST-OPTIONS-2026-11-03.md)
+records that a stronger adversarial same-user boundary would require a
+protected owner or read-only image. This policy does **not** claim that rustup
+or Cargo provide publisher signatures. Signing the project's release manifest
+can be added later without changing BuildRevision semantics. The first profile stays
 macOS ARM64; other platforms need their own selected adapter and evidence.
 
 ### First exact-input matcher

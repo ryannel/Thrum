@@ -1,6 +1,7 @@
 # Retained native tool-root trust boundary
 
-3 November 2026. **Decision analysis, not a selected release policy.** This
+3 November 2026. **Selected first-profile boundary: trusted local user.** The
+user selected option A for the first macOS headless development build. This
 refines the [prepared macOS environment](../T2-PREPARED-NATIVE-ENVIRONMENT.md)
 and the user-selected [reviewed exact-hash release policy](../T2-NATIVE-RELEASE-TRUST.md).
 It does not make any current candidate `BuildRevision` ready.
@@ -37,8 +38,7 @@ cannot exclude a deliberately hostile process running as that same owner.
 | **B. Protected owner** | A distinct privileged account or genuinely read-only mounted release image owns the selected byte set and grants the builder read access only. The release preparer must prove mount/owner lifetime, no writable aliases, digest match, and child teardown before unmount/replacement. | Stronger same-user isolation, but adds privileged installation, update and recovery machinery. APFS cloning alone does not supply it. No such helper or verified image exists in this repository. |
 | **C. Candidate only** | Keep cloned roots as unready local qualifications until B is implemented or another enforceable mechanism is found. | Preserves the strictest interpretation, but blocks a target-ready local build even after source, compiler and output closure are otherwise proven. |
 
-Option A is the recommended **first local development** boundary if the user
-accepts a trusted same-user host. It is still a substantial implementation
+Option A is the selected **first local development** boundary. It is still a substantial implementation
 gate: one owner must bind reviewed release hashes, private dependency cache,
 selected Xcode support and runtime records, sandbox policy and compiler
 receipts; deny writes from its compiler children; prevent cooperating Thrum
@@ -56,8 +56,10 @@ physical storage and must be measured with actual volume use; APFS clone
 logical byte counts are not physical reservation. None of these samples
 justify a throughput or latency guarantee.
 
-**Human policy choice:** Does the first macOS development build trust the
-local user account against deliberate same-user mutation (A), or must it
-resist that actor before readiness (B/C)? Keep `buildReady:false` until this
-choice and the independent compiler/system-read, job-containment and ready
-publication gates are satisfied.
+The selected profile trusts the local user account against deliberate
+same-user mutation. Read-only modes and owner-clearable flags remain accident
+barriers; this profile makes no adversarial same-user isolation claim. Option B
+is a later stronger tier if that threat boundary becomes required. Keep
+`buildReady:false` until an actual reviewed release manifest, retained
+no-writer lifecycle, compiler/system-read closure, job containment and ready
+publication are qualified.
