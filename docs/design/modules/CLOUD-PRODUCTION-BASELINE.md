@@ -63,7 +63,9 @@ volumes, rights/recipes, conservative128/256cooks and actual shared-optical imag
 not complete Cb anatomy or a live lifecycle.128 loses visible detail at the matched3km pose;384rays barely changes256.
 One sampledR16texture replaces unused full PDE/rest allocation in that frozen adapter. No full-sky/device admission follows.
 
-Before constructing another whole source, falsify **local support geometry** on this actual3D input. Let rho be raw
+[The bounded local-geometry proof](../../evidence/cloud-geometry-operators-2026-11-03/README.md) now distinguishes support removal from matched-integral fade on this actual3D input. Native multi-view stills and sampled1x/16xcontacts show contraction/opening and uneven remnants, while alpha retains the original outline. This does **not** accept convincing breakup: remnants stay in place, no new lobes grow, and continuous playback cadence was not judged. Final instrument81 closes reviewed failure/capacity faults and passes actual GPU coefficient/endpoint checks. Keep local erosion as a candidate tool; do not turn it into another whole-cloud fade/shrink lifecycle.
+
+The bounded experiment is specified as follows. Let rho be raw
 authored density. Cook d0 from the signed Euclidean distance to opposite-class voxel centres of rho>=.001/.005, with
 explicit native/half/voxel-scale approximation; it is not an exact continuous isosurface SDF. Use positive-inside d0,
 32m halfwidth w in the current2048m fixture and baseline `rho_ref=rho*smoothstep(-w,w,d0)`. Audit that reference's
