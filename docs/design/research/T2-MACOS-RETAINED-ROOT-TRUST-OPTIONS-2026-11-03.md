@@ -11,12 +11,15 @@ It does not make any current candidate `BuildRevision` ready.
 F3's admitted source and F4's cooked product are already distinct from T2's
 compiler inputs. T2 must retain one selected byte set from cold preparation
 through Cargo metadata, compilation, receipt verification and artifact
-publication. The current APFS helper clones files into an owned destination
+publication. The initial APFS helper clones files into an owned destination
 and verifies the whole-root inventory, but its clone is writable afterward.
-The compiler sandbox grants reads from that clone and denies corresponding
-installed files in the local A/B proof. Metadata preparation and selected
-Xcode support/runtime inputs are still outside the clone. No source or
-multiplayer authority may come from a mutable candidate environment.
+A later [held-root candidate](../../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
+seals one caller-selected clone at a time and opens shared read leases; it has
+not yet been used by the real Cargo A/B consumer. That older compiler proof
+granted reads from unsealed clones and denied corresponding installed files.
+Metadata preparation and selected Xcode support/runtime inputs are still
+outside the complete held selection. No source or multiplayer authority may
+come from a mutable candidate environment.
 
 Apple describes APFS clones as copy-on-write same-volume copies, not a
 whole-tree transaction ([APFS overview](https://developer.apple.com/documentation/foundation/about-apple-file-system)).
@@ -49,7 +52,10 @@ whole job. Process-group cleanup and the separate compiler-job containment
 decision remain open.
 
 The cold 4.86-GB logical inventory and APFS clone work belong to release
-preparation, not world updates. The selected private Cargo cache is about
+preparation, not world updates. One local held-root probe measured 33.45
+seconds to clone, seal, fsync and rehash the Xcode linker/SDK pair after
+13.18 seconds of installed-source inventory. This is single-host cold work,
+not a per-edit cost. The selected private Cargo cache is about
 67.8 MB logical and its current per-edit integrity check took roughly
 150–230 ms in local samples. Retaining old and new release roots overlaps
 physical storage and must be measured with actual volume use; APFS clone
@@ -60,6 +66,6 @@ The selected profile trusts the local user account against deliberate
 same-user mutation. Read-only modes and owner-clearable flags remain accident
 barriers; this profile makes no adversarial same-user isolation claim. Option B
 is a later stronger tier if that threat boundary becomes required. Keep
-`buildReady:false` until an actual reviewed release manifest, retained
-no-writer lifecycle, compiler/system-read closure, job containment and ready
-publication are qualified.
+`buildReady:false` until an actual reviewed release manifest, complete
+retained no-writer lifecycle through real compiler work, compiler/system-read
+closure, job containment and ready publication are qualified.
