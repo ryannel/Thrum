@@ -4,6 +4,8 @@ use serde::de::{DeserializeSeed, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Value};
 use std::cell::Cell;
 
+use crate::profile::{LimitExceeded, ObservedQuantity, SourceDimension};
+
 /// Maximum exact bytes in one editable JSON source record.
 pub const MAX_RECORD_BYTES: usize = 16 * 1024 * 1024;
 /// Maximum JSON values in one v1 source record, including containers.
@@ -14,9 +16,34 @@ pub(crate) const MAX_CONTAINER_DEPTH: u8 = 64;
 #[derive(Debug)]
 pub enum JsonError {
     /// The exact input exceeded the selected 16 MiB record bound.
-    TooLarge,
+    TooLarge {
+        /// Exact supplied byte length.
+        observed: u64,
+    },
     /// Syntax, duplicate-key, numeric or nesting validation failed.
     Invalid(serde_json::Error),
+    /// The parser stopped at the first excess value or container level.
+    Limit {
+        /// Dimension, maximum and lower-bound observation.
+        detail: LimitExceeded,
+        /// Original serde error with parse location.
+        source: serde_json::Error,
+    },
+}
+
+impl JsonError {
+    /// Typed capacity detail, when this refusal was caused by a known bound.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooLarge { observed } => Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                *observed,
+            )),
+            Self::Limit { detail, .. } => Some(*detail),
+            Self::Invalid(_) => None,
+        }
+    }
 }
 
 /// Parse one bounded source record, rejecting duplicate keys at every depth.
@@ -28,17 +55,24 @@ pub fn parse_record_json(bytes: &[u8]) -> Result<Value, JsonError> {
 
 fn parse_record_json_with_limit(bytes: &[u8], node_limit: usize) -> Result<Value, JsonError> {
     if bytes.len() > MAX_RECORD_BYTES {
-        return Err(JsonError::TooLarge);
+        return Err(JsonError::TooLarge {
+            observed: bytes.len() as u64,
+        });
     }
     let nodes = Cell::new(0);
+    let limit = Cell::new(None);
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let value = StrictSeed {
         depth: 0,
         nodes: &nodes,
         node_limit,
+        limit: &limit,
     }
     .deserialize(&mut deserializer)
-    .map_err(JsonError::Invalid)?;
+    .map_err(|source| match limit.get() {
+        Some(detail) => JsonError::Limit { detail, source },
+        None => JsonError::Invalid(source),
+    })?;
     deserializer.end().map_err(JsonError::Invalid)?;
     Ok(value)
 }
@@ -47,6 +81,7 @@ struct StrictSeed<'a> {
     depth: u8,
     nodes: &'a Cell<usize>,
     node_limit: usize,
+    limit: &'a Cell<Option<LimitExceeded>>,
 }
 
 impl<'de> DeserializeSeed<'de> for StrictSeed<'_> {
@@ -58,14 +93,87 @@ impl<'de> DeserializeSeed<'de> for StrictSeed<'_> {
     ) -> Result<Self::Value, D::Error> {
         let count = self.nodes.get();
         if count >= self.node_limit {
-            return Err(serde::de::Error::custom("source JSON value count limit"));
+            // Let serde establish that a value token exists before reporting
+            // an observed excess. The probe rejects at the value callback;
+            // it never builds or traverses an excess container.
+            return deserializer.deserialize_any(ExcessValueVisitor {
+                limit: self.limit,
+                allowed: self.node_limit as u64,
+                observed: count as u64 + 1,
+            });
         }
         self.nodes.set(count + 1);
         deserializer.deserialize_any(StrictVisitor {
             depth: self.depth,
             nodes: self.nodes,
             node_limit: self.node_limit,
+            limit: self.limit,
         })
+    }
+}
+
+struct ExcessValueVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+    allowed: u64,
+    observed: u64,
+}
+
+impl ExcessValueVisitor<'_> {
+    fn refuse<T, E: serde::de::Error>(&self) -> Result<T, E> {
+        self.limit.set(Some(LimitExceeded {
+            dimension: SourceDimension::GenericJsonNodes,
+            allowed: self.allowed,
+            observed: ObservedQuantity::AtLeast(self.observed),
+        }));
+        Err(E::custom("source JSON value count limit"))
+    }
+}
+
+impl<'de> Visitor<'de> for ExcessValueVisitor<'_> {
+    type Value = Value;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("one more valid JSON value token")
+    }
+
+    fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_none<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_bool<E: serde::de::Error>(self, _: bool) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_i64<E: serde::de::Error>(self, _: i64) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_u64<E: serde::de::Error>(self, _: u64) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_f64<E: serde::de::Error>(self, _: f64) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_str<E: serde::de::Error>(self, _: &str) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_string<E: serde::de::Error>(self, _: String) -> Result<Self::Value, E> {
+        self.refuse()
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(self, _: A) -> Result<Self::Value, A::Error> {
+        self.refuse()
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, _: A) -> Result<Self::Value, A::Error> {
+        self.refuse()
     }
 }
 
@@ -73,6 +181,7 @@ struct StrictVisitor<'a> {
     depth: u8,
     nodes: &'a Cell<usize>,
     node_limit: usize,
+    limit: &'a Cell<Option<LimitExceeded>>,
 }
 
 impl<'de> Visitor<'de> for StrictVisitor<'_> {
@@ -118,6 +227,11 @@ impl<'de> Visitor<'de> for StrictVisitor<'_> {
 
     fn visit_seq<A: SeqAccess<'de>>(self, mut sequence: A) -> Result<Self::Value, A::Error> {
         if self.depth >= MAX_CONTAINER_DEPTH {
+            self.limit.set(Some(LimitExceeded {
+                dimension: SourceDimension::GenericJsonDepth,
+                allowed: MAX_CONTAINER_DEPTH as u64,
+                observed: ObservedQuantity::AtLeast(self.depth as u64 + 1),
+            }));
             return Err(serde::de::Error::custom("source JSON nesting limit"));
         }
         let mut values = Vec::new();
@@ -125,6 +239,7 @@ impl<'de> Visitor<'de> for StrictVisitor<'_> {
             depth: self.depth + 1,
             nodes: self.nodes,
             node_limit: self.node_limit,
+            limit: self.limit,
         })? {
             values.push(value);
         }
@@ -133,6 +248,11 @@ impl<'de> Visitor<'de> for StrictVisitor<'_> {
 
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
         if self.depth >= MAX_CONTAINER_DEPTH {
+            self.limit.set(Some(LimitExceeded {
+                dimension: SourceDimension::GenericJsonDepth,
+                allowed: MAX_CONTAINER_DEPTH as u64,
+                observed: ObservedQuantity::AtLeast(self.depth as u64 + 1),
+            }));
             return Err(serde::de::Error::custom("source JSON nesting limit"));
         }
         let mut values = Map::new();
@@ -141,6 +261,7 @@ impl<'de> Visitor<'de> for StrictVisitor<'_> {
                 depth: self.depth + 1,
                 nodes: self.nodes,
                 node_limit: self.node_limit,
+                limit: self.limit,
             })?;
             if values.insert(key, value).is_some() {
                 return Err(serde::de::Error::custom("duplicate source JSON key"));
@@ -164,7 +285,7 @@ mod tests {
         assert!(parse_record_json(deep.as_bytes()).is_err());
         assert!(matches!(
             parse_record_json(&vec![b' '; MAX_RECORD_BYTES + 1]),
-            Err(JsonError::TooLarge)
+            Err(JsonError::TooLarge { .. })
         ));
         let valid = parse_record_json(br#"{"fields":{"x":1},"id":"a"}"#).unwrap();
         assert_eq!(valid["fields"]["x"], 1);
@@ -173,6 +294,62 @@ mod tests {
         assert!(parse_record_json_with_limit(br#"[0,1]"#, 2).is_err());
         assert!(parse_record_json_with_limit(br#"{"a":0,"b":1}"#, 2).is_err());
         assert!(parse_record_json_with_limit(br#"[0,1]"#, 3).is_ok());
+    }
+
+    #[test]
+    fn reports_only_actual_generic_json_capacity_refusals() {
+        let oversized = parse_record_json(&vec![b' '; MAX_RECORD_BYTES + 1]).unwrap_err();
+        assert_eq!(
+            oversized.limit_exceeded(),
+            Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                (MAX_RECORD_BYTES + 1) as u64,
+            ))
+        );
+        for input in [br#"[0,1]"#.as_slice(), br#"{"a":0,"b":1}"#] {
+            let error = parse_record_json_with_limit(input, 2).unwrap_err();
+            assert_eq!(
+                error.limit_exceeded(),
+                Some(LimitExceeded {
+                    dimension: SourceDimension::GenericJsonNodes,
+                    allowed: 2,
+                    observed: ObservedQuantity::AtLeast(3),
+                })
+            );
+        }
+        for input in [br#"[0,?]"#.as_slice(), br#"{"a":0,"b":}"#, br#"[0,1e999]"#] {
+            assert_eq!(
+                parse_record_json_with_limit(input, 2)
+                    .unwrap_err()
+                    .limit_exceeded(),
+                None,
+                "invalid next token must remain a syntax refusal"
+            );
+        }
+        for input in [br#"[0,true]"#.as_slice(), br#"[0,"x"]"#, br#"[0,[]]"#] {
+            assert_eq!(
+                parse_record_json_with_limit(input, 2)
+                    .unwrap_err()
+                    .limit_exceeded()
+                    .unwrap()
+                    .dimension,
+                SourceDimension::GenericJsonNodes
+            );
+        }
+        let deep = format!("{}0{}", "[".repeat(65), "]".repeat(65));
+        let error = parse_record_json(deep.as_bytes()).unwrap_err();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::GenericJsonDepth,
+                allowed: MAX_CONTAINER_DEPTH as u64,
+                observed: ObservedQuantity::AtLeast(65),
+            })
+        );
+        for input in [br#"{"a":1,"a":2}"#.as_slice(), br#"[0,]"#] {
+            assert_eq!(parse_record_json(input).unwrap_err().limit_exceeded(), None);
+        }
     }
 
     #[test]
