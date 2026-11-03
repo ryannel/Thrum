@@ -281,7 +281,7 @@ pub enum LinkedRuleError {
 /// ready build must also bind the actual binary, toolchain/dependency closure
 /// and target manifest.
 pub fn verify_linked_rule_source(
-    pin: &mut PinnedSource<'_>,
+    pin: &mut PinnedSource,
     path: &SourcePath,
     linked_length: u64,
     linked_sha256: [u8; 32],
@@ -328,7 +328,7 @@ pub enum SceneCookError {
 /// scene bytes are not read or decoded. The caller retains any prior ready
 /// product if this returns an error; no active run is mutated here.
 pub fn cook_entry_scene(
-    pin: &mut PinnedSource<'_>,
+    pin: &mut PinnedSource,
     target: SceneTarget,
 ) -> Result<SceneProduct, SceneCookError> {
     let root = pin.root();
@@ -371,7 +371,7 @@ pub fn cook_entry_scene(
     })
 }
 
-fn input_hash(pin: &PinnedSource<'_>, path: &SourcePath) -> Result<[u8; 32], SceneCookError> {
+fn input_hash(pin: &PinnedSource, path: &SourcePath) -> Result<[u8; 32], SceneCookError> {
     pin.manifest()
         .files()
         .binary_search_by(|file| file.path().cmp(path))
@@ -380,7 +380,7 @@ fn input_hash(pin: &PinnedSource<'_>, path: &SourcePath) -> Result<[u8; 32], Sce
         .ok_or(SceneCookError::EntryMissing)
 }
 
-fn read_record(pin: &mut PinnedSource<'_>, path: &SourcePath) -> Result<Vec<u8>, SceneCookError> {
+fn read_record(pin: &mut PinnedSource, path: &SourcePath) -> Result<Vec<u8>, SceneCookError> {
     let entry = pin
         .manifest()
         .files()
@@ -533,7 +533,7 @@ mod tests {
 
         fn admit(
             &self,
-            store: &mut NativeSourceStore,
+            store: &NativeSourceStore,
             generation: i64,
             key: i64,
             paths: &[SourcePath],
@@ -555,13 +555,13 @@ mod tests {
     #[test]
     fn admitted_pins_cook_exact_scene_and_failed_replacement_keeps_prior_product() {
         let fixture = Fixture::new();
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
         let a_paths = fixture.write("A", false, false);
-        let a = fixture.admit(&mut store, 0, 1, &a_paths);
+        let a = fixture.admit(&store, 0, 1, &a_paths);
         let mut a_pin = store.pin_current(a.generation).unwrap();
         fs::write(
             fixture.root().join("scenes/main.scene.json"),
@@ -604,7 +604,7 @@ mod tests {
         a_pin.close().unwrap();
 
         let b_paths = fixture.write("B", false, false);
-        let b = fixture.admit(&mut store, a.generation, 2, &b_paths);
+        let b = fixture.admit(&store, a.generation, 2, &b_paths);
         let mut b_pin = store.pin_current(b.generation).unwrap();
         let b_product = cook_entry_scene(&mut b_pin, SceneTarget::Headless).unwrap();
         assert_eq!(b_product.label(), Some("B"));
@@ -623,7 +623,7 @@ mod tests {
         b_pin.close().unwrap();
 
         let c_paths = fixture.write("B", false, true);
-        let c = fixture.admit(&mut store, b.generation, 3, &c_paths);
+        let c = fixture.admit(&store, b.generation, 3, &c_paths);
         let mut c_pin = store.pin_current(c.generation).unwrap();
         let c_product = cook_entry_scene(&mut c_pin, SceneTarget::Headless).unwrap();
         assert_ne!(c_product.source_root(), b_product.source_root());
@@ -636,7 +636,7 @@ mod tests {
         c_pin.close().unwrap();
 
         let d_paths = fixture.write("D", true, true);
-        let d = fixture.admit(&mut store, c.generation, 4, &d_paths);
+        let d = fixture.admit(&store, c.generation, 4, &d_paths);
         let mut d_pin = store.pin_current(d.generation).unwrap();
         assert!(matches!(
             cook_entry_scene(&mut d_pin, SceneTarget::Headless),
@@ -654,13 +654,13 @@ mod tests {
     #[test]
     fn absent_and_empty_captions_remain_distinct_after_checked_load() {
         let fixture = Fixture::new();
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
         let paths = fixture.write("", false, false);
-        let empty_root = fixture.admit(&mut store, 0, 1, &paths);
+        let empty_root = fixture.admit(&store, 0, 1, &paths);
         let mut empty_pin = store.pin_current(empty_root.generation).unwrap();
         let empty = cook_entry_scene(&mut empty_pin, SceneTarget::Headless).unwrap();
         assert_eq!(empty.label(), Some(""));
@@ -683,7 +683,7 @@ mod tests {
             .unwrap(),
         )
         .unwrap();
-        let absent_root = fixture.admit(&mut store, empty_root.generation, 2, &paths);
+        let absent_root = fixture.admit(&store, empty_root.generation, 2, &paths);
         let mut absent_pin = store.pin_current(absent_root.generation).unwrap();
         let absent = cook_entry_scene(&mut absent_pin, SceneTarget::Headless).unwrap();
         assert_eq!(absent.label(), None);
@@ -710,12 +710,12 @@ mod tests {
         paths.push(rules_path.clone());
         paths.sort_unstable();
         fs::write(fixture.root().join(rules_path.as_str()), LINKED).unwrap();
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
-        let a = fixture.admit(&mut store, 0, 1, &paths);
+        let a = fixture.admit(&store, 0, 1, &paths);
         fs::write(
             fixture.root().join(rules_path.as_str()),
             vec![b'X'; LINKED.len()],
@@ -729,7 +729,7 @@ mod tests {
         assert_eq!(matched.path(), &rules_path);
         assert_eq!(matched.sha256(), linked_hash);
         a_pin.close().unwrap();
-        let b = fixture.admit(&mut store, a.generation, 2, &paths);
+        let b = fixture.admit(&store, a.generation, 2, &paths);
         let mut b_pin = store.pin_current(b.generation).unwrap();
         assert!(matches!(
             verify_linked_rule_source(&mut b_pin, &rules_path, LINKED.len() as u64, linked_hash),
@@ -752,12 +752,12 @@ mod tests {
         let fixture = Fixture::new();
         let paths = fixture.write("admitted caption", false, false);
         let original_scene = fs::read(fixture.root().join("scenes/main.scene.json")).unwrap();
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
-        let root = fixture.admit(&mut store, 0, 1, &paths);
+        let root = fixture.admit(&store, 0, 1, &paths);
         fs::write(
             fixture.root().join("scenes/main.scene.json"),
             b"dirty checkout",
@@ -867,12 +867,12 @@ mod tests {
         }))
         .unwrap();
         fs::write(&declaration_path, &valid).unwrap();
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
-        let a = fixture.admit(&mut store, 0, 1, &paths);
+        let a = fixture.admit(&store, 0, 1, &paths);
         let mut a_pin = store.pin_current(a.generation).unwrap();
         let a_scene = cook_entry_scene(&mut a_pin, SceneTarget::Headless).unwrap();
         let duplicate_key = String::from_utf8(valid)
@@ -886,7 +886,7 @@ mod tests {
         assert_eq!(declared_inputs.rule_source().as_str(), "game/rules.rs");
         a_pin.close().unwrap();
 
-        let b = fixture.admit(&mut store, a.generation, 2, &paths);
+        let b = fixture.admit(&store, a.generation, 2, &paths);
         let mut b_pin = store.pin_current(b.generation).unwrap();
         let b_scene = cook_entry_scene(&mut b_pin, SceneTarget::Headless).unwrap();
         assert!(matches!(
@@ -910,7 +910,7 @@ mod tests {
         }))
         .unwrap();
         fs::write(&declaration_path, missing_toolchain).unwrap();
-        let c = fixture.admit(&mut store, b.generation, 3, &paths);
+        let c = fixture.admit(&store, b.generation, 3, &paths);
         let mut c_pin = store.pin_current(c.generation).unwrap();
         let c_scene = cook_entry_scene(&mut c_pin, SceneTarget::Headless).unwrap();
         assert!(matches!(
@@ -991,12 +991,12 @@ mod tests {
         paths.push(SourcePath::parse("build/headless.json").unwrap());
         paths.sort_unstable();
 
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
-        let a = fixture.admit(&mut store, 0, 1, &paths);
+        let a = fixture.admit(&store, 0, 1, &paths);
         let rule_path = fixture.root().join("examples/i1-mobile-game/src/game.rs");
         fs::write(
             &rule_path,
@@ -1313,7 +1313,7 @@ mod tests {
         }
 
         fs::write(&rule_path, b"pub fn deliberately_invalid( {\n").unwrap();
-        let b = fixture.admit(&mut store, a.generation, 2, &paths);
+        let b = fixture.admit(&store, a.generation, 2, &paths);
         let mut b_pin = store.pin_current(b.generation).unwrap();
         let b_product = cook_entry_scene(&mut b_pin, SceneTarget::Headless).unwrap();
         assert!(read_pinned_build_declaration(&mut b_pin, &b_product).is_ok());
@@ -1408,7 +1408,7 @@ mod tests {
         let database = PathBuf::from(std::env::var_os("THRUM_CANDIDATE_CHILD_DB").unwrap());
         let candidate = PathBuf::from(std::env::var_os("THRUM_CANDIDATE_CHILD_DIR").unwrap());
         let digest = std::env::var("THRUM_CANDIDATE_CHILD_SHA256").unwrap();
-        let mut store = NativeSourceStore::open(&database, Fixture::plan()).unwrap();
+        let store = NativeSourceStore::open(&database, Fixture::plan()).unwrap();
         let root = store.current_root().unwrap().unwrap();
         let mut pin = store.pin_current(root.generation).unwrap();
         let product = cook_entry_scene(&mut pin, SceneTarget::Headless).unwrap();
@@ -2729,12 +2729,12 @@ mod tests {
     fn measure_pinned_small_scene_cook() {
         let fixture = Fixture::new();
         let paths = fixture.write("Small headless scene", false, false);
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
-        let root = fixture.admit(&mut store, 0, 1, &paths);
+        let root = fixture.admit(&store, 0, 1, &paths);
         let mut pin = store.pin_current(root.generation).unwrap();
         let mut times = Vec::with_capacity(1_000);
         for _ in 0..100 {
@@ -2758,12 +2758,12 @@ mod tests {
     fn measure_small_pinned_source_materialization() {
         let fixture = Fixture::new();
         let paths = fixture.write("Small build input", false, false);
-        let mut store = NativeSourceStore::open(
+        let store = NativeSourceStore::open(
             &fixture.root().join(".engine/source.sqlite"),
             Fixture::plan(),
         )
         .unwrap();
-        let root = fixture.admit(&mut store, 0, 1, &paths);
+        let root = fixture.admit(&store, 0, 1, &paths);
         let mut pin = store.pin_current(root.generation).unwrap();
         let mut times = Vec::with_capacity(200);
         for index in 0..220 {

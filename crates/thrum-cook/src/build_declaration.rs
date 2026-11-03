@@ -108,7 +108,7 @@ pub enum BuildDeclarationError {
 /// toolchain files, close dependencies, isolate compiler execution and verify
 /// the binary before any build can be called ready.
 pub fn read_pinned_build_declaration(
-    pin: &mut PinnedSource<'_>,
+    pin: &mut PinnedSource,
     product: &SceneProduct,
 ) -> Result<BuildDeclaration, BuildDeclarationError> {
     if product.source_root() != pin.root() || product.target() != SceneTarget::Headless {
