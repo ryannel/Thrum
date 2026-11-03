@@ -2,7 +2,7 @@
 
 use thrum_network::r4::{
     ACTOR_BYTES, ActionResult, Actor, Event, GroupError, GroupHeader, GroupInput, Lifecycle,
-    MAX_MESSAGE_BYTES, decode, encode,
+    MAX_MESSAGE_BYTES, MAX_PAYLOAD_BYTES, decode, encode,
 };
 
 fn actor(id: u64) -> Actor {
@@ -122,7 +122,7 @@ fn independent_golden_bytes_cover_every_fixed_r4_field() {
     assert_eq!(view.lifecycle().next(), Some(expected_lifecycle));
     assert_eq!(view.results().next(), Some(expected_result));
     assert_eq!(view.events().next(), Some(expected_event));
-    let mut encoded = [0_u8; MAX_MESSAGE_BYTES - 64];
+    let mut encoded = [0_u8; MAX_PAYLOAD_BYTES];
     let len = encode(
         GroupInput {
             header: expected_header,
@@ -149,7 +149,7 @@ fn fixed_records_round_trip_without_decoded_array_ownership() {
     }];
     let results = [result(9)];
     let events = [event(99)];
-    let mut bytes = [0_u8; MAX_MESSAGE_BYTES - 64];
+    let mut bytes = [0_u8; MAX_PAYLOAD_BYTES];
     let size = encode(
         GroupInput {
             header: header(),
@@ -189,7 +189,7 @@ fn maximum_declared_counts_fit_one_message_and_refuse_overflow() {
         origin_input_sequence: index as u64 + 1,
         ..event(0)
     });
-    let mut bytes = [0_u8; MAX_MESSAGE_BYTES - 64];
+    let mut bytes = [0_u8; MAX_PAYLOAD_BYTES];
     let input = GroupInput {
         header: GroupHeader {
             resolved_through: 64,
@@ -201,7 +201,9 @@ fn maximum_declared_counts_fit_one_message_and_refuse_overflow() {
         events: &events,
     };
     let size = encode(input, &mut bytes).unwrap();
+    assert_eq!(size, MAX_PAYLOAD_BYTES);
     assert_eq!(size + 64, 7008);
+    assert!(size + 64 <= MAX_MESSAGE_BYTES);
     let view = decode(&bytes[..size]).unwrap();
     assert_eq!(view.actors().len(), 32);
     assert_eq!(view.results().len(), 64);
@@ -241,7 +243,7 @@ fn maximum_declared_counts_fit_one_message_and_refuse_overflow() {
 
 #[test]
 fn malformed_counts_lengths_and_result_ranges_refuse_before_admission() {
-    let mut bytes = [0_u8; MAX_MESSAGE_BYTES - 64];
+    let mut bytes = [0_u8; MAX_PAYLOAD_BYTES];
     let size = encode(
         GroupInput {
             header: header(),
@@ -331,7 +333,7 @@ fn measure_r4_payload_cost() {
         ),
     ];
     for (name, actors, lifecycle, results, events, rounds) in cases {
-        let mut bytes = [0_u8; MAX_MESSAGE_BYTES - 64];
+        let mut bytes = [0_u8; MAX_PAYLOAD_BYTES];
         let input = || GroupInput {
             header: header(),
             actors,

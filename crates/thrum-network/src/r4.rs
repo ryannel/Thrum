@@ -13,6 +13,12 @@ pub const LIFECYCLE_BYTES: usize = 16;
 pub const RESULT_BYTES: usize = 32;
 /// An R4 event record's encoded length.
 pub const EVENT_BYTES: usize = 40;
+/// Exact maximum fixed R4 payload under all four record-count caps.
+pub const MAX_PAYLOAD_BYTES: usize = HEADER_BYTES
+    + MAX_ACTORS * ACTOR_BYTES
+    + MAX_LIFECYCLE * LIFECYCLE_BYTES
+    + MAX_RESULTS * RESULT_BYTES
+    + MAX_EVENTS * EVENT_BYTES;
 
 const ENVELOPE_BYTES: usize = 64;
 const MAX_ACTORS: usize = 32;

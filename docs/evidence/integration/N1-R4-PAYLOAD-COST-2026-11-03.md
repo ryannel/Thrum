@@ -11,6 +11,8 @@ encode loop writes caller-owned bytes; the decode loop validates framing and
 result shape, then reads **every field** of every actor, lifecycle, result
 and event into a checksum. The harness black-boxes encode inputs and the
 destination, and the decode input; the checksum preserves decoded work.
+The measured source is retained at local commit `f04196d`; later additions
+to the codec do not inherit these timings without remeasurement.
 
 Command: `RUSTC="$(rustup which --toolchain 1.99.1 rustc)" RUSTC_WRAPPER= rustup run 1.99.1 cargo test --release --locked --offline -p thrum-network --test r4_payload measure_r4_payload_cost -- --ignored --nocapture`.
 The [14 raw case samples](N1-R4-PAYLOAD-COST-SAMPLES-2026-11-03.csv)
