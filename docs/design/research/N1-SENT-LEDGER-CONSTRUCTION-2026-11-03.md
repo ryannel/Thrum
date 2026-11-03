@@ -99,3 +99,43 @@ queue; the ledger must also close or quarantine on uncertain external writes.
 The storage representation above is provisional until the ordinary and
 baseline paths both pass. The protocol and whole-engine ownership contracts
 remain the authority if this candidate layout proves inadequate.
+
+## Integration boundary after the first physical slices
+
+The [ordinary ledger](../../evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md)
+now owns exact StateGroup frames, pending result/event IDs, one application
+sequence and the result-retirement frontier. It conservatively closes after
+an exact Reject. The [physical baseline oracle](../../evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md)
+proves two chunk slots and tombstones, but its externally supplied sequence
+numbers are not joined to that production owner. The next implementation
+must put ordinary and baseline frame kinds under **one** sequence allocator.
+It must not copy the oracle's independent counter into a second public owner.
+
+The final BaselineAck transaction is wider than the sent ring. A baseline
+certificate must bind the immutable image hash and unique baseline ID to the
+Begin sequence, capture tick, `supersedesThrough`, exact included result IDs,
+event IDs and permitted transient-event expiry. The owner must preflight the
+mandatory union of already submitted ordinary frames, unsent queue units and
+subsequent-sync closure; otherwise a valid ACK could free a sent frame while
+silently losing an accepted unsent outcome. A conservative first path may
+require exact event inclusion and close when transient expiry cannot be
+proved. The game-schema/image validator supplies the semantic certificate;
+wire framing alone cannot establish it.
+
+One final ACK receipt stays occupied across callback refusal. With the
+current Authority's match/peer/epoch checked inside the callback, commit the
+contiguous result prefix first; only then may the N1 owner mark old ordinary
+sequences *superseded*, retire the exact included mandatory identities,
+release baseline frames/tombstones, advance the cross-kind disposition prefix
+through End, and resume ordinary submission at the next unused sequence.
+Callback unwind or uncertain transport submission closes/quarantines the
+whole peer owner. A wrong, stale or invalid BaselineAck changes no owner state;
+invalid completion of the active replacement follows the selected close
+policy rather than pretending the rejected frame was admitted.
+
+If a Reject arrives while later already assigned frames remain unwritten,
+the current conservative ledger requires close. A production replacement
+path may explicitly drain those same numbered frames before Begin, keeping
+their bytes and journal identities charged; it cannot assign fresh numbers
+or claim their admission. This ordered-drain policy must be proved with the
+actual transport adapter before it changes the conservative boundary.

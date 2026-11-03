@@ -2,6 +2,7 @@
 //! Replacement-baseline framing and transport/session policy are later gates.
 
 use crate::envelope::{self, Header, Kind};
+use crate::outbound::{TransferError, UnsentQueue};
 use crate::r4;
 use crate::retirement::{AuthorityRetirement, PeerKey, RetirementError};
 
@@ -215,6 +216,36 @@ impl OrdinaryLedger {
 
     fn entry(&self, offset: usize) -> Entry {
         self.entries[(self.entry_head + offset) % ORDINARY_ENTRIES].expect("occupied prefix")
+    }
+
+    /// Move the earliest already schema-certified N1-owned payload into
+    /// exact sent-frame storage. The queue releases its slot only after this
+    /// ledger has reserved bytes and journals and assigned the sequence.
+    /// On refusal, the queue retains the original unit and no sequence is
+    /// consumed. This is the no-socket owner-to-owner boundary; the W1
+    /// capture producer and authenticated session remain separate gates.
+    pub fn submit_next_from_queue(
+        &mut self,
+        queue: &mut UnsentQueue,
+        key: PeerKey,
+        acknowledged_client_sequence: u64,
+    ) -> Result<Option<u64>, TransferError<SubmitError>> {
+        if queue.identity() != key || self.key != key {
+            return Err(TransferError::Sink(SubmitError::WrongIdentity));
+        }
+        let mut committed = None;
+        let transferred = queue.transfer_next(|unit| {
+            committed =
+                Some(self.submit_state_group(key, unit.payload, acknowledged_client_sequence)?);
+            Ok(())
+        })?;
+        if transferred {
+            Ok(Some(
+                committed.expect("successful transfer committed sequence"),
+            ))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Encode and retain one already schema-certified R4 payload. This

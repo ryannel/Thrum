@@ -2,6 +2,7 @@
 //! result/event ACK retirement belong to the later sent-frame owner.
 
 use crate::r4::{self, GroupHeader, GroupView};
+use crate::retirement::PeerKey;
 
 /// Maximum peer-owned unsent R4 payload units in the first profile.
 pub const MAX_UNSENT_GROUPS: usize = 16;
@@ -43,6 +44,8 @@ pub trait OutboundValidator {
 pub enum OutboundError {
     /// An external transfer callback unwound; peer teardown is required.
     Poisoned,
+    /// The per-peer queue requires a nonzero match and connection epoch.
+    WrongIdentity,
     /// Baseline partition seed is duplicate, empty, invalid or too large.
     InvalidBaseline,
     /// R4 fixed framing or local result shape failed.
@@ -104,6 +107,7 @@ pub struct QueuedGroup<'a> {
 /// One finite peer's pre-submission units. Payload bytes are in one fixed
 /// backing allocation; metadata and chronological order are inline.
 pub struct UnsentQueue {
+    key: PeerKey,
     payloads: Box<[u8]>,
     slots: [Option<Slot>; MAX_UNSENT_GROUPS],
     order: [u8; MAX_UNSENT_GROUPS],
@@ -116,7 +120,10 @@ pub struct UnsentQueue {
 impl UnsentQueue {
     /// Reserve the exact payload arena after validating baseline cursors.
     /// No N1 queue allocation occurs when the capability is disabled.
-    pub fn from_baseline(seeds: &[PartitionSeed]) -> Result<Self, OutboundError> {
+    pub fn from_baseline(key: PeerKey, seeds: &[PartitionSeed]) -> Result<Self, OutboundError> {
+        if key.match_id == [0; 16] || key.connection_epoch == 0 {
+            return Err(OutboundError::WrongIdentity);
+        }
         if seeds.is_empty() || seeds.len() > MAX_PARTITIONS {
             return Err(OutboundError::InvalidBaseline);
         }
@@ -138,6 +145,7 @@ impl UnsentQueue {
             });
         }
         Ok(Self {
+            key,
             payloads: vec![0; PAYLOAD_STORAGE_BYTES].into_boxed_slice(),
             slots: [None; MAX_UNSENT_GROUPS],
             order: [0; MAX_UNSENT_GROUPS],
@@ -151,6 +159,10 @@ impl UnsentQueue {
     /// Number of retained, still-unsubmitted units.
     pub fn len(&self) -> usize {
         self.len
+    }
+    /// Exact peer and connection incarnation bound at baseline admission.
+    pub fn identity(&self) -> PeerKey {
+        self.key
     }
     /// Whether no unit is awaiting submission.
     pub fn is_empty(&self) -> bool {
