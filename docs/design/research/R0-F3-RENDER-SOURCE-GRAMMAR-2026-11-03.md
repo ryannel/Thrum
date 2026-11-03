@@ -26,10 +26,17 @@ The render record has the normal strict source envelope (`id`, `type`,
 `local_lights`. Arrays have canonical UUID identity independent of order;
 order only has the explicitly stated meaning for mesh vertices/triangles and
 texture bytes. Each embedded object has one canonical RFC 4122 UUID `id`.
+Semantic cook keys and deterministic product enumeration sort identity-keyed
+entries by UUID; reordering those JSON arrays alone cannot change their
+meaning or force a different product. Mesh vertex, triangle and texture-byte
+order remain inputs to their respective products.
 The active camera, instance mesh/material, and material texture slots are
 typed UUID edges. The selected first profile requires one active perspective
 camera and exactly four point local lights; those counts are a **recipe
 requirement**, not generic `thrum.render.scene@1` syntax.
+Every schema-1 embedded edge targets an identity in its owning render root.
+Cross-root sharing needs a later explicit source contract; F4 can therefore
+decode one selected root without searching unrelated render records.
 
 F3 validates every embedded ID against the complete project UUID namespace,
 including top-level records, project/history/schema IDs and other embedded
@@ -45,6 +52,16 @@ limit is introduced solely for this schema; the first render recipe declares
 its own finite preparation capacity and refuses over-capacity content before
 publication. Parser peak memory and adversarial near-limit latency still need
 measurement.
+The global collision index also needs a separate `EmbeddedIdentities`
+source-profile dimension: unreferenced embedded IDs can outnumber required
+edges across many legal records. Derive the first admitted count from measured
+compact-index bytes per ID, concurrent old/new peak and admission latency on
+dense near-limit records. Report observed and allowed identity counts in its
+own typed refusal; do not charge containment as a `RequiredReferences` edge
+or copy the existing 65,536 edge allowance. Until that capacity and its
+measurement are selected, the new schema cannot be an active admission
+profile. A bounded external sort is a future alternative if in-memory
+indexing proves disproportionate.
 
 ## Field meanings
 
@@ -62,7 +79,7 @@ but unresolved map is never an absence.
 | Instance | `id`, required `mesh` and `material` references, authored initial `translation_m` f64[3], `orientation_xyzw` f64[4], `scale` f64[3] and `two_sided` material policy through the material reference. W1 owns its committed runtime transform. The first R0 product supports identity static instance transform only; valid other TRS receives F4 `Unsupported` until transformed geometry, parity and normal certificates are proved. |
 | Material | Required `id`, `alpha_mode` (`opaque` or `mask`), `two_sided` boolean and one `sampler`; `alpha_cutoff` is required for mask and forbidden for opaque. Optional `base_factor_rgba` linear dimensionless f64[4], `emissive_radiance_factor_cd_m2` linear Rec.709 f64[3], `metallic_factor`, `roughness_factor` and `occlusion_strength` take the native factor defaults and composition in RENDER-SPEC §2. Optional typed `base_texture`, `orm_texture`, `emissive_texture` references share `uv0` and that sampler. Base and alpha factors, metallic, roughness, occlusion strength and cutoff lie in `[0,1]`; emissive factor is nonnegative. Schema 1 has no authored normal-map or smooth-normal field; F4 binds the flat-normal ABI default and native normal scale `1`. |
 | Texture | `id`, positive integer `width` and `height`, `format` (`rgba8-srgb` for base/emissive or `rgba8-linear` for data), and canonical padded RFC 4648 base64 `rgba8` bytes. Exactly `4×width×height` decoded bytes are present in upper-left-origin row-major order, with no row padding or mip levels. Validate checked dimension multiplication and encoded/decoded length before allocation. |
-| Point local light | `id`, authored initial `position_m` f64[3], nonnegative `luminous_intensity_cd` f64, nonnegative f64[3] `unit_luminance_linear_rec709` with `|Y(c)-1|≤1e-9`, and nonnegative `radius_m` f64. W1 owns its identity and committed transform; R0 supports static identity pose only and V3 applies inverse-square illumination outside the declared emitter radius. |
+| Point local light | `id`, authored initial `position_m` f64[3], nonnegative `luminous_intensity_cd` f64, nonnegative f64[3] `unit_luminance_linear_rec709` with `|Y(c)-1|≤1e-9`, and nonnegative `radius_m` f64. W1 owns its identity and committed position; R0 supports a static light at its authored position, and V3 applies inverse-square illumination outside the declared emitter radius. |
 
 The one material sampler has explicit `min_filter`/`mag_filter` values
 `nearest|linear`, `address_u`/`address_v` values
@@ -80,7 +97,15 @@ must be converted losslessly or explicitly refused.
 For the first R0 masked product, F4 requires equal `min_filter` and
 `mag_filter`, so pass-specific derivatives cannot select different filtering
 kernels. A valid source with unequal filters is F4 `Unsupported` for a masked
-material until an explicit shared alpha-sampling path is proved.
+material until an explicit shared alpha-sampling path is proved. Equal filters
+are necessary, not proof of bit-identical target samples: WebGPU leaves
+precise filtering behavior implementation-dependent. Qualify cutoff-boundary
+coverage on each target; a target that cannot meet the shared-alpha contract
+needs an explicit common sampling evaluator or a typed refusal. The ordinary
+texture path must also prove linear-light filtering of sRGB RGB, or use an
+explicit decode/filter product with the same source meaning.
+[WebGPU sampler behavior](https://gpuweb.github.io/gpuweb/#samplers),
+[glTF texture-coordinate origin](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#images).
 
 The source camera and local-light poses are *authored initial values*, not a
 second runtime authority. W1 owns committed transforms. V2 derives the
@@ -130,7 +155,8 @@ normal or omitted map is silently used.
 
 The Foundation v1 world-coordinate extent of ±`10^6` m applies to initial
 camera/light/instance positions and transformed bounds; each mesh's local
-geometry radius measured from its local origin is at most `10^3` m. These are existing source-profile bounds,
+geometry radius measured from its local origin is at most `10^3` m. These are
+existing source-profile bounds,
 not new R0 fixture constraints. A valid source can still be unrepresentable
 in the first R0 device profile.
 
@@ -147,6 +173,26 @@ material evaluator revision and relevant exact values. Formatting-only edits
 change the exact source binding but may reuse semantic products. Target or
 view changes can invalidate a representation certificate without recooking
 immutable geometry.
+An [isolated exact-triangle probe](../../evidence/render/R0-F3-EXACT-TRIANGLE-PROBE-2026-11-03.md)
+now supplies a 36-limb width argument under the Foundation local extent,
+independent rational signs for 8,009 cases, and a predicate-only 39,000-case
+all-fallback timing. It does not replace the actual typed parser, combined
+peak measurement or target/compiler verification of the interval filter.
+
+The minimal F3 extension is a `StagedScene.render_source` typed edge and a
+`StagedRender` summary containing its top-level path/ID/definition hash,
+compact embedded `(UUID, kind, owner)` identities, and typed
+`(source, field, target, expected kind)` edges. Parse every declared root,
+including unselected ones. A single global compact UUID index includes
+project/history/schema IDs, top-level records and emitted embedded IDs; sort
+it, reject adjacent duplicates and resolve type plus same-root ownership for
+every render edge. Check the separate embedded-ID and required-edge capacities
+before appending. Source errors name source path/ID, field, target and the
+observed/allowed dimension. Only the top-level render record enters the
+accepted manifest's record identity. The decoder may project into an F3
+summary sink and release geometry/texel scratch per object; F4 can project the
+same grammar into cook inputs from verified pinned bytes. Measure both peak
+forms, including simultaneous old/new pins, before selecting the profile.
 
 ## Required implementation proof
 
