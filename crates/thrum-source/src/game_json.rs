@@ -14,6 +14,7 @@ use crate::MAX_RECORD_BYTES;
 use crate::definition::{Presence, valid_symbol};
 use crate::record::canonical_uuid;
 use crate::schema_json::{SchemaDescriptor, SchemaFieldKind};
+use crate::{LimitExceeded, ObservedQuantity, SourceDimension};
 
 pub(crate) const MAX_OPAQUE_FIELDS: usize = 128;
 pub(crate) const MAX_RECORD_FIELDS: usize = 256;
@@ -28,9 +29,34 @@ pub(crate) const MAX_OPAQUE_STRING_BYTES: usize = 65_536;
 #[derive(Debug)]
 pub enum GameRecordError {
     /// Exact JSON bytes exceed the 16 MiB record bound.
-    TooLarge,
+    TooLarge {
+        /// Exact supplied byte length.
+        observed: u64,
+    },
     /// Syntax, known-field semantics, opaque limits or envelope refused.
     Invalid(serde_json::Error),
+    /// A game field count reached the first excess key.
+    Limit {
+        /// Dimension, maximum and lower-bound observation.
+        detail: LimitExceeded,
+        /// Original serde error with parse location.
+        source: serde_json::Error,
+    },
+}
+
+impl GameRecordError {
+    /// Typed capacity detail, when this refusal was caused by a known bound.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooLarge { observed } => Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                *observed,
+            )),
+            Self::Limit { detail, .. } => Some(*detail),
+            Self::Invalid(_) => None,
+        }
+    }
 }
 
 /// One required typed reference emitted by a parsed game record.
@@ -98,16 +124,23 @@ pub fn parse_game_record(
     descriptor: &SchemaDescriptor,
 ) -> Result<GameRecordSummary, GameRecordError> {
     if bytes.len() > MAX_RECORD_BYTES {
-        return Err(GameRecordError::TooLarge);
+        return Err(GameRecordError::TooLarge {
+            observed: bytes.len() as u64,
+        });
     }
     let nodes = Cell::new(0);
+    let limit = Cell::new(None);
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let record = GameRecordSeed {
         descriptor,
         nodes: &nodes,
+        limit: &limit,
     }
     .deserialize(&mut deserializer)
-    .map_err(GameRecordError::Invalid)?;
+    .map_err(|source| match limit.get() {
+        Some(detail) => GameRecordError::Limit { detail, source },
+        None => GameRecordError::Invalid(source),
+    })?;
     deserializer.end().map_err(GameRecordError::Invalid)?;
     Ok(record)
 }
@@ -120,7 +153,9 @@ pub fn parse_game_record(
 #[cfg(test)]
 pub(crate) fn game_record_type(bytes: &[u8]) -> Result<String, GameRecordError> {
     if bytes.len() > MAX_RECORD_BYTES {
-        return Err(GameRecordError::TooLarge);
+        return Err(GameRecordError::TooLarge {
+            observed: bytes.len() as u64,
+        });
     }
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let nodes = Cell::new(0);
@@ -202,6 +237,7 @@ impl<'de> Visitor<'de> for RecordTypeVisitor<'_> {
 struct GameRecordSeed<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
+    limit: &'a Cell<Option<LimitExceeded>>,
 }
 
 impl<'de> DeserializeSeed<'de> for GameRecordSeed<'_> {
@@ -214,6 +250,7 @@ impl<'de> DeserializeSeed<'de> for GameRecordSeed<'_> {
         deserializer.deserialize_map(GameRecordVisitor {
             descriptor: self.descriptor,
             nodes: self.nodes,
+            limit: self.limit,
         })
     }
 }
@@ -221,6 +258,7 @@ impl<'de> DeserializeSeed<'de> for GameRecordSeed<'_> {
 struct GameRecordVisitor<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
+    limit: &'a Cell<Option<LimitExceeded>>,
 }
 
 impl<'de> Visitor<'de> for GameRecordVisitor<'_> {
@@ -247,6 +285,7 @@ impl<'de> Visitor<'de> for GameRecordVisitor<'_> {
                     fields = Some(map.next_value_seed(GameFieldsSeed {
                         descriptor: self.descriptor,
                         nodes: self.nodes,
+                        limit: self.limit,
                     })?);
                 }
                 "documentation" if !documentation_seen => {
@@ -279,6 +318,7 @@ impl<'de> Visitor<'de> for GameRecordVisitor<'_> {
 struct GameFieldsSeed<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
+    limit: &'a Cell<Option<LimitExceeded>>,
 }
 
 impl<'de> DeserializeSeed<'de> for GameFieldsSeed<'_> {
@@ -291,6 +331,7 @@ impl<'de> DeserializeSeed<'de> for GameFieldsSeed<'_> {
         deserializer.deserialize_map(GameFieldsVisitor {
             descriptor: self.descriptor,
             nodes: self.nodes,
+            limit: self.limit,
         })
     }
 }
@@ -298,6 +339,7 @@ impl<'de> DeserializeSeed<'de> for GameFieldsSeed<'_> {
 struct GameFieldsVisitor<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
+    limit: &'a Cell<Option<LimitExceeded>>,
 }
 
 impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
@@ -314,13 +356,17 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
         let mut opaque_names: Option<HashSet<String>> = None;
         let mut references = Vec::new();
         loop {
-            if field_count >= MAX_RECORD_FIELDS {
-                map.next_key_seed(RejectExtraKeySeed)?;
-                break;
-            }
             let Some(key) = map.next_key::<String>()? else {
                 break;
             };
+            if field_count >= MAX_RECORD_FIELDS {
+                self.limit.set(Some(LimitExceeded {
+                    dimension: SourceDimension::GameRecordFields,
+                    allowed: MAX_RECORD_FIELDS as u64,
+                    observed: ObservedQuantity::AtLeast(field_count as u64 + 1),
+                }));
+                return Err(A::Error::custom("game field count limit"));
+            }
             field_count += 1;
             match self
                 .descriptor
@@ -359,6 +405,11 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
                         return Err(A::Error::custom("unknown required game field"));
                     }
                     if opaque_count >= MAX_OPAQUE_FIELDS {
+                        self.limit.set(Some(LimitExceeded {
+                            dimension: SourceDimension::GameOpaqueFields,
+                            allowed: MAX_OPAQUE_FIELDS as u64,
+                            observed: ObservedQuantity::AtLeast(opaque_count as u64 + 1),
+                        }));
                         return Err(A::Error::custom("optional field count limit"));
                     }
                     let names = opaque_names.get_or_insert_with(HashSet::new);
@@ -382,19 +433,6 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
             }
         }
         Ok(references)
-    }
-}
-
-struct RejectExtraKeySeed;
-
-impl<'de> DeserializeSeed<'de> for RejectExtraKeySeed {
-    type Value = String;
-
-    fn deserialize<D: serde::Deserializer<'de>>(
-        self,
-        _deserializer: D,
-    ) -> Result<Self::Value, D::Error> {
-        Err(D::Error::custom("game field count limit"))
     }
 }
 
@@ -754,6 +792,32 @@ mod tests {
         );
         let error = parse_game_record(extra.as_bytes(), &schema).err().unwrap();
         assert!(format!("{error:?}").contains("optional field count limit"));
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::GameOpaqueFields,
+                allowed: MAX_OPAQUE_FIELDS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_OPAQUE_FIELDS as u64 + 1),
+            })
+        );
+        let error = parse_game_record(&vec![b' '; MAX_RECORD_BYTES + 1], &schema)
+            .err()
+            .unwrap();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                MAX_RECORD_BYTES as u64 + 1,
+            ))
+        );
+        assert_eq!(
+            parse_game_record(b"{", &schema)
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            None
+        );
 
         let allowed = record().replace(
             "{\"a\":[1,true,null]}",
@@ -768,6 +832,60 @@ mod tests {
             .err()
             .unwrap();
         assert!(format!("{error:?}").contains("opaque depth limit"));
+    }
+
+    #[test]
+    fn total_field_limit_reports_a_valid_excess_key_only() {
+        let known = (0..128)
+            .map(|index| {
+                json!({
+                    "id": format!("marker.f{index:03}"),
+                    "kind": "text", "presence": "optional", "maxUtf8Bytes": 1
+                })
+            })
+            .collect::<Vec<_>>();
+        let descriptor_bytes = serde_json::to_vec(&json!({
+            "id":SCHEMA_ID, "type":"core.schema", "schema":1,
+            "fields":{
+                "schema.targetType":"game.marker", "schema.targetVersion":1,
+                "schema.optionalExtensionPrefix":"x.game.marker.",
+                "schema.fields":known
+            }
+        }))
+        .unwrap();
+        let descriptor = parse_schema_descriptor(&descriptor_bytes).unwrap();
+        let fields = (0..128)
+            .map(|index| format!("\"marker.f{index:03}\":\"x\""))
+            .chain((0..128).map(|index| format!("\"x.game.marker.f{index:03}\":0")))
+            .collect::<Vec<_>>()
+            .join(",");
+        let record_with = |suffix: &str| {
+            format!(
+                "{{\"id\":\"{RECORD_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{{fields}{suffix}}}}}"
+            )
+        };
+        assert!(parse_game_record(record_with("").as_bytes(), &descriptor).is_ok());
+        let error = parse_game_record(
+            record_with(",\"x.game.marker.extra\":0").as_bytes(),
+            &descriptor,
+        )
+        .err()
+        .unwrap();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::GameRecordFields,
+                allowed: MAX_RECORD_FIELDS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_RECORD_FIELDS as u64 + 1),
+            })
+        );
+        assert_eq!(
+            parse_game_record(record_with(",?").as_bytes(), &descriptor)
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            None
+        );
     }
 
     #[test]

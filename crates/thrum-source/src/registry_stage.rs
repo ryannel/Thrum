@@ -178,6 +178,7 @@ impl StagedRecordError {
                 observed: ObservedQuantity::AtLeast(*observed_at_least),
             }),
             Self::Stage(error) => error.limit_exceeded(),
+            Self::Game { source, .. } => source.limit_exceeded(),
             _ => None,
         }
     }

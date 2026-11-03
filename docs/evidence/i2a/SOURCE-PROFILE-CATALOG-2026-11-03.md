@@ -66,15 +66,22 @@ children; malformed excess tokens remain syntax failures. Registry-stage,
 lineage and accepted-store errors preserve the nested typed detail. Tests
 cover all three arrays, their distinct dimensions, malformed extra values and
 non-capacity syntax.
+The direct game-record parser reports exact record bytes, the first excess
+total field key and the first excess optional opaque field key. It validates
+the extra key token before marking the total-field bound. A complete
+128-known plus 128-optional field record passes; its 257th field reports the
+total-field dimension, while an invalid extra key remains a syntax error.
+The staged candidate preserves the nested game-record detail. Opaque value
+node, depth, member, key and string limits still need typed propagation.
 `RUSTC_WRAPPER= ./dev check` passed after design-hash refresh: repository
-checks, 112 Python tests, workspace Clippy and Rust tests, including 197
+checks, 112 Python tests, workspace Clippy and Rust tests, including 198
 passing `thrum-source` unit tests (46 opt-in tests ignored). The 64 MiB
 accepted-manifest threshold is tested through its shared guard; a full public
 admission fixture above that encoded size remains unrun.
 
 The catalogue does **not** establish that all simultaneous maxima fit memory,
 that every parser refusal is typed, that a wider profile works, or that a
-consumer can use every F3-valid candidate. Schema symbol/text bounds and game
-and environment parser limit propagation remain open,
+consumer can use every F3-valid candidate. Schema symbol/text bounds, remaining
+game opaque limits and environment parser propagation remain open,
 as do structured disk estimate/observation receipts and full F3→F4 workload
 qualification.
