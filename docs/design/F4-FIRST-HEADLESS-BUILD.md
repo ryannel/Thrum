@@ -61,6 +61,14 @@ and closure checks succeed. A failed compile, missing input, corrupt output,
 stale source selection or interrupted publication leaves the prior ready build
 identifiable and the newly accepted source separately available.
 
+The [prepared native environment design](T2-PREPARED-NATIVE-ENVIRONMENT.md)
+owns the first macOS compiler selection, generated sandbox and invocation
+binding. Its current metadata-isolation fixture is a candidate only: the
+installed tool and SDK roots are still mutable host locations, and an
+unreviewed cold hash does not retain them through compilation. F4 may publish
+a ready manifest only after T2 proves that selected bytes and runtime reads
+remain closed for the whole build.
+
 The first compiler profile should prepare one private Cargo dependency root
 from release-verified registry index records and lockfile-checksummed archives,
 then reuse that immutable root only when the admitted Cargo manifest set,
@@ -218,6 +226,10 @@ Proof order:
    unproved index completeness, unreviewed release inputs and unclosed selected
    build units remain. It does not attest the compiler/dependency closure or
    make the adapter trusted.
+   The [narrow metadata proof](../evidence/i2a/F4-NARROW-METADATA.md)
+   removes global metadata permission for the local A/B compile and denies
+   unrelated file and directory metadata; its Xcode support paths and host
+   runtime bytes still need release and retention qualification.
 3. Publish and reload a verified target manifest and binary/product closure;
    corrupt/missing bytes and interrupted publication refuse, while the prior
    ready build remains available.
