@@ -1,6 +1,7 @@
 """macOS candidate checks for append-only sealed tool-root selections."""
 
 from contextlib import contextmanager
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -51,6 +52,24 @@ def fixture():
 
 @unittest.skipUnless(sys.platform == "darwin", "requires macOS file flags and clonefile")
 class HoldMacosToolRootClone(unittest.TestCase):
+    def test_witnesses_share_the_existing_cold_inventory(self):
+        with fixture() as (source, parent, expected):
+            root, _ = held.prepare_sealed_clone(source, parent, expected)
+            selected = b"#!/bin/sh\nprintf 'selected\\n'\n"
+            witnesses = {"bin/tool": {
+                "sha256": hashlib.sha256(selected).hexdigest(), "bytes": len(selected),
+            }}
+            with patch.object(held, "inventory_root", side_effect=AssertionError("second scan")):
+                with held.open_sealed_clone(parent, expected, witnesses) as lease:
+                    self.assertEqual(lease.root, root)
+                    self.assertEqual(lease.witnesses, witnesses)
+            with self.assertRaisesRegex(ValueError, "witness file is missing"):
+                held.open_sealed_clone(parent, expected, {"bin/missing": witnesses["bin/tool"]})
+            with self.assertRaisesRegex(ValueError, "file witnesses differ"):
+                held.open_sealed_clone(parent, expected, {"bin/tool": {
+                    "sha256": "0" * 64, "bytes": len(selected),
+                }})
+
     def test_sealed_executable_and_relative_link_reload(self):
         with fixture() as (source, parent, expected):
             root, record = held.prepare_sealed_clone(source, parent, expected)

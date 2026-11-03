@@ -255,6 +255,57 @@ Measure cold clone/seal and warm selection-key, cache, tool-hash and total
 edit-to-ready costs separately; retain the full rehash on other platforms
 until their own lifecycle is qualified.
 
+### Proposed held release-selection bridge
+
+The first macOS development profile needs one T2 owner for the reviewed
+release-input manifest, its origin record and six proof reports, the exact
+private-cache manifest, and the four sealed root leases. The trusted release
+loader chooses the manifest outside game source. The owner first copies the
+manifest, origin record and six proof reports into its private append-only
+selection, verifies every canonical digest and relationship on those exact
+copies, seals their files against writes and replacements, and keeps their
+descriptors and a shared owner lock open. The immutable copied manifest bytes
+are the authority; later changes to the caller's original paths cannot
+redefine a running selection. The release-selection wire identity is the
+SHA-256 of those canonical manifest bytes; origin and proof digests already
+form a transitive chain from it. The exact cache-manifest digest and four
+root inventories are a separate local owner binding that must match the
+manifest before the selection can be exposed. The owner retains the sealed
+records and all four leases until the last compiler child has exited and
+candidate output checks finish. It must refuse a changed sealed path,
+digest, report relationship, root inventory, Rust component witness or source
+dependency key. A code-only source edit may
+reuse the same held selection; a changed dependency key needs a new cold
+selection. The guard's response and candidate evidence should carry the
+manifest digest so a later publisher cannot silently mix selections.
+
+Cold opening first validates the bounded canonical manifest, origin record,
+six reports and their cross-references while staging sealed private copies.
+It then opens the sealed cache and
+three tool roots under one guard. The selected Rust component file witnesses
+are collected while streaming the Rust root's existing complete cold
+inventory, and compared with the reports before the guard says ready. The
+cache's legacy byte digest and directory-complete tree digest remain separate
+checks. This adds no second 4.86 GB tool-root read: the current cold open
+already inventories the three tool roots once, while the release matcher
+currently inventories them again. Warm requests check lease health, selected
+record identity and the dependency-selection key; they do not rescan those
+roots or fetch origins. The guard checks held descriptor/path/seal identities
+before and after every warm request and before successful shutdown. If a
+held record or root is lost during a compiler job, guard monitoring stops that
+job before candidate retention. The unheld
+and other-platform paths retain their full byte checks.
+
+The proof queue is: (1) collect Rust witnesses in the existing sealed-root
+inventory, with exact match and missing/wrong witness refusal; (2) bind the
+canonical manifest, origin reports, cache manifest and four roots in one
+cold-open guard, including crosswired and changed-file fixtures; (3) carry
+the manifest digest through guard replies and candidate evidence and run a
+real admitted A/B build; (4) measure cold-open reads/time and warm edit cost.
+These are candidate engineering proofs. Apple-origin approval, selected
+compiler read closure, runtime/support bytes and the ready publisher remain
+separate gates; this bridge cannot set `buildReady:true`.
+
 ## macOS runtime boundary
 
 The local profile still permits named system-library and configuration
