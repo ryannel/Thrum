@@ -62,6 +62,10 @@ or copy the existing 65,536 edge allowance. Until that capacity and its
 measurement are selected, the new schema cannot be an active admission
 profile. A bounded external sort is a future alternative if in-memory
 indexing proves disproportionate.
+The [isolated embedded-index microprobe](../../evidence/render/R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.md)
+shows this dimension is independent: four bounded source-shaped roots can
+carry 332,016 embedded IDs with only four edges. Its generic JSON parser
+dominates peak memory, so it does not yet justify a numeric capacity.
 
 ## Field meanings
 
