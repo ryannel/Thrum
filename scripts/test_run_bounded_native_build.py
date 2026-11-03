@@ -82,12 +82,15 @@ class NativeBuildSupervisor(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as directory:
                     request, output = self.request(Path(directory))
                     with mock.patch("run_bounded_native_build.collect_bounded",
-                                    return_value=(cargo_status, b"", b"")):
+                                    return_value=(cargo_status, b"partial output", b"sandbox refused")):
                         self.assertEqual(run(request), 125)
                     report = json.loads((output / "cargo-supervisor.json").read_text())
                     self.assertEqual(report["kind"], "refusedStatus")
                     self.assertEqual(report["cargoStatus"], cargo_status)
-                    self.assertFalse((output / "cargo.stdout").exists())
+                    self.assertEqual((output / "cargo.stdout").read_bytes(), b"partial output")
+                    self.assertEqual((output / "cargo.stderr").read_bytes(), b"sandbox refused")
+                    self.assertEqual(report["stdoutSha256"], hashlib.sha256(b"partial output").hexdigest())
+                    self.assertEqual(report["stderrSha256"], hashlib.sha256(b"sandbox refused").hexdigest())
 
     def test_interrupted_and_timed_out_jobs_inventory_bounded_receipts(self):
         for failure, expected_kind in ((KeyboardInterrupt("stopped"), "interrupted"),
