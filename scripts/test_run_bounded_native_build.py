@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from run_bounded_native_build import observed_receipts, run
+from verify_rustc_receipts import parse_receipt
 
 
 @unittest.skipUnless(sys.platform == "darwin", "first native supervisor profile is macOS")
@@ -177,6 +178,9 @@ class NativeBuildSupervisor(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("THRUM_TEST_NATIVE_SUPERVISOR_PROCESS") == "1",
                          "opt-in macOS sandbox process cleanup proof")
     def test_sigterm_and_timeout_stop_real_sandbox_child_before_fault_inventory(self):
+        wrapper = Path(os.environ["THRUM_TEST_RUSTC_RECEIPT_WRAPPER"])
+        self.assertTrue(wrapper.is_absolute() and wrapper.is_file() and not wrapper.is_symlink())
+        selected_python = Path(sys.executable).resolve(strict=True)
         for fault, timeout in (("sigterm", 120), ("timeout", 2)):
             with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
                 request, output = self.request(Path(directory))
@@ -185,7 +189,6 @@ class NativeBuildSupervisor(unittest.TestCase):
                 pidfile = output / "cargo-child.pid"
                 child_code = (
                     "import os,pathlib,time;"
-                    f"pathlib.Path({str(receipt_dir / '101.receipt')!r}).write_bytes({self.receipt(completed=False)!r});"
                     f"marker=pathlib.Path({str(pidfile)!r});"
                     "temporary=marker.with_suffix('.tmp');"
                     "temporary.write_text(str(os.getpid()));temporary.replace(marker);"
@@ -193,8 +196,12 @@ class NativeBuildSupervisor(unittest.TestCase):
                 )
                 data = json.loads(request.read_text())
                 data["ownerPid"] = os.getpid()
+                data["environment"].update({
+                    "THRUM_SELECTED_RUSTC": str(selected_python),
+                    "THRUM_RECEIPT_DIR": str(receipt_dir),
+                })
                 data["command"] = ["/usr/bin/sandbox-exec", "-p", "(version 1)(allow default)",
-                                   sys.executable, "-c", child_code]
+                                   str(wrapper), str(selected_python), "-c", child_code]
                 request.write_text(json.dumps(data))
                 runner = (
                     "import pathlib,sys;import run_bounded_native_build as native;"
@@ -224,6 +231,11 @@ class NativeBuildSupervisor(unittest.TestCase):
                     self.assertFalse(report["buildReady"])
                     self.assertEqual(report["receiptInventory"]["pending"], 1)
                     self.assertEqual(report["receiptInventory"]["files"], 1)
+                    receipt_paths = list(receipt_dir.iterdir())
+                    self.assertEqual(len(receipt_paths), 1)
+                    parsed = parse_receipt(receipt_paths[0].read_bytes(), allow_pending=True)
+                    self.assertTrue(parsed["pending"])
+                    self.assertEqual(parsed["rustc"], os.fsencode(selected_python))
                     deadline = time.monotonic() + 2
                     while time.monotonic() < deadline:
                         try:

@@ -51,13 +51,28 @@ does **not** prove containment. Seven routine supervisor protocol tests cover ou
 binding, wrong-parent/aliased-request refusal, unexpected Cargo status, caught
 interruption and timeout inventories, aliased and 65th-entry refusal, and an
 actual SIGTERM delivered to a supervisor process with a mocked collector. An
-eighth opt-in macOS sandbox process test exercises both SIGTERM and a
+eighth opt-in macOS sandbox process test runs the actual Rust receipt wrapper
+against a sleeping selected Python child. It exercises both SIGTERM and a
 two-second test-only timeout through the real collector, observes same-group
-child exit and records one pending receipt in each case. The command-line
+child exit and verifies the wrapper's pending receipt in each case. The command-line
 supervisor retains its 120-second deadline.
 
 No test here proves a real interrupted Cargo compiler job's complete receipt
 closure or detached-child containment.
+
+Run the opt-in process fixture from the repository root after building the
+wrapper with the pinned toolchain:
+
+```sh
+RUSTC_WRAPPER= rustup run 1.99.1 cargo build --locked --offline -p xtask --bin rustc_receipt
+THRUM_TEST_NATIVE_SUPERVISOR_PROCESS=1 \
+  THRUM_TEST_RUSTC_RECEIPT_WRAPPER="$PWD/target/debug/rustc_receipt" \
+  python3.11 -m unittest discover -s scripts -p 'test_run_bounded_native_build.py'
+```
+
+The actual wrapper test took 2.24 seconds locally, including its deliberately
+two-second timeout. This is fault-path test latency, not compile overhead or
+an edit-to-ready tail.
 The real sandboxed admitted A/B build passed: five compile receipts and three
 probes reconciled, invalid B failed and A remained executable. A's fresh
 Cargo step took 3,671 and 3,470 ms in two uncontrolled runs. Neither is an
