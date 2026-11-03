@@ -149,7 +149,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact task/publication APIs, overload parameters, platform event and storage adapters.",
@@ -212,7 +212,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d",
         "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -269,7 +269,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Schema field/codecs, migration registry, coordinate tolerances and storage primitive audit.",
@@ -502,7 +502,11 @@
       },
       "i2a_native_owner_local_cost": {
         "evidence": "../evidence/i2a/SOURCE-OWNER-LOCAL-COST-2026-11-03.md",
-        "scope": "Three local optimized runs each time ten public three-file accepted admissions, pin/scene-copy/releases and fresh owner opens after ten edits with the cooperative lock and indexed selected-head audit. Three further runs time one 12 MiB public admission with an A lease live and a pinned B copy. A coordinated existing A reader waits roughly 87–89 ms behind B's large admission in three local runs. The record reports timings and post-admission SQLite lengths; it does not isolate lock syscall or calibrated mutex overhead, representative reader tails, transient allocated-block peak, RSS, cook/compiler path or device performance."
+        "scope": "Three local optimized runs each time ten public three-file accepted admissions, pin/scene-copy/releases and fresh owner opens after ten edits with the cooperative lock and indexed selected-head audit. Three further runs time one 12 MiB public admission with an A lease live and a pinned B copy. A coordinated existing A reader waits roughly 87\u201389 ms behind B's large admission in three local runs. The record reports timings and post-admission SQLite lengths; it does not isolate lock syscall or calibrated mutex overhead, representative reader tails, transient allocated-block peak, RSS, cook/compiler path or device performance."
+      },
+      "i2a_phased_accepted_admission": {
+        "evidence": "../evidence/i2a/SOURCE-PHASED-ACCEPTED-ADMISSION-2026-11-03.md",
+        "scope": "Accepted public admission now holds one admission permit but releases the SQLite-core mutex between completed large-blob chunks and tiny-file batches and while reading/hashing staged bytes. An A lease reads exact bytes after B's first chunk while A remains selected; the phased path passes a precommit process kill, live-lease post-sync final-COMMIT fault, workspace gate and opt-in admitted A/B build. Three local 12 MiB contention runs sampled ten A reads each, with observed maximum copy time 23.477\u201327.672 ms and B wall 88.942\u201394.938 ms, versus a separate serialized-baseline reader wait 85.272\u201390.423 ms. Timers differ and do not prove writer throughput. Larger-source or representative reader tails, starvation, final verification/manifest hold time, allocations/RSS, sustained WAL pressure, physical peaks and whole source-to-build performance remain open."
       },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
@@ -603,7 +607,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d",
         "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -771,7 +775,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Typed entity/component APIs, table/sparse implementation, transform and command details.",
@@ -829,7 +833,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d",
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -1139,7 +1143,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "RecoveryRoot format, adapters, operation epochs, save/replay envelope and migration."
@@ -1818,7 +1822,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e"
+        "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Operation registry, transaction/undo and durable retry/recovery interfaces."
@@ -2689,7 +2693,7 @@
     "contract_sha256": "c5a808cb5ea377f4ab7995dc1232ab7d001f6a6f599a858f433b9a0905582a8b",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-      "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
+      "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d",
       "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
@@ -3072,7 +3076,7 @@
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
       "FIRST-USE-WALKTHROUGHS.md": "38402601329f448342ba86c97878adb62e079846b0ba3345f86430202d9e7eac",
-      "FOUNDATION-SPEC.md": "fb1324f66372b5758c523a6fba6f365fa53b6671df2de4578e3a9f2bf436ff2e",
+      "FOUNDATION-SPEC.md": "808d80a5f492a1d8ddad358e74473d35053ea0d7a9b299de8a3a19f2a2013d9d",
       "FROM-SCRATCH-WALKTHROUGHS.md": "5f64e1fc79ba65819654b42cde2877945d5a8532fc3e11f5d4f70119fa2c988c",
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
