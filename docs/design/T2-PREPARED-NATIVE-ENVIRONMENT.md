@@ -107,7 +107,12 @@ root retention is proved. Until then the candidate may cache an inventory for
 experiments, but cannot claim that reuse is trusted. The observed
 Rust/linker/SDK inventory reads about 4.86 GB of logical bytes and took roughly
 11–15 seconds on one Mac; a release preparation job must measure snapshot
-creation and additional support/runtime bytes. The current per-edit private-cache integrity pass reads
+creation and additional support/runtime bytes. A local
+[APFS clone feasibility probe](research/T2-MACOS-APFS-TOOL-ROOT-RETENTION-2026-11-03.md)
+copied the Rust root in 0.056 seconds and the selected Xcode linker/SDK roots
+in 8.398 seconds with matching inventories and working cloned compilers.
+Whole-tree atomic selection, an owned no-writer lifecycle and selected support
+files remain unproved. The current per-edit private-cache integrity pass reads
 67.8 MB and took roughly 150–230 ms. Keep that cost until an equivalent sealed
 retention guarantee is proved; metadata-only checks cannot silently replace
 byte integrity. Policy generation is proportional to selected roots and
