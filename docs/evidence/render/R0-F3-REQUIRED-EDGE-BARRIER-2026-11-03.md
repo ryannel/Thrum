@@ -1,0 +1,11 @@
+# Required-edge capacity after declared structure
+
+3 November 2026. This is the second checkpoint of the [operation-wide render closure sequence](../../design/research/F3-RENDER-GLOBAL-CLOSURE-SEQUENCE-2026-11-03.md). It preserves the existing 65,536 required-reference unit and changes only when its refusal is selected.
+
+The staged record pass now saturates its count at 65,537 and finishes local grammar for every declared record before reporting capacity. At the first excess it drops accumulated scene, game and built-in summaries. It does not append the crossing reference. Later game records use the same strict descriptor parser with a remaining-reference allowance of zero: it validates and counts target UUIDs without a reference vector or owned target ID. The crossing game can retain only references within the remaining allowance until its parser returns; that partial summary is then dropped. The public `parse_game_record` result is unchanged. Parser keys, escaped-text scratch, record bytes and stage/store allocations are outside this first projection guarantee.
+
+The limit fixture reaches exactly 65,536 game references, then crosses with one built-in edge. A malformed later scene reports its structural error instead of capacity. Two later game records exercise the nonretaining path; a malformed second game reports its structural error, while repaired records report capacity. The parser test checks zero-retention count, normal retained output and rejection of an invalid target UUID in both modes. Independent read-only defect review found no issue.
+
+`RUSTC_WRAPPER= cargo test --locked --offline -q -p thrum-source` passed with 301 passed, 53 ignored and none failed. `RUSTC_WRAPPER= ./dev check` passed after the code change. One ignored dense 256-descriptor over-limit probe completed correctly with 1.016 seconds measured inside its debug test on this Mac; it is a single diagnostic, not comparative latency evidence or a release performance qualification.
+
+This does not provide the operation-wide canonical UUID namespace, typed-edge order, deferred bounds, charged render-indexed-work account, scene@3/render@1 admission, F4 product or complete F3 resource and latency qualification.

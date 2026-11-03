@@ -685,7 +685,15 @@
         "functional_validation": "scene@1 and scene@2 malformed-record versus duplicate-ID precedence, structurally valid duplicate and descriptor-order fixtures; 16 focused tests, full repository gate and independent read-only review pass",
         "experienced_quality": "not_applicable_to_source_validation_order",
         "platform_performance": "no paired timing or allocation measurement; complete candidates avoid the registry-only collision-set allocation, but combined F3 cost remains unmeasured",
-        "scope": "Only the registry structure extraction is complete. Required-edge capacity can still stop structural parsing; global canonical UUID and typed-edge passes, deferred bounds, F3/F4 activation and ready renderer remain open."
+        "scope": "Only the registry structure extraction is covered by this entry. A separate checkpoint now defers required-edge capacity until local grammar completes; global canonical UUID and typed-edge passes, deferred bounds, F3/F4 activation and ready renderer remain open."
+      },
+      "i2a_required_edge_barrier": {
+        "evidence": "../evidence/render/R0-F3-REQUIRED-EDGE-BARRIER-2026-11-03.md",
+        "implementation": "post_structure_saturating_required_edge_count_with_nonretaining_game_reference_sink",
+        "functional_validation": "exact 65536 boundary, late malformed scene and game after overflow, repaired over-limit refusal, zero-retention UUID validation and normal public parser output; 301 source tests, full repository gate and independent read-only review pass",
+        "experienced_quality": "not_applicable_to_source_capacity_barrier",
+        "platform_performance": "one debug ignored dense over-limit probe reports 1.016 seconds inside the validation call; no paired ordinary-path CPU or allocation/RSS measurement",
+        "scope": "This is only the existing required-edge capacity barrier. Parser scratch and stage/store memory are not charged. Operation-wide embedded UUID namespace, typed-edge ordering, deferred bounds, F3/F4 activation and ready renderer remain open."
       },
       "i2a_scene3_local_candidate": {
         "evidence": "../evidence/render/R0-F3-SCENE3-LOCAL-DECODER-2026-11-03.md",

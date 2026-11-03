@@ -123,6 +123,18 @@ pub fn parse_game_record(
     bytes: &[u8],
     descriptor: &SchemaDescriptor,
 ) -> Result<GameRecordSummary, GameRecordError> {
+    parse_game_record_with_reference_limit(bytes, descriptor, usize::MAX)
+        .map(|(summary, _)| summary)
+}
+
+/// Validate all fields while retaining no more than `retain_limit` reference
+/// targets. The full count is returned even when later targets are discarded.
+/// The staged candidate uses this after its operation-wide edge credit fills.
+pub(crate) fn parse_game_record_with_reference_limit(
+    bytes: &[u8],
+    descriptor: &SchemaDescriptor,
+    retain_limit: usize,
+) -> Result<(GameRecordSummary, usize), GameRecordError> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(GameRecordError::TooLarge {
             observed: bytes.len() as u64,
@@ -135,6 +147,7 @@ pub fn parse_game_record(
         descriptor,
         nodes: &nodes,
         limit: &limit,
+        retain_limit,
     }
     .deserialize(&mut deserializer)
     .map_err(|source| match limit.get() {
@@ -142,7 +155,7 @@ pub fn parse_game_record(
         None => GameRecordError::Invalid(source),
     })?;
     deserializer.end().map_err(GameRecordError::Invalid)?;
-    Ok(record)
+    Ok((record.summary, record.reference_count))
 }
 
 /// Read only the top-level type discriminator before descriptor-bound parsing.
@@ -238,10 +251,16 @@ struct GameRecordSeed<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
     limit: &'a Cell<Option<LimitExceeded>>,
+    retain_limit: usize,
+}
+
+struct ParsedGameRecord {
+    summary: GameRecordSummary,
+    reference_count: usize,
 }
 
 impl<'de> DeserializeSeed<'de> for GameRecordSeed<'_> {
-    type Value = GameRecordSummary;
+    type Value = ParsedGameRecord;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
@@ -251,6 +270,7 @@ impl<'de> DeserializeSeed<'de> for GameRecordSeed<'_> {
             descriptor: self.descriptor,
             nodes: self.nodes,
             limit: self.limit,
+            retain_limit: self.retain_limit,
         })
     }
 }
@@ -259,10 +279,11 @@ struct GameRecordVisitor<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
     limit: &'a Cell<Option<LimitExceeded>>,
+    retain_limit: usize,
 }
 
 impl<'de> Visitor<'de> for GameRecordVisitor<'_> {
-    type Value = GameRecordSummary;
+    type Value = ParsedGameRecord;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a first-profile game record")
@@ -286,6 +307,7 @@ impl<'de> Visitor<'de> for GameRecordVisitor<'_> {
                         descriptor: self.descriptor,
                         nodes: self.nodes,
                         limit: self.limit,
+                        retain_limit: self.retain_limit,
                     })?);
                 }
                 "documentation" if !documentation_seen => {
@@ -305,12 +327,15 @@ impl<'de> Visitor<'de> for GameRecordVisitor<'_> {
             ));
         }
         let references = fields.ok_or_else(|| A::Error::custom("missing game record fields"))?;
-        Ok(GameRecordSummary {
-            id,
-            record_type: self.descriptor.target_type().to_owned(),
-            schema: self.descriptor.target_version(),
-            definition_hash: *self.descriptor.definition_hash(),
-            references,
+        Ok(ParsedGameRecord {
+            summary: GameRecordSummary {
+                id,
+                record_type: self.descriptor.target_type().to_owned(),
+                schema: self.descriptor.target_version(),
+                definition_hash: *self.descriptor.definition_hash(),
+                references: references.rows,
+            },
+            reference_count: references.count,
         })
     }
 }
@@ -319,10 +344,16 @@ struct GameFieldsSeed<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
     limit: &'a Cell<Option<LimitExceeded>>,
+    retain_limit: usize,
+}
+
+struct ParsedReferences {
+    rows: Vec<GameReference>,
+    count: usize,
 }
 
 impl<'de> DeserializeSeed<'de> for GameFieldsSeed<'_> {
-    type Value = Vec<GameReference>;
+    type Value = ParsedReferences;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
@@ -332,6 +363,7 @@ impl<'de> DeserializeSeed<'de> for GameFieldsSeed<'_> {
             descriptor: self.descriptor,
             nodes: self.nodes,
             limit: self.limit,
+            retain_limit: self.retain_limit,
         })
     }
 }
@@ -340,10 +372,11 @@ struct GameFieldsVisitor<'a> {
     descriptor: &'a SchemaDescriptor,
     nodes: &'a Cell<usize>,
     limit: &'a Cell<Option<LimitExceeded>>,
+    retain_limit: usize,
 }
 
 impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
-    type Value = Vec<GameReference>;
+    type Value = ParsedReferences;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("bounded known fields and declared optional opaque fields")
@@ -355,6 +388,7 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
         let mut opaque_count = 0;
         let mut opaque_names: Option<HashSet<String>> = None;
         let mut references = Vec::new();
+        let mut reference_count = 0;
         loop {
             let Some(key) = map.next_key::<String>()? else {
                 break;
@@ -387,12 +421,17 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
                             })?;
                         }
                         SchemaFieldKind::RecordRef { .. } => {
-                            let target_id = map.next_value_seed(ReferenceSeed)?;
-                            references.push(GameReference {
-                                field_index: u8::try_from(index)
-                                    .expect("descriptor has at most 128 fields"),
-                                target_id,
-                            });
+                            reference_count += 1;
+                            if references.len() < self.retain_limit {
+                                let target_id = map.next_value_seed(ReferenceSeed)?;
+                                references.push(GameReference {
+                                    field_index: u8::try_from(index)
+                                        .expect("descriptor has at most 128 fields"),
+                                    target_id,
+                                });
+                            } else {
+                                map.next_value_seed(ReferenceValidationSeed)?;
+                            }
                         }
                     }
                 }
@@ -432,7 +471,10 @@ impl<'de> Visitor<'de> for GameFieldsVisitor<'_> {
                 return Err(A::Error::custom("missing required game field"));
             }
         }
-        Ok(references)
+        Ok(ParsedReferences {
+            rows: references,
+            count: reference_count,
+        })
     }
 }
 
@@ -484,6 +526,40 @@ impl<'de> DeserializeSeed<'de> for ReferenceSeed {
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
         deserializer.deserialize_str(ReferenceVisitor)
+    }
+}
+
+struct ReferenceValidationSeed;
+
+impl<'de> DeserializeSeed<'de> for ReferenceValidationSeed {
+    type Value = ();
+
+    fn deserialize<D: serde::Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> Result<Self::Value, D::Error> {
+        deserializer.deserialize_str(ReferenceValidationVisitor)
+    }
+}
+
+struct ReferenceValidationVisitor;
+
+impl Visitor<'_> for ReferenceValidationVisitor {
+    type Value = ();
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a canonical target record UUID")
+    }
+
+    fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+        if !canonical_uuid(value) {
+            return Err(E::custom("invalid target record UUID"));
+        }
+        Ok(())
+    }
+
+    fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
+        self.visit_str(&value)
     }
 }
 
@@ -729,6 +805,25 @@ mod tests {
                 .references(),
             parsed.references()
         );
+    }
+
+    #[test]
+    fn exhausted_reference_sink_validates_without_retaining_targets() {
+        let schema = schema();
+        let bytes = record();
+        let (discarded, count) =
+            parse_game_record_with_reference_limit(bytes.as_bytes(), &schema, 0).unwrap();
+        assert_eq!(count, 1);
+        assert!(discarded.references().is_empty());
+        assert_eq!(discarded.id(), RECORD_ID);
+        let (retained, count) =
+            parse_game_record_with_reference_limit(bytes.as_bytes(), &schema, 1).unwrap();
+        assert_eq!(count, 1);
+        assert_eq!(retained.references()[0].target_id(), SCENE_ID);
+
+        let invalid = bytes.replace(SCENE_ID, "not-a-canonical-uuid");
+        assert!(parse_game_record_with_reference_limit(invalid.as_bytes(), &schema, 0).is_err());
+        assert!(parse_game_record(invalid.as_bytes(), &schema).is_err());
     }
 
     #[test]
