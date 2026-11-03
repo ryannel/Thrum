@@ -73,6 +73,14 @@ or Cargo provide publisher signatures. Signing the project's release manifest
 can be added later without changing BuildRevision semantics. The first profile stays
 macOS ARM64; other platforms need their own selected adapter and evidence.
 
+The exact Apple acquisition route for this first profile is still a
+[pending Xcode origin choice](research/T2-XCODE-OFFICIAL-ORIGIN-CHOICE-2026-11-03.md).
+An installed signed Mac App Store app and an Apple Developer download archive
+can each seed an exact-hash manifest only after one controlled job authenticates
+the same frozen bytes from which the selected linker, SDK and support roots are
+derived. No current local assessment substitutes for that proof or human
+approval of the resulting manifest.
+
 The first development profile also uses the user-selected
 [reviewed compiler-family assumption](research/T2-MACOS-COMPILER-JOB-CONTAINMENT-2026-11-03.md):
 the reviewed Rust/Xcode helper set must not detach from its build process
