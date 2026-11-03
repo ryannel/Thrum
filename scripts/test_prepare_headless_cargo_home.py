@@ -81,7 +81,8 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
             pidfile = Path(directory) / "child.pid"
             child_code = (
                 "import os,pathlib,time;"
-                f"pathlib.Path({str(pidfile)!r}).write_text(str(os.getpid()));"
+                f"p=pathlib.Path({str(pidfile)!r});"
+                "tmp=p.with_suffix('.tmp');tmp.write_text(str(os.getpid()));tmp.replace(p);"
                 "time.sleep(10)"
             )
             runner = (
@@ -114,6 +115,80 @@ class PrepareHeadlessCargoHome(unittest.TestCase):
                         os.kill(child_pid, signal.SIGKILL)
                     except ProcessLookupError:
                         pass
+
+    @unittest.skipUnless(os.name == "posix", "early signal deferral requires POSIX")
+    def test_signal_during_popen_return_reaps_new_child(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pidfile = Path(directory) / "child.pid"
+            runner = f"""
+import os,pathlib,signal,subprocess,sys
+sys.path.insert(0, {str(Path(__file__).parent)!r})
+import prepare_headless_cargo_home as native
+real_popen = subprocess.Popen
+def launch(*args, **kwargs):
+    child = real_popen(*args, **kwargs)
+    pathlib.Path({str(pidfile)!r}).write_text(str(child.pid))
+    os.kill(os.getpid(), signal.SIGTERM)
+    return child
+def interrupted(*_):
+    raise KeyboardInterrupt()
+signal.signal(signal.SIGTERM, interrupted)
+native.subprocess.Popen = launch
+native.collect_bounded([sys.executable, '-c', 'import time; time.sleep(30)'],
+                       {directory!r}, os.environ.copy())
+"""
+            wrapper = subprocess.Popen([sys.executable, "-c", runner],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            child_pid = None
+            try:
+                _, stderr = wrapper.communicate(timeout=5)
+                self.assertNotEqual(wrapper.returncode, 0, stderr.decode(errors="replace"))
+                self.assertTrue(pidfile.exists(), "Popen did not return a child")
+                child_pid = int(pidfile.read_text())
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    try:
+                        os.kill(child_pid, 0)
+                    except ProcessLookupError:
+                        break
+                    time.sleep(0.01)
+                else:
+                    self.fail("early SIGTERM left the launched child alive")
+            finally:
+                if wrapper.poll() is None:
+                    wrapper.kill()
+                    wrapper.communicate()
+                if child_pid is not None:
+                    try:
+                        os.kill(child_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    @unittest.skipUnless(os.name == "posix", "child signal delivery requires POSIX")
+    def test_collector_does_not_block_child_sigterm(self):
+        with tempfile.TemporaryDirectory() as directory:
+            status, _, _ = collect_bounded(
+                [sys.executable, "-c",
+                 "import os,signal; os.kill(os.getpid(), signal.SIGTERM)"],
+                Path(directory), os.environ.copy(), timeout_seconds=3,
+            )
+            self.assertEqual(status, -signal.SIGTERM)
+
+    @unittest.skipUnless(os.name == "posix", "ignored child signal disposition requires POSIX")
+    def test_collector_preserves_ignored_child_sigint(self):
+        prior = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                status, output, _ = collect_bounded(
+                    [sys.executable, "-c",
+                     "import signal,sys; sys.stdout.write(str(signal.getsignal(signal.SIGINT) "
+                     "== signal.SIG_IGN))"],
+                    Path(directory), os.environ.copy(), timeout_seconds=3,
+                )
+            self.assertEqual((status, output), (0, b"True"))
+        finally:
+            signal.signal(signal.SIGINT, prior)
 
     @unittest.skipUnless(os.name == "posix", "private inventory requires POSIX")
     def test_verify_reuse_refuses_dependency_selection_change(self):

@@ -112,6 +112,15 @@ class VerifyRustcReceipts(unittest.TestCase):
             self.assertEqual(report["units"][0]["artifacts"], ["debug/headless"])
             self.assertFalse(report["buildReady"])
 
+    def test_oversized_receipt_directory_refuses_before_parsing_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts = args[0]
+            for number in range(103, 166):
+                (receipts / f"{number}.receipt").write_bytes(b"partial")
+            with self.assertRaisesRegex(ValueError, "oversized"):
+                inspect(*args[:6])
+
     def test_failed_compile_requires_exact_failed_receipt_and_cargo_error(self):
         with tempfile.TemporaryDirectory() as directory:
             args = self.fixture(Path(directory).resolve())

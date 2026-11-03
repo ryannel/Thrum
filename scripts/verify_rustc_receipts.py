@@ -342,8 +342,14 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript,
         raise ValueError("receipt directory differs from selected output")
     if not rustc.is_absolute() or rustc.is_symlink() or not rustc.is_file():
         raise ValueError("selected rustc must be an ordinary absolute file")
-    entries = sorted(receipt_dir.iterdir())
-    if not 1 <= len(entries) <= MAX_RECEIPTS:
+    entries = []
+    with os.scandir(receipt_dir) as scan:
+        for entry in scan:
+            if len(entries) == MAX_RECEIPTS:
+                raise ValueError("rustc receipt set is empty or oversized")
+            entries.append(Path(entry.path))
+    entries.sort()
+    if not entries:
         raise ValueError("rustc receipt set is empty or oversized")
     compiles = {}
     failed_crate = None

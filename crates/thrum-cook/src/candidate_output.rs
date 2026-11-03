@@ -384,20 +384,22 @@ pub(crate) fn verify(
     {
         return Err(invalid("incomplete candidate file index"));
     }
-    let mut actual_names = fs::read_dir(path)?
-        .map(|entry| {
-            entry.and_then(|entry| {
-                entry
-                    .file_name()
-                    .into_string()
-                    .map_err(|_| invalid("non-UTF8 candidate name"))
-            })
-        })
-        .collect::<io::Result<Vec<_>>>()?;
-    actual_names.sort_unstable();
     let mut expected_names = files.keys().cloned().collect::<Vec<_>>();
     expected_names.push(REPORT.to_owned());
     expected_names.sort_unstable();
+    let mut actual_names = Vec::with_capacity(expected_names.len());
+    for entry in fs::read_dir(path)? {
+        if actual_names.len() == expected_names.len() {
+            return Err(invalid("candidate directory exceeds report membership"));
+        }
+        actual_names.push(
+            entry?
+                .file_name()
+                .into_string()
+                .map_err(|_| invalid("non-UTF8 candidate name"))?,
+        );
+    }
+    actual_names.sort_unstable();
     if actual_names != expected_names {
         return Err(invalid("candidate file membership changed"));
     }
