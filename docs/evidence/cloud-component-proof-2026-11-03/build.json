@@ -1,0 +1,47 @@
+{
+  "identity": {
+    "build": "0ec8c1463e8dcccb",
+    "files": {
+      "assets/FROZEN-INPUTS.json": "136d6d46584f9e3096ebc79893f0c196ad3b4b8d6508ba4bb2355006c956cb18",
+      "assets/body.density.r16f": "5f78052d1abc3214c26b8c74ae02ff7e97cdadcfce659e1fab9c640070c00d10",
+      "assets/body.distance.r16f": "337fd51f5086edc75dd5e89fd4a5ecc0fd54a883cad4a879118c74e890c9be1e",
+      "assets/body.json": "a9ada1d45f4a793634ad449179aebdac87344c872bf9f9012f68ffe583942c0e",
+      "assets/crown-a.density.r16f": "84c726c3d3e34ec45b7635b5f1a78b79e1b1fb7c0dbe1b1f1ba5e8485cae797a",
+      "assets/crown-a.distance.r16f": "57abad0d0b80504c5986a59ec7f1f2f338ccc6730731f0d12e75540ffe6927ac",
+      "assets/crown-a.json": "cabdc9947d43bcd4354266337529f93031dc4c53a841153dd97d554e5d438d3a",
+      "assets/crown-b.density.r16f": "123c769cada4702d089243313c642ef3fe3cfad6b8a3dbece34922783cd2dcef",
+      "assets/crown-b.distance.r16f": "deb171c9040447f34c7d871067fea25d52617c69b6ee7f923522c90cfbf229f5",
+      "assets/crown-b.json": "f96f0ba5dc3335d6fdbb8ac4e74f740a59a41a83c5607980ee6eb590d6b5a354",
+      "assets/held-fixture.json": "20618d1d5688e7db34623419d0817dc26fa4dcaf822a3abee36dc5eb4ffbf0f7",
+      "assets/snapshot.json": "0f9c32b7303aef7d175b73fadc96f5fcf96989375f8c3c124e028b4f96a38ab6",
+      "index.html": "7298af769afd6e853d22bc7e6688554ca05722c3e207b0e86708bbbb12003feb",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "2f96c110c43a75b734e457fe50ab2a1de499546a954a3ae6140406559eed997c",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "a1349c3fbc9cf8b554d00fe01d5a9dfd8d738292a1ac878ea089f0059283aee6",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/held-adapter.js": "c0b88296718f3ab2c905d26ee9be87333a16cf2f636925786fe208ce477ec327",
+      "src/held-lab.js": "64908161429eed0fcf6637f272dc790dd116598bab8af117269945cdae31b48b",
+      "src/held-oracle.js": "00b305491cc2ad6f65f2a2d87f4797d90037d307a45ba3e07ef4abb41383fe22",
+      "src/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/scene.js": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "archive": "instrument-0ec8c1463e8dcccb.zip",
+  "archive_bytes": 53081,
+  "archive_sha256": "822f9f49d80e092461e69c09966dbfafd1307d7330ad4cbbb7d4a7cb34687fca",
+  "external_gzip": {
+    "assets/body.density.r16f": "inputs/body.density.r16f.gz",
+    "assets/body.distance.r16f": "inputs/body.distance.r16f.gz",
+    "assets/crown-a.density.r16f": "inputs/crown-a.density.r16f.gz",
+    "assets/crown-a.distance.r16f": "inputs/crown-a.distance.r16f.gz",
+    "assets/crown-b.density.r16f": "inputs/crown-b.density.r16f.gz",
+    "assets/crown-b.distance.r16f": "inputs/crown-b.distance.r16f.gz"
+  }
+}

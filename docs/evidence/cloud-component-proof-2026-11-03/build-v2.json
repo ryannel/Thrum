@@ -1,0 +1,42 @@
+{
+  "identity": {
+    "build": "1e446a5adeda974c",
+    "files": {
+      "assets/FROZEN-INPUTS.json": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+      "assets/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "assets/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "assets/body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "assets/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "assets/crown-b.distance.r16f": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+      "assets/crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "assets/held-fixture.json": "ad2bfe222215b069422e717bcb6f7645960ae4bc4e4fd2229a00e5a464ff06c7",
+      "assets/snapshot.json": "6f1635547717838946eb1df1e6e592387e102ceeec9d75a85d78ca38d6cc1666",
+      "index.html": "20d426ab1481247acccc81d98b8b32905d62480febe830e6e08575cecc893066",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "e1fe1d1e3f1e4a02ff0dd55785410ba7626717c7ab12ca3678428bd8bf07e7bc",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "856e4d6818a495afa93564b5591ea5cbb822572d57befe073a9304a821edda02",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/held-adapter.js": "1b2ba05fab2964c43f283cbf13acb70dbf88aa717318450604e08c26e2f8c839",
+      "src/held-lab.js": "64908161429eed0fcf6637f272dc790dd116598bab8af117269945cdae31b48b",
+      "src/held-oracle.js": "5c1e7e539c5f6c45af6f7e887cc2c21731fedb6b8a7c0b54cf318f994a8c3eed",
+      "src/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/scene.js": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "archive": "instrument-1e446a5adeda974c.zip",
+  "archive_bytes": 86695,
+  "archive_sha256": "3d9f09e456d2b91bdb443f10d6618033d3c68d74e7c1a64dae0425427ea56131",
+  "external_gzip": {
+    "assets/body.density.r16f": "inputs/v2-body.density.r16f.gz",
+    "assets/body.distance.r16f": "inputs/v2-body.distance.r16f.gz",
+    "assets/crown-b.density.r16f": "inputs/v2-crown-b.density.r16f.gz",
+    "assets/crown-b.distance.r16f": "inputs/v2-crown-b.distance.r16f.gz"
+  }
+}

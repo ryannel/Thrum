@@ -1,0 +1,1 @@
+Owner: root cloud campaign. Selected historical component mechanism evidence, rejected v1 content and provisionally selected v2 integration inputs. Exact source and derived fields retained here; original CC0 masters/notices retained by cloud-authored-masters. No live lifecycle or production acceptance.

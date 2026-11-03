@@ -1,0 +1,1459 @@
+{
+  "name": "held-b2-full-mode0-1e446a5adeda974c-5224a38c-4",
+  "build": "1e446a5adeda974c",
+  "identity": {
+    "build": "1e446a5adeda974c",
+    "files": {
+      "assets/FROZEN-INPUTS.json": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+      "assets/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "assets/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "assets/body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "assets/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "assets/crown-b.distance.r16f": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+      "assets/crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "assets/held-fixture.json": "ad2bfe222215b069422e717bcb6f7645960ae4bc4e4fd2229a00e5a464ff06c7",
+      "assets/snapshot.json": "6f1635547717838946eb1df1e6e592387e102ceeec9d75a85d78ca38d6cc1666",
+      "index.html": "20d426ab1481247acccc81d98b8b32905d62480febe830e6e08575cecc893066",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "e1fe1d1e3f1e4a02ff0dd55785410ba7626717c7ab12ca3678428bd8bf07e7bc",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "856e4d6818a495afa93564b5591ea5cbb822572d57befe073a9304a821edda02",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/held-adapter.js": "1b2ba05fab2964c43f283cbf13acb70dbf88aa717318450604e08c26e2f8c839",
+      "src/held-lab.js": "64908161429eed0fcf6637f272dc790dd116598bab8af117269945cdae31b48b",
+      "src/held-oracle.js": "5c1e7e539c5f6c45af6f7e887cc2c21731fedb6b8a7c0b54cf318f994a8c3eed",
+      "src/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/scene.js": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "observation": "5224a38c",
+  "host": {
+    "adapter": {},
+    "devicePixelRatio": 2,
+    "screen": [
+      1728,
+      1117
+    ]
+  },
+  "fixture": {
+    "fixtureId": "b2-full",
+    "description": "candidateheldgeometry; sameBbasisfirsts6seconds5, etaalreadybakedBODY; contentUNQUALIFIED",
+    "parts": [
+      {
+        "id": "body-0",
+        "asset_id": "body",
+        "role": "BODY",
+        "age_s": 165,
+        "born_s": 0,
+        "C_world_m": [
+          0,
+          1239.2,
+          0
+        ],
+        "Q_columns": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "s_world_per_local_m": 4,
+        "b_world_per_local_m": 4,
+        "K_world_per_rotated_local_y": [
+          1.068,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          299,
+          233,
+          167
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      },
+      {
+        "id": "body-100",
+        "asset_id": "body",
+        "role": "BODY",
+        "age_s": 65,
+        "born_s": 100,
+        "C_world_m": [
+          0,
+          1239.2,
+          0
+        ],
+        "Q_columns": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "s_world_per_local_m": 4,
+        "b_world_per_local_m": 4,
+        "K_world_per_rotated_local_y": [
+          0.268,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          299,
+          233,
+          167
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      },
+      {
+        "id": "b-1-70",
+        "asset_id": "crown-b",
+        "role": "BILLOW",
+        "age_s": 95,
+        "born_s": 70,
+        "parent_id": "body-0",
+        "parent_site_id": "body-shoulder-0",
+        "C_world_m": [
+          -212.1628522455549,
+          1307.150112277745,
+          436
+        ],
+        "Q_columns": [
+          [
+            0.994922695152221,
+            0.09748081547070914,
+            0.025026441300578094
+          ],
+          [
+            -0.09110068075942016,
+            0.9779928903709157,
+            -0.18769830975433574
+          ],
+          [
+            -0.04277266596057683,
+            0.1844653823768317,
+            0.9819078909779071
+          ]
+        ],
+        "s_world_per_local_m": 6,
+        "b_world_per_local_m": 6,
+        "K_world_per_rotated_local_y": [
+          0.85059375,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          225,
+          265,
+          197
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      },
+      {
+        "id": "b-2-120",
+        "asset_id": "crown-b",
+        "role": "BILLOW",
+        "age_s": 45,
+        "born_s": 120,
+        "parent_id": "body-0",
+        "parent_site_id": "body-shoulder-6",
+        "C_world_m": [
+          -15.62638326989614,
+          1290.0666634948075,
+          -60
+        ],
+        "Q_columns": [
+          [
+            0.9788571252173149,
+            -0.19211290926802072,
+            0.07022363143200551
+          ],
+          [
+            0.1999395226995439,
+            0.8262174480243899,
+            -0.5266772357400413
+          ],
+          [
+            0.043161506450501576,
+            0.5295822442446427,
+            0.8471597993610095
+          ]
+        ],
+        "s_world_per_local_m": 5,
+        "b_world_per_local_m": 5,
+        "K_world_per_rotated_local_y": [
+          0.208828125,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          225,
+          265,
+          197
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      }
+    ],
+    "fixtureSha256": "ad2bfe222215b069422e717bcb6f7645960ae4bc4e4fd2229a00e5a464ff06c7",
+    "fixtureBounds": [
+      [
+        -848.584,
+        963.083888079346,
+        -576
+      ],
+      [
+        532.352,
+        1831.3078439538363,
+        1288
+      ]
+    ],
+    "commonBounds": [
+      [
+        -848.584,
+        963.083888079346,
+        -576
+      ],
+      [
+        532.352,
+        1831.3078439538363,
+        1288
+      ]
+    ],
+    "sourceHashes": {
+      "body": {
+        "manifest": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+        "density": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+        "distance": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14"
+      },
+      "crown-b": {
+        "manifest": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+        "density": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+        "distance": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416"
+      }
+    },
+    "componentIntegrals": [
+      {
+        "id": "body-0",
+        "assetId": "body",
+        "sWorldPerLocalM": 4,
+        "g": 1,
+        "bWorldPerLocalM": 4,
+        "worldNativePitchM": 8,
+        "localReferenceQuadratureM3": 192859.1134944696,
+        "worldReferenceQuadratureM3BeforeMax": 12342983.263646055,
+        "worldJacobian": 64,
+        "scope": "Per-part texel-centre native rho/d quadrature transformed by b\u00b3; nonlinear filtered continuous integral and joint max ownership not claimed"
+      },
+      {
+        "id": "body-100",
+        "assetId": "body",
+        "sWorldPerLocalM": 4,
+        "g": 1,
+        "bWorldPerLocalM": 4,
+        "worldNativePitchM": 8,
+        "localReferenceQuadratureM3": 192859.1134944696,
+        "worldReferenceQuadratureM3BeforeMax": 12342983.263646055,
+        "worldJacobian": 64,
+        "scope": "Per-part texel-centre native rho/d quadrature transformed by b\u00b3; nonlinear filtered continuous integral and joint max ownership not claimed"
+      },
+      {
+        "id": "b-1-70",
+        "assetId": "crown-b",
+        "sWorldPerLocalM": 6,
+        "g": 1,
+        "bWorldPerLocalM": 6,
+        "worldNativePitchM": 12,
+        "localReferenceQuadratureM3": 34400.244862121996,
+        "worldReferenceQuadratureM3BeforeMax": 7430452.890218351,
+        "worldJacobian": 216,
+        "scope": "Per-part texel-centre native rho/d quadrature transformed by b\u00b3; nonlinear filtered continuous integral and joint max ownership not claimed"
+      },
+      {
+        "id": "b-2-120",
+        "assetId": "crown-b",
+        "sWorldPerLocalM": 5,
+        "g": 1,
+        "bWorldPerLocalM": 5,
+        "worldNativePitchM": 10,
+        "localReferenceQuadratureM3": 34400.244862121996,
+        "worldReferenceQuadratureM3BeforeMax": 4300030.60776525,
+        "worldJacobian": 125,
+        "scope": "Per-part texel-centre native rho/d quadrature transformed by b\u00b3; nonlinear filtered continuous integral and joint max ownership not claimed"
+      }
+    ],
+    "sourceMode": "held static native R16 component max field",
+    "poseSourceTimeForAuthoringSeconds": 165,
+    "rendererTimeSeconds": 0,
+    "legacyPdeSteps": 0,
+    "logicalGpuBytes": 23923024,
+    "allocations": [
+      {
+        "label": "timestamp resolve",
+        "bytes": 256
+      },
+      {
+        "label": "timestamp readback",
+        "bytes": 256
+      },
+      {
+        "label": "held voxel light",
+        "bytes": 147456,
+        "format": "rgba16float",
+        "size": [
+          32,
+          24,
+          24
+        ]
+      },
+      {
+        "label": "held receiver Beer field",
+        "bytes": 131072,
+        "format": "rgba16float",
+        "size": [
+          128,
+          128
+        ]
+      },
+      {
+        "label": "held air transmittance",
+        "bytes": 131072,
+        "format": "rgba16float",
+        "size": [
+          256,
+          64
+        ]
+      },
+      {
+        "label": "held optical image",
+        "bytes": 7372800,
+        "format": "rgba16float",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "label": "held uniform 0/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/32",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/32",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/32",
+        "bytes": 176
+      },
+      {
+        "label": "body density",
+        "bytes": 6291456,
+        "format": "r16float",
+        "size": [
+          192,
+          64,
+          256
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "body distance",
+        "bytes": 6291456,
+        "format": "r16float",
+        "size": [
+          192,
+          64,
+          256
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "crown-b density",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "crown-b distance",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "eight held poses",
+        "bytes": 768
+      },
+      {
+        "label": "two held domains",
+        "bytes": 64
+      }
+    ],
+    "qualification": "UNQUALIFIED candidate assets and growth/attachment cues; only frozen field hashes and offline math checks passed",
+    "limitations": "Static authoring and common consumer query only; no lifecycle, weather, full sky or budget acceptance"
+  },
+  "presentation": {
+    "frame": 8,
+    "presented": true,
+    "time": 0,
+    "committedSourceTime": 0,
+    "sourceSteps": 0,
+    "worldTime": 0,
+    "weatherInput": {
+      "time": 0,
+      "wind": 0,
+      "windIntegral": 0,
+      "moist": 0,
+      "dry": 0,
+      "lift": 0,
+      "frontX": 0,
+      "storm": 0
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.05,
+      "distance": 2000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        432.18576670997425,
+        1297.2375274752344,
+        2264.285134558024
+      ],
+      "target": [
+        -158.11599999999999,
+        1397.195866016591,
+        356
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -848.584,
+        963.083888079346,
+        -576
+      ],
+      [
+        532.352,
+        1831.3078439538363,
+        1288
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "MS": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "lightingProfile": {
+        "id": "selected-production",
+        "name": "SelectedProduction",
+        "a": 0.5,
+        "b": 0.5,
+        "c": 0.5,
+        "abc": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "uniformMap": {
+          "a": "p.sun.w",
+          "b": "p.domain.y",
+          "c": "p.domain.z"
+        },
+        "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+        "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+      },
+      "exposure": 0.5
+    },
+    "epoch": 4,
+    "family": 0,
+    "controls": {
+      "lightingProfile": "selected-production",
+      "family": 0,
+      "provider": 0,
+      "cohorts": true,
+      "forceZero": false,
+      "sun": 30,
+      "mode": 0,
+      "mirror": true,
+      "main": true,
+      "fog": false,
+      "resolved": true,
+      "viewSteps": 384,
+      "extinctionScale": 4.222222222222222,
+      "preparedDensity": false,
+      "materialStructure": false,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": false,
+      "materialCore": false,
+      "connectedFeed": false,
+      "frontMorph": false,
+      "neckMix": false,
+      "dualRest": false,
+      "emptyWork": false,
+      "cachedVelocity": false,
+      "alpha": 1
+    },
+    "lightBuilt": true
+  },
+  "profile": {
+    "id": "selected-production",
+    "name": "SelectedProduction",
+    "a": 0.5,
+    "b": 0.5,
+    "c": 0.5,
+    "abc": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "uniformMap": {
+      "a": "p.sun.w",
+      "b": "p.domain.y",
+      "c": "p.domain.z"
+    },
+    "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+    "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+  },
+  "nativeSourceGpuBytes": 16121856,
+  "gpuBytes": 23923024,
+  "gpuAllocations": [
+    {
+      "label": "timestamp resolve",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp readback",
+      "bytes": 256
+    },
+    {
+      "label": "held voxel light",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "held receiver Beer field",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "label": "held air transmittance",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        256,
+        64
+      ]
+    },
+    {
+      "label": "held optical image",
+      "bytes": 7372800,
+      "format": "rgba16float",
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "held uniform 0/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/32",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/32",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/32",
+      "bytes": 176
+    },
+    {
+      "label": "body density",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "body distance",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "crown-b density",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "crown-b distance",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "eight held poses",
+      "bytes": 768
+    },
+    {
+      "label": "two held domains",
+      "bytes": 64
+    }
+  ],
+  "frameSubmittedPerformanceMs": 2149547.7449998856,
+  "cameraPreset": "oblique",
+  "revision": 4,
+  "gpuQueueCompletedPerformanceMs": 2149719.1750001907,
+  "completionScope": "GPU queue fence completed; scanout and browser display unmeasured",
+  "capture": {
+    "file": "held-b2-full-mode0-1e446a5adeda974c-5224a38c-4.png",
+    "bytes": 364998
+  },
+  "partStateSha256": "beb55e9b6cf720ec7315e4fee7cbb3182af6d57254b51b6990c98afe49962bdd"
+}

@@ -1,0 +1,1599 @@
+{
+  "name": "held-probe-b-full-0ec8c1463e8dcccb-7638c80d-6",
+  "build": "0ec8c1463e8dcccb",
+  "identity": {
+    "build": "0ec8c1463e8dcccb",
+    "files": {
+      "assets/FROZEN-INPUTS.json": "136d6d46584f9e3096ebc79893f0c196ad3b4b8d6508ba4bb2355006c956cb18",
+      "assets/body.density.r16f": "5f78052d1abc3214c26b8c74ae02ff7e97cdadcfce659e1fab9c640070c00d10",
+      "assets/body.distance.r16f": "337fd51f5086edc75dd5e89fd4a5ecc0fd54a883cad4a879118c74e890c9be1e",
+      "assets/body.json": "a9ada1d45f4a793634ad449179aebdac87344c872bf9f9012f68ffe583942c0e",
+      "assets/crown-a.density.r16f": "84c726c3d3e34ec45b7635b5f1a78b79e1b1fb7c0dbe1b1f1ba5e8485cae797a",
+      "assets/crown-a.distance.r16f": "57abad0d0b80504c5986a59ec7f1f2f338ccc6730731f0d12e75540ffe6927ac",
+      "assets/crown-a.json": "cabdc9947d43bcd4354266337529f93031dc4c53a841153dd97d554e5d438d3a",
+      "assets/crown-b.density.r16f": "123c769cada4702d089243313c642ef3fe3cfad6b8a3dbece34922783cd2dcef",
+      "assets/crown-b.distance.r16f": "deb171c9040447f34c7d871067fea25d52617c69b6ee7f923522c90cfbf229f5",
+      "assets/crown-b.json": "f96f0ba5dc3335d6fdbb8ac4e74f740a59a41a83c5607980ee6eb590d6b5a354",
+      "assets/held-fixture.json": "20618d1d5688e7db34623419d0817dc26fa4dcaf822a3abee36dc5eb4ffbf0f7",
+      "assets/snapshot.json": "0f9c32b7303aef7d175b73fadc96f5fcf96989375f8c3c124e028b4f96a38ab6",
+      "index.html": "7298af769afd6e853d22bc7e6688554ca05722c3e207b0e86708bbbb12003feb",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "2f96c110c43a75b734e457fe50ab2a1de499546a954a3ae6140406559eed997c",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "a1349c3fbc9cf8b554d00fe01d5a9dfd8d738292a1ac878ea089f0059283aee6",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/held-adapter.js": "c0b88296718f3ab2c905d26ee9be87333a16cf2f636925786fe208ce477ec327",
+      "src/held-lab.js": "64908161429eed0fcf6637f272dc790dd116598bab8af117269945cdae31b48b",
+      "src/held-oracle.js": "00b305491cc2ad6f65f2a2d87f4797d90037d307a45ba3e07ef4abb41383fe22",
+      "src/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/scene.js": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "observation": "7638c80d",
+  "host": {
+    "adapter": {},
+    "devicePixelRatio": 2,
+    "screen": [
+      1728,
+      1117
+    ]
+  },
+  "fixture": {
+    "fixtureId": "b-full",
+    "description": "immutableheld nativecomponentquery fixture, not dynamic lifecycle proof",
+    "parts": [
+      {
+        "id": "body-0",
+        "asset_id": "body",
+        "role": "BODY",
+        "age_s": 165,
+        "born_s": 0,
+        "C_world_m": [
+          0,
+          1332,
+          0
+        ],
+        "Q_columns": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "b_world_per_local_m": 4,
+        "K_world_per_rotated_local_y": [
+          1.068,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          299,
+          233,
+          167
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      },
+      {
+        "id": "body-100",
+        "asset_id": "body",
+        "role": "BODY",
+        "age_s": 65,
+        "born_s": 100,
+        "C_world_m": [
+          0,
+          1332,
+          0
+        ],
+        "Q_columns": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "b_world_per_local_m": 4,
+        "K_world_per_rotated_local_y": [
+          0.268,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          299,
+          233,
+          167
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      },
+      {
+        "id": "crown-a-70",
+        "asset_id": "crown-a",
+        "role": "BILLOW",
+        "age_s": 95,
+        "born_s": 70,
+        "parent_id": "body-0",
+        "parent_site_id": "body-shoulder-0",
+        "C_world_m": [
+          -202.3372522455549,
+          1436.7501122777448,
+          436
+        ],
+        "Q_columns": [
+          [
+            0.5220454132700846,
+            0.7415948682494318,
+            0.42131423404564416
+          ],
+          [
+            -0.8430821824501439,
+            0.37387349094867384,
+            0.386563170872172
+          ],
+          [
+            0.1291550403040194,
+            -0.5570060542294697,
+            0.8204043611105876
+          ]
+        ],
+        "b_world_per_local_m": 4,
+        "K_world_per_rotated_local_y": [
+          0.5670625,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          237,
+          261,
+          181
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      },
+      {
+        "id": "crown-b-120",
+        "asset_id": "crown-b",
+        "role": "BILLOW",
+        "age_s": 45,
+        "born_s": 120,
+        "parent_id": "body-0",
+        "parent_site_id": "body-shoulder-6",
+        "C_world_m": [
+          -7.5095832698961456,
+          1413.2666634948073,
+          -60
+        ],
+        "Q_columns": [
+          [
+            0.8033272069880175,
+            -0.5097502496059306,
+            0.307928693046196
+          ],
+          [
+            0.5937293711623132,
+            0.6452535794622215,
+            -0.48076319353756003
+          ],
+          [
+            0.0463770664999339,
+            0.5690364627723188,
+            0.8210034509367687
+          ]
+        ],
+        "b_world_per_local_m": 4,
+        "K_world_per_rotated_local_y": [
+          0.1670625,
+          0,
+          0
+        ],
+        "root_global_xyz_local_m": [
+          225,
+          265,
+          197
+        ],
+        "g": 1,
+        "Aseed": 1,
+        "age_exposure_local_m": 0
+      }
+    ],
+    "fixtureSha256": "20618d1d5688e7db34623419d0817dc26fa4dcaf822a3abee36dc5eb4ffbf0f7",
+    "fixtureBounds": [
+      [
+        -872.08,
+        1092,
+        -576
+      ],
+      [
+        513.128,
+        2231.612892161166,
+        1288
+      ]
+    ],
+    "commonBounds": [
+      [
+        -872.08,
+        1092,
+        -576
+      ],
+      [
+        513.128,
+        2231.612892161166,
+        1288
+      ]
+    ],
+    "sourceHashes": {
+      "body": {
+        "manifest": "a9ada1d45f4a793634ad449179aebdac87344c872bf9f9012f68ffe583942c0e",
+        "density": "5f78052d1abc3214c26b8c74ae02ff7e97cdadcfce659e1fab9c640070c00d10",
+        "distance": "337fd51f5086edc75dd5e89fd4a5ecc0fd54a883cad4a879118c74e890c9be1e"
+      },
+      "crown-a": {
+        "manifest": "cabdc9947d43bcd4354266337529f93031dc4c53a841153dd97d554e5d438d3a",
+        "density": "84c726c3d3e34ec45b7635b5f1a78b79e1b1fb7c0dbe1b1f1ba5e8485cae797a",
+        "distance": "57abad0d0b80504c5986a59ec7f1f2f338ccc6730731f0d12e75540ffe6927ac"
+      },
+      "crown-b": {
+        "manifest": "f96f0ba5dc3335d6fdbb8ac4e74f740a59a41a83c5607980ee6eb590d6b5a354",
+        "density": "123c769cada4702d089243313c642ef3fe3cfad6b8a3dbece34922783cd2dcef",
+        "distance": "deb171c9040447f34c7d871067fea25d52617c69b6ee7f923522c90cfbf229f5"
+      }
+    },
+    "sourceMode": "held static native R16 component max field",
+    "poseSourceTimeForAuthoringSeconds": 165,
+    "rendererTimeSeconds": 0,
+    "legacyPdeSteps": 0,
+    "logicalGpuBytes": 27462000,
+    "allocations": [
+      {
+        "label": "timestamp resolve",
+        "bytes": 256
+      },
+      {
+        "label": "timestamp readback",
+        "bytes": 256
+      },
+      {
+        "label": "held voxel light",
+        "bytes": 147456,
+        "format": "rgba16float",
+        "size": [
+          32,
+          24,
+          24
+        ]
+      },
+      {
+        "label": "held receiver Beer field",
+        "bytes": 131072,
+        "format": "rgba16float",
+        "size": [
+          128,
+          128
+        ]
+      },
+      {
+        "label": "held air transmittance",
+        "bytes": 131072,
+        "format": "rgba16float",
+        "size": [
+          256,
+          64
+        ]
+      },
+      {
+        "label": "held optical image",
+        "bytes": 7372800,
+        "format": "rgba16float",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "label": "held uniform 0/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/32",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/32",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/32",
+        "bytes": 176
+      },
+      {
+        "label": "body density",
+        "bytes": 6291456,
+        "format": "r16float",
+        "size": [
+          192,
+          64,
+          256
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "body distance",
+        "bytes": 6291456,
+        "format": "r16float",
+        "size": [
+          192,
+          64,
+          256
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "crown-a density",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "crown-a distance",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "crown-b density",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "crown-b distance",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Shared immutable held component"
+      },
+      {
+        "label": "eight held poses",
+        "bytes": 768
+      },
+      {
+        "label": "three held domains",
+        "bytes": 96
+      }
+    ],
+    "qualification": "UNQUALIFIED candidate assets and growth/attachment cues; only frozen field hashes and offline math checks passed",
+    "limitations": "Static authoring and common consumer query only; no lifecycle, weather, full sky or budget acceptance"
+  },
+  "presentation": {
+    "frame": 10,
+    "presented": true,
+    "time": 0,
+    "committedSourceTime": 0,
+    "sourceSteps": 0,
+    "worldTime": 0,
+    "weatherInput": {
+      "time": 0,
+      "wind": 0,
+      "windIntegral": 0,
+      "moist": 0,
+      "dry": 0,
+      "lift": 0,
+      "frontX": 0,
+      "storm": 0
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.05,
+      "distance": 3000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        705.9766500649614,
+        1511.8689382685482,
+        3218.4277018370353
+      ],
+      "target": [
+        -179.476,
+        1661.806446080583,
+        356
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -872.08,
+        1092,
+        -576
+      ],
+      [
+        513.128,
+        2231.612892161166,
+        1288
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "MS": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "lightingProfile": {
+        "id": "selected-production",
+        "name": "SelectedProduction",
+        "a": 0.5,
+        "b": 0.5,
+        "c": 0.5,
+        "abc": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "uniformMap": {
+          "a": "p.sun.w",
+          "b": "p.domain.y",
+          "c": "p.domain.z"
+        },
+        "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+        "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+      },
+      "exposure": 0.5
+    },
+    "epoch": 5,
+    "family": 0,
+    "controls": {
+      "lightingProfile": "selected-production",
+      "family": 0,
+      "provider": 0,
+      "cohorts": true,
+      "forceZero": false,
+      "sun": 30,
+      "mode": 0,
+      "mirror": true,
+      "main": true,
+      "fog": false,
+      "resolved": true,
+      "viewSteps": 384,
+      "extinctionScale": 4.222222222222222,
+      "preparedDensity": false,
+      "materialStructure": false,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": false,
+      "materialCore": false,
+      "connectedFeed": false,
+      "frontMorph": false,
+      "neckMix": false,
+      "dualRest": false,
+      "emptyWork": false,
+      "cachedVelocity": false,
+      "alpha": 1
+    },
+    "lightBuilt": true
+  },
+  "profile": {
+    "id": "selected-production",
+    "name": "SelectedProduction",
+    "a": 0.5,
+    "b": 0.5,
+    "c": 0.5,
+    "abc": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "uniformMap": {
+      "a": "p.sun.w",
+      "b": "p.domain.y",
+      "c": "p.domain.z"
+    },
+    "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+    "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+  },
+  "nativeSourceGpuBytes": 19660800,
+  "gpuBytes": 27462000,
+  "gpuAllocations": [
+    {
+      "label": "timestamp resolve",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp readback",
+      "bytes": 256
+    },
+    {
+      "label": "held voxel light",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "held receiver Beer field",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "label": "held air transmittance",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        256,
+        64
+      ]
+    },
+    {
+      "label": "held optical image",
+      "bytes": 7372800,
+      "format": "rgba16float",
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "held uniform 0/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/32",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/32",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/32",
+      "bytes": 176
+    },
+    {
+      "label": "body density",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "body distance",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "crown-a density",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "crown-a distance",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "crown-b density",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "crown-b distance",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Shared immutable held component"
+    },
+    {
+      "label": "eight held poses",
+      "bytes": 768
+    },
+    {
+      "label": "three held domains",
+      "bytes": 96
+    }
+  ],
+  "frameSubmittedPerformanceMs": 141690.75999975204,
+  "cameraPreset": "oblique",
+  "revision": 4,
+  "gpuQueueCompletedPerformanceMs": 141760.73999977112,
+  "completionScope": "GPU queue fence completed; scanout and browser display unmeasured",
+  "partStateSha256": "51100fc70fa2a2008ad622e10e542b05a0ef4e42da0b3403fbd1c8d2f0c2ffeb",
+  "probe": {
+    "pass": true,
+    "points": 1760,
+    "positive": 289,
+    "invalid": 0,
+    "maxAbsQ": 0.00025557847317339566,
+    "maxAbsRaw": 0.00025557847317339566,
+    "maxAbsSigma": 4.855681791199676e-06,
+    "declaredToleranceQ": 0.002,
+    "declaredToleranceSigma": 3.8e-05,
+    "examples": [
+      {
+        "x": [
+          0,
+          1332,
+          0
+        ],
+        "gpu": 0.1148681640625,
+        "cpu": 0.11487695106088286,
+        "rawGpu": 0.1148681640625,
+        "rawCpu": 0.11487695106088286
+      },
+      {
+        "x": [
+          16,
+          1332,
+          0
+        ],
+        "gpu": 0.132080078125,
+        "cpu": 0.13203825157985535,
+        "rawGpu": 0.132080078125,
+        "rawCpu": 0.13203825157985535
+      },
+      {
+        "x": [
+          -16,
+          1332,
+          0
+        ],
+        "gpu": 0.1044921875,
+        "cpu": 0.10447069198749379,
+        "rawGpu": 0.1044921875,
+        "rawCpu": 0.10447069198749379
+      },
+      {
+        "x": [
+          4.271999835968018,
+          1348,
+          0
+        ],
+        "gpu": 0.11016845703125,
+        "cpu": 0.1101765700875785,
+        "rawGpu": 0.11016845703125,
+        "rawCpu": 0.1101765700875785
+      },
+      {
+        "x": [
+          -4.271999835968018,
+          1316,
+          0
+        ],
+        "gpu": 0.10394287109375,
+        "cpu": 0.10395790442307778,
+        "rawGpu": 0.10394287109375,
+        "rawCpu": 0.10395790442307778
+      },
+      {
+        "x": [
+          0,
+          1332,
+          16
+        ],
+        "gpu": 0.08203125,
+        "cpu": 0.08206428692776813,
+        "rawGpu": 0.08203125,
+        "rawCpu": 0.08206428692776813
+      },
+      {
+        "x": [
+          0,
+          1332,
+          -16
+        ],
+        "gpu": 0.1240234375,
+        "cpu": 0.1240234375,
+        "rawGpu": 0.1240234375,
+        "rawCpu": 0.1240234375
+      },
+      {
+        "x": [
+          90.68000030517578,
+          1372,
+          40
+        ],
+        "gpu": 0.1866455078125,
+        "cpu": 0.18664550589863252,
+        "rawGpu": 0.1866455078125,
+        "rawCpu": 0.18664550589863252
+      },
+      {
+        "x": [
+          0,
+          1332,
+          0
+        ],
+        "gpu": 0.1148681640625,
+        "cpu": 0.11487695106088286,
+        "rawGpu": 0.1148681640625,
+        "rawCpu": 0.11487695106088286
+      },
+      {
+        "x": [
+          16,
+          1332,
+          0
+        ],
+        "gpu": 0.132080078125,
+        "cpu": 0.13203825157985535,
+        "rawGpu": 0.132080078125,
+        "rawCpu": 0.13203825157985535
+      },
+      {
+        "x": [
+          -16,
+          1332,
+          0
+        ],
+        "gpu": 0.1044921875,
+        "cpu": 0.10447069198749379,
+        "rawGpu": 0.1044921875,
+        "rawCpu": 0.10447069198749379
+      },
+      {
+        "x": [
+          1.0720000267028809,
+          1348,
+          0
+        ],
+        "gpu": 0.11016845703125,
+        "cpu": 0.11019328872624905,
+        "rawGpu": 0.11016845703125,
+        "rawCpu": 0.11019328872624905
+      }
+    ],
+    "scope": "Actual shared componentQuery and coefficients at root neighborhoods plus common bound grid; f32 inverse and hardware R16 filtering compared with independent JS trilinear. No beauty or performance acceptance."
+  }
+}
