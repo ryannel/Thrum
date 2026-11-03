@@ -223,6 +223,18 @@ reset. This prevents format saturation without inventing a second lighting
 unit. `p` and output gamut/tone policy are versioned view metadata. Reject
 NaN/negative light intensity and invalid exposure at authoring/runtime
 boundaries; large HDR values are not silently clamped before V4.
+Before an f32 shader path is admitted, derive finite ranges for its inputs and
+intermediates, including division, normalization, discriminants, light/source
+accumulation, pre-exposure and alpha-record storage. Check a dangerous
+operation's preconditions **before** evaluating it, or use a bounded algebraic
+form; a final nonfinite test cannot certify an earlier WGSL runtime overflow.
+Outside the proved range, return a typed unsupported/failure status before
+that operation and gate current output/history. The range and f16 packing
+error belong to the selected provider/profile; `p > 0` alone does not prove
+that every intermediate or output fits. Verify the range against independent
+high-precision cases and the pinned WGSL/backend versions before claiming a
+portable diagnostic path. [WGSL floating-point evaluation](https://gpuweb.github.io/gpuweb/wgsl/#floating-point-evaluation)
+allows indeterminate runtime results after overflow, infinity or NaN.
 
 ## 5. Initial atmosphere, fog and transport operator
 
@@ -433,6 +445,13 @@ record. The first spatial profile consumes no retained colour history; it
 still records the sample actually submitted so later providers cannot infer
 one from global frame parity. A changed origin, camera cut, device generation,
 size or incompatible source/product revision invalidates prior correspondence.
+For a later temporal profile, submitted metadata and accepted-history
+metadata are distinct: a GPU-rejected sample cannot advance the previous
+pose, exposure, source epoch or history image used by its successor. The first
+temporal proof resets history whenever acceptance is unknown to the CPU;
+retaining history across delayed GPU acceptance requires an explicit GPU-owned
+metadata path or bounded delayed lease protocol. Submission completion alone
+does not certify an accepted sample.
 Retain the 160-byte `ViewRecord` above. Group 0 binding 1 adds a versioned
 128-byte `ViewAuxRecord`: unjittered inverse view-projection at 0, viewport
 size/inverse size at 64, finite near/far plus view scale/storage ratio at 80,

@@ -5,6 +5,8 @@ simulation, environment, render, network and delivery at inspected main
 `0e70299`. The [disk provenance](SOURCE-LIMIT-PROVENANCE-2026-11-03.md)
 traces the former hard 8 GiB floor. This is a design selection, not a claim of
 whole-engine implementation, device performance or a measured safe threshold.
+The later [independent review and dispositions](LIMIT-POLICY-REVIEW-DISPOSITIONS-2026-11-03.md)
+record the corrected mechanisms and remaining executable gates.
 
 ## Classify the promise before choosing a number
 
@@ -43,9 +45,9 @@ product bytes. The current built-in environment definition embeds record and
 opaque capacity ceilings; widening those ceilings changes its definition hash
 and dependent cook key, even if a selected light's bytes do not change. Only
 an allowance outside the hashed definition/dependency closure can change
-without that product-key effect. The build binding separately names accepted source and
-target/profile. Queue
-size, free-space target and evidence revisions are diagnostics/policy, not
+without that product-key effect. The build binding separately names accepted
+source and target/profile. Queue size, free-space target and evidence revisions
+are diagnostics/policy, not
 automatic source, product or network hashes. A valid F3 snapshot can remain
 accepted when one phone renderer or F4 product is unsupported; a failed build
 leaves the earlier ready build.
@@ -67,14 +69,16 @@ lease-safe retirement apply even where strong precharged progress is optional.
 
 On pressure, first remove truly unnecessary/duplicate work, then evict only
 unleased derived data, defer speculation, serialize work that can be chunked,
-select an already prepared acceptable visual tier, show loading/stop-load, or
-reject. Never truncate a required source, light, collision support, water
+select a complete current image from an acceptable visual tier with an encoded
+same-frame path, show diagnostic/loading or stop-load, or reject. Never
+truncate a required source, light, collision support, water
 receipt, network dependency group or current GPU output. An outside-regime
 physical result is not a cheaper visual tier. A substitute must be declared,
 cooked and ready for the **current device generation**, preserve its cues and
-required consumers, and fit old/new overlap. Commit one validated generation
-at its safe barrier, invalidate affected histories, then retire disabled work
-after its last lease/fence. Report owner, stage, profile,
+required consumers, and fit old/new overlap. Pipeline readiness alone does not
+produce a fallback image or pay its failed-frame cost. Commit one validated
+generation at its safe barrier, invalidate affected histories, then retire
+disabled work after its last lease/fence. Report owner, stage, profile,
 quantity, unit/timebase, requested, allowed, estimate versus observation,
 outcome and a supported next action. Use owner-specific checked counters and a
 small common diagnostic envelope; do not create a new public limits crate or
