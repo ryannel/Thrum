@@ -139,12 +139,6 @@ pub enum BudgetError {
     UnsafeStore(PathBuf),
     /// One byte counter or rounded estimate overflowed.
     Overflow,
-    /// Accepted-store SQLite main-file projection exceeds its selected target.
-    MainLimit,
-    /// Accepted-store WAL reached its selected stop-and-checkpoint target.
-    WalLimit,
-    /// Observed available space cannot preserve the selected planned headroom.
-    FreeSpace,
     /// Structured staging estimate or availability refusal.
     StagePressure(StageSpacePressure),
     /// A named filesystem operation failed.

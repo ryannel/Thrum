@@ -544,7 +544,14 @@
         "implementation": "phase_specific_stage_space_pressure_from_existing_budget_checks",
         "functional_validation": "Early and final temporary scans return lower-bound charged bytes; complete temporary preflight, copy projection and preflight/before/after-write availability return distinct typed details. Injected availability decisions assert exact samples, equality and checked overflow before I/O. Existing stage drift and old-stage preservation remain in the repository gate.",
         "performance_validation": "The detail reuses existing scans and filesystem availability queries; no new query, allocation or measured whole-path speed claim.",
-        "scope": "Stage-only operational policy and filesystem observation reporting. No physical reservation or guaranteed headroom; accepted-store receipts, actual ENOSPC/high-water trials, T2/F4 per-volume composition and device qualification remain open."
+        "scope": "Stage-only operational policy and filesystem observation reporting. No physical reservation or guaranteed headroom; accepted-store detail is tracked separately, while actual ENOSPC/high-water trials, T2/F4 per-volume composition and device qualification remain open."
+      },
+      "i2a_store_space_pressure_detail": {
+        "evidence": "../evidence/i2a/SOURCE-STORE-SPACE-DETAIL-2026-11-03.md",
+        "implementation": "phase_specific_accepted_store_space_pressure_from_existing_guards",
+        "functional_validation": "Candidate main/WAL preflight reports exact accounted current, marginal growth and observed WAL length. Shared WAL guard reports allowance and post-checkpoint bytes/busy state; preflight/live available-space decisions assert exact injected samples, equality and overflow before I/O. Complete blob reuse reduces marginal charge to metadata baseline; incomplete blobs retain a full charge. Public blocked-WAL pressure has typed detail, while a real SQLite DiskFull fault has only its broad kind and keeps prior root/retry behavior.",
+        "performance_validation": "The detail reuses existing candidate scan, SQLite page query, WAL stat and filesystem availability samples; no new normal-path query/allocation or measured whole-path speed claim.",
+        "scope": "Accepted-store-local policy and non-atomic filesystem observation reporting. No APFS reservation or guaranteed headroom; actual ENOSPC/high-water trials, T2/F4 per-volume composition and device qualification remain open."
       },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
