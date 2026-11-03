@@ -830,6 +830,184 @@ mod tests {
         pin.close().unwrap();
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn external_same_volume_input_owner_survives_source_admission() {
+        use std::os::unix::fs::{DirBuilderExt, MetadataExt, PermissionsExt, symlink};
+        use thrum_source::{InventoryError, StageError, StageSpacePressure, scan_declared_tree};
+
+        const MIB: u64 = 1024 * 1024;
+        let fixture = Fixture::new();
+        // A separately owned sibling fixture keeps the job outside the entire project.
+        let jobs = Fixture::new();
+        fs::set_permissions(jobs.root(), fs::Permissions::from_mode(0o700)).unwrap();
+        let project = fs::canonicalize(fixture.root()).unwrap();
+        let job_parent = fs::canonicalize(jobs.root()).unwrap();
+        assert!(!job_parent.starts_with(&project));
+        assert!(!project.starts_with(&job_parent));
+        assert_eq!(
+            fs::metadata(&project).unwrap().dev(),
+            fs::metadata(&job_parent).unwrap().dev()
+        );
+        let job_root = job_parent.join("job-a");
+        fs::DirBuilder::new().mode(0o700).create(&job_root).unwrap();
+        for private_root in [&job_parent, &job_root] {
+            assert_eq!(
+                fs::metadata(private_root).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+        }
+        fs::write(job_root.join("registration"), b"fixture-owned A input").unwrap();
+        let destination = job_root.join("input");
+
+        let mut paths = fixture.write("A", false, false);
+        let mut master = fs::File::create(project.join("master.bin")).unwrap();
+        for _ in 0..(12 * MIB / 4096) {
+            master.write_all(&[0x5a; 4096]).unwrap();
+        }
+        drop(master);
+        paths.push(SourcePath::parse("master.bin").unwrap());
+        // This local target discriminates one stage from stage + retained input.
+        let plan = SourceSpacePlan {
+            temporary_target_bytes: 16 * MIB,
+            ..Fixture::plan()
+        };
+        let scratch = BuildScratchPlan {
+            temporary_target_bytes: plan.temporary_target_bytes,
+            free_headroom_bytes: plan.free_headroom_bytes,
+        };
+        let database = project.join(".engine/source.sqlite");
+        let store = NativeSourceStore::open(&database, plan).unwrap();
+        let a = {
+            let stage = stage_declared_tree_with_plan(&project, &paths, plan).unwrap();
+            let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+            store.admit(0, 1, 1, [1; 32], &candidate).unwrap()
+        };
+        let mut pin = store.pin_current(a.generation).unwrap();
+        let input = materialize_pinned_source(&mut pin, &destination, scratch).unwrap();
+        let exact_a = tree_hashes(input.path());
+        assert_eq!(exact_a, tree_hashes_from_pin(&mut pin));
+        assert_eq!(input.source_root(), a);
+        assert_eq!(input.file_count(), paths.len());
+        assert!(input.copied_bytes() > 12 * MIB);
+
+        fixture.write("B", false, false);
+        let mut exact_b = exact_a.clone();
+        let scene = Path::new("scenes/main.scene.json");
+        exact_b
+            .iter_mut()
+            .find(|(path, _)| path == scene)
+            .unwrap()
+            .1 = file_sha256_bytes(&project.join(scene));
+        // Placement inside a nonexcluded project subtree changes declared membership.
+        let inside_project = project.join("job-input");
+        let misplaced = materialize_pinned_source(&mut pin, &inside_project, scratch).unwrap();
+        assert!(matches!(
+            stage_declared_tree_with_plan(&project, &paths, plan),
+            Err(StageError::Inventory(InventoryError::UndeclaredFile(_)))
+        ));
+        misplaced.close().unwrap();
+
+        // An alias back to the external tree cannot smuggle it into source inventory.
+        let alias = project.join("job-alias");
+        symlink(&job_root, &alias).unwrap();
+        assert!(matches!(
+            stage_declared_tree_with_plan(&project, &paths, plan),
+            Err(StageError::Inventory(InventoryError::UnsupportedEntry(path))) if path == alias
+        ));
+        fs::remove_file(alias).unwrap();
+
+        // .engine is excluded from source membership but still charged by F3.
+        let inside_engine = project.join(".engine/job-input");
+        let charged = materialize_pinned_source(&mut pin, &inside_engine, scratch).unwrap();
+        let error = match stage_declared_tree_with_plan(&project, &paths, plan) {
+            Ok(_) => panic!("project input plus B stage must exceed the test target"),
+            Err(error) => error,
+        };
+        let Some(StageSpacePressure::TemporaryPreflight {
+            existing_charge_bytes,
+            projected_stage_bytes,
+            target_bytes,
+        }) = error.space_pressure()
+        else {
+            panic!("expected complete existing plus projected refusal: {error:?}");
+        };
+        assert!(existing_charge_bytes + projected_stage_bytes > target_bytes);
+        assert_eq!(store.current_root().unwrap(), Some(a));
+        charged.close().unwrap();
+
+        // Only the complete external F4 owner remains; both F3 scans now pass.
+        let inventory = scan_declared_tree(&project, &paths).unwrap();
+        assert_eq!(inventory.files().len(), paths.len());
+        let stage = stage_declared_tree_with_plan(&project, &paths, plan).unwrap();
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        let expected_b = candidate.provisional_manifest().unwrap().revision();
+        let b = store
+            .admit(a.generation, 1, 2, [2; 32], &candidate)
+            .unwrap();
+        assert_eq!(b.revision, expected_b);
+        assert_eq!(store.current_root().unwrap(), Some(b));
+        assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+        assert_ne!(a.revision, b.revision);
+        assert_eq!(tree_hashes(input.path()), exact_a);
+        assert_eq!(tree_hashes_from_pin(&mut pin), exact_a);
+        drop(candidate);
+        drop(stage);
+        pin.close().unwrap();
+        drop(store);
+
+        let reopened = NativeSourceStore::open(&database, plan).unwrap();
+        assert_eq!(reopened.current_root().unwrap(), Some(b));
+        assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+        assert_eq!(reopened.outcome(1, 1, [1; 32]).unwrap(), Some(a));
+        let mut current = reopened.pin_current(b.generation).unwrap();
+        assert_eq!(tree_hashes_from_pin(&mut current), exact_b);
+        current.close().unwrap();
+        let mut historical = reopened.pin_accepted(a).unwrap();
+        assert_eq!(tree_hashes_from_pin(&mut historical), exact_a);
+        historical.close().unwrap();
+        assert_eq!(tree_hashes(input.path()), exact_a);
+        let copied = input.copied_bytes();
+        input.close().unwrap();
+        assert!(!destination.exists());
+        assert_eq!(
+            fs::read(job_root.join("registration")).unwrap(),
+            b"fixture-owned A input"
+        );
+        eprintln!(
+            "external-input copied={copied} target={target_bytes} control_existing={existing_charge_bytes} control_projected={projected_stage_bytes} same_device=true private_parent=true b_reopened=true old_pin_and_tree_exact=true checked_close=true"
+        );
+    }
+
+    #[cfg(unix)]
+    fn tree_hashes_from_pin(pin: &mut PinnedSource) -> Vec<(PathBuf, [u8; 32])> {
+        struct HashWriter(Sha256);
+        impl Write for HashWriter {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                self.0.update(bytes);
+                Ok(bytes.len())
+            }
+
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let paths: Vec<_> = pin
+            .manifest()
+            .files()
+            .iter()
+            .map(|file| file.path().clone())
+            .collect();
+        paths
+            .into_iter()
+            .map(|path| {
+                let mut writer = HashWriter(Sha256::new());
+                pin.copy_file_to(&path, &mut writer).unwrap();
+                (PathBuf::from(path.as_str()), writer.0.finalize().into())
+            })
+            .collect()
+    }
+
     #[test]
     fn accepted_source_can_have_a_valid_scene_but_an_unbuildable_declaration() {
         let fixture = Fixture::new();
