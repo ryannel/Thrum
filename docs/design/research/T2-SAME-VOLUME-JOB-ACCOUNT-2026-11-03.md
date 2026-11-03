@@ -244,3 +244,41 @@ and hash work; do not relax exact source/ready publication to improve latency.
 This design stays provisional until F3/F4/T2 owners reconcile root placement,
 receipt fields and the first host's job lifecycle, then implement and run the
 fault cases. No cross-process or device qualification is inferred.
+
+## Implemented first F4 input slice
+
+The Unix `thrum-jobs` host now owns one synchronous F4 input phase per call.
+It receives a live selected F3 store owner and canonical project root, checks
+the store path is inside that project, and compares every pin's issuing store
+path before charging or creating a job root. The binding is operational; it
+does not authenticate a same-user path replacement. The private external job
+parent is canonical, mode `0700`, owned by the project user and on the same
+`st_dev`; an exclusive lock excludes another cooperating host. Any existing
+entry other than the lock quarantines the parent at open.
+
+The current managed-temporary target charges two filesystem allocation
+granules for parent/lock control, then the selected F4 scratch target plus two
+granules per active job for its root and registration. Checked aggregate
+arithmetic runs before any root creation. One filesystem free-space sample
+compares the **proposed** full phase claim plus desired headroom: completed
+active input trees and control files are already reflected in the sample, so
+adding their full claims again would double-count them. The aggregate target
+still counts all active claims. This is a conservative scheduling model, not
+a reservation or APFS physical allocation bound. The host adds no per-chunk
+account scan to F4's existing verified copy.
+
+The host durably records a separate random host incarnation, sequence, source
+generation/revision, phase and claim before F4 copies. It holds parent, job
+and input directory descriptors to check path identity before exposing input
+or deleting it. Successful explicit F4 close, an empty-root check and directory
+syncs precede refund. An uncertain close or identity fault quarantines the
+host with the full claim. Host destruction leaves active registered inputs
+for restart inspection; restart currently refuses every retained or unknown
+root rather than reconstructing claims. A process kill after registration has
+been exercised. The [focused proof](../../evidence/integration/T2-F4-JOB-HOST-2026-11-03.md)
+records the exact cases and limitations.
+
+This slice does not yet account F3 main/WAL/project temporary work, compiler
+output, cache or retained ready roots; it does not perform F3 scan races,
+native ENOSPC, sync-fault injection, recovery of retained jobs, or readiness
+publication. The complete design and proof queue above remain open.
