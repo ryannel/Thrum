@@ -598,6 +598,12 @@ branches to `FailedCurrent`; it never proceeds through Displayable on a later CP
 After all producers, a GPU status reduction/resolve gate selects one of: complete current
 result; an already prepared **whole accepted fallback profile**; or a diagnostic/loading
 surface. It also disables affected V4 history publication for the failed generation.
+The first late-overflow proof selects the diagnostic/loading surface through an
+independent same-submission path. A ready fallback pipeline/product is not yet
+a fallback image: a richer current-frame substitution needs its own encoded
+execution path, complete current inputs independent of the failed producer,
+selection mechanism and worst-case failed-primary-plus-fallback work/storage
+account. If any of these is absent, the gate selects diagnostic/loading.
 CPU readback arrives later for diagnostics and admission reports. It does not determine
 whether this frame silently displays truncated layers. A previous complete image may be
 held only with an explicit stale-view loading policy and bounded age; stale world pixels

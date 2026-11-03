@@ -115,10 +115,11 @@ and outcome lookup provide durable retry semantics when a game needs them, after
 authoritative recovery root.
 
 Authoritative simulation runs at its selected fixed tick. Replication cadence may be lower and does not change that
-tick or physical quality. After commit, N1 reads a purpose-specific immutable replication projection with the same
-bounded-reader discipline as other consumers. It does not read a mutable solver or serialize a render packet. Slow
-peers cannot retain world snapshots indefinitely: coalesce outbound state before submission, release leases, and
-resynchronize/disconnect when declared age/queue limits are exceeded.
+tick or physical quality. After commit, N1 briefly leases a purpose-specific immutable world snapshot to copy a
+bounded, N1-owned replication projection, then releases the W1 lease before remote send or acknowledgement. It does
+not read a mutable solver or serialize a render packet. Only N1-owned projection, result and event bytes may wait for
+a remote peer. Coalesce outbound state before submission and resynchronize/disconnect when declared age/queue limits
+are exceeded; remote ACK and queue age never govern W1 snapshot release.
 
 Each replicated schema declares fields, visibility/ownership audience, units, quantization/error bounds and dependency
 groups. Dependent fields in a group are from one committed revision; partial updates must not form an impossible pose,
