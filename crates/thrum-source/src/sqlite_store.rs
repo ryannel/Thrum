@@ -6,6 +6,8 @@
 #[cfg(test)]
 use std::cell::Cell;
 #[cfg(test)]
+use std::cell::RefCell;
+#[cfg(test)]
 use std::collections::HashSet;
 use std::fmt;
 use std::fs::{self, File};
@@ -66,6 +68,14 @@ const GC_MARK_CANDIDATES: usize = 128;
 thread_local! {
     static MAX_APPEND_SLICE_NS: Cell<u64> = const { Cell::new(0) };
     static CLEANUP_SLICE_STATS: Cell<(u64, u64, u64)> = const { Cell::new((0, 0, 0)) };
+    static BEFORE_APPEND_SQL: RefCell<Option<AppendSqlHook>> = const { RefCell::new(None) };
+}
+
+#[cfg(test)]
+struct AppendSqlHook {
+    hash: [u8; 32],
+    index: i64,
+    run: Box<dyn FnOnce()>,
 }
 
 #[cfg(test)]
@@ -2110,6 +2120,23 @@ impl SqliteStoreCore {
             .and_then(|value| value.checked_add(MIB))
             .ok_or(StoreError::Budget(BudgetError::Overflow))?;
         self.ensure_wal_room(allowance)?;
+        #[cfg(test)]
+        BEFORE_APPEND_SQL.with(|pending| {
+            let hook = {
+                let mut pending = pending.borrow_mut();
+                if pending
+                    .as_ref()
+                    .is_some_and(|hook| hook.hash == expected_hash && hook.index == index)
+                {
+                    pending.take().map(|hook| hook.run)
+                } else {
+                    None
+                }
+            };
+            if let Some(hook) = hook {
+                hook();
+            }
+        });
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -4874,6 +4901,154 @@ fn measure_accepted_malformed_cleanup_256_chunks() {
         usage.main_file_bytes,
         usage.wal_file_bytes,
     );
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+#[ignore = "requires THRUM_TEST_ENOSPC_VOLUME_DIR on a task-owned bounded volume"]
+fn measure_accepted_native_enospc_after_live_guard() {
+    struct RunGuard {
+        directory: PathBuf,
+        filler: PathBuf,
+    }
+
+    impl Drop for RunGuard {
+        fn drop(&mut self) {
+            BEFORE_APPEND_SQL.with(|pending| {
+                pending.borrow_mut().take();
+            });
+            let _ = fs::remove_file(&self.filler);
+            let _ = fs::remove_dir_all(&self.directory);
+        }
+    }
+
+    let Some(volume) = std::env::var_os("THRUM_TEST_ENOSPC_VOLUME_DIR") else {
+        return;
+    };
+    let volume = PathBuf::from(volume);
+    let run = volume.join(format!("thrum-f3-enospc-{}", std::process::id()));
+    fs::create_dir(&run).unwrap();
+    let database = run.join("source.sqlite");
+    let filler = run.join("filler.bin");
+    // Declared before the SQLite owner and pins, so unwinding closes them
+    // before this guard removes a potentially full filler and its directory.
+    let _run_guard = RunGuard {
+        directory: run.clone(),
+        filler: filler.clone(),
+    };
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A before real disk fault");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+    let checkpoint: (i64, i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(checkpoint.0, 0);
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 12, 44);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let hash = *stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap()
+        .sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let filler_errno = Arc::new(AtomicU64::new(0));
+    let filler_bytes = Arc::new(AtomicU64::new(0));
+    let hook_errno = Arc::clone(&filler_errno);
+    let hook_bytes = Arc::clone(&filler_bytes);
+    let hook_filler = filler.clone();
+    BEFORE_APPEND_SQL.with(|pending| {
+        *pending.borrow_mut() = Some(AppendSqlHook {
+            hash,
+            index: 0,
+            run: Box::new(move || {
+                let mut file = match File::create(&hook_filler) {
+                    Ok(file) => file,
+                    Err(error) => {
+                        hook_errno
+                            .store(error.raw_os_error().unwrap_or(1) as u64, Ordering::Relaxed);
+                        return;
+                    }
+                };
+                let block = [0xa5_u8; MIB as usize];
+                for _ in 0..512 {
+                    match file.write_all(&block) {
+                        Ok(()) => {
+                            hook_bytes.fetch_add(MIB, Ordering::Relaxed);
+                        }
+                        Err(error) => {
+                            hook_errno
+                                .store(error.raw_os_error().unwrap_or(1) as u64, Ordering::Relaxed);
+                            break;
+                        }
+                    }
+                }
+                // Return a little room for SQLite rollback and unlink while
+                // leaving less than one four-MiB chunk's WAL demand.
+                let keep = hook_bytes.load(Ordering::Relaxed).saturating_sub(MIB);
+                let _ = file.set_len(keep);
+            }),
+        });
+    });
+    let available_before = fs4::available_space(&volume).unwrap();
+    let failed = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap_err();
+    assert!(BEFORE_APPEND_SQL.with(|pending| pending.borrow().is_none()));
+    let available_after = fs4::available_space(&volume).unwrap();
+    fs::remove_file(&filler).unwrap();
+    assert_eq!(filler_errno.load(Ordering::Relaxed), 28);
+    assert!(available_after < 9 * MIB);
+    assert!(matches!(
+        &failed.0,
+        StoreError::Sql(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error {
+                code: rusqlite::ErrorCode::DiskFull,
+                ..
+            },
+            _,
+        ))
+    ));
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    a_pin.close().unwrap();
+    drop(store);
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(a));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
+    let b = reopened
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    eprintln!(
+        "accepted_native_enospc filler_full_blocks={} available_before={} available_after={} sqlite_code=SQLITE_FULL",
+        filler_bytes.load(Ordering::Relaxed) / MIB,
+        available_before,
+        available_after,
+    );
+    drop(reopened);
+    fs::remove_dir_all(run).unwrap();
 }
 
 #[test]

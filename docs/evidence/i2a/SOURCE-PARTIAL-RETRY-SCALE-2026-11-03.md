@@ -92,10 +92,33 @@ An independent adversarial review corrected the child fixture lifetime,
 the kill deadline, the update oracle and the seed/retry timer scope before
 this checkpoint.
 
+## Native out-of-space after admission preflight
+
+An opt-in test used a task-owned 256 MiB APFS disk image for the accepted
+SQLite database while its validated source stage stayed on the host volume.
+The test-only hook runs after the actual `append_blob_chunk` live WAL/space
+guard and before the first B-chunk SQL transaction. It filled the image until
+a native `ENOSPC` write, attempted to release rollback/unlink room by
+truncating the filler, and then let SQLite continue. In the clean run, the
+filler completed 248 one-MiB writes; observed available space was
+266,792,960 bytes before B admission and 5,701,632 bytes after failed
+admission. SQLite reported `SQLITE_FULL`, not a planning receipt. After
+removing the filler, the old A pin still returned exact bytes, A remained
+selected and B had no keyed outcome. A fresh accepted owner observed the
+same A/none state and admitted B with its exact keyed outcome. The test
+removed its database subdirectory after completion; a test-only unwind
+guard also clears the pending hook and attempts to remove the filler on failure.
+
+This is a real native write fault after one successful live guard, with the
+fault created by a test-only competing writer. It does not prove a physical
+free-space reservation, other APFS allocations, a cleanup/final-COMMIT space
+fault, power-loss recovery, or cross-volume staging behavior. The test is
+opt-in because it requires a separately mounted bounded volume.
+
 ## Still open for the full F3 gate
 
-An interrupted hundreds-chunk cleanup, actual native `ENOSPC` after a
-successful guard check,
+An interrupted hundreds-chunk cleanup, native space faults during cleanup
+and final publication,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
