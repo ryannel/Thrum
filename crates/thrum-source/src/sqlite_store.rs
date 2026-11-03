@@ -65,6 +65,7 @@ const GC_MARK_CANDIDATES: usize = 128;
 #[cfg(test)]
 thread_local! {
     static MAX_APPEND_SLICE_NS: Cell<u64> = const { Cell::new(0) };
+    static CLEANUP_SLICE_STATS: Cell<(u64, u64, u64)> = const { Cell::new((0, 0, 0)) };
 }
 
 #[cfg(test)]
@@ -75,6 +76,24 @@ impl Drop for AppendSliceTimer {
     fn drop(&mut self) {
         let elapsed = self.0.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
         MAX_APPEND_SLICE_NS.with(|maximum| maximum.set(maximum.get().max(elapsed)));
+    }
+}
+
+#[cfg(test)]
+struct CleanupSliceTimer(Instant);
+
+#[cfg(test)]
+impl Drop for CleanupSliceTimer {
+    fn drop(&mut self) {
+        let elapsed = self.0.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
+        CLEANUP_SLICE_STATS.with(|stats| {
+            let (count, total, maximum) = stats.get();
+            stats.set((
+                count + 1,
+                total.saturating_add(elapsed),
+                maximum.max(elapsed),
+            ));
+        });
     }
 }
 const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
@@ -2016,6 +2035,10 @@ impl SqliteStoreCore {
             let Some((index, stored_length)) = last else {
                 return Ok(());
             };
+            // Test builds observe the bounded per-row cleanup slice without
+            // adding a timer to the production path.
+            #[cfg(test)]
+            let _slice_timer = CleanupSliceTimer(Instant::now());
             // A corrupt oversized row cannot be removed under this profile's
             // bounded-transaction claim; leave it unselectable for repair.
             let stored_length =
@@ -4754,6 +4777,103 @@ fn accepted_malformed_partial_cleanup_resumes_after_sql_failure() {
     );
     b_pin.close().unwrap();
     a_pin.close().unwrap();
+}
+
+#[test]
+#[ignore = "local 256-chunk malformed accepted cleanup cost probe"]
+fn measure_accepted_malformed_cleanup_256_chunks() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A retained during large B cleanup");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 1028, 43);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let master_file = stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap();
+    let hash = *master_file.sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let mut scratch = Vec::new();
+    let admission = store.owner.admission().unwrap();
+    let mut short_input = stage_b
+        .open(&master)
+        .unwrap()
+        .take(256 * CHUNK_BYTES as u64);
+    assert!(matches!(
+        store.stage_blob_phased(
+            &mut short_input,
+            master_file.length(),
+            hash,
+            &mut scratch,
+            &mut || {},
+        ),
+        Err(StoreError::InputIo)
+    ));
+    drop(admission);
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .execute(
+            "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+
+    CLEANUP_SLICE_STATS.with(|stats| stats.set((0, 0, 0)));
+    let started = Instant::now();
+    let mut old_reads = 0;
+    let b = store
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                let mut copied = Vec::new();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+                old_reads += 1;
+            },
+            || {},
+        )
+        .unwrap();
+    let retry_ms = started.elapsed().as_secs_f64() * 1000.0;
+    let (cleanup_count, cleanup_total_ns, cleanup_max_ns) =
+        CLEANUP_SLICE_STATS.with(|stats| stats.get());
+    assert_eq!(cleanup_count, 255);
+    assert_eq!(old_reads, 257);
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(store.current_root().unwrap(), Some(b));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    a_pin.close().unwrap();
+    let usage = store.space_usage().unwrap();
+    eprintln!(
+        "accepted_cleanup_256 deleted_rows={cleanup_count} cleanup_total_ms={:.3} cleanup_max_slice_ms={:.3} retry_ms={retry_ms:.3} after_main_bytes={} after_wal_bytes={} old_pin_reads={old_reads}",
+        cleanup_total_ns as f64 / 1_000_000.0,
+        cleanup_max_ns as f64 / 1_000_000.0,
+        usage.main_file_bytes,
+        usage.wal_file_bytes,
+    );
 }
 
 #[test]
