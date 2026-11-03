@@ -3755,6 +3755,16 @@ fn measure_native_store_small_admission_and_read() {
     }
     admission_ms.sort_by(f64::total_cmp);
     pinned_read_ms.sort_by(f64::total_cmp);
+    let selected = store.current_root().unwrap();
+    drop(store);
+    let mut reopen_ms = Vec::new();
+    for _ in 0..10 {
+        let start = Instant::now();
+        let reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+        reopen_ms.push(start.elapsed().as_secs_f64() * 1000.0);
+        assert_eq!(reopened.current_root().unwrap(), selected);
+    }
+    reopen_ms.sort_by(f64::total_cmp);
     eprintln!(
         "native_small_admission n=10 min_ms={:.3} median_ms={:.3} max_ms={:.3}",
         admission_ms[0], admission_ms[5], admission_ms[9]
@@ -3762,6 +3772,10 @@ fn measure_native_store_small_admission_and_read() {
     eprintln!(
         "native_small_pin_copy n=10 min_ms={:.3} median_ms={:.3} max_ms={:.3}",
         pinned_read_ms[0], pinned_read_ms[5], pinned_read_ms[9]
+    );
+    eprintln!(
+        "native_small_reopen n=10 min_ms={:.3} median_ms={:.3} max_ms={:.3}",
+        reopen_ms[0], reopen_ms[5], reopen_ms[9]
     );
     eprintln!(
         "native_small_space sampled_after_admit=10 max_main_bytes={max_main} max_wal_bytes={max_wal} max_logical_bytes={max_logical} min_available_bytes={min_available}"
