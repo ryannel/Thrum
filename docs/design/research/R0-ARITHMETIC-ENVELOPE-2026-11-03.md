@@ -181,6 +181,13 @@ possible. Do not introduce optional angle-based early exits until their
 absolute radiance, post-tone and moving-image error are independently
 bounded for the selected exposure and source profile.
 
+The [independent high-precision CPU oracle](../../evidence/render/R0-GGX-NUMERIC-ORACLE-2026-11-03.md)
+checks the original and scaled real expressions, sharp family and selected
+f32/FTZ/fusion diagnostics. It confirms algebraic equivalence on its tested
+domain and exposes bright sign loss and directional narrowing. It does not
+provide the missing source certificate, an exhaustive WGSL error bound or
+experienced visual qualification.
+
 ## Remaining proof before any R0 shader claim
 
 1. Pin the admitted fixture and independently enumerate all reachable
