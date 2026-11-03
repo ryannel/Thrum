@@ -167,8 +167,8 @@ preparation, not a game edit or world tick.
 
 ### Private dependency cache retention target
 
-The current pruned private Cargo home is produced by a write-capable cold
-metadata step, then rehashed before every A/B reuse. The local 2,923-file,
+The pruned private Cargo home is produced by a write-capable cold metadata
+step. The historical reuse path rehashed it before every A/B build; its 2,923-file,
 67.8-MB integrity pass costs roughly 150–230 ms per edit. The compiler sandbox
 already denies writes to `CARGO_HOME`, but metadata preparation requires its
 fresh writable home. Seal only **after** metadata resolution, archive pruning,
@@ -178,16 +178,22 @@ reuse the held selection.
 
 The [cold retained-cache candidate](../evidence/i2a/T2-HELD-CARGO-CACHE-CANDIDATE-2026-11-03.md)
 now binds the two digest domains and a sealed manifest under a held APFS root
-lease. Five synthetic macOS fixtures cover extra-directory drift, manifest
+lease. Six synthetic macOS fixtures cover extra-directory drift, manifest
 drift, interrupted publication, concurrent readers and lease release after a
-sidecar-close error. That initial proof used a tiny synthetic cache.
+sidecar-close error, plus a held Rust/cache pair that checks only the source
+dependency key on a code edit. These fixtures use a tiny synthetic cache.
 
 A subsequent [admitted A/B qualification](../evidence/i2a/T2-HELD-CACHE-NATIVE-AB-2026-11-03.md)
 did use the full sealed cache as compiler `CARGO_HOME`, with a cooperating
 guard holding its shared lease from before A until after B and final output
 checks. The one-host cold cache preparation took 1.55 seconds and verified
 open 363 ms for 2,923 files/67.8 MB. This proves consumption and lifetime
-for that fixture; it still pays full cache rehashes before A and B.
+for that fixture; that first integration still paid full cache rehashes before
+A and B. The later [held reuse check](../evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md)
+uses one persistent guard to hold both Rust and cache leases and validate the
+source key without repeating those two full hashes. Two real A/B guard checks
+reported 2 ms and 1 ms; the qualification fixture still has separate full
+cache/tool checks, so complete warm edit cost remains unmeasured.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
@@ -211,8 +217,8 @@ The [pinned Cargo bookkeeping probe](../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-0
 passed with `.global-cache` and `.package-cache-mutate` absent and cache writes
 denied during unsealed A/B compilation; this establishes the compiler's
 read-only behavior for that fixture. Bind the selected dependency key to a
-single T2 owner-held selection, prove real drift refusal and lifecycle
-failure, and measure warm reuse before removing the per-edit rehash.
+single reviewed T2 owner selection, prove real drift refusal and lifecycle
+failure, and remove the remaining full hashes from the complete warm path.
 Measure cold clone/seal and warm selection-key, cache, tool-hash and total
 edit-to-ready costs separately; retain the full rehash on other platforms
 until their own lifecycle is qualified.
