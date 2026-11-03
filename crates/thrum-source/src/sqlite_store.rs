@@ -3325,6 +3325,89 @@ fn accepted_kill_after_verified_stage_retains_a_and_retries_b() {
     assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
 }
 
+#[test]
+fn accepted_kill_after_public_admit_child() {
+    let Some(directory) = std::env::var_os("THRUM_TEST_ACCEPTED_COMMITTED_KILL_DIR") else {
+        return;
+    };
+    let marker =
+        PathBuf::from(std::env::var_os("THRUM_TEST_ACCEPTED_COMMITTED_KILL_MARKER").unwrap());
+    let fixture = Fixture(PathBuf::from(directory));
+    let database = fixture.database();
+    let stage = minimal_source_stage(&fixture, "committed before response");
+    std::mem::forget(fixture);
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let b = store.admit(1, 1, 2, [2; 32], &candidate).unwrap();
+    assert_eq!(b.generation, 2);
+    signal_and_wait_for_kill(&marker);
+}
+
+#[test]
+fn accepted_kill_after_public_admit_recovers_exact_outcome() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "before lost response");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    drop(store);
+
+    let marker = fixture.0.join("accepted-committed.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::accepted_kill_after_public_admit_child")
+        .arg("--nocapture")
+        .env("THRUM_TEST_ACCEPTED_COMMITTED_KILL_DIR", &fixture.0)
+        .env("THRUM_TEST_ACCEPTED_COMMITTED_KILL_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    kill_after_marker(child, &marker, || {
+        assert_eq!(
+            NativeSourceStore::open(&database, plan)
+                .err()
+                .unwrap()
+                .kind(),
+            SourceStoreErrorKind::Busy
+        );
+    });
+
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let b = store.outcome(1, 2, [2; 32]).unwrap().unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(store.current_root().unwrap(), Some(b));
+    let stage_b = minimal_source_stage(&fixture, "committed before response");
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    assert_eq!(
+        store
+            .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+            .unwrap(),
+        b
+    );
+    assert_eq!(
+        store.outcome(1, 2, [3; 32]).unwrap_err().kind(),
+        SourceStoreErrorKind::TokenConflict
+    );
+    let mut old_pin = store.pin_accepted(a).unwrap();
+    let mut copied = Vec::new();
+    old_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    old_pin.close().unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(b));
+}
+
 #[cfg(unix)]
 #[test]
 fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
