@@ -3021,6 +3021,8 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     );
     drop(store);
     observer.assert_closed();
+    assert_eq!(observer.counts.wal_writes.load(Ordering::Relaxed), wal_writes);
+    assert_eq!(observer.counts.main_writes.load(Ordering::Relaxed), main_writes);
 
     let reopened = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
     let selected = reopened.current_root().unwrap().unwrap();
@@ -4051,6 +4053,8 @@ fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
     );
     drop(store);
     observer.assert_closed();
+    assert_eq!(observer.counts.wal_writes.load(Ordering::Relaxed), wal_writes);
+    assert_eq!(observer.counts.main_writes.load(Ordering::Relaxed), main_writes);
 
     let reopened = NativeSourceStore::open(&database, plan).unwrap();
     let b = reopened.outcome(1, 2, [2; 32]).unwrap().unwrap();
@@ -4199,8 +4203,12 @@ fn accepted_reader_waiting_at_publication_sees_uncertain_commit_quarantine() {
         old_pin.close().unwrap_err().kind(),
         SourceStoreErrorKind::RecoveryRequired
     );
+    let wal_writes = observer.counts.wal_writes.load(Ordering::Relaxed);
+    let main_writes = observer.counts.main_writes.load(Ordering::Relaxed);
     drop(store);
     observer.assert_closed();
+    assert_eq!(observer.counts.wal_writes.load(Ordering::Relaxed), wal_writes);
+    assert_eq!(observer.counts.main_writes.load(Ordering::Relaxed), main_writes);
 }
 
 #[test]
