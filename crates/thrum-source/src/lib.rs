@@ -37,6 +37,9 @@ mod render_json;
 // Object-scoped geometry preparation shares exact source predicates.
 #[allow(dead_code)]
 mod render_source_objects;
+// Canonical collection-wide structural error selection stays inactive.
+#[allow(dead_code)]
+mod render_source_collections;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;

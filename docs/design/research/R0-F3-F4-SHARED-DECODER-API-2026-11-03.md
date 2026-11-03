@@ -102,6 +102,25 @@ object, field checks use fixed schema field order after decoded duplicate-key
 checks. Syntax failure reports the parser's byte offset rather than a
 reorder-invariant semantic locator. Exact per-vertex radius,
 triangle and quaternion checks belong to shared structural preparation.
+Within one collection, valid-ID object errors sort before anonymous object
+errors; valid IDs sort by UUID, then schema field. For equal UUID and field,
+borrowed raw object bytes break the tie before source ordinal, so swapping
+distinct same-ID objects does not change the selected error. Anonymous
+objects sort by source ordinal, then field. Formatting an already-invalid
+same-ID object can change that final raw-byte tie; no semantic key is issued
+for invalid source. A streaming scanner retains one lowest structural error
+and continues checking later objects, but stops projecting valid objects
+after the first structural error. Earlier projection output is provisional
+and discarded if any error wins. Resource-pressure projection refusal may
+stop early as validation incomplete, with no semantic source result.
+F4 target-support refusal runs after source structural/global closure and
+must not hide a later source error.
+The private scanner's generic callback error is only a mechanism; its F3/F4
+production wrapper must allow early abort solely for operational incomplete
+or failure classes. Target Unsupported cannot be passed as that callback
+error. Unknown-field diagnostic text also remains parser-owned scratch until
+the winning error is selected; account or measure the rejected-object churn
+before claiming a complete decoder memory tier.
 Instance transformed-box checks need the referenced mesh's extrema and run
 **after** typed edges in shared closure; texture-slot transfer compatibility
 is also an edge check. F4-specific representation and target support follow
