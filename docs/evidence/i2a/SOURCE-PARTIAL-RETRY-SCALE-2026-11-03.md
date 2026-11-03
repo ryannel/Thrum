@@ -73,16 +73,29 @@ The seed phase's maximum append calls were 10.870, 75.045 and 72.426 ms;
 these are separate from the retry values above. The 40 MiB stop is an
 operational checkpoint threshold, not a maximum physical WAL allocation.
 
-The normal accepted-owner crash, reader-blocked WAL and cleanup tests, and this opt-in
-scale test, passed.
+An additional opt-in release probe seeded 256 four-MiB B chunks, removed
+index zero and retried the malformed B through the accepted owner. Cleanup
+deleted the remaining **255 four-MiB rows**, one per transaction, before
+restaging B. Its test-only timer starts after each row-selection query and
+covers the WAL guard/checkpoint and DELETE transaction through commit: 255
+measured slices totaled 1,033.982 ms, with a 5.428 ms maximum. The whole
+retry took 6,244.751 ms, including cleanup, restaging, verification, 257
+synchronous exact A-pin reads and B publication. The post-retry apparent
+main/WAL lengths were 1,076,318,208 / 21,267,472 bytes. This is one local
+host run, not a latency promise. It does not measure the SELECT work preceding
+each deletion, an allocation high-water or a concurrent A read during the
+cleanup loop.
+
+The normal accepted-owner crash, reader-blocked WAL and cleanup tests, and
+both opt-in scale tests, passed.
 An independent adversarial review corrected the child fixture lifetime,
 the kill deadline, the update oracle and the seed/retry timer scope before
 this checkpoint.
 
 ## Still open for the full F3 gate
 
-Hundreds-chunk malformed cleanup cost and interruption, actual native
-`ENOSPC` after a successful guard check,
+An interrupted hundreds-chunk cleanup, actual native `ENOSPC` after a
+successful guard check,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
