@@ -64,6 +64,14 @@ constructor still relies on an externally admitted baseline. The production
 owner remains incomplete until those states and the unified cross-kind
 sequence/supersession transaction join this same boundary.
 
+The owner now also has a [bounded complete-tick projection callback](../../evidence/integration/N1-PROJECTED-CAPTURE-2026-11-03.md).
+It borrows one reusable four-group scratch, exposes only a push-only writer to
+the game hook, checks the exact baseline partition set and common tick, then
+atomically copies validated bytes to its unsent queue. Sticky scratch faults
+and callback unwind close the peer even if the game hook suppresses an error.
+The present API deliberately requires all admitted partitions at each capture;
+it does not yet select a sparse producer or prove W1 snapshot/result provenance.
+
 ## Cost and alternatives
 
 The selected fixture copies 48 group payloads and retains 16 framed messages
