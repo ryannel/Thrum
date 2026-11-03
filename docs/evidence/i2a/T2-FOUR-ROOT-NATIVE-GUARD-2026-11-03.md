@@ -51,3 +51,25 @@ compiler helper/no-detach and complete read closure remain open, and the
 cooperating guard's death during a compiler job has not been qualified. The
 runner reports `buildReady:false`; no `BuildRevision`, device or frame-time
 claim follows.
+
+## Bounded guard responses
+
+At exact local source commit `3ad1005c7e8705dbe3a889c6134adaf29b1e309d`,
+the Rust side of the guard protocol stopped using an unbounded line reader
+and unbounded response channel. It retains at most 4,097 bytes to decide
+whether a response exceeds the **4 KiB line limit**, and queues at most two
+responses. A full queue makes the reader stop without blocking; shutdown
+also refuses queued unsolicited output. A focused regression feeds four
+responses without a consumer and requires the reader to finish within one
+second. The normal `RUSTC_WRAPPER= ./dev check` passed, and independent
+review found and then cleared a full-queue cleanup deadlock in the first
+bounded-channel version.
+
+The exact-commit macOS A/B qualification passed with the bounded protocol:
+four selected roots remained held, A compiled and reloaded, invalid B failed
+as expected, the changed materialized lockfile was refused, all four roots
+re-inventoried unchanged, and owned scratch was cleaned. The two held
+source-key checks reported **3 ms and 1 ms**. Guard cold open took 13.054 s,
+the A/B process 34.592 s and outer post-build inventory 10.356 s. These are
+uncontrolled local observations, not a protocol-overhead or end-to-end
+speedup measurement. `buildReady:false` remains unchanged.
