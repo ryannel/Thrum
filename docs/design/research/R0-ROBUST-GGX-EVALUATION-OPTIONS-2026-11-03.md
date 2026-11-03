@@ -64,6 +64,54 @@ An exact sign alone is insufficient if a positive magnitude or ratio has
 flushed away. A second-branch ratio that rounds to zero needs an absolute
 radiance/display error bound before it can be dropped.
 
+### A conservative signed-dot filter to challenge
+
+For the explicit scalar expression
+`d=x0*y0+x1*y1+x2*y2`, fix all six **already represented** f32 operands
+as normal-or-zero values in `[-1,1]`. Let `D` be their exact real dot,
+`N=2^-126` the smallest normal f32, and allow either adjacent rounding,
+all groupings/orders of these three products and two sums, fusion, and
+permitted FTZ. A conservative local-error account is:
+
+| Effective node | Endpoint bound | Directed rounding plus FTZ error |
+| --- | ---: | ---: |
+| Three products | `|p|≤1` each | `2^-24+N` each |
+| First pair sum | `|s|≤2` | `2^-23+N` |
+| Final sum | `|d|≤3` | `2^-22+N` |
+
+The endpoints are representable, so each adjacent rounding and flush stays
+inside its row's magnitude bound. A child output flush and its parent's
+input flush can be counted as one effective flush on that single-use edge.
+The five nodes therefore give
+`|d−D| ≤ E = 9·2^-24 + 5N < 2^-20`.
+The proposed filter certifies exact represented sign only when
+`d>2^-20` or `d<−2^-20`; every other value, including computed zero,
+remains uncertain. `2^-20` is a simple conservative threshold, **not** a
+minimum authored/view angle. In particular, rounding can give a nonzero
+computed dot for an exact zero, or the opposite sign for a tiny positive
+dot. `x=(a,-1,-1), y=(a,b,2^-47)` with `a=1−2^-23` and
+`b=1−2^-22` has exact `D=2^-47`; a permitted downward rounding of `a²`
+gives computed `d=−2^-47` in left-to-right evaluation. A positive `2^-127`
+product from two normal inputs can flush to zero.
+
+This is a **scoped mathematical filter candidate**, independently checked
+against the current [WGSL accuracy](https://www.w3.org/TR/WGSL/#floating-point-accuracy),
+[FTZ](https://www.w3.org/TR/WGSL/#floating-point-evaluation) and
+[reassociation/fusion](https://www.w3.org/TR/WGSL/#reassociation-and-fusion)
+rules. WGSL's `dot` accuracy is inherited from a component-product sum;
+applying this bound to a conforming builtin is a specification-derived
+consequence, not an observation about a native instruction. Alternate
+implementations do not receive a larger error allowance than the inherited
+accuracy contract. Backend validation and a selected shader expression are
+still required before a portable R0 shader claim. The
+bound excludes all upstream source, transform, interpolation and normal-map
+error. If represented operands differ from authored operands by certified
+component errors `|δx_i|≤a_i`, `|δy_i|≤b_i`, add a separately proved
+`U≥Σ_i(|x_i|b_i+|y_i|a_i+a_i b_i)` to the threshold with outward rounding.
+No such source certificate exists yet. This constant filter adds two
+comparisons/branches but can send many bright grazing fragments to the
+expensive path; fallback occupancy and full five-light cost are unmeasured.
+
 The existing max-component normalization of `v=wi+wo` can avoid a tiny
 denominator without the arbitrary `2^-12` threshold when `v` has a
 certifiably nonzero represented component. For an exactly unit `n` and
