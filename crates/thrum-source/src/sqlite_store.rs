@@ -4294,6 +4294,16 @@ fn measure_accepted_partial_retry_with_live_old_pin() {
         }
     }
 
+    #[cfg(unix)]
+    fn allocated_bytes(path: &Path) -> u64 {
+        use std::os::unix::fs::MetadataExt;
+        match fs::metadata(path) {
+            Ok(metadata) => metadata.blocks() * 512,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
+            Err(error) => panic!("cannot sample {}: {error}", path.display()),
+        }
+    }
+
     for (case, prefix_chunks) in [(0_u8, 1_u64), (1, 16), (2, 256)] {
         let fixture = Fixture::new();
         let plan = SourceSpacePlan {
@@ -4318,15 +4328,30 @@ fn measure_accepted_partial_retry_with_live_old_pin() {
             .unwrap();
         let hash = *master_file.sha256();
         let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+        #[cfg(unix)]
+        let stage_allocated: u64 = stage_b
+            .files()
+            .iter()
+            .map(|file| allocated_bytes(&stage_b.test_directory().join(file.path().as_str())))
+            .sum();
         let mut scratch = Vec::new();
         let max_main = Cell::new(0_u64);
         let max_wal = Cell::new(0_u64);
+        #[cfg(unix)]
+        let max_main_allocated = Cell::new(0_u64);
+        #[cfg(unix)]
+        let max_wal_allocated = Cell::new(0_u64);
         let old_reads = Cell::new(0_u64);
         let database = fixture.database();
         let wal = wal_path(&database);
         let mut sample = || {
             max_main.set(max_main.get().max(file_bytes(&database)));
             max_wal.set(max_wal.get().max(file_bytes(&wal)));
+            #[cfg(unix)]
+            {
+                max_main_allocated.set(max_main_allocated.get().max(allocated_bytes(&database)));
+                max_wal_allocated.set(max_wal_allocated.get().max(allocated_bytes(&wal)));
+            }
             let mut copied = Vec::new();
             a_pin.copy_file_to(&scene, &mut copied).unwrap();
             assert_eq!(copied, old_scene);
@@ -4407,6 +4432,12 @@ fn measure_accepted_partial_retry_with_live_old_pin() {
             max_wal.get(),
             stage_b.copied_bytes(),
             old_reads.get(),
+        );
+        #[cfg(unix)]
+        eprintln!(
+            "accepted_partial_retry_allocated prefix_chunks={prefix_chunks} sampled_main_blocks_bytes={} sampled_wal_blocks_bytes={} stage_file_blocks_bytes={stage_allocated}",
+            max_main_allocated.get(),
+            max_wal_allocated.get(),
         );
         drop(sample);
         a_pin.close().unwrap();
