@@ -3,6 +3,7 @@
 //! This parses supplied bytes only. A source-capture validator must verify
 //! staged bytes, declared path, active history and graph closure separately.
 
+use std::cell::Cell;
 use std::fmt;
 
 use serde::de::{DeserializeSeed, Error as _, MapAccess, SeqAccess, Visitor};
@@ -12,17 +13,44 @@ use crate::definition::{
     DefinitionError, FieldDefinition, FieldKind, MAX_FIELDS, Presence, VersionField,
     field_meaning_signature, type_version_definition_hash,
 };
+use crate::json::reject_excess_value;
 use crate::record::canonical_uuid;
+use crate::{LimitExceeded, ObservedQuantity, SourceDimension};
 
 /// A source schema record failed the fixed first-profile grammar.
 #[derive(Debug)]
 pub enum SchemaError {
     /// Exact JSON bytes exceed the 16 MiB source-record bound.
-    TooLarge,
-    /// JSON syntax, duplicate keys, field count or fixed record shape refused.
+    TooLarge {
+        /// Exact supplied byte length.
+        observed: u64,
+    },
+    /// JSON syntax, duplicate keys or fixed record shape refused.
     Invalid(serde_json::Error),
     /// Field or type-version semantics cannot receive canonical hashes.
     Definition(DefinitionError),
+    /// The descriptor array exposed its first excess entry value token.
+    Limit {
+        /// Dimension, maximum and lower-bound observation.
+        detail: LimitExceeded,
+        /// Original serde error with parse location.
+        source: serde_json::Error,
+    },
+}
+
+impl SchemaError {
+    /// Typed capacity detail, when this refusal was caused by a known bound.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooLarge { observed } => Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                *observed,
+            )),
+            Self::Limit { detail, .. } => Some(*detail),
+            Self::Invalid(_) | Self::Definition(_) => None,
+        }
+    }
 }
 
 /// Value kind retained from a checked source-carried field descriptor.
@@ -120,12 +148,18 @@ impl SchemaDescriptor {
 /// canonical first-profile hash inputs. It does not validate a project tree.
 pub fn parse_schema_descriptor(bytes: &[u8]) -> Result<SchemaDescriptor, SchemaError> {
     if bytes.len() > MAX_RECORD_BYTES {
-        return Err(SchemaError::TooLarge);
+        return Err(SchemaError::TooLarge {
+            observed: bytes.len() as u64,
+        });
     }
+    let limit = Cell::new(None);
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
-    let raw = SchemaSeed
+    let raw = SchemaSeed { limit: &limit }
         .deserialize(&mut deserializer)
-        .map_err(SchemaError::Invalid)?;
+        .map_err(|source| match limit.get() {
+            Some(detail) => SchemaError::Limit { detail, source },
+            None => SchemaError::Invalid(source),
+        })?;
     deserializer.end().map_err(SchemaError::Invalid)?;
     if !canonical_uuid(&raw.record_id) || raw.record_type != "core.schema" || raw.schema != 1 {
         return Err(SchemaError::Invalid(serde::de::Error::custom(
@@ -185,22 +219,26 @@ struct RawSchemaFields {
     optional_extension_prefix: Option<String>,
 }
 
-struct SchemaSeed;
+struct SchemaSeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for SchemaSeed {
+impl<'de> DeserializeSeed<'de> for SchemaSeed<'_> {
     type Value = RawSchema;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_map(SchemaVisitor)
+        deserializer.deserialize_map(SchemaVisitor { limit: self.limit })
     }
 }
 
-struct SchemaVisitor;
+struct SchemaVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for SchemaVisitor {
+impl<'de> Visitor<'de> for SchemaVisitor<'_> {
     type Value = RawSchema;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -219,7 +257,7 @@ impl<'de> Visitor<'de> for SchemaVisitor {
                 "type" if record_type.is_none() => record_type = Some(map.next_value()?),
                 "schema" if schema.is_none() => schema = Some(map.next_value()?),
                 "fields" if fields.is_none() => {
-                    fields = Some(map.next_value_seed(SchemaFieldsSeed)?)
+                    fields = Some(map.next_value_seed(SchemaFieldsSeed { limit: self.limit })?)
                 }
                 "documentation" if !documentation_seen => {
                     let _: String = map.next_value()?;
@@ -242,22 +280,26 @@ impl<'de> Visitor<'de> for SchemaVisitor {
     }
 }
 
-struct SchemaFieldsSeed;
+struct SchemaFieldsSeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for SchemaFieldsSeed {
+impl<'de> DeserializeSeed<'de> for SchemaFieldsSeed<'_> {
     type Value = RawSchemaFields;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_map(SchemaFieldsVisitor)
+        deserializer.deserialize_map(SchemaFieldsVisitor { limit: self.limit })
     }
 }
 
-struct SchemaFieldsVisitor;
+struct SchemaFieldsVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for SchemaFieldsVisitor {
+impl<'de> Visitor<'de> for SchemaFieldsVisitor<'_> {
     type Value = RawSchemaFields;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -279,7 +321,7 @@ impl<'de> Visitor<'de> for SchemaFieldsVisitor {
                     target_version = Some(map.next_value()?);
                 }
                 "schema.fields" if fields.is_none() => {
-                    fields = Some(map.next_value_seed(FieldArraySeed)?);
+                    fields = Some(map.next_value_seed(FieldArraySeed { limit: self.limit })?);
                 }
                 "schema.optionalExtensionPrefix" if !prefix_seen => {
                     optional_extension_prefix = map.next_value()?;
@@ -298,22 +340,26 @@ impl<'de> Visitor<'de> for SchemaFieldsVisitor {
     }
 }
 
-struct FieldArraySeed;
+struct FieldArraySeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for FieldArraySeed {
+impl<'de> DeserializeSeed<'de> for FieldArraySeed<'_> {
     type Value = Vec<SchemaField>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_seq(FieldArrayVisitor)
+        deserializer.deserialize_seq(FieldArrayVisitor { limit: self.limit })
     }
 }
 
-struct FieldArrayVisitor;
+struct FieldArrayVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for FieldArrayVisitor {
+impl<'de> Visitor<'de> for FieldArrayVisitor<'_> {
     type Value = Vec<SchemaField>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -324,7 +370,7 @@ impl<'de> Visitor<'de> for FieldArrayVisitor {
         let mut fields: Vec<SchemaField> = Vec::new();
         loop {
             if fields.len() >= MAX_FIELDS {
-                sequence.next_element_seed(RejectExtraFieldSeed)?;
+                sequence.next_element_seed(RejectExtraFieldSeed { limit: self.limit })?;
                 break;
             }
             let Some(field) = sequence.next_element_seed(FieldSeed)? else {
@@ -342,16 +388,27 @@ impl<'de> Visitor<'de> for FieldArrayVisitor {
     }
 }
 
-struct RejectExtraFieldSeed;
+struct RejectExtraFieldSeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for RejectExtraFieldSeed {
+impl<'de> DeserializeSeed<'de> for RejectExtraFieldSeed<'_> {
     type Value = ();
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
-        _deserializer: D,
+        deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        Err(D::Error::custom("schema.fields exceeds 128 descriptors"))
+        reject_excess_value(
+            deserializer,
+            self.limit,
+            LimitExceeded {
+                dimension: SourceDimension::SchemaFields,
+                allowed: MAX_FIELDS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_FIELDS as u64 + 1),
+            },
+            "schema.fields exceeds 128 descriptors",
+        )
     }
 }
 
@@ -501,6 +558,40 @@ mod tests {
         );
         let error = parse_schema_descriptor(bytes.as_bytes()).err().unwrap();
         assert!(format!("{error:?}").contains("exceeds 128"));
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::SchemaFields,
+                allowed: MAX_FIELDS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_FIELDS as u64 + 1),
+            })
+        );
+        let malformed = bytes.replace(",[[[[[[0]]]]]]", ",?");
+        assert_eq!(
+            parse_schema_descriptor(malformed.as_bytes())
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            None
+        );
+        let error = parse_schema_descriptor(&vec![b' '; MAX_RECORD_BYTES + 1])
+            .err()
+            .unwrap();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                MAX_RECORD_BYTES as u64 + 1,
+            ))
+        );
+        assert_eq!(
+            parse_schema_descriptor(b"{")
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            None
+        );
     }
 
     #[test]

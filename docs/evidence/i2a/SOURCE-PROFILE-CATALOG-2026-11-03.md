@@ -59,15 +59,22 @@ An exploratory optimized million-value dense-array parser probe took
 interleaved runs afterward on this host. The small difference is not a
 representative throughput or tail qualification; the excess-token probe is
 entered only after the bound is reached.
+Direct `core.schema` and `core.registry-history` parsers also report exact
+record bytes and the first excess descriptor, permanent-field or type-version
+value token. The bound probe rejects an excess container without visiting its
+children; malformed excess tokens remain syntax failures. Registry-stage,
+lineage and accepted-store errors preserve the nested typed detail. Tests
+cover all three arrays, their distinct dimensions, malformed extra values and
+non-capacity syntax.
 `RUSTC_WRAPPER= ./dev check` passed after design-hash refresh: repository
-checks, 107 Python tests, workspace Clippy and Rust tests, including 195
+checks, 112 Python tests, workspace Clippy and Rust tests, including 197
 passing `thrum-source` unit tests (46 opt-in tests ignored). The 64 MiB
 accepted-manifest threshold is tested through its shared guard; a full public
 admission fixture above that encoded size remains unrun.
 
 The catalogue does **not** establish that all simultaneous maxima fit memory,
 that every parser refusal is typed, that a wider profile works, or that a
-consumer can use every F3-valid candidate. Schema/history, game and
-environment parser limit propagation remain open,
+consumer can use every F3-valid candidate. Schema symbol/text bounds and game
+and environment parser limit propagation remain open,
 as do structured disk estimate/observation receipts and full F3→F4 workload
 qualification.

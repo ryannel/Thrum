@@ -3,6 +3,7 @@
 use serde::de::{DeserializeSeed, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Value};
 use std::cell::Cell;
+use std::marker::PhantomData;
 
 use crate::profile::{LimitExceeded, ObservedQuantity, SourceDimension};
 
@@ -96,11 +97,16 @@ impl<'de> DeserializeSeed<'de> for StrictSeed<'_> {
             // Let serde establish that a value token exists before reporting
             // an observed excess. The probe rejects at the value callback;
             // it never builds or traverses an excess container.
-            return deserializer.deserialize_any(ExcessValueVisitor {
-                limit: self.limit,
-                allowed: self.node_limit as u64,
-                observed: count as u64 + 1,
-            });
+            return reject_excess_value(
+                deserializer,
+                self.limit,
+                LimitExceeded {
+                    dimension: SourceDimension::GenericJsonNodes,
+                    allowed: self.node_limit as u64,
+                    observed: ObservedQuantity::AtLeast(count as u64 + 1),
+                },
+                "source JSON value count limit",
+            );
         }
         self.nodes.set(count + 1);
         deserializer.deserialize_any(StrictVisitor {
@@ -112,25 +118,41 @@ impl<'de> DeserializeSeed<'de> for StrictSeed<'_> {
     }
 }
 
-struct ExcessValueVisitor<'a> {
-    limit: &'a Cell<Option<LimitExceeded>>,
-    allowed: u64,
-    observed: u64,
+/// Refuse after serde recognizes the next JSON value token. Invalid tokens
+/// remain syntax errors, and an excess container is never traversed or built.
+pub(crate) fn reject_excess_value<'de, D, T>(
+    deserializer: D,
+    limit: &Cell<Option<LimitExceeded>>,
+    detail: LimitExceeded,
+    message: &'static str,
+) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserializer.deserialize_any(ExcessValueVisitor {
+        limit,
+        detail,
+        message,
+        value: PhantomData,
+    })
 }
 
-impl ExcessValueVisitor<'_> {
-    fn refuse<T, E: serde::de::Error>(&self) -> Result<T, E> {
-        self.limit.set(Some(LimitExceeded {
-            dimension: SourceDimension::GenericJsonNodes,
-            allowed: self.allowed,
-            observed: ObservedQuantity::AtLeast(self.observed),
-        }));
-        Err(E::custom("source JSON value count limit"))
+struct ExcessValueVisitor<'a, T> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+    detail: LimitExceeded,
+    message: &'static str,
+    value: PhantomData<T>,
+}
+
+impl<T> ExcessValueVisitor<'_, T> {
+    fn refuse<E: serde::de::Error>(&self) -> Result<T, E> {
+        self.limit.set(Some(self.detail));
+        Err(E::custom(self.message))
     }
 }
 
-impl<'de> Visitor<'de> for ExcessValueVisitor<'_> {
-    type Value = Value;
+impl<'de, T> Visitor<'de> for ExcessValueVisitor<'_, T> {
+    type Value = T;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("one more valid JSON value token")
