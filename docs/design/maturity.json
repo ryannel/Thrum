@@ -2159,6 +2159,13 @@
         "scope": "Only state/lifecycle R4 payloads after an externally admitted baseline and mandatory game-schema/dependency validation. Results, events and nonzero watermarks are refused until a bounded atomic progress owner exists. No N1 outbound owner, envelope, transport, ACK ledger or full four-peer profile.",
         "evidence": "../evidence/integration/N1-R4-STATE-REPLICA-2026-11-03.md",
         "isolated_cost_samples": "../evidence/integration/N1-R4-STATE-REPLICA-COST-SAMPLES-2026-11-03.csv"
+      },
+      "application_envelope_codec": {
+        "implementation": "registered thrum-network allocation-free 64-byte first-version application envelope encoder and borrowed decoder",
+        "functional_validation": "three local tests cover an independent literal 67-byte golden vector, all fixed header fields, Hello zero-identity rules, exact 64 KiB cap and malformed magic/version/kind/reserved/length refusal; independent read-only review found no functional defect",
+        "platform_performance": "no allocation-call, CPU, RSS, transport or whole-callback measurement",
+        "scope": "Structural framing only; session role, epoch, sequence and ACK disposition, rate, per-kind payload schema and state transitions remain unimplemented",
+        "evidence": "../evidence/integration/N1-ENVELOPE-CODEC-2026-11-03.md"
       }
     }
   ],

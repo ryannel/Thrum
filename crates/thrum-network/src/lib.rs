@@ -1,4 +1,5 @@
 //! Bounded first-profile network data owners. No transport or world authority.
 
+pub mod envelope;
 pub mod r4;
 pub mod replica;
