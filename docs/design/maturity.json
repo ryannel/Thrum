@@ -667,6 +667,12 @@
         "functional_validation": "not_applicable_to_policy_selection",
         "scope": "The user selected a trusted local user boundary for the first macOS ARM64 headless development build. Deliberate mutation by another process running as that same user is outside this profile; owner-clearable flags and read-only modes remain accident barriers. A one-root sealed lease candidate now exists, but the selected policy still requires one reviewed exact-hash release manifest, private owned complete input selection held through metadata, compiler shutdown and output verification, compiler/system-read closure, job containment and ready publication. No reviewed manifest or complete retained release owner exists, and buildReady remains false."
       },
+      "i2a_macos_compiler_job_policy": {
+        "design": "research/T2-MACOS-COMPILER-JOB-CONTAINMENT-2026-11-03.md",
+        "implementation": "reviewed_compiler_family_assumption_selected_only",
+        "functional_validation": "not_applicable_to_policy_selection; existing supervisor fixtures prove same-group cleanup and demonstrate a detached closed-pipe escape, but do not qualify a reviewed release family",
+        "scope": "The user selected a reviewed Rust/Xcode compiler-family no-detach assumption for the first macOS headless development profile. Process-group cleanup remains required, while any observed detached child is a release fault. This does not claim OS-enforced transitive containment or extend to arbitrary build scripts, proc macros or unreviewed helpers. Successful, failed, timed-out and interrupted real-job receipt/lifetime qualification, reviewed executable selection and ready publication remain open; buildReady stays false."
+      },
       "i2a_held_macos_tool_root_candidate": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md",
