@@ -211,6 +211,13 @@ all-fallback instances and combined F3 memory before activation. These are
 existing Foundation-envelope constraints with a schema-local bound shape,
 not new R0 fixture limits. A valid source can still be unrepresentable in
 the first R0 device profile.
+An [isolated exact transformed-bound
+probe](../../evidence/render/R0-F3-TRANSFORMED-BOUND-PROBE-2026-11-03.md)
+now supplies an 84-limb width argument and 2,655 independent rational
+oracle matches, but its predicate-only 50,000-instance fallback families
+take 1.47–3.61 s on the named Mac. This is an implementation pressure to
+optimize and measure in the complete F3 path, not an admitted edit-latency
+or memory qualification.
 
 The exact-dyadic triangle rule needs a bounded adaptive implementation: a
 proved fast filter may accept clear cases, with a fixed-width/exact fallback
