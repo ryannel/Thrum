@@ -199,6 +199,10 @@ removed two redundant full-cache tree scans and separate pre/post Cargo/Rustc as
 from that fixture only while the persistent guard lives. The selected compiler
 file checks and outer post-build inventory remain; this is not a complete
 release-owner or warm edit-to-ready timing result.
+A later [real materialized-lockfile drift check](../evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md#real-materialized-lockfile-drift)
+refused reuse after B's compiler job and receipt audit when one byte changed
+in its owned scratch lockfile. The guard kept its held selection and closed
+normally; this does not test writes during a running compiler.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
