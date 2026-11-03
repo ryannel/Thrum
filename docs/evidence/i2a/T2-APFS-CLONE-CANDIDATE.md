@@ -9,8 +9,9 @@ measured raw per-file clone cost separately.
 ## Selected mechanism and local proof
 
 [`prepare_macos_tool_root_clone.py`](../../../scripts/prepare_macos_tool_root_clone.py)
-accepts one installed source root, an absent destination under a caller-owned
-parent on the same volume, and an independently supplied exact inventory. It
+accepts one installed source root, an absent destination under a mode-private
+parent owned by the current user on the same volume,
+and an independently supplied exact inventory. It
 opens source directories and regular files with no-follow flags, uses
 `fclonefileat` on held regular-file descriptors, recreates relative symlinks,
 and refuses unsupported entries, aliases at root, source/destination overlap,
@@ -21,11 +22,22 @@ matches. A failed preparation removes its newly created root while its
 directory identity remains owned; a changed root identity requires the caller
 to quarantine the parent rather than delete an unknown replacement.
 
-Seven small macOS fixtures passed: exact content and relative-link copy,
+Eleven small macOS fixtures passed: exact content and relative-link copy,
 clone-private mutation, wrong digest cleanup, existing destination
 preservation, source alias and absolute-link refusal, extra-file refusal,
 changed source during cloning, and FIFO refusal without opening it. The test
 command was `python3.11 scripts/test_prepare_macos_tool_root_clone.py`.
+The added path fixtures refuse a `0755` destination parent and a `0777`
+non-sticky ancestor before creating a clone. The helper checks the resolved
+ancestor chain's POSIX owners and group/other write bits, allowing a sticky
+ancestor. It queries the held parent directory for a macOS extended ACL and
+refuses any returned ACL or query error; a real mode-`0700` parent with an
+`everyone allow` ACL and a synthetic getter fault both refuse before clone
+creation. [Apple's file-system security guidance](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemDetails/FileSystemDetails.html)
+explains that ACL entries can grant rights beyond mode bits. The helper does
+not inspect ancestor ACLs, so an ancestor chain without grants that allow
+replacement remains a caller precondition for this unready candidate. It also
+does not establish a held no-writer owner after return.
 
 The local selected inputs were Rust 1.99.1 ARM64 Apple and Xcode 27.2's linker
 toolchain and macOS SDK. The helper compared each clone with the previously
