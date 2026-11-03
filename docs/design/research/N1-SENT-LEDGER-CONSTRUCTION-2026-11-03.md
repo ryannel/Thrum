@@ -100,6 +100,33 @@ The storage representation above is provisional until the ordinary and
 baseline paths both pass. The protocol and whole-engine ownership contracts
 remain the authority if this candidate layout proves inadequate.
 
+## Simultaneous capacity, before a game recipe is selected
+
+R4's independent record maxima are not an admitted simultaneous workload.
+One maximum group is 6,944 payload bytes and 7,008 bytes with its envelope.
+Only the controlled partition carries results. With four partitions, the
+largest structurally shaped tick is therefore one 7,008-byte controlled
+group plus three 4,960-byte result-free groups. Three such 60 Hz ticks make
+65,664 wire bytes over one 20 Hz release, 128 bytes above the 65,536-byte
+quarter-second network target even before control traffic. Their 12 queue
+slots fit the 16-slot unsent owner, but a fourth unreleased tick occupies
+all 16 slots. If every permitted group also carries 64 distinct events and
+the controlled group carries 64 results, that three-tick window asks for
+768 event IDs and 192 result IDs. The ordinary sent journals reserve only
+128 events and 256 results. Game schema and dependency closure may reduce
+these maxima further; this calculation alone admits no workload.
+
+The first production game recipe must therefore state **joint** per-peer
+partition, actor, result, event and lifecycle burst bounds over the cadence
+and slow-ACK windows. Admission must preflight that combined work against
+the queue, journals, sent-frame arena, baseline and sync closure, then pace,
+recapture or explicitly close on overload. It must never claim that all R4
+individual maxima can be emitted together or convert a mandatory unit into
+coalescible state to make the budget fit. The owner-byte and CPU measurement
+must include the old queue and sent frames, immutable 256 KiB image, baseline
+frame slots, and new sync queue at the same time; the ordinary four-peer
+measurement does not cover that peak.
+
 ## Integration boundary after the first physical slices
 
 The [ordinary ledger](../../evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md)
@@ -114,13 +141,36 @@ It must not copy the oracle's independent counter into a second public owner.
 The final BaselineAck transaction is wider than the sent ring. A baseline
 certificate must bind the immutable image hash and unique baseline ID to the
 Begin sequence, capture tick, `supersedesThrough`, exact included result IDs,
-event IDs and permitted transient-event expiry. The owner must preflight the
-mandatory union of already submitted ordinary frames, unsent queue units and
-subsequent-sync closure; otherwise a valid ACK could free a sent frame while
-silently losing an accepted unsent outcome. A conservative first path may
-require exact event inclusion and close when transient expiry cannot be
-proved. The game-schema/image validator supplies the semantic certificate;
-wire framing alone cannot establish it.
+event IDs and permitted transient-event expiry. At the capture barrier the
+owner freezes the **pre-cutoff** mandatory union of already submitted ordinary
+frames and unsent queue units. The game-schema/image validator must prove
+that the frozen image includes each exact result and required event in this
+union, with the corresponding state/lifecycle closure. A valid ACK may retire
+only that certified pre-cutoff set. A conservative first path requires exact
+event inclusion and closes when transient expiry cannot be proved. Wire
+framing and a hash of opaque image bytes alone cannot establish this semantic
+certificate.
+
+Output committed **after** the baseline capture tick belongs to a distinct
+bounded subsequent-sync queue. It survives BaselineAck and is submitted under
+the replacement partition map and advanced interest generations after the
+ACK transaction succeeds. It cannot be covered by the frozen image or retired
+by that ACK. The old unsent queue and sent frames, immutable baseline image,
+and new sync queue therefore coexist. Clearing the old queue at Begin or ACK,
+or reusing it for post-cutoff capture before old mandatory identities are
+certified, would lose accepted output. Sync overflow follows an explicit
+abandon-and-recapture or close decision; it never drops mandatory units.
+
+For the first replacement path, require every already assigned ordinary frame
+to be fully written and no occupied ACK receipt before Begin. Otherwise close
+this peer under the current policy. This avoids an unqualified ordered-drain
+path while preserving the old frames and their exact application sequences.
+Begin/Chunk/End then consume the **same** sequence counter as StateGroup. A
+staged chunk frees only its frame slot and credit; its sequence tombstone stays
+until final disposition. Ordinary cumulative ACK must inspect entry kinds
+and explicit disposition, not equate numeric sequence distance with the
+number of ordinary entries. A rejected StateGroup remains rejected even when
+a later chunk stages successfully.
 
 One final ACK receipt stays occupied across callback refusal. With the
 current Authority's match/peer/epoch checked inside the callback, commit the
@@ -132,6 +182,20 @@ Callback unwind or uncertain transport submission closes/quarantines the
 whole peer owner. A wrong, stale or invalid BaselineAck changes no owner state;
 invalid completion of the active replacement follows the selected close
 policy rather than pretending the rejected frame was admitted.
+
+The first integrated rejection proof must hold a sent rejected result and an
+unsent mandatory result at the cutoff, progress eight chunks through two
+credits with an out-of-order staging ACK, and capture another mandatory unit
+after the cutoff. Reject wrong/stale/premature BaselineAck and omitted result
+or event identities without retirement. Fail and retry the authority callback
+with the exact occupied receipt; caught unwind requires close. A successful
+ACK retires only the certified old union, preserves the new sync unit and
+advances the result frontier through an earlier admitted-higher gap exactly
+once. Exercise an unwritten assigned frame, sequence exhaustion and sync
+capacity refusal as explicit close/recapture outcomes. The existing physical
+oracle proves frame storage and staging only; semantic completion also needs
+a selected image encoder, validator and consumer to check actual image
+contents against the certificate.
 
 If a Reject arrives while later already assigned frames remain unwritten,
 the current conservative ledger requires close. A production replacement
