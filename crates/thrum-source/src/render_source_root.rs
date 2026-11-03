@@ -281,6 +281,39 @@ mod tests {
     }
 
     #[test]
+    fn archived_authored_render_record_passes_complete_local_structure() {
+        // The byte-identical render member of the selected evidence package.
+        // Its full scene/project edges and unique namespace remain later work.
+        let bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../docs/evidence/render/R0-AUTHORED-RENDER-RECORD-2026-11-03.json"
+        ));
+        let mut projection = Projection::default();
+        let summary = scan_render_root(bytes, &mut projection).unwrap();
+        assert_eq!(
+            summary.counts,
+            RenderRootCounts {
+                cameras: 1,
+                meshes: 3,
+                instances: 3,
+                materials: 3,
+                textures: 4,
+                local_lights: 4,
+            }
+        );
+        assert_eq!(projection.textures.len(), 4);
+        for checked in &projection.textures {
+            let mut decoded = 0;
+            emit_texture_chunks(checked, |chunk| {
+                decoded += chunk.len();
+                Ok::<_, Pressure>(())
+            })
+            .unwrap();
+            assert_eq!(decoded, checked.facts.decoded_len);
+        }
+    }
+
+    #[test]
     fn local_summary_does_not_claim_active_camera_or_global_identity_closure() {
         let source = root(["[]"; 6]);
         let summary = scan_render_root(source.as_bytes(), &mut Projection::default()).unwrap();

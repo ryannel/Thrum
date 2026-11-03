@@ -674,7 +674,7 @@
       "i2a_render_root_structural_candidate": {
         "evidence": "../evidence/render/R0-F3-RENDER-ROOT-STRUCTURAL-SCAN-2026-11-03.md",
         "implementation": "private_inactive_complete_render_root_structural_coordinator_and_texture_collection_scanner",
-        "functional_validation": "two texture collection and nine root tests cover borrowed replay, checked dispatch-token equivalence, canonical collection/UUID ordering, raw tie, anonymous fallback, complete header refusal, provisional output and operational abort; independent review found no blocker and targeted Clippy passes",
+        "functional_validation": "two texture collection and ten root tests cover borrowed replay, checked dispatch-token equivalence, canonical collection/UUID ordering, raw tie, anonymous fallback, complete header refusal, provisional output and operational abort; the byte-identical selected authored render record passes local structure at 1/3/3/3/4/4 object counts; independent review found no blocker and targeted Clippy passes",
         "experienced_quality": "not_applicable_to_inactive_source_coordinator",
         "platform_performance": "no combined parser allocation/RSS, charged peak, full authored fixture, F3/F4 latency or device measurement; no array-wide object index is retained",
         "scope": "No operation-wide global UUID or typed/same-root/slot-format edge closure, deferred instance bounds, F3 admission, F4 selected-pin publication or ready renderer."

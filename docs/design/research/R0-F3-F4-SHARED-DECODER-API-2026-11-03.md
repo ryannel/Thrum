@@ -30,9 +30,16 @@ pub fn check_render_edge(
     namespace: &CompleteNamespace,
 ) -> Result<ResolvedRenderEdge, RenderClosureError>;
 
+pub fn check_candidate_namespace(
+    prepared: PreparedCandidate,
+) -> Result<NamespaceCheckedCandidate, RenderClosureError>;
+
+pub fn close_candidate_edges(
+    checked: NamespaceCheckedCandidate,
+) -> Result<EdgeClosedCandidate, RenderClosureError>;
+
 pub fn finish_render_v1(
-    prepared: &[PreparedRender],
-    checked: &CheckedEdgeReceipt,
+    closed: EdgeClosedCandidate,
 ) -> Result<RenderClosureReceipt, RenderClosureError>;
 
 pub trait RenderProjection {
@@ -46,6 +53,18 @@ pub enum RenderDecodeError<E> {
     Projection(E),
 }
 ```
+
+The closure signatures are candidate typestate, not current SDK exports.
+`PreparedCandidate` owns every prepared declared root and its edge stream;
+`check_candidate_namespace` consumes that set, builds/checks its own complete
+namespace and returns both in one private owner. `close_candidate_edges`
+consumes that exact owner after all operation-wide edges pass. It cannot
+accept a namespace from another attempt. `EdgeClosedCandidate` has private fields and
+is not cloneable or constructible by a root-local caller. `finish_render_v1`
+consumes it, so a valid A receipt cannot be accidentally paired with B's
+unchecked or omitted roots. F4 constructs a distinct selected-pin preparation
+bound to its accepted source and selected closure; it applies the same rules
+without treating one selected root as a new F3 global-admission result.
 
 `CheckedRenderRecord<'_>` is an opaque borrow of the original bytes plus the
 already checked `record_header` result. F3 dispatch constructs it while
@@ -151,16 +170,22 @@ source validity and cannot redefine it.
 | V2/V3/V4 | Verified F4 product bytes, W1 committed/presentation sample, selected target and recipe. | Packet and representation certificates are per-view; unchanged exact CPU mesh facts and semantic products can be reused under their keys and leases. |
 
 F3's complete-candidate order is: registry structure; all declared-record
-structure by canonical path; one global duplicate-UUID pass; all typed,
-same-root and slot-format edges by canonical source locator; then deferred
-cross-object predicates by canonical locator. A missing mesh therefore
+structure by canonical path; the existing required-reference capacity barrier
+after complete local structure; one global duplicate-UUID pass; all typed,
+same-root and slot-format edges by canonical source locator, including the
+scene@2 environment-entry cardinality predicate at its selected scene edge;
+then deferred cross-object predicates by canonical locator. The [integration
+sequence](F3-RENDER-GLOBAL-CLOSURE-SEQUENCE-2026-11-03.md) fixes capacity
+overflow and resource-pressure behavior. A missing mesh therefore
 reports its edge error before a bound needing that mesh. Each phase reports
 its first deterministic error. Structural parsing may append to temporary
 sinks but never resolves edges based on parse order. F3's coordinator calls
 `check_render_edge` while traversing the **operation-wide sorted edge stream**,
-including non-render edges. Only after every edge succeeds does it issue an
-unforgeable `CheckedEdgeReceipt` and call `finish_render_v1` over all prepared
-render roots. F4 uses the same helpers on its one selected root, after its
+including non-render edges. Only after every edge succeeds does it issue a
+private `EdgeClosedCandidate` owning that exact prepared set and call
+`finish_render_v1` over its render roots. The closed type cannot be paired
+with another attempt's or a partial set of roots. F4 uses the same closure
+rules on its one selected root, after its
 accepted pin attests global source closure. No per-root bound may run while
 another root's edge remains unchecked. `finish_render_v1` chooses the first
 deferred error by canonical locator across its complete input, independent
