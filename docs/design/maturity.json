@@ -624,6 +624,15 @@
         "platform_performance": "one local macOS 26.6.2 APFS probe: 394-file Rust raw clone 0.056 seconds and 757760 observed free-space bytes; 39237-file Xcode linker/SDK raw clone 8.398 seconds and 52809728 observed free-space bytes for 3.83 GB logical content. An exact-inventory helper run including full clone-byte hashing took 0.626, 8.788 and 14.604 seconds for Rust, linker and SDK separately. Three uncontrolled cloned A compiler stages took 10171, 4297 and 4262 ms; the final run also took 1284 ms for private-cache preparation and 207 ms for candidate retention. No paired installed-versus-cloned or complete warm edit-to-ready comparison is claimed",
         "scope": "Same-volume held-descriptor APFS clones reproduce selected local tool-root inventories. An opt-in admitted A/B compiler consumes selected cloned Cargo/Rustc and Clang/SDK under narrow sandbox grants while installed counterparts are denied, but the helper accepts an unreviewed local digest and does not keep clones immutable after return. Private-cache metadata preparation and Xcode support still use installed paths. No reviewed release manifest, selected host-runtime bytes, complete compiler read closure or ready BuildRevision is claimed; buildReady stays false."
       },
+      "i2a_compiler_support_grant_reduction": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../evidence/i2a/T2-COMPILER-SUPPORT-GRANTS-2026-11-03.md",
+        "implementation": "macos_opt_in_compiler_sandbox_grant_reduction_only",
+        "functional_validation": "two sandboxed A/B builds passed with installed Xcode support-file data and metadata denied: one used installed Rust/linker/SDK roots and one used exact-inventory APFS clones; each compiled A, refused invalid B and reloaded runnable A",
+        "experienced_quality": "not_applicable_to_headless_compiler_isolation",
+        "platform_performance": "uncontrolled A build samples of 3621 ms installed and 8261 ms cloned on one Mac; no paired comparison, speedup or tail claim",
+        "scope": "The bounded compiler sandbox removes Xcode libxcrun support-file read and metadata exceptions after negative probes and two A/B qualifications. Metadata/private-cache preparation still uses installed host tools and support, and selected system runtime reads, no-writer clone ownership, reviewed release inputs and ready BuildRevision remain open; buildReady stays false."
+      },
       "i2a_narrowed_macos_metadata": {
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/F4-NARROW-METADATA.md",
