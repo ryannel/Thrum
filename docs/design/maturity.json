@@ -2132,7 +2132,7 @@
       },
       "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
       "current_design_sha256": "b629730082481a90c607ddcee876bac32c3070ddf01b45644382a3040c06c611",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress and structural envelope framing are implemented; event-bearing groups still refuse. The N1 outbound/session adapter remains unbuilt. Prior reviewed hashes retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing and a finite pre-submission payload queue are implemented; event-bearing replica groups still refuse. W1 capture, sent-frame/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -2151,7 +2151,7 @@
       "i1_headless": {
         "design": "I1-HEADLESS.md",
         "evidence": "../evidence/i1-headless/QUALIFICATION.md",
-        "scope": "In-memory replica baseline/groups, individual results, contiguous watermark and event cursor, with two independently controlled peers, finite cumulative ordinary host membership and a selected inline slow-peer projection probe; separate structural R4 payload/envelope codecs and an event-free-result multi-group N1 replica exist, but no authenticated session/event admission, remote projection/queue owner, real WSS or four-peer qualification.",
+        "scope": "In-memory replica baseline/groups, individual results, contiguous watermark and event cursor, with two independently controlled peers, finite cumulative ordinary host membership and a selected inline slow-peer projection probe; separate structural R4 payload/envelope codecs, event-free-result multi-group N1 replica and pre-submission payload queue exist, but no authenticated session/event admission, W1 projection adapter, sent-frame owner, real WSS or four-peer qualification.",
         "two_peer_evidence": "../evidence/i1-headless/TWO-PEER.md",
         "ordinary_peer_profile_evidence": "../evidence/i1-headless/ORDINARY-PEER-PROFILE.md",
         "slow_peer_projection_probe_evidence": "../evidence/i1-headless/SLOW-PEER-PROJECTION-PROBE.md"
@@ -2159,10 +2159,10 @@
       "outbound_cadence_design": {
         "design": "research/N1-OUTBOUND-CADENCE-2026-11-03.md",
         "decision": "provisional",
-        "implementation": "private selected-inline cadence and sent-frame ACK models; separate bounded state/lifecycle-only R4 multi-group replica",
+        "implementation": "private cadence and sent-frame ACK models; bounded R4 multi-group replica, event-free progress and finite pre-submission queue",
         "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two cadence model tests preserve mandatory chronology and reject partial-update coalescing. Two sent-frame model tests stage an eight-chunk replacement behind a rejected sequence and refuse omitted mandatory IDs. Four composite replica model tests admit same-tick partitions with distinct sample ages and atomically refuse stale, colliding, cross-partition reassigned or over-capacity state; no production N1 owner is run",
         "platform_performance": "isolated four-peer 128-entity membership lookup measured on Apple M3 Max for 1/8/32/128 sorted changes; it excludes sorting, codec, journal and host callback. Ordinary 20 Hz R4 byte model is a lower-bound scenario; mandatory burst and whole-path four-peer CPU/RSS unmeasured",
-        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. Stable baseline partition identity, per-partition interest generation and 256 cumulative assigned IDs now have a bounded production replica; event-free results/watermarks have paired atomic progress admission. Structural envelope framing exists, but authenticated submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are unimplemented. The candidate unsent layout uses sixteen exact 6944-byte R4 payload slots plus charged metadata; a callback-plus-capture timer is needed because F1's current reported elapsed time excludes later N1 extraction. The private ledger model verifies two chunk credits and exact supersession arithmetic, not concurrent queues or a runtime ACK owner. Event-bearing groups, full semantic closure, mandatory capacity handling and actual N1 queues remain open.",
+        "scope": "N1-owned exact tick units and 20 Hz batch release remain proposed. Stable baseline partition identity, per-partition interest generation and 256 cumulative assigned IDs have a bounded replica; event-free results/watermarks have paired atomic progress admission. The finite unsent queue holds sixteen exact 6944-byte R4 payload slots with certified complete-state-only coalescing and global barrier order. Structural envelope framing exists, but authenticated submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are unimplemented. A callback-plus-capture timer is needed because F1's reported elapsed time excludes later N1 extraction. The private ledger model verifies two chunk credits and exact supersession arithmetic, not a runtime ACK owner. Event-bearing replica groups, W1 projection, full semantic closure, mandatory burst capacity and sent-frame integration remain open.",
         "model_oracle_evidence": "../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md",
         "baseline_ack_oracle_evidence": "../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md",
         "multi_group_replica_oracle_evidence": "../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md",
@@ -2197,6 +2197,14 @@
         "platform_performance": "reserved Rust value/Vec capacity remains stable through admission; no CPU-tail, allocator-call, RSS, four-peer whole path or transport measurement",
         "scope": "Event-free same-epoch result/watermark admission only. Externally verified baseline inventory, controlled actor/partition and session epoch are required. Exact event dedup, outbound journal/ACK and content/transport qualification remain open.",
         "evidence": "../evidence/integration/N1-R4-RESULT-PROGRESS-2026-11-03.md"
+      },
+      "unsent_payload_queue": {
+        "implementation": "registered thrum-network 16-slot exact R4 payload arena, inline ordered metadata, complete-partition-only state coalescing and poison-on-unwind transfer boundary",
+        "functional_validation": "seven focused tests cover owned bytes, chronology, partial-state and mandatory preservation, P+1 refusal, retryable no-mutation sink error and uncertain-transfer poison; independent review found and corrected three contract faults and found no remaining transfer issue",
+        "platform_performance": "seven Apple M3 Max release-process samples: median 1584.9 ns per four-peer three-tick state-only window with 48 small captures and 16 no-op transfers; four queues reserve 447200 Rust bytes. No 32-actor mandatory burst, allocator-call, RSS, W1 callback, sent-ledger or transport measurement",
+        "scope": "Pre-submission owned payload bytes only. Game validator must certify complete partition state and dependency closure; external sent sink must reserve exact bytes/ACK metadata before sequence assignment. No W1 adapter, result/event journal, ACK ledger or full bandwidth/whole-callback qualification.",
+        "evidence": "../evidence/integration/N1-UNSENT-QUEUE-2026-11-03.md",
+        "isolated_cost_samples": "../evidence/integration/N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv"
       }
     }
   ],
