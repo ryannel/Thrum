@@ -146,9 +146,12 @@ decode/upload/prepare peak is capped at **48 MiB** in the staging share; seriali
 individual peaks would overlap. Count retained browser responses, Wasm heap growth and driver-visible staging in
 the measured peak. A stopped portable transition uses the same staging limit after old leases retire.
 
-The first pipeline demand inventory budgets **R0 10 tuples** (2 depth, 2 shadow, 2 forward, 2 velocity, 2 UI/post)
+The first pipeline demand inventory budgets **R0 10 boot tuples** (2 depth, 2 shadow, 2 forward,
+tone, spatial AA, final output and one UI pass when the authored fixture uses it)
 and **R2 40 tuples** (6 depth, 6 shadow, 10 forward, 6 velocity, 4 transparency, 4 UI/post, 4 joint-media).
-These are placeholders for an admitted authored closure, with 6/8 tuples of headroom against the respective first
+The spatial-only R0 fixture does not boot two unused velocity tuples; adding a temporal provider or an
+admitted transition would add its reachable velocity and reconstruction roles to the closure. These are
+placeholders for an admitted authored closure, with 6/8 tuples of headroom against the respective first
 recipe caps; an actual material/geometry/pass combination can consume several tuples. A target report must enumerate
 each concrete descriptor key and its role, not infer readiness from this arithmetic. The wider [Rendering](RENDER-SPEC.md#3-shader-closure-keys-and-readiness)
 512-total/64-boot/128-live-switch controls remain reference-profile gates, not SDK-wide format limits.

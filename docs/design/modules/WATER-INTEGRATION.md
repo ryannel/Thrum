@@ -1,6 +1,8 @@
 # Water integration and proof plan
 
-1 November 2026. **D2-water B/C specification for a bounded wider profile; no implementation or qualification.**
+1 November 2026, revised 2 November. **D2-water B/C specification for bounded
+dynamics and regional optics; focused actual-interface light remains an open
+family capability. No implementation or qualification.**
 The [commission](WATER.md) remains the family inventory. [Dynamics](WATER-DYNAMICS.md),
 [whitewater](WATER-APPEARANCE.md) and [optics](WATER-OPTICS.md) select mechanisms, approximations and real limits.
 This document connects them under existing C4 ownership; it does not revise the smaller initial specification,
@@ -112,7 +114,7 @@ foam visibility/navigation must retain its coarse facts in the physical compatib
 | Thin calm rain/puddle graph | Selected basin filling/preconnected wet-edge exchange on an admitted orthogonal gentle-slope mesh; no advancing dry-slope runoff, floating body or inertial flood |
 | Interactive graph plus thin film / analytic exterior | Named reservoir or actual released drop may connect through its finite source ledger; a general traversable heterogeneous seam is **not selected** |
 | Prepared coast curl / dense appearance | Noncontact curl plus dilute causal populations only. Dense plume, 3D turbulence, arbitrarily intersecting curls and contact/occupancy are not supplied |
-| Layered optics | Two-layer baseline unchanged; wider at most four ordered events or eligible absorption-only thin sheet, bounded complete visibility and explicit overflow |
+| Layered regional optics | Exact `BoundedAlpha2` beside explicitly approximate sorted alpha; bounded actual camera occupancy/covered regional geometry, up to four desktop interface events per camera branch, virtual-cover-plane Sun approximation and explicit overflow. Portable absorption is a smaller authored profile; focused actual-interface caustics and clear fall illumination remain open |
 
 Richer spectra/spatially varying seas, exact open boundaries, automatic moving patches, thin-wall exclusion, inertial
 thin flooding, advancing dry-slope runoff, traversable heterogeneous edges, overlapping hull pressure supports and physically traversable breakers
@@ -155,7 +157,8 @@ consumers checked; restoring it cannot promise the missing historical tail. Head
 | Least-established coupling: one geometric hull, then a second floater | Solve calm inventory/buoyancy, launch/turn/stop under declared pressure approximation, observe stored bow/wake and independent second-body force response. Current/fixed-body constant-depth comparison, wavelength/shape-volume error and body pressure identity must match the admitted model. Nonzero pixels or scheduled bobbing cannot pass |
 | One continuous donor/fall/finite receiver | Measure donor+transit+receiver liquid, first moving water/solid hit, arrival interval integration, pressure/momentum/spray partition, source-off delay and remaining wave/appearance tails. Repeat with different tick/substep schedules: a tick-frequency ring train or event-count-dependent force fails |
 | Thin fill/sill/drain | Rain on resolved basin/sill, nearly dry cells and preconnected wet-edge reversals; exact volume, continuous wet area and pairwise energy decay. Reject barrier leaks, whole-cell popping, dry-path jumps, head-order overshoot and unqualified smoothing. Compare wet-flow times with lubrication scaling inside its admitted regime; do not pass general advancing runoff |
-| Complete optical path and populations | Moving foam and rising bubbles, no duplicate population; dry hull over submerged bed, offscreen receiver/blocker, masked material, finite source and underwater ray; source-off, branch/layer/visit overflow and histories in two views. Reject missing-data shadows, doubled Sun/attenuation and static world-locked foam |
+| Bounded regional optical path and populations | Moving foam and rising bubbles, no duplicate population; dry hull over submerged bed, offscreen receiver/blocker, masked material, finite **virtual** source path and actual camera underwater ray; source-off, branch/layer/visit overflow and histories in two views. Reject missing-data shadows, doubled Sun/attenuation and static world-locked foam. Compare visible virtual-source loss against actual-interface reference separately |
+| Focused-light challenger | Source-complete finite-Sun first hits and receiver-bin flux bounds in a restricted region, then focused single-scattering image reconstruction and cost. Refusal or attractive still frames do not qualify the wider focused/fall profile |
 | Save/off/fault/replica | Restore actual phased state and event cursor; slow leases, failed candidate/cook, graphics-off, device loss, source changes, join/reconnect and incompatible content. Reject lost physical water, replay births, stale geometry or advanced bodies with old fluid |
 | Sustained performance and experience | Name hardware/build/content/profile, warmup and long time series; collect CPU/GPU critical path, median/p95/p99/max, allocations, bytes, event/packet/capture counts and phase correlation. Watch ordinary motion and cue readability separately. Test low tiers, no renderer, two views, 30/60/high-refresh presentation and 30 Hz catch-up |
 
