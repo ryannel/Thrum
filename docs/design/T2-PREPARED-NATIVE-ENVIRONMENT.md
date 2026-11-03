@@ -165,6 +165,44 @@ pair took 33.45 seconds to clone, seal, fsync and rehash, separate from 13.18
 seconds to inventory the installed sources. This belongs to release
 preparation, not a game edit or world tick.
 
+### Private dependency cache retention target
+
+The current pruned private Cargo home is produced by a write-capable cold
+metadata step, then rehashed before every A/B reuse. The local 2,923-file,
+67.8-MB integrity pass costs roughly 150–230 ms per edit. The compiler sandbox
+already denies writes to `CARGO_HOME`, but metadata preparation requires its
+fresh writable home. Seal only **after** metadata resolution, archive pruning,
+the second offline resolution and exact private-root inventory have completed.
+A dependency-selection change creates a new private home; a code-only edit may
+reuse the held selection.
+
+Retain one cache under the same private release owner and append-only lifecycle
+as the tool roots. Bind three distinct identities in its canonical record: the
+existing `thrum.cargo-home.v1` digest used by the cache manifest and origin
+receipts, a whole-tree digest that includes directory membership and links,
+and the exact private-cache manifest bytes. Neither digest may be silently
+substituted for the other. The cold preparer compares both before and after
+sealing, and the compiler's `CARGO_HOME` must resolve only to that selected
+sealed path. A held shared lease spans cache reuse checks, Cargo shutdown,
+receipt verification and output retention. An unsealed cache still takes the
+current complete byte rehash path.
+
+The warm fast path can skip repeated full-cache and tool-executable hashing
+only when its T2 owner holds matching cache and tool-root leases and validates
+the admitted dependency-selection key. A Boolean caller claim or a subprocess
+that verifies then exits cannot confer that lease on a later compiler process.
+The existing origin comparisons remain local candidate evidence until a
+reviewed release manifest and preparation job bind their acquisition. Prove a
+real metadata preparation followed by an A/B build from the sealed home.
+Test the pinned Cargo version with `.global-cache` and
+`.package-cache-mutate` absent; establish that cache bookkeeping needs no
+write before choosing this path. Then prove mutation/extra-directory refusal,
+independent reopen, interrupted preparation
+and multiple concurrent read leases before removing the per-edit rehash.
+Measure cold clone/seal and warm selection-key, cache, tool-hash and total
+edit-to-ready costs separately; retain the full rehash on other platforms
+until their own lifecycle is qualified.
+
 ## macOS runtime boundary
 
 The local profile still permits named system-library and configuration
