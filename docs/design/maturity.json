@@ -2302,6 +2302,14 @@
         "multi_group_replica_oracle_evidence": "../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md",
         "membership_lookup_probe_evidence": "../evidence/integration/N1-MEMBERSHIP-LOOKUP-2026-11-03.md"
       },
+      "baseline_image_candidate": {
+        "design": "research/N1-BASELINE-IMAGE-GRAMMAR-2026-11-03.md",
+        "implementation": "unimplemented_design_candidate",
+        "functional_validation": "two adversarial read-only reviews corrected result inclusion, accepted high-water monotonicity, temporal closure and client replacement checks; header and section size arithmetic reviewed; no codec or cross-owner test exists",
+        "experienced_quality": "not_applicable_to_unimplemented_protocol_candidate",
+        "platform_performance": "independent section maxima imply 34048 image bytes and two chunks; the event-free R4 subset is at most 28928 bytes and one chunk. No producer, consumer, transport, allocation or tail measurement exists",
+        "scope": "Not a released NETWORK-SPEC image. Same-barrier authority accepted-input and pending-schedule inventory, selected game schema, event-bearing admission, actual cross-kind sequence/ACK owner, atomic client consumer and eight-chunk transport test remain open."
+      },
       "r4_payload_codec": {
         "implementation": "registered thrum-network crate; bounded R4 StateGroup payload encoder and borrowed structural decoder",
         "functional_validation": "four local codec tests cover an independent literal golden vector for every fixed field, maximum-count 7008-byte complete message, round trip, count/length/refusal and malformed result range; independent read-only review found no actionable defect",
