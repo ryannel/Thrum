@@ -496,6 +496,10 @@
         "evidence": "../evidence/i2a/SOURCE-ACCEPTED-STAGE-KILL-2026-11-03.md",
         "scope": "A child process using the production accepted candidate-admission core is killed after B's staged file and manifest blobs are verified, before final root/outcome commit. Fresh open under the cooperating owner lock sees A selected, no B keyed outcome and a complete retained B manifest; public retry commits B while an A lease retains exact old scene bytes. This is one local precommit interruption point, not final-COMMIT process-kill, host power-loss or complete RecoveryRoot qualification."
       },
+      "i2a_accepted_lost_response": {
+        "evidence": "../evidence/i2a/SOURCE-ACCEPTED-LOST-RESPONSE-2026-11-03.md",
+        "scope": "A child process commits B through public NativeSourceStore::admit, then is killed before reporting success. Fresh owner open recovers B by exact epoch/key/request hash, same-request public retry returns B without generation advance, changed request conflicts and historical A remains byte-exact. This is an orderly local process-kill point after successful COMMIT, not inside-COMMIT interruption, host power-loss or complete application recovery."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
