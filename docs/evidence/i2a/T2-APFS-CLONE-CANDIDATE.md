@@ -22,7 +22,7 @@ matches. A failed preparation removes its newly created root while its
 directory identity remains owned; a changed root identity requires the caller
 to quarantine the parent rather than delete an unknown replacement.
 
-Eleven small macOS fixtures passed: exact content and relative-link copy,
+Fifteen small macOS fixtures passed: exact content and relative-link copy,
 clone-private mutation, wrong digest cleanup, existing destination
 preservation, source alias and absolute-link refusal, extra-file refusal,
 changed source during cloning, and FIFO refusal without opening it. The test
@@ -30,14 +30,23 @@ command was `python3.11 scripts/test_prepare_macos_tool_root_clone.py`.
 The added path fixtures refuse a `0755` destination parent and a `0777`
 non-sticky ancestor before creating a clone. The helper checks the resolved
 ancestor chain's POSIX owners and group/other write bits, allowing a sticky
-ancestor. It queries the held parent directory for a macOS extended ACL and
-refuses any returned ACL or query error; a real mode-`0700` parent with an
-`everyone allow` ACL and a synthetic getter fault both refuse before clone
-creation. [Apple's file-system security guidance](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemDetails/FileSystemDetails.html)
-explains that ACL entries can grant rights beyond mode bits. The helper does
-not inspect ancestor ACLs, so an ancestor chain without grants that allow
-replacement remains a caller precondition for this unready candidate. It also
-does not establish a held no-writer owner after return.
+ancestor. It queries each held directory for a macOS extended ACL, rejects
+any parent ACL, and rejects an ancestor ACL with an allowing or unknown entry.
+A real mode-`0700` parent and an ancestor with `everyone allow` ACLs both
+refuse before clone creation; a deny-only ancestor remains usable, matching
+this host's home-directory ACL. An ancestor-first regression also refuses when
+an allowing ACL would be removed upon checking the private child. The helper
+checks held-descriptor permissions again after each ACL query; a fixture
+changes an ancestor to mode `0777` during that query and refuses. A synthetic
+getter fault also refuses. The
+Darwin `acl_get_fd_np`/`acl_get_entry` checks use the selected SDK constants;
+[Apple's file-system security guidance](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemDetails/FileSystemDetails.html)
+explains why ACLs must be considered alongside mode bits. The helper does not
+hold the checked directory chain across clone creation or establish a
+no-writer owner after return. The first profile's trusted same-user assumption
+excludes deliberate same-user path replacement; other-user path replacement
+is restricted by the checked permissions at selection, but this is not a
+security audit of every filesystem or privileged actor.
 
 The local selected inputs were Rust 1.99.1 ARM64 Apple and Xcode 27.2's linker
 toolchain and macOS SDK. The helper compared each clone with the previously
