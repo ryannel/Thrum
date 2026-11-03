@@ -991,11 +991,8 @@ mod tests {
         paths.push(SourcePath::parse("build/headless.json").unwrap());
         paths.sort_unstable();
 
-        let store = NativeSourceStore::open(
-            &fixture.root().join(".engine/source.sqlite"),
-            Fixture::plan(),
-        )
-        .unwrap();
+        let source_database = fixture.root().join(".engine/source.sqlite");
+        let store = NativeSourceStore::open(&source_database, Fixture::plan()).unwrap();
         let a = fixture.admit(&store, 0, 1, &paths);
         let rule_path = fixture.root().join("examples/i1-mobile-game/src/game.rs");
         fs::write(
@@ -1213,6 +1210,9 @@ mod tests {
         );
         a_pin.close().unwrap();
         a_materialized.close().unwrap();
+        // The fresh verifier must acquire the source store's exclusive owner
+        // lease itself; reopen this fixture's owner only after that check.
+        drop(store);
         if let Some((candidate, digest)) = &candidate_a {
             fs::remove_dir_all(&a_output).unwrap();
             let reload_started = Instant::now();
@@ -1311,6 +1311,8 @@ mod tests {
                 assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
             }
         }
+
+        let store = NativeSourceStore::open(&source_database, Fixture::plan()).unwrap();
 
         fs::write(&rule_path, b"pub fn deliberately_invalid( {\n").unwrap();
         let b = fixture.admit(&store, a.generation, 2, &paths);
