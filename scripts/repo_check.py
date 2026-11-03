@@ -168,6 +168,85 @@ def check_maturity(ledger):
     return errors
 
 
+RUST_ROOTS = ("crates", "examples", "tools")
+TEST_MOD = re.compile(r"(pub(\([^)]*\))?\s+)?mod\s+\w+\s*[;{]")
+BARE_IGNORE = re.compile(r"#\[ignore\]")
+# Size backstops count code lines: no blanks, comments or inline test modules. A note is a
+# prompt to check cohesion, not an instruction to split; the limit stops unbounded growth.
+# Small limits fragment coherent code, so these stay deliberately generous.
+FILE_LINES = {"production": (1_000, 2_500), "test": (2_000, 4_000)}
+
+
+def is_test_file(relative):
+    name = relative.rsplit("/", 1)[-1]
+    return (
+        not f"/{relative}".count("/src/")
+        or "/src/tests/" in f"/{relative}"
+        or name == "tests.rs"
+        or name.endswith(("_test.rs", "_tests.rs"))
+    )
+
+
+def code_lines(lines):
+    count, skip_to_close, pending_test = 0, False, False
+    for line in lines:
+        stripped = line.strip()
+        if skip_to_close:
+            skip_to_close = line != "}"
+            continue
+        if stripped == "#[cfg(test)]":
+            pending_test = True
+            continue
+        if pending_test and TEST_MOD.match(stripped) and stripped.endswith("{"):
+            skip_to_close, pending_test = True, False
+            continue
+        if not stripped.startswith(("#[", "//")):
+            pending_test = False
+        if stripped and not stripped.startswith("//"):
+            count += 1
+    return count
+
+
+def rust_files(root):
+    result = []
+    for base in RUST_ROOTS:
+        for directory, names, files in os.walk(root / base):
+            names[:] = [n for n in names if n not in {"target", "tmp"}]
+            result.extend(Path(directory) / f for f in files if f.endswith(".rs"))
+    return sorted(result)
+
+
+def check_rust_layout(root, files):
+    """Keep test code out of production items, explain skipped tests and bound file growth.
+
+    Returns blocking errors and advisory notes.
+    """
+    errors, notes = [], []
+    for path in files:
+        relative = path.relative_to(root).as_posix()
+        lines = path.read_text(encoding="utf-8").splitlines()
+        production = not is_test_file(relative)
+        note_at, limit = FILE_LINES["production" if production else "test"]
+        size = code_lines(lines)
+        if size > limit:
+            errors.append(f"{relative}: {size} code lines exceeds {limit}; split by responsibility")
+        elif size > note_at:
+            notes.append(f"{relative}: {size} code lines; check it still holds one responsibility")
+        for index, line in enumerate(lines):
+            stripped = line.strip()
+            if BARE_IGNORE.search(stripped):
+                errors.append(f"{relative}:{index + 1}: #[ignore] needs a reason; timing belongs in benches/")
+            if not production or stripped != "#[cfg(test)]":
+                continue
+            following = next(
+                (l.strip() for l in lines[index + 1:] if l.strip() and not l.strip().startswith(("#[", "//"))),
+                "",
+            )
+            if not TEST_MOD.match(following):
+                errors.append(f"{relative}:{index + 1}: #[cfg(test)] may gate only a test module, not production items")
+    return errors, notes
+
+
 def markdown_files(root):
     result = []
     for directory, names, files in os.walk(root):
@@ -180,6 +259,10 @@ def main():
     files = markdown_files(ROOT)
     errors, links = check_links(ROOT, files)
     errors += check_skills(ROOT)
+    layout_errors, notes = check_rust_layout(ROOT, rust_files(ROOT))
+    errors += layout_errors
+    for note in notes:
+        print(f"note: {note}", file=sys.stderr)
     ledger = json.loads((ROOT / "docs/design/maturity.json").read_text(encoding="utf-8"))
     errors += check_maturity(ledger)
     errors += check_hashes(ROOT, ledger)

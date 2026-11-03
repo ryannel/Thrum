@@ -20,6 +20,44 @@ class RepositoryChecks(unittest.TestCase):
             self.assertEqual(len(errors), 3)
             self.assertTrue(any("missing anchor" in e for e in errors))
 
+    def test_rust_layout_rejects_test_items_in_production_and_bare_ignore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            src = root / "crates/core/src/lib.rs"
+            src.parent.mkdir(parents=True)
+            src.write_text(
+                "#[cfg(test)]\nmod tests;\n"
+                "#[cfg(test)]\n#[path = \"x.rs\"]\npub(crate) mod observer {}\n"
+                "#[cfg(test)]\nfn probe() {}\n"
+                "#[test]\n#[ignore = \"device only\"]\nfn reasoned() {}\n"
+                "#[test]\n#[ignore]\nfn bare() {}\n"
+            )
+            integration = root / "crates/core/tests/it.rs"
+            integration.parent.mkdir()
+            integration.write_text("#[cfg(test)]\nfn helper() {}\n")
+            errors, notes = repo_check.check_rust_layout(root, repo_check.rust_files(root))
+            self.assertEqual(len(errors), 2)
+            self.assertEqual(notes, [])
+            self.assertTrue(any("lib.rs:6" in e and "test module" in e for e in errors))
+            self.assertTrue(any("lib.rs:12" in e and "needs a reason" in e for e in errors))
+
+    def test_file_size_counts_code_only_and_separates_note_from_limit(self):
+        note_at, limit = repo_check.FILE_LINES["production"]
+        body = "fn f() {}\n"
+        padding = "\n// comment\n" * limit
+        inline_tests = "#[cfg(test)]\nmod tests {\n" + body * limit + "}\n"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            src = root / "crates/core/src"
+            src.mkdir(parents=True)
+            (src / "small.rs").write_text(body * note_at + padding + inline_tests)
+            (src / "noted.rs").write_text(body * (note_at + 1))
+            (src / "large.rs").write_text(body * (limit + 1))
+            (src / "tests.rs").write_text(body * (limit + 1))
+            errors, notes = repo_check.check_rust_layout(root, repo_check.rust_files(root))
+            self.assertEqual([e.split(":")[0] for e in errors], ["crates/core/src/large.rs"])
+            self.assertEqual([n.split(":")[0] for n in notes], ["crates/core/src/noted.rs", "crates/core/src/tests.rs"])
+
     def test_explicit_and_duplicate_heading_anchors(self):
         self.assertEqual(repo_check.anchors('# One\n# One\n<a id="manual"></a>\n'), {'one', 'one-1', 'manual'})
 
