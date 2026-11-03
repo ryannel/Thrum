@@ -23,6 +23,8 @@ use rusqlite::{
     Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior, config::DbConfig,
     params,
 };
+#[cfg(test)]
+use rusqlite::{Statement, ToSql};
 
 #[cfg(test)]
 use crate::provisional_store_vfs_test as checkpoint_vfs;
@@ -49,12 +51,85 @@ const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
 const SMALL_BATCH_FILE_BYTES: u64 = 4 * 1024;
 #[cfg(test)]
+const CLOSURE_BATCH_FILES: usize = 128;
+#[cfg(test)]
 const GC_MARK_SCAN_BLOBS: usize = 4096;
 #[cfg(test)]
 const GC_MARK_CANDIDATES: usize = 128;
 const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
 const SOURCE_STORE_FORMAT: i64 = 1;
 const MIB: u64 = 1024 * 1024;
+
+#[cfg(test)]
+type ClosureRef = ([u8; 32], i64);
+
+#[cfg(test)]
+fn prepare_manifest_closure(manifest: &TreeManifest) -> Result<Vec<ClosureRef>, StoreError> {
+    let mut refs = Vec::with_capacity(manifest.files().len());
+    for file in manifest.files() {
+        let (length, hash) = file.blob_identity();
+        refs.push((
+            hash,
+            i64::try_from(length).map_err(|_| StoreError::InputLength)?,
+        ));
+    }
+    refs.sort_unstable();
+    refs.dedup();
+    Ok(refs)
+}
+
+#[cfg(test)]
+fn closure_batch_sql(count: usize) -> String {
+    let mut sql = String::with_capacity(160 + count * 6);
+    sql.push_str("WITH expected(hash, length) AS (VALUES ");
+    for index in 0..count {
+        if index != 0 {
+            sql.push(',');
+        }
+        sql.push_str("(?,?)");
+    }
+    sql.push_str(
+        ") SELECT EXISTS(SELECT 1 FROM expected AS e LEFT JOIN blob_header AS b ON b.hash=e.hash WHERE b.hash IS NULL OR b.length!=e.length OR b.state!=1)",
+    );
+    sql
+}
+
+#[cfg(test)]
+fn check_closure_batch<'a>(
+    statement: &mut Statement<'_>,
+    batch: &'a [ClosureRef],
+    params: &mut Vec<&'a dyn ToSql>,
+) -> Result<(), StoreError> {
+    params.clear();
+    for (hash, length) in batch {
+        params.push(hash);
+        params.push(length);
+    }
+    let missing: i64 = statement.query_row(params.as_slice(), |row| row.get(0))?;
+    if missing != 0 {
+        return Err(StoreError::MissingCompleteFile);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+fn check_prepared_manifest_closure(
+    tx: &Transaction<'_>,
+    refs: &[ClosureRef],
+) -> Result<(), StoreError> {
+    let mut params = Vec::with_capacity(CLOSURE_BATCH_FILES * 2);
+    let (groups, remainder) = refs.as_chunks::<CLOSURE_BATCH_FILES>();
+    let mut full = tx.prepare(&closure_batch_sql(CLOSURE_BATCH_FILES))?;
+    for batch in groups {
+        check_closure_batch(&mut full, batch, &mut params)?;
+    }
+    drop(full);
+    if !remainder.is_empty() {
+        let mut last = tx.prepare(&closure_batch_sql(remainder.len()))?;
+        check_closure_batch(&mut last, remainder, &mut params)?;
+    }
+    Ok(())
+}
 #[cfg(test)]
 const GIB: u64 = 1024 * MIB;
 #[cfg(test)]
@@ -1859,6 +1934,26 @@ impl SqliteStoreCore {
                 }
                 Ok(())
             },
+        )
+    }
+
+    #[cfg(test)]
+    fn commit_prepared_manifest_probe(
+        &mut self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        revision: [u8; 32],
+        refs: &[ClosureRef],
+    ) -> Result<i64, StoreError> {
+        self.commit_with_closure(
+            expected_generation,
+            epoch,
+            key,
+            request_hash,
+            revision,
+            |tx| check_prepared_manifest_closure(tx, refs),
         )
     }
 
@@ -7289,6 +7384,10 @@ fn measure_maximum_manifest_closure_reader_wait() {
         .stage_manifest_phased(&manifest, &mut scratch)
         .unwrap();
     drop(scratch);
+    let batched = std::env::var_os("THRUM_TEST_BATCHED_MANIFEST_CLOSURE").is_some();
+    let prepare_start = Instant::now();
+    let prepared = batched.then(|| prepare_manifest_closure(&manifest).unwrap());
+    let prepare_ms = prepare_start.elapsed().as_secs_f64() * 1000.0;
     let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
     let (go_tx, go_rx) = std::sync::mpsc::channel();
     let (started_tx, started_rx) = std::sync::mpsc::channel();
@@ -7305,9 +7404,14 @@ fn measure_maximum_manifest_closure_reader_wait() {
         go_tx.send(()).unwrap();
         started_rx.recv().unwrap();
         let start = Instant::now();
-        let generation = inner
-            .commit_verified_manifest_probe(a.generation, 1, 2, [2; 32], revision, &manifest)
-            .unwrap();
+        let generation = match prepared.as_deref() {
+            Some(refs) => inner
+                .commit_prepared_manifest_probe(a.generation, 1, 2, [2; 32], revision, refs)
+                .unwrap(),
+            None => inner
+                .commit_verified_manifest_probe(a.generation, 1, 2, [2; 32], revision, &manifest)
+                .unwrap(),
+        };
         let commit_ms = start.elapsed().as_secs_f64() * 1000.0;
         drop(inner);
         (reader.join().unwrap(), commit_ms, generation)
@@ -7319,8 +7423,57 @@ fn measure_maximum_manifest_closure_reader_wait() {
         generation
     );
     eprintln!(
-        "maximum_manifest_closure files=100000 distinct={distinct} reader_wait_copy_ms={reader_ms:.3} commit_ms={commit_ms:.3}"
+        "maximum_manifest_closure files=100000 distinct={distinct} batched={batched} prepare_ms={prepare_ms:.3} reader_wait_copy_ms={reader_ms:.3} commit_ms={commit_ms:.3}"
     );
+}
+
+#[test]
+fn prepared_closure_probe_checks_complete_bytes_across_batch_boundaries() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let blobs: Vec<_> = (0_u32..129)
+        .map(|value| {
+            let bytes = value.to_le_bytes();
+            (Sha256::digest(bytes).into(), bytes)
+        })
+        .collect();
+    for group in blobs.chunks(SMALL_BATCH_FILES) {
+        store
+            .stage_small_blob_batch(group.iter().map(|(hash, bytes)| (*hash, bytes.as_slice())))
+            .unwrap();
+    }
+    let refs: Vec<ClosureRef> = blobs.iter().map(|(hash, _)| (*hash, 4)).collect();
+    {
+        let tx = store.conn.unchecked_transaction().unwrap();
+        check_prepared_manifest_closure(&tx, &[]).unwrap();
+        check_prepared_manifest_closure(&tx, &refs[..128]).unwrap();
+        check_prepared_manifest_closure(&tx, &refs).unwrap();
+        let mut missing = refs.clone();
+        missing[128].0 = [0; 32];
+        assert!(matches!(
+            check_prepared_manifest_closure(&tx, &missing),
+            Err(StoreError::MissingCompleteFile)
+        ));
+        let mut wrong_length = refs.clone();
+        wrong_length[128].1 = 5;
+        assert!(matches!(
+            check_prepared_manifest_closure(&tx, &wrong_length),
+            Err(StoreError::MissingCompleteFile)
+        ));
+        tx.commit().unwrap();
+    }
+    store
+        .conn
+        .execute(
+            "UPDATE blob_header SET state=0 WHERE hash=?1",
+            params![refs[128].0.as_slice()],
+        )
+        .unwrap();
+    let tx = store.conn.unchecked_transaction().unwrap();
+    assert!(matches!(
+        check_prepared_manifest_closure(&tx, &refs),
+        Err(StoreError::MissingCompleteFile)
+    ));
 }
 
 #[test]
