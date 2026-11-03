@@ -179,6 +179,12 @@ not a universal recovery path for subnormal **input** components. Supporting
 those inputs would need an upstream integer encoding or a separately proved
 representation path; the accumulator above already covers their exponent
 lattice if their bits are reliably available.
+The [raw-`u32` Metal diagnostic](../../evidence/render/R0-EXACT-REPRESENTED-DOT-METAL-2026-11-03.md)
+now matches an independent exact oracle for 189,803 selected records and
+returns magnitude without a tiny-float conversion. Its input interface
+bypasses float-to-bit recovery, and its isolated cost includes large
+diagnostic writes; it does not select a fragment fallback or prove general
+WGSL/backend performance.
 It also cannot recover source-real signs or relative direction detail lost
 before the represented operands arrived. Count fallback frequency, divergent
 waves, live registers and latency in ordinary and deliberately tangent
