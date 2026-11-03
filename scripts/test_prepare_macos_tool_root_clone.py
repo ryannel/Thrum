@@ -117,10 +117,99 @@ class PrepareMacosToolRootClone(unittest.TestCase):
             source = base / "source"
             source.mkdir()
             (source / "tool").write_bytes(b"selected")
-            with patch.object(clone_module, "_has_extended_acl", side_effect=OSError("ACL unavailable")):
+            with patch.object(clone_module, "_extended_acl_status", side_effect=OSError("ACL unavailable")):
                 with self.assertRaisesRegex(OSError, "ACL unavailable"):
                     prepare_clone(source, base / "clone", inventory_root(source))
             self.assertFalse((base / "clone").exists())
+
+    def test_allowing_ancestor_acl_refuses_before_clone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            private = base / "private"
+            private.mkdir(mode=0o700)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            subprocess.run(
+                ["/bin/chmod", "+a", "everyone allow list,search,add_file,add_subdirectory,delete_child", str(base)],
+                check=True,
+            )
+            try:
+                with self.assertRaisesRegex(ValueError, "ancestor ACL grants access"):
+                    prepare_clone(source, private / "clone", expected)
+                self.assertFalse((private / "clone").exists())
+            finally:
+                subprocess.run(["/bin/chmod", "-N", str(base)], check=True)
+
+    def test_allowing_ancestor_is_checked_before_private_child(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            private = base / "private"
+            private.mkdir(mode=0o700)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            subprocess.run(
+                ["/bin/chmod", "+a", "everyone allow list,search,add_file,add_subdirectory,delete_child", str(base)],
+                check=True,
+            )
+            private_inode = os.stat(private).st_ino
+            real_status = clone_module._extended_acl_status
+
+            def clear_acl_at_child(fd):
+                if os.fstat(fd).st_ino == private_inode:
+                    subprocess.run(["/bin/chmod", "-N", str(base)], check=True)
+                return real_status(fd)
+
+            try:
+                with patch.object(clone_module, "_extended_acl_status", side_effect=clear_acl_at_child):
+                    with self.assertRaisesRegex(ValueError, "ancestor ACL grants access"):
+                        prepare_clone(source, private / "clone", expected)
+                self.assertFalse((private / "clone").exists())
+            finally:
+                subprocess.run(["/bin/chmod", "-N", str(base)], check=True)
+
+    def test_ancestor_permission_change_during_acl_query_refuses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            private = base / "private"
+            private.mkdir(mode=0o700)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            base_inode = os.stat(base).st_ino
+            real_status = clone_module._extended_acl_status
+
+            def change_permissions(fd):
+                if os.fstat(fd).st_ino == base_inode:
+                    os.chmod(base, 0o777)
+                return real_status(fd)
+
+            try:
+                with patch.object(clone_module, "_extended_acl_status", side_effect=change_permissions):
+                    with self.assertRaisesRegex(ValueError, "permissions changed"):
+                        prepare_clone(source, private / "clone", expected)
+                self.assertFalse((private / "clone").exists())
+            finally:
+                os.chmod(base, 0o700)
+
+    def test_deny_only_ancestor_acl_does_not_block_clone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            private = base / "private"
+            private.mkdir(mode=0o700)
+            source = base / "source"
+            source.mkdir()
+            (source / "tool").write_bytes(b"selected")
+            expected = inventory_root(source)
+            subprocess.run(["/bin/chmod", "+a", "everyone deny delete", str(base)], check=True)
+            try:
+                self.assertEqual(prepare_clone(source, private / "clone", expected), expected)
+            finally:
+                subprocess.run(["/bin/chmod", "-N", str(base)], check=True)
 
     def test_source_alias_and_absolute_link_refuse(self):
         with tempfile.TemporaryDirectory() as directory:
