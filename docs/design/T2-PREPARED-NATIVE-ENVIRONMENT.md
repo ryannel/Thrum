@@ -218,6 +218,14 @@ wrapper receipt retained that receipt, published no candidate and left four
 root inventories unchanged. A normal A/B run still passed. This does not prove
 Rustc had started when the guard died or cover guard loss during candidate
 staging, supervisor SIGKILL or detached compiler descendants.
+The [held-tool hash fast path](../evidence/i2a/T2-HELD-TOOL-HASH-FAST-PATH-2026-11-03.md)
+now omits repeated hashes of the exact Cargo/Rustc/Clang files only while that
+four-root guard is live. Installed Xcode support and LibreSSL config remain
+unheld and checked around each compiler job; unheld builds retain complete
+checks. This removes known repeated file reads from the fixture without a
+whole-edit speedup claim. One retained-A rerun failed after the compiler and
+receipt audit without captured exit detail; later runs passed, but stability
+remains an explicit release gate.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
