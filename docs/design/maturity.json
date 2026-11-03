@@ -679,6 +679,14 @@
         "platform_performance": "no combined parser allocation/RSS, charged peak, full authored fixture, F3/F4 latency or device measurement; no array-wide object index is retained",
         "scope": "No operation-wide global UUID or typed/same-root/slot-format edge closure, deferred instance bounds, F3 admission, F4 selected-pin publication or ready renderer."
       },
+      "i2a_registry_structure_order": {
+        "evidence": "../evidence/render/R0-F3-REGISTRY-STRUCTURE-ORDER-2026-11-03.md",
+        "implementation": "complete_candidate_registry_structure_before_declared_records_and_registry_only_identity_wrapper",
+        "functional_validation": "scene@1 and scene@2 malformed-record versus duplicate-ID precedence, structurally valid duplicate and descriptor-order fixtures; 16 focused tests, full repository gate and independent read-only review pass",
+        "experienced_quality": "not_applicable_to_source_validation_order",
+        "platform_performance": "no paired timing or allocation measurement; complete candidates avoid the registry-only collision-set allocation, but combined F3 cost remains unmeasured",
+        "scope": "Only the registry structure extraction is complete. Required-edge capacity can still stop structural parsing; global canonical UUID and typed-edge passes, deferred bounds, F3/F4 activation and ready renderer remain open."
+      },
       "i2a_scene3_local_candidate": {
         "evidence": "../evidence/render/R0-F3-SCENE3-LOCAL-DECODER-2026-11-03.md",
         "implementation": "private_inactive_scene3_local_decoder_and_unregistered_immutable_definition",
