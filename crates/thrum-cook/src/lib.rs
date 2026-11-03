@@ -1074,6 +1074,7 @@ mod tests {
                     guard.prepare_ms,
                     guard.cold_open_ms
                 );
+                eprintln!("admitted-headless-cache held_native_roots=4");
                 cache_guard = Some(guard);
                 prepared
             } else {
