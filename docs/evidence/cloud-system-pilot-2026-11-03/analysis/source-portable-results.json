@@ -1,0 +1,58 @@
+{
+  "pass": true,
+  "scope": "Fresh copied viewer served payload+source tests, no siblingworktree/masterdata/code paths used; Node source suite only, no browser/GPU restoration claim",
+  "modelSHA256": "675edc8de1d0ad197434be3ae1b04ea4f842362fa1ec8d227e1ae878a0a7133b",
+  "inputIndexSHA256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+  "admissionSHA256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+  "tests": [
+    {
+      "test": "smoke",
+      "exitCode": 0
+    },
+    {
+      "test": "replays",
+      "exitCode": 0
+    },
+    {
+      "test": "contracts",
+      "exitCode": 0
+    },
+    {
+      "test": "reference",
+      "exitCode": 0
+    },
+    {
+      "test": "reference-continuation",
+      "exitCode": 0
+    },
+    {
+      "test": "control-domain",
+      "exitCode": 0
+    },
+    {
+      "test": "presentation-status",
+      "exitCode": 0
+    },
+    {
+      "test": "known-scope",
+      "exitCode": 0
+    }
+  ],
+  "filesCopied": 68,
+  "bytesCopied": 16661685,
+  "nodeSuiteWallSeconds": 1.9553122920915484,
+  "temporaryCopiedViewerRemovedAfterValidation": true,
+  "knownScope": {
+    "selectedClockDTSeconds": 0.25,
+    "directSourceRefinementDTSeconds": 0.125,
+    "knownDefects": [
+      {
+        "scope": "SourceClock constructed with nonselecteddt=.125",
+        "requestedSeekPresentationTime": 120,
+        "actualPresentationTime": 120.125,
+        "reason": "fixed.25presentationlag exceeds one retained fine interval; constructor currently does not reject this unsupportedclockprofile",
+        "status": "knownnonquarterclocklimitation; directmatching-intervalmodelrefinementonly, nothalf-stepclockagreement"
+      }
+    ]
+  }
+}

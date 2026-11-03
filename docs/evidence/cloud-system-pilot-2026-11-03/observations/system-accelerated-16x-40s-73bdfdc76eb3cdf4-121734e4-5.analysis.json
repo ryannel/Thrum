@@ -1,0 +1,48 @@
+{
+  "build": "73bdfdc76eb3cdf4",
+  "clip": "system-accelerated-16x-40s-73bdfdc76eb3cdf4-121734e4-5.webm",
+  "sourceWindow": [
+    0,
+    640
+  ],
+  "recorderWallMs": 40002.11499977112,
+  "decodedFrames": 600,
+  "encodedPTSRangeSeconds": [
+    0.0,
+    39.917
+  ],
+  "encodedFrameGapMs": {
+    "count": 599,
+    "p50": 67.00000000000017,
+    "p95": 83.99999999999963,
+    "p99": 91.00000000000108,
+    "max": 99.99999999999964
+  },
+  "retainedSubmissionRecordsAll": 4521,
+  "recordingWindowSubmissions": 1365,
+  "submissionIntervalMs": {
+    "count": 1364,
+    "p50": 31.852500200271606,
+    "p95": 42.94499969482422,
+    "p99": 49.05999994277954,
+    "max": 53.71500015258789
+  },
+  "queueFenceElapsedMs": {
+    "count": 1365,
+    "p50": 24.855000019073486,
+    "p95": 39.78999996185303,
+    "p99": 44.12000036239624,
+    "max": 48.364999771118164
+  },
+  "sourceBacklogSeconds": {
+    "count": 1365,
+    "p50": 0.12359999847456038,
+    "p95": 0.2354399948119834,
+    "p99": 0.24631999969562912,
+    "max": 0.24951999664403957
+  },
+  "traceOverwrittenSinceStart": 0,
+  "overwrittenNotAllowedToInferFullWindow": false,
+  "droppedEncodedBytes": 0,
+  "scope": "Recorded/observer-on run, source simulations and queue-fence timing; no quiet GPU execution, scanout, process-residency or target-device admission. All decoded frame PTS contribute to this summary; individual PTS are not retained here. No continuous watched-motion claim."
+}

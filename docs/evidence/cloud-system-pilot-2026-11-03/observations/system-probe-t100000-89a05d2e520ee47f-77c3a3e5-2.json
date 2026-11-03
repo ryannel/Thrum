@@ -1,0 +1,1938 @@
+{
+  "name": "system-probe-t100000-89a05d2e520ee47f-77c3a3e5-2",
+  "build": "89a05d2e520ee47f",
+  "identity": {
+    "build": "89a05d2e520ee47f",
+    "files": {
+      "assets/admission/admission.json": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+      "assets/input-index.json": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+      "assets/noise/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+      "assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "assets/templates/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "assets/templates/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "assets/templates/body.json": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+      "assets/templates/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "assets/templates/crown-b.distance.r16f": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+      "assets/templates/crown-b.json": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918",
+      "assets/templates/original-FROZEN-INPUTS.json": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+      "assets/templates/original-body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "assets/templates/original-crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "index.html": "bfe66706628e087aedc0e70d83a517fa3aa02b06b0042391059c40947b7c8791",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "8b422e2c590d0e6a9b0336c776b6a496dd702f3d196e57ebf755e7f1307dad90",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "b114c861825865962741c9dc1b9fa157aaec0995d40cf9c368b305fca5dcae15",
+      "shaders/shadow.wgsl": "05100d8969543afe9b6d234f43ed4ca3184ed19a4452c69e53f7a3a7bbf98ad3",
+      "shaders/view.wgsl": "248eb6b09861c997bf04ecc871c892d057358bbbe906bba678661f09bf92f406",
+      "src/bench/app.js": "50725c24ee3a072d4cf08ce0a6b5a4f3698e3e60cd93b6fb1aadb1ce31a51739",
+      "src/bench/motion.js": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf",
+      "src/bench/trace.js": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e",
+      "src/render/adapter.js": "5ca7f4f82eb4132489304858e066fc251aca4a146f236ec9d96707572aa6b784",
+      "src/render/assets.js": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a",
+      "src/render/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/render/gpu.js": "0f9d6a5b0ef97cb92d3562b8d8a0b331ac7cb93d49ef244a39dfdff09510cc77",
+      "src/render/held-oracle.js": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60",
+      "src/render/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/render/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/render/scene.js": "cd3418dccc13857417537dbcc8917836357050f93cbde80146f3818419d4199a",
+      "src/source/admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+      "src/source/clock.js": "7e2d0fab7b1bdb287716e57bcc37e019ae45dbbf4d80f4051325e02bc4d55535",
+      "src/source/math.js": "1eca92cb5966bd5f58c416a0f28a37a3a02c37f6a22cfdff0b685bc3b640c553",
+      "src/source/model.js": "18d30d376f49dfd37277ab66c9d2583de459ab785642d64642a57deff9fc18e4",
+      "src/source/reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+      "src/source/weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+      "style.css": "68cda56226acf6ed24649782b32cbe7aa86dc7487211597c3469bcbbb16e61f8"
+    }
+  },
+  "observation": "77c3a3e5",
+  "host": {
+    "adapter": {},
+    "devicePixelRatio": 2,
+    "screen": [
+      1728,
+      1117
+    ]
+  },
+  "source": {
+    "sourceTime": 100,
+    "sourceTick": 401,
+    "previousTime": 100,
+    "committedTime": 100.25,
+    "requestedTime": 100.25,
+    "alpha": 0,
+    "epoch": 2,
+    "cellId": "cu-weather-cell-1",
+    "forcingRevision": 0,
+    "parts": [
+      {
+        "ID": 1,
+        "parentID": 0,
+        "slot": 0,
+        "templateID": "body",
+        "role": "BODY",
+        "C": [
+          347.83999999999816,
+          1239.2,
+          0
+        ],
+        "Qcolumns": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "s": 4,
+        "g": 1,
+        "b": 4,
+        "Aseed": 1,
+        "K": [
+          0.5480000000000003,
+          0,
+          0
+        ],
+        "root": [
+          299,
+          233,
+          167
+        ],
+        "born": 0,
+        "age": 100,
+        "ageE": 0,
+        "establishment": "parentless"
+      },
+      {
+        "ID": 2,
+        "parentID": 1,
+        "slot": 1,
+        "templateID": "crown-b",
+        "role": "BILLOW",
+        "C": [
+          127.47590638794817,
+          1297.474680602552,
+          436
+        ],
+        "Qcolumns": [
+          [
+            0.994922695152221,
+            0.09748081547070914,
+            0.025026441300578094
+          ],
+          [
+            -0.09110068075942016,
+            0.9779928903709157,
+            -0.18769830975433574
+          ],
+          [
+            -0.04277266596057683,
+            0.1844653823768317,
+            0.9819078909779071
+          ]
+        ],
+        "s": 6,
+        "g": 0.7011354032152755,
+        "b": 4.206812419291653,
+        "Aseed": 1,
+        "K": [
+          0.08997174482378373,
+          0,
+          0
+        ],
+        "root": [
+          225,
+          265,
+          197
+        ],
+        "born": 70,
+        "age": 30,
+        "ageE": 0,
+        "establishment": "healthy"
+      },
+      {
+        "ID": 3,
+        "parentID": 1,
+        "slot": 2,
+        "templateID": "body",
+        "role": "BODY",
+        "C": [
+          347.83999999999816,
+          1239.2,
+          0
+        ],
+        "Qcolumns": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "s": 4,
+        "g": 0.015625,
+        "b": 0.0625,
+        "Aseed": 0,
+        "K": [
+          0,
+          0,
+          0
+        ],
+        "root": [
+          299,
+          233,
+          167
+        ],
+        "born": 100,
+        "age": 0,
+        "ageE": 0,
+        "establishment": "healthy"
+      }
+    ],
+    "bounds": [
+      [
+        -488.98400000000186,
+        1062.760109180954,
+        -584
+      ],
+      [
+        854.9119999999981,
+        1672.980196346798,
+        1296
+      ]
+    ],
+    "controls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontStart": 420,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "events": [
+      {
+        "time": 0,
+        "type": "birth",
+        "ID": 1,
+        "parentID": 0,
+        "role": "BODY",
+        "s": 4,
+        "site": null,
+        "cellId": "cu-weather-cell-1"
+      },
+      {
+        "time": 70,
+        "type": "birth",
+        "ID": 2,
+        "parentID": 1,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          242,
+          246.8,
+          276
+        ],
+        "cellId": "cu-weather-cell-1"
+      },
+      {
+        "time": 100,
+        "type": "birth",
+        "ID": 3,
+        "parentID": 1,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1"
+      }
+    ],
+    "stats": {
+      "births": 3,
+      "bodyBirths": 2,
+      "billowBirths": 1,
+      "recoveryBirths": 0,
+      "failedBirths": 0,
+      "weatherCancelledSlots": 0,
+      "capacityFailures": 0,
+      "retired": 0,
+      "healthyEstablishments": 0,
+      "cancelledEstablishments": 0,
+      "maxSlots": 3,
+      "maxPriorCurrentIDs": 3,
+      "maxReferenceParts": 1,
+      "admissionNodeTests": 1,
+      "controlPointUpdates": 0,
+      "sourceSteps": 401,
+      "maxControlPitch": 128,
+      "maxK": 0.5500000000000003,
+      "exposurePublications": 1
+    },
+    "inputIndexSha256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+    "sourceFrozenSha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+    "assetHashes": {
+      "body": {
+        "rho": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+        "distance": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+        "correctedMetadata": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+      },
+      "crown-b": {
+        "rho": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+        "distance": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+        "correctedMetadata": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918"
+      }
+    },
+    "noiseSha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "poseUploadCount": 3,
+    "poseUploadBytes": 2304,
+    "controlUploadCount": 0,
+    "controlUploadBytes": 0,
+    "logicalGpuBytes": 24302992,
+    "logicalGpuAllocations": [
+      {
+        "label": "timestamp resolve",
+        "bytes": 256
+      },
+      {
+        "label": "timestamp readback",
+        "bytes": 256
+      },
+      {
+        "label": "held voxel light",
+        "bytes": 147456,
+        "format": "rgba16float",
+        "size": [
+          32,
+          24,
+          24
+        ]
+      },
+      {
+        "label": "held receiver Beer field",
+        "bytes": 131072,
+        "format": "rgba16float",
+        "size": [
+          128,
+          128
+        ]
+      },
+      {
+        "label": "held air transmittance",
+        "bytes": 131072,
+        "format": "rgba16float",
+        "size": [
+          256,
+          64
+        ]
+      },
+      {
+        "label": "held optical image",
+        "bytes": 7372800,
+        "format": "rgba16float",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "label": "held uniform 0/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 0/32",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 1/32",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/0",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/1",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/2",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/3",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/4",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/5",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/6",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/7",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/8",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/9",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/10",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/11",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/12",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/13",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/14",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/15",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/16",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/17",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/18",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/19",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/20",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/21",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/22",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/23",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/24",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/25",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/26",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/27",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/28",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/29",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/30",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/31",
+        "bytes": 176
+      },
+      {
+        "label": "held uniform 2/32",
+        "bytes": 176
+      },
+      {
+        "label": "body rho",
+        "bytes": 6291456,
+        "format": "r16float",
+        "size": [
+          192,
+          64,
+          256
+        ],
+        "role": "Frozen shared native source input"
+      },
+      {
+        "label": "body d",
+        "bytes": 6291456,
+        "format": "r16float",
+        "size": [
+          192,
+          64,
+          256
+        ],
+        "role": "Frozen shared native source input"
+      },
+      {
+        "label": "crown-b rho",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Frozen shared native source input"
+      },
+      {
+        "label": "crown-b d",
+        "bytes": 1769472,
+        "format": "r16float",
+        "size": [
+          96,
+          96,
+          96
+        ],
+        "role": "Frozen shared native source input"
+      },
+      {
+        "label": "fixed material M noise",
+        "bytes": 65536,
+        "format": "r16float",
+        "size": [
+          32,
+          32,
+          32
+        ],
+        "role": "Frozen shared native source input"
+      },
+      {
+        "label": "8 common presented part maps",
+        "bytes": 768
+      },
+      {
+        "label": "2 local asset domains",
+        "bytes": 64
+      },
+      {
+        "label": "prior/current local weather loss",
+        "bytes": 314432
+      }
+    ],
+    "scope": "One common immutable liquid source query; source/art/performance/full sky not qualified"
+  },
+  "sourceClock": {
+    "requestedTime": 100.25,
+    "committedSourceTime": 100.25,
+    "presentationTime": 100,
+    "sourceBacklog": 0,
+    "maxBacklog": 75.5,
+    "sourceStepCount": 401,
+    "sourceStepSeconds": 0.25,
+    "presentationLagSeconds": 0.25,
+    "rate": 1,
+    "playing": false,
+    "epoch": 2,
+    "seeking": false,
+    "sourceCpuMs": 16.285000324249268,
+    "backlogObservations": 4,
+    "droppedSourceSteps": 0,
+    "scope": "Backlog retained; no view steps source, no display/GPU cadence claim"
+  },
+  "sourceModel": {
+    "time": 100.25,
+    "tick": 401,
+    "previousTime": 100,
+    "cellId": "cu-weather-cell-1",
+    "region": [
+      348.70959999999815,
+      1239.2,
+      0
+    ],
+    "initial": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontStart": 420,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "controls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontStart": 420,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "committedRevision": 0,
+    "queuedRevision": 0,
+    "roleEpoch": 0,
+    "nextBody": 200,
+    "nextBillow": 120,
+    "lastActualBirthTime": 100,
+    "stats": {
+      "births": 3,
+      "bodyBirths": 2,
+      "billowBirths": 1,
+      "recoveryBirths": 0,
+      "failedBirths": 0,
+      "weatherCancelledSlots": 0,
+      "capacityFailures": 0,
+      "retired": 0,
+      "healthyEstablishments": 0,
+      "cancelledEstablishments": 0,
+      "maxSlots": 3,
+      "maxPriorCurrentIDs": 3,
+      "maxReferenceParts": 1,
+      "admissionNodeTests": 1,
+      "controlPointUpdates": 0,
+      "sourceSteps": 401,
+      "maxControlPitch": 128,
+      "maxK": 0.5500000000000003,
+      "exposurePublications": 1
+    },
+    "parts": [
+      {
+        "ID": 1,
+        "parentID": 0,
+        "templateID": "body",
+        "role": "BODY",
+        "born": 0,
+        "age": 100.25,
+        "tau": 100.25,
+        "g": 1,
+        "s": 4,
+        "C": [
+          348.70959999999815,
+          1239.2,
+          0
+        ],
+        "K": [
+          0.5500000000000003,
+          0,
+          0
+        ],
+        "maxE": 0,
+        "establishment": "parentless",
+        "minSeed": null,
+        "minNeck": null,
+        "minResolved": null
+      },
+      {
+        "ID": 2,
+        "parentID": 1,
+        "templateID": "crown-b",
+        "role": "BILLOW",
+        "born": 70,
+        "age": 30.25,
+        "tau": 30.25,
+        "g": 0.7094608532209886,
+        "s": 6,
+        "C": [
+          128.37465264036112,
+          1297.5103367319052,
+          436
+        ],
+        "K": [
+          0.09208765427217788,
+          0,
+          0
+        ],
+        "maxE": 0,
+        "establishment": "healthy",
+        "minSeed": 30.006296144156657,
+        "minNeck": 2.1617115295319773,
+        "minResolved": 16.48359344596344
+      },
+      {
+        "ID": 3,
+        "parentID": 1,
+        "templateID": "body",
+        "role": "BODY",
+        "born": 100,
+        "age": 0.25,
+        "tau": 0.25,
+        "g": 0.015625,
+        "s": 4,
+        "C": [
+          348.70959999999815,
+          1239.2,
+          0
+        ],
+        "K": [
+          3.125e-05,
+          0,
+          0
+        ],
+        "maxE": 0,
+        "establishment": "healthy",
+        "minSeed": 40.53566056597354,
+        "minNeck": null,
+        "minResolved": null
+      }
+    ],
+    "referenceIDs": [
+      1
+    ],
+    "events": [
+      {
+        "time": 0,
+        "type": "birth",
+        "ID": 1,
+        "parentID": 0,
+        "role": "BODY",
+        "s": 4,
+        "site": null,
+        "cellId": "cu-weather-cell-1"
+      },
+      {
+        "time": 70,
+        "type": "birth",
+        "ID": 2,
+        "parentID": 1,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          242,
+          246.8,
+          276
+        ],
+        "cellId": "cu-weather-cell-1"
+      },
+      {
+        "time": 100,
+        "type": "birth",
+        "ID": 3,
+        "parentID": 1,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1"
+      }
+    ],
+    "controlBytesCPU": 943296
+  },
+  "presentation": {
+    "frame": 4,
+    "presented": true,
+    "time": 100,
+    "committedSourceTime": 100,
+    "sourceSteps": 0,
+    "worldTime": 100,
+    "weatherInput": {
+      "time": 100,
+      "wind": 4,
+      "windIntegral": 347.83999999999816,
+      "moist": 1,
+      "dry": 0,
+      "lift": 1,
+      "frontX": -2500,
+      "storm": 0
+    },
+    "sourceInputRange": [],
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.05,
+      "distance": 3000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        885.4526500649614,
+        1150.062492187965,
+        2862.4277018370353
+      ],
+      "target": [
+        0,
+        1300,
+        0
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "domain": [
+      [
+        -488.98400000000186,
+        1062.760109180954,
+        -584
+      ],
+      [
+        854.9119999999981,
+        1672.980196346798,
+        1296
+      ]
+    ],
+    "look": {
+      "kappa": [
+        0.019,
+        0.0076
+      ],
+      "MS": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "lightingProfile": {
+        "id": "selected-production",
+        "name": "SelectedProduction",
+        "a": 0.5,
+        "b": 0.5,
+        "c": 0.5,
+        "abc": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "uniformMap": {
+          "a": "p.sun.w",
+          "b": "p.domain.y",
+          "c": "p.domain.z"
+        },
+        "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+        "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+      },
+      "exposure": 0.5
+    },
+    "epoch": 2,
+    "family": 0,
+    "controls": {
+      "lightingProfile": "selected-production",
+      "family": 0,
+      "provider": 0,
+      "cohorts": true,
+      "forceZero": false,
+      "sun": 30,
+      "mode": 0,
+      "mirror": true,
+      "main": true,
+      "fog": false,
+      "resolved": true,
+      "viewSteps": 96,
+      "extinctionScale": 4.222222222222222,
+      "preparedDensity": false,
+      "materialStructure": false,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": false,
+      "materialCore": false,
+      "connectedFeed": false,
+      "frontMorph": false,
+      "neckMix": false,
+      "dualRest": false,
+      "emptyWork": false,
+      "cachedVelocity": false,
+      "alpha": 1,
+      "sourceAlpha": 0
+    },
+    "lightBuilt": true
+  },
+  "lightingProfile": {
+    "id": "selected-production",
+    "name": "SelectedProduction",
+    "a": 0.5,
+    "b": 0.5,
+    "c": 0.5,
+    "abc": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "uniformMap": {
+      "a": "p.sun.w",
+      "b": "p.domain.y",
+      "c": "p.domain.z"
+    },
+    "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+    "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+  },
+  "fixtureRevision": 0,
+  "sourceInputs": {
+    "version": 1,
+    "source_geometry_frozen_inputs_sha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+    "qualification": "UNQUALIFIED candidate source/art; frozen bytes and renderer proof only",
+    "template_units": "local metres, density q; world transform b=s_i*g; BODY eta=.6 baked",
+    "template_taper": "smoothstep(-8,8,d-M*(ageE+Eweather)); local halfwidth8, world halfwidth8*b",
+    "templates": {
+      "body": {
+        "metadata": {
+          "file": "templates/body.json",
+          "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+          "bytes": 9130
+        },
+        "original_metadata": {
+          "file": "templates/original-body.json",
+          "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+          "bytes": 9097
+        },
+        "density": {
+          "file": "templates/body.density.r16f",
+          "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+          "bytes": 6291456
+        },
+        "distance": {
+          "file": "templates/body.distance.r16f",
+          "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+          "bytes": 6291456
+        }
+      },
+      "crown-b": {
+        "metadata": {
+          "file": "templates/crown-b.json",
+          "sha256": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918",
+          "bytes": 11519
+        },
+        "original_metadata": {
+          "file": "templates/original-crown-b.json",
+          "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+          "bytes": 11486
+        },
+        "density": {
+          "file": "templates/crown-b.density.r16f",
+          "sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+          "bytes": 1769472
+        },
+        "distance": {
+          "file": "templates/crown-b.distance.r16f",
+          "sha256": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+          "bytes": 1769472
+        }
+      }
+    },
+    "noise": {
+      "file": "noise/channels-32.r16f",
+      "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "bytes": 65536,
+      "dimensions_xyz": [
+        32,
+        32,
+        32
+      ],
+      "metadata": {
+        "file": "noise/channels-32.json",
+        "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+        "bytes": 526
+      },
+      "coordinate": "global material a/512, clamp-to-edge; M=.3+.7*N"
+    },
+    "errata": {
+      "source": "Both frozen v2 metadata reference.definition strings said localw8/worldw32, which is true only for BODY at b4.",
+      "correction": "Local halfwidth 8 m for every template; world halfwidth=8*b, so mature B1=48m at b6 and B2=40m at b5.",
+      "numeric_payloads_changed": false,
+      "reference_integral_local_m3_changed": false,
+      "original_metadata": [
+        {
+          "file": "templates/original-body.json",
+          "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+          "bytes": 9097
+        },
+        {
+          "file": "templates/original-crown-b.json",
+          "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+          "bytes": 11486
+        }
+      ]
+    },
+    "rendering": {
+      "baseline": "7c719e6a164480db",
+      "kappa_per_world_m": 0.019,
+      "additional_scattering_abc": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "source_geometry_snapshot_worktree_relative": "tmp/cloud-component-content-v2/FROZEN-INPUTS.json",
+    "source_geometry_frozen_inputs_bytes": 1305,
+    "admission": {
+      "file": "admission/admission.json",
+      "sha256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+      "bytes": 150256,
+      "scope": "Source CPU admission and conservative support only; renderer never uses this to cull native q"
+    }
+  },
+  "submissionPerformanceMs": 25926.67999982834,
+  "cameraMode": "oblique",
+  "focusMode": "fixed",
+  "logicalGpuBytes": 24302992,
+  "gpuAllocations": [
+    {
+      "label": "timestamp resolve",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp readback",
+      "bytes": 256
+    },
+    {
+      "label": "held voxel light",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "held receiver Beer field",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "label": "held air transmittance",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        256,
+        64
+      ]
+    },
+    {
+      "label": "held optical image",
+      "bytes": 7372800,
+      "format": "rgba16float",
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "held uniform 0/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 0/32",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 1/32",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/0",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/1",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/2",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/3",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/4",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/5",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/6",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/7",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/8",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/9",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/10",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/11",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/12",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/13",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/14",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/15",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/16",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/17",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/18",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/19",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/20",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/21",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/22",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/23",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/24",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/25",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/26",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/27",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/28",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/29",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/30",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/31",
+      "bytes": 176
+    },
+    {
+      "label": "held uniform 2/32",
+      "bytes": 176
+    },
+    {
+      "label": "body rho",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "body d",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "crown-b rho",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "crown-b d",
+      "bytes": 1769472,
+      "format": "r16float",
+      "size": [
+        96,
+        96,
+        96
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "fixed material M noise",
+      "bytes": 65536,
+      "format": "r16float",
+      "size": [
+        32,
+        32,
+        32
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "8 common presented part maps",
+      "bytes": 768
+    },
+    {
+      "label": "2 local asset domains",
+      "bytes": 64
+    },
+    {
+      "label": "prior/current local weather loss",
+      "bytes": 314432
+    }
+  ],
+  "gpuQueueCompletedPerformanceMs": 25956.235000133514,
+  "completionScope": "GPU queue fence completed; GPU execution duration, scanout and encoded frame time unmeasured",
+  "probe": {
+    "pass": true,
+    "points": 1752,
+    "positive": 329,
+    "invalid": 0,
+    "maxAbsQ": 0.00038415710121808555,
+    "maxAbsRaw": 0.0003527818554975304,
+    "maxAbsSigma": 7.2990631542401915e-06,
+    "toleranceQ": 0.002,
+    "toleranceSigma": 3.8e-05,
+    "examples": [
+      {
+        "x": [
+          347.8399963378906,
+          1239.199951171875,
+          0
+        ],
+        "gpu": 0.07196044921875,
+        "cpu": 0.0719603979162982,
+        "rawGpu": 0.07196044921875,
+        "rawCpu": 0.0719603979162982
+      },
+      {
+        "x": [
+          363.8399963378906,
+          1239.199951171875,
+          0
+        ],
+        "gpu": 0.06878662109375,
+        "cpu": 0.06878664187051481,
+        "rawGpu": 0.06878662109375,
+        "rawCpu": 0.06878664187051481
+      },
+      {
+        "x": [
+          331.8399963378906,
+          1239.199951171875,
+          0
+        ],
+        "gpu": 0.0689697265625,
+        "cpu": 0.0689696639247506,
+        "rawGpu": 0.0689697265625,
+        "rawCpu": 0.0689696639247506
+      },
+      {
+        "x": [
+          350.0320129394531,
+          1255.199951171875,
+          0
+        ],
+        "gpu": 0.07733154296875,
+        "cpu": 0.07733160274310993,
+        "rawGpu": 0.07733154296875,
+        "rawCpu": 0.07733160274310993
+      },
+      {
+        "x": [
+          345.64801025390625,
+          1223.199951171875,
+          0
+        ],
+        "gpu": 0.083740234375,
+        "cpu": 0.08374043570258358,
+        "rawGpu": 0.083740234375,
+        "rawCpu": 0.08374043570258358
+      },
+      {
+        "x": [
+          347.8399963378906,
+          1239.199951171875,
+          16
+        ],
+        "gpu": 0.071533203125,
+        "cpu": 0.0715332416512095,
+        "rawGpu": 0.071533203125,
+        "rawCpu": 0.0715332416512095
+      },
+      {
+        "x": [
+          347.8399963378906,
+          1239.199951171875,
+          -16
+        ],
+        "gpu": 0.1226806640625,
+        "cpu": 0.12268064703569123,
+        "rawGpu": 0.1226806640625,
+        "rawCpu": 0.12268064703569123
+      },
+      {
+        "x": [
+          433.32000732421875,
+          1279.199951171875,
+          40
+        ],
+        "gpu": 0.1270751953125,
+        "cpu": 0.1270751917996174,
+        "rawGpu": 0.1270751953125,
+        "rawCpu": 0.1270751917996174
+      },
+      {
+        "x": [
+          127.47590637207031,
+          1297.4747314453125,
+          436
+        ],
+        "gpu": 0.127685546875,
+        "cpu": 0.12764072663809542,
+        "rawGpu": 0.127685546875,
+        "rawCpu": 0.12764072663809542
+      },
+      {
+        "x": [
+          144.2528076171875,
+          1299.114990234375,
+          436.4211120605469
+        ],
+        "gpu": 0.130859375,
+        "cpu": 0.13083239498753313,
+        "rawGpu": 0.130859375,
+        "rawCpu": 0.13083239498753313
+      },
+      {
+        "x": [
+          110.69901275634766,
+          1295.8343505859375,
+          435.5788879394531
+        ],
+        "gpu": 0.1353759765625,
+        "cpu": 0.1354268113289619,
+        "rawGpu": 0.1353759765625,
+        "rawCpu": 0.1354268113289619
+      },
+      {
+        "x": [
+          126.2948989868164,
+          1313.931640625,
+          432.841552734375
+        ],
+        "gpu": 0.134521484375,
+        "cpu": 0.13452150177890979,
+        "rawGpu": 0.134521484375,
+        "rawCpu": 0.13452150177890979
+      }
+    ],
+    "scope": "Actual shared source/coefficients GPU against independent CPU rho/d/M/domain-grid interpolation, including raw source; no art or performance pass"
+  }
+}

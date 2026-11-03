@@ -1,0 +1,1 @@
+Owner: root cloud campaign. Integrated bounded liquid-Cu prototype, source/clock/consumer checks and actual recorded growth/breakup evidence. Not a full CF01, Cb, complete atmosphere, full-sky or target-device admission. Frozen native inputs are shared with the component/master evidence.
