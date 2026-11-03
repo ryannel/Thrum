@@ -2257,6 +2257,13 @@
         "scope": "Ordinary StateGroup-only no-socket slice after external game-schema and match-lifetime event-identity certification. The ledger privately owns the result retirement frontier, preventing helper substitution on ACK retry. ACK identity is supplied by a future authenticated session. No cross-kind sequence ledger, baseline/chunk reserve, supersession, historical event dedup, W1 producer or transport adapter. Result journal retirement is physical; reuse of that exact result slot during a pending lower gap is not claimed.",
         "evidence": "../evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md",
         "isolated_cost_samples": "../evidence/integration/N1-ORDINARY-SENT-LEDGER-COST-SAMPLES-2026-11-03.csv"
+      },
+      "baseline_physical_staging_oracle": {
+        "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",
+        "functional_validation": "two focused tests cover eight distinct 32 KiB chunks across two credits, out-of-order exact ACK and slot reuse, duplicate/wrong/premature refusal, exact Begin fields and decoded chunk/End bytes, one-byte final chunk and uncertain-write quarantine; independent read-only review found no storage or credit defect",
+        "platform_performance": "no timing, allocator-call, RSS, production owner or whole-callback measurement",
+        "scope": "Physical storage oracle only. External sequence numbers are model inputs, not one production allocator; no integration with the outstanding ordinary/rejected ledger, BaselineAck mandatory-identity coverage, supersession, transport or replica. The immutable 256 KiB image and sync closure remain separate simultaneous owners.",
+        "evidence": "../evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md"
       }
     }
   ],
