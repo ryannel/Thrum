@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import subprocess
 import sys
@@ -267,6 +268,118 @@ class NativeBuildSupervisor(unittest.TestCase):
                          "opt-in macOS Cargo timeout proof")
     def test_timed_out_cargo_compile_retains_pending_wrapper_receipt(self):
         self._cargo_compiler_fault("timeout")
+
+    @unittest.skipUnless(os.environ.get("THRUM_TEST_NATIVE_SUPERVISOR_PROCESS") == "1",
+                         "opt-in macOS real Cargo receipt closure proof")
+    def test_real_cargo_success_and_compile_failure_complete_receipts(self):
+        wrapper = Path(os.environ["THRUM_TEST_RUSTC_RECEIPT_WRAPPER"])
+        self.assertTrue(wrapper.is_absolute() and wrapper.is_file() and not wrapper.is_symlink())
+        cargo = Path(subprocess.check_output(
+            ["rustup", "which", "cargo", "--toolchain", "1.99.1"], text=True).strip())
+        rustc = Path(subprocess.check_output(
+            ["rustup", "which", "rustc", "--toolchain", "1.99.1"], text=True).strip())
+        for broken, expected_status in ((False, 0), (True, 101)):
+            with self.subTest(broken=broken):
+                root = Path(tempfile.mkdtemp(prefix="thrum-cargo-receipt-"))
+                safe_cleanup = True
+                try:
+                    self._cargo_completed_case(root, wrapper, cargo, rustc,
+                                               broken, expected_status)
+                except subprocess.TimeoutExpired as error:
+                    safe_cleanup = False
+                    self.fail(f"supervisor did not finish bounded cleanup; inspect {root}: {error}")
+                finally:
+                    if safe_cleanup:
+                        shutil.rmtree(root)
+
+    def _cargo_completed_case(self, root, wrapper, cargo, rustc, broken, expected_status):
+        request, output = self.request(root)
+        source = root / "source"
+        (source / "src").mkdir()
+        (source / "Cargo.toml").write_text(
+            '[package]\nname = "thrum_receipt_fixture"\nversion = "0.1.0"\n'
+            'edition = "2024"\n')
+        (source / "Cargo.lock").write_text(
+            'version = 4\n\n[[package]]\nname = "thrum_receipt_fixture"\n'
+            'version = "0.1.0"\n')
+        (source / "src/main.rs").write_text(
+            'fn main() { missing_name(); }\n' if broken else 'fn main() {}\n')
+        receipt_dir = output / "rustc-receipts"
+        receipt_dir.mkdir()
+        cargo_home = root / "cargo-home"
+        cargo_home.mkdir()
+        data = json.loads(request.read_text())
+        data["ownerPid"] = os.getpid()
+        data["environment"] = {
+            "CARGO_HOME": str(cargo_home),
+            "CARGO_TARGET_DIR": str(output / "target"),
+            "PATH": "/usr/bin:/bin",
+            "RUSTC": str(rustc),
+            "RUSTC_WRAPPER": str(wrapper),
+            "THRUM_SELECTED_RUSTC": str(rustc),
+            "THRUM_RECEIPT_DIR": str(receipt_dir),
+        }
+        data["command"] = [
+            "/usr/bin/sandbox-exec", "-p", "(version 1)(allow default)(deny network*)",
+            str(cargo), "build", "--locked", "--offline", "--manifest-path",
+            str(source / "Cargo.toml"),
+        ]
+        request.write_text(json.dumps(data))
+        runner = (
+            "import pathlib,sys;import run_bounded_native_build as native;"
+            f"sys.exit(native.run(pathlib.Path({str(request)!r}),timeout_seconds=10))"
+        )
+        supervisor = subprocess.Popen(
+            [sys.executable, "-c", runner], cwd=Path(__file__).parent,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        try:
+            _, stderr = supervisor.communicate(timeout=20)
+        except subprocess.TimeoutExpired:
+            supervisor.terminate()
+            try:
+                _, stderr = supervisor.communicate(timeout=8)
+            except subprocess.TimeoutExpired:
+                supervisor.kill()
+                try:
+                    supervisor.communicate(timeout=2)
+                except subprocess.TimeoutExpired:
+                    supervisor.stdout.close()
+                    supervisor.stderr.close()
+                    supervisor.wait(timeout=2)
+                raise
+            self.fail("supervisor exceeded outer deadline after graceful cleanup: "
+                      + stderr.decode(errors="replace"))
+        self.assertEqual(supervisor.returncode, expected_status,
+                         stderr.decode(errors="replace"))
+        report = json.loads((output / "cargo-supervisor.json").read_text())
+        self.assertEqual(report["kind"], "completed")
+        self.assertEqual(report["cargoStatus"], expected_status)
+        self.assertFalse(report["buildReady"])
+        for name in ("stdout", "stderr"):
+            raw = (output / f"cargo.{name}").read_bytes()
+            self.assertEqual(report[f"{name}Bytes"], len(raw))
+            self.assertEqual(report[f"{name}Sha256"], hashlib.sha256(raw).hexdigest())
+        receipts = [parse_receipt(path.read_bytes())
+                    for path in sorted(receipt_dir.iterdir())]
+        self.assertGreaterEqual(len(receipts), 2)
+        self.assertTrue(all(item["rustc"] == os.fsencode(rustc)
+                            and item["cwd"] == os.fsencode(source.resolve())
+                            and b"THRUM_RECEIPT_DIR" not in item["environment"]
+                            and b"THRUM_SELECTED_RUSTC" not in item["environment"]
+                            for item in receipts),
+                        [(item["kind"], item["rustc"], item["cwd"])
+                         for item in receipts])
+        compiles = [item for item in receipts if item["kind"] == 1]
+        self.assertEqual(len(compiles), 1)
+        self.assertEqual(compiles[0]["outcome"], 0)
+        self.assertEqual(compiles[0]["status"], 1 if broken else 0)
+        self.assertTrue(any(argument.endswith(b"src/main.rs")
+                            for argument in compiles[0]["arguments"]))
+        self.assertTrue(all(item["status"] == 0 for item in receipts
+                            if item["kind"] == 0))
+        self.assertEqual((output / "target/debug/thrum_receipt_fixture").exists(),
+                         not broken)
 
     def _cargo_compiler_fault(self, fault):
         if fault not in ("sigterm", "timeout"):
