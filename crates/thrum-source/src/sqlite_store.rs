@@ -6,7 +6,7 @@
 #[cfg(test)]
 use std::collections::HashSet;
 use std::fmt;
-use std::fs;
+use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 #[cfg(test)]
@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 #[cfg(test)]
 use std::time::{Duration, Instant};
 
+use fs4::{FileExt, TryLockError};
 use rusqlite::types::ValueRef;
 use rusqlite::{
     Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior, config::DbConfig,
@@ -27,7 +28,7 @@ use rusqlite::{
 use crate::provisional_store_vfs_test as checkpoint_vfs;
 use sha2::{Digest, Sha256};
 
-use crate::budget::{BudgetError, Limits, SourceSpacePlan};
+use crate::budget::{BudgetError, Limits, SourceSpacePlan, open_regular_lock};
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
@@ -96,6 +97,7 @@ enum StoreError {
     UncertainCommit(rusqlite::Error),
     RecoveryRequired,
     OwnerPoisoned,
+    OwnerBusy,
     InputIo,
     OutputIo,
     InputLength,
@@ -153,6 +155,7 @@ impl fmt::Display for StoreError {
             Self::CandidateFile(error) => write!(formatter, "candidate file: {error:?}"),
             Self::Budget(error) => write!(formatter, "physical preflight: {error:?}"),
             Self::ConsumerWrite(error) => write!(formatter, "consumer output: {error}"),
+            Self::OwnerBusy => write!(formatter, "another accepted-source owner holds the store"),
             other => write!(formatter, "{other:?}"),
         }
     }
@@ -530,6 +533,7 @@ impl SqliteStoreCore {
         Self::open_with_plan(path, SourceSpacePlan::DEFAULT)
     }
 
+    #[cfg(test)]
     fn open_with_plan(path: &Path, plan: SourceSpacePlan) -> Result<Self, StoreError> {
         Self::open_with_plan_and_vfs(path, plan, None)
     }
@@ -1913,6 +1917,8 @@ pub struct SourceStoreUsage {
 pub enum SourceStoreErrorKind {
     /// Owner cannot safely continue; discard it and reopen. A final COMMIT may be uncertain.
     RecoveryRequired,
+    /// Another cooperating owner still holds this native source store.
+    Busy,
     /// The selected planning target or observed free space deferred work.
     SpacePressure,
     /// Another root won the generation precondition.
@@ -1946,6 +1952,7 @@ impl SourceStoreError {
             StoreError::RecoveryRequired
             | StoreError::UncertainCommit(_)
             | StoreError::OwnerPoisoned => SourceStoreErrorKind::RecoveryRequired,
+            StoreError::OwnerBusy => SourceStoreErrorKind::Busy,
             StoreError::Budget(
                 BudgetError::MainLimit
                 | BudgetError::WalLimit
@@ -2024,12 +2031,46 @@ impl From<rusqlite::Error> for SourceStoreError {
 
 struct NativeSourceOwner {
     inner: Mutex<SqliteStoreCore>,
+    _lock: File,
 }
 
 impl NativeSourceOwner {
     fn lock(&self) -> Result<MutexGuard<'_, SqliteStoreCore>, StoreError> {
         self.inner.lock().map_err(|_| StoreError::OwnerPoisoned)
     }
+}
+
+fn canonical_store_path(path: &Path) -> Result<PathBuf, StoreError> {
+    if !path.is_absolute() {
+        return Err(StoreError::Budget(BudgetError::UnsafeStore(
+            path.to_owned(),
+        )));
+    }
+    let parent = path.parent().ok_or(StoreError::InputIo)?;
+    let parent = parent
+        .canonicalize()
+        .map_err(|source| physical_io(parent, source))?;
+    if !parent.is_dir() {
+        return Err(StoreError::Budget(BudgetError::UnsafeStore(parent)));
+    }
+    let file_name = path.file_name().ok_or(StoreError::InputIo)?;
+    let database = parent.join(file_name);
+    match fs::symlink_metadata(&database) {
+        Ok(metadata) => {
+            if !metadata.file_type().is_file() {
+                return Err(StoreError::Budget(BudgetError::UnsafeStore(database)));
+            }
+            // Distinct names of one SQLite inode would derive distinct WAL and
+            // sidecar paths. This profile admits only one-name regular files.
+            #[cfg(unix)]
+            if std::os::unix::fs::MetadataExt::nlink(&metadata) != 1 {
+                return Err(StoreError::Budget(BudgetError::UnsafeStore(database)));
+            }
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+        Err(source) => return Err(physical_io(&database, source)),
+    }
+    Ok(database)
 }
 
 /// Native append-only source authority, outside world-update callbacks.
@@ -2043,10 +2084,43 @@ pub struct NativeSourceStore {
 
 impl NativeSourceStore {
     /// Open or create one native SQLite source store with a planning policy.
+    ///
+    /// A cooperating owner holds an exclusive sidecar lock until this handle
+    /// and every accepted-source lease have closed. Opening the same store from
+    /// another process or handle returns `Busy` before SQLite recovery runs.
     pub fn open(path: &Path, plan: SourceSpacePlan) -> Result<Self, SourceStoreError> {
+        Self::open_with_vfs(path, plan, None)
+    }
+
+    fn open_with_vfs(
+        path: &Path,
+        plan: SourceSpacePlan,
+        vfs: Option<&str>,
+    ) -> Result<Self, SourceStoreError> {
+        let database = canonical_store_path(path)?;
+        let mut lock_name = database
+            .file_name()
+            .ok_or(StoreError::InputIo)?
+            .to_os_string();
+        lock_name.push(".owner.lock");
+        let lock_path = database.with_file_name(lock_name);
+        let lock = open_regular_lock(&lock_path).map_err(|error| match error {
+            BudgetError::Busy => StoreError::OwnerBusy,
+            other => StoreError::Budget(other),
+        })?;
+        match FileExt::try_lock(&lock) {
+            Ok(()) => {}
+            Err(TryLockError::WouldBlock) => return Err(StoreError::OwnerBusy.into()),
+            Err(TryLockError::Error(source)) => {
+                return Err(physical_io(&lock_path, source).into());
+            }
+        }
         let store = Self {
             owner: Arc::new(NativeSourceOwner {
-                inner: Mutex::new(SqliteStoreCore::open_with_plan(path, plan)?),
+                inner: Mutex::new(SqliteStoreCore::open_with_plan_and_vfs(
+                    &database, plan, vfs,
+                )?),
+                _lock: lock,
             }),
             plan,
         };
@@ -2385,7 +2459,7 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     let fixture = Fixture::new();
     let database = fixture.database();
     let observer = checkpoint_vfs::Observer::new("unix");
-    let mut core = SqliteStoreCore::open_with_plan_and_vfs(
+    let store = NativeSourceStore::open_with_vfs(
         &database,
         SourceSpacePlan::DEFAULT,
         Some(observer.name()),
@@ -2393,29 +2467,34 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     .unwrap();
     let a = b"accepted root A";
     let revision_a: [u8; 32] = Sha256::digest(a).into();
-    core.stage_blob(&mut a.as_slice(), a.len() as u64, revision_a)
-        .unwrap();
-    assert_eq!(core.commit_probe(0, 1, 1, [1; 32], revision_a).unwrap(), 1);
-    let pin_a = core.pin_current_root(1).unwrap();
+    let pin_a = {
+        let mut core = store.owner.lock().unwrap();
+        core.stage_blob(&mut a.as_slice(), a.len() as u64, revision_a)
+            .unwrap();
+        assert_eq!(core.commit_probe(0, 1, 1, [1; 32], revision_a).unwrap(), 1);
+        core.pin_current_root(1).unwrap()
+    };
 
     let b = b"accepted root B";
     let revision_b: [u8; 32] = Sha256::digest(b).into();
-    core.stage_blob(&mut b.as_slice(), b.len() as u64, revision_b)
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .stage_blob(&mut b.as_slice(), b.len() as u64, revision_b)
         .unwrap();
     observer.arm_wal_fault(checkpoint_vfs::WalFault::AfterCommitSync);
     assert!(matches!(
-        core.commit_probe(1, 1, 2, [2; 32], revision_b),
+        store
+            .owner
+            .lock()
+            .unwrap()
+            .commit_probe(1, 1, 2, [2; 32], revision_b),
         Err(StoreError::UncertainCommit(_))
     ));
     assert_eq!(observer.counts.wal_fault_hits.load(Ordering::Relaxed), 1);
     let wal_writes = observer.counts.wal_writes.load(Ordering::Relaxed);
     let main_writes = observer.counts.main_writes.load(Ordering::Relaxed);
-    let store = NativeSourceStore {
-        owner: Arc::new(NativeSourceOwner {
-            inner: Mutex::new(core),
-        }),
-        plan: SourceSpacePlan::DEFAULT,
-    };
     assert_eq!(
         store.current_root().unwrap_err().kind(),
         SourceStoreErrorKind::RecoveryRequired
@@ -2948,6 +3027,13 @@ fn native_source_pin_keeps_owner_after_store_handle_drops() {
     let path = SourcePath::parse("project.json").unwrap();
     let expected = fs::read(fixture.source_root().join(path.as_str())).unwrap();
     drop(store);
+    assert_eq!(
+        NativeSourceStore::open(&fixture.database(), plan)
+            .err()
+            .unwrap()
+            .kind(),
+        SourceStoreErrorKind::Busy
+    );
     fs::remove_file(fixture.source_root().join(path.as_str())).unwrap();
 
     let mut copied = Vec::new();
@@ -2969,6 +3055,82 @@ fn native_source_pin_keeps_owner_after_store_handle_drops() {
     assert_eq!(pins, 0);
 }
 
+#[test]
+fn native_owner_lock_canonicalizes_parent_and_refuses_symlink_sidecar() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan::DEFAULT;
+    let owner = NativeSourceStore::open(&database, plan).unwrap();
+    let alias = fixture.0.join("source").join("..").join("source.sqlite");
+    fs::create_dir(fixture.0.join("source")).unwrap();
+    assert_eq!(
+        NativeSourceStore::open(&alias, plan).err().unwrap().kind(),
+        SourceStoreErrorKind::Busy
+    );
+    drop(owner);
+    #[cfg(unix)]
+    {
+        let lock = fixture.0.join("source.sqlite.owner.lock");
+        fs::remove_file(&lock).unwrap();
+        std::os::unix::fs::symlink(&database, &lock).unwrap();
+        assert!(NativeSourceStore::open(&database, plan).is_err());
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn native_owner_lock_refuses_hard_link_database_alias() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let alias = fixture.0.join("second-name.sqlite");
+    let owner = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
+    fs::hard_link(&database, &alias).unwrap();
+    assert!(NativeSourceStore::open(&alias, SourceSpacePlan::DEFAULT).is_err());
+    drop(owner);
+    assert!(NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).is_err());
+    fs::remove_file(alias).unwrap();
+    assert!(NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).is_ok());
+}
+
+#[test]
+fn native_owner_lock_child_holds_until_killed() {
+    let Some(database) = std::env::var_os("THRUM_TEST_NATIVE_OWNER_DB") else {
+        return;
+    };
+    let marker = PathBuf::from(std::env::var_os("THRUM_TEST_NATIVE_OWNER_MARKER").unwrap());
+    let _owner =
+        NativeSourceStore::open(&PathBuf::from(database), SourceSpacePlan::DEFAULT).unwrap();
+    signal_and_wait_for_kill(&marker);
+}
+
+#[test]
+fn native_owner_lock_refuses_other_process_and_reopens_after_kill() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let marker = fixture.0.join("owner.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::native_owner_lock_child_holds_until_killed")
+        .arg("--nocapture")
+        .env("THRUM_TEST_NATIVE_OWNER_DB", &database)
+        .env("THRUM_TEST_NATIVE_OWNER_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    kill_after_marker(child, &marker, || {
+        assert_eq!(
+            NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT)
+                .err()
+                .unwrap()
+                .kind(),
+            SourceStoreErrorKind::Busy
+        );
+    });
+    let reopened = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), None);
+}
+
 #[cfg(unix)]
 #[test]
 fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
@@ -2981,14 +3143,7 @@ fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let core =
-        SqliteStoreCore::open_with_plan_and_vfs(&database, plan, Some(observer.name())).unwrap();
-    let store = NativeSourceStore {
-        owner: Arc::new(NativeSourceOwner {
-            inner: Mutex::new(core),
-        }),
-        plan,
-    };
+    let store = NativeSourceStore::open_with_vfs(&database, plan, Some(observer.name())).unwrap();
     let stage_a = minimal_source_stage(&fixture, "accepted A");
     let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
     let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
@@ -3013,6 +3168,13 @@ fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
         Err(StoreError::UncertainCommit(_))
     ));
     assert_eq!(observer.counts.wal_fault_hits.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        NativeSourceStore::open(&database, plan)
+            .err()
+            .unwrap()
+            .kind(),
+        SourceStoreErrorKind::Busy
+    );
     let wal_writes = observer.counts.wal_writes.load(Ordering::Relaxed);
     let main_writes = observer.counts.main_writes.load(Ordering::Relaxed);
     let mut output = Vec::new();
