@@ -137,7 +137,9 @@ def main():
             "THRUM_TEST_RETAINED_RUST_ROOT": str(selected["rust"][0]),
             "THRUM_TEST_RETAINED_RUST_INVENTORY": json.dumps(selected["rust"][1], sort_keys=True),
             "THRUM_TEST_RETAINED_LINKER_ROOT": str(selected["linker"][0]),
+            "THRUM_TEST_RETAINED_LINKER_INVENTORY": json.dumps(selected["linker"][1], sort_keys=True),
             "THRUM_TEST_RETAINED_SDK_ROOT": str(selected["sdk"][0]),
+            "THRUM_TEST_RETAINED_SDK_INVENTORY": json.dumps(selected["sdk"][1], sort_keys=True),
             "RUSTC_WRAPPER": "",
         }
         command = [

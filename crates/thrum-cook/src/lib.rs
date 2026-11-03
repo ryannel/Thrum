@@ -1056,7 +1056,12 @@ mod tests {
             );
             #[cfg(target_os = "macos")]
             let prepared = if let Some(owner) = &sealed_cache_owner {
-                let guard = SealedCacheGuard::prepare_and_hold(checkout, owner, &prepared);
+                let guard = SealedCacheGuard::prepare_and_hold(
+                    checkout,
+                    owner,
+                    &prepared,
+                    native_tools.as_ref().unwrap(),
+                );
                 let mut prepared = prepared;
                 prepared.path = guard.root.clone();
                 prepared.manifest_path = guard.manifest_path.clone();
@@ -1721,7 +1726,12 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     impl SealedCacheGuard {
-        fn prepare_and_hold(checkout: &Path, owner: &Path, cache: &PreparedCacheHome) -> Self {
+        fn prepare_and_hold(
+            checkout: &Path,
+            owner: &Path,
+            cache: &PreparedCacheHome,
+            tools: &NativeSandboxTools,
+        ) -> Self {
             let python = std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into());
             let helper = checkout.join("scripts/hold_macos_private_cargo_cache.py");
             let prepare_started = Instant::now();
@@ -1750,6 +1760,20 @@ mod tests {
             let bytes = selected["legacy"]["bytes"].as_u64().unwrap();
             let expected_reuse_sha256 = selected["reuseKeySha256"].as_str().unwrap().to_owned();
             let manifest_path = owner.join(format!(".cargo-manifest-{tree_sha256}.json"));
+            assert_eq!(root, owner.join(format!("root-{tree_sha256}")));
+            assert!(tools.retained_roots());
+            let rust_tree_json = std::env::var("THRUM_TEST_RETAINED_RUST_INVENTORY").unwrap();
+            let linker_tree_json = std::env::var("THRUM_TEST_RETAINED_LINKER_INVENTORY").unwrap();
+            let sdk_tree_json = std::env::var("THRUM_TEST_RETAINED_SDK_INVENTORY").unwrap();
+            for (inventory, path) in [
+                (&rust_tree_json, &tools.toolchain),
+                (&linker_tree_json, &tools.linker_root),
+                (&sdk_tree_json, &tools.sdk),
+            ] {
+                let selected_tree: serde_json::Value = serde_json::from_str(inventory).unwrap();
+                let digest = selected_tree["sha256"].as_str().unwrap();
+                assert_eq!(path, &owner.join(format!("root-{digest}")));
+            }
             let open_started = Instant::now();
             let mut child = Command::new(&python)
                 .arg(&helper)
@@ -1761,7 +1785,11 @@ mod tests {
                 .arg("--legacy-json")
                 .arg(serde_json::to_string(&selected["legacy"]).unwrap())
                 .arg("--rust-tree-json")
-                .arg(std::env::var_os("THRUM_TEST_RETAINED_RUST_INVENTORY").unwrap())
+                .arg(&rust_tree_json)
+                .arg("--linker-tree-json")
+                .arg(&linker_tree_json)
+                .arg("--sdk-tree-json")
+                .arg(&sdk_tree_json)
                 .arg("--manifest-sha")
                 .arg(selected["manifestSha256"].as_str().unwrap())
                 .stdin(Stdio::piped())
@@ -1781,13 +1809,13 @@ mod tests {
                     }
                 }
             });
-            let response = receiver.recv_timeout(Duration::from_secs(10));
+            let response = receiver.recv_timeout(Duration::from_secs(30));
             if response.is_err() {
                 drop(child.stdin.take());
                 let _ = child.kill();
                 let _ = child.wait();
                 reader.join().unwrap();
-                panic!("sealed cache lease did not report readiness within ten seconds");
+                panic!("sealed native lease did not report readiness within thirty seconds");
             }
             let ready = response.unwrap();
             if ready.as_deref() != Ok("READY") {
