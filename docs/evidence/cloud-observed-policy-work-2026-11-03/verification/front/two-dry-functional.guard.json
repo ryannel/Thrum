@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "command": [
+    "node",
+    "--expose-gc",
+    "tests/observed/two-dry-functional.mjs"
+  ],
+  "exitCode": 0,
+  "sampledTreePeakBytes": 186400768,
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "stopped": null,
+  "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+}

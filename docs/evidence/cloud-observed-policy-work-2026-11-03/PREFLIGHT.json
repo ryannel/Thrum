@@ -1,0 +1,18 @@
+{
+  "ownership": "Only this new evidence directory; original candidates unchanged",
+  "nonNativeBytes": {
+    "work": 1437806,
+    "front": 1630019
+  },
+  "nativePayloads": 7,
+  "nativeDestinationsPerVariant": 10,
+  "nativeUniqueDecodedBytes": 17956864,
+  "nativePayloadCopiesRetainedHere": 0,
+  "functionalGuard": {
+    "serial": true,
+    "sampledEarlyBytes": 234881024,
+    "hardBytes": 268435456
+  },
+  "costEvaluatorsToExecute": 0,
+  "excluded": "Later weather-zero candidate, GPU/browser/benchmark, captures, native duplicates"
+}

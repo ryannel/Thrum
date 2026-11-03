@@ -1,0 +1,13 @@
+{
+  "pass": true,
+  "command": [
+    "node",
+    "tests/observed/contracts.mjs"
+  ],
+  "exitCode": 0,
+  "sampledTreePeakBytes": 114737152,
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "stopped": null,
+  "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+}

@@ -1,0 +1,42 @@
+{
+  "pass": true,
+  "scope": "Fresh functional relocation only; no cost evaluator/GPU/browser/timing executed",
+  "restores": {
+    "work": {
+      "phases": 8,
+      "allPass": true,
+      "maxSampledTreePeakBytes": 191315968,
+      "sourcePinsSHA256": "902f2608a776560b1b88a998a0555b1605db2ea2937f443cebdceb04ca00436d",
+      "costReceiptsSHA256": {
+        "cost.json": "b003d3080540385272698cd84f2f3ebf74989d4f50547766ac70b264596426ab"
+      },
+      "receipt": "verification/work/fresh-functional-results.json"
+    },
+    "work-repeat": {
+      "phases": 8,
+      "allPass": true,
+      "maxSampledTreePeakBytes": 192380928,
+      "sourcePinsSHA256": "902f2608a776560b1b88a998a0555b1605db2ea2937f443cebdceb04ca00436d",
+      "costReceiptsSHA256": {
+        "cost.json": "b003d3080540385272698cd84f2f3ebf74989d4f50547766ac70b264596426ab"
+      },
+      "receipt": "verification/work-repeat/fresh-functional-results.json"
+    },
+    "front": {
+      "phases": 10,
+      "allPass": true,
+      "maxSampledTreePeakBytes": 190791680,
+      "sourcePinsSHA256": "12777301a56a54c3bcc0cf29b23b7a33eb3e3cfad186dc908d04b0b22f4715cf",
+      "costReceiptsSHA256": {
+        "cost.json": "65fff59a92f4bd858b09fc55760c0c9dee7e87d3ecc27cd3a2fd1995c48100cd",
+        "cost-two-dry.json": "27ccaf7381d086ab497cef03935569d4f4c103c64aeaed418d58bb27f094a47b"
+      },
+      "receipt": "verification/front/fresh-functional-results.json"
+    }
+  },
+  "workRepeatReason": "First command completion was initially absent from the tool response; a second fresh relocation was started. Both completed successfully; neither reran cost.",
+  "archiveBytes": 783932,
+  "nativeCopiesRetained": 0,
+  "nativeUniqueDecodedBytesPerRestore": 17956864,
+  "sourceAndCostBytesStillMatchArchives": true
+}
