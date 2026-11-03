@@ -4,6 +4,10 @@
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-render]
+manifest = "crates/thrum-render/Cargo.toml"
+allowed_workspace_dependencies = []
+
 [packages.thrum-mobile-shell]
 manifest = "crates/thrum-mobile-shell/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core"]
@@ -38,6 +42,12 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-sou
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
 
+[external_dependencies.divan]
+requirement = "=0.1.21"
+license = "MIT OR Apache-2.0"
+purpose = "Deterministic V1 workload timing and allocation-count benchmarks for simulation and link conditioning"
+target_cost = "Development-only benchmark dependency; no runtime or target-device dependency, with benchmark compilation and timing overhead measured separately"
+
 [external_dependencies.base64]
 requirement = "=0.23.1"
 license = "MIT OR Apache-2.0"
@@ -59,14 +69,14 @@ target_cost = "Target-specific mobile dependency with substantial platform glue 
 [external_dependencies.wgpu]
 requirement = "=30.0.1"
 license = "MIT OR Apache-2.0"
-purpose = "Minimal native Metal/Vulkan clear surface to prove mobile presentation and surface recreation without a second world"
-target_cost = "Large target-specific native graphics closure and device/surface memory; only Metal or Vulkan enabled per mobile target, startup, surface recovery and sustained device costs remain to measure"
+purpose = "Native mobile clear surface and typed GPU renderer with prepared synthetic scene, optional timestamp queries and portable WGSL"
+target_cost = "Large target-specific graphics closure and device/surface memory; Metal/Vulkan/WebGPU feature sets and startup, GPU timestamps, surface recovery and sustained device costs require named-target measurement"
 
 [external_dependencies.pollster]
 requirement = "=1.0.1"
 license = "Apache-2.0/MIT"
-purpose = "Block first mobile adapter/device creation in the initial synchronous shell"
-target_cost = "Small single-purpose native dependency; startup blocking must be measured and replaced if it harms responsiveness"
+purpose = "Block first mobile adapter/device creation in the initial shell and opt-in local renderer device tests"
+target_cost = "Small native/test dependency; runtime startup blocking must be measured and replaced if it harms responsiveness"
 
 [external_dependencies.serde]
 requirement = "=1.0.229"

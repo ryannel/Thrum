@@ -1,6 +1,6 @@
 # Rendering specification: portable shaders, materials and transport
 
-1 November 2026, revised 2 November. This closes the remaining *initial portable render path* decisions behind
+1 November 2026, revised 3 November for the V1 renderer reset. This selects an initial portable render path behind
 [selected architecture](ARCHITECTURE-DECISIONS.md),
 [C4](CONTRACTS.md),
 [rendering](modules/RENDERING.md) and
@@ -61,8 +61,7 @@ forward shading, sorted by declared group and writes no opaque depth; intersecti
 refractive transparency remains explicitly approximate. Water uses its own typed
 material/interface provider, not a hidden metallic-roughness flag. A required imported
 extension must map to this closure with stated loss or fail admission.
-An exact ordered-alpha capability is selected separately below; choosing sorted alpha
-does not grant its event/overflow or refracted-path promises.
+Exact ordered alpha is parked; sorted alpha remains an explicitly approximate baseline.
 
 For `c_i=n·ω_i>0`, `c_o=n·ω_o>0`, `c_h=n·h`, `h=normalize(ω_i+ω_o)`, use
 `f_r=(1-m)(1-F)base/π + D_GGX G_2 F/(4c_i c_o)`, otherwise zero.
@@ -134,31 +133,35 @@ The closure creates only actually reachable tuples, not their full product. Surf
 light count is runtime data and does not create a shader per number of lights.
 
 Use four explicit bind groups, within WebGPU's guaranteed baseline: `0` view/frame;
-`1` scene lights/clusters/shadows/environment/medium; `2` material uniform, the four
-textures and sampler; `3` object transforms/skin palette. Passes declare exact subsets
-of this layout; extensions cannot silently add a fifth group or unbounded texture
-array to the portable profile. Use scene/object storage buffers and indexed records,
-not one dynamic uniform binding per object. The integrated workload's 32 surface
+`1` scene lights/clusters/shadows/environment/medium; `2` a storage-buffer material
+table, four typed 2D texture arrays and samplers; `3` indexed instance/transform
+storage and skin palette. F4 assigns texture layers within declared size/format
+classes; class or layer overflow creates another prepared bucket or a declared
+visual fallback, never an out-of-range shader index. Passes declare exact subsets
+of this layout; extensions cannot silently add a fifth group or assume bindless
+textures. `instance_index` selects the object record, material row and transform;
+no dynamic per-object uniform binding is required. The integrated workload's 32 surface
 lights per cluster (8 mobile) is an F2 capacity limit with diagnosed overflow,
 not shader truncation. Resource/texture counts and storage sizes must pass the
 queried adapter limits; wgpu's documented default WebGPU limits include four bind
 groups, 16 sampled textures and 256-byte dynamic uniform offset alignment.
 [wgpu limits](https://docs.rs/wgpu/30.0.1/wgpu/struct.Limits.html).
 
-**CPU/WGSL ABI revision 1:** WGSL buffer structs use only `u32`, `f32`, `vec4` and
+**CPU/WGSL ABI revision 2:** WGSL buffer structs use only `u32`, `f32`, `vec4` and
 `mat4x4<f32>` in portable shared records; no `bool`, `vec3` or implicit Rust padding.
 Matrices are column-major. A `ViewRecord` contains `viewProj` and
 `previousViewProj` at byte offsets 0 and 64 (64 bytes each), then
 `cameraXYZ_time` at 128 and `preExposure_invExposure_jitterXY` at 144; 160-byte
-record, 256-byte dynamic-uniform stride. A `MaterialRecord` is four 16-byte
+record, 256-byte dynamic-uniform stride. A `MaterialRecord` has four 16-byte
 vectors at offsets 0/16/32/48: base RGBA, emissive RGB+alpha cutoff,
 `(occlusionStrength,roughnessFactor,metallicFactor,normalScale)`, and four
-`u32` flags/IDs; 64 bytes. Material products, default textures, shaders and
+`u32` semantic flags/IDs; the fifth `vec4<u32>` at 64 names base, normal,
+ORM and emissive texture-array layers. It is 80 bytes. Material products, default textures, shaders and
 representation certificates pin one material-semantic/evaluator revision in
 their keys; equal byte layout alone cannot authorize mixed meanings.
 An `ObjectRecord` stores current/previous model matrices (0/64), three normal
 matrix columns padded as `vec4` (128/144/160), and a `vec4<u32>` of stable
-instance index, skin offset, flags and source generation (176); 192-byte stride.
+instance index, material row, skin offset and source generation (176); 192-byte stride.
 GPU matrices and `cameraXYZ` are f32 relative to the declared view origin;
 a world-origin change invalidates prior samples unless both frames are
 explicitly transformed into the same origin convention.
@@ -262,135 +265,63 @@ Perform V3 transport in these scene units with f32 shader arithmetic. Store
 scene colour in a qualified RGBA16Float intermediate with a per-view scalar
 pre-exposure `p`; every producer writes `p L` and V4 knows `p`. Histories
 rescale by `p_current/p_history` only when their inputs remain valid; otherwise
-reset. This prevents format saturation without inventing a second lighting
-unit. `p` and output gamut/tone policy are versioned view metadata. Reject
-NaN/negative light intensity and invalid exposure at authoring/runtime
-boundaries; large HDR values are not silently clamped before V4.
-Before an f32 shader path is admitted, derive finite ranges for its inputs and
-intermediates, including division, normalization, discriminants, light/source
-accumulation, pre-exposure and alpha-record storage. Check a dangerous
-operation's preconditions **before** evaluating it, or use a bounded algebraic
-form; a final nonfinite test cannot certify an earlier WGSL runtime overflow.
-Outside the proved range, return a typed unsupported/failure status before
-that operation and gate current output/history. The range and f16 packing
-error belong to the selected provider/profile; `p > 0` alone does not prove
-that every intermediate or output fits. Verify the range against independent
-high-precision cases and the pinned WGSL/backend versions before claiming a
-portable diagnostic path. [WGSL floating-point evaluation](https://gpuweb.github.io/gpuweb/wgsl/#floating-point-evaluation)
-allows indeterminate runtime results after overflow, infinity or NaN.
-The [R0 arithmetic-envelope study](research/R0-ARITHMETIC-ENVELOPE-2026-11-03.md)
-supplies a fixed-p half-float counterexample and a conservative per-recipe
-real-number light/storage bound. Its actual source, WGSL intermediate and
-device proofs remain open.
+reset. This reduces format saturation without inventing another lighting unit.
+`p` and output gamut/tone policy are versioned view metadata. Authoring and
+authoritative numeric boundaries still reject invalid light facts. Presentation
+uses safe finite arithmetic, then clamps scene colour to the selected storage
+range **after pre-exposure and before fp16 storage**. Count high/low clamps and
+nonfinite repairs per pass and expose them in the profiler; developer builds
+may assert on unexpected counts. Use a finite fallback colour for a
+presentation-only calculation outside support, reset affected temporal
+history, and keep the world tick and other passes running. Geometry and
+floating-point comparisons use scale-aware tolerances checked against visible
+error; sub-ULP edge cases do not require exact predicates on the render path.
+The retained [arithmetic-envelope study](research/R0-ARITHMETIC-ENVELOPE-2026-11-03.md)
+is not a V1 gate.
 
 ## 5. Initial atmosphere, fog and transport operator
 
-Select a small **joint single-scattering air path**, not a universal multiple-
-scattering solver: one flat-ground exponential atmosphere
-`σ_{t,a}(y)=σ_{t,0} exp(-max(y,0)/H)` with RGB default sea-level
-scattering/extinction `(6,12,24)×10^-6 m^-1`, `H=8000 m`, albedo 1 and
-Rayleigh phase `p_R(μ)=3(1+μ²)/(16π)`. These RGB values are an authored
-Earth-like approximation, not a measured spectral fit. Admit authored
-`σ_{t,0}` channels in `[0,5×10^-5] m^-1` and `H∈[4000,12000] m`.
-Add at most two overlapping bounded homogeneous local fog spheres/boxes
-per ray, each with `σ_t∈[0,0.05] m^-1`, `σ_s/σ_t∈[0,1]`, radius or box
-half-extent ≤250 m and Henyey–Greenstein `g∈[-0.85,0.85]`; the default
-is `σ_t=0.015 m^-1`, albedo 0.9, `g=0.6`. The admitted ground/shore camera
-envelope is altitude 0–500 m and view-path length ≤2 km, with no camera
-below ground or orbital/planetary-curvature claim. Fog may be revised only
-at a committed E1 sample; all light/media history carries its source epoch.
-Each E1 source declares world support, update time, model/source revision,
-light dependence and whether coefficients are authoritative for gameplay
-or presentation-only. The range excludes arbitrary 3D density noise.
+Select Hillaire-style atmospheric precomputation for the first dynamic sky:
+transmittance (proposed 256×64), multiple scattering (32²), sky view
+(192×108) and aerial perspective (32³). Use a spherical planet with
+Rayleigh, Mie and ozone coefficients; update LUTs only when their Sun,
+weather, camera-height or profile dependencies change. The Sun disk and Moon
+are separate celestial emitters with one named light identity each. Generate
+sky-derived diffuse SH and a prefiltered specular cubemap over several frames;
+an authored HDRI is an optional override, no longer a mandatory terminal
+background. Begin with [Hillaire 2020](https://sebh.github.io/publications/egsr2020.pdf)
+and measure the LUT update cost and sunset/altitude error on named devices.
 
-The R1/R3 air profile requires an authored equirectangular HDRI (exact asset
-hash and colour profile in F4) as *terminal background*. Its initial
-calibration is D65 with mean scene luminance 1000 cd/m² and no Sun disk;
-V3 cooks a diffuse environment convolution and a specular reflection mip
-chain from that same source. The separate directional Sun supplies direct
-light and is not added again from the HDRI. An HDRI supplies no path
-extinction: the joint air model above supplies aerial perspective. The R0
-small game can omit the air/HDRI capability and use an explicitly authored
-constant environment-light source. Clouds initially supply a source-direction
-optical-depth/attenuation field under its declared angle/altitude validity,
-not a second overlapping visible volume. This cloud factor multiplies direct
-Sun **once** at each queried light path; the joint air integrator computes
-air/fog attenuation itself and does not consume an already air-attenuated
-Sun. Transparent cloud cards, if authored, are approximate surfaces.
-The initial field is an authored nonnegative `τ_cloud(x,z,t,ω_s)` sampled
-at the receiver/source position for its declared Sun-direction range, with
-`T_cloud=exp(-τ_cloud)`; outside that range it is unavailable unless an
-explicit clear-sky or static-source fallback was admitted. If a game uses
-cloud visibility for rules, that source/query belongs to E1 authority and
-N1's semantic gameplay projection, not the client's shadow texture.
-[Bruneton's documented Earth atmosphere inputs](https://ebruneton.github.io/precomputed_atmospheric_scattering/atmosphere/demo/demo.cc.html).
+V3 owns one source-to-receiver transport closure. E1 supplies deterministic
+headless Sun direction, light level, wind and visibility from seed, time and
+weather state. Gameplay never samples the sky texture. V3 applies cloud
+optical depth to each direct Sun path once; the sky/IBL, local fog, clouds and
+water share the same source identity and applied-attenuation metadata. A
+cloud-shadow map may exist without drawing a cloud. A skipped visual tier
+keeps authoritative environmental effects and reports its presentation
+fallback.
 
-For a camera ray from `a` to `b`, split at every fog-volume entry/exit, water
-interface and opaque depth. Within each subinterval, sum the active
-`σ_t=Σσ_{t,i}`. Evaluate a common source at sample `s`:
-`j(s)=Σ_i σ_{s,i}(s)[p_i(μ_s) E_sun(s) + Σ_{l∈V} p_i(μ_l) E_l(s)] + j_amb(s)`.
-`V` is the explicitly selected volumetric-light subset: Sun plus at most
-**4 local lights per media cell** on desktop/browser and **2** mobile,
-chosen by declared light participation/priority, not arbitrary truncation
-from the 32/8 surface-light lists. More media-affecting lights reject the
-profile or require an authored alternative. `E_sun(s)` includes global-air,
-local-fog and selected cloud optical depth on the *light ray* once;
-`E_l(s)` includes inverse-square/geometric source intensity, shadow and
-total participating-medium attenuation to that sample. The direct Sun is
-not pre-attenuated by atmosphere and then attenuated a second time.
-`j_amb=σ_s L_amb` is an optional authored isotropic ambient approximation,
-not a claim to solved multiple scattering. `p_i` is a normalized phase
-function in sr⁻¹. Direct and ambient contributions have distinct ownership.
+Desktop and WebGPU use a joint froxel integrator for aerial perspective,
+height/local fog and participating lights. The proposed first grids are
+160×90×64 desktop and 128×72×32 browser; mobile starts with the atmospheric
+aerial-perspective LUT plus analytic height fog as an explicitly approximate
+layering policy whose overlap error must be measured. Within each froxel, combine
+extinction and source coefficients before integration. For a segment,
+`L_out = T L_in + S`; compose ordered disjoint segments as
+`(T_near T_far, S_near + T_near S_far)`. Independently lit overlapping
+`(T,S)` images do not become exact by blending. Water and transparent
+surfaces sample the same cumulative view transport at their depth. Temporal
+reprojection tracks atmosphere, fog, Sun and cloud epochs and resets when the
+source, camera or topology invalidates it. The froxel budget, light subset,
+step count, error against a high-sample reference and GPU pass times are
+measured in M5; the proposed dimensions are not qualification.
 
-For a straight path in exponential air, use the analytic optical-depth
-integral. If `y(s)=y0+s d_y`, then over length `d` above ground,
-`τ_a=σ_{t,0}e^{-y0/H}(H/d_y)(1-e^{-d_y d/H})`, with the continuous
-limit `σ_{t,0}e^{-y0/H}d` as `d_y→0`; clip at declared ground/support
-boundaries. Homogeneous fog contributes its chord length times `σ_{t,f}`.
-The same integrals evaluate source-ray attenuation to the Sun/local light.
-For a view substep of length `Δs`, use exact constant-coefficient attenuation
-`T_k=e^{-σ_t Δs}` and midpoint source `S_k=j_mid(1-T_k)/σ_t`, with
-the `σ_t→0` limit `j_mid Δs`. Compose front to back as
-`(T,S) ← (T T_k, S + T S_k)`. This combines overlapping coefficients
-before integration. The midpoint source, lighting sample and isotropic
-ambient are declared approximations; the operator is exact only for its
-piecewise-constant source/coefficients. Independently cooked atmosphere and
-fog `(T,S)` pairs are **never** treated as an exact overlap. Even disjoint
-view-ray pairs compose exactly only when their source-light assumptions
-include the same whole-scene light-path attenuation.
-
-Initial volume image resolution is half the main view for 1080p desktop
-and 720p browser/mobile, with depth-aware spatial upsample and no mandatory
-temporal reprojection. Split at all support boundaries; subdivide where
-`Δτ>0.5` or estimated source variation exceeds 10%, up to **32 samples/ray
-desktop** and **16 browser/mobile**. Early termination at `T<10^-3`
-requires an upper bound on omitted background and source radiance to keep
-the resulting absolute error declared; it is not unconditional. Preflight
-uses conservative support, optical-depth and closest-light bounds; it
-rejects a declared camera/content envelope when they require more than
-the cap, or labels an explicit lower-fidelity optical policy. These step
-thresholds do **not** prove image error near sharp lights and boundaries.
-Initial comparison targets against a high-sample joint reference
-are ≤2% relative or 0.1 cd/m² absolute scene-luminance error for desktop,
-≤5% or 0.2 cd/m² for browser/mobile in supported non-edge pixels; silhouettes,
-fog boundaries, Sun shafts, water interfaces and motion need separate
-visual review. These thresholds are design goals to falsify, not measured
-facts or a proof that the sample caps suffice. The cost model is
-`O(pixels × samples × participating lights)` plus source-ray intersection;
-F2/T2 must include both views, light subsets, upload/transition peaks and
-the root's 10/16 ms GPU envelopes before admission claims.
-
-Optional precomputed atmosphere LUTs may supply background and direct-source
-outputs in their stated parameter/ray domain. An aerial-perspective `(T,S)`
-LUT cannot be independently overlaid with local fog in an overlap. Such a
-profile either exposes atmosphere coefficients to the joint path, uses a
-single provider that jointly recomputes the pair, or explicitly selects a
-measured approximate layering policy. No LUT is required by the initial
-baseline. A ray outside camera altitude/range/support, or through a water
-boundary without the chosen optical interface, returns unsupported or an
-approved fallback; it never silently clamps coordinates. Opaque depth
-terminates air, water starts a separately owned underwater segment, and V4
-receives only the final scene-linear colour/depth/history metadata.
+Presentation degrades explicitly when a LUT or froxel pass misses its budget:
+reuse a valid history within its declared age, reduce resolution/steps, or
+fall back to analytic fog/clear sky. Count and display quality downgrades.
+Authority, content identity and gameplay visibility still fail closed on
+invalid data. Exact cloud/fog/water overlap remains a selected joint-provider
+responsibility, not independent screen-space overlays.
 
 ## 6. What this closes and what must be demonstrated
 
@@ -398,7 +329,7 @@ This selects the initial source language/toolchain path, material feature
 closure, binding ABI, product/runtime identities, RGB/photometric convention
 and actual joint medium algorithm. It excludes a mandatory shader graph,
 runtime shader invention, universal area-light/multiple-scattering model,
-planetary atmosphere, arbitrary overlapping LUT composition and shader-byte
+unrestricted orbital cameras, arbitrary overlapping LUT composition and shader-byte
 equality across peers. A gameplay-relevant fog/visibility field remains
 authority-owned by E1/N1 and cannot be weakened by a client visual tier;
 the local joint fog pipeline and its histories remain per peer. Source edits
@@ -416,60 +347,24 @@ trace. A failed numerical or device target narrows that profile or requires
 an explicit provider redesign; it does not silently redefine the selected
 transport or physical world. No such evidence exists in this handoff.
 
-## 7. Bounded R3 transparency and regional optical profiles
+## 7. R3 transparency and regional optics — parked
 
-The [R3 gap-closure study](research/R3-OPTICS-AND-TRANSPARENCY-DESIGN-2026-11-02.md)
-and [integration decision](research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
-select a distinct `BoundedAlpha2` exact nonrefractive coverage profile beside
-the approximate sorted baseline. Its first implementation uses a finite per-pixel
-fragment append with checked counters, deterministic depth/owner sort and a
-GPU status reduction **before** V4 display/history commit. A third required
-event or counter/storage overflow is a current-view failure, never a silently
-discarded pane. The seven-walk depth-peel proposal remains a comparison
-implementation; neither path has device performance proof. Alpha on a ray
-after refraction is found through the complete regional geometry, not the
-original screen's first-segment records. Raster event, bent-ray alpha,
-interface, path branch and BVH visit limits are separate admitted counts.
-
-`R3-RegionalVirtual-D` selects actual camera-side occupied-water boundaries,
-Snell/Fresnel/TIR, covered regional rigid/deforming/cutout/coverage-alpha
-geometry and the joint air/fog/water single-scattering operator. Source-side
-underwater direct light uses a **named virtual horizontal cover interface**
-above the admitted physical wave/stage envelope, with virtual-water and air
-segments, complete blocker queries on those model paths and one named Sun,
-cloud and medium partition. This resolves the otherwise undefined mean-plane
-query for a wet receiver above mean level. It does not represent actual-wave
-focusing, source-ray parallax or focused caustics; geometry completeness
-within this virtual model is not physical source-path equivalence. Source
-rays from an outside-water receiver/sample that cross any real water interface
-are ineligible for this model. A separate
-conditional [focused-light challenger](research/R3-FOCUSED-LIGHT-CHALLENGER-2026-11-02.md)
-has finite source-cell flux bounds but no admitted real-time or focused
-single-scattering image closure. The full focused/fall source profile remains
-open in [WATER-OPTICS](modules/WATER-OPTICS.md).
-
-The first portable water optical proof is `R3-RegionalAbsorption-P`: one
-admitted graph/bed water volume and at most one water-interface event per camera
-path, actual camera refraction/TIR, complete supported regional geometry and
-bounded alpha, with water absorption
-but no water single-scattering shafts/haze. It changes visual quality by an
-authored profile; it does not change physical water, rain, contact or saved
-state. Portable scattering expansion requires certified source-query work
-removal and remains provisional. The render study's 720p portable transient
-worksheet totals 38.008 MiB before allocator overhead and other consumers;
-its query and bandwidth counts, the desktop two-view case and all named-device
-quality/performance gates remain unmeasured. F2 rejects a recipe that cannot
-reserve its full concurrent graph, rather than dropping required optical
-events or source visibility at runtime.
+R3 regional water optics and exact ordered-alpha research are retained in
+[the earlier study](research/R3-OPTICS-AND-TRANSPARENCY-DESIGN-2026-11-02.md)
+for M9, after a running renderer and measured water exist. V1 uses sorted
+premultiplied alpha as an explicitly approximate baseline. If an optional
+fragment or effect budget overflows, preserve the best available image,
+record telemetry and lower presentation quality. An authoritative visibility
+or gameplay query never relies on that approximation.
 
 ## 8. R0 first rendered game contract and proof
 
 This section selects the first bounded V1–V4 integration from the
 [render implementor walk](research/RENDER-IMPLEMENTOR-DOGFOOD-2026-11-02.md).
 It is a **design and build contract**, not a claim that a renderer or target
-pipeline already exists. I2a's admitted source/build/save path remains the
-production prerequisite. A synthetic pinned fixture may exercise the GPU
-mechanisms in isolation, with its evidence labelled accordingly.
+pipeline already exists. M1 starts with a synthetic in-memory scene; A6 later
+connects cooked products and exact source/build identity before production
+content claims. Synthetic GPU timings cannot qualify the cook path.
 
 **Fixture and authority.** One admitted R0 recipe has one perspective camera,
 one static geometry interface, opaque and masked metallic-roughness materials,
@@ -537,8 +432,7 @@ After undoing storage scale, set `C_e=e*L`,
 Encode `C_d` to sRGB for the spatial filter, decode its result to
 display-linear for UI composition, then encode the selected output once,
 either in the shader or by an sRGB attachment conversion, never both.
-Negative or nonfinite radiance and a value outside the admitted half-float/pre-exposure
-envelope are diagnosed rather than clamped into a plausible image. This
+Presentation repairs nonfinite radiance and clamps after pre-exposure before half-float storage, with per-pass counters and a visible developer diagnostic. This
 simple SDR curve is a bounded first profile; it is not an HDR, automatic
 exposure or photographic-look promise.
 

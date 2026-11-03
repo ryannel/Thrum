@@ -15,9 +15,11 @@ projections. The source build graph, CPU schedule and GPU pass graph remain sepa
 and lifetimes mean different things.
 
 Own the engine's public identities, schemas, composition, world authority, content lifecycle, rendering policy and
-creator operations. Select Rust, wgpu and platform-specific shells, using winit where appropriate. Reuse hecs
-0.11.2 privately for ordinary W1 component storage; specialized physics, pose, navigation and GPU stores remain
-with their owners. Do not build a second generic sparse ECS now. F1 scheduling and F3 schemas stay ours. A backend
+creator operations. Select Rust, wgpu and platform-specific shells, using winit where appropriate. The private W1
+component-store choice is reopened for the [three-day hecs/bevy_ecs/custom SoA spike](decisions/A0-WORLD-STORAGE.md)
+against the V1 workload; the earlier hecs 0.11.2 selection is historical until that comparison. Specialized physics,
+pose, navigation and GPU stores remain with their owners. Do not build a second generic sparse ECS without measured
+benefit. F1 scheduling and F3 schemas stay ours. A backend
 handle or Rust type ID is never a public object, source, save or network identity. Compiler/library pins and target
 qualification remain mandatory before construction uses these dependencies; selecting a library is not installing it.
 

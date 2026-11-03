@@ -10,6 +10,7 @@ mod host;
 mod publication_pool;
 mod replica;
 mod replica_index;
+pub mod sim;
 mod world;
 
 pub use authority::{

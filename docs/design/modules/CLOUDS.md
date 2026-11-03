@@ -1,0 +1,19 @@
+# Clouds: V1 handoff and retained optical reference
+
+3 November 2026. **Status: M6 target, no engine renderer yet.** This compact handoff selects only the reusable optical and ownership rules from `codex/cloud-system-design` at `3b46c19`. That branch remains separate; its cohort renderer and bulk experiments are not a runtime dependency. [The build plan](../../BUILD-PLAN.md) puts a measured sky/fog renderer before clouds. No cloud appearance or frame budget is qualified by this page.
+
+## Ownership and consumers
+
+E1/W1 owns deterministic weather causes, world time, wind and gameplay queries. F4 owns admitted cloud source assets; V3 owns optical coefficients and transport; V1 owns GPU resources/submission; V2 extracts committed source snapshots; V4 owns display/history. A source snapshot names its revision, epoch, time, support and interpretation. Optical samples name extinction/scattering in m⁻¹, phase parameters, validity and error. Valid zero cloud differs from unavailable data. GPU caches never become authoritative weather or save state.
+
+Main view, reflected view, Sun attenuation/shadows, sky/IBL and optional headless semantic queries are separate consumers of the **same** source. Hiding visible clouds does not retire an offscreen shadow or reflection consumer; removing all optical consumers releases cloud GPU resources after readers finish. Headless wind/rain/visibility needs no GPU readback. A visual fallback may reduce cloud quality while preserving physical/gameplay weather facts and reporting its age/error.
+
+## Transport and reference
+
+Beer attenuation for a constant segment is `T = exp(-σ_t Δs)`. A source segment contributes `S = j(1-T)/σ_t`, with limit `j Δs` as `σ_t→0`. Compose front segment A and rear segment B as `(T_A T_B, S_A + T_A S_B)`. Overlapping air, fog and cloud require summed coefficients and one source-light evaluation; independent lit images cannot be blended into exact overlap. A near/far level substitutes for another representation of the same condensate; it never adds a duplicate density. V3 applies named air, cloud and geometry attenuation once to a source path. The Hillaire clear-air multiple-scattering approximation is labelled separately from cloud/fog scattering.
+
+The retained independent Python references in [`scripts/reference/cloud/`](../../../scripts/reference/cloud/optical_reference.py) define float64 atmosphere transport, Beer segment cases and Rayleigh/Henyey–Greenstein phase parameters (`WEIGHTS`, `BRANCH_B`, `LIQUID_G`). They are comparison oracles, not runtime code or a selected cloud morphology. They require NumPy and are taken from branch commit `3b46c19`; their 23 unit tests passed locally with Python 3.14 and NumPy 2.4.6, without qualifying an engine render. The earlier per-cloud cohort measured about 13 ms GPU for one cloud on an M3 Max, so M6 must use a shared weather/source representation and early cost screen rather than scale that implementation.
+
+## M6 implementation target
+
+Start with a scrolling weather map, type/height lookup, shared 3D base/detail noise and quarter-resolution temporally reprojected tracing. Amortize a cloud shadow map and feed terrain, froxels, water and reflected/environment capture from the same source. Drive weather evolution with stable seed/time/wind; keep gameplay-relevant weather on the CPU side of the source contract. Provide a 2.5D/panorama mobile tier and a current-state fallback for stale history. These are design candidates; select dimensions, step counts and quality after measured macOS, WebGPU and phone scenes. Compare sunset, horizon, motion and cloud-shadow alignment against the retained reference, and record GPU pass time plus visual evidence before promoting maturity.

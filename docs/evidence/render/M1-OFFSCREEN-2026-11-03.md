@@ -1,0 +1,5 @@
+# M1 offscreen renderer checkpoint
+
+3 November 2026. On Apple M3 Max/Metal with pinned wgpu 30.0.1, an opt-in test prepared one opaque static pipeline, rendered a 10,000-instance synthetic grid, and read back a padded 65×33 RGBA8Unorm target. Pixel assertions distinguish background, center, instance material rows and nonzero table strides. Two timing batches reused their resources; two local runs returned diagnostic pass pairs of 16.250/13.250 µs and 19.416/12.084 µs after render-completion-gated resolution. A disabled timestamp-feature path returned no fabricated timing. This is a correctness/diagnostic observation, not a full-frame or sustained performance qualification.
+
+CPU contract tests cover graph access/init/discard/lifetime/closure, ABI packing and limits, and history generation/reset. `thrum-render` compiled for wasm32 WebGPU, iOS simulator Metal and Android Vulkan with the pinned compiler. Those are compile checks, not browser/phone execution. The renderer has no PBR, clustered lights, CSM, cooked products, display transform or surface recovery yet. M2 and A6 own those integrations; named-device visual and frame-budget review remain open.

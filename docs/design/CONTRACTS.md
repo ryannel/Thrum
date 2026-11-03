@@ -265,6 +265,7 @@ make bound missing textures multiplicative identities while native factor
 defaults carry non-emitting/dielectric meaning. Their occlusion-strength term
 modulates selected indirect light only, not direct transport or emission.
 Linear scene-referred colour is kept separate from display transforms; V4 owns exposure/tone mapping/output encoding.
+V3 uses per-view pre-exposure and clamps to the selected presentation storage range before fp16 writes. V1/V3 count nonfinite repairs, clamps and quality fallbacks per pass for telemetry. An unsupported optional visual effect degrades through a declared prepared fallback and invalidates affected history; it does not fail the authoritative tick or hide a valid gameplay state. Source and gameplay facts still reject invalid data at their own boundaries. Scale-aware tolerances govern presentation geometry/numerics; exact arithmetic is not a renderer admission prerequisite.
 W1 owns authored light identity/source descriptors and E1 owns its celestial/environment drivers. V3 owns their
 render transport evaluation. A headless physical surface model uses a declared E1 irradiance/thermal provider and
 shared source facts/exposure data; it never reads rendered pixels as the authority for heat or weather.
@@ -305,15 +306,12 @@ Even disjoint `(T,S)` segments compose exactly only relative to a shared declare
 term must use incident lighting consistent with the combined scene, including other media on its light paths.
 View-ray disjointness alone does not justify independently lit preintegration. Otherwise recompute jointly or
 declare the lighting approximation and its validity.
-Grouped sorted alpha remains an explicitly approximate profile. A profile promising two exact ordered
-nonrefractive coverage events must prepare bounded event storage, deterministic ordering and current-view overflow
-status before display; it cannot silently truncate a third event. After refraction, V3 obtains first hits from the
-declared complete regional geometry, not the original camera depth/alpha capture. Camera-path, source-path,
-interface, alpha and traversal limits are distinct; incomplete support is not darkness. The selected bounded
-regional Sun policy may use a named virtual cover interface while camera occupancy uses actual admitted water.
-Its complete geometry visibility is completeness **within that light-path approximation**, not actual-interface
-focused caustics. Such focused transport remains a separate capability with its own source coverage and energy
-partition. V3 applies the chosen source path and cloud/air/fog/water constituents once.
+Grouped sorted alpha remains an explicitly approximate V1 profile. Exact ordered alpha and regional water optics are
+parked until M9; their retained studies do not impose an active view-failure gate. Optional fragment overflow lowers
+presentation quality and increments telemetry. Gameplay visibility never depends on sorted-alpha pixels. V3 applies
+the chosen source path and cloud/air/fog/water constituents once, including any Hillaire atmosphere LUT and joint
+froxel fog path. An authored HDRI may override dynamic sky appearance, but cannot create a second Sun or apply
+attenuation twice. Overlapping media require a joint integrator or an explicitly measured approximate fallback.
 
 ## C09 Environmental fields and physical exchange — E1 with P3
 

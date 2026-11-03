@@ -1,5 +1,7 @@
 # Water integration and proof plan
 
+**V1 reset (3 November 2026): the regional-optics portion below is parked with R3 until M9; water dynamics remain later M8 work.**
+
 1 November 2026, revised 2 November. **D2-water B/C specification for bounded
 dynamics and regional optics; focused actual-interface light remains an open
 family capability. No implementation or qualification.**

@@ -3,9 +3,12 @@
 *.profraw
 *.profdata
 
-# Owned scratch experiments and bulk generated output. Selected evidence belongs
-# in docs/evidence/ and is deliberately visible to Git.
+# Owned scratch experiments and bulk generated output. Compact selected evidence
+# may live in docs/evidence; new bulk archives and media need a durable store.
 /tmp/
+docs/evidence/**/*.tar.gz
+docs/evidence/**/*.zip
+docs/evidence/**/*.webm
 
 # Local Python tooling and environments.
 __pycache__/
