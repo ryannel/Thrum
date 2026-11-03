@@ -1339,6 +1339,15 @@
           "correctness": "exact3viewer_restore_and_actual_source_upload_named_profiles_matched16point_low_high_T_probe_pass_scoped_not_fullfield",
           "experienced_quality": "normals_show_small_lobes_calibrated_019_reveals_contrast_highcache_does_not_repair_club_body_ribbon_cap_rejected",
           "performance": "highreference264x_coefficient_query_count_staged_only_logical_bytes_not_timing_residency_or_device_admission"
+        },
+        "finite_component_integration": {
+          "record": "../evidence/cloud-component-proof-2026-11-03/README.md",
+          "commission": "../evidence/cloud-component-proof-2026-11-03/INTEGRATION-COMMISSION.md",
+          "build": "1e446a5adeda974c",
+          "decision": "v2_BODY_rounded_B_inputs_provisionally_selected_for_complete_bounded_Cu_integration",
+          "correctness": "both_exact_static_viewers_restore_scoped_tests_and_independent_artifact_review_pass_v1_and_v2_actual_GPU_CPU_point_probes_pass_live_source_admission_unrun",
+          "experienced_quality": "actual_v1_native_local_head_emergence_but_cut_content_rejected_v2_native_natural_roof_and_two_rounded_heads_visible_no_live_lifecycle_acceptance",
+          "performance": "v2_held_logical_GPU23923024_bytes_not_residency_dynamic_work_or_device_fullsky_admission"
         }
       }
     },
