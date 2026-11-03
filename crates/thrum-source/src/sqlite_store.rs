@@ -4,6 +4,8 @@
 //! limits require separate qualification; planning targets are advisory.
 
 #[cfg(test)]
+use std::cell::Cell;
+#[cfg(test)]
 use std::collections::HashSet;
 use std::fmt;
 use std::fs::{self, File};
@@ -59,6 +61,22 @@ const CLOSURE_BATCH_FILES: usize = 128;
 const GC_MARK_SCAN_BLOBS: usize = 4096;
 #[cfg(test)]
 const GC_MARK_CANDIDATES: usize = 128;
+
+#[cfg(test)]
+thread_local! {
+    static MAX_APPEND_SLICE_NS: Cell<u64> = const { Cell::new(0) };
+}
+
+#[cfg(test)]
+struct AppendSliceTimer(Instant);
+
+#[cfg(test)]
+impl Drop for AppendSliceTimer {
+    fn drop(&mut self) {
+        let elapsed = self.0.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
+        MAX_APPEND_SLICE_NS.with(|maximum| maximum.set(maximum.get().max(elapsed)));
+    }
+}
 const SQLITE_PAGE_BYTES: u64 = 4 * 1024;
 const SOURCE_STORE_FORMAT: i64 = 1;
 const MIB: u64 = 1024 * 1024;
@@ -2038,6 +2056,10 @@ impl SqliteStoreCore {
         index: i64,
         bytes: &[u8],
     ) -> Result<(), StoreError> {
+        // Test builds measure the complete retained-row lookup, WAL guard and
+        // bounded write/commit. Release builds pay no timer cost.
+        #[cfg(test)]
+        let _slice_timer = AppendSliceTimer(Instant::now());
         let sql_length = i64::try_from(length).map_err(|_| StoreError::InputLength)?;
         let retained: Option<bool> = self
             .conn
@@ -4212,6 +4234,290 @@ fn accepted_owner_reuses_partial_blob_while_old_pin_reads() {
 }
 
 #[test]
+#[ignore = "local accepted-store partial retry scale and sampled space probe"]
+fn measure_accepted_partial_retry_with_live_old_pin() {
+    fn file_bytes(path: &Path) -> u64 {
+        match fs::metadata(path) {
+            Ok(metadata) => metadata.len(),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
+            Err(error) => panic!("cannot sample {}: {error}", path.display()),
+        }
+    }
+
+    for (case, prefix_chunks) in [(0_u8, 1_u64), (1, 16), (2, 256)] {
+        let fixture = Fixture::new();
+        let plan = SourceSpacePlan {
+            wal_stop_bytes: 40 * MIB,
+            free_headroom_bytes: 0,
+            ..SourceSpacePlan::DEFAULT
+        };
+        let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+        let stage_a = minimal_source_stage(&fixture, "A retained during B retry");
+        let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+        let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+        let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+        let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+        let mut a_pin = store.pin_current(a.generation).unwrap();
+        let size_mib = (prefix_chunks + 1) * 4;
+        let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, size_mib, case + 30);
+        let master = SourcePath::parse("master.bin").unwrap();
+        let master_file = stage_b
+            .files()
+            .iter()
+            .find(|file| file.path() == &master)
+            .unwrap();
+        let hash = *master_file.sha256();
+        let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+        let mut scratch = Vec::new();
+        let max_main = Cell::new(0_u64);
+        let max_wal = Cell::new(0_u64);
+        let old_reads = Cell::new(0_u64);
+        let database = fixture.database();
+        let wal = wal_path(&database);
+        let mut sample = || {
+            max_main.set(max_main.get().max(file_bytes(&database)));
+            max_wal.set(max_wal.get().max(file_bytes(&wal)));
+            let mut copied = Vec::new();
+            a_pin.copy_file_to(&scene, &mut copied).unwrap();
+            assert_eq!(copied, old_scene);
+            old_reads.set(old_reads.get() + 1);
+        };
+        MAX_APPEND_SLICE_NS.with(|maximum| maximum.set(0));
+        let admission = store.owner.admission().unwrap();
+        let mut short_input = stage_b
+            .open(&master)
+            .unwrap()
+            .take(prefix_chunks * CHUNK_BYTES as u64);
+        assert!(matches!(
+            store.stage_blob_phased(
+                &mut short_input,
+                master_file.length(),
+                hash,
+                &mut scratch,
+                &mut sample,
+            ),
+            Err(StoreError::InputIo)
+        ));
+        drop(admission);
+        sample();
+        assert_eq!(old_reads.get(), prefix_chunks + 1);
+        assert_eq!(store.current_root().unwrap(), Some(a));
+        assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+        let (state, retained): (i64, i64) = store
+            .owner
+            .lock()
+            .unwrap()
+            .conn
+            .query_row(
+                "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+                 FROM blob_header WHERE hash=?1",
+                params![hash.as_slice()],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((state, retained), (0, prefix_chunks as i64));
+        store
+            .owner
+            .lock()
+            .unwrap()
+            .conn
+            .execute_batch(
+                "CREATE TRIGGER no_partial_delete BEFORE DELETE ON blob_chunks
+                 BEGIN SELECT RAISE(ABORT, 'matching prefix must be reused'); END;
+                 CREATE TRIGGER no_partial_update BEFORE UPDATE ON blob_chunks
+                 BEGIN SELECT RAISE(ABORT, 'matching prefix must not be rewritten'); END;",
+            )
+            .unwrap();
+        let seed_append_ms =
+            MAX_APPEND_SLICE_NS.with(|maximum| maximum.replace(0) as f64 / 1_000_000.0);
+        let retry_started = Instant::now();
+        let b = store
+            .admit_with_probes(
+                a.generation,
+                1,
+                2,
+                [2; 32],
+                &candidate_b,
+                &mut sample,
+                || {},
+            )
+            .unwrap();
+        let retry_ms = retry_started.elapsed().as_secs_f64() * 1000.0;
+        sample();
+        assert_eq!(old_reads.get(), prefix_chunks + 1 + prefix_chunks + 1 + 1);
+        assert_eq!(b.generation, a.generation + 1);
+        assert_eq!(store.current_root().unwrap(), Some(b));
+        assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+        let retry_append_ms =
+            MAX_APPEND_SLICE_NS.with(|maximum| maximum.get() as f64 / 1_000_000.0);
+        eprintln!(
+            "accepted_partial_retry prefix_chunks={prefix_chunks} total_chunks={} retry_ms={retry_ms:.3} seed_max_append_ms={seed_append_ms:.3} retry_max_append_ms={retry_append_ms:.3} sampled_main_bytes={} sampled_wal_bytes={} staged_copy_bytes={} old_pin_reads={}",
+            prefix_chunks + 1,
+            max_main.get(),
+            max_wal.get(),
+            stage_b.copied_bytes(),
+            old_reads.get(),
+        );
+        drop(sample);
+        a_pin.close().unwrap();
+    }
+}
+
+#[test]
+fn accepted_kill_mid_blob_child() {
+    let Some(directory) = std::env::var_os("THRUM_TEST_ACCEPTED_MID_BLOB_KILL_DIR") else {
+        return;
+    };
+    let marker =
+        PathBuf::from(std::env::var_os("THRUM_TEST_ACCEPTED_MID_BLOB_KILL_MARKER").unwrap());
+    let fixture = std::mem::ManuallyDrop::new(Fixture(PathBuf::from(directory)));
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let first_stage = minimal_source_stage(&fixture, "A retained during B retry");
+    let stage_b = stage_n_mib_binary(&fixture, &first_stage, plan, 68, 31);
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let mut chunks = 0;
+    store
+        .admit_with_probes(
+            1,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                chunks += 1;
+                if chunks == 16 {
+                    signal_and_wait_for_kill(&marker);
+                }
+            },
+            || {},
+        )
+        .unwrap();
+    panic!("child passed the mid-blob kill point");
+}
+
+#[test]
+fn accepted_owner_kill_mid_blob_reopens_a_pin_and_retries_b() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A retained during B retry");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    drop(store);
+
+    let marker = fixture.0.join("accepted-mid-blob.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::accepted_kill_mid_blob_child")
+        .arg("--nocapture")
+        .env("THRUM_TEST_ACCEPTED_MID_BLOB_KILL_DIR", &fixture.0)
+        .env("THRUM_TEST_ACCEPTED_MID_BLOB_KILL_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    kill_after_marker_with_deadline(child, &marker, Duration::from_secs(30), || {
+        assert_eq!(
+            NativeSourceStore::open(&database, plan)
+                .err()
+                .unwrap()
+                .kind(),
+            SourceStoreErrorKind::Busy
+        );
+    });
+
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 68, 31);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let hash = *stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap()
+        .sha256();
+    let (state, retained): (i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, retained), (0, 16));
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .execute_batch(
+            "CREATE TRIGGER no_partial_delete BEFORE DELETE ON blob_chunks
+             BEGIN SELECT RAISE(ABORT, 'killed prefix must be reused'); END;
+             CREATE TRIGGER no_partial_update BEFORE UPDATE ON blob_chunks
+             BEGIN SELECT RAISE(ABORT, 'killed prefix must not be rewritten'); END;",
+        )
+        .unwrap();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let b = store
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                copied.clear();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+            },
+            || {},
+        )
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(store.current_root().unwrap(), Some(b));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    assert_eq!(
+        store
+            .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+            .unwrap(),
+        b
+    );
+    let mut b_pin = store.pin_current(b.generation).unwrap();
+    assert_eq!(
+        b_pin.copy_file_to(&master, &mut io::sink()).unwrap(),
+        68 * MIB
+    );
+    b_pin.close().unwrap();
+    a_pin.close().unwrap();
+    drop(store);
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+}
+
+#[test]
 fn accepted_old_pin_reads_between_new_blob_chunks() {
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {
@@ -5124,7 +5430,9 @@ fn stage_n_mib_binary(
         &root,
         &declared,
         Limits {
-            temporary: (size_mib * 2).max(64) * MIB,
+            // A killed owner can leave one full provisional copy to be
+            // charged until project cleanup; allow a fresh retry copy.
+            temporary: (size_mib * 3).max(64) * MIB,
             free_floor: 0,
             ..plan.into()
         },
@@ -8103,8 +8411,18 @@ fn signal_and_wait_for_kill(marker: &Path) -> ! {
 
 #[cfg(test)]
 fn kill_after_marker(child: Child, marker: &Path, before_kill: impl FnOnce()) {
+    kill_after_marker_with_deadline(child, marker, Duration::from_secs(5), before_kill);
+}
+
+#[cfg(test)]
+fn kill_after_marker_with_deadline(
+    child: Child,
+    marker: &Path,
+    timeout: Duration,
+    before_kill: impl FnOnce(),
+) {
     let mut child = KillChildOnDrop(child);
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let deadline = Instant::now() + timeout;
     while !marker.exists() {
         assert!(Instant::now() < deadline, "child did not reach kill point");
         assert!(child.0.try_wait().unwrap().is_none(), "child exited early");
