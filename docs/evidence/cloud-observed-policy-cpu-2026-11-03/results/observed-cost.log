@@ -1,0 +1,6 @@
+{"case":"single-wet1200","mode":"legacy","maxMs":3.2207089999999994,"gatePass":true}
+{"case":"single-wet1200","mode":"observed","maxMs":4.766750000000002,"gatePass":false}
+{"case":"single-dry900","mode":"legacy","maxMs":1.5769999999999982,"gatePass":true}
+{"case":"single-dry900","mode":"observed","maxMs":5.234000000000151,"gatePass":false}
+{"case":"two-wet1200","mode":"legacy","maxMs":2.74675000000002,"gatePass":true}
+{"case":"two-wet1200","mode":"observed","maxMs":8.634250000000065,"gatePass":false}

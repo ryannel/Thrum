@@ -1,0 +1,354 @@
+--- d9/index.html
++++ b31460fad16cde97/index.html
+@@ -1,5 +1,5 @@
+-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Two-cell optical interaction proof</title><link rel="stylesheet" href="style.css"></head><body>
+-<header><h1>Two-cell optical interaction proof</h1><p>Two independent formations · one deterministic source clock · native BODY and shared B basis · common optical q, light, receiver and independent mirror · <strong>prototype, not art or device admission</strong></p></header>
++<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Two-cell covered-light proof</title><link rel="stylesheet" href="style.css"></head><body>
++<header><h1>Two-cell covered-light proof</h1><p>Two independent formations · one deterministic source clock · native BODY and shared B basis · common optical q, two covered light charts, receiver and independent mirror · <strong>prototype, not art or device admission</strong></p></header>
+ <div id="lab"><section id="controls">
+ <label>Fixture<select id="fixture"><option value="overlap">Overlap roots0/16m</option><option value="remote">Remote B Sun blocker</option><option value="separated">Visible pair B2400/-1200m</option></select></label><label><input id="includeB" type="checkbox" checked>B optical contribution (diagnostic epoch)</label><label><input id="observer" type="checkbox">Frame observer</label><button id="programme">Queue shared wind150/front500</button><button id="play">Play</button><button id="pause">Pause</button><button id="reset">Reset source</button><label>Rate<select id="rate"><option value="1">1×</option><option value="16">16×</option></select></label>
+ <label>Seek source s<input id="seek-value" type="number" value="100" min="0" max="1200" step="0.25" style="width:78px"></label><button id="seek">Replay</button><button id="cancel-seek">Cancel replay</button>
+--- d9/shaders/optics.wgsl
++++ b31460fad16cde97/shaders/optics.wgsl
+@@ -1,5 +1,5 @@
+ struct Params  {
+-  camera:vec4f, focus:vec4f, sun:vec4f, bmin:vec4f, bmax:vec4f, weather:vec4f, control:vec4f, front:vec4f, image:vec4f, domain:vec4f, lifecycle:vec4f, receiver:vec4f
++  camera:vec4f, focus:vec4f, sun:vec4f, bmin:vec4f, bmax:vec4f, weather:vec4f, control:vec4f, front:vec4f, image:vec4f, domain:vec4f, lifecycle:vec4f, receiver:vec4f, lightBmin:vec4f, lightBmax:vec4f
+ }
+ ;
+ @group(0) @binding(0) var<uniform> p:Params;
+@@ -8,6 +8,7 @@
+ @group(0) @binding(3) var linearClamp:sampler;
+ @group(0) @binding(4) var restTex:texture_3d<f32>;
+ @group(0) @binding(5) var voxelLight:texture_3d<f32>;
++@group(0) @binding(27) var voxelLightB:texture_3d<f32>;
+ @group(0) @binding(7) var airTrans:texture_2d<f32>;
+ @group(0) @binding(10) var previousQ:texture_3d<f32>;
+ @group(0) @binding(11) var previousRest:texture_3d<f32>;
+@@ -128,13 +129,23 @@
+   let tau=tauRay(x,p.sun.xyz,32u,1.);
+   return exp(-vec2f(tau,tau*p.domain.y));
+ }
++// A chart contributes only when every interpolation corner exists. A one-voxel
++// smooth collar blends to the other chart or COMPLETE current-source fallback.
++fn chartWeight(x:vec3f,lo:vec3f,hi:vec3f)->f32 {
++  let pitch=(hi-lo)/vec3f(32.,24.,24.);
++  let edge=min(x-(lo+.5*pitch),hi-.5*pitch-x);
++  let w=smoothstep(vec3f(0),pitch,edge);return w.x*w.y*w.z;
++}
++fn lightWeights(x:vec3f)->vec3f {
++  let a=chartWeight(x,p.bmin.xyz,p.bmax.xyz);let b=chartWeight(x,p.lightBmin.xyz,p.lightBmax.xyz);let sum=a+b;
++  if(sum>=1.){return vec3f(a/sum,b/sum,0.);}return vec3f(a,b,1.-sum);
++}
+ fn cacheT(x:vec3f)->vec2f {
+   if(p.domain.w>.5){return directT(x);}
+-  let uv=uvw(x);
+-  if(any(uv<vec3f(0))||any(uv>vec3f(1))) {
+-    return directT(x);
+-  }
+-  return textureSampleLevel(voxelLight,linearClamp,uv,0.).xy;
++  let w=lightWeights(x);var t=vec2f(0.);
++  if(w.x>0.){t+=w.x*textureSampleLevel(voxelLight,linearClamp,uvw(x),0.).xy;}
++  if(w.y>0.){let uv=(x-p.lightBmin.xyz)/(p.lightBmax.xyz-p.lightBmin.xyz);t+=w.y*textureSampleLevel(voxelLightB,linearClamp,uv,0.).xy;}
++  if(w.z>0.){t+=w.z*directT(x);}return t;
+ }
+ fn cloudSun(x:vec3f)->vec2f {
+   var tau=0.;
+@@ -145,13 +156,15 @@
+   }
+   return exp(-vec2f(tau,p.domain.y*tau))*cacheT(x+p.sun.xyz*200.);
+ }
++fn directAmbientA(x:vec3f)->f32 {
++  let dirs=array<vec3f,4>(vec3f(.6,.8,0.),vec3f(-.6,.8,0.),vec3f(0.,.8,.6),vec3f(0.,.8,-.6));
++  var a=0.;for(var j=0u;j<4u;j++){a+=exp(-tauRay(x,dirs[j],20u,1.));}return a*.25;
++}
+ fn ambientA(x:vec3f)->f32 {
+-  let uv=uvw(x);
+-  if(any(uv<vec3f(0))||any(uv>vec3f(1))) {
+-    let dirs=array<vec3f,4>(vec3f(.6,.8,0.),vec3f(-.6,.8,0.),vec3f(0.,.8,.6),vec3f(0.,.8,-.6));
+-    var a=0.;for(var j=0u;j<4u;j++){a+=exp(-tauRay(x,dirs[j],20u,1.));}return a*.25;
+-  }
+-  return textureSampleLevel(voxelLight,linearClamp,uv,0.).z;
++  let w=lightWeights(x);var a=0.;
++  if(w.x>0.){a+=w.x*textureSampleLevel(voxelLight,linearClamp,uvw(x),0.).z;}
++  if(w.y>0.){let uv=(x-p.lightBmin.xyz)/(p.lightBmax.xyz-p.lightBmin.xyz);a+=w.y*textureSampleLevel(voxelLightB,linearClamp,uv,0.).z;}
++  if(w.z>0.){a+=w.z*directAmbientA(x);}return a;
+ }
+ fn hg(g:f32,mu:f32)->f32 {
+   return(1.-g*g)/(4.*PI*pow(max(1.+g*g-2.*g*mu,.001),1.5));
+--- d9/src/bench/app.js
++++ b31460fad16cde97/src/bench/app.js
+@@ -6,6 +6,7 @@
+ import {FrameSettlement,frameFence,assertGpuHealthy} from '../render/frame-lifecycle.js';
+ import {recordCanvas,MAX_CLIP_BYTES} from './motion.js';
+ import {completedTraceRow} from './trace.js';
++import {failureSnapshot,postFailure,settleRecording} from './failure-retention.js';
+ const $=id=>document.getElementById(id),canvas=$('canvas'),settlement=new FrameSettlement(),observation=crypto.randomUUID().slice(0,8);
+ let adapter,clock,identity,loading=true,fatal=false,dirty=false,queued=false,drawing=false,handle=null,busy=false,seekJob=null,recording=null,lastFrame=null,lastSubmitted=null,serial=0,revision=0;
+ const trace=[],TRACE_LIMIT=8192;let overwrittenTrace=0;let lastHud=0,configuration;
+@@ -15,7 +16,12 @@
+ function controlsDisabled(v){for(const el of document.querySelectorAll('#controls input,#controls select,#controls button'))if(!el.readOnly)el.disabled=v;}
+ function sourceControls(){const c={};for(const k of Object.keys(DEFAULT_CONTROLS)){const el=$(k);if(!el)throw Error('Missing source control '+k);c[k]=typeof DEFAULT_CONTROLS[k]==='boolean'?el.checked:Number(el.value);if(typeof c[k]==='number'&&!Number.isFinite(c[k]))throw Error('Invalid source control '+k);}return c;}
+ function options(){return {lightingProfile:$('lighting').value,family:0,provider:0,cohorts:true,forceZero:false,sun:Number($('sun').value),sunAzimuth:Number($('azimuth').value),includeB:$('includeB').checked,fixtureRevision:revision,mode:Number($('mode').value),mirror:$('mirror').checked,main:$('main').checked,fog:$('fog').checked,resolved:$('full').checked,viewSteps:Number($('steps').value),extinctionScale:.019/.0045,preparedDensity:false,materialStructure:false,materialSpace:'world',materialFilter:false,thermals:false,materialCore:false,connectedFeed:false,frontMorph:false,neckMix:false,dualRest:false,emptyWork:false,cachedVelocity:false,alpha:1};}
+-function fail(error){if(fatal)return;fatal=true;dirty=false;queued=false;if(handle!==null)cancelAnimationFrame(handle);handle=null;seekJob?.controller.abort('fatal');recording?.controller.abort('fatal');settlement.fail(error);controlsDisabled(true);info('Unavailable · '+error.message);$('receipt').textContent=error.stack??String(error);console.error(error);}
++function fail(error){if(fatal)return;fatal=true;dirty=false;queued=false;if(handle!==null)cancelAnimationFrame(handle);handle=null;
++ const failure=failureSnapshot(error,{identity,observation,fixtureRevision:revision,clockSnapshot:()=>({clock:clock?.metadata(),model:clock?.model.metadata()}),lastSubmitted,lastCompleted:lastFrame,recordingStart:recording?.start,hostSnapshot:hostFacts,gpuErrors:adapter?.gpu.errors??[]});
++ try{clock?.pause(performance.now());}catch{}
++ const journal={name:`system-FAILED-${identity?.build??'startup'}-${observation}-${++serial}`,build:identity?.build??null,failure};postFailure(journal).catch(saveError=>{console.error('Failure journal could not be saved',saveError);$('receipt').textContent=JSON.stringify({...journal,journalSaveError:String(saveError)},null,2);});
++ seekJob?.controller.abort('fatal');recording?.controller.abort('fatal');settlement.fail(error);controlsDisabled(true);info('Unavailable · '+error.message);$('receipt').textContent=JSON.stringify(journal,null,2);console.error(error);}
++
+ function requestRender(){if(fatal)return;dirty=true;if(!loading&&!queued&&!drawing){queued=true;requestAnimationFrame(draw);}}
+ function sourceNeedsSteps(){if(!clock||seekJob)return false;const t=clock.tuple();return t.committedTime+.25<=t.requestedTime+1e-9;}
+ function ensureTick(){if(handle===null&&!loading&&!fatal&&(clock?.playing||sourceNeedsSteps()))handle=requestAnimationFrame(tick);}
+@@ -45,7 +51,7 @@
+ async function reset(){if(busy||fatal)return;pause(false);if(seekJob){seekJob.controller.abort('reset');await seekJob.promise;}await settled();clock.reset(sourceControls());adapter.scene.epoch++;changed('source-reset');readout();}
+ function recordState(){const t=clock.tuple();return{clock:structuredClone(clock.metadata()),sourceModel:structuredClone(clock.model.metadata()),sourceTime:t.time,requestedTime:t.requestedTime,committedTime:t.committedTime,sourceTick:t.sourceTick,epoch:t.epoch,groups:t.groups.map(g=>({cellID:g.cellID,stats:structuredClone(g.stats),events:structuredClone(g.events)})),lastCompletedFrame:lastFrame?structuredClone(lastFrame):null,lastSubmittedFrame:lastSubmitted?structuredClone(lastSubmitted):null,host:hostFacts(),wallPerformanceMs:performance.now(),gpuErrors:adapter.gpu.errors.length,fault:fatal};}
+ async function record(kind){if(recording||busy||fatal||seekJob)return;pause(false);const startTime=kind==='renewal'?130:kind==='breakup'?500:0,rate=kind==='accelerated'?16:1,seconds=kind==='accelerated'?40:90;await seekTo(startTime);if(Math.abs(clock.tuple().time-startTime)>.001){info('Recording cancelled: requested source window not reached');return;}if(kind==='accelerated'){$('follow').value='region';changed('explicit-accelerated-follow');}else{$('follow').value='fixed';if(kind==='breakup'){const R=clock.tuple().groups[0].region;adapter.scene.fixedFocus=[R[0]-170,1239.2,R[2]+155];}changed(kind==='breakup'?'breakup-fixed-source500-world-anchor':'renewal-fixed-world');}clock.setRate(rate,performance.now());$('rate').value=String(rate);await drainSource();const state={controller:new AbortController(),start:null,end:null,traceOverwrittenStart:overwrittenTrace,worldFocusAtStart:[...adapter.scene.fixedFocus]};recording=state;busy=true;controlsDisabled(true);info(`Recording ${kind} · ${seconds} wall seconds at ${rate}× source request`);
+- try{const result=await recordCanvas(canvas,seconds*1000,{signal:state.controller.signal,onStart:()=>{clock.play(performance.now());state.start=recordState();ensureTick();},onDeadline:()=>{pause(false);state.end=recordState();}});if(!state.end){pause(false);state.end=recordState();}await drainSource();if(result.blob.size>MAX_CLIP_BYTES)throw Error('Clip exceeds 12 MiB');const outcome=result.aborted?result.abortReason:state.end.fault||state.end.gpuErrors?'faulted':state.end.sourceTime<=state.start.sourceTime?'no-source-progress':'recorded-fixed-controls';const name=`system-${kind}-${rate}x-${seconds}s-${identity.build}-${observation}-${++serial}`,r=await fetch('/motion',{method:'POST',headers:{'X-Capture-Name':name},body:result.blob});if(!r.ok)throw Error('Motion save '+r.status);await save(name,{motion:{file:name+'.webm',bytes:result.blob.size,mimeType:result.mimeType,requestedWallSeconds:seconds,actualRecorderWallMs:result.elapsedMs,requestedCaptureFps:result.requestedFps,deliveredFpsClaim:false,retainedEncodedByteLimit:MAX_CLIP_BYTES,droppedEncodedBytes:result.droppedEncodedBytes,outcome,kind,focusMode:$('follow').value,worldFocusAtStart:state.worldFocusAtStart,start:state.start,endAtStopRequest:state.end,afterStopSettledFrame:structuredClone(lastFrame),sourceWindow:[state.start.sourceTime,state.end.sourceTime],scope:'Actual canvas stream; source, committed, GPU completion and encoded frame sampling times distinct. Continuous watched motion and art acceptance separate.'},submissionTrace:structuredClone(trace),traceCapacity:TRACE_LIMIT,traceOverwrittenSinceStart:overwrittenTrace-state.traceOverwrittenStart,traceSampleWindow:trace.length?[trace[0].sourceTime,trace.at(-1).sourceTime]:null});info('Saved '+outcome+' · '+name);}catch(error){fail(error);}finally{recording=null;busy=false;if(!fatal)controlsDisabled(false);}}
++ try{const result=await recordCanvas(canvas,seconds*1000,{signal:state.controller.signal,onStart:()=>{clock.play(performance.now());state.start=recordState();ensureTick();},onDeadline:()=>{pause(false);state.end=recordState();},onFailure:fail});if(!state.end){if(!fatal)pause(false);try{state.end=recordState();}catch(error){state.end={fault:true,snapshotError:String(error),sourceTime:lastFrame?.source.sourceTime??null};}}const recordingSettlement=await settleRecording(()=>fatal,drainSource);if(result.blob.size>MAX_CLIP_BYTES)throw Error('Clip exceeds 12 MiB');const outcome=fatal?'FAILED/PARTIAL':result.aborted?result.abortReason:state.end.fault||state.end.gpuErrors?'faulted':state.end.sourceTime<=state.start.sourceTime?'no-source-progress':'recorded-fixed-controls';const name=`${fatal?'FAILED-PARTIAL-':''}system-${kind}-${rate}x-${seconds}s-${identity.build}-${observation}-${++serial}`,r=await fetch('/motion',{method:'POST',headers:{'X-Capture-Name':name},body:result.blob});if(!r.ok)throw Error('Motion save '+r.status);await save(name,{motion:{file:name+'.webm',bytes:result.blob.size,mimeType:result.mimeType,requestedWallSeconds:seconds,actualRecorderWallMs:result.elapsedMs,requestedCaptureFps:result.requestedFps,deliveredFpsClaim:false,retainedEncodedByteLimit:MAX_CLIP_BYTES,droppedEncodedBytes:result.droppedEncodedBytes,outcome,kind,focusMode:$('follow').value,worldFocusAtStart:state.worldFocusAtStart,start:state.start,endAtStopRequest:state.end,afterStopSettledFrame:recordingSettlement.gpuSettled?structuredClone(lastFrame):null,lastCompletedFrame:structuredClone(lastFrame),recordingSettlement,callbackError:result.callbackError,sourceWindow:[state.start?.sourceTime??null,state.end?.sourceTime??null],scope:'Actual canvas stream; source, committed, GPU completion and encoded frame sampling times distinct. Continuous watched motion and art acceptance separate.'},submissionTrace:structuredClone(trace),traceCapacity:TRACE_LIMIT,traceOverwrittenSinceStart:overwrittenTrace-state.traceOverwrittenStart,traceSampleWindow:trace.length?[trace[0].sourceTime,trace.at(-1).sourceTime]:null});info('Saved '+outcome+' · '+name);}catch(error){fail(error);}finally{recording=null;busy=false;if(!fatal)controlsDisabled(false);}}
+ $('fixture').onchange=()=>switchFixture().catch(fail);
+ $('includeB').onchange=()=>{adapter.invalidate();changed('B-contribution-diagnostic-optical-epoch');};
+ $('programme').onclick=()=>{try{clock.model.enqueueBatch([{requestedTime:150,patch:{meanX:0,meanZ:5,shearX:0,shearZ:.0015,uplift:.2}},{requestedTime:500,patch:{frontX:522,frontStart:500,frontSpeed:35,frontWidth:800,dryGain:1}}]);changed('shared-global-programme');info('Shared wind150/front500 queued for both formations');}catch(e){info('Programme rejected: '+e.message);}};
+@@ -56,4 +62,4 @@
+ function preset(){const c=adapter.scene.camera,v=$('camera').value;Object.assign(c,{yaw:v==='front'?0:v==='side'?Math.PI/2:.3,pitch:v==='high'?.55:-.05,panX:0,panY:0});changed();}$('camera').onchange=preset;$('follow').onchange=changed;$('distance').onchange=()=>{const n=Number($('distance').value);if(n>=1000&&n<=20000){adapter.scene.camera.distance=n;changed();}};
+ for(const id of['sun','azimuth','lighting','mode','steps','full','mirror','main','fog','observer'])$(id).onchange=changed;
+ let drag=null;canvas.onpointerdown=e=>{if(loading||fatal||busy)return;canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button===2};};canvas.onpointerup=()=>drag=null;canvas.onpointercancel=()=>drag=null;canvas.onpointermove=e=>{if(!drag||loading||fatal||busy)return;const c=adapter.scene.camera,dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(drag.pan){c.panX-=dx*c.distance*.001;c.panY+=dy*c.distance*.001;}else{c.yaw-=dx*.004;c.pitch=Math.max(-.7,Math.min(.8,c.pitch+dy*.004));}drag.x=e.clientX;drag.y=e.clientY;changed();};canvas.oncontextmenu=e=>e.preventDefault();canvas.addEventListener('wheel',e=>{e.preventDefault();if(loading||fatal||busy)return;const c=adapter.scene.camera,dx=Math.max(-120,Math.min(120,e.deltaX)),dy=Math.max(-120,Math.min(120,e.deltaY));if(e.shiftKey){c.panX-=dx*c.distance*.0005;c.panY+=dy*c.distance*.0005;}else{c.yaw-=dx*.003;c.distance=Math.max(1000,Math.min(20000,c.distance*Math.exp(dy*.006)));$('distance').value=String(Math.round(c.distance));}changed();},{passive:false});
+-controlsDisabled(true);let startupTimer=null;try{identity=await fetch('identity.json').then(r=>r.json());const startupStart=performance.now(),shaderPaths=['optics','light','shadow','air','view','display'].map(n=>`/build/${identity.build}/shaders/${n}.wgsl`);let startupPhase='Verifying frozen native templates and material field';startupTimer=setInterval(()=>{const resources=new Set(performance.getEntriesByType('resource').map(e=>new URL(e.name).pathname));if(!startupPhase.startsWith('Preparing shared clear-air')){if(shaderPaths.every(path=>resources.has(path)))startupPhase='Compiling held cloud GPU pipelines';else if(resources.has(`/build/${identity.build}/assets/admission/admission.json`))startupPhase='Opening WebGPU adapter/device and fetching shaders';}const elapsed=((performance.now()-startupStart)/1000).toFixed(0);info(`${startupPhase} · ${elapsed}s elapsed${Number(elapsed)>=120?' · still preparing; elapsed time is not a GPU duration':''}`);},500);const preparation=RenderAdapter.create(canvas,s=>{startupPhase=s;info(s);});adapter=await preparation;clearInterval(startupTimer);startupTimer=null;const admissionMetadata=adapter.input.admissionMetadata,templates=Object.fromEntries(Object.entries(adapter.input.assets).map(([id,x])=>[id,x.manifest]));configuration={templates,admissionMetadata};clock=new SourceClock(new TwoCellWorld(configuration,DEFAULT_CONTROLS));$('startup-progress').value=0;await clock.seek(100,(committed,target)=>{$('startup-progress').value=Math.min(100,committed);info(`Preparing live source ${committed.toFixed(1)} / ${target.toFixed(1)}s`);});if(Math.abs(clock.tuple().time-100)>1e-6)throw Error('Initial source replay did not reach 100s');$('startup-progress').hidden=true;loading=false;controlsDisabled(false);requestRender();readout();}catch(error){loading=false;$('startup-progress').hidden=true;fail(error);}finally{if(startupTimer!==null)clearInterval(startupTimer);}
++controlsDisabled(true);let startupTimer=null;try{identity=await fetch('identity.json').then(r=>r.json());const startupStart=performance.now(),shaderPaths=['optics','light','shadow','air','view','display'].map(n=>`/build/${identity.build}/shaders/${n}.wgsl`);let startupPhase='Verifying frozen native templates and material field';startupTimer=setInterval(()=>{if(fatal)return;const resources=new Set(performance.getEntriesByType('resource').map(e=>new URL(e.name).pathname));if(!startupPhase.startsWith('Preparing shared clear-air')){if(shaderPaths.every(path=>resources.has(path)))startupPhase='Compiling held cloud GPU pipelines';else if(resources.has(`/build/${identity.build}/assets/admission/admission.json`))startupPhase='Opening WebGPU adapter/device and fetching shaders';}const elapsed=((performance.now()-startupStart)/1000).toFixed(0);info(`${startupPhase} · ${elapsed}s elapsed${Number(elapsed)>=120?' · still preparing; elapsed time is not a GPU duration':''}`);},500);const preparation=RenderAdapter.create(canvas,s=>{startupPhase=s;info(s);},fail);adapter=await preparation;clearInterval(startupTimer);startupTimer=null;const admissionMetadata=adapter.input.admissionMetadata,templates=Object.fromEntries(Object.entries(adapter.input.assets).map(([id,x])=>[id,x.manifest]));configuration={templates,admissionMetadata};clock=new SourceClock(new TwoCellWorld(configuration,DEFAULT_CONTROLS));$('startup-progress').value=0;await clock.seek(100,(committed,target)=>{$('startup-progress').value=Math.min(100,committed);info(`Preparing live source ${committed.toFixed(1)} / ${target.toFixed(1)}s`);});if(fatal)throw Error('Initialization failed after a detected GPU fault');if(Math.abs(clock.tuple().time-100)>1e-6)throw Error('Initial source replay did not reach 100s');$('startup-progress').hidden=true;loading=false;controlsDisabled(false);requestRender();readout();}catch(error){loading=false;$('startup-progress').hidden=true;fail(error);}finally{if(startupTimer!==null)clearInterval(startupTimer);}
+--- d9/src/bench/failure-retention.js
++++ b31460fad16cde97/src/bench/failure-retention.js
+@@ -0,0 +1,9 @@
++// CPU evidence path: never waits for GPU health/settlement.
++const message=e=>String(e?.message??e);
++const safe=fn=>{try{return structuredClone(fn());}catch(e){return{unavailable:message(e)};}};
++export function failureSnapshot(error,{identity,observation,fixtureRevision,clockSnapshot,lastSubmitted,lastCompleted,recordingStart,hostSnapshot,gpuErrors}){
++ return Object.freeze({status:'FAILED',originalError:{message:message(error),stack:String(error?.stack??'')},identity:safe(()=>identity),observation,fixtureRevision,detectedPerformanceMs:performance.now(),source:safe(clockSnapshot),lastSubmitted:safe(()=>lastSubmitted),lastCompleted:safe(()=>lastCompleted),recordingStart:safe(()=>recordingStart),host:safe(hostSnapshot),gpuErrors:safe(()=>gpuErrors),scope:'Detected failure only; last submitted and completed are distinct. No GPU drain or fabricated completed frame. A fence with no loss/error/rejection event remains an observability gap.'});
++}
++export async function postFailure(record,post=fetch){const response=await post('/receipt',{method:'POST',body:JSON.stringify(record)});if(!response.ok)throw Error('Failure receipt save '+response.status);}
++export async function settleRecording(isFatal,drain){if(isFatal())return{gpuSettled:false,reason:'fatal: GPU drain not attempted'};try{await drain();}catch(e){if(!isFatal())throw e;return{gpuSettled:false,reason:'fatal during drain: '+message(e)};}return isFatal()?{gpuSettled:false,reason:'fatal after drain'}:{gpuSettled:true,reason:null};}
++
+--- d9/src/bench/motion.js
++++ b31460fad16cde97/src/bench/motion.js
+@@ -1,29 +1,30 @@
+ // This bounds our retained encoded chunks, not the browser's internal encoder buffer.
+ export const MAX_CLIP_BYTES=12*1024**2;
+ // Actual rendered canvas recording. Capture request FPS is not a delivered-FPS claim.
+-export async function recordCanvas(canvas,durationMs=12000,{signal,onStart=()=>{},onDeadline=()=>{}}={}){
++export async function recordCanvas(canvas,durationMs=12000,{signal,onStart=()=>{},onDeadline=()=>{},onFailure=()=>{}}={}){
+  if(!canvas.captureStream||!globalThis.MediaRecorder)throw Error('Canvas recording unavailable');
+  const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));if(!mimeType)throw Error('WebM recording unavailable');
+  const stream=canvas.captureStream(15),chunks=[];let started,abortReason=null,stopRequestedPerformanceMs=null,retainedBytes=0,droppedEncodedBytes=0,capacityExceeded=false;
+  try{return await new Promise((resolve,reject)=>{
+-  const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:durationMs>60000?750000:1500000});let timer;
++  const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:durationMs>60000?750000:1500000});let timer,callbackError=null;
+   const cleanup=()=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);};
+-  const stop=()=>{if(stopRequestedPerformanceMs!==null)return;stopRequestedPerformanceMs=performance.now();clearTimeout(timer);onDeadline();if(recorder.state!=='inactive')recorder.stop();};
++  const notify=error=>{try{onFailure(error);}catch{}};
++  const stop=()=>{if(stopRequestedPerformanceMs!==null)return;stopRequestedPerformanceMs=performance.now();clearTimeout(timer);try{onDeadline();}catch(error){callbackError=String(error?.message??error);abortReason??='deadline-callback-error';notify(error);}finally{try{if(recorder.state!=='inactive')recorder.stop();}catch(error){cleanup();notify(error);reject(error);}}};
+   const abort=()=>{if(!capacityExceeded)abortReason=String(signal.reason??'aborted');stop();};
+   recorder.ondataavailable=e=>{
+    if(!e.data.size)return;
+    if(capacityExceeded||retainedBytes+e.data.size>MAX_CLIP_BYTES){capacityExceeded=true;abortReason='encoded-size-limit';droppedEncodedBytes+=e.data.size;stop();return;}
+    retainedBytes+=e.data.size;chunks.push(e.data);
+   };
+-  recorder.onerror=e=>{cleanup();reject(Error(e.error?.message??'Motion recorder failed'));};
++  recorder.onerror=e=>{const error=Error(e.error?.message??'Motion recorder failed');abortReason='recorder-error: '+error.message;notify(error);stop();};
+   recorder.onstop=()=>{
+    cleanup();
+    if(retainedBytes>MAX_CLIP_BYTES){chunks.length=0;reject(Error('Encoded clip exceeds retained 12 MiB limit'));return;}
+    if(!retainedBytes){const error=Error(capacityExceeded?'Encoded clip capacity exceeded before any media could be retained':'Motion recorder produced no frames');if(capacityExceeded)error.code='encoded-size-limit';reject(error);return;}
+    const blob=new Blob(chunks,{type:mimeType});chunks.length=0;
+    if(blob.size>MAX_CLIP_BYTES){reject(Error('Encoded clip exceeds retained 12 MiB limit'));return;}
+-   resolve({blob,mimeType,elapsedMs:performance.now()-started,stopRequestedPerformanceMs,stoppedPerformanceMs:performance.now(),requestedFps:15,aborted:abortReason!==null,abortReason,retainedEncodedByteLimit:MAX_CLIP_BYTES,droppedEncodedBytes});
++   resolve({blob,mimeType,elapsedMs:performance.now()-started,stopRequestedPerformanceMs,stoppedPerformanceMs:performance.now(),requestedFps:15,aborted:abortReason!==null,abortReason,retainedEncodedByteLimit:MAX_CLIP_BYTES,droppedEncodedBytes,callbackError});
+   };
+-  recorder.start(1000);started=performance.now();onStart();signal?.addEventListener('abort',abort,{once:true});timer=setTimeout(stop,durationMs);if(signal?.aborted)abort();
++  recorder.start(1000);started=performance.now();signal?.addEventListener('abort',abort,{once:true});try{onStart();}catch(error){callbackError=String(error?.message??error);abortReason='start-callback-error';notify(error);stop();}if(stopRequestedPerformanceMs===null)timer=setTimeout(stop,durationMs);if(signal?.aborted)abort();
+  });}finally{for(const track of stream.getTracks())track.stop();}
+ }
+--- d9/src/render/adapter.js
++++ b31460fad16cde97/src/render/adapter.js
+@@ -1,14 +1,15 @@
++import {lightingProfile} from './lighting-profile.js';
+ import {Gpu} from './gpu.js';import {Scene,UNIFORM_BYTES} from './scene.js';
+ import {frameFence,assertGpuHealthy} from './frame-lifecycle.js';import {loadRenderAssets,uploadHalf3d} from './assets.js';
+ import {assetIds,packDomains} from './held-oracle.js';import {packWorldParts,packGroupBounds,summary,rayIntervals,GRID_COUNT,MAX_PARTS,EXPOSURE_FLOATS} from './world-optics.js';
+-import {assertWorldPublication,snapshotWorldForProbe} from '../source/world.js';import {evaluateWorld} from '../source/world-reference.js';import {forward} from '../source/math.js';
++import {assertWorldPublication,snapshotWorldForProbe} from '../source/world.js';import {evaluateWorld} from '../source/world-reference.js';import {forward} from '../source/math.js';import {coveredCharts,lightWeights} from './light-coverage.js';import {lightReference,positiveOffChartWitness} from './light-reference.js';
+ const shaderNames=['optics','light','shadow','air','view','display'];
+ export function frameWeather(t){return {time:t.time,wind:t.controls.meanX,windIntegral:t.groups[0].region[0],moist:Number(t.controls.moist),lift:Number(t.controls.lift),frontX:t.controls.frontX};}
+ export function sourceControlKey(t){assertWorldPublication(t);return [t.epoch,t.sourceTick,...t.groups.map(g=>g.exposureRevision)].join('/');}
+ export class RenderAdapter {
+- static async create(canvas,progress=()=>{}){
+-  const input=await loadRenderAssets(progress),gpu=await Gpu.open(canvas);
+-  if(gpu.device.limits.maxSampledTexturesPerShaderStage<8||gpu.device.limits.maxStorageBuffersPerShaderStage<6)throw Error('Device lacks eight sampled textures/six storage buffers (four ordinary plus two probe) for two-cell optical query');
++ static async create(canvas,progress=()=>{},onFailure=()=>{}){
++  const input=await loadRenderAssets(progress),gpu=await Gpu.open(canvas,onFailure);
++  if(gpu.device.limits.maxSampledTexturesPerShaderStage<9||gpu.device.limits.maxStorageBuffersPerShaderStage<6)throw Error('Device lacks nine sampled textures/six storage buffers (four ordinary plus two probe) for two-cell optical query');
+   const codes=Object.fromEntries(await Promise.all(shaderNames.map(async n=>{const r=await fetch('shaders/'+n+'.wgsl');if(!r.ok)throw Error('Missing shader '+n);return[n,await r.text()];}))),a=new RenderAdapter();Object.assign(a,{input,gpu,codes,poseUploadCount:0,poseUploadBytes:0,controlUploadCount:0,controlUploadBytes:0,controlWasZero:true,opticalEpoch:0});
+   const s=new Scene(gpu,codes);a.scene=s;
+   try{await s.init(progress);a.textures={};for(const id of assetIds){const v=input.assets[id];a.textures[id]={density:uploadHalf3d(gpu,id+' shared rho',v.dims,v.density),distance:uploadHalf3d(gpu,id+' shared distance',v.dims,v.distance)};}a.noise=uploadHalf3d(gpu,'shared fixed M',[32,32,32],input.noise);s.heldDensity=a.textures.body.density;
+@@ -19,24 +20,23 @@
+  invalidate(){this.opticalEpoch++;this.controlKey=null;this.poseKey=null;this.pendingTuple=null;}
+  publish(tuple){assertWorldPublication(tuple);const g=this.gpu,key=sourceControlKey(tuple);if(this.controlKey!==key){if(tuple.exposureAllZero){if(!this.controlWasZero){g.device.queue.writeBuffer(this.exposureBuffer,0,this.zeroExposure);this.controlUploadCount++;this.controlUploadBytes+=this.zeroExposure.byteLength;}this.controlWasZero=true;}else{for(const group of tuple.groups){for(const [bank,name]of [[0,'exposurePrevious'],[1,'exposureCurrent']]){g.device.queue.writeBuffer(this.exposureBuffer,(bank*MAX_PARTS+group.groupIndex*8)*GRID_COUNT*4,group[name]);this.controlUploadCount++;this.controlUploadBytes+=group[name].byteLength;}}this.controlWasZero=false;}this.controlKey=key;}
+   const poseKey=[this.opticalEpoch,tuple.epoch,tuple.sourceTick,tuple.time,tuple.alpha,tuple.forcingRevision].join('/');if(this.poseKey!==poseKey){const packed=packWorldParts(tuple);g.device.queue.writeBuffer(this.poseBuffer,0,packed);g.device.queue.writeBuffer(this.groupBuffer,0,packGroupBounds(tuple));this.poseUploadCount++;this.poseUploadBytes+=packed.byteLength+64;this.poseKey=poseKey;}
+-  this.pendingTuple=tuple;this.submittedSource=summary(tuple);this.scene.sourceSummary=this.submittedSource;this.scene.sourceKey=poseKey;this.scene.time=tuple.time;this.scene.epoch=tuple.epoch;this.scene.opticalEpoch=this.opticalEpoch;return tuple;
++  const charts=coveredCharts(tuple);this.scene.cacheBounds=charts[0].bounds;this.scene.cacheBoundsB=charts[1].bounds;this.scene.chartCoverage=charts;this.pendingTuple=tuple;this.submittedSource=summary(tuple);this.scene.sourceSummary=this.submittedSource;this.scene.sourceKey=poseKey;this.scene.time=tuple.time;this.scene.epoch=tuple.epoch;this.scene.opticalEpoch=this.opticalEpoch;return tuple;
+  }
+  render(ui){const t=this.pendingTuple;assertWorldPublication(t);try{return this.scene.render({sample:()=>frameWeather(t)},{...ui,sourceAlpha:t.alpha},0,t.time);}finally{this.pendingTuple=null;}}
+  metadata(){if(!this.submittedSource)throw Error('No source submission');return {...this.submittedSource,cpuSourceRevision:'1a0a01c2c8735b74',opticalEpoch:this.opticalEpoch,inputIndexSha256:this.input.indexSha256,sourceFrozenSha256:this.input.frozenSha256,poseUploadCount:this.poseUploadCount,poseUploadBytes:this.poseUploadBytes,controlUploadCount:this.controlUploadCount,controlUploadBytes:this.controlUploadBytes,logicalGpuBytes:this.gpu.bytes,scope:'Two-cell CPU source, MAX within formation/ADD between every optical query; GPU/art/cost admission requires actual browser evidence'};}
+  async probe(ui,tuple){const t=snapshotWorldForProbe(tuple);await frameFence(this.gpu);this.publish(t);this.pendingTuple=null;const s=this.scene,g=this.gpu,d=g.device,points=[];
+   for(const group of t.groups){for(const p of group.parts)for(const delta of[[0,0,0],[4,0,0],[-4,0,0],[0,4,0],[0,-4,0],[0,0,4],[0,0,-4],[20,10,10]])points.push(forward(p,p.root.map((v,i)=>v+delta[i])));const[lo,hi]=group.bounds;for(let z=0;z<8;z++)for(let y=0;y<8;y++)for(let x=0;x<8;x++)points.push(lo.map((v,i)=>v+(hi[i]-v)*([x,y,z][i]+.5)/8));}
+-  const ordinary=points.length;points.push([0,2,0],t.groups[0].region,t.groups[1].region);if(points.length>2000)throw Error('Probe point cap exceeded');const input=new Float32Array(points.length*4);for(let i=0;i<points.length;i++)input.set(points[i],i*4);const bytes=input.byteLength,uniform=d.createBuffer({size:UNIFORM_BYTES,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST}),positions=d.createBuffer({size:bytes,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST}),output=d.createBuffer({size:bytes,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC}),read=d.createBuffer({size:bytes,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+-  try{if(s.lastSubmission?.sourceKey!==this.poseKey||s.lastSubmission.controls.includeB!==ui.includeB)throw Error('Probe requires a completed matching-source/contribution render');this.probePipeline??=await g.compute('two-cell common coefficient and off-cache oracle',s.codes.optics+`\n@group(0) @binding(25) var<storage,read> queryPoints:array<vec4f>;@group(0) @binding(26) var<storage,read_write> queryOut:array<vec4f>;@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u){let n=arrayLength(&queryPoints);if(id.x>=n){return;}let x=queryPoints[id.x].xyz;if(id.x>=n-3u){queryOut[id.x]=vec4f(tauRay(x,p.sun.xyz,32u,1.),directT(x).x,ambientA(x),f32(sourceIntervals(x,p.sun.xyz,1e8).count));return;}queryOut[id.x]=vec4f(formationQuery(0u,x,false),formationQuery(1u,x,false),coefficients(x,1.).x,componentQuery(x,true));}`);
+-   s.write(uniform,frameWeather(t),{...ui,sourceAlpha:t.alpha});d.queue.writeBuffer(positions,0,input);const bg=g.group(this.probePipeline,[[0,uniform],[1,s.heldDensity.createView()],[3,s.clamp],[5,s.light.createView()],...s.heldInputs(),[25,positions],[26,output]]),e=d.createCommandEncoder(),pass=e.beginComputePass();pass.setPipeline(this.probePipeline);pass.setBindGroup(0,bg);pass.dispatchWorkgroups(Math.ceil(points.length/64));pass.end();e.copyBufferToBuffer(output,0,read,0,bytes);g.submit(e);await read.mapAsync(GPUMapMode.READ);const data=new Float32Array(read.getMappedRange());let maxQ=0,maxRaw=0,maxSigma=0,invalid=0,positive=0;const examples=[];
++  const witness=positiveOffChartWitness(t,this.input.assets,this.input.noise),ordinary=points.length;points.push([0,2,0],t.groups[0].region,witness.root??t.groups[1].region,(witness.root??t.groups[1].region).map((v,k)=>v+(k===0?16:0)),(witness.root??t.groups[1].region).map((v,k)=>v+(k===2?16:0)),witness.point??[t.groups[1].region[0],399,t.groups[1].region[2]]);if(points.length>2000)throw Error('Probe point cap exceeded');const input=new Float32Array(points.length*4);for(let i=0;i<points.length;i++)input.set(points[i],i*4);const bytes=input.byteLength,outputBytes=bytes+6*16,uniform=d.createBuffer({size:UNIFORM_BYTES,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST}),positions=d.createBuffer({size:bytes,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST}),output=d.createBuffer({size:outputBytes,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC}),read=d.createBuffer({size:outputBytes,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
++  try{if(s.lastSubmission?.sourceKey!==this.poseKey||s.lastSubmission.controls.includeB!==ui.includeB)throw Error('Probe requires a completed matching-source/contribution render');this.probePipeline??=await g.compute('two-cell common coefficient and off-cache oracle',s.codes.optics+`\n@group(0) @binding(25) var<storage,read> queryPoints:array<vec4f>;@group(0) @binding(26) var<storage,read_write> queryOut:array<vec4f>;@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u){let n=arrayLength(&queryPoints);if(id.x>=n){return;}let x=queryPoints[id.x].xyz;if(id.x>=n-6u){let t=cacheT(x);queryOut[id.x]=vec4f(tauRay(x,p.sun.xyz,32u,1.),t.x,ambientA(x),f32(sourceIntervals(x,p.sun.xyz,1e8).count));queryOut[n+id.x-(n-6u)]=vec4f(t.y,0,0,0);return;}queryOut[id.x]=vec4f(formationQuery(0u,x,false),formationQuery(1u,x,false),coefficients(x,1.).x,componentQuery(x,true));}`);
++   s.write(uniform,frameWeather(t),{...ui,sourceAlpha:t.alpha});d.queue.writeBuffer(positions,0,input);const bg=g.group(this.probePipeline,[[0,uniform],[1,s.heldDensity.createView()],[3,s.clamp],[5,s.light.createView()],[27,s.lightB.createView()],...s.heldInputs(),[25,positions],[26,output]]),e=d.createCommandEncoder(),pass=e.beginComputePass();pass.setPipeline(this.probePipeline);pass.setBindGroup(0,bg);pass.dispatchWorkgroups(Math.ceil(points.length/64));pass.end();e.copyBufferToBuffer(output,0,read,0,outputBytes);g.submit(e);await read.mapAsync(GPUMapMode.READ);const data=new Float32Array(read.getMappedRange());let maxQ=0,maxRaw=0,maxSigma=0,invalid=0,positive=0;const examples=[];
+    for(let i=0;i<ordinary;i++){const x=Array.from(input.subarray(i*4,i*4+3)),v=data.subarray(i*4,i*4+4),q=evaluateWorld(t,x,this.input.assets,this.input.noise),raw=evaluateWorld(t,x,this.input.assets,this.input.noise,{raw:true});for(let j=0;j<2;j++)maxQ=Math.max(maxQ,Math.abs(v[j]-q.groups[j].q));maxRaw=Math.max(maxRaw,Math.abs(v[3]-(ui.includeB===false?raw.groups[0].q:raw.q)));maxSigma=Math.max(maxSigma,Math.abs(v[2]-.019*(ui.includeB===false?q.groups[0].q:q.q)));if(!Array.from(v).every(Number.isFinite)||Array.from(v).some(x=>x<0))invalid++;if(v[2]>0)positive++;if(examples.length<8&&q.q>0)examples.push({x,gpu:Array.from(v),cpu:q});}
+    const el=ui.sun*Math.PI/180,az=ui.sunAzimuth??-.7,sun=[Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)],lights=[];
+-   const cpuTau=(x,dir,count)=>{const spans=rayIntervals(t,x,dir,1e8,ui.includeB!==false);let tau=0;for(const[a,b]of spans)for(let j=0;j<count;j++){const y=x.map((v,k)=>Math.fround(v+dir[k]*(a+(j+.5)*(b-a)/count))),q=evaluateWorld(t,y,this.input.assets,this.input.noise);tau+=.019*(ui.includeB===false?q.groups[0].q:q.q)*(b-a)/count;}return{tau,spans};};
+-   for(let i=ordinary;i<points.length;i++){const x=Array.from(input.subarray(i*4,i*4+3)),v=Array.from(data.subarray(i*4,i*4+4)),{tau,spans}=cpuTau(x,sun,32),direct=Math.exp(-tau),outsideCache=x.some((v,k)=>v<s.cacheBounds[0][k]||v>s.cacheBounds[1][k]);let ambient=null;
+-    if(outsideCache){ambient=[[.6,.8,0],[-.6,.8,0],[0,.8,.6],[0,.8,-.6]].reduce((sum,dir)=>sum+Math.exp(-cpuTau(x,dir,20).tau),0)*.25;}
+-    const directPass=Math.abs(v[1]-direct)<=.025,ambientPass=ambient===null||Math.abs(v[2]-ambient)<=.025;
+-    lights.push({x,gpuTau:v[0],cpuMidpointTau:tau,gpuDirect:v[1],cpuDirect:direct,directTolerance:.025,directPass,gpuAmbient:v[2],cpuOffCacheAmbient:ambient,ambientTolerance:.025,ambientPass,ambientScope:outsideCache?'Independent four-direction20-sample-per-interval fallback comparison':'A-cache trilinear approximation: numerical reference unqualified; matching source/contribution render checked',gpuIntervals:v[3],cpuIntervals:spans,tauTolerance:.1+.02*tau,pass:v.every(Number.isFinite)&&Math.abs(v[0]-tau)<=.1+.02*tau&&v[3]===spans.length&&directPass&&ambientPass});}
++   const charts=s.chartCoverage;
++   for(let i=ordinary;i<points.length;i++){const x=Array.from(input.subarray(i*4,i*4+3)),v=Array.from(data.subarray(i*4,i*4+4)),reference=lightReference(t,x,sun,this.input.assets,this.input.noise,{includeB:ui.includeB!==false}),gpuT1=data[(points.length+i-ordinary)*4],cpuT1=Math.exp(-lightingProfile(ui.lightingProfile).b*reference.tau),T1Error=Math.abs(gpuT1-cpuT1),weights=lightWeights(charts,x),offAllCharts=weights[2]===1,transmissionError=Math.abs(v[1]-reference.direct),ambientError=Math.abs(v[2]-reference.ambient),valuesValid=Number.isFinite(gpuT1)&&gpuT1>=0&&gpuT1<=1.00001&&v.every(Number.isFinite)&&v[0]>=0&&v[1]>=0&&v[1]<=1.00001&&v[2]>=0&&v[2]<=1.00001;
++    const qBAtPoint=evaluateWorld(t,x,this.input.assets,this.input.noise).groups[1].q;lights.push({qBAtPoint,role:['receiver','A-root','positive-B-root','B-root-plus16X','B-root-plus16Z','below-all-charts-B-ambient'][i-ordinary],x,weights,offAllCharts,gpuTau:v[0],cpuMidpointTau:reference.tau,gpuT0:v[1],cpuT0:reference.direct,T0Error:transmissionError,gpuT1,cpuT1,T1Error,profileB:lightingProfile(ui.lightingProfile).b,gpuAmbient:v[2],cpuAmbient:reference.ambient,ambientError,directTolerance:.025,ambientTolerance:.025,cacheReferenceStatus:offAllCharts?'Complete fallback compared at existing tolerances':'Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass',gpuIntervals:v[3],cpuIntervals:reference.intervals,tauTolerance:.1+.02*reference.tau,pass:valuesValid&&Math.abs(v[0]-reference.tau)<=.1+.02*reference.tau&&v[3]===reference.intervals.length&&(!offAllCharts||transmissionError<=.025&&T1Error<=.025&&ambientError<=.025)});}
++   let offChartWitness={...witness,pass:false};if(witness.available){const x=lights.at(-1).x,full=lightReference(t,x,sun,this.input.assets,this.input.noise),omittedB=lightReference(t,x,sun,this.input.assets,this.input.noise,{includeB:false}),occlusionDifference=omittedB.ambient-full.ambient;offChartWitness={...witness,fullReference:full,omittedBNegative:omittedB,occlusionDifference,minimumMeaningfulDifference:.025,positiveConfiguration:ui.includeB!==false,pass:lights.at(-1).offAllCharts&&occlusionDifference>.025&&lights.at(-1).pass,scope:'Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel'};}
+ 
+-   read.unmap();assertGpuHealthy(g);return {pass:invalid===0&&maxQ<=.002&&maxRaw<=.004&&maxSigma<=.004*.019&&lights.every(l=>l.pass),source:summary(t),points:ordinary,positive,invalid,maxAbsQ:maxQ,maxAbsRaw:maxRaw,maxAbsSigma:maxSigma,toleranceQ:.002,toleranceRaw:.004,toleranceSigma:.004*.019,lights,examples,scope:'Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance.'};
++   read.unmap();assertGpuHealthy(g);return {pass:invalid===0&&maxQ<=.002&&maxRaw<=.004&&maxSigma<=.004*.019&&lights.every(l=>l.pass)&&offChartWitness.pass,source:summary(t),points:ordinary,positive,invalid,maxAbsQ:maxQ,maxAbsRaw:maxRaw,maxAbsSigma:maxSigma,toleranceQ:.002,toleranceRaw:.004,toleranceSigma:.004*.019,lights,offChartWitness,chartCoverage:charts,cachedLightAccuracyQualified:false,examples,scope:'Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance.'};
+   }finally{for(const x of[uniform,positions,output,read])x.destroy();}
+  }
+  async dispose(){await frameFence(this.gpu);await this.scene.dispose();for(const id of assetIds)for(const texture of Object.values(this.textures[id]))texture.destroy();this.noise.destroy();for(const name of['poseBuffer','domainBuffer','groupBuffer','exposureBuffer'])this[name].destroy();}
+--- d9/src/render/gpu.js
++++ b31460fad16cde97/src/render/gpu.js
+@@ -1,6 +1,6 @@
+ const textureBytes = { rgba16float: 8, rgba8unorm: 4 };
+ export class Gpu {
+-  constructor(device, adapter, context, format) {
++  constructor(device, adapter, context, format, onFailure = () => {}) {
+     this.device = device;
+     this.adapter = adapter;
+     this.context = context;
+@@ -15,13 +15,15 @@
+       this.errorCount = (this.errorCount ?? 0) + 1;
+       if (this.errors.length < 64)
+         this.errors.push(e.error.message ?? String(e.error));
++      onFailure(e.error ?? Error("Uncaptured GPU error"));
+     });
+     device.lost.then((v) => {
+       this.errors.push("Device lost: " + v.message);
+       this.lost = true;
++      onFailure(Error("GPU device lost: " + v.message));
+     });
+   }
+-  static async open(canvas) {
++  static async open(canvas, onFailure = () => {}) {
+     if (!navigator.gpu) throw Error("WebGPU is unavailable in this browser.");
+     const adapter = await navigator.gpu.requestAdapter({
+       powerPreference: "high-performance",
+@@ -34,7 +36,7 @@
+     const context = canvas.getContext("webgpu");
+     const format = navigator.gpu.getPreferredCanvasFormat();
+     context.configure({ device, format, alphaMode: "opaque" });
+-    return new Gpu(device, adapter, context, format);
++    return new Gpu(device, adapter, context, format, onFailure);
+   }
+   texture(label, size, format = "rgba16float", extra = 0, mipLevelCount = 1) {
+     const tex = this.device.createTexture({
+@@ -135,22 +137,23 @@
+ // Actual counters must respect resource dependencies, regardless of descriptor placement.
+ // Receiver and light may overlap each other; view consumes both, display consumes view.
+ export function decodeOpticalTimestamps(q){
+- const names=['receiverMs','lightMs','viewMs','displayMs'],rejectionReasons=[];
+- if(q.length!==8)rejectionReasons.push('Expected eight timestamp counters');
++ const names=q.length===8?['receiverMs','lightMs','viewMs','displayMs']:['receiverMs','lightAMs','lightBMs','viewMs','displayMs'],rejectionReasons=[];
++ if(q.length!==8&&q.length!==10)rejectionReasons.push('Expected eight historical or ten two-chart timestamp counters');
+  else{
+-  for(let i=0;i<4;i++)if(q[2*i+1]<=q[2*i])rejectionReasons.push(names[i]+': nonpositive within-pass interval');
+-  for(const [start,end,label]of [[4,1,'view begins before required receiver end'],[4,3,'view begins before required light end'],[6,5,'display begins before required view end']])if(q[start]<q[end])rejectionReasons.push(label);
++  for(let i=0;i<names.length;i++)if(q[2*i+1]<=q[2*i])rejectionReasons.push(names[i]+': nonpositive within-pass interval');
++  const edges=q.length===8?[[4,1,'view begins before required receiver end'],[4,3,'view begins before required light end'],[6,5,'display begins before required view end']]:[[6,1,'view begins before required receiver end'],[6,3,'view begins before required lightA end'],[6,5,'view begins before required lightB end'],[8,7,'display begins before required view end']];
++  for(const[start,end,label]of edges)if(q[start]<q[end])rejectionReasons.push(label);
+  }
+  const accepted=rejectionReasons.length===0,result={validPairs:accepted,dependencyOrderValid:accepted,rejectionReasons,wholeMs:null,timingScope:accepted?'Positive within-pass counters satisfy required receiver/light→view→display dependencies; independent compute may overlap; whole graph unqualified.':'Unqualified timestamp generation: positive pairs alone cannot establish pass durations when required dependencies fail.',rawNanoseconds:Array.from(q,String)};
+- for(let i=0;i<4;i++)result[names[i]]=accepted?Number(q[i*2+1]-q[i*2])/1e6:null;
++ for(let i=0;i<names.length;i++)result[names[i]]=accepted?Number(q[i*2+1]-q[i*2])/1e6:null;
+  return result;
+ }
+ // Three independent readback generations. No cross-pass aggregate is called GPU time.
+ export class Timings {
+- constructor(gpu){this.gpu=gpu;this.supported=gpu.device.features.has('timestamp-query');this.completed=[];this.serial=0;this.latest=null;this.slots=this.supported?Array.from({length:3},(_,i)=>({busy:false,query:gpu.device.createQuerySet({type:'timestamp',count:8}),resolve:gpu.buffer('timestamp resolve '+i,256,GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC),read:gpu.buffer('timestamp read '+i,256,GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST)})):[];}
++ constructor(gpu){this.gpu=gpu;this.supported=gpu.device.features.has('timestamp-query');this.completed=[];this.serial=0;this.latest=null;this.slots=this.supported?Array.from({length:3},(_,i)=>({busy:false,query:gpu.device.createQuerySet({type:'timestamp',count:10}),resolve:gpu.buffer('timestamp resolve '+i,256,GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC),read:gpu.buffer('timestamp read '+i,256,GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST)})):[];}
+  begin(meta){const s=this.slots.find(s=>!s.busy);if(!s)return null;s.busy=true;s.generation=++this.serial;s.meta=structuredClone(meta);return s;}
+  descriptor(s,pair){return s?{querySet:s.query,beginningOfPassWriteIndex:pair*2,endOfPassWriteIndex:pair*2+1}:undefined;}
+- encode(e,s){if(!s)return;e.resolveQuerySet(s.query,0,8,s.resolve,0);e.copyBufferToBuffer(s.resolve,0,s.read,0,64);}
+- collect(s){if(!s)return;s.read.mapAsync(GPUMapMode.READ).then(()=>{const q=new BigUint64Array(s.read.getMappedRange().slice(0,64));s.read.unmap();const result={generation:s.generation,...s.meta,...decodeOpticalTimestamps(q)};this.completed.push(Object.freeze(result));if(this.completed.length>16)this.completed.shift();this.latest=result;},error=>{this.completed.push({generation:s.generation,...s.meta,error:String(error),wholeMs:null});if(this.completed.length>16)this.completed.shift();}).finally(()=>s.busy=false);}
++ encode(e,s){if(!s)return;e.resolveQuerySet(s.query,0,10,s.resolve,0);e.copyBufferToBuffer(s.resolve,0,s.read,0,80);}
++ collect(s){if(!s)return;s.read.mapAsync(GPUMapMode.READ).then(()=>{const q=new BigUint64Array(s.read.getMappedRange().slice(0,80));s.read.unmap();const result={generation:s.generation,...s.meta,...decodeOpticalTimestamps(q)};this.completed.push(Object.freeze(result));if(this.completed.length>16)this.completed.shift();this.latest=result;},error=>{this.completed.push({generation:s.generation,...s.meta,error:String(error),wholeMs:null});if(this.completed.length>16)this.completed.shift();}).finally(()=>s.busy=false);}
+  dispose(){for(const s of this.slots){s.query.destroy();s.resolve.destroy();s.read.destroy();}}
+ }
+--- d9/src/render/light-coverage.js
++++ b31460fad16cde97/src/render/light-coverage.js
+@@ -0,0 +1,7 @@
++import {assertWorldPublication} from '../source/world.js';
++export const LIGHT_DIMS=Object.freeze([32,24,24]),LIGHT_SPAN=Object.freeze([4000,2600,4000]);
++export const LIGHT_PITCH=Object.freeze(LIGHT_SPAN.map((v,k)=>v/LIGHT_DIMS[k]));
++export function coveredCharts(tuple){assertWorldPublication(tuple);return tuple.groups.map(g=>{const centre=[0,1,2].map(k=>(g.bounds[0][k]+g.bounds[1][k])*.5),lo=[Math.round(centre[0]/LIGHT_PITCH[0])*LIGHT_PITCH[0]-2000,400,Math.round(centre[2]/LIGHT_PITCH[2])*LIGHT_PITCH[2]-2000],hi=lo.map((v,k)=>v+LIGHT_SPAN[k]);const bounds=[lo.map(Math.fround),hi.map(Math.fround)],fullWeightSourceCoverage=g.bounds[0].every((v,k)=>v>=bounds[0][k]+1.5*LIGHT_PITCH[k]&&g.bounds[1][k]<=bounds[1][k]-1.5*LIGHT_PITCH[k]);return Object.freeze({cellID:g.cellID,bounds:Object.freeze(bounds.map(Object.freeze)),fullWeightSourceCoverage,spacing:LIGHT_PITCH});});}
++const smooth=x=>{const u=Math.max(0,Math.min(1,x));return u*u*(3-2*u);};
++export function chartWeight(bounds,x){return x.reduce((w,v,k)=>{const pitch=(bounds[1][k]-bounds[0][k])/LIGHT_DIMS[k],edge=Math.min(v-(bounds[0][k]+.5*pitch),bounds[1][k]-.5*pitch-v);return w*smooth(edge/pitch);},1);}
++export function lightWeights(charts,x){let a=chartWeight(charts[0].bounds,x),b=chartWeight(charts[1].bounds,x),sum=a+b;if(sum>=1){a/=sum;b/=sum;return[a,b,0];}return[a,b,1-sum];}
+--- d9/src/render/light-reference.js
++++ b31460fad16cde97/src/render/light-reference.js
+@@ -0,0 +1,8 @@
++// On-demand independent CPU midpoint reference, never ordinary frame work.
++import {evaluateWorld} from '../source/world-reference.js';import {rayIntervals} from './world-optics.js';
++export const AMBIENT_DIRECTIONS=Object.freeze([[.6,.8,0],[-.6,.8,0],[0,.8,.6],[0,.8,-.6]].map(Object.freeze));
++export function lightReference(t,x,sun,assets,noise,{includeB=true}={}){
++ const integrate=(dir,count)=>{const intervals=rayIntervals(t,x,dir,1e8,includeB);let tau=0;for(const[a,b]of intervals)for(let i=0;i<count;i++){const p=x.map((v,k)=>Math.fround(v+dir[k]*(a+(i+.5)*(b-a)/count))),q=evaluateWorld(t,p,assets,noise);tau+=.019*(includeB?q.q:q.groups[0].q)*(b-a)/count;}return{tau,intervals};};
++ const direct=integrate(sun,32),ambient=AMBIENT_DIRECTIONS.map(dir=>Math.exp(-integrate(dir,20).tau));return{tau:direct.tau,direct:Math.exp(-direct.tau),ambient:ambient.reduce((a,b)=>a+b,0)/4,ambientDirections:ambient,intervals:direct.intervals};
++}
++export function positiveOffChartWitness(t,assets,noise){for(const p of t.groups[1].parts.filter(p=>p.templateID==='body'&&p.Aseed>0)){const q=evaluateWorld(t,p.C,assets,noise).groups[1].q;if(q>.041)return{available:true,root:[...p.C],qBAtRoot:q,point:[p.C[0]-.75*(p.C[1]-399),399,p.C[2]].map(Math.fround),direction:[.6,.8,0],definition:'Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot'};}return{available:false,reason:'No actual B BODY root with q>.041; meaningful light witness unavailable'};}
+--- d9/src/render/scene.js
++++ b31460fad16cde97/src/render/scene.js
+@@ -1,25 +1,26 @@
+ // Held-only graph adapted from 17f. No PDE/provider allocations or source stepping.
+-import {Timings} from './gpu.js';import {lightingProfile} from './lighting-profile.js';
+-export const UNIFORM_BYTES=192;
++import {Timings} from './gpu.js';import {frameFence} from './frame-lifecycle.js';import {lightingProfile} from './lighting-profile.js';
++export const UNIFORM_BYTES=224;
+ export class Scene {
+- constructor(gpu,codes){Object.assign(this,{gpu,codes,frame:0,epoch:0,time:0,steps:0,viewSize:[640,360],lightDims:[32,24,24],camera:{yaw:.3,pitch:-.05,distance:3000,panX:0,panY:0},fixedFocus:[0,1300,0],cacheBounds:[[-2000,400,-2000],[2000,3000,2000]],receiverDomain:[0,0,16000,16000],groups:new Map(),scratch:new Float32Array(48)});this.timings=new Timings(gpu);}
++ constructor(gpu,codes){Object.assign(this,{gpu,codes,frame:0,epoch:0,time:0,steps:0,viewSize:[640,360],lightDims:[32,24,24],camera:{yaw:.3,pitch:-.05,distance:3000,panX:0,panY:0},fixedFocus:[0,1300,0],cacheBounds:[[-2000,400,-2000],[2000,3000,2000]],receiverDomain:[0,0,16000,16000],groups:new Map(),scratch:new Float32Array(56)});this.timings=new Timings(gpu);}
+  target(){return [this.fixedFocus[0]+this.camera.panX,this.fixedFocus[1]+this.camera.panY,this.fixedFocus[2]];}
+  cameraPosition(){const t=this.target(),c=this.camera;return[t[0]+Math.sin(c.yaw)*Math.cos(c.pitch)*c.distance,Math.max(2,t[1]+Math.sin(c.pitch)*c.distance),t[2]+Math.cos(c.yaw)*Math.cos(c.pitch)*c.distance];}
+  async init(progress){const g=this.gpu,d=g.device;this.clamp=d.createSampler({magFilter:'linear',minFilter:'linear',addressModeU:'clamp-to-edge',addressModeV:'clamp-to-edge',addressModeW:'clamp-to-edge'});
+   for(const n of ['light','shadow','air'])this[n+'Pipeline']=await g.compute('two-cell '+n,this.codes.optics+this.codes[n]);
+   this.viewPipeline=await g.render('two-cell main and independent mirror',this.codes.optics+this.codes.view,'rgba16float');this.displayPipeline=await g.render('17f display',this.codes.display,g.format);
+-  this.light=g.texture('A-focused current voxel light',this.lightDims);this.receiver=g.texture('independent16km receiver domain',[128,128]);this.air=g.texture('17f clear-air transmittance',[256,64]);this.view=g.texture('joint optical image',[1280,720],'rgba16float',GPUTextureUsage.RENDER_ATTACHMENT);
+-  this.uniforms=Array.from({length:3},(_,i)=>g.buffer('optical frame '+i,UNIFORM_BYTES,GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST));progress('Preparing shared clear-air table');const e=d.createCommandEncoder(),pass=e.beginComputePass();pass.setPipeline(this.airPipeline);pass.setBindGroup(0,g.group(this.airPipeline,[[8,this.air.createView()]]));pass.dispatchWorkgroups(32,8);pass.end();g.submit(e);await d.queue.onSubmittedWorkDone();
++  this.light=g.texture('A current world light chart',this.lightDims);this.lightB=g.texture('B current world light chart',this.lightDims);this.receiver=g.texture('independent16km receiver domain',[128,128]);this.air=g.texture('17f clear-air transmittance',[256,64]);this.view=g.texture('joint optical image',[1280,720],'rgba16float',GPUTextureUsage.RENDER_ATTACHMENT);
++  this.uniforms=Array.from({length:3},(_,i)=>[0,1].map(j=>g.buffer('optical frame/chart '+i+'/'+j,UNIFORM_BYTES,GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST)));progress('Preparing shared clear-air table');const e=d.createCommandEncoder(),pass=e.beginComputePass();pass.setPipeline(this.airPipeline);pass.setBindGroup(0,g.group(this.airPipeline,[[8,this.air.createView()]]));pass.dispatchWorkgroups(32,8);pass.end();g.submit(e);await frameFence(g);
+  }
+- write(buffer,snapshot,ui,stage=null,time=this.time){const a=this.scratch,[lo,hi]=this.cacheBounds,look=lightingProfile(ui.lightingProfile),el=ui.sun*Math.PI/180,az=ui.sunAzimuth??-.7;a.set([...this.cameraPosition(),ui.mirror?1:0],0);a.set([...this.target(),ui.mode],4);a.set([Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az),look.a],8);a.set([...lo,.019],12);a.set([...hi,.0018],16);a.set([time,0,snapshot.wind??0,snapshot.windIntegral??0],20);a.set([snapshot.moist??0,0,snapshot.lift??0,64],24);a.set([snapshot.frontX??0,0,ui.viewSteps??96,ui.main?1:0],28);a.set([...this.viewSize,Math.tan(48*Math.PI/360),ui.fog?1:0],32);a.set([1,look.b,look.c,0],36);a.set([0,ui.sourceAlpha??1,0,ui.includeB===false?1:3],40);a.set(this.receiverDomain,44);this.gpu.device.queue.writeBuffer(buffer,0,a);return buffer;}
++ write(buffer,snapshot,ui,stage=null,time=this.time,buildChart=0){const a=this.scratch,[lo,hi]=buildChart===1?this.cacheBoundsB:this.cacheBounds,look=lightingProfile(ui.lightingProfile),el=ui.sun*Math.PI/180,az=ui.sunAzimuth??-.7;a.set([...this.cameraPosition(),ui.mirror?1:0],0);a.set([...this.target(),ui.mode],4);a.set([Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az),look.a],8);a.set([...lo,.019],12);a.set([...hi,.0018],16);a.set([time,0,snapshot.wind??0,snapshot.windIntegral??0],20);a.set([snapshot.moist??0,0,snapshot.lift??0,64],24);a.set([snapshot.frontX??0,0,ui.viewSteps??96,ui.main?1:0],28);a.set([...this.viewSize,Math.tan(48*Math.PI/360),ui.fog?1:0],32);a.set([1,look.b,look.c,0],36);a.set([0,ui.sourceAlpha??1,0,ui.includeB===false?1:3],40);a.set(this.receiverDomain,44);a.set([...this.cacheBoundsB[0],0],48);a.set([...this.cacheBoundsB[1],0],52);this.gpu.device.queue.writeBuffer(buffer,0,a);return buffer;}
+  cachedGroup(key,pipeline,entries){if(!this.groups.has(key))this.groups.set(key,this.gpu.group(pipeline,entries()));return this.groups.get(key);}
+- render(weather,ui,ticks=0,worldTime=this.time){const g=this.gpu,d=g.device;if(g.pending>=3||g.lost||g.errors.length)return false;this.viewSize=ui.resolved?[1280,720]:[640,360];const frame=this.frame,slot=frame%3,v=this.uniforms[slot],snapshot=weather.sample(worldTime);this.write(v,snapshot,ui,null,worldTime);
+-  const submission={frame,time:worldTime,epoch:this.epoch,opticalEpoch:this.opticalEpoch??0,camera:{...this.camera,position:this.cameraPosition(),target:this.target()},viewSize:[...this.viewSize],cacheBounds:this.cacheBounds.map(v=>[...v]),receiverDomain:[...this.receiverDomain],sourceBounds:this.sourceSummary?.groups.map(g=>({cellID:g.cellID,bounds:g.bounds})),controls:{...ui},sourceKey:this.sourceKey,look:{kappa:[.019,0],MS:[...lightingProfile(ui.lightingProfile).abc],lightingProfile:lightingProfile(ui.lightingProfile),exposure:.5},lightBuilt:true};
++ render(weather,ui,ticks=0,worldTime=this.time){const g=this.gpu,d=g.device;if(g.pending>=3||g.lost||g.errors.length)return false;this.viewSize=ui.resolved?[1280,720]:[640,360];const frame=this.frame,slot=frame%3,v=this.uniforms[slot][0],vB=this.uniforms[slot][1],snapshot=weather.sample(worldTime);this.write(v,snapshot,ui,null,worldTime);this.write(vB,snapshot,ui,null,worldTime,1);
++  const submission={frame,time:worldTime,epoch:this.epoch,opticalEpoch:this.opticalEpoch??0,camera:{...this.camera,position:this.cameraPosition(),target:this.target()},viewSize:[...this.viewSize],cacheBounds:this.cacheBounds.map(v=>[...v]),cacheBoundsB:this.cacheBoundsB.map(v=>[...v]),chartCoverage:this.chartCoverage,receiverDomain:[...this.receiverDomain],sourceBounds:this.sourceSummary?.groups.map(g=>({cellID:g.cellID,bounds:g.bounds})),controls:{...ui},sourceKey:this.sourceKey,look:{kappa:[.019,0],MS:[...lightingProfile(ui.lightingProfile).abc],lightingProfile:lightingProfile(ui.lightingProfile),exposure:.5},lightBuilt:true};
+   const timing=frame%12===0?this.timings.begin({frame,sourceKey:this.sourceKey,time:worldTime,epoch:this.epoch,opticalEpoch:submission.opticalEpoch,fixtureRevision:ui.fixtureRevision??0}):null;
+   const e=d.createCommandEncoder(),inputs=()=>[[0,v],[1,this.heldDensity.createView()],[3,this.clamp],...this.heldInputs()];
+-  for(const [name,pair,dims]of [['shadow',0,[16,16,1]],['light',1,this.lightDims.map(n=>Math.ceil(n/4))]]){const pipeline=this[name+'Pipeline'],bg=this.cachedGroup(name+'/'+slot,pipeline,()=>[...inputs(),[name==='shadow'?12:6,this[name==='shadow'?'receiver':'light'].createView()]]),pass=e.beginComputePass(timing?{timestampWrites:this.timings.descriptor(timing,pair)}:{});pass.setPipeline(pipeline);pass.setBindGroup(0,bg);pass.dispatchWorkgroups(...dims);pass.end();}
+-  const bg=this.cachedGroup('view/'+slot,this.viewPipeline,()=>[...inputs(),[5,this.light.createView()],[7,this.air.createView()],[13,this.receiver.createView()]]);let pass=e.beginRenderPass({colorAttachments:[{view:this.view.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}],...(timing?{timestampWrites:this.timings.descriptor(timing,2)}:{})});pass.setViewport(0,0,...this.viewSize,0,1);pass.setPipeline(this.viewPipeline);pass.setBindGroup(0,bg);pass.draw(3);pass.end();
+-  const display=this.cachedGroup('display/'+slot,this.displayPipeline,()=>[[0,this.view.createView()],[1,this.clamp],[2,v]]);pass=e.beginRenderPass({colorAttachments:[{view:g.context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}],...(timing?{timestampWrites:this.timings.descriptor(timing,3)}:{})});pass.setPipeline(this.displayPipeline);pass.setBindGroup(0,display);pass.draw(3);pass.end();this.timings.encode(e,timing);g.submit(e);this.lastSubmission=Object.freeze(submission);this.lastPresentation=this.lastSubmission;this.frame++;this.timings.collect(timing);return true;
++  for(const [name,pair,dims,uniform,output]of [['shadow',0,[16,16,1],v,this.receiver],['light',1,this.lightDims.map(n=>Math.ceil(n/4)),v,this.light],['light',2,this.lightDims.map(n=>Math.ceil(n/4)),vB,this.lightB]]){const pipeline=this[name+'Pipeline'],bg=this.cachedGroup(name+'/'+slot+'/'+pair,pipeline,()=>[[0,uniform],[1,this.heldDensity.createView()],[3,this.clamp],...this.heldInputs(),[name==='shadow'?12:6,output.createView()]]),pass=e.beginComputePass(timing?{timestampWrites:this.timings.descriptor(timing,pair)}:{});pass.setPipeline(pipeline);pass.setBindGroup(0,bg);pass.dispatchWorkgroups(...dims);pass.end();}
++
++  const bg=this.cachedGroup('view/'+slot,this.viewPipeline,()=>[...inputs(),[5,this.light.createView()],[27,this.lightB.createView()],[7,this.air.createView()],[13,this.receiver.createView()]]);let pass=e.beginRenderPass({colorAttachments:[{view:this.view.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}],...(timing?{timestampWrites:this.timings.descriptor(timing,3)}:{})});pass.setViewport(0,0,...this.viewSize,0,1);pass.setPipeline(this.viewPipeline);pass.setBindGroup(0,bg);pass.draw(3);pass.end();
++  const display=this.cachedGroup('display/'+slot,this.displayPipeline,()=>[[0,this.view.createView()],[1,this.clamp],[2,v]]);pass=e.beginRenderPass({colorAttachments:[{view:g.context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}],...(timing?{timestampWrites:this.timings.descriptor(timing,4)}:{})});pass.setPipeline(this.displayPipeline);pass.setBindGroup(0,display);pass.draw(3);pass.end();this.timings.encode(e,timing);g.submit(e);this.lastSubmission=Object.freeze(submission);this.lastPresentation=this.lastSubmission;this.frame++;this.timings.collect(timing);return true;
+  }
+- async dispose(){await this.gpu.device.queue.onSubmittedWorkDone();this.timings.dispose();for(const k of['light','receiver','air','view'])this[k]?.destroy();for(const b of this.uniforms??[])b.destroy();this.groups.clear();}
++ async dispose(){try{if(this.gpu.pending&&!this.gpu.lost&&!this.gpu.errors.length)await frameFence(this.gpu);}catch{}this.timings.dispose();for(const k of['light','lightB','receiver','air','view'])this[k]?.destroy();for(const frame of this.uniforms??[])for(const b of frame)b.destroy();this.groups.clear();}
+ }

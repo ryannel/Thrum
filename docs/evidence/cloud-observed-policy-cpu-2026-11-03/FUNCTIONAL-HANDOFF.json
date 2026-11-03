@@ -1,0 +1,45 @@
+{
+  "functionalPass": true,
+  "sourcePinsSHA256": "f57da1bd956e06df5e936b67e05b6358d20b0477a8d8d6d7a86eda8adbd3098f",
+  "tests": {
+    "legacy-source8": {
+      "receipt": "results/legacy-source8.guard.json",
+      "sha256": "7b81dcfa8c30a7d41c8cc660a63e7fd2b2bb2d4d3c6b333d9dfba608314de956",
+      "sampledTreePeakBytes": 193085440
+    },
+    "legacy-world12": {
+      "receipt": "results/legacy-world12.guard.json",
+      "sha256": "1db9b7df32f2d825b42444b021d1fe5c4292b590c6e61ff277c0ecea638ff3fc",
+      "sampledTreePeakBytes": 143360000
+    },
+    "legacy-world-native": {
+      "receipt": "results/legacy-world-native.guard.json",
+      "sha256": "d6aae57d1f45f54ced65feb75f6d32b308a98e2db4ed545792feefb04a3b3d89",
+      "sampledTreePeakBytes": 131547136
+    },
+    "legacy-diff": {
+      "receipt": "results/legacy-diff.guard.json",
+      "sha256": "221db30ce43b047450da0ab8765490057e6b4d7384f73e10829e02af13acc7d2",
+      "sampledTreePeakBytes": 122322944
+    },
+    "observed-contracts": {
+      "receipt": "results/observed-contracts.guard.json",
+      "sha256": "b7f86c270dc95975e43ce04b161a362450ec8e2526956adac6ef3fd3501b56b0",
+      "sampledTreePeakBytes": 108986368
+    },
+    "observed-replays": {
+      "receipt": "results/observed-replays.guard.json",
+      "sha256": "570a639a93c7c79de2c94d9f04ac6cd3a9a8c12c7efe1b51d1ac1c99cc547aa2",
+      "sampledTreePeakBytes": 137592832
+    },
+    "observed-native": {
+      "receipt": "results/observed-native.guard.json",
+      "sha256": "414c483b1914b69e5f05421af3a36d18c7f7873cbae377151df3022b6b159dc0",
+      "sampledTreePeakBytes": 109690880
+    }
+  },
+  "costGate": "UNRUN; root quiet ACK required",
+  "healthyWetRenewal": "FAIL: forecast declines420/820; no threshold/cadence/content adjustment",
+  "adoption": "none",
+  "scope": "CPUprototypeonly; no renderer/GPU/browser/server/canonical/evidence/Git changes"
+}

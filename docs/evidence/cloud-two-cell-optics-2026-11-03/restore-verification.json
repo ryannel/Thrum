@@ -1,0 +1,25 @@
+{
+  "scope": "Fresh package restore and all member/shared/served hashes only; no tests/GPU/benchmark rerun",
+  "command": "python3 restore.py --output /private/tmp/thrum-two-cell-optical-root-restore",
+  "exit_code": 0,
+  "stdout": "Verified optical build d9ce7a9895ab34f4 at /private/tmp/thrum-two-cell-optical-root-restore ; CPU tests run: False\nKnown actual GPU playback hangs; no art, motion or performance admission. Start serve.py explicitly for an instrument, not a qualified product.\n",
+  "stderr": "",
+  "archive_members": 154,
+  "build": "d9ce7a9895ab34f4",
+  "served_files": 42,
+  "external_native_payloads": 5,
+  "functional_validation": {
+    "command": "python3 restore.py --output /private/tmp/thrum-cloud-optical-failure-validation-v2 --test",
+    "exit_code": 0,
+    "archive_members": 155,
+    "phases": [
+      "contracts12",
+      "native6",
+      "source8",
+      "render10"
+    ],
+    "sampled_process_tree_peak_bytes": 196296704,
+    "scope": "Fresh recovery and unchanged serial CPU suites only; no GPU or timing qualification",
+    "preceding_failures": "observations/restore-attempt.json"
+  }
+}

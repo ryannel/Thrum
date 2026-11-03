@@ -1,0 +1,458 @@
+{
+  "pass": true,
+  "checks": [
+    "actual_overlap_positive_MAXwithin_ADDbetween_vs_both_negatives",
+    "native_queries_never_step_source_and_bound_rejection_exact",
+    "owned_native_observer_stable_after_commit",
+    "healthy_clear_missing_and_expired_differ",
+    "actual_remote_B_Sun_chord_outside_A16kmcache_omittedB_negative",
+    "global150turn500front_atomic_absolute_world_X_distinct_E"
+  ],
+  "overlap": {
+    "presentationTime": 120,
+    "epoch": 7,
+    "roots": [
+      [
+        417.40799999999746,
+        1239.2,
+        0
+      ],
+      [
+        433.40799999999723,
+        1239.2,
+        0
+      ]
+    ],
+    "point": [
+      425.40799999999734,
+      1239.2,
+      0
+    ],
+    "actual": {
+      "q": 0.23726830648401745,
+      "sigmaT": 0.004508097823196331,
+      "groups": [
+        {
+          "cellID": "A",
+          "q": 0.13225967476479525,
+          "rejectedByBound": false
+        },
+        {
+          "cellID": "B",
+          "q": 0.1050086317192222,
+          "rejectedByBound": false
+        }
+      ],
+      "scope": "MAX inside each liquid formation; ADD independent formation extinction; no fog/air/lighting proof"
+    },
+    "deliberatelyWrong": {
+      "globalMaxSigma": 0.00251293382053111,
+      "proxySumSigma": 0.007141703780227581
+    }
+  },
+  "remote": {
+    "initialRootXZ": [
+      11992.715801343124,
+      6779.681531943434
+    ],
+    "presentationTime": 120,
+    "receiver": [
+      0,
+      2,
+      0
+    ],
+    "sun": [
+      0.8742430952929605,
+      0.08715574274765817,
+      0.4776011796872865
+    ],
+    "bodyRoot": [
+      12410.12380134312,
+      1239.2,
+      6779.681531943434
+    ],
+    "closestRayPoint": [
+      12410.123801343123,
+      1239.2,
+      6779.681531943434
+    ],
+    "rootRayErrorM": 3.637978807091713e-12,
+    "cacheDomain": "16km fullwidth centred at A BODY",
+    "Aroot": [
+      417.40799999999746,
+      1239.2,
+      0
+    ],
+    "positiveChordSamples": 65,
+    "chordRangeWorldM": [
+      -32,
+      32
+    ],
+    "minQ": 0.071960449218757,
+    "maxQ": 0.12887364205125834,
+    "trapezoidTau64m": 0.11868756068801399,
+    "chord": [
+      {
+        "offsetWorldM": -32,
+        "qB": 0.07289932982954893,
+        "sigmaT": 0.0013850872667614297
+      },
+      {
+        "offsetWorldM": -31,
+        "qB": 0.0742772451919534,
+        "sigmaT": 0.0014112676586471146
+      },
+      {
+        "offsetWorldM": -30,
+        "qB": 0.07550917738149404,
+        "sigmaT": 0.0014346743702483868
+      },
+      {
+        "offsetWorldM": -29,
+        "qB": 0.07659464057665386,
+        "sigmaT": 0.0014552981709564231
+      },
+      {
+        "offsetWorldM": -28,
+        "qB": 0.07753314895592092,
+        "sigmaT": 0.0014731298301624974
+      },
+      {
+        "offsetWorldM": -27,
+        "qB": 0.07932167980806311,
+        "sigmaT": 0.001507111916353199
+      },
+      {
+        "offsetWorldM": -26,
+        "qB": 0.08113851672536858,
+        "sigmaT": 0.001541631817782003
+      },
+      {
+        "offsetWorldM": -25,
+        "qB": 0.0829311668269084,
+        "sigmaT": 0.0015756921697112597
+      },
+      {
+        "offsetWorldM": -24,
+        "qB": 0.08470141998143224,
+        "sigmaT": 0.0016093269796472126
+      },
+      {
+        "offsetWorldM": -23,
+        "qB": 0.09590677782508529,
+        "sigmaT": 0.0018222287786766205
+      },
+      {
+        "offsetWorldM": -22,
+        "qB": 0.10526084988764592,
+        "sigmaT": 0.0019999561478652723
+      },
+      {
+        "offsetWorldM": -21,
+        "qB": 0.10675625769344493,
+        "sigmaT": 0.0020283688961754537
+      },
+      {
+        "offsetWorldM": -20,
+        "qB": 0.10555399795505015,
+        "sigmaT": 0.002005525961145953
+      },
+      {
+        "offsetWorldM": -19,
+        "qB": 0.10492653624621731,
+        "sigmaT": 0.001993604188678129
+      },
+      {
+        "offsetWorldM": -18,
+        "qB": 0.10493748956192005,
+        "sigmaT": 0.001993812301676481
+      },
+      {
+        "offsetWorldM": -17,
+        "qB": 0.1024807292106516,
+        "sigmaT": 0.0019471338550023803
+      },
+      {
+        "offsetWorldM": -16,
+        "qB": 0.09948277860088289,
+        "sigmaT": 0.0018901727934167748
+      },
+      {
+        "offsetWorldM": -15,
+        "qB": 0.09768948391942428,
+        "sigmaT": 0.0018561001944690614
+      },
+      {
+        "offsetWorldM": -14,
+        "qB": 0.09493746087181079,
+        "sigmaT": 0.001803811756564405
+      },
+      {
+        "offsetWorldM": -13,
+        "qB": 0.09391232704237337,
+        "sigmaT": 0.0017843342138050941
+      },
+      {
+        "offsetWorldM": -12,
+        "qB": 0.09627105944916903,
+        "sigmaT": 0.0018291501295342116
+      },
+      {
+        "offsetWorldM": -11,
+        "qB": 0.10269957883174079,
+        "sigmaT": 0.001951291997803075
+      },
+      {
+        "offsetWorldM": -10,
+        "qB": 0.10024831201319699,
+        "sigmaT": 0.0019047179282507428
+      },
+      {
+        "offsetWorldM": -9,
+        "qB": 0.08829812821714156,
+        "sigmaT": 0.0016776644361256895
+      },
+      {
+        "offsetWorldM": -8,
+        "qB": 0.08438969849749384,
+        "sigmaT": 0.0016034042714523828
+      },
+      {
+        "offsetWorldM": -7,
+        "qB": 0.08183856220746952,
+        "sigmaT": 0.0015549326819419209
+      },
+      {
+        "offsetWorldM": -6,
+        "qB": 0.07955523750043327,
+        "sigmaT": 0.001511549512508232
+      },
+      {
+        "offsetWorldM": -5,
+        "qB": 0.08447798922645142,
+        "sigmaT": 0.0016050817953025768
+      },
+      {
+        "offsetWorldM": -4,
+        "qB": 0.0927572543726686,
+        "sigmaT": 0.0017623878330807034
+      },
+      {
+        "offsetWorldM": -3,
+        "qB": 0.09484399366433986,
+        "sigmaT": 0.0018020358796224573
+      },
+      {
+        "offsetWorldM": -2,
+        "qB": 0.08837391210140369,
+        "sigmaT": 0.00167910432992667
+      },
+      {
+        "offsetWorldM": -1,
+        "qB": 0.07706099442440331,
+        "sigmaT": 0.0014641588940636629
+      },
+      {
+        "offsetWorldM": 0,
+        "qB": 0.071960449218757,
+        "sigmaT": 0.001367248535156383
+      },
+      {
+        "offsetWorldM": 1,
+        "qB": 0.07794056025063958,
+        "sigmaT": 0.001480870644762152
+      },
+      {
+        "offsetWorldM": 2,
+        "qB": 0.08230019043554662,
+        "sigmaT": 0.0015637036182753858
+      },
+      {
+        "offsetWorldM": 3,
+        "qB": 0.08436500124055155,
+        "sigmaT": 0.0016029350235704793
+      },
+      {
+        "offsetWorldM": 4,
+        "qB": 0.08461291612650282,
+        "sigmaT": 0.0016076454064035536
+      },
+      {
+        "offsetWorldM": 5,
+        "qB": 0.08254770769324851,
+        "sigmaT": 0.0015684064461717216
+      },
+      {
+        "offsetWorldM": 6,
+        "qB": 0.08167542417947822,
+        "sigmaT": 0.001551833059410086
+      },
+      {
+        "offsetWorldM": 7,
+        "qB": 0.08024946368053723,
+        "sigmaT": 0.0015247398099302073
+      },
+      {
+        "offsetWorldM": 8,
+        "qB": 0.08501787237279088,
+        "sigmaT": 0.0016153395750830267
+      },
+      {
+        "offsetWorldM": 9,
+        "qB": 0.09137254807729715,
+        "sigmaT": 0.0017360784134686459
+      },
+      {
+        "offsetWorldM": 10,
+        "qB": 0.09843484221976251,
+        "sigmaT": 0.0018702620021754876
+      },
+      {
+        "offsetWorldM": 11,
+        "qB": 0.10221495735281576,
+        "sigmaT": 0.0019420841897034994
+      },
+      {
+        "offsetWorldM": 12,
+        "qB": 0.10313089722148926,
+        "sigmaT": 0.0019594870472082956
+      },
+      {
+        "offsetWorldM": 13,
+        "qB": 0.10456052964742762,
+        "sigmaT": 0.0019866500633011247
+      },
+      {
+        "offsetWorldM": 14,
+        "qB": 0.10611216414561915,
+        "sigmaT": 0.002016131118766764
+      },
+      {
+        "offsetWorldM": 15,
+        "qB": 0.10733908019697654,
+        "sigmaT": 0.002039442523742554
+      },
+      {
+        "offsetWorldM": 16,
+        "qB": 0.10807326398128893,
+        "sigmaT": 0.0020533920156444894
+      },
+      {
+        "offsetWorldM": 17,
+        "qB": 0.10848281756674612,
+        "sigmaT": 0.0020611735337681763
+      },
+      {
+        "offsetWorldM": 18,
+        "qB": 0.11113726020365958,
+        "sigmaT": 0.0021116079438695317
+      },
+      {
+        "offsetWorldM": 19,
+        "qB": 0.11570788578549977,
+        "sigmaT": 0.0021984498299244958
+      },
+      {
+        "offsetWorldM": 20,
+        "qB": 0.12031848054634342,
+        "sigmaT": 0.002286051130380525
+      },
+      {
+        "offsetWorldM": 21,
+        "qB": 0.12781420303740196,
+        "sigmaT": 0.0024284698577106373
+      },
+      {
+        "offsetWorldM": 22,
+        "qB": 0.12448604379013149,
+        "sigmaT": 0.0023652348320124983
+      },
+      {
+        "offsetWorldM": 23,
+        "qB": 0.11696140455846012,
+        "sigmaT": 0.0022222666866107423
+      },
+      {
+        "offsetWorldM": 24,
+        "qB": 0.11489294834207373,
+        "sigmaT": 0.0021829660184994005
+      },
+      {
+        "offsetWorldM": 25,
+        "qB": 0.1154660587428526,
+        "sigmaT": 0.002193855116114199
+      },
+      {
+        "offsetWorldM": 26,
+        "qB": 0.11631241307894134,
+        "sigmaT": 0.0022099358484998855
+      },
+      {
+        "offsetWorldM": 27,
+        "qB": 0.11707136293166254,
+        "sigmaT": 0.0022243558957015883
+      },
+      {
+        "offsetWorldM": 28,
+        "qB": 0.11674699063682958,
+        "sigmaT": 0.002218192822099762
+      },
+      {
+        "offsetWorldM": 29,
+        "qB": 0.11995551026313815,
+        "sigmaT": 0.002279154694999625
+      },
+      {
+        "offsetWorldM": 30,
+        "qB": 0.1250900692191182,
+        "sigmaT": 0.0023767113151632454
+      },
+      {
+        "offsetWorldM": 31,
+        "qB": 0.12887364205125834,
+        "sigmaT": 0.0024485991989739086
+      },
+      {
+        "offsetWorldM": 32,
+        "qB": 0.12874538388790838,
+        "sigmaT": 0.0024461622938702593
+      }
+    ],
+    "scope": "Finite actualR16 CPU chord and membership, not rendered shadow or allray integration proof"
+  },
+  "front550": {
+    "presentationTime": 550,
+    "committedTime": 550.25,
+    "maxEStatsTime": 550.25,
+    "controls": {
+      "meanX": 0,
+      "meanZ": 6,
+      "shearX": 0,
+      "shearZ": -0.0015,
+      "uplift": 0.25,
+      "moist": true,
+      "lift": true,
+      "frontX": 522,
+      "frontStart": 500,
+      "frontSpeed": 35,
+      "frontWidth": 800,
+      "dryGain": 1
+    },
+    "maxEByCell": [
+      {
+        "cellID": "A",
+        "maxE": 50.25
+      },
+      {
+        "cellID": "B",
+        "maxE": 0
+      }
+    ]
+  },
+  "boundedPoints": 558,
+  "boundedPositive": 75,
+  "sharedNativeBytes": 16187392,
+  "maxRSSKiB": 108864,
+  "node": "v24.16.0",
+  "scope": "NativeR16 CPU liquid composition/causality oracle only; noGPU/air/fog/environment/renderedshadow/art/performance admission"
+}

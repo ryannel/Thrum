@@ -1,0 +1,19 @@
+{
+  "policyID": "cu-held-predict-observe-v1",
+  "designRevision": "observed-policy-rev2+explicit-epoch-guard",
+  "mode": "opt-in-fresh-only",
+  "stepSeconds": 0.25,
+  "forecastSteps": 180,
+  "observationAgeSeconds": 45,
+  "oldThreshold": 0.005,
+  "newPositiveThreshold": 0.041,
+  "localHeadSubballMetres": 6,
+  "worldMatureNeckMetres": 16,
+  "newNaturalInputIndexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+  "rawIdentity": "owning-model-instance/cellID/localID/birthTick",
+  "qualifiedIdentity": "only explicit validated presentation epoch; omitted epoch remains raw",
+  "sourceClockAuthority": "existing SourceClock, unchanged",
+  "runtimeCostGate": "maximum whole synchronous step <=4ms on qualified host; currently unmeasured",
+  "scope": "CPU functional prototype only, not source-art/lifecycle/GPU or runtime-cost adoption"
+}

@@ -1,0 +1,14 @@
+{
+  "scope": "Design-only current-at-birth all-old state/time correction; no implementation",
+  "original_freeze_sha256": "496e40ad1da175de7168f79c15a7ce7d0c7ddf8b93abb3602371bae7ce86eb88",
+  "files": {
+    "REVISION-2.md": {
+      "bytes": 8503,
+      "sha256": "6bc8923a249849d6e6b3b72d0bb132ea1a805fd2b1613076c94696aba54e4dfc"
+    },
+    "policy-spec-v2.json": {
+      "bytes": 2867,
+      "sha256": "5d52e143b79db4b2a9579efab4c04b2b99376444b1dc0bbf7245903cc18b7875"
+    }
+  }
+}

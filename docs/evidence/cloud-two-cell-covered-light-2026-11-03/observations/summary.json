@@ -1,0 +1,495 @@
+{
+  "build": "b31460fad16cde97",
+  "rows": [
+    {
+      "serial": 1,
+      "file": "system-probe-t120000-b31460fad16cde97-da657b63-1.json",
+      "build": "b31460fad16cde97",
+      "kind": "probe",
+      "pass": true,
+      "points": 1088,
+      "positive": 224,
+      "maxAbsQ": 9.346394604613228e-05,
+      "includeB": true,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7,
+      "receiverGpuT0": 1,
+      "receiverCpuT0": 1,
+      "offAllChartsGpuAmbient": 0.8754834532737732,
+      "offAllChartsCpuAmbient": 0.8755010806591251,
+      "maxCachedT0Error": 0.05994647394065933,
+      "cachedAccuracy": "UNQUALIFIED"
+    },
+    {
+      "serial": 2,
+      "file": "system-t120000-mode0-b31460fad16cde97-da657b63-2.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 120,
+      "includeB": true,
+      "main": true,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7
+    },
+    {
+      "serial": 3,
+      "file": "system-renewal-1x-90s-b31460fad16cde97-da657b63-3.json",
+      "build": "b31460fad16cde97",
+      "kind": "motion",
+      "motion": {
+        "file": "system-renewal-1x-90s-b31460fad16cde97-da657b63-3.webm",
+        "sourceWindow": [
+          130,
+          220
+        ],
+        "requestedWallSeconds": 90,
+        "actualRecorderWallMs": 90010.75,
+        "bytes": 2166463,
+        "outcome": "recorded-fixed-controls",
+        "callbackError": null,
+        "droppedEncodedBytes": 0,
+        "recordingSettlement": {
+          "gpuSettled": true,
+          "reason": null
+        },
+        "requestedCaptureFps": 15,
+        "deliveredFpsClaim": false
+      },
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7,
+      "fixture": [
+        {
+          "cellID": "A",
+          "rootXZ": [
+            0,
+            0
+          ]
+        },
+        {
+          "cellID": "B",
+          "rootXZ": [
+            2400,
+            -1200
+          ]
+        }
+      ]
+    },
+    {
+      "serial": 4,
+      "file": "system-t220003-mode0-b31460fad16cde97-da657b63-4.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 220.00258500004367,
+      "includeB": true,
+      "main": true,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7
+    },
+    {
+      "serial": 5,
+      "file": "system-accelerated-16x-40s-b31460fad16cde97-da657b63-5.json",
+      "build": "b31460fad16cde97",
+      "kind": "motion",
+      "motion": {
+        "file": "system-accelerated-16x-40s-b31460fad16cde97-da657b63-5.webm",
+        "sourceWindow": [
+          0,
+          640
+        ],
+        "requestedWallSeconds": 40,
+        "actualRecorderWallMs": 40004.329999923706,
+        "bytes": 2831219,
+        "outcome": "recorded-fixed-controls",
+        "callbackError": null,
+        "droppedEncodedBytes": 0,
+        "recordingSettlement": {
+          "gpuSettled": true,
+          "reason": null
+        },
+        "requestedCaptureFps": 15,
+        "deliveredFpsClaim": false
+      },
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7,
+      "fixture": [
+        {
+          "cellID": "A",
+          "rootXZ": [
+            0,
+            0
+          ]
+        },
+        {
+          "cellID": "B",
+          "rootXZ": [
+            2400,
+            -1200
+          ]
+        }
+      ]
+    },
+    {
+      "serial": 6,
+      "file": "system-t170250-mode0-b31460fad16cde97-da657b63-6.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 170.25,
+      "includeB": true,
+      "main": true,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7
+    },
+    {
+      "serial": 7,
+      "file": "system-t170250-mode0-b31460fad16cde97-da657b63-7.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 170.25,
+      "includeB": true,
+      "main": false,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7
+    },
+    {
+      "serial": 8,
+      "file": "system-probe-t170250-b31460fad16cde97-da657b63-8.json",
+      "build": "b31460fad16cde97",
+      "kind": "probe",
+      "pass": true,
+      "points": 1104,
+      "positive": 254,
+      "maxAbsQ": 0.00018640630520747048,
+      "includeB": true,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7,
+      "receiverGpuT0": 1,
+      "receiverCpuT0": 1,
+      "offAllChartsGpuAmbient": 0.877741813659668,
+      "offAllChartsCpuAmbient": 0.8777518487268117,
+      "maxCachedT0Error": 0.03378927370415008,
+      "cachedAccuracy": "UNQUALIFIED"
+    },
+    {
+      "serial": 9,
+      "file": "system-t170250-mode0-b31460fad16cde97-da657b63-9.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 170.25,
+      "includeB": false,
+      "main": false,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7
+    },
+    {
+      "serial": 10,
+      "file": "system-probe-t170250-b31460fad16cde97-da657b63-10.json",
+      "build": "b31460fad16cde97",
+      "kind": "probe",
+      "pass": true,
+      "points": 1104,
+      "positive": 127,
+      "maxAbsQ": 0.00018640630520747048,
+      "includeB": false,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7,
+      "receiverGpuT0": 1,
+      "receiverCpuT0": 1,
+      "offAllChartsGpuAmbient": 1,
+      "offAllChartsCpuAmbient": 1,
+      "maxCachedT0Error": 0.024512733382110463,
+      "cachedAccuracy": "UNQUALIFIED"
+    },
+    {
+      "serial": 11,
+      "file": "system-probe-t120000-b31460fad16cde97-da657b63-11.json",
+      "build": "b31460fad16cde97",
+      "kind": "probe",
+      "pass": true,
+      "points": 1088,
+      "positive": 224,
+      "maxAbsQ": 9.346394604613228e-05,
+      "includeB": true,
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5,
+      "receiverGpuT0": 0.45442551374435425,
+      "receiverCpuT0": 0.4543692392551612,
+      "offAllChartsGpuAmbient": 0.8754834532737732,
+      "offAllChartsCpuAmbient": 0.8755012564593964,
+      "maxCachedT0Error": 0.06109864122330688,
+      "cachedAccuracy": "UNQUALIFIED"
+    },
+    {
+      "serial": 12,
+      "file": "system-t120000-mode0-b31460fad16cde97-da657b63-12.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 120,
+      "includeB": true,
+      "main": false,
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5
+    },
+    {
+      "serial": 13,
+      "file": "system-probe-t120000-b31460fad16cde97-da657b63-13.json",
+      "build": "b31460fad16cde97",
+      "kind": "probe",
+      "pass": true,
+      "points": 1088,
+      "positive": 112,
+      "maxAbsQ": 9.346394604613228e-05,
+      "includeB": false,
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5,
+      "receiverGpuT0": 1,
+      "receiverCpuT0": 1,
+      "offAllChartsGpuAmbient": 1,
+      "offAllChartsCpuAmbient": 1,
+      "maxCachedT0Error": 0.01676211631646285,
+      "cachedAccuracy": "UNQUALIFIED"
+    },
+    {
+      "serial": 14,
+      "file": "system-t120000-mode0-b31460fad16cde97-da657b63-14.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 120,
+      "includeB": false,
+      "main": false,
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5
+    },
+    {
+      "serial": 15,
+      "file": "system-breakup-1x-90s-b31460fad16cde97-da657b63-15.json",
+      "build": "b31460fad16cde97",
+      "kind": "motion",
+      "motion": {
+        "file": "system-breakup-1x-90s-b31460fad16cde97-da657b63-15.webm",
+        "sourceWindow": [
+          500,
+          590
+        ],
+        "requestedWallSeconds": 90,
+        "actualRecorderWallMs": 90004.6749997139,
+        "bytes": 1397710,
+        "outcome": "recorded-fixed-controls",
+        "callbackError": null,
+        "droppedEncodedBytes": 0,
+        "recordingSettlement": {
+          "gpuSettled": true,
+          "reason": null
+        },
+        "requestedCaptureFps": 15,
+        "deliveredFpsClaim": false
+      },
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5,
+      "fixture": [
+        {
+          "cellID": "A",
+          "rootXZ": [
+            0,
+            0
+          ]
+        },
+        {
+          "cellID": "B",
+          "rootXZ": [
+            2400,
+            -1200
+          ]
+        }
+      ]
+    },
+    {
+      "serial": 16,
+      "file": "system-t590002-mode0-b31460fad16cde97-da657b63-16.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 590.0024800000211,
+      "includeB": true,
+      "main": true,
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5
+    },
+    {
+      "serial": 17,
+      "file": "system-probe-t590002-b31460fad16cde97-da657b63-17.json",
+      "build": "b31460fad16cde97",
+      "kind": "probe",
+      "pass": true,
+      "points": 1064,
+      "positive": 60,
+      "maxAbsQ": 8.894372577152032e-05,
+      "includeB": true,
+      "sunDegrees": 5,
+      "sunAzimuth": 0.5,
+      "receiverGpuT0": 1,
+      "receiverCpuT0": 1,
+      "offAllChartsGpuAmbient": 0.8961777687072754,
+      "offAllChartsCpuAmbient": 0.89619343314649,
+      "maxCachedT0Error": 0.04505286324496993,
+      "cachedAccuracy": "UNQUALIFIED"
+    },
+    {
+      "serial": 18,
+      "file": "system-t120000-mode0-b31460fad16cde97-da657b63-18.json",
+      "build": "b31460fad16cde97",
+      "kind": "held-image",
+      "sourceTime": 120,
+      "includeB": true,
+      "main": true,
+      "sunDegrees": 30,
+      "sunAzimuth": -0.7
+    }
+  ],
+  "rootAssessment": "Coherent two-cell translations/reflected response/local crest changes; repeated smooth twin anatomy unaccepted. Low-Sun drying A almost gone while B persists, mirror follows; no breakup quality acceptance. Sampled frames only, no continuous watching.",
+  "scope": "Available M3Max selected runs only; no causal hang fix, cached-light/performance/art/fullP4a qualification",
+  "cameraTargets": {
+    "5": {
+      "target": [
+        -170,
+        1239.2,
+        155
+      ],
+      "scope": "Last submitted frame at recording start; accelerated follow can move later"
+    },
+    "15": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        1768.0799999999913
+      ],
+      "scope": "Last submitted frame at recording start; accelerated follow can move later"
+    },
+    "1": {
+      "target": [
+        1200,
+        1300,
+        -600
+      ],
+      "scope": "Submitted held frame"
+    },
+    "11": {
+      "target": [
+        0,
+        1300,
+        0
+      ],
+      "scope": "Submitted held frame"
+    },
+    "13": {
+      "target": [
+        0,
+        1300,
+        0
+      ],
+      "scope": "Submitted held frame"
+    },
+    "10": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        248.32819999999987
+      ],
+      "scope": "Submitted held frame"
+    },
+    "8": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        248.32819999999987
+      ],
+      "scope": "Submitted held frame"
+    },
+    "17": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        1768.0799999999913
+      ],
+      "scope": "Submitted held frame"
+    },
+    "3": {
+      "target": [
+        1200,
+        1300,
+        -600
+      ],
+      "scope": "Last submitted frame at recording start; accelerated follow can move later"
+    },
+    "12": {
+      "target": [
+        0,
+        1300,
+        0
+      ],
+      "scope": "Submitted held frame"
+    },
+    "14": {
+      "target": [
+        0,
+        1300,
+        0
+      ],
+      "scope": "Submitted held frame"
+    },
+    "18": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        1768.0799999999913
+      ],
+      "scope": "Submitted held frame"
+    },
+    "2": {
+      "target": [
+        1200,
+        1300,
+        -600
+      ],
+      "scope": "Submitted held frame"
+    },
+    "6": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        248.32819999999987
+      ],
+      "scope": "Submitted held frame"
+    },
+    "7": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        248.32819999999987
+      ],
+      "scope": "Submitted held frame"
+    },
+    "9": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        248.32819999999987
+      ],
+      "scope": "Submitted held frame"
+    },
+    "4": {
+      "target": [
+        1200,
+        1300,
+        -600
+      ],
+      "scope": "Submitted held frame"
+    },
+    "16": {
+      "target": [
+        351.75999999999647,
+        1239.2,
+        1768.0799999999913
+      ],
+      "scope": "Submitted held frame"
+    }
+  }
+}

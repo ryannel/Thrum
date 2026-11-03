@@ -1,0 +1,49 @@
+{
+  "files": {
+    "FREEZE.json": {
+      "bytes": 9307,
+      "sha256": "1c910f1b244606b1d96a7b66ebd649f79aec5a4fcf82a9ee4471cd310b18e6c5"
+    },
+    "README.md": {
+      "bytes": 6905,
+      "sha256": "9869a53fcf7cf3d4b81e5d204eb74c593c482d55c80acb543a41bf8c4c669dd9"
+    },
+    "instrument-d9ce7a9895ab34f4.zip": {
+      "bytes": 338301,
+      "sha256": "b6e5b3fe94b1e90957f14786149da0d6966e325926bd7956f9efbac28f957b1d"
+    },
+    "observations/captures.zip": {
+      "bytes": 1571327,
+      "sha256": "3d8c587d32c2b352cb53a4137bcaeadb62b1e586d916d2f578ca178d46b8514d"
+    },
+    "observations/gpu-loss-d9ce7a.json": {
+      "bytes": 2510,
+      "sha256": "30e335c9f49ace30b6024ef6f16dddc4950f36f9b5c2b4ebf3cb61fb34f89aa0"
+    },
+    "observations/restore-attempt.json": {
+      "bytes": 893,
+      "sha256": "2b59bbae0e25fc93a3dbf672cf42133fe7f61a2b22216c9c29a0625ea144d9b8"
+    },
+    "observations/system-t120000-mode0-d9ce7a9895ab34f4-9018df28-1.png": {
+      "bytes": 356051,
+      "sha256": "b61cac6dce2a1aaefb6432caf84f1040138e19f2592c225865da2784615b1faf"
+    },
+    "observations/system-t170250-mode0-d9ce7a9895ab34f4-e0cabccb-1.png": {
+      "bytes": 361440,
+      "sha256": "d7c8e5015b439ef00ce7e109d64c5083e639ff812f27989f996b6cebe7817f98"
+    },
+    "restore-spec.json": {
+      "bytes": 30570,
+      "sha256": "d1fce34b0b82ac4e1f70080f0d2defba0cee1729a550888348d9c7f43d0c595f"
+    },
+    "restore-verification.json": {
+      "bytes": 1123,
+      "sha256": "a0334de252c6de11ac0c3454bf8aac9e288a46d2da33947199fa53557e7d117c"
+    },
+    "restore.py": {
+      "bytes": 3264,
+      "sha256": "ecec4d8e8a88aec07fe3b472318e01079839f45af04c88374c1474b63ecf0916"
+    }
+  },
+  "scope": "Known-failing optical diagnostic; no admission"
+}

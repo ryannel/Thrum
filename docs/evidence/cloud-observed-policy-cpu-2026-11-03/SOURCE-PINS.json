@@ -1,0 +1,62 @@
+{
+  "source": {
+    "src/source/admission-policy.js": {
+      "sha256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+      "bytes": 12309
+    },
+    "src/source/admission-policy.provenance.json": {
+      "sha256": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49",
+      "bytes": 212
+    },
+    "src/source/clock.js": {
+      "sha256": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+      "bytes": 2928
+    },
+    "src/source/math.js": {
+      "sha256": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+      "bytes": 5436
+    },
+    "src/source/model.js": {
+      "sha256": "75306c0fe439f2e14e18e8b02e62309b42423b983dbf9ceef9d00ccd81162354",
+      "bytes": 23605
+    },
+    "src/source/native-potential.js": {
+      "sha256": "751eb275097ac5115f6d2b5a71d3260c3706177678520b9fa0faaf052d13a340",
+      "bytes": 1683
+    },
+    "src/source/observed-policy.js": {
+      "sha256": "c334fcdf0e1390fcc29307c1c1bcfa6fd64682728692b12f21c5041e055f938d",
+      "bytes": 15418
+    },
+    "src/source/reference.js": {
+      "sha256": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+      "bytes": 2457
+    },
+    "src/source/weather.js": {
+      "sha256": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+      "bytes": 1759
+    },
+    "src/source/world-reference.js": {
+      "sha256": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+      "bytes": 1720
+    },
+    "src/source/world.js": {
+      "sha256": "e24633d238c72d98d62528f47ec57155b40abd794e06e3676858708633a4bbca",
+      "bytes": 10862
+    }
+  },
+  "baseRevision": "1a0a01c2c8735b74",
+  "unchangedAgainst1a": {
+    "clock.js": true,
+    "weather.js": true,
+    "world.js": false,
+    "world-reference.js": true,
+    "math.js": true,
+    "admission-policy.js": true,
+    "admission-policy.provenance.json": true,
+    "model.js": false,
+    "reference.js": true
+  },
+  "configurationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7",
+  "scope": "CPUonly; cost gate unrun; natural source/art/lifecycle unadopted"
+}

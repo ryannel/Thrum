@@ -1,0 +1,1052 @@
+{
+  "scope": "PortableCPUsourcecontracts/replays/nativepointreferences only; GPU/art/productioncadence separate",
+  "pass": true,
+  "sourceUnchangedDuringRun": true,
+  "modelSHA256": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+  "sourceHashes": {
+    "model.js": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+    "clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+    "weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+    "math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+    "reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+    "admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+    "admission-policy.provenance.json": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49"
+  },
+  "inputIndexSHA256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+  "admissionSHA256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+  "nodeVersion": "v24.16.0",
+  "runs": [
+    {
+      "test": "smoke",
+      "exitCode": 0,
+      "nodeProcessWallMs": 200.09145900000001,
+      "log": "run-logs/smoke.log",
+      "logSHA256": "dc6be4ea6fabded0eeb4304fcac9a712566152637f9bd574e2be2a3a02fa78a5"
+    },
+    {
+      "test": "replays",
+      "exitCode": 0,
+      "nodeProcessWallMs": 425.408375,
+      "log": "run-logs/replays.log",
+      "logSHA256": "944421cd1b2a67aeb9c19c7bd666e00b74648e4fc4a0ab5e94007588db496e74"
+    },
+    {
+      "test": "contracts",
+      "exitCode": 0,
+      "nodeProcessWallMs": 271.817,
+      "log": "run-logs/contracts.log",
+      "logSHA256": "af8a1d33454deb9cf6bc88f7cd9cab32f5a681302d040e87e1d782d707d7c24b"
+    },
+    {
+      "test": "reference",
+      "exitCode": 0,
+      "nodeProcessWallMs": 481.26929199999995,
+      "log": "run-logs/reference.log",
+      "logSHA256": "2c69f12072535d493e0d87e128c468a2764abad5817c9c97a9e0540a24cae965"
+    },
+    {
+      "test": "reference-continuation",
+      "exitCode": 0,
+      "nodeProcessWallMs": 48.34920800000009,
+      "log": "run-logs/reference-continuation.log",
+      "logSHA256": "324acec18698d75264c28b82f19b872561407a2a22eeaf525e46dff69ff5762d"
+    },
+    {
+      "test": "control-domain",
+      "exitCode": 0,
+      "nodeProcessWallMs": 158.378375,
+      "log": "run-logs/control-domain.log",
+      "logSHA256": "c6a85533ce02066d173bc6854611f1247ef6788e435b926dd47779c38915b5bd"
+    },
+    {
+      "test": "presentation-status",
+      "exitCode": 0,
+      "nodeProcessWallMs": 66.58387500000003,
+      "log": "run-logs/presentation-status.log",
+      "logSHA256": "a3ad45ec54e99801e12bdb30d18e74f33b461e18c200eaee23e047224e0bcdd5"
+    },
+    {
+      "test": "clock-profile",
+      "exitCode": 0,
+      "nodeProcessWallMs": 80.32170799999994,
+      "log": "run-logs/clock-profile.log",
+      "logSHA256": "8a6d038a989941bda6600aa5a846f50a9200ecb8cd7185c36da75fbdbbcfe28f"
+    }
+  ],
+  "wet1200": {
+    "stats": {
+      "births": 36,
+      "bodyBirths": 13,
+      "billowBirths": 23,
+      "recoveryBirths": 0,
+      "failedBirths": 0,
+      "weatherCancelledSlots": 0,
+      "capacityFailures": 0,
+      "retired": 30,
+      "healthyEstablishments": 33,
+      "cancelledEstablishments": 0,
+      "maxSlots": 6,
+      "maxPriorCurrentIDs": 6,
+      "maxReferenceParts": 5,
+      "admissionNodeTests": 2963,
+      "controlPointUpdates": 0,
+      "sourceSteps": 4800,
+      "maxControlPitch": 128,
+      "maxK": 2.029999999999998,
+      "exposurePublications": 0
+    },
+    "eventCount": 99,
+    "overwrittenEvents": 0,
+    "birthEvents": [
+      {
+        "time": 0,
+        "type": "birth",
+        "ID": 1,
+        "parentID": 0,
+        "role": "BODY",
+        "s": 4,
+        "site": null,
+        "cellId": "cu-weather-cell-1",
+        "siteID": null
+      },
+      {
+        "time": 70,
+        "type": "birth",
+        "ID": 2,
+        "parentID": 1,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          242,
+          246.8,
+          276
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-shoulder-0"
+      },
+      {
+        "time": 100,
+        "type": "birth",
+        "ID": 3,
+        "parentID": 1,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 120,
+        "type": "birth",
+        "ID": 4,
+        "parentID": 1,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          122,
+          250,
+          214
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-2"
+      },
+      {
+        "time": 170,
+        "type": "birth",
+        "ID": 5,
+        "parentID": 3,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          358,
+          242,
+          278
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-3"
+      },
+      {
+        "time": 200,
+        "type": "birth",
+        "ID": 6,
+        "parentID": 3,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 220,
+        "type": "birth",
+        "ID": 7,
+        "parentID": 3,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          210,
+          256,
+          190
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-4"
+      },
+      {
+        "time": 270,
+        "type": "birth",
+        "ID": 8,
+        "parentID": 6,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          282,
+          272,
+          92
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-5"
+      },
+      {
+        "time": 300,
+        "type": "birth",
+        "ID": 9,
+        "parentID": 6,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 320,
+        "type": "birth",
+        "ID": 10,
+        "parentID": 6,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          340,
+          252,
+          194
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-6"
+      },
+      {
+        "time": 370,
+        "type": "birth",
+        "ID": 11,
+        "parentID": 9,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          178,
+          242,
+          240
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-7"
+      },
+      {
+        "time": 400,
+        "type": "birth",
+        "ID": 12,
+        "parentID": 9,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 420,
+        "type": "birth",
+        "ID": 13,
+        "parentID": 9,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          242,
+          246.8,
+          276
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-shoulder-0"
+      },
+      {
+        "time": 470,
+        "type": "birth",
+        "ID": 14,
+        "parentID": 12,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          292,
+          244.4,
+          152
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-shoulder-6"
+      },
+      {
+        "time": 500,
+        "type": "birth",
+        "ID": 15,
+        "parentID": 12,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 520,
+        "type": "birth",
+        "ID": 16,
+        "parentID": 12,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          122,
+          250,
+          214
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-2"
+      },
+      {
+        "time": 570,
+        "type": "birth",
+        "ID": 17,
+        "parentID": 15,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          358,
+          242,
+          278
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-3"
+      },
+      {
+        "time": 600,
+        "type": "birth",
+        "ID": 18,
+        "parentID": 15,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 620,
+        "type": "birth",
+        "ID": 19,
+        "parentID": 15,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          210,
+          256,
+          190
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-4"
+      },
+      {
+        "time": 670,
+        "type": "birth",
+        "ID": 20,
+        "parentID": 18,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          282,
+          272,
+          92
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-5"
+      },
+      {
+        "time": 700,
+        "type": "birth",
+        "ID": 21,
+        "parentID": 18,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 720,
+        "type": "birth",
+        "ID": 22,
+        "parentID": 18,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          340,
+          252,
+          194
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-6"
+      },
+      {
+        "time": 770,
+        "type": "birth",
+        "ID": 23,
+        "parentID": 21,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          178,
+          242,
+          240
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-7"
+      },
+      {
+        "time": 800,
+        "type": "birth",
+        "ID": 24,
+        "parentID": 21,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 820,
+        "type": "birth",
+        "ID": 25,
+        "parentID": 21,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          242,
+          246.8,
+          276
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-shoulder-0"
+      },
+      {
+        "time": 870,
+        "type": "birth",
+        "ID": 26,
+        "parentID": 24,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          292,
+          244.4,
+          152
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-shoulder-6"
+      },
+      {
+        "time": 900,
+        "type": "birth",
+        "ID": 27,
+        "parentID": 24,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 920,
+        "type": "birth",
+        "ID": 28,
+        "parentID": 24,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          122,
+          250,
+          214
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-2"
+      },
+      {
+        "time": 970,
+        "type": "birth",
+        "ID": 29,
+        "parentID": 27,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          358,
+          242,
+          278
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-3"
+      },
+      {
+        "time": 1000,
+        "type": "birth",
+        "ID": 30,
+        "parentID": 27,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 1020,
+        "type": "birth",
+        "ID": 31,
+        "parentID": 27,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          210,
+          256,
+          190
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-4"
+      },
+      {
+        "time": 1070,
+        "type": "birth",
+        "ID": 32,
+        "parentID": 30,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          282,
+          272,
+          92
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-5"
+      },
+      {
+        "time": 1100,
+        "type": "birth",
+        "ID": 33,
+        "parentID": 30,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      },
+      {
+        "time": 1120,
+        "type": "birth",
+        "ID": 34,
+        "parentID": 30,
+        "role": "BILLOW",
+        "s": 5,
+        "site": [
+          340,
+          252,
+          194
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-6"
+      },
+      {
+        "time": 1170,
+        "type": "birth",
+        "ID": 35,
+        "parentID": 33,
+        "role": "BILLOW",
+        "s": 6,
+        "site": [
+          178,
+          242,
+          240
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-admission-7"
+      },
+      {
+        "time": 1200,
+        "type": "birth",
+        "ID": 36,
+        "parentID": 33,
+        "role": "BODY",
+        "s": 4,
+        "site": [
+          299,
+          233,
+          167
+        ],
+        "cellId": "cu-weather-cell-1",
+        "siteID": "body-root"
+      }
+    ]
+  },
+  "replays": {
+    "defaultDry900": {
+      "stats": {
+        "births": 14,
+        "bodyBirths": 5,
+        "billowBirths": 9,
+        "recoveryBirths": 0,
+        "failedBirths": 1,
+        "weatherCancelledSlots": 12,
+        "capacityFailures": 0,
+        "retired": 14,
+        "healthyEstablishments": 12,
+        "cancelledEstablishments": 1,
+        "maxSlots": 6,
+        "maxPriorCurrentIDs": 6,
+        "maxReferenceParts": 5,
+        "admissionNodeTests": 1039,
+        "controlPointUpdates": 9030094,
+        "sourceSteps": 3600,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 0
+      },
+      "activeParts": 0,
+      "failedBirthEvents": [
+        {
+          "time": 500,
+          "type": "failed-birth",
+          "role": "BODY",
+          "scheduled": 500,
+          "reason": "no-loss-free-parent-with-protected-lease",
+          "parentCandidates": []
+        }
+      ],
+      "cancelledSlots": [
+        {
+          "time": 520,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 520
+        },
+        {
+          "time": 570,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 570
+        },
+        {
+          "time": 600,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 600
+        },
+        {
+          "time": 620,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 620
+        },
+        {
+          "time": 670,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 670
+        },
+        {
+          "time": 700,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 700
+        },
+        {
+          "time": 720,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 720
+        },
+        {
+          "time": 770,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 770
+        },
+        {
+          "time": 800,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 800
+        },
+        {
+          "time": 820,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 820
+        },
+        {
+          "time": 870,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 870
+        },
+        {
+          "time": 900,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 900
+        }
+      ],
+      "recoveryEvents": []
+    },
+    "off150on200Wet600": {
+      "stats": {
+        "births": 17,
+        "bodyBirths": 7,
+        "billowBirths": 10,
+        "recoveryBirths": 0,
+        "failedBirths": 0,
+        "weatherCancelledSlots": 1,
+        "capacityFailures": 0,
+        "retired": 11,
+        "healthyEstablishments": 12,
+        "cancelledEstablishments": 2,
+        "maxSlots": 6,
+        "maxPriorCurrentIDs": 6,
+        "maxReferenceParts": 5,
+        "admissionNodeTests": 725,
+        "controlPointUpdates": 0,
+        "sourceSteps": 2400,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 0
+      },
+      "activeParts": 6,
+      "failedBirthEvents": [],
+      "cancelledSlots": [
+        {
+          "time": 170,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 170
+        }
+      ],
+      "recoveryEvents": []
+    },
+    "clearRecovery750": {
+      "stats": {
+        "births": 9,
+        "bodyBirths": 4,
+        "billowBirths": 5,
+        "recoveryBirths": 1,
+        "failedBirths": 0,
+        "weatherCancelledSlots": 12,
+        "capacityFailures": 0,
+        "retired": 3,
+        "healthyEstablishments": 4,
+        "cancelledEstablishments": 1,
+        "maxSlots": 6,
+        "maxPriorCurrentIDs": 6,
+        "maxReferenceParts": 5,
+        "admissionNodeTests": 404,
+        "controlPointUpdates": 0,
+        "sourceSteps": 3000,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 0
+      },
+      "activeParts": 6,
+      "failedBirthEvents": [],
+      "cancelledSlots": [
+        {
+          "time": 100,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 100
+        },
+        {
+          "time": 120,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 120
+        },
+        {
+          "time": 170,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 170
+        },
+        {
+          "time": 200,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 200
+        },
+        {
+          "time": 220,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 220
+        },
+        {
+          "time": 270,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 270
+        },
+        {
+          "time": 300,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 300
+        },
+        {
+          "time": 320,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 320
+        },
+        {
+          "time": 370,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 370
+        },
+        {
+          "time": 400,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 400
+        },
+        {
+          "time": 420,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 420
+        },
+        {
+          "time": 470,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 470
+        }
+      ],
+      "recoveryEvents": [
+        {
+          "time": 500,
+          "type": "clear-recondensation",
+          "ID": 3,
+          "parentID": 0,
+          "role": "BODY",
+          "s": 4,
+          "site": null,
+          "cellId": "cu-weather-cell-1"
+        }
+      ]
+    },
+    "initialOffOn200": {
+      "stats": {
+        "births": 6,
+        "bodyBirths": 3,
+        "billowBirths": 3,
+        "recoveryBirths": 1,
+        "failedBirths": 0,
+        "weatherCancelledSlots": 5,
+        "capacityFailures": 0,
+        "retired": 0,
+        "healthyEstablishments": 3,
+        "cancelledEstablishments": 0,
+        "maxSlots": 6,
+        "maxPriorCurrentIDs": 6,
+        "maxReferenceParts": 4,
+        "admissionNodeTests": 206,
+        "controlPointUpdates": 0,
+        "sourceSteps": 1600,
+        "maxControlPitch": 128,
+        "maxK": 1.348000000000001,
+        "exposurePublications": 0
+      },
+      "activeParts": 6,
+      "failedBirthEvents": [],
+      "cancelledSlots": [
+        {
+          "time": 0,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 0
+        },
+        {
+          "time": 70,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 70
+        },
+        {
+          "time": 100,
+          "type": "weather-cancelled-slot",
+          "role": "BODY",
+          "scheduled": 100
+        },
+        {
+          "time": 120,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 120
+        },
+        {
+          "time": 170,
+          "type": "weather-cancelled-slot",
+          "role": "BILLOW",
+          "scheduled": 170
+        }
+      ],
+      "recoveryEvents": [
+        {
+          "time": 200,
+          "type": "clear-recondensation",
+          "ID": 1,
+          "parentID": 0,
+          "role": "BODY",
+          "s": 4,
+          "site": null,
+          "cellId": "cu-weather-cell-1"
+        }
+      ]
+    }
+  },
+  "reference": {
+    "pass": true,
+    "refinements": [
+      {
+        "presentationTime": 94.13,
+        "points": 200,
+        "positive": 37,
+        "maxAbsQ": 7.923021203004588e-8,
+        "meanAbsQ": 1.6858449033417633e-9
+      },
+      {
+        "presentationTime": 210.13,
+        "points": 600,
+        "positive": 199,
+        "maxAbsQ": 0.00001395597652208147,
+        "meanAbsQ": 1.0242441650099021e-7
+      },
+      {
+        "presentationTime": 480.13,
+        "points": 600,
+        "positive": 195,
+        "maxAbsQ": 0.000008674802407959703,
+        "meanAbsQ": 1.0453702189106908e-7
+      }
+    ],
+    "independentRendererCPUOracleMaxAbsQ": 5.551115123125783e-17,
+    "totalPositive": 431,
+    "domainExposurePlaneExact": true,
+    "probeSnapshotStable": true,
+    "finiteLocalEndpointZero": true,
+    "scope": "nativeR16CPU pointwise/convergence/consumer-reference tests; noGPU/continuous-ray/art/admission/performance proof"
+  },
+  "contracts": {
+    "pass": true,
+    "inverseMaxLocalM": 5.684341886080802e-14,
+    "finiteDifferenceVelocityMaxWorldMPerS": 2.744175429114648e-7,
+    "changedWind": {
+      "births": 7,
+      "bodyBirths": 3,
+      "billowBirths": 4,
+      "recoveryBirths": 0,
+      "failedBirths": 0,
+      "weatherCancelledSlots": 0,
+      "capacityFailures": 0,
+      "retired": 1,
+      "healthyEstablishments": 4,
+      "cancelledEstablishments": 0,
+      "maxSlots": 6,
+      "maxPriorCurrentIDs": 6,
+      "maxReferenceParts": 5,
+      "admissionNodeTests": 438,
+      "controlPointUpdates": 0,
+      "sourceSteps": 880,
+      "maxControlPitch": 128,
+      "maxK": 0.9918790248815634,
+      "exposurePublications": 0
+    },
+    "viewIndependentParts": true,
+    "causalControls": true,
+    "terminalVsDormant": true,
+    "noExposureRejuvenation": true,
+    "backlogRetained": true,
+    "seekCancellation": true,
+    "controlBytesCPU": 943296,
+    "scope": "CPU contracts, noGPU/art/production cadence claim"
+  },
+  "clockProfile": {
+    "pass": true,
+    "selectedClockDTSeconds": 0.25,
+    "rejectedClockDTSeconds": [
+      0.125,
+      0.0625
+    ],
+    "rejectionBeforeAnySourceStep": true,
+    "directSourceRefinementDTSeconds": 0.125,
+    "directRefinementPresentationTime": 120,
+    "selectedClockSeekPresentationTime": 120,
+    "selectedClockResetPresentationTime": 0,
+    "scope": "Constructor rejects unsupported clock timesteps; direct SourceModel refinement remains available. Former seek-offset result belongs to archived73b."
+  },
+  "limits": [
+    "SourceClockrequiresdt=.25; directSourceModelrefinementmayusedt=.125",
+    "Pointandnativequadraturechecksarefinite,notcontinuousrayorall-weatherproof",
+    "Sourcecontrolviewsstableonlyuntilnextcommit;copyon-demandforasyncCPUobserver",
+    "Wetloss-freepreparedadmissionconservativelyrejectsweather/age-affectedparents",
+    "OneBbasis/twoscales;templatevarietyandwhole-family/fullskyoutsideprofile",
+    "CPUprocesswalltimesaretestcost,notGPU/displayor5msqualification"
+  ]
+}

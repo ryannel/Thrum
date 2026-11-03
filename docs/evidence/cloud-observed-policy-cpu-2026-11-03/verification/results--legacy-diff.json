@@ -1,0 +1,9 @@
+{
+  "pass": true,
+  "reference": "1a0a01c2c8735b74",
+  "steps": 4800,
+  "checkpoints": 301,
+  "naturalInputs": true,
+  "scope": "Default legacy exact metadata/events/decisions/F32control bytes vs frozen1a; no timing",
+  "maxRSSKiB": 98688
+}

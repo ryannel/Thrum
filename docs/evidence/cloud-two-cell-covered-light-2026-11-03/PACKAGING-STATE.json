@@ -1,0 +1,12 @@
+{
+  "state": "sealed source/results/observations and actual fresh functional restore verified",
+  "servedBuild": "b31460fad16cde97",
+  "sourceArchiveMembers": 118,
+  "nativePayloads": 5,
+  "nativeBytes": 16187392,
+  "captureFiles": 30,
+  "receiptSerials": 18,
+  "inspectionPNGs": 7,
+  "noGPUorTimingRunByPackager": true,
+  "ownedFreshRestoreRemoved": true
+}

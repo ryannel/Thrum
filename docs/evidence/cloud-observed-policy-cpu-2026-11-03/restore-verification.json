@@ -1,0 +1,133 @@
+{
+  "pass": true,
+  "date": "2026-11-03",
+  "command": "python3 docs/evidence/cloud-observed-policy-cpu-2026-11-03/restore.py --output /private/tmp/thrum-observed-policy-fresh-20261103 --test",
+  "archiveSHA256": "698edef86121b1db9aca9ba100233a2f7d23371989b27b02ee09895abfada9d1",
+  "sourcePinsSHA256": "f57da1bd956e06df5e936b67e05b6358d20b0477a8d8d6d7a86eda8adbd3098f",
+  "functionalPhases": 7,
+  "functionalCounts": {
+    "legacySourceGroups": 8,
+    "legacyWorldContracts": 12,
+    "legacyNativeChecks": 6,
+    "legacyDifferentialSteps": 4800,
+    "legacyDifferentialCheckpoints": 301,
+    "observedContracts": 10,
+    "observedReplayCases": 6
+  },
+  "freshResults": {
+    "pass": true,
+    "runs": [
+      {
+        "phase": "legacy-source8",
+        "pass": true,
+        "command": [
+          "node",
+          "tests/source/run.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 192774144,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      },
+      {
+        "phase": "legacy-world12",
+        "pass": true,
+        "command": [
+          "node",
+          "tests/world/contracts.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 141541376,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      },
+      {
+        "phase": "legacy-world-native",
+        "pass": true,
+        "command": [
+          "node",
+          "tests/world/native.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 131940352,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      },
+      {
+        "phase": "legacy-diff",
+        "pass": true,
+        "command": [
+          "node",
+          "tests/observed/legacy-diff.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 121389056,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      },
+      {
+        "phase": "observed-contracts",
+        "pass": true,
+        "command": [
+          "node",
+          "tests/observed/contracts.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 112164864,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      },
+      {
+        "phase": "observed-replays",
+        "pass": true,
+        "command": [
+          "node",
+          "--expose-gc",
+          "tests/observed/replays.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 135364608,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      },
+      {
+        "phase": "observed-native",
+        "pass": true,
+        "command": [
+          "node",
+          "tests/observed/native.mjs"
+        ],
+        "exitCode": 0,
+        "sampledTreePeakBytes": 105545728,
+        "earlyBytes": 234881024,
+        "hardBytes": 268435456,
+        "stopped": null,
+        "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+      }
+    ],
+    "scope": "Fresh functional relocation only; cost evaluator NEVER executed; recorded cost failure unchanged",
+    "costReceiptSHA256": "cf5a17a1111ee6ff6471f52d66dd5e040e8fc15bb1f7f45e931a5a7702818487"
+  },
+  "peakGuardedTreeBytes": 192774144,
+  "externalUniquePayloads": 7,
+  "externalNativePaths": 10,
+  "uniqueNativeBytes": 17956864,
+  "identicalNativeDestinationsHardlinked": true,
+  "costEvaluatorExecuted": false,
+  "recordedCostSHA256Unchanged": "cf5a17a1111ee6ff6471f52d66dd5e040e8fc15bb1f7f45e931a5a7702818487",
+  "recordedCostGatePass": false,
+  "scope": "Fresh functional relocation only; no cost/GPU/adoption rerun or later candidate",
+  "ownedRestoreRemovedAfterReceipt": true
+}

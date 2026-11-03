@@ -1,0 +1,49 @@
+{
+  "pass": true,
+  "points": 1248,
+  "positive": 493,
+  "maxDiff": 6.245004513516506e-17,
+  "lowerTests": 384,
+  "samples": [
+    {
+      "time": 100,
+      "count": 144,
+      "positive": 72,
+      "maxDiff": 2.7755575615628914e-17
+    },
+    {
+      "time": 220,
+      "count": 336,
+      "positive": 160,
+      "maxDiff": 5.551115123125783e-17
+    },
+    {
+      "time": 370,
+      "count": 336,
+      "positive": 128,
+      "maxDiff": 5.551115123125783e-17
+    },
+    {
+      "time": 415,
+      "count": 288,
+      "positive": 117,
+      "maxDiff": 5.551115123125783e-17
+    },
+    {
+      "time": 550,
+      "count": 96,
+      "positive": 16,
+      "maxDiff": 6.245004513516506e-17
+    },
+    {
+      "time": 590,
+      "count": 48,
+      "positive": 0,
+      "maxDiff": 0
+    }
+  ],
+  "nativeSharedBytes": 14352384,
+  "noiseBytes": 65536,
+  "maxRSSKiB": 88032,
+  "scope": "Finite actualR16 CPU source/independent query+lower-witness checks; no GPU/art/cost admission"
+}

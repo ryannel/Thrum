@@ -1,0 +1,106 @@
+{
+  "pass": true,
+  "runs": [
+    {
+      "phase": "legacy-source8",
+      "pass": true,
+      "command": [
+        "node",
+        "tests/source/run.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 192774144,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    },
+    {
+      "phase": "legacy-world12",
+      "pass": true,
+      "command": [
+        "node",
+        "tests/world/contracts.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 141541376,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    },
+    {
+      "phase": "legacy-world-native",
+      "pass": true,
+      "command": [
+        "node",
+        "tests/world/native.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 131940352,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    },
+    {
+      "phase": "legacy-diff",
+      "pass": true,
+      "command": [
+        "node",
+        "tests/observed/legacy-diff.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 121389056,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    },
+    {
+      "phase": "observed-contracts",
+      "pass": true,
+      "command": [
+        "node",
+        "tests/observed/contracts.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 112164864,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    },
+    {
+      "phase": "observed-replays",
+      "pass": true,
+      "command": [
+        "node",
+        "--expose-gc",
+        "tests/observed/replays.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 135364608,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    },
+    {
+      "phase": "observed-native",
+      "pass": true,
+      "command": [
+        "node",
+        "tests/observed/native.mjs"
+      ],
+      "exitCode": 0,
+      "sampledTreePeakBytes": 105545728,
+      "earlyBytes": 234881024,
+      "hardBytes": 268435456,
+      "stopped": null,
+      "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+    }
+  ],
+  "scope": "Fresh functional relocation only; cost evaluator NEVER executed; recorded cost failure unchanged",
+  "costReceiptSHA256": "cf5a17a1111ee6ff6471f52d66dd5e040e8fc15bb1f7f45e931a5a7702818487"
+}

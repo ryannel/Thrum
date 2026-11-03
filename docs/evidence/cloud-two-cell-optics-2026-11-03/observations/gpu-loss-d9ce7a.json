@@ -1,0 +1,57 @@
+{
+  "scope": "Actual root browser observation; device failure cause unassigned; not a performance measurement",
+  "build": "d9ce7a9895ab34f4",
+  "fixture": "separated A[0,0]/B[2400,-1200]",
+  "programme": "shared wind150/front500 queued before normal130\u2192220 recording",
+  "device_error_timestamp_utc": "2026-11-03T13:17:52.863Z",
+  "error": "Geometry GPU device lost: Metal command buffer failed: Discarded (victim of GPU error/recovery) (00000005:kIOGPUCommandBufferCallbackErrorInnocentVictim) (domain=MTLCommandBufferErrorDomain, code=1); Dawn Metal QueueMTL.mm:210",
+  "last_visible": {
+    "requestedTime": 170.481,
+    "committedTime": 170.25,
+    "presentedTime": 170.231,
+    "backlog": 0.231,
+    "sourceTick": 681,
+    "sourceEpoch": 4,
+    "partsA": 5,
+    "partsB": 5,
+    "sourceCpuCumulativeMs": 86.2,
+    "controlUploadBytes": 0,
+    "main": true,
+    "mirror": true,
+    "fog": false,
+    "includeB": true,
+    "viewSteps": 96,
+    "backing": [
+      1280,
+      720
+    ],
+    "cameraDistance": 8000,
+    "sunDegrees": 30,
+    "sunAzimuth": -0.7
+  },
+  "host": {
+    "cpu": "Apple M3 Max",
+    "ram_bytes": 38654705664,
+    "gpu_adapter_scope": "Apple metal-3; device model not exposed by WebGPU"
+  },
+  "recording": "No complete or partial WebM/receipt saved by the current failure path; directory inspected after failure. This is a missing evidence/recovery behavior, not a successful recording.",
+  "next_isolation": "Same frozen shader/source state at170.25, paused, recorder disabled; then bounded ordinary playback without MediaRecorder if static state succeeds. Do not restart solely on timeout.",
+  "recorder_free_isolation": {
+    "static_paused_source170_25": "PASS; actual PNG/receipt system-t170250-mode0-d9ce7a9895ab34f4-e0cabccb-1 retained in captures",
+    "ordinary_playback": "FAIL without MediaRecorder",
+    "error_timestamp_utc": "2026-11-03T13:31:12.628Z",
+    "error": "Caused GPU Hang Error (00000003:kIOGPUCommandBufferCallbackErrorHang), MTLCommandBufferErrorDomain code2; Dawn Metal QueueMTL.mm:210",
+    "last_visible": {
+      "requestedTime": 172.664,
+      "committedTime": 172.5,
+      "presentedTime": 172.414,
+      "sourceTick": 690,
+      "epoch": 4,
+      "partsA": 5,
+      "partsB": 5,
+      "sourceCpuCumulativeMs": 105.5,
+      "backlog": 0.164
+    },
+    "inference": "MediaRecorder is not necessary for this observed failure. GPU workload/repeated execution is implicated; particular offending pass or driver cause is not yet established."
+  }
+}

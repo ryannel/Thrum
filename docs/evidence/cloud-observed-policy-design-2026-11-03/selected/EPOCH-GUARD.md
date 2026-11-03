@@ -1,0 +1,3 @@
+# Explicit supplied-epoch guard
+
+The new observer publication path distinguishes omitted epoch from explicitly supplied0 using the call boundary (`arguments.length>=2` plus a nonnegative safe-integer check), never the defaulted epoch value. SourceClock.tuple supplies its epoch explicitly. Direct SourceModel.presentation(t) exposes raw model-instance records only. TwoCellWorld.presentation(t) must preserve omission when forwarding to new-mode cells; it must not turn its default0 into an explicit qualification. With an explicit validated world presentation epoch, cells may bind observation IDs to that value. Legacy presentation signatures/defaults and old output remain unchanged. Metadata remains raw; direct-model tests use an explicit external test namespace.

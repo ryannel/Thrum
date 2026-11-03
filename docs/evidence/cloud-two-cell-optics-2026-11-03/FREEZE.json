@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "status": "Timing dependency guard focused CPU regression passed; source/shaders/optics unchanged71e6. New browser reload/proof pending.",
+  "cpuSourceRevision": "1a0a01c2c8735b74",
+  "sourceFreezeSHA256": "39f186b0cc90b991a7484d51acbf0dc5dea6fc31967c6f433f8fb2b78540e3a2",
+  "servedBuild": "d9ce7a9895ab34f4",
+  "servedFiles": {
+    "assets/admission/admission.json": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+    "assets/input-index.json": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+    "assets/noise/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+    "assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "assets/templates/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "assets/templates/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "assets/templates/body.json": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+    "assets/templates/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "assets/templates/crown-b.distance.r16f": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+    "assets/templates/crown-b.json": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918",
+    "assets/templates/original-FROZEN-INPUTS.json": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+    "assets/templates/original-body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+    "assets/templates/original-crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+    "index.html": "bf37fa4e377f35bda4a71b352c84bbf8582e39580ef6a52b10bbd386d09967b9",
+    "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+    "shaders/component-source.wgsl": "8b3456bde4b951983bfb1a9abdb7906b189c9f4bea47eb61aaa730380b7bf7f6",
+    "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+    "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+    "shaders/optics.wgsl": "abc65d98bcba4bc125cae17f1d9d1ddb0935af98de1efc96e7de0f1ec5db5b3d",
+    "shaders/shadow.wgsl": "d28ee4536c01500be85fba886252eed84ddaa9464fa1ef1e650845755736d0aa",
+    "shaders/view.wgsl": "15b4d669ef86f42f422058f881b095e129f8714aa0c61524129bb1c57af49374",
+    "src/bench/app.js": "55856b5dc6c8bf5af424ca002207c6f4c75a6cbae1c105e49057d692071c1a33",
+    "src/bench/motion.js": "765434b71deea19471458add17b4c1ad3d56b1b37c1e371ebb2939a4f8dca6cf",
+    "src/bench/trace.js": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e",
+    "src/render/adapter.js": "2aedc745c9da29853eca274e9e4f9e8f72734b9605e0dfb177e21998c6a3c9f8",
+    "src/render/assets.js": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a",
+    "src/render/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+    "src/render/gpu.js": "2d069f11ae96d3e9b35b93d3c488be5e4665cd8e0ce94433f6ec41f92d811cd5",
+    "src/render/held-oracle.js": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60",
+    "src/render/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+    "src/render/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+    "src/render/scene.js": "2eb72a25f44d6597b91c179680e9b3140411df7b9a6ad906ab8d6e89f3097e91",
+    "src/render/world-optics.js": "222de3d7f9d22710ffefda4bf57ed8790c8dc7e589c6ff32a988aa20a9f44572",
+    "src/source/admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+    "src/source/clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+    "src/source/math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+    "src/source/model.js": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+    "src/source/reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+    "src/source/weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+    "src/source/world-reference.js": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+    "src/source/world.js": "96cdd7b1b5f1bbb0c423a0a41e2a9763ef510566246070fb62a139616aa899a4",
+    "style.css": "2777e311275761435b29f9e8dde0af2b84d0624bc4c727281ad7b3565b896f0a"
+  },
+  "sourceHashes": {
+    "admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+    "clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+    "math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+    "model.js": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+    "reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+    "weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+    "world-reference.js": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+    "world.js": "96cdd7b1b5f1bbb0c423a0a41e2a9763ef510566246070fb62a139616aa899a4"
+  },
+  "sharedInputPins": {
+    "assets/admission/admission.json": {
+      "sha256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+      "bytes": 150256
+    },
+    "assets/input-index.json": {
+      "sha256": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+      "bytes": 3757
+    },
+    "assets/noise/channels-32.json": {
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+      "bytes": 526
+    },
+    "assets/noise/channels-32.r16f": {
+      "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "bytes": 65536
+    },
+    "assets/templates/body.density.r16f": {
+      "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "bytes": 6291456
+    },
+    "assets/templates/body.distance.r16f": {
+      "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "bytes": 6291456
+    },
+    "assets/templates/body.json": {
+      "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+      "bytes": 9130
+    },
+    "assets/templates/crown-b.density.r16f": {
+      "sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+      "bytes": 1769472
+    },
+    "assets/templates/crown-b.distance.r16f": {
+      "sha256": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+      "bytes": 1769472
+    },
+    "assets/templates/crown-b.json": {
+      "sha256": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918",
+      "bytes": 11519
+    },
+    "assets/templates/original-FROZEN-INPUTS.json": {
+      "sha256": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+      "bytes": 1305
+    },
+    "assets/templates/original-body.json": {
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "bytes": 9097
+    },
+    "assets/templates/original-crown-b.json": {
+      "sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+      "bytes": 11486
+    }
+  },
+  "changedServedPaths": [
+    "index.html",
+    "shaders/component-source.wgsl",
+    "shaders/optics.wgsl",
+    "shaders/shadow.wgsl",
+    "shaders/view.wgsl",
+    "src/bench/app.js",
+    "src/render/adapter.js",
+    "src/render/gpu.js",
+    "src/render/scene.js",
+    "src/render/world-optics.js"
+  ],
+  "serverSHA256": "5d429c09720d16d187d14aebee081024199f2f71425c6a58cebb5bc7181a479e",
+  "fixtureRoots": {
+    "overlap": [
+      [
+        0,
+        0
+      ],
+      [
+        16,
+        0
+      ]
+    ],
+    "remote": [
+      [
+        0,
+        0
+      ],
+      [
+        11992.715801343124,
+        6779.681531943434
+      ]
+    ],
+    "separated": [
+      [
+        0,
+        0
+      ],
+      [
+        2400,
+        -1200
+      ]
+    ]
+  },
+  "functionalReceipts": {
+    "guarded-all-results.json": "f222685c272a921d905c76ccfdfbbaca523e9bd7c6cce1b9fff3fd277f82d500",
+    "guarded-render-results.json": "4adf200beca938224a901d234b9ef0d011c422e8d2cdc132c3f5e67bbe6dae65",
+    "tests/world/contracts-results.json": "fff1fa98396c4db7a6951a8fc5aa9316605f6dc2476e4fa35dc5e20802a5494a",
+    "tests/world/native-results.json": "933980204ccd3ac97539e04b1af9eae6d0e338feadf1c4da68ce2c97892149f0",
+    "tests/source/suite-results.json": "d21c76f0cc1eda85853a8ad4aad34b63f92bf1c853ef5ad8a035bbf98b2a3224"
+  },
+  "scope": "Optical source/shaders unchanged; raw71e6 counter durations rejected/unqualified. No GPU/server/browser/native-heavy jobs by timing-fix author.",
+  "parentBuild": "71e6176663d066bb",
+  "parentFreezeSHA256": "fbaef308e588d2286f7ec4cfa1a124ae04bb12cede1b47a7fd673975862b2731",
+  "changedFromParent": [
+    "src/render/gpu.js"
+  ],
+  "timingGuardReceiptSHA256": "29b0fcd3de977744db8c001fd053ec469c7d57253fd74cd9b82b78a7b00de751",
+  "inheritedFunctionalReceiptScope": "Previous world12/native6/source8/render9 receipts are71e6; unchanged source/query code retained. This timing-only revision adds focused timestamp2tests, not a new optical GPU pass."
+}

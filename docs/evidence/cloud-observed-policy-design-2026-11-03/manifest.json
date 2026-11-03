@@ -1,0 +1,49 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 3715,
+      "sha256": "5ac1587c2821c03466b00d07faaeac50966144c3063f2ea917429dbf653fe8c4"
+    },
+    "alternatives/relative-universal-design.zip": {
+      "bytes": 18250,
+      "sha256": "f9e99a6338e718e492e98552eeda586154886fe5c0c4406f8de76955df4b1a6d"
+    },
+    "selected/EPOCH-CLARIFICATION.md": {
+      "bytes": 1610,
+      "sha256": "5f68c0fd047aa289e3e9ca3dd2423ad7a35af194abeb37f619b87cc6cbbda0c9"
+    },
+    "selected/EPOCH-GUARD.md": {
+      "bytes": 769,
+      "sha256": "9d159600803a516e358e43544fee5065e8a8db8e6295bd344155b62e2519950c"
+    },
+    "selected/FREEZE-v2.json": {
+      "bytes": 482,
+      "sha256": "581eca106fedb7a6e54dde2bc8d28e7c5aef5c22bf7bf10dc0ac41f5d4096936"
+    },
+    "selected/FREEZE.json": {
+      "bytes": 509,
+      "sha256": "496e40ad1da175de7168f79c15a7ce7d0c7ddf8b93abb3602371bae7ce86eb88"
+    },
+    "selected/POLICY.md": {
+      "bytes": 17819,
+      "sha256": "3c5bdaee8c893482a88b36e4898d60410e4d201f970733f0bbe2786d4cc00ff6"
+    },
+    "selected/README.md": {
+      "bytes": 507,
+      "sha256": "dc4e2e952cfe07c788bd43ea698d7a5d8308ce1f9312cec3b9d4a6be869ebee3"
+    },
+    "selected/REVISION-2.md": {
+      "bytes": 8503,
+      "sha256": "6bc8923a249849d6e6b3b72d0bb132ea1a805fd2b1613076c94696aba54e4dfc"
+    },
+    "selected/policy-spec-v2.json": {
+      "bytes": 2867,
+      "sha256": "5d52e143b79db4b2a9579efab4c04b2b99376444b1dc0bbf7245903cc18b7875"
+    },
+    "selected/policy-spec.json": {
+      "bytes": 1906,
+      "sha256": "1ef1104a527528e245339b88735bdbfb4ed8a4141ca35e45559907fb5c7e3701"
+    }
+  },
+  "scope": "Design decision only; implementation/cost/experience unrun"
+}

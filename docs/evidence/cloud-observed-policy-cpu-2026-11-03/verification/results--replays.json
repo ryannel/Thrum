@@ -1,0 +1,1101 @@
+{
+  "scope": "Functional source/naturalCPU only; no cost/art/GPU admission",
+  "nativeSharedBytes": 14352384,
+  "node": "v24.16.0",
+  "maxRSSKiB": 112000,
+  "cases": {
+    "wet1200": {
+      "end": 1200,
+      "legacy": {
+        "stats": {
+          "births": 32,
+          "bodyBirths": 13,
+          "billowBirths": 19,
+          "recoveryBirths": 0,
+          "failedBirths": 4,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 26,
+          "healthyEstablishments": 29,
+          "cancelledEstablishments": 0,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 6672,
+          "controlPointUpdates": 0,
+          "sourceSteps": 4800,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 18
+        },
+        "policy": null,
+        "firstFailure": {
+          "time": 370,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 370,
+          "reason": "no-certified-catalogue-or-root",
+          "parentCandidates": [
+            9
+          ]
+        },
+        "observedOutcomes": [],
+        "actualZero": false,
+        "receiptFile": "wet1200.json"
+      },
+      "observed": {
+        "stats": {
+          "births": 34,
+          "bodyBirths": 13,
+          "billowBirths": 21,
+          "recoveryBirths": 0,
+          "failedBirths": 2,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 28,
+          "healthyEstablishments": 31,
+          "cancelledEstablishments": 0,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 4139,
+          "controlPointUpdates": 0,
+          "sourceSteps": 4800,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 21
+        },
+        "policy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 23,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 2,
+            "births": 21,
+            "exposed": 20,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 36180,
+            "forecastHealthChecks": 14220,
+            "declineReasons": {
+              "held-endpoint-not-certified": 2
+            },
+            "siteDeclineCounts": {
+              "held-exterior-uncertified": 35
+            },
+            "predictionNodes": 4139,
+            "observationNodes": 290,
+            "nativeQueries": 0,
+            "referenceSteps": 19440
+          },
+          "statsTime": 1200,
+          "latest": {
+            "identityScope": "model-instance",
+            "cellID": "cu-weather-cell-1",
+            "localID": 32,
+            "birthTick": 4480,
+            "birthTime": 1120,
+            "time": 1165,
+            "referenceTime": 1165,
+            "referenceIDs": [
+              25,
+              30,
+              28,
+              31,
+              27,
+              29
+            ],
+            "outcome": "exposed",
+            "predictedHeadID": "natural-head-0",
+            "observedHeadID": "natural-head-0",
+            "forcingRevision": 0,
+            "cancellation": null
+          },
+          "pending": {
+            "cellID": "cu-weather-cell-1",
+            "localID": 33,
+            "birthTick": 4680,
+            "birthTime": 1170,
+            "deadline": 1215,
+            "referenceTime": 1200,
+            "referenceIDs": [
+              25,
+              30,
+              28,
+              31,
+              32,
+              29
+            ]
+          }
+        },
+        "firstFailure": {
+          "time": 420,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 420,
+          "reason": "held-endpoint-not-certified",
+          "parentCandidates": [
+            9
+          ],
+          "forecastSiteReasonCounts": {
+            "held-exterior-uncertified": 8
+          }
+        },
+        "observedOutcomes": [
+          {
+            "time": 115,
+            "outcome": "exposed",
+            "localID": 2
+          },
+          {
+            "time": 165,
+            "outcome": "exposed",
+            "localID": 4
+          },
+          {
+            "time": 215,
+            "outcome": "exposed",
+            "localID": 5
+          },
+          {
+            "time": 265,
+            "outcome": "exposed",
+            "localID": 7
+          },
+          {
+            "time": 315,
+            "outcome": "exposed",
+            "localID": 8
+          },
+          {
+            "time": 365,
+            "outcome": "exposed",
+            "localID": 10
+          },
+          {
+            "time": 415,
+            "outcome": "exposed",
+            "localID": 11
+          },
+          {
+            "time": 515,
+            "outcome": "exposed",
+            "localID": 13
+          },
+          {
+            "time": 565,
+            "outcome": "exposed",
+            "localID": 15
+          },
+          {
+            "time": 615,
+            "outcome": "exposed",
+            "localID": 16
+          },
+          {
+            "time": 665,
+            "outcome": "exposed",
+            "localID": 18
+          },
+          {
+            "time": 715,
+            "outcome": "exposed",
+            "localID": 19
+          },
+          {
+            "time": 765,
+            "outcome": "exposed",
+            "localID": 21
+          },
+          {
+            "time": 815,
+            "outcome": "exposed",
+            "localID": 22
+          },
+          {
+            "time": 915,
+            "outcome": "exposed",
+            "localID": 24
+          },
+          {
+            "time": 965,
+            "outcome": "exposed",
+            "localID": 26
+          },
+          {
+            "time": 1015,
+            "outcome": "exposed",
+            "localID": 27
+          },
+          {
+            "time": 1065,
+            "outcome": "exposed",
+            "localID": 29
+          },
+          {
+            "time": 1115,
+            "outcome": "exposed",
+            "localID": 30
+          },
+          {
+            "time": 1165,
+            "outcome": "exposed",
+            "localID": 32
+          }
+        ],
+        "actualZero": false,
+        "receiptFile": "wet1200.json"
+      }
+    },
+    "defaultDry900": {
+      "end": 900,
+      "legacy": {
+        "stats": {
+          "births": 13,
+          "bodyBirths": 5,
+          "billowBirths": 8,
+          "recoveryBirths": 0,
+          "failedBirths": 2,
+          "weatherCancelledSlots": 12,
+          "capacityFailures": 0,
+          "retired": 13,
+          "healthyEstablishments": 11,
+          "cancelledEstablishments": 1,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 2655,
+          "controlPointUpdates": 8175232,
+          "sourceSteps": 3600,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 5
+        },
+        "policy": null,
+        "firstFailure": {
+          "time": 370,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 370,
+          "reason": "no-certified-catalogue-or-root",
+          "parentCandidates": [
+            9
+          ]
+        },
+        "observedOutcomes": [],
+        "actualZero": true,
+        "receiptFile": "defaultDry900.json"
+      },
+      "observed": {
+        "stats": {
+          "births": 12,
+          "bodyBirths": 5,
+          "billowBirths": 7,
+          "recoveryBirths": 0,
+          "failedBirths": 3,
+          "weatherCancelledSlots": 12,
+          "capacityFailures": 0,
+          "retired": 12,
+          "healthyEstablishments": 11,
+          "cancelledEstablishments": 0,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 1451,
+          "controlPointUpdates": 5423952,
+          "sourceSteps": 3600,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 5
+        },
+        "policy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 17,
+            "weatherSkipped": 8,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 2,
+            "births": 7,
+            "exposed": 7,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 12803,
+            "forecastHealthChecks": 5064,
+            "declineReasons": {
+              "held-endpoint-not-certified": 1,
+              "held-parent-weather-unqualified": 1
+            },
+            "siteDeclineCounts": {
+              "held-exterior-uncertified": 13
+            },
+            "predictionNodes": 1451,
+            "observationNodes": 62,
+            "nativeQueries": 0,
+            "referenceSteps": 5760
+          },
+          "statsTime": 900,
+          "latest": {
+            "identityScope": "model-instance",
+            "cellID": "cu-weather-cell-1",
+            "localID": 11,
+            "birthTick": 1480,
+            "birthTime": 370,
+            "time": 415,
+            "referenceTime": 415,
+            "referenceIDs": [
+              9,
+              8,
+              3,
+              10,
+              6,
+              7
+            ],
+            "outcome": "exposed",
+            "predictedHeadID": "natural-head-0",
+            "observedHeadID": "natural-head-0",
+            "forcingRevision": 0,
+            "cancellation": null
+          },
+          "pending": null
+        },
+        "firstFailure": {
+          "time": 420,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 420,
+          "reason": "held-endpoint-not-certified",
+          "parentCandidates": [
+            9
+          ],
+          "forecastSiteReasonCounts": {
+            "held-exterior-uncertified": 8
+          }
+        },
+        "observedOutcomes": [
+          {
+            "time": 115,
+            "outcome": "exposed",
+            "localID": 2
+          },
+          {
+            "time": 165,
+            "outcome": "exposed",
+            "localID": 4
+          },
+          {
+            "time": 215,
+            "outcome": "exposed",
+            "localID": 5
+          },
+          {
+            "time": 265,
+            "outcome": "exposed",
+            "localID": 7
+          },
+          {
+            "time": 315,
+            "outcome": "exposed",
+            "localID": 8
+          },
+          {
+            "time": 365,
+            "outcome": "exposed",
+            "localID": 10
+          },
+          {
+            "time": 415,
+            "outcome": "exposed",
+            "localID": 11
+          }
+        ],
+        "actualZero": true,
+        "receiptFile": "defaultDry900.json"
+      }
+    },
+    "off150on200": {
+      "end": 600,
+      "legacy": {
+        "stats": {
+          "births": 15,
+          "bodyBirths": 7,
+          "billowBirths": 8,
+          "recoveryBirths": 0,
+          "failedBirths": 2,
+          "weatherCancelledSlots": 1,
+          "capacityFailures": 0,
+          "retired": 10,
+          "healthyEstablishments": 10,
+          "cancelledEstablishments": 2,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 2315,
+          "controlPointUpdates": 0,
+          "sourceSteps": 2400,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 8
+        },
+        "policy": null,
+        "firstFailure": {
+          "time": 420,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 420,
+          "reason": "no-certified-catalogue-or-root",
+          "parentCandidates": [
+            8
+          ]
+        },
+        "observedOutcomes": [],
+        "actualZero": false,
+        "receiptFile": "off150on200.json"
+      },
+      "observed": {
+        "stats": {
+          "births": 17,
+          "bodyBirths": 7,
+          "billowBirths": 10,
+          "recoveryBirths": 0,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 1,
+          "capacityFailures": 0,
+          "retired": 11,
+          "healthyEstablishments": 12,
+          "cancelledEstablishments": 2,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 745,
+          "controlPointUpdates": 0,
+          "sourceSteps": 2400,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 8
+        },
+        "policy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 11,
+            "weatherSkipped": 1,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 10,
+            "exposed": 8,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 1,
+            "invalid": 0,
+            "predictionPoseSteps": 13320,
+            "forecastHealthChecks": 4500,
+            "declineReasons": {},
+            "siteDeclineCounts": {
+              "held-exterior-uncertified": 5
+            },
+            "predictionNodes": 745,
+            "observationNodes": 184,
+            "nativeQueries": 0,
+            "referenceSteps": 8460
+          },
+          "statsTime": 600,
+          "latest": {
+            "identityScope": "model-instance",
+            "cellID": "cu-weather-cell-1",
+            "localID": 15,
+            "birthTick": 2080,
+            "birthTime": 520,
+            "time": 565,
+            "referenceTime": 565,
+            "referenceIDs": [
+              8,
+              13,
+              11,
+              14,
+              12,
+              10
+            ],
+            "outcome": "exposed",
+            "predictedHeadID": "natural-head-0",
+            "observedHeadID": "natural-head-0",
+            "forcingRevision": 2,
+            "cancellation": null
+          },
+          "pending": {
+            "cellID": "cu-weather-cell-1",
+            "localID": 16,
+            "birthTick": 2280,
+            "birthTime": 570,
+            "deadline": 615,
+            "referenceTime": 600,
+            "referenceIDs": [
+              8,
+              13,
+              11,
+              14,
+              15,
+              12
+            ]
+          }
+        },
+        "firstFailure": null,
+        "observedOutcomes": [
+          {
+            "time": 115,
+            "outcome": "exposed",
+            "localID": 2
+          },
+          {
+            "time": 165,
+            "outcome": "weather-cancelled",
+            "localID": 4
+          },
+          {
+            "time": 265,
+            "outcome": "exposed",
+            "localID": 6
+          },
+          {
+            "time": 315,
+            "outcome": "exposed",
+            "localID": 7
+          },
+          {
+            "time": 365,
+            "outcome": "exposed",
+            "localID": 9
+          },
+          {
+            "time": 415,
+            "outcome": "exposed",
+            "localID": 10
+          },
+          {
+            "time": 465,
+            "outcome": "exposed",
+            "localID": 12
+          },
+          {
+            "time": 515,
+            "outcome": "exposed",
+            "localID": 13
+          },
+          {
+            "time": 565,
+            "outcome": "exposed",
+            "localID": 15
+          }
+        ],
+        "actualZero": false,
+        "receiptFile": "off150on200.json"
+      }
+    },
+    "clearRecovery750": {
+      "end": 750,
+      "legacy": {
+        "stats": {
+          "births": 9,
+          "bodyBirths": 4,
+          "billowBirths": 5,
+          "recoveryBirths": 1,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 12,
+          "capacityFailures": 0,
+          "retired": 3,
+          "healthyEstablishments": 4,
+          "cancelledEstablishments": 1,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 691,
+          "controlPointUpdates": 0,
+          "sourceSteps": 3000,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 2
+        },
+        "policy": null,
+        "firstFailure": null,
+        "observedOutcomes": [],
+        "actualZero": false,
+        "receiptFile": "clearRecovery750.json"
+      },
+      "observed": {
+        "stats": {
+          "births": 9,
+          "bodyBirths": 4,
+          "billowBirths": 5,
+          "recoveryBirths": 1,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 12,
+          "capacityFailures": 0,
+          "retired": 3,
+          "healthyEstablishments": 4,
+          "cancelledEstablishments": 1,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 323,
+          "controlPointUpdates": 0,
+          "sourceSteps": 3000,
+          "maxControlPitch": 128,
+          "maxK": 2.029999999999998,
+          "exposurePublications": 2
+        },
+        "policy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 13,
+            "weatherSkipped": 8,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 5,
+            "exposed": 3,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 1,
+            "invalid": 0,
+            "predictionPoseSteps": 4860,
+            "forecastHealthChecks": 2160,
+            "declineReasons": {},
+            "siteDeclineCounts": {
+              "held-exterior-uncertified": 2
+            },
+            "predictionNodes": 323,
+            "observationNodes": 26,
+            "nativeQueries": 0,
+            "referenceSteps": 2340
+          },
+          "statsTime": 750,
+          "latest": {
+            "identityScope": "model-instance",
+            "cellID": "cu-weather-cell-1",
+            "localID": 7,
+            "birthTick": 2680,
+            "birthTime": 670,
+            "time": 715,
+            "referenceTime": 715,
+            "referenceIDs": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "outcome": "exposed",
+            "predictedHeadID": "natural-head-0",
+            "observedHeadID": "natural-head-0",
+            "forcingRevision": 2,
+            "cancellation": null
+          },
+          "pending": {
+            "cellID": "cu-weather-cell-1",
+            "localID": 9,
+            "birthTick": 2880,
+            "birthTime": 720,
+            "deadline": 765,
+            "referenceTime": 750,
+            "referenceIDs": [
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ]
+          }
+        },
+        "firstFailure": null,
+        "observedOutcomes": [
+          {
+            "time": 115,
+            "outcome": "weather-cancelled",
+            "localID": 2
+          },
+          {
+            "time": 615,
+            "outcome": "exposed",
+            "localID": 4
+          },
+          {
+            "time": 665,
+            "outcome": "exposed",
+            "localID": 6
+          },
+          {
+            "time": 715,
+            "outcome": "exposed",
+            "localID": 7
+          }
+        ],
+        "actualZero": false,
+        "receiptFile": "clearRecovery750.json"
+      }
+    },
+    "initialOff400": {
+      "end": 400,
+      "legacy": {
+        "stats": {
+          "births": 6,
+          "bodyBirths": 3,
+          "billowBirths": 3,
+          "recoveryBirths": 1,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 5,
+          "capacityFailures": 0,
+          "retired": 0,
+          "healthyEstablishments": 3,
+          "cancelledEstablishments": 0,
+          "maxSlots": 6,
+          "maxPriorCurrentIDs": 6,
+          "maxReferenceParts": 4,
+          "admissionNodeTests": 411,
+          "controlPointUpdates": 0,
+          "sourceSteps": 1600,
+          "maxControlPitch": 128,
+          "maxK": 1.348000000000001,
+          "exposurePublications": 1
+        },
+        "policy": null,
+        "firstFailure": null,
+        "observedOutcomes": [],
+        "actualZero": false,
+        "receiptFile": "initialOff400.json"
+      },
+      "observed": {
+        "stats": {
+          "births": 6,
+          "bodyBirths": 3,
+          "billowBirths": 3,
+          "recoveryBirths": 1,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 5,
+          "capacityFailures": 0,
+          "retired": 0,
+          "healthyEstablishments": 3,
+          "cancelledEstablishments": 0,
+          "maxSlots": 6,
+          "maxPriorCurrentIDs": 6,
+          "maxReferenceParts": 4,
+          "admissionNodeTests": 88,
+          "controlPointUpdates": 0,
+          "sourceSteps": 1600,
+          "maxControlPitch": 128,
+          "maxK": 1.348000000000001,
+          "exposurePublications": 1
+        },
+        "policy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 6,
+            "weatherSkipped": 3,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 3,
+            "exposed": 2,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 2700,
+            "forecastHealthChecks": 1260,
+            "declineReasons": {},
+            "siteDeclineCounts": {
+              "held-exterior-uncertified": 1
+            },
+            "predictionNodes": 88,
+            "observationNodes": 4,
+            "nativeQueries": 0,
+            "referenceSteps": 1200
+          },
+          "statsTime": 400,
+          "latest": {
+            "identityScope": "model-instance",
+            "cellID": "cu-weather-cell-1",
+            "localID": 4,
+            "birthTick": 1280,
+            "birthTime": 320,
+            "time": 365,
+            "referenceTime": 365,
+            "referenceIDs": [
+              1,
+              2,
+              3
+            ],
+            "outcome": "exposed",
+            "predictedHeadID": "natural-head-0",
+            "observedHeadID": "natural-head-0",
+            "forcingRevision": 1,
+            "cancellation": null
+          },
+          "pending": {
+            "cellID": "cu-weather-cell-1",
+            "localID": 5,
+            "birthTick": 1480,
+            "birthTime": 370,
+            "deadline": 415,
+            "referenceTime": 400,
+            "referenceIDs": [
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        "firstFailure": null,
+        "observedOutcomes": [
+          {
+            "time": 315,
+            "outcome": "exposed",
+            "localID": 2
+          },
+          {
+            "time": 365,
+            "outcome": "exposed",
+            "localID": 4
+          }
+        ],
+        "actualZero": false,
+        "receiptFile": "initialOff400.json"
+      }
+    },
+    "changedWind900": {
+      "end": 900,
+      "legacy": {
+        "stats": {
+          "births": 19,
+          "bodyBirths": 8,
+          "billowBirths": 11,
+          "recoveryBirths": 1,
+          "failedBirths": 8,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 13,
+          "healthyEstablishments": 13,
+          "cancelledEstablishments": 2,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 3208,
+          "controlPointUpdates": 3448926,
+          "sourceSteps": 3600,
+          "maxControlPitch": 128,
+          "maxK": 1.522500000000002,
+          "exposurePublications": 5
+        },
+        "policy": null,
+        "firstFailure": {
+          "time": 370,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 370,
+          "reason": "no-certified-catalogue-or-root",
+          "parentCandidates": [
+            9
+          ]
+        },
+        "observedOutcomes": [],
+        "actualZero": false,
+        "receiptFile": "changedWind900.json"
+      },
+      "observed": {
+        "stats": {
+          "births": 19,
+          "bodyBirths": 8,
+          "billowBirths": 11,
+          "recoveryBirths": 1,
+          "failedBirths": 8,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 13,
+          "healthyEstablishments": 14,
+          "cancelledEstablishments": 1,
+          "maxSlots": 7,
+          "maxPriorCurrentIDs": 7,
+          "maxReferenceParts": 6,
+          "admissionNodeTests": 936,
+          "controlPointUpdates": 3606142,
+          "sourceSteps": 3600,
+          "maxControlPitch": 128,
+          "maxK": 1.522500000000002,
+          "exposurePublications": 6
+        },
+        "policy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 17,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 5,
+            "forecastDeclined": 1,
+            "births": 11,
+            "exposed": 10,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 14714,
+            "forecastHealthChecks": 5355,
+            "declineReasons": {
+              "held-parent-weather-unqualified": 1
+            },
+            "siteDeclineCounts": {
+              "held-exterior-uncertified": 7
+            },
+            "predictionNodes": 936,
+            "observationNodes": 166,
+            "nativeQueries": 0,
+            "referenceSteps": 7254
+          },
+          "statsTime": 900,
+          "latest": {
+            "identityScope": "model-instance",
+            "cellID": "cu-weather-cell-1",
+            "localID": 17,
+            "birthTick": 3391,
+            "birthTime": 847.75,
+            "time": 892.75,
+            "referenceTime": 892.75,
+            "referenceIDs": [
+              13,
+              14,
+              15,
+              16
+            ],
+            "outcome": "exposed",
+            "predictedHeadID": "natural-head-0",
+            "observedHeadID": "natural-head-0",
+            "forcingRevision": 3,
+            "cancellation": null
+          },
+          "pending": {
+            "cellID": "cu-weather-cell-1",
+            "localID": 19,
+            "birthTick": 3591,
+            "birthTime": 897.75,
+            "deadline": 942.75,
+            "referenceTime": 900,
+            "referenceIDs": [
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "firstFailure": {
+          "time": 420,
+          "type": "failed-birth",
+          "role": "BILLOW",
+          "scheduled": 420,
+          "reason": "held-parent-weather-unqualified",
+          "parentCandidates": [
+            9
+          ],
+          "forecastSiteReasonCounts": null
+        },
+        "observedOutcomes": [
+          {
+            "time": 115,
+            "outcome": "exposed",
+            "localID": 2
+          },
+          {
+            "time": 165,
+            "outcome": "exposed",
+            "localID": 4
+          },
+          {
+            "time": 215,
+            "outcome": "exposed",
+            "localID": 5
+          },
+          {
+            "time": 265,
+            "outcome": "exposed",
+            "localID": 7
+          },
+          {
+            "time": 315,
+            "outcome": "exposed",
+            "localID": 8
+          },
+          {
+            "time": 365,
+            "outcome": "exposed",
+            "localID": 10
+          },
+          {
+            "time": 415,
+            "outcome": "exposed",
+            "localID": 11
+          },
+          {
+            "time": 792.75,
+            "outcome": "exposed",
+            "localID": 14
+          },
+          {
+            "time": 842.75,
+            "outcome": "exposed",
+            "localID": 16
+          },
+          {
+            "time": 892.75,
+            "outcome": "exposed",
+            "localID": 17
+          }
+        ],
+        "actualZero": false,
+        "receiptFile": "changedWind900.json"
+      }
+    }
+  }
+}

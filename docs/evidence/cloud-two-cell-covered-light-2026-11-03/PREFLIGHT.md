@@ -1,0 +1,27 @@
+# Covered two-cell light and failure retention — pre-allocation contract
+
+New copy only; d9ce7a/71e6 and their captures stay unchanged. Source1a0a/world/clock/math/admission/native rho/d/noise fixed. No GPU/browser/server or benchmark by author. d9 actual recorder-free GPUHANG is adverse with unassigned cause; coverage correction is not a proven hang fix.
+
+## Current retained light demand
+
+Two world-aligned light windows each32×24×24 over4000×2600×4000m, same spacing125/108.333333333/166.666666667m and same32 Sun+four20 ambient interval integration/profile as existing chart. Windows in XZ follow each group's strict-support-box centre, quantized to this shared world lattice; Y remains400..3000. Source/group bounds are separate from both caches and16km receiver domain. Each chart integrates COMPLETE two-formation coefficients, never only its associated group. Main-hidden retains both charts/receiver/mirror. B omission is diagnostic optical configuration, not provider-disabled admission: both charts remain resident/build the remaining common source; record that cost honestly.
+
+Lookup only samples points with all trilinear corners inside a chart (half-texel inset). Smooth weights rise from0 at that valid-centre boundary to1 one native cache spacing inward; overlapping chart weights are normalized when their sum>=1. When sum<1 the residual uses complete direct Sun/four-ray ambient integration. Thus lookup is continuous at chart/overlap boundaries and has no clear-outside or invalid clamped-corner sentinel. Same lattice helps matching; continuous blending does not assume floating point translated grids are exactly equal. CPU coverage helper reports whether each source bound is wholly in the full-weight interior; failure remains explicit/fallback-complete, not a claim of covered work.
+
+Additional GPU light texture147,456B; two charts294,912B. Two224B uniforms per each of3frame slots=1,344B (delta768 versus old3×192). Other fixed bytes unchanged: native16,187,392, poses1,536, asset domains64, group bounds64, controls628,864, receiver131,072, air131,072, view7,372,800. Timestamp query10counters per generation, resolve/read remain256B each;3bounded slots1,536B plus implementation query memory unknown. One additional sampled texture: device requires9 sampled textures/6storage buffers for probe (4ordinary).
+
+Per-frame compute ceiling for2intervals: receiver128²×64×2=2,097,152 coefficient calls; each chart18,432×112×2=4,128,768; two charts+receiver10,354,688. Each coefficient scans16slots. Finite ceilings are not actual work/ms/residency. Covered occupied fragment samples use3coefficient calls plus texture lookups versus147..291offcache; residual fallback remains fully expensive. No count/spacing/tolerance/source opacity reduction.
+
+Both products rebuilt every submitted frame with immutable common source/time/Sun/profile, paired uniforms and per-chart bounds in the presentation receipt. No stale cache keys; texture/bind groups persistent, no per-birth allocation. GPU resource queue drain/retirement unchanged. Timings use5within-pass pairs; view depends on receiver+both lights, display on view; independent compute overlap legal. Invalid counters retain raw/reasons and null allpass durations; whole GPU total remainsnull.
+
+## Probes and fatal retention
+
+Preserve q/raw/sigma tolerances. New below-Y400 witness x=[Broot.x−.75*(Broot.y−399),399,Broot.z] lies outside ALL charts and +(.6,.8,0) passes through actual positive Broot. Require CPU ambient strictly below the omitted-B negative by existing.025 comparison tolerance (not an assumed point certificate); compare actual GPU full fallback four20-ray ambient and directSun to CPU at existing tolerances. Probe native Bpositive points inside covered chart versus same finiteCPU light; report cache errors unqualified, never fabricate clear/pass from cacheapprox.
+
+Fatal handler snapshots originalerror/build/source clock/last submitted+completed facts best-effort and POSTs failure independent of GPU. Record abort stops/finalizes even if snapshot callbackthrows. A finalized partial blob saves with FAILED/PARTIAL labels without GPUdrain; failurejournal is persisted even if encoder neverfinalizes. Terminal FrameSettlement remains terminal, no completed-frame forgery. Mock unit checks inject devicefailure/settlement rejection/callbackthrow/recordererror; no hardware experiments.
+
+Functional tests serial under unchanged224MiB early/256MiB hard sampled process-tree guards; native shared once. No512matrix/throughput claim; retain failures and exact code/input freeze before rootactual matching170programme/static/normal/16x/mainhidden. Full P4a air/fog/environment remains deferred.
+
+Detected-failure scope: no timeout infers device loss from a slow fence. A promise that never settles and emits no device/error/rejection event remains unhandled observability; this patch does not claim a watchdog. Both actual d9 failures did emit device.lost errors.
+
+Startup closure after independent review: Gpu.open installs the supplied fatal callback with internal device listeners before Scene.init starts. Init awaits loss-aware frameFence; disposal skips queue draining on lost/errored devices and uses loss-aware fencing only for healthy pending work. Mock constructor events and lostScene disposal with no queue object pass. Original041d review snapshot is retained under history; this is an unrun GPU revision.

@@ -1,0 +1,14 @@
+{
+  "state": "sealed source/results/observations and actual fresh functional restore verified",
+  "archiveMembers": 147,
+  "archiveBytes": 415512,
+  "nativeUniquePayloads": 7,
+  "nativeUniqueBytes": 17956864,
+  "nativePaths": 10,
+  "targetPackageBytes": 4194304,
+  "freshRestoreDiskEstimateBytes": 23068672,
+  "sourcePinsSHA256": "f57da1bd956e06df5e936b67e05b6358d20b0477a8d8d6d7a86eda8adbd3098f",
+  "costGatePass": false,
+  "noCostRunByPackager": true,
+  "ownedFreshRestoreRemoved": true
+}

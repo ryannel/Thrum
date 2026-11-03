@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "scope": "FrozenCPU-only source contract, not an observed browser build",
+  "baselineBrowserBuild": "17fca3a6a1012a52",
+  "cpuContractRevision": "1a0a01c2c8735b74",
+  "codeFrozen": true,
+  "changedOrAddedSourceFiles": [
+    "src/source/model.js",
+    "src/source/world-reference.js",
+    "src/source/world.js"
+  ],
+  "ownedCodeSHA256": {
+    "src/source/model.js": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+    "src/source/world.js": "96cdd7b1b5f1bbb0c423a0a41e2a9763ef510566246070fb62a139616aa899a4",
+    "src/source/world-reference.js": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+    "tests/world/contracts.mjs": "ef023d53b25874f847870fc146b02a8c78fe3c17d6172e99ef197daeaec280f2",
+    "tests/world/native.mjs": "c1a0d42e6d2983006fe77300e1efe07e364adcfcda193f75d2c2da032601eb75",
+    "run-guarded.py": "de4ea09b4ad1f32ae1789bc64d0a4169ad7790a084cd4c09856a6cf8ff4439c9"
+  },
+  "allSourceSHA256": {
+    "src/source/admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+    "src/source/admission-policy.provenance.json": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49",
+    "src/source/clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+    "src/source/math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+    "src/source/model.js": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+    "src/source/reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+    "src/source/weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+    "src/source/world-reference.js": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+    "src/source/world.js": "96cdd7b1b5f1bbb0c423a0a41e2a9763ef510566246070fb62a139616aa899a4"
+  },
+  "nativeInputSHA256": {
+    "assets/admission/admission.json": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+    "assets/input-index.json": "2f7186b74253fc4c141e30a53113abd723fbb078c40893aac8cc5ce3be3a84d8",
+    "assets/noise/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+    "assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "assets/templates/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "assets/templates/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "assets/templates/body.json": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+    "assets/templates/crown-b.density.r16f": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "assets/templates/crown-b.distance.r16f": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416",
+    "assets/templates/crown-b.json": "2a429d6f44bc5c01571835612dbab91934c0c5abde124955f19212216c160918",
+    "assets/templates/original-FROZEN-INPUTS.json": "dbb633512b543f74016a023080b6c64a00bb6d14fa898ff596ca032bd0a24d8c",
+    "assets/templates/original-body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+    "assets/templates/original-crown-b.json": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309"
+  },
+  "tests": {
+    "worldContracts": 12,
+    "nativeOracleChecks": 6,
+    "sourceSuiteGroups": 8,
+    "rendererTestsSerial": 8
+  }
+}

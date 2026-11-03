@@ -1423,6 +1423,29 @@
           "correctness": "independent_review_no_findings_12focused_6native_source8_render8_serial_checks_pass_MAXwithin_ADDbetween_and_remote_positive_Sun_chord",
           "experienced_quality": "CPU_only_no_two_cell_render_or_motion_acceptance",
           "performance": "functional_guarded_RSS_only_concurrent_test_scheduler_overshoot_preserved_serial_recovery_not_production_capacity_or_throughput"
+        },
+        "two_cell_optical_first": {
+          "record": "../evidence/cloud-two-cell-optics-2026-11-03/README.md",
+          "build": "d9ce7a9895ab34f4",
+          "implementation": "two_group_16slot_shared_field_sorted_ray_support_current_cache_receiver_independent_mirror_and_offcache_fallback",
+          "correctness": "actual_overlap_remote_and_separated_GPU_CPU_point_checks_pass_cross_pass_marker_overlap_rejected_by_conservative_attribution_gate_no_counter_fault_or_whole_GPU_time_claim",
+          "experienced_quality": "two_visible_repeated_smooth_clouds_and_reflections_static170_25_pass_normal_record_and_recorderfree_playback_GPU_DEVICE_LOSS_no_motion_or_art_admission",
+          "performance": "available_M3Max36GiB_fixedA_cache_offcache_workload_multiplier_analytical_only_no_M2_5ms_or_stable_frame_admission"
+        },
+        "two_cell_covered_light": {
+          "record": "../evidence/cloud-two-cell-covered-light-2026-11-03/README.md",
+          "build": "b31460fad16cde97",
+          "implementation": "two_current_complete_world_light_charts_complete_offchart_fallback_detected_failure_retention",
+          "correctness": "actual_source_receiver_and_nonclear_offchart_queries_pass_cache_T0_errors_around0_06_UNQUALIFIED",
+          "experienced_quality": "actual_normal90s_16x40s_lowSun_dry90s_recordings_complete_sampled_native_frames_mainhidden_mirrors_remote_blocker_response_no_source_art_or_full_atmosphere_admission",
+          "performance": "available_M3Max_only_three_bounded_recordings_stable_no_measured_speedup_GPUtime_full_residency_or_M2_5ms_admission"
+        },
+        "observed_policy_cpu": {
+          "record": "../evidence/cloud-observed-policy-cpu-2026-11-03/README.md",
+          "implementation": "isolated_optin_cu_held_predict_observe_v1_pureCPU_legacy_default_unchanged",
+          "correctness": "functional_default_differential_six_replays_native_queries_and_independent_review_pass_370_birth_exposed415_healthy420_820_decline",
+          "experienced_quality": "CPU_only_no_actual_new_policy_optics_or_art_acceptance",
+          "performance": "predeclared4ms_whole_step_publication_gate_FAIL_max4_766750_singlewet_5_234000_singledry_8_634250_twowet_no_runtime_adoption"
         }
       }
     },

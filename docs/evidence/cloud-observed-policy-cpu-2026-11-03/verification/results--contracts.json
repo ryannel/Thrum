@@ -1,0 +1,19 @@
+{
+  "pass": true,
+  "checks": [
+    "exact370_ID7_current_zero_prior_positive_provenance_and_prior_only_rejection",
+    "Q_aware_root_neck_bound_rejects_admitted_nonorthogonal_near16",
+    "forecast_top_level_weather_attachment_spatial_and_mixed_reasons_preserved",
+    "no_future_command_peek_actual_interval_reference_evolution_and_causal_explicit_epoch_publication",
+    "cancelled_child_keeps_all_old_to_aligned_deadline",
+    "deadline_command_changes_endpoint_status_not_completed_interval",
+    "stale_reference_time_rejected",
+    "fresh_reset_seek_external_interruption_no_second_epoch_and_quiet_tuple_reuse",
+    "world_omitted_epoch_stays_raw_explicit_qualifies_and_cells_distinct",
+    "native_occupied_witness_vs_sampled_zero_bvh_uncertified_vs_exposed"
+  ],
+  "node": "v24.16.0",
+  "nativeBytes": 14352384,
+  "maxRSSKiB": 130880,
+  "scope": "Functional contracts; synthetic classification fixtures labelled, no cost/GPU/art pass"
+}

@@ -1,0 +1,22 @@
+{
+  "scope": "Actual fresh restore functional test failure; packaging omission, not source case failure",
+  "attempts": [
+    {
+      "command": "python3 restore.py --output /private/tmp/thrum-cloud-optical-failure-validation --test",
+      "exit_code": 1,
+      "failure": "Sandbox blocks ps used by unchanged process-memory guard; retry same functional command with process observation access."
+    },
+    {
+      "command": "python3 run-guarded.py --phase all",
+      "cwd": "/private/tmp/thrum-cloud-optical-failure-validation",
+      "exit_code": 1,
+      "completed": [
+        "world contracts",
+        "native",
+        "all eight source cases"
+      ],
+      "failure": "source aggregate receipt opens missing src/source/admission-policy.provenance.json",
+      "resolution": "Add exact nonserved provenance file to archive/member pins; re-run fresh restore with tests."
+    }
+  ]
+}
