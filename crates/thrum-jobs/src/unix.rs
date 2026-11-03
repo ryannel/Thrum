@@ -983,6 +983,53 @@ mod tests {
     }
 
     #[test]
+    fn worker_read_keeps_a_claim_while_b_materializes() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let mut pin = store.pin_current(1).unwrap();
+        let plan = JobSpacePlan {
+            managed_temporary_target_bytes: 40 * MIB,
+            free_headroom_bytes: 0,
+        };
+        let mut host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, plan).unwrap();
+        let a = host.materialize(&mut pin, scratch()).unwrap();
+        let reader = host.input_lease(a).unwrap();
+        let (start_tx, start_rx) = std::sync::mpsc::sync_channel::<()>(0);
+        let (read_tx, read_rx) = std::sync::mpsc::sync_channel::<u64>(0);
+        let (release_tx, release_rx) = std::sync::mpsc::sync_channel::<()>(0);
+        let worker = std::thread::spawn(move || {
+            let mut file = File::open(reader.join("master.bin")).unwrap();
+            start_rx.recv().unwrap();
+            let mut buffer = [0_u8; 64 * 1024];
+            let mut bytes = 0_u64;
+            loop {
+                let count = file.read(&mut buffer).unwrap();
+                if count == 0 {
+                    break;
+                }
+                assert!(buffer[..count].iter().all(|byte| *byte == 0x5a));
+                bytes += count as u64;
+            }
+            drop(file);
+            read_tx.send(bytes).unwrap();
+            release_rx.recv().unwrap();
+            drop(reader);
+        });
+        let b = host
+            .materialize_with(&mut pin, scratch(), || start_tx.send(()).unwrap())
+            .unwrap();
+        assert_eq!(read_rx.recv().unwrap(), 12 * MIB);
+        assert!(matches!(host.close(a), Err(JobError::ReadersActive(id)) if id == a));
+        host.close(b).unwrap();
+        assert!(host.active_claim_bytes() > 0);
+        release_tx.send(()).unwrap();
+        worker.join().unwrap();
+        host.close(a).unwrap();
+        assert_eq!(host.active_claim_bytes(), 0);
+    }
+
+    #[test]
     fn process_kill_after_registration_child() {
         let Some(project) = std::env::var_os("THRUM_JOB_KILL_PROJECT") else {
             return;
