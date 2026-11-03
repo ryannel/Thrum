@@ -2,6 +2,7 @@
 
 pub mod envelope;
 pub mod outbound;
+pub mod peer;
 pub mod progress;
 pub mod r4;
 pub mod replica;

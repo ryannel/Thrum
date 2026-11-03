@@ -2349,6 +2349,13 @@
         "evidence": "../evidence/integration/N1-W1-CALLBACK-CAPTURE-TAILS-2026-11-03.md",
         "raw_samples": "../evidence/integration/N1-W1-CALLBACK-CAPTURE-TAIL-SAMPLES-2026-11-03.csv"
       },
+      "ordinary_peer_owner": {
+        "implementation": "registered thrum-network no-socket OrdinaryPeer privately pairs one baseline-bound unsent queue with one exact ordinary sent ledger and exposes capture, submission, known-byte write, exact ACK and Reject operations under one peer identity",
+        "functional_validation": "six focused tests cover pre-sequence state coalescing, exact result ACK callback refusal/retry, frame-capacity retry without consuming queued bytes or sequence, independent healthy peer after capture refusal, close after exact Reject/uncertain write and caught schema/authority callback unwind; independent read-only review found no defect",
+        "platform_performance": "the wrapper adds no payload or frame arena beyond its two contained owners and performs bounded phase checks; no new owner-level release timing, allocation count or RSS measurement has run",
+        "scope": "Ordinary-only owner after an externally admitted baseline. The caller supplies encoded groups and a game validator; whole-peer partition completeness, production W1 projection, baseline/sync storage, cross-kind sequence/supersession, authenticated ACK/session, transport and complete lifecycle/event burst remain open. Existing separate construction types are still public and therefore not a production encapsulation guarantee.",
+        "evidence": "../evidence/integration/N1-ORDINARY-PEER-OWNER-2026-11-03.md"
+      },
       "baseline_physical_staging_oracle": {
         "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",
         "functional_validation": "two focused tests cover eight distinct 32 KiB chunks across two credits, out-of-order exact ACK and slot reuse, duplicate/wrong/premature refusal, exact Begin fields and decoded chunk/End bytes, one-byte final chunk and uncertain-write quarantine; independent read-only review found no storage or credit defect",
