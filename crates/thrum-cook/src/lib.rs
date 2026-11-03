@@ -2001,7 +2001,7 @@ mod tests {
                 } else {
                     output.push((
                         entry.path().strip_prefix(root).unwrap().to_owned(),
-                        Sha256::digest(fs::read(entry.path()).unwrap()).into(),
+                        file_sha256_bytes(&entry.path()),
                     ));
                 }
             }
@@ -2012,7 +2012,7 @@ mod tests {
         output
     }
 
-    fn file_sha256_hex(path: &Path) -> String {
+    fn file_sha256_bytes(path: &Path) -> [u8; 32] {
         let mut file = fs::File::open(path).unwrap();
         let mut hash = Sha256::new();
         let mut buffer = [0u8; 64 * 1024];
@@ -2023,12 +2023,28 @@ mod tests {
             }
             hash.update(&buffer[..count]);
         }
-        use std::fmt::Write as _;
-        let mut hex = String::with_capacity(64);
-        for byte in hash.finalize() {
-            write!(&mut hex, "{byte:02x}").unwrap();
-        }
-        hex
+        hash.finalize().into()
+    }
+
+    fn file_sha256_hex(path: &Path) -> String {
+        candidate_output::hex(file_sha256_bytes(path))
+    }
+
+    #[test]
+    fn streamed_tree_hash_matches_full_digest_across_buffer_boundaries() {
+        let fixture = Fixture::new();
+        let path = fixture.root().join("streamed.bin");
+        let bytes = (0..(128 * 1024 + 17))
+            .map(|index| (index % 251) as u8)
+            .collect::<Vec<_>>();
+        fs::write(&path, &bytes).unwrap();
+        let expected: [u8; 32] = Sha256::digest(&bytes).into();
+        assert_eq!(file_sha256_bytes(&path), expected);
+        assert_eq!(file_sha256_hex(&path), candidate_output::hex(expected));
+        assert_eq!(
+            tree_hashes(fixture.root()),
+            vec![("streamed.bin".into(), expected)]
+        );
     }
 
     fn inspect_headless_cargo_units(
