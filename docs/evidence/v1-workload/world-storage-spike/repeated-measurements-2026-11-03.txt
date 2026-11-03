@@ -1,0 +1,12 @@
+macOS native release, 10000 entities, 1500 moving, 100 spawn/despawn pairs/s; 600 warm + 1200 sampled ticks
+custom: tick ns p50=416 p99=542 max=7458; four snapshots ns p50=41958 p99=47125 max=51167; 16 full history rows=160000 bytes=3840000
+hecs: tick ns p50=1958 p99=2458 max=2625; four snapshots ns p50=57375 p99=66959 max=68500; 16 full history rows=160000 bytes=3840000
+bevy: tick ns p50=4416 p99=4917 max=10417; four snapshots ns p50=58292 p99=64333 max=74625; 16 full history rows=160000 bytes=3840000
+macOS native release, 10000 entities, 1500 moving, 100 spawn/despawn pairs/s; 600 warm + 1200 sampled ticks
+custom: tick ns p50=416 p99=583 max=4833; four snapshots ns p50=43625 p99=55125 max=70542; 16 full history rows=160000 bytes=3840000
+hecs: tick ns p50=2000 p99=2666 max=5250; four snapshots ns p50=58125 p99=74000 max=100666; 16 full history rows=160000 bytes=3840000
+bevy: tick ns p50=4375 p99=8125 max=16166; four snapshots ns p50=58042 p99=70333 max=105667; 16 full history rows=160000 bytes=3840000
+macOS native release, 10000 entities, 1500 moving, 100 spawn/despawn pairs/s; 600 warm + 1200 sampled ticks
+custom: tick ns p50=416 p99=583 max=8959; four snapshots ns p50=42000 p99=51750 max=58958; 16 full history rows=160000 bytes=3840000
+hecs: tick ns p50=2000 p99=3041 max=9083; four snapshots ns p50=58083 p99=81166 max=109958; 16 full history rows=160000 bytes=3840000
+bevy: tick ns p50=4334 p99=5458 max=20292; four snapshots ns p50=53208 p99=65416 max=73208; 16 full history rows=160000 bytes=3840000
