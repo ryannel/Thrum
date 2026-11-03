@@ -31,6 +31,9 @@ mod render_bound;
 // Exact source geometry is compiled privately ahead of the same decoder.
 #[allow(dead_code)]
 mod render_geometry_exact;
+// Strict render-v1 envelope borrows collections ahead of shared decoding.
+#[allow(dead_code)]
+mod render_json;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;
