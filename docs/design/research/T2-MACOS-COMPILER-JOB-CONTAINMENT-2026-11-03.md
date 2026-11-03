@@ -30,6 +30,13 @@ killable lifetime after a child changes session. Apple's
 [launchd job guidance](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
 discourages daemonizing managed processes; it does not by itself promise
 transitive containment of arbitrary detached grandchildren.
+[Apple's current background-process guidance](https://developer.apple.com/documentation/appkit/managing-ongoing-background-processes-in-your-mac)
+recommends XPC services when a Mac app needs the system to track helper
+relationships and terminate helpers with the app. That guidance does not
+specify a termination boundary across `setsid`, reparenting and closed pipes
+for an unprivileged command-line compiler adapter. Treating it as one would be
+an inference requiring a detached-child qualification, not a documented
+guarantee.
 
 ### Foundation `Process` candidate
 
@@ -59,6 +66,10 @@ family but does not turn the current process-group cleanup into an OS job
 container. A compiler/tool failure, a compromised selected tool or an
 unexpected helper could still escape; output publication must refuse and
 owned scratch cannot be assumed safe to delete merely because Cargo exited.
+The [append-only held tool-root candidate](../../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
+keeps already sealed selected pathnames stable after an owner exits; it does
+not make materialized source/output scratch safe to remove or prove all
+compiler children have stopped.
 
 The choices for a ready profile are:
 
