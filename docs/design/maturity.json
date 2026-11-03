@@ -2183,6 +2183,14 @@
           "correctness": "fixed5633_profile_base_gate_FAIL_56_70158percent_narrow_rises_vs80_height50_range54_19073m_vs16_old_guide_cannot_be_fixed_by_multiplicative_base",
           "experienced_quality": "actual_native_and_fixed_pose_scalar_projections_inspected_broad_bank_few_masses_rejected_not_beauty_or_final_effective_q_acceptance",
           "performance": "sampled_tree183369728B_exceeds160MiB_plan_below224MiB_sampled_stop_50ms_monitor_256MiB_declared_ceiling_NOT_OS_enforced_no_runtime_speed_or_residency_claim"
+        },
+        "joint_media_next_graph": {
+          "record": "../evidence/cloud-joint-media-design-2026-11-03/README.md",
+          "design": "selected_bounded_four_LUT_joint_RGB_media_BSM_point_tail_current_Env_independent_mirror",
+          "implementation": "maintained_pure_CPU_analytic_fog_reference_only; complete_graph_unbuilt",
+          "correctness": "12_focused_Node_tests_pass_and_sparse_vector_review_P2_closed; stated_binary64_and_4ulp_host_assumption",
+          "experienced_quality": "existing_source91_actual_pair_and_close_reinspected; new_joint_media_images_and_motion_unrun",
+          "performance": "no_new_GPU_frame_memory_device_or_full_sky_admission"
         }
       }
     },
