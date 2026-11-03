@@ -20,9 +20,12 @@ use crate::project_v2_json::{ProjectV2, ProjectV2Error, parse_project_v2};
 use crate::registry::{RegistryConsistencyError, validate_active_registry_with};
 use crate::schema_json::{SchemaDescriptor, SchemaError, parse_schema_descriptor};
 use crate::{
-    MAX_RECORD_BYTES, ManifestEntry, ManifestError, RecordDescriptor, SourcePath, StageError,
-    StagedFile, StagedTree, TreeManifest,
+    LimitExceeded, MAX_RECORD_BYTES, ManifestEntry, ManifestError, ObservedQuantity,
+    RecordDescriptor, SourceDimension, SourcePath, StageError, StagedFile, StagedTree,
+    TreeManifest,
 };
+
+pub(crate) const MAX_REQUIRED_REFERENCES: usize = 65_536;
 
 /// A declared first-profile registry does not agree with its staged source.
 #[derive(Debug)]
@@ -67,6 +70,17 @@ pub enum StagedRegistryError {
     DuplicateRecordId(String),
 }
 
+impl StagedRegistryError {
+    /// Specific nested source-capacity refusal, when available.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::Stage(error) => error.limit_exceeded(),
+            Self::Project(error) => error.limit_exceeded(),
+            _ => None,
+        }
+    }
+}
+
 /// A registry's declared scene/game/built-in records failed the closure profile.
 #[derive(Debug)]
 pub enum StagedRecordError {
@@ -107,7 +121,10 @@ pub enum StagedRecordError {
         target_id: String,
     },
     /// Required-edge summaries exceed this first profile's 65,536-edge cap.
-    TooManyRequiredEdges,
+    TooManyRequiredEdges {
+        /// Processed reference count at refusal; more records may remain.
+        observed_at_least: u64,
+    },
     /// A source envelope could not supply unambiguous type/version dispatch.
     Envelope {
         /// Declared source record path.
@@ -149,6 +166,21 @@ pub enum StagedRecordError {
     },
 }
 
+impl StagedRecordError {
+    /// Specific nested source-capacity refusal, when available.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooManyRequiredEdges { observed_at_least } => Some(LimitExceeded {
+                dimension: SourceDimension::RequiredReferences,
+                allowed: MAX_REQUIRED_REFERENCES as u64,
+                observed: ObservedQuantity::AtLeast(*observed_at_least),
+            }),
+            Self::Stage(error) => error.limit_exceeded(),
+            _ => None,
+        }
+    }
+}
+
 /// A first-profile staged candidate failed before deriving a manifest.
 #[derive(Debug)]
 pub enum StagedCandidateError {
@@ -156,6 +188,16 @@ pub enum StagedCandidateError {
     Registry(StagedRegistryError),
     /// Scene/game/built-in identity or required reference closure refused.
     Records(StagedRecordError),
+}
+
+impl StagedCandidateError {
+    /// Specific nested source-capacity refusal, when available.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::Registry(error) => error.limit_exceeded(),
+            Self::Records(error) => error.limit_exceeded(),
+        }
+    }
 }
 
 /// Two rehashed staged histories cannot form one monotonic source lineage.
@@ -595,7 +637,7 @@ pub fn validate_staged_registry<'a>(
 pub fn validate_staged_records(
     registry: &StagedRegistry<'_>,
 ) -> Result<StagedRecords, StagedRecordError> {
-    const MAX_REQUIRED_EDGES: usize = 65_536;
+    const MAX_REQUIRED_EDGES: usize = MAX_REQUIRED_REFERENCES;
 
     let paths = registry.project.record_paths();
     let scene_count = paths
@@ -824,10 +866,15 @@ fn add_required_edges(
     added: usize,
     limit: usize,
 ) -> Result<usize, StagedRecordError> {
-    current
-        .checked_add(added)
-        .filter(|edges| *edges <= limit)
-        .ok_or(StagedRecordError::TooManyRequiredEdges)
+    match current.checked_add(added) {
+        Some(edges) if edges <= limit => Ok(edges),
+        Some(edges) => Err(StagedRecordError::TooManyRequiredEdges {
+            observed_at_least: edges as u64,
+        }),
+        None => Err(StagedRecordError::TooManyRequiredEdges {
+            observed_at_least: limit as u64 + 1,
+        }),
+    }
 }
 
 /// Check one narrow staged registry and its declared record closure together.
@@ -1602,12 +1649,17 @@ mod tests {
         staged_paths.extend([ENVIRONMENT_PATH.to_owned(), LIGHT_PATH.to_owned()]);
         let path_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
         let changed = fixture.stage(&path_refs);
-        assert!(matches!(
-            validate_staged_candidate(&changed, &[]),
-            Err(StagedCandidateError::Records(
-                StagedRecordError::TooManyRequiredEdges
-            ))
-        ));
+        let Err(error) = validate_staged_candidate(&changed, &[]) else {
+            panic!("one more built-in reference must exceed the candidate profile");
+        };
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::RequiredReferences,
+                allowed: 65_536,
+                observed: ObservedQuantity::AtLeast(65_537),
+            })
+        );
         assert_eq!(
             validate_staged_candidate(&prior, &[])
                 .unwrap()
@@ -2481,7 +2533,7 @@ mod tests {
         assert!(matches!(
             validate_staged_candidate(&stage, &[]),
             Err(StagedCandidateError::Records(
-                StagedRecordError::TooManyRequiredEdges
+                StagedRecordError::TooManyRequiredEdges { .. }
             ))
         ));
         eprintln!("all_type_excess_edges elapsed={:?}", start.elapsed());

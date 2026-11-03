@@ -42,10 +42,13 @@ use crate::registry_stage::{StagedCandidate, StagedRegistryError};
 use crate::schema_json::parse_schema_descriptor;
 #[cfg(test)]
 use crate::stage::stage_declared_tree_with;
-use crate::{ManifestEntry, ManifestError, SourcePath, SourceRevision, StageError, TreeManifest};
+use crate::{
+    LimitExceeded, ManifestEntry, ManifestError, SourceDimension, SourcePath, SourceRevision,
+    StageError, TreeManifest,
+};
 
 const CHUNK_BYTES: usize = 4 * 1024 * 1024;
-const FIRST_PROFILE_MANIFEST_BYTES: usize = 64 * 1024 * 1024;
+pub(crate) const FIRST_PROFILE_MANIFEST_BYTES: usize = 64 * 1024 * 1024;
 const MAX_HISTORY_BYTES: usize = 16 * 1024 * 1024;
 const SMALL_BATCH_FILES: usize = 128;
 const SMALL_BATCH_BYTES: usize = 1024 * 1024;
@@ -176,6 +179,7 @@ enum StoreError {
     InputIo,
     OutputIo,
     InputLength,
+    ManifestTooLarge(u64),
     HashMismatch,
     MissingChunk,
     InvalidChunkLayout,
@@ -227,6 +231,10 @@ impl fmt::Display for StoreError {
             Self::Lineage(error) => write!(formatter, "lineage: {error:?}"),
             Self::CandidateStage(error) => write!(formatter, "candidate stage: {error:?}"),
             Self::CandidateManifest(error) => write!(formatter, "candidate manifest: {error:?}"),
+            Self::ManifestTooLarge(length) => write!(
+                formatter,
+                "canonical manifest has {length} bytes; first accepted profile allows {FIRST_PROFILE_MANIFEST_BYTES}"
+            ),
             Self::CandidateFile(error) => write!(formatter, "candidate file: {error:?}"),
             Self::Budget(error) => write!(formatter, "physical preflight: {error:?}"),
             Self::ConsumerWrite(error) => write!(formatter, "consumer output: {error}"),
@@ -367,6 +375,14 @@ struct RootReadPin {
 
 fn blob_chunk_count(length: u64) -> Result<i64, StoreError> {
     i64::try_from(length.div_ceil(CHUNK_BYTES as u64)).map_err(|_| StoreError::InputLength)
+}
+
+fn ensure_manifest_size(length: u64) -> Result<(), StoreError> {
+    if length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
+        Err(StoreError::ManifestTooLarge(length))
+    } else {
+        Ok(())
+    }
 }
 
 fn verify_supplied_blob(
@@ -1351,9 +1367,7 @@ impl SqliteStoreCore {
         manifest
             .write_jcs(&mut count)
             .map_err(|_| StoreError::OutputIo)?;
-        if count.length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(StoreError::InputLength);
-        }
+        ensure_manifest_size(count.length)?;
         let mut blobs: Vec<_> = manifest
             .files()
             .iter()
@@ -1661,9 +1675,7 @@ impl SqliteStoreCore {
             .write_jcs(&mut count)
             .map_err(|_| StoreError::OutputIo)?;
         let length = count.length;
-        if length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(StoreError::InputLength);
-        }
+        ensure_manifest_size(length)?;
         let hash: [u8; 32] = count.digest.finalize().into();
         let chunk_count = blob_chunk_count(length)?;
         if self.begin_blob(length, hash, chunk_count)? {
@@ -2074,9 +2086,7 @@ impl SqliteStoreCore {
         manifest
             .write_jcs(&mut count)
             .map_err(|_| StoreError::OutputIo)?;
-        if count.length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(StoreError::InputLength);
-        }
+        ensure_manifest_size(count.length)?;
         let revision: [u8; 32] = count.digest.finalize().into();
         self.commit_verified_manifest_probe(
             expected_generation,
@@ -2341,6 +2351,7 @@ impl SourceStoreError {
             | StoreError::History(_)
             | StoreError::DifferentProject
             | StoreError::InputLength
+            | StoreError::ManifestTooLarge(_)
             | StoreError::HashMismatch
             | StoreError::InputIo => SourceStoreErrorKind::Candidate,
             StoreError::InvalidPlan => SourceStoreErrorKind::InvalidPlan,
@@ -2361,6 +2372,21 @@ impl SourceStoreError {
             | StoreError::AmbiguousRootHistory
             | StoreError::UnsupportedDependencyRoots => SourceStoreErrorKind::CorruptStore,
             _ => SourceStoreErrorKind::Storage,
+        }
+    }
+
+    /// Specific content-capacity refusal, when the accepted store knows one.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match &self.0 {
+            StoreError::ManifestTooLarge(length) => Some(LimitExceeded::exact(
+                SourceDimension::AcceptedManifestBytes,
+                FIRST_PROFILE_MANIFEST_BYTES as u64,
+                *length,
+            )),
+            StoreError::CandidateManifest(error) => error.limit_exceeded(),
+            StoreError::CandidateFile(error) => error.limit_exceeded(),
+            StoreError::CandidateStage(error) => error.limit_exceeded(),
+            _ => None,
         }
     }
 }
@@ -2792,9 +2818,7 @@ impl NativeSourceStore {
             .write_jcs(&mut count)
             .map_err(|_| StoreError::OutputIo)?;
         let length = count.length;
-        if length > FIRST_PROFILE_MANIFEST_BYTES as u64 {
-            return Err(StoreError::InputLength);
-        }
+        ensure_manifest_size(length)?;
         let hash: [u8; 32] = count.digest.finalize().into();
         let chunk_count = blob_chunk_count(length)?;
         if self.owner.lock()?.begin_blob(length, hash, chunk_count)? {
@@ -7510,6 +7534,23 @@ fn candidate_space_preflight_does_not_charge_unused_wal_stop_as_work() {
             )
             .unwrap();
     }
+}
+
+#[test]
+fn accepted_manifest_limit_reports_exact_capacity_without_writing() {
+    assert!(ensure_manifest_size(FIRST_PROFILE_MANIFEST_BYTES as u64).is_ok());
+    let error: SourceStoreError = ensure_manifest_size(FIRST_PROFILE_MANIFEST_BYTES as u64 + 1)
+        .unwrap_err()
+        .into();
+    assert_eq!(error.kind(), SourceStoreErrorKind::Candidate);
+    assert_eq!(
+        error.limit_exceeded(),
+        Some(LimitExceeded::exact(
+            SourceDimension::AcceptedManifestBytes,
+            FIRST_PROFILE_MANIFEST_BYTES as u64,
+            FIRST_PROFILE_MANIFEST_BYTES as u64 + 1,
+        ))
+    );
 }
 
 #[test]

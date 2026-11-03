@@ -15,14 +15,14 @@ use crate::definition::{Presence, valid_symbol};
 use crate::record::canonical_uuid;
 use crate::schema_json::{SchemaDescriptor, SchemaFieldKind};
 
-const MAX_OPAQUE_FIELDS: usize = 128;
-const MAX_RECORD_FIELDS: usize = 256;
-const MAX_OPAQUE_NODES: usize = 65_536;
-const MAX_OPAQUE_DEPTH: u8 = 64;
+pub(crate) const MAX_OPAQUE_FIELDS: usize = 128;
+pub(crate) const MAX_RECORD_FIELDS: usize = 256;
+pub(crate) const MAX_OPAQUE_NODES: usize = 65_536;
+pub(crate) const MAX_OPAQUE_DEPTH: u8 = 64;
 const OPAQUE_START_DEPTH: u8 = 2;
-const MAX_OPAQUE_OBJECT_MEMBERS: usize = 1_024;
-const MAX_OPAQUE_KEY_BYTES: usize = 128;
-const MAX_OPAQUE_STRING_BYTES: usize = 65_536;
+pub(crate) const MAX_OPAQUE_OBJECT_MEMBERS: usize = 1_024;
+pub(crate) const MAX_OPAQUE_KEY_BYTES: usize = 128;
+pub(crate) const MAX_OPAQUE_STRING_BYTES: usize = 65_536;
 
 /// A game record failed the first-profile descriptor or bounded JSON rules.
 #[derive(Debug)]

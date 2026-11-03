@@ -16,8 +16,8 @@ use crate::meaning::{
 };
 use crate::record::canonical_uuid;
 
-const MAX_FIELD_HISTORY: usize = 100_000;
-const MAX_VERSION_HISTORY: usize = 1_024;
+pub(crate) const MAX_FIELD_HISTORY: usize = 100_000;
+pub(crate) const MAX_VERSION_HISTORY: usize = 1_024;
 
 /// A fixed registry-history source record failed its local grammar.
 #[derive(Debug)]
