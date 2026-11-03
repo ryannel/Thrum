@@ -76,6 +76,8 @@ impl StagedRegistryError {
         match self {
             Self::Stage(error) => error.limit_exceeded(),
             Self::Project(error) => error.limit_exceeded(),
+            Self::Schema { source, .. } => source.limit_exceeded(),
+            Self::History(error) => error.limit_exceeded(),
             _ => None,
         }
     }
@@ -211,6 +213,17 @@ pub enum StagedLineageError {
     History(HistoryError),
     /// A permanent field meaning or type-version definition was lost or changed.
     Conflict(CarriedHistoryError),
+}
+
+impl StagedLineageError {
+    /// Specific nested source-capacity refusal, when available.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::Stage(error) => error.limit_exceeded(),
+            Self::History(error) => error.limit_exceeded(),
+            Self::DifferentProject | Self::Conflict(_) => None,
+        }
+    }
 }
 
 /// Registry and records checked together against one provisional stage.

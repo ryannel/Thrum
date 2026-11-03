@@ -4,17 +4,20 @@
 //! must compare active descriptors and authenticate the prior admitted root.
 
 use std::borrow::Cow;
+use std::cell::Cell;
 use std::fmt;
 
 use serde::de::{DeserializeSeed, Error as _, MapAccess, SeqAccess, Visitor};
 
 use crate::MAX_RECORD_BYTES;
 use crate::definition::valid_symbol;
+use crate::json::reject_excess_value;
 use crate::meaning::{
     FieldHistoryView, MeaningHistoryError, TypeVersionHistoryError, TypeVersionHistoryView,
     compare_field_history_views, compare_type_version_views,
 };
 use crate::record::canonical_uuid;
+use crate::{LimitExceeded, ObservedQuantity, SourceDimension};
 
 pub(crate) const MAX_FIELD_HISTORY: usize = 100_000;
 pub(crate) const MAX_VERSION_HISTORY: usize = 1_024;
@@ -23,9 +26,34 @@ pub(crate) const MAX_VERSION_HISTORY: usize = 1_024;
 #[derive(Debug)]
 pub enum HistoryError {
     /// Exact JSON bytes exceed the 16 MiB record limit.
-    TooLarge,
-    /// Syntax, fixed shape, key order or count refused.
+    TooLarge {
+        /// Exact supplied byte length.
+        observed: u64,
+    },
+    /// Syntax, fixed shape or key order refused.
     Invalid(serde_json::Error),
+    /// An array exposed its first excess entry value token.
+    Limit {
+        /// Dimension, maximum and lower-bound observation.
+        detail: LimitExceeded,
+        /// Original serde error with parse location.
+        source: serde_json::Error,
+    },
+}
+
+impl HistoryError {
+    /// Typed capacity detail, when this refusal was caused by a known bound.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooLarge { observed } => Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                *observed,
+            )),
+            Self::Limit { detail, .. } => Some(*detail),
+            Self::Invalid(_) => None,
+        }
+    }
 }
 
 /// One permanent field meaning carried in the registry-history record.
@@ -164,32 +192,42 @@ pub fn compare_carried_histories(
 /// escaped spelling may allocate. Keep `bytes` alive while using the result.
 pub fn parse_registry_history(bytes: &[u8]) -> Result<RegistryHistory<'_>, HistoryError> {
     if bytes.len() > MAX_RECORD_BYTES {
-        return Err(HistoryError::TooLarge);
+        return Err(HistoryError::TooLarge {
+            observed: bytes.len() as u64,
+        });
     }
+    let limit = Cell::new(None);
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
-    let raw = HistorySeed
+    let raw = HistorySeed { limit: &limit }
         .deserialize(&mut deserializer)
-        .map_err(HistoryError::Invalid)?;
+        .map_err(|source| match limit.get() {
+            Some(detail) => HistoryError::Limit { detail, source },
+            None => HistoryError::Invalid(source),
+        })?;
     deserializer.end().map_err(HistoryError::Invalid)?;
     Ok(raw)
 }
 
-struct HistorySeed;
+struct HistorySeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for HistorySeed {
+impl<'de> DeserializeSeed<'de> for HistorySeed<'_> {
     type Value = RegistryHistory<'de>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_map(HistoryVisitor)
+        deserializer.deserialize_map(HistoryVisitor { limit: self.limit })
     }
 }
 
-struct HistoryVisitor;
+struct HistoryVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for HistoryVisitor {
+impl<'de> Visitor<'de> for HistoryVisitor<'_> {
     type Value = RegistryHistory<'de>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -210,7 +248,7 @@ impl<'de> Visitor<'de> for HistoryVisitor {
                 }
                 "schema" if schema.is_none() => schema = Some(map.next_value::<u64>()?),
                 "fields" if fields.is_none() => {
-                    fields = Some(map.next_value_seed(HistoryFieldsSeed)?)
+                    fields = Some(map.next_value_seed(HistoryFieldsSeed { limit: self.limit })?)
                 }
                 "documentation" if !documentation_seen => {
                     let _: String = map.next_value()?;
@@ -240,22 +278,26 @@ impl<'de> Visitor<'de> for HistoryVisitor {
     }
 }
 
-struct HistoryFieldsSeed;
+struct HistoryFieldsSeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for HistoryFieldsSeed {
+impl<'de> DeserializeSeed<'de> for HistoryFieldsSeed<'_> {
     type Value = (Vec<HistoryField<'de>>, Vec<HistoryVersion<'de>>);
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_map(HistoryFieldsVisitor)
+        deserializer.deserialize_map(HistoryFieldsVisitor { limit: self.limit })
     }
 }
 
-struct HistoryFieldsVisitor;
+struct HistoryFieldsVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for HistoryFieldsVisitor {
+impl<'de> Visitor<'de> for HistoryFieldsVisitor<'_> {
     type Value = (Vec<HistoryField<'de>>, Vec<HistoryVersion<'de>>);
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -268,10 +310,12 @@ impl<'de> Visitor<'de> for HistoryFieldsVisitor {
         while let Some(key) = map.next_key_seed(CowStringSeed)? {
             match key.as_ref() {
                 "registry.fields" if fields.is_none() => {
-                    fields = Some(map.next_value_seed(FieldHistoryArraySeed)?);
+                    fields =
+                        Some(map.next_value_seed(FieldHistoryArraySeed { limit: self.limit })?);
                 }
                 "registry.versions" if versions.is_none() => {
-                    versions = Some(map.next_value_seed(VersionHistoryArraySeed)?);
+                    versions =
+                        Some(map.next_value_seed(VersionHistoryArraySeed { limit: self.limit })?);
                 }
                 _ => return Err(A::Error::custom("duplicate or unsupported history field")),
             }
@@ -283,22 +327,26 @@ impl<'de> Visitor<'de> for HistoryFieldsVisitor {
     }
 }
 
-struct FieldHistoryArraySeed;
+struct FieldHistoryArraySeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for FieldHistoryArraySeed {
+impl<'de> DeserializeSeed<'de> for FieldHistoryArraySeed<'_> {
     type Value = Vec<HistoryField<'de>>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_seq(FieldHistoryArrayVisitor)
+        deserializer.deserialize_seq(FieldHistoryArrayVisitor { limit: self.limit })
     }
 }
 
-struct FieldHistoryArrayVisitor;
+struct FieldHistoryArrayVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for FieldHistoryArrayVisitor {
+impl<'de> Visitor<'de> for FieldHistoryArrayVisitor<'_> {
     type Value = Vec<HistoryField<'de>>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -309,7 +357,11 @@ impl<'de> Visitor<'de> for FieldHistoryArrayVisitor {
         let mut entries: Vec<HistoryField<'de>> = Vec::new();
         loop {
             if entries.len() >= MAX_FIELD_HISTORY {
-                sequence.next_element_seed(RejectExtraSeed)?;
+                sequence.next_element_seed(RejectExtraSeed {
+                    limit: self.limit,
+                    dimension: SourceDimension::HistoryFields,
+                    allowed: MAX_FIELD_HISTORY as u64,
+                })?;
                 break;
             }
             let Some(entry) = sequence.next_element_seed(FieldHistoryEntrySeed)? else {
@@ -327,22 +379,26 @@ impl<'de> Visitor<'de> for FieldHistoryArrayVisitor {
     }
 }
 
-struct VersionHistoryArraySeed;
+struct VersionHistoryArraySeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for VersionHistoryArraySeed {
+impl<'de> DeserializeSeed<'de> for VersionHistoryArraySeed<'_> {
     type Value = Vec<HistoryVersion<'de>>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_seq(VersionHistoryArrayVisitor)
+        deserializer.deserialize_seq(VersionHistoryArrayVisitor { limit: self.limit })
     }
 }
 
-struct VersionHistoryArrayVisitor;
+struct VersionHistoryArrayVisitor<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for VersionHistoryArrayVisitor {
+impl<'de> Visitor<'de> for VersionHistoryArrayVisitor<'_> {
     type Value = Vec<HistoryVersion<'de>>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -353,7 +409,11 @@ impl<'de> Visitor<'de> for VersionHistoryArrayVisitor {
         let mut entries: Vec<HistoryVersion<'de>> = Vec::new();
         loop {
             if entries.len() >= MAX_VERSION_HISTORY {
-                sequence.next_element_seed(RejectExtraSeed)?;
+                sequence.next_element_seed(RejectExtraSeed {
+                    limit: self.limit,
+                    dimension: SourceDimension::HistoryVersions,
+                    allowed: MAX_VERSION_HISTORY as u64,
+                })?;
                 break;
             }
             let Some(entry) = sequence.next_element_seed(VersionHistoryEntrySeed)? else {
@@ -371,16 +431,29 @@ impl<'de> Visitor<'de> for VersionHistoryArrayVisitor {
     }
 }
 
-struct RejectExtraSeed;
+struct RejectExtraSeed<'a> {
+    limit: &'a Cell<Option<LimitExceeded>>,
+    dimension: SourceDimension,
+    allowed: u64,
+}
 
-impl<'de> DeserializeSeed<'de> for RejectExtraSeed {
+impl<'de> DeserializeSeed<'de> for RejectExtraSeed<'_> {
     type Value = ();
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
-        _deserializer: D,
+        deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        Err(D::Error::custom("registry history count limit"))
+        reject_excess_value(
+            deserializer,
+            self.limit,
+            LimitExceeded {
+                dimension: self.dimension,
+                allowed: self.allowed,
+                observed: ObservedQuantity::AtLeast(self.allowed + 1),
+            },
+            "registry history count limit",
+        )
     }
 }
 
@@ -645,6 +718,65 @@ mod tests {
         );
         let error = parse_registry_history(bytes.as_bytes()).err().unwrap();
         assert!(format!("{error:?}").contains("count limit"));
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::HistoryVersions,
+                allowed: MAX_VERSION_HISTORY as u64,
+                observed: ObservedQuantity::AtLeast(MAX_VERSION_HISTORY as u64 + 1),
+            })
+        );
+        let malformed = bytes.replace(",[[[0]]]", ",?");
+        assert_eq!(
+            parse_registry_history(malformed.as_bytes())
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            None
+        );
+    }
+
+    #[test]
+    fn field_count_and_record_bytes_have_distinct_typed_refusals() {
+        let mut bytes = format!("{{\"id\":\"{HISTORY_ID}\",\"type\":\"core.registry-history\",\"schema\":1,\"fields\":{{\"registry.fields\":[").into_bytes();
+        for index in 0..MAX_FIELD_HISTORY {
+            if index != 0 {
+                bytes.push(b',');
+            }
+            bytes.extend_from_slice(format!("{{\"typeId\":\"game.large\",\"fieldId\":\"field.f{index:06}\",\"signature\":\"{HASH}\",\"retired\":false}}").as_bytes());
+        }
+        bytes.extend_from_slice(b",[[[0]]] ],\"registry.versions\":[]}}}");
+        assert!(bytes.len() <= MAX_RECORD_BYTES);
+        let error = parse_registry_history(&bytes).err().unwrap();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::HistoryFields,
+                allowed: MAX_FIELD_HISTORY as u64,
+                observed: ObservedQuantity::AtLeast(MAX_FIELD_HISTORY as u64 + 1),
+            })
+        );
+        let malformed = String::from_utf8(bytes).unwrap().replace(",[[[0]]]", ",?");
+        assert_eq!(
+            parse_registry_history(malformed.as_bytes())
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            None
+        );
+        let error = parse_registry_history(&vec![b' '; MAX_RECORD_BYTES + 1])
+            .err()
+            .unwrap();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                MAX_RECORD_BYTES as u64 + 1,
+            ))
+        );
+        let error = parse_registry_history(b"{").err().unwrap();
+        assert_eq!(error.limit_exceeded(), None);
     }
 
     #[test]

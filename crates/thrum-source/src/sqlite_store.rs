@@ -2386,6 +2386,7 @@ impl SourceStoreError {
             StoreError::CandidateManifest(error) => error.limit_exceeded(),
             StoreError::CandidateFile(error) => error.limit_exceeded(),
             StoreError::CandidateStage(error) => error.limit_exceeded(),
+            StoreError::History(error) => error.limit_exceeded(),
             _ => None,
         }
     }
