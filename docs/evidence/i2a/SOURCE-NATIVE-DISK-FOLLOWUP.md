@@ -22,6 +22,14 @@ Rust 1.99.1 optimized `thrum-source` test binary on local macOS arm64. Three seq
 
 The WAL holds most of this tiny-store sample before checkpoint; a 4,096-byte main-file length does not imply that only 4,096 bytes of accepted source were retained. The largest sampled lengths are post-admission observations, not peak allocated blocks or a 99th-percentile latency. Other local workloads were not controlled.
 
+## Sustained blocked-WAL allocation snapshots — 3 November 2026
+
+The accepted-source path was rerun with its owner-managed read-only pin connection. An ignored optimized fixture keeps an external SQLite read transaction open while it validates and admits successive distinct 4 MiB source edits under a configurable 40 MiB WAL stop. It copies exact A bytes between edits. Eight B updates commit; the ninth defers with the prior root selected and no new keyed outcome. After the external reader commits, the same request publishes once and A remains readable. Three local runs reported the same **34,686,312-byte apparent WAL** at refusal and **4,305,432 bytes** after retry; elapsed fixture times were **658.428, 625.577 and 642.553 ms**.
+
+On Unix the fixture also reads allocated filesystem blocks for the SQLite main and WAL files after each successful admission, at deferral and after retry. Each of the three runs observed **34,754,560 bytes** of combined allocated blocks at deferral and **38,010,880 bytes** after retry, the largest sampled sum. These values are APFS `st_blocks × 512` observations, not an atomic or transient high-water: checkpoint and copy-on-write overlap between samples can be higher, and the source stage/managed temporary files are outside this sum. The post-retry increase despite a much shorter WAL is why free-headroom planning must consider main/WAL overlap. No hard physical cap follows.
+
+Reproduce with `RUSTC_WRAPPER= cargo test -p thrum-source --release --lib measure_native_phased_sustained_blocked_wal -- --ignored --nocapture`. This is a local synthetic pressure case; the selected planning path still needs managed temporary allocation, pre/post checkpoint allocation sampling at finer boundaries, actual host-volume faults and longer running representative edits.
+
 ## Remaining work
 
-Measure the production path under prolonged reader-blocked checkpointing, larger new/reused source overlap and actual host-volume free-space change; record main/WAL/managed-temporary allocated blocks and observed high-water without assuming the planning estimate is a hard cap. Test host I/O faults and platform VFS/power-loss conditions separately. Collector deletion and transitive owner pins remain a later gate. See the [build plan](../../BUILD-PLAN.md).
+Measure the production path under prolonged reader-blocked checkpointing, larger new/reused source overlap and actual host-volume free-space change; record main/WAL/managed-temporary allocated blocks and transient high-water without assuming the planning estimate is a hard cap. Test host I/O faults and platform VFS/power-loss conditions separately. Collector deletion and transitive owner pins remain a later gate. See the [build plan](../../BUILD-PLAN.md).
