@@ -3,6 +3,7 @@
 //! separate owners. Outcome/event/watermark admission is deliberately refused
 //! until one bounded progress owner can admit it atomically with state.
 
+use crate::progress::{Progress, ProgressError};
 use crate::r4::{Actor, GroupView, Lifecycle};
 
 /// First-profile maximum stable partitions.
@@ -100,6 +101,15 @@ pub enum ReplicaError {
     MissingFullState,
     /// Outcome, event or watermark admission requires the pending progress owner.
     UnsupportedOutcome,
+}
+
+/// Refusal from paired state and event-free result-progress admission.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProgressAdmissionError {
+    /// Result inventory, watermark or controller closure is invalid.
+    Progress(ProgressError),
+    /// State, lifecycle or game schema is invalid.
+    State(ReplicaError),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -270,9 +280,40 @@ impl Replica {
         group: &GroupView<'_>,
         validator: &impl SchemaValidator,
     ) -> Result<(), ReplicaError> {
-        if group.header.resolved_through != 0
-            || group.results().len() != 0
-            || group.events().len() != 0
+        self.admit_inner(group, validator, false)
+    }
+
+    /// Admit event-free results and state together after exact progress
+    /// preflight. The result inventory commits only after state admission is
+    /// known to succeed. Event-bearing groups still refuse before mutation.
+    pub fn admit_with_progress(
+        &mut self,
+        group: &GroupView<'_>,
+        progress: &mut Progress,
+        validator: &impl SchemaValidator,
+    ) -> Result<(), ProgressAdmissionError> {
+        let prior_sample_tick = self
+            .partition_sample(group.header.group_id)
+            .map_or(0, |(_, tick)| tick);
+        let candidate = progress
+            .preflight(group, prior_sample_tick)
+            .map_err(ProgressAdmissionError::Progress)?;
+        self.admit_inner(group, validator, true)
+            .map_err(ProgressAdmissionError::State)?;
+        progress.commit(candidate);
+        Ok(())
+    }
+
+    fn admit_inner(
+        &mut self,
+        group: &GroupView<'_>,
+        validator: &impl SchemaValidator,
+        permit_event_free_results: bool,
+    ) -> Result<(), ReplicaError> {
+        if !permit_event_free_results
+            && (group.header.resolved_through != 0
+                || group.results().len() != 0
+                || group.events().len() != 0)
         {
             return Err(ReplicaError::UnsupportedOutcome);
         }
