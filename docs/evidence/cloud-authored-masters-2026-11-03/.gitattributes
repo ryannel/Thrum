@@ -1,0 +1,4 @@
+# Preserve the publisher's exact rights/readme bytes, including original line endings.
+/inputs/LICENSE.txt -text
+/inputs/README.txt -text
+/instrument/LICENSE.txt -text
