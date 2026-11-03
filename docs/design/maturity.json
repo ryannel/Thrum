@@ -2371,6 +2371,14 @@
         "scope": "First-profile complete-tick construction slice only. The caller supplies a game projection hook and external schema validator; exact W1 snapshot/result provenance, real dependency closure, lifecycle/event mandatory burst, baseline/sync replacement, authenticated transport/session and production whole-host budget remain open.",
         "evidence": "../evidence/integration/N1-PROJECTED-CAPTURE-2026-11-03.md"
       },
+      "w1_owned_projection_fixture": {
+        "implementation": "test-only four-peer W1 consumer projects real committed 128-cell publications through one reusable CaptureScratch into four OrdinaryPeer owners, with an outer caught-unwind guard for shared extraction",
+        "functional_validation": "two new focused tests cover nine authority ticks with peer 4 withholding admission ACK beyond eight frames and exact result retirement after ACK, plus caught shared-extraction unwind closing all affected peers; prior split fixture still passes with the common projection helper refactor",
+        "platform_performance": "seven alternating fresh Apple M3 Max Rust 1.99.1 release-process pairs per profile over 10000 measured three-tick windows: median owned/split elapsed ns are 50133.2/52882.6 state-only and 69752.1/73448.9 with four actual inputs/results per tick; median paired reductions are 5.81%/5.03%. All paired paths encode identical 302080000/456960000 total bytes and matching full-byte checksums. Owned queue/ledger/scratch Rust reserve is 1197392 bytes versus 1169376 for split queue/ledger reserve; stack, allocator metadata, RSS and OS scheduling effects are not counted",
+        "scope": "Selected no-socket fixture with synthetic 60 Hz timestamps run back-to-back. Timing includes input submission, host callbacks, test-only projection, capture, queue-to-sent transfer, exact frame-byte checksum and authority ACK; excludes transport/TLS, complete lifecycle/event bursts, general game schema and simultaneous physics/render/environment work. The observed paired difference is not attributed to one internal change or a whole-game budget.",
+        "evidence": "../evidence/integration/N1-W1-OWNED-PROJECTION-2026-11-03.md",
+        "raw_samples": "../evidence/integration/N1-W1-OWNED-PROJECTION-COST-SAMPLES-2026-11-03.csv"
+      },
       "baseline_physical_staging_oracle": {
         "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",
         "functional_validation": "two focused tests cover eight distinct 32 KiB chunks across two credits, out-of-order exact ACK and slot reuse, duplicate/wrong/premature refusal, exact Begin fields and decoded chunk/End bytes, one-byte final chunk and uncertain-write quarantine; independent read-only review found no storage or credit defect",
