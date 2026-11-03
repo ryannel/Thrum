@@ -6,18 +6,31 @@
 activate `core.scene@3` or `thrum.render.scene@1`. The current F3 registry
 stage, F4 scene cook and `PinnedSource` API do not implement this interface.
 
-## One decoder, object-scoped outputs
+## Shared structural preparation, then closure
 
-`thrum-source` owns one versioned strict decoder and immutable built-in
+`thrum-source` owns one versioned strict grammar and immutable built-in
 descriptor for `thrum.render.scene@1`. F3 and F4 select different
-projections from the same decoded meaning. A candidate Rust shape is:
+projections from the same decoded meaning. Structural preparation must finish
+for every declared record before F3 checks the complete UUID namespace;
+a root-local decoder cannot reject a dangling or wrong-kind edge early and
+thereby hide a later global duplicate. A candidate Rust shape is:
 
 ```rust
-pub fn decode_render_v1<P: RenderProjection>(
+pub fn prepare_render_v1<P: RenderProjection>(
     bytes: &[u8],
     work: &mut RenderDecodeWork,
     projection: &mut P,
-) -> Result<RenderSummary, RenderDecodeError<P::Error>>;
+) -> Result<PreparedRender, RenderDecodeError<P::Error>>;
+
+pub fn check_render_edge(
+    edge: &RenderEdge,
+    namespace: &CompleteNamespace,
+) -> Result<ResolvedRenderEdge, RenderClosureError>;
+
+pub fn finish_render_v1(
+    prepared: &[PreparedRender],
+    checked: &CheckedEdgeReceipt,
+) -> Result<RenderClosureReceipt, RenderClosureError>;
 
 pub trait RenderProjection {
     type Error;
@@ -31,17 +44,22 @@ pub enum RenderDecodeError<E> {
 }
 ```
 
-The exact Rust names can change with implementation, but these ownership and
-failure distinctions cannot. `RenderEvent<'_>` has closed typed variants for
-the root, embedded identity, typed edge and checked camera/mesh/instance/
-material/texture/local-light object. UUIDs are canonical binary octets;
-numbers are finite decoded f64 values. Mesh position/UV/triangle slices and
-decoded texture bytes borrow only one object-scoped scratch lifetime. A
-projection must copy any data it retains. A completed `RenderSummary` owns
-only root ID, descriptor identity, counts and checked closure metadata; it
-does not retain geometry, texels or identity chunks. All events are
-**provisional** until complete decode succeeds. On any source, pressure or
-projection failure, the caller drops its partial projection and publishes no
+Exact Rust names can change; the two phases, ownership and failure
+distinctions cannot. Structural preparation checks the complete typed record
+grammar and per-object numeric rules. `RenderEvent<'_>` has closed typed
+variants for root/embedded identities, **edge declarations** and locally
+checked camera/mesh/instance/material/texture/local-light objects. It does
+not resolve an edge. UUIDs are canonical binary octets and numbers are finite
+decoded f64 values. Mesh position/UV/triangle slices and decoded texture bytes
+borrow one object-scoped scratch lifetime; a projection copies any data it
+retains. `PreparedRender` temporarily owns root ID, descriptor, counts,
+compact mesh extrema, texture formats, deferred instance TRS/mesh facts and
+canonical locators, without a full geometry/texel body. F3's operation sinks
+retain IDs and edges across all declared records for the global pass. A
+`RenderClosureReceipt` is issued only after that pass and deferred closure.
+**All events and prepared facts remain provisional until the complete
+operation succeeds.** On source, pressure, projection, duplicate, edge or
+deferred-predicate failure, drop every provisional projection and publish no
 candidate/product.
 
 The parser performs the whole-record 16 MiB/one-million-node/64-depth bounded
@@ -51,28 +69,66 @@ duplicate **decoded** keys refuse. Prefer a streaming collection visitor
 with per-object scratch to an array-wide `Vec<&RawValue>` index; if the latter
 is selected for simplicity, its peak and latency must be measured and
 charged. No `serde_json::Value` tree, F4-only parser or retained F3 copy of
-the mesh/texture body is permitted. The exact triangle, radius, quaternion
-and transformed-box predicates are part of the shared decoder. F4-specific
-representation and target support are separate after source validity.
+the mesh/texture body is permitted. Root/object field order is immaterial:
+the fixture puts `fields` before root `id/type`, instances before meshes,
+triangles before UVs and base64 before texture dimensions. Borrowed raw slices
+may defer fields until prerequisites are known. For semantically invalid but
+syntactically complete objects with valid IDs, select the first structural
+error by canonical collection/UUID/field order, not callback encounter order;
+the parser may retain only the smallest error locator while visiting all
+object slices. An object with missing/invalid UUID uses its collection and
+source array ordinal as a fallback locator; reordering such malformed
+anonymous objects can change which structural error is first. Within one
+object, field checks use fixed schema field order after decoded duplicate-key
+checks. Syntax failure reports the parser's byte offset rather than a
+reorder-invariant semantic locator. Exact per-vertex radius,
+triangle and quaternion checks belong to shared structural preparation.
+Instance transformed-box checks need the referenced mesh's extrema and run
+**after** typed edges in shared closure; texture-slot transfer compatibility
+is also an edge check. F4-specific representation and target support follow
+source validity and cannot redefine it.
 
 ## Consumer handoff
 
 | Phase | Owned input and work | Output and release |
 | --- | --- | --- |
-| F3 declared validation | Authenticated provisional staged bytes for every declared render root, including unselected roots. An operation-scoped charged work account starts before inventory/capture. | The F3 projection emits identity and edge events to temporary charged sinks; checked mesh extrema remain only until instance bound closure. It retains top-level summary and checked counts. |
-| F3 global closure | One complete namespace of project, history, schema, scene, game, built-in and embedded IDs, and all actual typed edges. | Complete structural parse, then one deterministic collision pass, then typed/same-root edge resolution. Release chunks and merge scratch after closure; no `EmbeddedIdentities` validity cap. A pressure result leaves admission incomplete and same-token retryable. |
-| F4 selected cook | One accepted `PinnedSource` and its authenticated manifest. Follow the selected entry scene's `render.source` and unchanged `environment.source` edges. `copy_file_to` can write a partial prefix, so decode only after its successful full length/hash return. | One F4 projection may feed multiple immutable products from one checked decode. Exact build binding names the admitted source and selected closure; semantic product keys use relevant decoded meaning. Discard all partial work on copy/decode/cook failure. |
+| F3 declared validation | Authenticated provisional staged bytes for every declared render root, including unselected roots. An operation-scoped charged work account starts before inventory/capture. | The F3 projection emits identity and edge declarations to temporary charged sinks; compact mesh extrema/instance/texture facts remain only through closure. Retain top-level summary/counts after success. |
+| F3 global closure | One complete namespace of project, history, schema, scene, game, built-in and embedded IDs, and all actual typed edges. | Complete structural parse, one deterministic collision pass, then typed/same-root/slot-format edges, then deferred transformed bounds. Release chunks and merge scratch after closure; no `EmbeddedIdentities` validity cap. Pressure leaves admission incomplete and same-token retryable. |
+| F4 selected cook | One accepted `PinnedSource` and its authenticated manifest. Follow the selected entry scene's `render.source` and unchanged `environment.source` edges. `copy_file_to` can write a partial prefix, so decode only after its successful full length/hash return. | Run the same structural preparation and local closure on the selected root. The accepted F3 pin attests the complete tree; F4 rechecks selected local closure before feeding product projections. Exact build binding names admitted source and selected closure. Discard all partial work on failure. |
 | V2/V3/V4 | Verified F4 product bytes, W1 committed/presentation sample, selected target and recipe. | Packet and representation certificates are per-view; unchanged exact CPU mesh facts and semantic products can be reused under their keys and leases. |
+
+F3's complete-candidate order is: registry structure; all declared-record
+structure by canonical path; one global duplicate-UUID pass; all typed,
+same-root and slot-format edges by canonical source locator; then deferred
+cross-object predicates by canonical locator. A missing mesh therefore
+reports its edge error before a bound needing that mesh. Each phase reports
+its first deterministic error. Structural parsing may append to temporary
+sinks but never resolves edges based on parse order. F3's coordinator calls
+`check_render_edge` while traversing the **operation-wide sorted edge stream**,
+including non-render edges. Only after every edge succeeds does it issue an
+unforgeable `CheckedEdgeReceipt` and call `finish_render_v1` over all prepared
+render roots. F4 uses the same helpers on its one selected root, after its
+accepted pin attests global source closure. No per-root bound may run while
+another root's edge remains unchecked. `finish_render_v1` chooses the first
+deferred error by canonical locator across its complete input, independent
+of the supplied root order.
 
 The current `validate_staged_registry` checks registry UUIDs in an early
 `HashSet`, while `validate_staged_records` later sorts top-level IDs and
-resolves type-specific references. The render extension must replace those
-split collision decisions with one complete namespace pass. Preserve a
-fixed error precedence: registry structure, declared-record structure,
-global duplicate, then typed edge. Define one canonical path/object/field
-locator for top-level and embedded entries and the same first-pair order
-independent of chunk size. The exported registry-only validator's behavior
-change must be explicitly reconciled with its callers/tests.
+resolves type-specific references. Complete-candidate validation must replace
+those split decisions with the ordered phases above. Define one canonical
+path/object/field locator and total identity key `(UUID, path, kind, owner,
+locator)` for top-level and embedded entries; use stable embedded UUID/field
+locators instead of reorder-sensitive array ordinals where available. The
+first equal-UUID pair by this key is reported independent of chunk size.
+The exported registry-only validator's behavior change needs reconciliation
+with callers/tests; retaining its early duplicate refusal in the complete
+path preserves the precedence defect. The saved fixture has **16 graph edges
+including the project entry-scene reference**, whereas current
+`StagedRecords::required_edges` capacity accounting excludes that project
+entry edge. Under the existing capacity unit, this fixture would emit **15
+charged required-reference summaries**. Containment spends zero. A change
+to that unit needs a separate profile/test migration.
 
 Host `ValidationIncomplete(ResourcePressure)` is distinct from semantic
 source refusal and filesystem/WAL `SourceStoreErrorKind::SpacePressure`. The
@@ -86,15 +142,19 @@ a terminal validation rejection for `(epoch,key)`.
 
 ## Smallest implementation sequence and proof
 
-1. Add the standalone decoder/API and immutable descriptor to
-   `thrum-source`; test it on the [complete candidate
-   fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md) and
-   independent exact numeric oracles. It can exist without admitting the
-   new schema. Freeze the transformed-box exact predicate only after its
-   width, all-fallback and repeated-instance cost proof.
+1. Add the **inactive** shared structural decoder, closure code and immutable
+   descriptor to `thrum-source`; test the [complete candidate
+   fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md),
+   escaped/reordered equivalents, canonical structural-error selection for
+   valid IDs, exact numeric oracles and aborting
+   projections with in-memory sinks. The [private transformed-box
+   predicate](../../evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md)
+   is compiled but has no decoder caller yet. Keep admission dispatch disabled.
 2. Integrate scene schema 3 and the render root into F3 staged parsing.
    Keep `core.scene@1/@2` semantics and existing constant-light descriptors
-   intact. Replace split collision/edge checks, validate unselected roots,
+   intact. Add an F4 scene@3 environment projection before activation: the
+   current constant-light selected-pin cooker accepts only scene@2. Replace
+   split collision/edge checks, validate unselected roots,
    and prove deterministic path/field diagnostics under reorderings and
    three-way cross-chunk collisions.
 3. Add the host operation account and distinct pressure propagation through

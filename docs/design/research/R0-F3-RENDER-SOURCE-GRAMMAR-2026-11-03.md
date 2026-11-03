@@ -251,8 +251,11 @@ The minimal F3 extension is a `StagedScene.render_source` typed edge and a
 embedded identities and typed edges to account-charged sinks. Parse every
 declared root, including unselected ones. A global sorted/merged UUID view
 includes project/history/schema IDs, top-level records and emitted embedded
-IDs; reject duplicates and resolve type plus same-root ownership for every
-render edge. Check the existing required-edge capacity before appending;
+IDs; reject duplicates before resolving type plus same-root ownership for
+every render edge. Defer instance transformed-box checks until after its mesh
+edge resolves; the [shared decoder/closure API](R0-F3-F4-SHARED-DECODER-API-2026-11-03.md)
+fixes this global precedence and object-scratch ownership. Check the existing
+required-edge capacity before appending;
 failure to reserve identity work is a retryable incomplete validation, not a
 new source-dimension refusal. Source errors name source path/ID, field and
 target; pressure receipts name the owner, stage and charged bytes. Only the

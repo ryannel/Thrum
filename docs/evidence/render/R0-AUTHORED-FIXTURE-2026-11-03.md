@@ -46,7 +46,10 @@ assigned deterministically under `a6b9c300-0000-4000-8000-…`; 18 are embedded
 camera/mesh/instance/material/texture/local-light identities. The independent
 edge list contains 16 required typed references including the project's entry
 scene. Project file membership and embedded containment are not additional
-required-reference edges. The external `declared_tree.json` is a prospective
+required-reference edges. The current `StagedRecords::required_edges` source
+capacity excludes the project entry-scene edge; adding scene@3/render@1 under
+that existing unit would charge 15 summaries for this fixture while still
+checking all 16 graph edges. The external `declared_tree.json` is a prospective
 capture caller's complete list, not a Foundation TreeManifest.
 
 ## Authored content and mask expectations
