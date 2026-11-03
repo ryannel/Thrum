@@ -153,9 +153,12 @@ before relying on the record, including after an interrupted preparation.
 Measure lock wait, seal walk, physical allocation and build overlap separately
 before claiming a performance benefit.
 The [first held-root candidate](../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
-proves this lifecycle only for one caller-selected APFS clone and a small
-fixture. It has not held the complete reviewed selection through a real Cargo
-job, and its cold full-Xcode seal cost is not yet known.
+proves this lifecycle one caller-selected APFS clone at a time, including
+local full Rust, Xcode linker and SDK cold preparations. It has not held the
+complete reviewed selection through a real Cargo job. The one-host cold Xcode
+pair took 33.45 seconds to clone, seal, fsync and rehash, separate from 13.18
+seconds to inventory the installed sources. This belongs to release
+preparation, not a game edit or world tick.
 
 ## macOS runtime boundary
 
