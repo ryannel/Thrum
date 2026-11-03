@@ -36,6 +36,26 @@ At equivalent accepted images **and motion/behaviour**, prefer lower complete CP
 numbers are supporting context, not target predictions. If close3D quality cannot fit a tier, report an explicit reduced
 profile or failed target; do not rename an inferior image an equal-quality optimization.
 
+## Source status after the front-normal proof
+
+3 November2026: [native source/motion proof](../../evidence/cloud-front-growth-2026-11-03/README.md) rejects
+profiles2/3/4 as default morphology generators. The following source recipes and correction sections retain the
+attempt and its verified operators; they are not an accepted visual foundation. Normal-front correctness and
+work-mask equivalence passed, but the result remains a depleted, periodic stack of soft umbrellas and shutdown fade.
+Do not extend this chain with more noise, resolution or rate patches. Keep the shared renderer and reference tools.
+
+The next source challenger uses **authored3D anatomy compiled to the same timed optical snapshots**: broad connected
+body, unequal towers/nested shoulders, and downwind ice. First inspect an actual frozen formation from several angles.
+Native recipe/cooked static masters are allowed without Houdini; a static ingredient is not a complete cached lifecycle.
+The previous failed sphere-hierarchy cook is a negative comparator, not a selected generator. Research supports
+production modeling/up-rez and implicit support erosion; it does not prove our exact arbitrary-weather runtime lifecycle.
+
+Before dependent lifecycle construction, specify the chosen field's local growth/erosion, stable cell/part lineage,
+wind/material mapping, surviving fragments, tower-fed ice reservoir, overlap/phase partition, correspondence invalidation,
+recovery and dirty-work/cost bounds. Same-IDCu→Cb and changing fronts remain required. This replacement design/content
+selection is **unfinished**; no new default source or production-quality claim is made by naming it. The single
+[build queue](CLOUD-MIGRATION.md#p1b--representative-live-source-regimes-before-layoutlibrary-freeze) owns the next proof.
+
 ## Native content and live source path
 
 1. Version plain recipe/control data, generator source and seeds in the package. Generate reusable Perlin–Worley/
@@ -296,7 +316,7 @@ forcing can leave gaps below one181m cell. Measure actual sampled low-keep inter
 
 Multiply frontal growth by radial taper.65–1.25R and lifetime, plus a bounded prepared3D noise lookup in that head's
 moving/growing frame (feature scale must be resolvable by native q). `vg=18sqrt(lift)*moist*front*noise(.25..1)` with
-world fade8100–9100m. Existing occupied-q condensation is localized to the SAME front, limited by actual positive
+world fade8100–9100m. The actual fixed-grid cook uses .35local noise scale with an adaptive LOD>=2 from the187.5/181.25/187.5m pitches; another grid must supply its own footprint. Existing occupied-q condensation is localized to the SAME front, limited by actual positive
 composed vertical velocity and final velocity cap. It no longer replenishes the whole shaft. The affine protection
 narrows only radially to.5R; its vertical H and.65plateau threshold remain. Core data observers must use those same
 axes. Surface motion outside this narrow core and the continuous stem can now develop shoulders and depleted wakes.
@@ -324,6 +344,22 @@ operator, not exact phase ancestry or accurate normals. Count source masks, prep
 head loop in the full-resolution pass. No new volume; reuse reverse scratch+copy. Mixing may be disabled diagnostically
 without disabling required normal motion. Prospective support must include positive neighbours; the current8voxel
 activation guard exceeds one normal-motion halo. Future sparse/page admission still needs its own proof.
+
+Profile4 work selection must use exact finite source support, not assume small Gaussian tails round to zero.
+Its base Gaussian sigma280 centred1320 is multiplied by `1-smoothstep(840,1120,abs(y-1320))` and the existing
+1050–1200 lower gate: source is exactly zero outside1050..2440m. XZ support encloses each active22s pulse's
+1.25*2radius kernel at the moving root+2offset. Old positive q OR prospective support, dilated by one8voxel brick,
+contains advection and normal motion. Current maximum full velocity displacement is below one native cell/tick;
+two native-cell carrier gradient probes plus trilinear donors (up to four native cells), and all source stencils fit this guard. Other Cb profiles retain dense work.
+
+For this profile, empty air outside that conservative guard receives a fresh wind-world material chart; updating
+all-air history there is unnecessary under this explicitly selected convention. Occupied/near-cloud material never
+receives that reset. Build support even when the optional q work-mask comparator is disabled: carrier-domain policy
+must remain identical between comparisons. This saves seven composed-flow queries per inactive half-grid cell,
+beyond three full-grid q flow evaluations. It is not equivalence to the previous arbitrary-age empty-air chart.
+Charge mask preparation and validate whole-field q equality and cloud material continuity; retain the optional20MiB
+velocity cache for the later full-sky comparison. This addresses a real pilot floor: previous Cb support was all ones,
+so its empty-work checkbox did not skip Cb air. No timing or Thrum-budget pass follows from that discovery.
 
 Numerical gates: vacuum/constant/ramp, phase capacity/positive bounds and age-zero birth; two-pitch axial/diagonal
 ball-front motion and finite zero-width handling. Experience gates: native radial/azimuthal shoulder contours and

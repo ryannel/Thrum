@@ -1,0 +1,66 @@
+--- a/src/scene.js
++++ b/src/scene.js
+@@ -1,3 +1,4 @@
++import { sourceProfile } from "./profile.js";
+ import { FeedWitness } from "./witness.js";
+ import { observeOpticalTopology } from "./optical-topology.js";
+ import { observeMaterial } from "./material-observer.js";
+@@ -382,7 +383,7 @@
+       [
+         snapshot.frontX,
+         snapshot.storm,
+-        stage === null ? (ui.viewSteps ?? 96) : ui.thermals ? (ui.materialCore ? (ui.connectedFeed && this.family===1 ? (ui.frontMorph ? 4 : 3) : 2) : 1) : 0,
++        stage === null ? (ui.viewSteps ?? 96) : sourceProfile(ui,this.family),
+         stage === null ? (ui.main ? 1 : 0) : (ui.neckMix ? 1 : 0),
+       ],
+       28,
+@@ -518,7 +519,7 @@
+     const ordinaryData = this.driver.reset(time, state, !clear, this.family===1 && ui.thermals && ui.materialCore && ui.connectedFeed);
+     this.cirrusData = this.family === 4 ? cirrusControls(71, state.wind) : null;
+     const data = this.cirrusData ?? ordinaryData;
+-    this.thermalDriver.reset(time, state, this.driver.pulses, Boolean(ui.materialCore),this.family===1 && ui.thermals && ui.materialCore && ui.connectedFeed,Boolean(ui.frontMorph));
++    this.thermalDriver.reset(time, state, this.driver.pulses, Boolean(ui.materialCore),sourceProfile(ui,this.family)>=3,sourceProfile(ui,this.family)===4);
+     const emit = this.emitters[this.frame % 3][0];
+     this.gpu.device.queue.writeBuffer(emit, 0, data);
+     if (!this.sourcePipeline) return;
+@@ -624,7 +625,7 @@
+         for (let j = 0; j < 4; j++) this.thermalBindings.delete(slot[off + j]);
+       }
+       this.write(slot[off], snapshot, ui, 1, nextTime);
+-      if (ui.emptyWork !== false || (this.family === 1 && ui.thermals && ui.materialCore && ui.connectedFeed && ui.frontMorph)) {
++      if (ui.emptyWork !== false || sourceProfile(ui,this.family)===4) {
+         const supportGroup = this.cachedGroup(
+           "support/" + frameSlot + "/" + n + "/" + this.current,
+           this.supportPipeline,
+@@ -1010,7 +1011,7 @@
+     const nativeAnalysisCpuMs=performance.now()-started;
+     return {
+       ...result,connectivityThresholds,
+-      frontPreparation:this.thermalDriver.frontDiagnostics??null,
++      frontPreparation:this.thermalDriver.frontMorph?(this.thermalDriver.frontDiagnostics??null):null,
+       opticalTopology:feedRoot?await observeOpticalTopology(this,ui,feedRoot,queryWeather):null,
+       sections,
+       analysisCpuMs:nativeAnalysisCpuMs,
+--- /dev/null
++++ b/src/profile.js
+@@ -0,0 +1,7 @@
++// One profile decision for GPU parameters, CPU preparation and observers.
++export function sourceProfile(ui, family) {
++  if (!ui.thermals) return 0;
++  if (!ui.materialCore) return 1;
++  if (family !== 1 || !ui.connectedFeed) return 2;
++  return ui.frontMorph ? 4 : 3;
++}
+--- /dev/null
++++ b/tests/profile.test.mjs
+@@ -0,0 +1,10 @@
++import assert from 'node:assert/strict';
++import { sourceProfile } from '../src/profile.js';
++const all={thermals:true,materialCore:true,connectedFeed:true,frontMorph:true};
++assert.equal(sourceProfile(all,1),4);
++assert.equal(sourceProfile({...all,connectedFeed:false},1),2,'Inactive feed cannot narrow legacy core diagnostics');
++assert.equal(sourceProfile({...all,frontMorph:false},1),3);
++assert.equal(sourceProfile({...all,materialCore:false},1),1);
++assert.equal(sourceProfile({...all,thermals:false},1),0);
++for(const family of [0,2,3,4])assert.equal(sourceProfile(all,family),2,'Cb front preparation cannot leak to another family');
++console.log('CPU/GPU source-profile prerequisites and legacy comparison cases passed');

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { analyzeDensity } from '../src/morphology.js';
+const dims=[12,12,12],bounds=[[-3000,500,-3000],[3000,6500,3000]],q=new Float32Array(12**3);
+const at=(x,y,z)=>(z*12+y)*12+x;
+q[at(5,1,5)]=.4;for(let y=2;y<7;y++)q[at(5,y,5)]=.1;q[at(5,7,5)]=.4;
+q[at(10,1,10)]=.9;
+const h=new Float32Array([-250,4250,-250,1200,24,1200,1,28,1,1,0,1,28,.001,.003,1]),scratch={};
+const options={feedRoot:[0,1320,0],threshold:.08};
+const connected=analyzeDensity(q,dims,bounds,h,scratch,options);
+assert.equal(connected.heads[0].centerConnectedToFeed,true,'Actual thin neck connects head to current root');
+assert.ok(connected.heads[0].plateau.nativeCells>connected.heads[0].plateau.occupiedCells,'Control volume is not counted as occupied material');
+assert.ok(connected.heads[0].plateau.meanQ>0&&connected.heads[0].plateau.meanQ<.4);
+assert.equal(connected.largest.find(c=>c.voxels===1).touchesFeed,false,'Unrelated low material is not this root');
+const severed=analyzeDensity(q,dims,bounds,h,scratch,{...options,threshold:.2});
+assert.equal(severed.heads[0].centerConnectedToFeed,false,'Denser topology rejects the same weak neck');
+assert.equal(connected.heads[0].centerConnectedToFeed,true,'Scratch reuse cannot mutate a prior receipt');
+console.log('Native root-specific connectivity, threshold separation and real plateau occupancy passed');
