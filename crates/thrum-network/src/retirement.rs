@@ -73,6 +73,11 @@ impl AuthorityRetirement {
     pub fn admitted_higher_count(&self) -> usize {
         self.higher.len()
     }
+    /// Whether this exact result was already admitted by the client. A sent
+    /// owner can use this with its pending journal to refuse duplicate work.
+    pub fn is_admitted(&self, id: u64) -> bool {
+        id != 0 && (id <= self.retired_through || self.higher.binary_search(&id).is_ok())
+    }
     /// Whether one exact ACK receipt is still awaiting authority disposition.
     pub fn receipt_occupied(&self) -> bool {
         self.receipt_occupied

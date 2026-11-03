@@ -2237,6 +2237,13 @@
         "scope": "Server-side helper only. A future sent ledger must authenticate exact submitted-frame ACKs before stage; the host callback must verify current Authority match/peer/epoch before calling the epoch-less core API. Physical frame/journal reuse, transport and whole-host integration remain open.",
         "evidence": "../evidence/integration/N1-RESULT-RETIREMENT-2026-11-03.md",
         "sent_ledger_candidate": "research/N1-SENT-LEDGER-CONSTRUCTION-2026-11-03.md"
+      },
+      "ordinary_sent_frame_ledger": {
+        "implementation": "registered thrum-network 160 KiB split-frame circular ordinary arena, 112 sequence entries, inline 256-result and 128-event pending identity journals, exact admission ACK receipt integration and known-offset write cursor",
+        "functional_validation": "seven focused tests cover exact envelope bytes, result gap with retired frame/journal entry, physical frame split without uncharged wrap padding, frame/entry/journal capacity refusal, callback error retry, callback unwind quarantine, wrong identity, duplicate pending identity and sequence exhaustion; independent read-only review found no remaining defect",
+        "platform_performance": "arena and metadata are pre-reserved; no allocation-call, CPU-tail, RSS or full four-peer callback measurement",
+        "scope": "Ordinary StateGroup-only no-socket slice after external game-schema and match-lifetime event-identity certification. The ledger privately owns the result retirement frontier, preventing helper substitution on ACK retry. ACK identity is supplied by a future authenticated session. No cross-kind sequence ledger, baseline/chunk reserve, supersession, historical event dedup, W1 producer or transport adapter. Result journal retirement is physical; reuse of that exact result slot during a pending lower gap is not claimed.",
+        "evidence": "../evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md"
       }
     }
   ],
