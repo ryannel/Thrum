@@ -16,21 +16,21 @@ const PEER: PeerId = PeerId(1);
 #[derive(Clone)]
 struct Unit {
     partition: usize,
-    wire_id: u32,
+    envelope_sequence: u64,
     complete_state: bool,
     group: Group,
 }
 
 struct CadenceModel {
     pending: Vec<Unit>,
-    next_wire_id: u32,
+    next_envelope_sequence: u64,
 }
 
 impl CadenceModel {
     fn new() -> Self {
         Self {
             pending: Vec::new(),
-            next_wire_id: 1,
+            next_envelope_sequence: 1,
         }
     }
 
@@ -60,7 +60,7 @@ impl CadenceModel {
         }
         self.pending.push(Unit {
             partition,
-            wire_id: 0,
+            envelope_sequence: 0,
             complete_state,
             group,
         });
@@ -106,8 +106,10 @@ impl CadenceModel {
         let mut released = std::mem::take(&mut self.pending);
         released.sort_by_key(|unit| (unit.group.commit_tick, unit.partition));
         for unit in &mut released {
-            unit.wire_id = self.next_wire_id;
-            self.next_wire_id += 1;
+            // The no-socket model treats release as final ordered submission.
+            // groupId is a separate stable partition identity in N1.
+            unit.envelope_sequence = self.next_envelope_sequence;
+            self.next_envelope_sequence += 1;
         }
         released
     }
@@ -133,7 +135,7 @@ fn change_id(change: &EntityChange<u64>) -> StableId {
 fn group(tick: u64, changes: Vec<EntityChange<u64>>, watermark: u64) -> Group {
     Group {
         authority: AUTHORITY,
-        group_id: 0, // The model assigns wire IDs only when units are released.
+        group_id: 0, // Each I1 reference lane receives its own sequence on admission.
         commit_tick: tick,
         event_cursor: 0,
         changes,
@@ -365,7 +367,10 @@ fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
                 )
             }));
             assert_eq!(
-                batch.iter().map(|unit| unit.wire_id).collect::<Vec<_>>(),
+                batch
+                    .iter()
+                    .map(|unit| unit.envelope_sequence)
+                    .collect::<Vec<_>>(),
                 vec![1, 2, 3, 4]
             );
             assert_eq!(
@@ -380,7 +385,7 @@ fn mandatory_tick_units_survive_three_tick_release_and_same_tick_partitions() {
             assert_eq!(batch.iter().filter(|unit| unit.partition == 0).count(), 3);
             assert_eq!(controller_replica.get(CONTROLLER), Some(&3));
             assert_eq!(static_replica.get(STATIC), Some(&0));
-            assert_eq!(batch.last().unwrap().wire_id, 8);
+            assert_eq!(batch.last().unwrap().envelope_sequence, 8);
         }
     }
 }

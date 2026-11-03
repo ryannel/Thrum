@@ -1044,7 +1044,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "919110da84d752df13e651b59eb324e9c39be33f1e1bfac60d260c8c8b4d5a78"
+        "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Action/context schemas and exact touch/controller/IME adapters."
@@ -1254,7 +1254,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "919110da84d752df13e651b59eb324e9c39be33f1e1bfac60d260c8c8b4d5a78"
+        "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Event/action semantics, rule graph/scripting choice, sequence interruption and game policies.",
@@ -2093,14 +2093,14 @@
       ],
       "next_design_package": null,
       "next_construction_package": "I2n",
-      "remaining_detailed_design": "Initial SR01-SR03/SR07 mechanisms specify per-action outcomes, atomic lifecycle/state, compatibility and reconnect/suspend. The 60-to-20 Hz mandatory outbound cadence, revised simultaneous R4 burst and same-tick multi-group replica admission are provisional and need an executable oracle before N1 runtime promotion. New genres, streamed servers, richer prediction and online services require separate recipes.",
+      "remaining_detailed_design": "Initial SR01-SR03/SR07 mechanisms specify per-action outcomes, atomic lifecycle/state, compatibility and reconnect/suspend. Stable partition identity, envelope sequence, baseline supersession and sent-frame ledger bounds are selected; 60-to-20 Hz mandatory cadence, revised simultaneous R4 burst and same-tick multi-group replica admission still need an executable production oracle before runtime promotion. New genres, streamed servers, richer prediction and online services require separate recipes.",
       "qualification": "I1 in-memory authority/replica fixture passed locally. I2n still requires native/browser real-transport join/content/baseline/interest/reconnect/overload and whole-game frame/state-age/resource evidence.",
       "existing_candidate": {
         "status": "not_inventoried"
       },
       "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
       "current_design_sha256": "8f67913eaaa1090756ffe84bdf75d68cdf00a4e1cad11aa23af8b6b42b52942d",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch and same-tick multi-group consumer gap is now explicit; earlier R4 byte arithmetic covers ordinary cadence only. The N1 adapter remains unbuilt. Prior reviewed hashes retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch and same-tick multi-group consumer gap is explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId now names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. The N1 adapter remains unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -2109,7 +2109,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "919110da84d752df13e651b59eb324e9c39be33f1e1bfac60d260c8c8b4d5a78"
+        "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
       },
       "initial_specification_stage": "specified_with_outbound_construction_gap",
       "prior_remaining_detailed_design": "The initial finite four-player WSS protocol still needs exact outbound mandatory burst and multi-group replica admission. Datagram/streamed-server/full-physics prediction and online-service extensions require separate specifications before their claims.",
@@ -2130,7 +2130,7 @@
         "implementation": "private selected-inline cadence model only",
         "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two local model tests preserve three-tick mandatory chronology and reject partial-update coalescing, but the multi-group production oracle is not run",
         "platform_performance": "ordinary 20 Hz R4 byte model is a lower-bound scenario; mandatory burst and four-peer CPU/RSS unmeasured",
-        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. The model supplies its own completeness marker and separate replica reference lanes; schema-checked completeness, one confirmed multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
+        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. Stable baseline partition identity, per-partition interest generation, envelope submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are specified but unimplemented. The model supplies its own completeness marker and separate replica reference lanes; schema-checked completeness, one confirmed multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
         "model_oracle_evidence": "../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md"
       }
     }
@@ -2897,7 +2897,7 @@
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
-      "NETWORK-SPEC.md": "919110da84d752df13e651b59eb324e9c39be33f1e1bfac60d260c8c8b4d5a78"
+      "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b"
     },
     "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
     "closed_architectural_findings": [
@@ -3283,7 +3283,7 @@
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
       "MATURITY.md": "9ed4aff909e59d256c8cef5f1eee7a056e84140a43a4ff1eda66f1d018abbdbc",
-      "NETWORK-SPEC.md": "919110da84d752df13e651b59eb324e9c39be33f1e1bfac60d260c8c8b4d5a78",
+      "NETWORK-SPEC.md": "d2f11144dc76008fe1e73f915cbe6b3606e58609255c2d078177771b95cdf34b",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",

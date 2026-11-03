@@ -71,8 +71,8 @@ protocol. Entity references are u64 wire IDs scoped by MatchId. Stable type/fiel
 the exact schema manifest, never Rust TypeId. Integers carry declared units; float fields are finite IEEE f32/f64 only
 where explicitly declared. Initial messages do not use compression, avoiding decompression expansion and hidden CPU.
 
-Kinds 1–12 are Hello, Welcome, Reject, ContentReady, BaselineBegin, BaselineChunk, BaselineEnd, BaselineAck,
-InputBatch, StateGroup, Clock and Close. Reserved kinds fail this protocol version. Hello's MatchId, epoch and sequence
+Kinds 1–13 are Hello, Welcome, Reject, ContentReady, BaselineBegin, BaselineChunk, BaselineEnd, BaselineAck,
+InputBatch, StateGroup, Clock, Close and BaselineChunkAck. Reserved kinds fail this protocol version. Hello's MatchId, epoch and sequence
 are zero. It declares `role` (`player` or `spectator`), `protocolHash`,
 `semanticManifestHash`, exact required consumer capability IDs, invitation token and client build provenance.
 Welcome assigns MatchId, a nonzero connection epoch allocated monotonically and uniquely **match-wide**, player
@@ -184,6 +184,23 @@ and 64 events. Each lifecycle record is `wireId:u64, visibilityGeneration:u32, s
 Per-game event payloads and the exact entity schema are declared in the protocol manifest. Only the controlled-actor
 group carries a nonzero resolvedThrough and its matching complete controller state; other groups use zero.
 
+`groupId` is a **stable dependency-closed partition identity** declared by the
+admitted baseline, not a publication counter. The pair
+`(groupId, interestGeneration)` identifies one partition incarnation;
+`interestGeneration` is **per partition**, distinct from each entity's
+visibility generation. A partition's `commitTick` strictly increases across
+its admitted StateGroups, including live interest-generation transitions;
+different partitions may publish the same
+tick or have different explicitly tolerated sample ages. One partition emits
+at most one admitted group for a tick. The 64-byte envelope's application
+message sequence, not `groupId`, orders actual publications and identifies
+them for admission acknowledgement. N1 assigns that sequence only after
+coalescing unsent replaceable state and choosing final send order, so a
+coalesced candidate leaves no sequence hole. Once submitted, that exact
+framed message/sequence remains in the bounded send/ACK ledger until
+admission ACK or explicit connection teardown; an uncertain write is not
+renumbered as a new publication.
+
 One group atomically admits lifecycle changes **with** required first or dependent state at the same committed tick:
 spawn/re-entry plus pose, ownership and required attachments; detach/despawn plus dependent relationship changes.
 The client validates all IDs, generations, schemas, dependencies, event origins and bounded counts, then publishes
@@ -208,7 +225,16 @@ then admit once at a replica barrier and acknowledge. Its staged image may excee
 published atomically only after all chunks validate. The baseline includes complete lifecycle/state groups for the
 interest set, the controlled actor's committed state, its same-epoch contiguous watermark and **all outstanding
 individually resolved result IDs represented in that state**, including IDs above a pending gap, plus the admitted
-event cursor.
+event cursor. Its bounded image also binds the unique `groupId` partition
+descriptors, each partition's `interestGeneration`, dependency-closed entity
+assignment and capture tick; all initial partition samples use the baseline
+capture tick. The mapping stays fixed until an atomic replacement baseline.
+A live leave/re-entry may change membership within its assigned partition:
+that partition's interest generation increments without wrapping, and its
+transition group carries the ordered lifecycle and complete current
+partition state under the new generation. A repartition requires a
+replacement baseline. Reused group IDs in a same-epoch replacement baseline
+advance their interest generation; exhaustion requires a new connection.
 The server retains any still-pending future input in the same epoch; the client keeps its matching unresolved local
 intent for later reconciliation. During sync retain at most two seconds/256 KiB of subsequent publications: coalesce replaceable full
 state per group while preserving ordered lifecycle, outcomes and mandatory events. If that closure cannot be
@@ -224,15 +250,58 @@ chunkCount:u16, reserved:u16, protocolHash:32 bytes, semanticHash:32 bytes, payl
 is `baselineId:u64, resolvedThrough:u64, eventCursor:u64` (24 bytes); the baseline ID binds its exact included
 result-ID set, including resolved IDs above the contiguous watermark.
 
-The first profile sends full groups, with no delta baseline or group-history machinery. Header acknowledgements for
-BaselineChunk confirm validated staging only; BaselineAck names its baseline ID, resolved watermark and event cursor
+The first profile sends full groups, with no delta baseline or group-history machinery. A
+`BaselineChunkAck` payload is `baselineId:u64, chunkIndex:u32, reserved:u32=0` (16 bytes).
+It confirms one exact validated chunk was staged, releases that chunk's
+retained frame bytes and one of at most two chunk credits, but keeps a small
+sequence tombstone and releases no result/event journal record. It is
+independent of the cumulative header-ACK prefix, which may be blocked by a
+rejected earlier StateGroup. The server retains the immutable baseline image
+for retry until final BaselineAck or close. A duplicate/stale/wrong-index
+chunk ACK consumes no additional credit. Header acknowledgements may later
+include staged chunk sequences as dispositions but are not needed to fund
+chunk progress. BaselineAck names its baseline ID, resolved watermark and event cursor
 and confirms atomic replica admission. The baseline ID identifies its exact included result-ID set, including any
 resolved IDs above the watermark; BaselineAck releases exactly those results/events admitted by that baseline;
 chunk/header acknowledgement alone never releases them. A header acknowledgement for StateGroup confirms committed
 group admission, including lifecycle, results and events, not mere receipt. An invalid group triggers Reject/resync
 without acknowledging that group as admitted. Unsent
 replaceable **state-only** groups may coalesce before entering transport; lifecycle, results and events remain reliable
-until acknowledged or included in a new complete baseline. Bytes already sent on WebSocket cannot be withdrawn.
+until acknowledged or included in a new complete baseline. Coalescing is
+limited to the same partition incarnation and cannot cross a mandatory
+group. Bytes already sent on WebSocket cannot be withdrawn.
+The per-peer ACK ledger maps each submitted application sequence to the
+exact admitted StateGroup and its result/event identities. A cumulative
+admission header ACK retires only the covered ledger entries and their
+mandatory records; it cannot release unrelated records by group ID, tick or
+watermark alone. BaselineAck retires exactly its baseline-bound included set,
+idempotently with any earlier group ACK. Same-epoch baseline replacement
+does not reset envelope sequencing or fabricate ACK for abandoned output.
+A StateGroup Reject names the offending server application sequence and a
+bounded reason code; it is a refusal, not admission ACK. The server verifies
+that sequence against its outstanding ledger, stops ordinary submissions and
+captures a replacement baseline after earlier submitted bytes in the ordered
+stream. The baseline image carries a bounded `supersedesThrough` application
+sequence (zero for initial sync); its ID binds the Begin sequence and the
+precise earlier submitted interval. Only StateGroup frames in that interval
+are superseded; other message kinds still require their own disposition.
+Only after a valid BaselineAck confirms
+atomic replacement may N1 retire exact frame bytes in that interval as
+**superseded**, distinct from admitted. It releases result/event journal
+records only if that baseline includes their exact IDs or its declared
+transient-event cursor explicitly expires them. Expiration never removes an
+input result or an immediate event required by an outstanding result
+included in the baseline; other mandatory records
+remain retained or force close if they cannot be represented. The client
+may advance its contiguous application disposition through that interval
+only after admitting the baseline. A failed/expired replacement closes the
+connection without treating rejected frames as admitted. Same-epoch sync
+submits no new StateGroups after BaselineBegin until BaselineAck; new
+authority output stays in bounded N1-owned sync closure with no envelope
+sequence assigned yet. The one-second sent-frame age is a pressure trigger;
+once replacement starts, old frames remain charged only within the selected
+two-second sync window, after which the peer closes unless a valid
+BaselineAck has retired them.
 The single ordered stream and atomic group prevent a spawn from preceding required first state. Control has queue
 priority before submission, without a claim it can overtake already transmitted state.
 
@@ -397,6 +466,7 @@ or resync. These are acceptance envelopes to measure end-to-end, not an assertio
 | Application receive queue | 64 messages / 256 KiB; reject/disconnect overflow, never allocate an unbounded decoded queue |
 | Outbound unsent state | 128 KiB; coalesce superseded groups; oldest pending age >250 ms triggers full resync |
 | Outbound reliable control | 64 KiB; failure to reserve closes peer, never silently drops lifecycle |
+| Sent, unacknowledged application frames | 256 KiB exact retained frames / 128 entries / 1 s oldest age, with ordinary submissions limited to 160 KiB / 112 entries and 96 KiB / 16 entries reserved for replacement-baseline framing and chunk credits; stop submission and resynchronize or close |
 | Transport send buffer | Stop submitting at 128 KiB buffered; above 256 KiB or 1 s stalled, close/resync |
 | State bandwidth | 256 KiB/s server→peer, 32 KiB/s peer→server; token bucket with one quarter-second burst |
 | Server serialization/admission | 0.5 ms/tick and 16 MiB aggregate N1 working-memory cap for four peers, charged inside the whole-engine budget |
@@ -407,8 +477,14 @@ recover within the F1 bounded backlog, end the session with an overload reason; 
 
 Reserve up to 2 MiB of engine-controlled state/queues per admitted peer plus shared serialization/projection capacity
 and transport/TLS headroom inside the 16 MiB aggregate cap. This includes 256 KiB current baseline staging,
-256 KiB subsequent-sync closure, 256 KiB receive, 128 KiB unsent state, 64 KiB control, 256 KiB transport-send
-capacity, 8 KiB results, 5 KiB events and bounded dedup/parser metadata. There is no 512 KiB delta-base reserve.
+256 KiB subsequent-sync closure, 256 KiB receive, 128 KiB unsent state, 64 KiB control,
+256 KiB exact sent-frame/ACK ledger, 256 KiB transport-send capacity, 8 KiB results,
+5 KiB events and bounded dedup/parser metadata. The 128 ledger entries' sequence/identity
+metadata and simultaneous frame bytes count inside the per-peer reserve, alongside the
+mandatory journals and baseline staging; no frame may be counted only as a drained
+transport buffer. Baseline chunks use at most two outstanding 32 KiB chunk
+credits and independent `BaselineChunkAck` staging dispositions so a full 256 KiB
+baseline need not occupy the sent-frame ledger at once. There is no 512 KiB delta-base reserve.
 The remaining per-peer reserve and shared aggregate headroom must cover actual codec/TLS allocations, never an
 uncharged library default.
 Listen hosts charge local authority and client roles separately. Refuse a connection/recipe if reservation cannot fit.
