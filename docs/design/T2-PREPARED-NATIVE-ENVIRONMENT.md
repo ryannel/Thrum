@@ -203,6 +203,13 @@ A later [real materialized-lockfile drift check](../evidence/i2a/T2-HELD-CACHE-R
 refused reuse after B's compiler job and receipt audit when one byte changed
 in its owned scratch lockfile. The guard kept its held selection and closed
 normally; this does not test writes during a running compiler.
+The [four-root guard candidate](../evidence/i2a/T2-FOUR-ROOT-NATIVE-GUARD-2026-11-03.md)
+now cold-verifies and holds cache, Rust, linker and SDK together across A/B
+compilation and output checks. The outer qualifier stopped duplicating those
+tool-root cold opens and still re-inventories all four before cleanup. The
+guard starts after cache metadata preparation; installed Xcode support and
+host-runtime bytes, reviewed origin and full compiler read closure remain
+outside this selection.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
