@@ -2269,10 +2269,11 @@
       "w1_to_n1_capture_fixture": {
         "implementation": "test-only complete-partition projection from real W1 HostPublication snapshots into four peer-bound unsent queues and ordinary sent ledgers; production thrum-network retains no thrum-core dependency",
         "functional_validation": "one no-socket fixture changes W1 on nine consecutive 60 Hz ticks, proves the four controlled actors inhabit their result partitions, advances with peer 4 holding unacknowledged frames beyond eight snapshot pages, refuses wrong authority and stale epoch without retiring its host result, then retires exact ledger and host histories on valid ACK; full repository check passes",
-        "platform_performance": "seven Apple M3 Max fresh release-process samples: median 49767.4 ns per three-tick idle state-only window over 2000 measured windows per process, including W1 callbacks, complete 128-cell snapshot projection to 48 R4 captures, queue coalescing, 16 framed writes, a full 30208-byte checksum and ledger ACK processing. Four queues plus ledgers reserve 1169376 Rust bytes. No measured rule changes, authority result retirement, mandatory bursts, allocator-call count, RSS, transport or whole-game/device tails",
+        "platform_performance": "seven Apple M3 Max fresh release-process samples: median 49903.8 ns per three-tick idle state-only window and 69288.0 ns for four actual inputs/results on each of three ticks, over 2000 measured windows per process. Both include W1 callbacks, complete 128-cell projection to 48 R4 captures, queue coalescing, exact framed writes and full byte checksum; the result probe also invokes authority result retirement. Four queues plus ledgers reserve 1169376 Rust bytes. No complete lifecycle/event burst, allocator-call count, RSS, transport or whole-game/device tails",
         "scope": "Selected local fixture only. The W1-to-R4 mapping, complete-state game validator and four-peer schedule are hardcoded in an integration test, not reusable production admission. No authenticated wire receipt, client replica, event/lifecycle closure, unified baseline session or socket path.",
         "evidence": "../evidence/integration/N1-W1-CAPTURE-2026-11-03.md",
-        "isolated_cost_samples": "../evidence/integration/N1-W1-CAPTURE-COST-SAMPLES-2026-11-03.csv"
+        "isolated_cost_samples": "../evidence/integration/N1-W1-CAPTURE-COST-SAMPLES-2026-11-03.csv",
+        "result_traffic_cost_samples": "../evidence/integration/N1-W1-RESULT-BURST-COST-SAMPLES-2026-11-03.csv"
       },
       "baseline_physical_staging_oracle": {
         "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",
