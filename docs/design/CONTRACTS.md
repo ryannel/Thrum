@@ -50,6 +50,12 @@ an explicit stop/load boundary. The barrier invariant does not require live whol
 code. A later live streaming recipe must specify scoped staging, consumer commit and peak admission before selection.
 Selected default timestep is 1/60 s, configurable for game/solver stability requirements; substeps are internal to an
 explicit solver schedule and do not create another world clock. Rendering and replication cadences are separate.
+The resolved game recipe must bind that timestep to compatible P3/E1 provider
+integration and N1 semantic timing before a run starts. A clock accepting a
+different rate alone does not authorize a solver or wire recipe written for
+1/60 s; refuse the combination or select a separately derived and qualified
+provider/protocol. Name world ticks, world seconds, callback time and transport
+deadlines separately in limits and diagnostics.
 Authored day/weather phases may have different rates, but each is a versioned deterministic map from the same F1
 world time, sampled at the committed tick. Save/replay preserves phase parameters and discontinuities. A changed
 source phase does not change the physical `dt`; any process-rate scaling and conversion of output fluxes to world
@@ -177,8 +183,14 @@ Initial bounded worlds and stop/load transitions use FOUNDATION-SPEC's simpler c
 
 Budget peak residency, not just steady state:
 M_peak = M_live + M_pending_decode + M_upload_staging + M_replacement_overlap + M_transient + M_reserve.
-Admission control defers new work before this bound exceeds the selected budget. Do not double count aliased or
-shared/unified allocations; retain separate measured physical, allocator-estimated and logical byte accounts.
+For a named bounded resource profile, admission defers new work before its
+logical owned-byte bound is exceeded. Other profiles use finite queues and
+observed pressure without claiming a universal process-RSS cap. Reconcile
+simultaneous claims across owners before either spends a shared staging or
+reserve allowance. Do not double count aliased or shared/unified allocations;
+retain separate measured physical, allocator-estimated and logical byte
+accounts. V1 includes concurrent views, frames in flight and fence-held old/new
+resources in the GPU lifetime account; a per-pass subtotal is not the peak.
 Retire a resource only after all CPU leases and relevant GPU submissions have completed. Eviction removes derived
 products, not durable identity or saved state. Disk/browser cache entries are optional accelerators, not authority.
 CPU snapshot/provider leases and GPU packet/fence leases are separate references in this accounting. Cancellation
@@ -468,6 +480,49 @@ A frame is a dependency schedule, not the sum of every parallel job. Its lower b
 path and total work divided by available parallel capacity. Shared bandwidth, synchronization and queues can increase
 actual cost. Authors supply cost variables and worst-case work caps; coordinator reconciles simultaneous consumers.
 Quality allocation has hysteresis and bounded transition cost; it never oscillates providers every frame.
+
+Before selecting or enforcing a number, identify its **kind, owner, unit,
+timebase, scope and consequence**. Semantic/publication invariants and
+encoding/ABI rules preserve exact meaning and compatible readers. A numerical
+model's validity/error envelope needs its provider's derivation and
+outside-regime outcome. A supported capacity is a finite promise of one named
+implementation profile, not automatically a source-format or SDK-wide limit.
+Operational disk/queue/quality thresholds are configurable policy and observed
+backpressure, not guaranteed OS/driver bounds. Frame, memory, startup and
+visual objectives are named workload/device qualification targets, not
+implemented safety checks. Enlarging a processing allowance with unchanged
+meaning requires profile and cost qualification. If a limit is encoded in a
+hashed definition or product dependency, changing it also changes that
+definition and dependent cook keys, even when existing selected values and
+output bytes are unchanged. Changing meaning or encoding requires the
+corresponding schema/protocol/ABI revision.
+
+F2 resolves the compatible game/target recipe from owner-declared semantics,
+provider domains, capacities and device features. It does not own source,
+allocations or publication. F3 may accept source independently of target
+readiness; F4 validates product/build closure; F1 coordinates runtime due work,
+W1 owns committed world state, V1 owns GPU resources/fences, N1 owns peer queues,
+and T2 coordinates cooperating build/storage jobs. Reconcile simultaneous
+claims **within each shared resource domain**, counting known shared logical
+allocations once while retaining all lease/fence reasons. A bounded pool may
+guarantee only its charged owner bytes; logical reservations never imply a hard
+whole-process RSS, physical free-space or device-memory guarantee. Report
+estimates, allocator accounts and observed peaks separately.
+
+Keep identity scopes separate: exact SourceRevision does not change for
+identical admitted bytes when a disk target or parser allowance changes;
+product cook keys retain typed values,
+meaning/definition, dependency and cook/toolchain/target-class provenance even
+if output bytes happen to match; build bindings retain exact admitted source
+and target requirements; N1 gameplay compatibility includes actual time and
+physical semantics. Operational threshold/evidence changes do not enter those
+identities merely because they share a resolved recipe. On a limit refusal,
+report owner, stage, selected profile, quantity/unit/timebase, requested versus
+allowed, estimate versus observation and a supported retry, loading, wider
+profile or unsupported outcome. Required content, authoritative receipts and
+complete current output are never silently truncated to meet a cap. The
+[cross-owner limit review](research/HOLISTIC-LIMIT-POLICY-2026-11-03.md) records
+the first integration order and unresolved qualifications.
 
 Evidence identifies code/design revision, configuration, content hashes, device/backend, duration and method. Design,
 implementation, correctness, perceptual acceptance and platform/performance qualification are separate states. Human

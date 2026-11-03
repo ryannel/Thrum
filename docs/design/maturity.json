@@ -132,7 +132,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "631a87cdefa3eaef07b930cf841938576e46d96bbf9edcffaa111770b6b154f5",
+      "current_design_sha256": "96dcffee70ba8aeefd82142bf93196303fb51e48ff4544d6a82ecbbdcbe4ab74",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -149,7 +149,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c"
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact task/publication APIs, overload parameters, platform event and storage adapters.",
@@ -212,7 +212,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c",
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6",
         "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -269,7 +269,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c"
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Schema field/codecs, migration registry, coordinate tolerances and storage primitive audit.",
@@ -560,7 +560,7 @@
       },
       "i2a_apfs_physical_admission_options": {
         "evidence": "research/SOURCE-APFS-PHYSICAL-ADMISSION-OPTIONS-2026-11-03.md",
-        "scope": "Primary Apple/SQLite research compares shared-volume guarding, APFS volume reserve/quota, exclusive container and conservative retention. None supplies a documented complete per-operation CoW/metadata/recovery allocation bound or proves the required 8 GiB actually unallocated floor. The canonical strict physical gate and durable broker/telemetry qualification remain open; a weaker observed-space profile would require an explicit contract decision."
+        "scope": "Primary Apple/SQLite research compares shared-volume guarding, APFS volume reserve/quota, exclusive container and conservative retention. None supplies a documented complete per-operation CoW/metadata/recovery allocation bound or proves an 8 GiB actually unallocated floor. The selected first native profile already uses configurable planning targets and exact space-fault recovery; the stronger strict-floor option remains unqualified research, not its source-admission gate."
       },
       "i2a_safe_request_credit_ledger": {
         "evidence": "../evidence/i2a/SOURCE-REQUEST-CREDIT-LEDGER-2026-11-03.md",
@@ -598,7 +598,7 @@
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
       "current_design_sha256": "e52095ea1d50d25c26991db0425a62cc3b0aaf626ced1fca01d7aa296b889b4b",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. The first E1 constant-light CPU product, semantic cook key and exact-source build binding are selected; a standalone typed-input codec has independent goldens, while the admitted-source lease, production cooker and publication remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. The first E1 constant-light CPU product, semantic cook key and exact-source build binding are selected; a standalone typed-input codec and historical provisional-lease bridge have independent oracles. The current accepted-source pin and a separate headless scene cook exist, but constant-light cooking from that pin, durable product publication and ready-build binding remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
         "A03",
@@ -617,11 +617,15 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c",
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6",
         "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Cook formats, target products, crash-recovery and quota adapter details.",
+      "i2a_constant_light_provisional_lease_bridge": {
+        "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F4-LEASE-BRIDGE-2026-11-03.md",
+        "scope": "An independently reviewed exact-source scratch proof at commit 1c35b53 joins the historical provisional verified lease to F3 constant-light typed values and a proof-local 160-byte F4 codec, checks 17 leased A/B and edit/corruption cases with an independent Python oracle, and measures 3/4,094-record local paths. Its selection recipe comes from the staged candidate, numeric projections are test-only, and its cache is local. It does not exercise the later accepted PinnedSource/current headless cooker, persistent product cache/publication, ready build, renderer, visuals or devices."
+      },
       "i2a_headless_scene_product": {
         "evidence": "../evidence/i2a/F4-HEADLESS-SCENE-COOK.md",
         "scope": "A first CPU-only entry-scene product is cooked from verified pinned accepted project/scene bytes with a target/version/direct-input product digest distinct from SourceRevision. A bounded byte codec and independent content hash support checked load using expected identities from a future trusted manifest. A production-store integration test proves mutable checkout isolation, changed-scene recook, identical reusable bytes after unrelated source edits, corrupt/truncated/mismatched load refusal, historical accepted pin and refusal of a valid incompatible two-entry source while retaining a prior in-memory product. This does not implement durable product publication, a trusted build manifest, code/toolchain closure, target-ready BuildRevision, world activation, save or platform qualification."
@@ -791,7 +795,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c"
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Typed entity/component APIs, table/sparse implementation, transform and command details.",
@@ -849,7 +853,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c",
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6",
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -1159,7 +1163,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c"
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "RecoveryRoot format, adapters, operation epochs, save/replay envelope and migration."
@@ -1838,7 +1842,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c"
+        "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Operation registry, transaction/undo and durable retry/recovery interfaces."
@@ -1961,7 +1965,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "c5a808cb5ea377f4ab7995dc1232ab7d001f6a6f599a858f433b9a0905582a8b",
+  "contract_sha256": "093bd2e4e4d724efdc22d746e4bbb9899795c1d049849d5b7ded85d1e2d92154",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -2706,10 +2710,10 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
     "contract_revision": "C4",
-    "contract_sha256": "c5a808cb5ea377f4ab7995dc1232ab7d001f6a6f599a858f433b9a0905582a8b",
+    "contract_sha256": "093bd2e4e4d724efdc22d746e4bbb9899795c1d049849d5b7ded85d1e2d92154",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-      "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c",
+      "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6",
       "RENDER-SPEC.md": "0e119f7dd39bc6fe3fe75990f7c3174eaf74dac4cfe2071bd986a2090b106a70",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
@@ -3087,12 +3091,12 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "3f14950f81c5b7e5bd0c64ccfb66612da40ffb812c81b0bb79bf01b26ef38117",
-      "CONTRACTS.md": "c5a808cb5ea377f4ab7995dc1232ab7d001f6a6f599a858f433b9a0905582a8b",
+      "CONTRACTS.md": "093bd2e4e4d724efdc22d746e4bbb9899795c1d049849d5b7ded85d1e2d92154",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
       "FIRST-USE-WALKTHROUGHS.md": "38402601329f448342ba86c97878adb62e079846b0ba3345f86430202d9e7eac",
-      "FOUNDATION-SPEC.md": "08558fb703ef73f56048dc028a97db614bb93696515e7ed02a83161e93dfdc4c",
+      "FOUNDATION-SPEC.md": "2fee6740505439c1dd868e729bfe81cd2c8cdcc5af5ec120259a871a5b09a9e6",
       "FROM-SCRATCH-WALKTHROUGHS.md": "5f64e1fc79ba65819654b42cde2877945d5a8532fc3e11f5d4f70119fa2c988c",
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
@@ -3115,7 +3119,7 @@
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "698976ba423fbeee448a6b91b24806b55203e6aab2c7adfca0d8d6fc1c0f649b",
       "modules/NETWORKING.md": "37e4801ee01cd67e47ed88191d296aa1fc8bd79c8b822e80b1ac482bd3b4e6f7",
-      "modules/PLATFORM-RUNTIME.md": "631a87cdefa3eaef07b930cf841938576e46d96bbf9edcffaa111770b6b154f5",
+      "modules/PLATFORM-RUNTIME.md": "96dcffee70ba8aeefd82142bf93196303fb51e48ff4544d6a82ecbbdcbe4ab74",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "bf9a5b907363a01f06848d3ad1e167fc8800f2fe4141d598a5fb342bb217f254",
       "modules/TOOLS-DELIVERY.md": "ae2b7a72dee8b4e36eb1c54d64d31ace9d9eface016abd25e2e92a46fde70277",
