@@ -82,8 +82,10 @@ one instantaneous source snapshot or prevent a later write to the clone. The
 current caller uses unreviewed local digests. An opt-in A/B qualification now
 launches Cargo/Rustc and Clang/SDK from the clones; explicit sandbox controls
 deny reads and metadata from the corresponding installed tool files. The
-private-cache metadata phase and selected Xcode support files still use the
-installed tools/paths, and same-user writes to the clones remain possible.
+private-cache metadata phase now uses the selected cloned Cargo/Rustc in the
+[later A/B qualification](../evidence/i2a/T2-SELECTED-METADATA-TOOLS-2026-11-03.md).
+Xcode discovery and selected support files still use installed paths before
+the metadata sandbox, and same-user writes to the clones remain possible.
 The compiler sandbox itself now denies installed support-file data and
 metadata reads in both installed-root and retained-clone A/B fixtures; direct
 selected Cargo/Rustc/Clang does not need those exceptions in this bounded
