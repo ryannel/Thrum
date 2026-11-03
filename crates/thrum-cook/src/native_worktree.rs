@@ -116,10 +116,38 @@ pub fn materialize_pinned_source(
     destination: &Path,
     plan: BuildScratchPlan,
 ) -> Result<MaterializedSource, MaterializeError> {
+    materialize_pinned_source_with(pin, destination, plan, || {}, |_| {})
+}
+
+#[cfg(test)]
+pub(crate) fn materialize_pinned_source_after_preflight(
+    pin: &mut PinnedSource,
+    destination: &Path,
+    plan: BuildScratchPlan,
+    after_preflight: impl FnOnce(),
+    before_failed_copy_cleanup: impl FnOnce(&Path),
+) -> Result<MaterializedSource, MaterializeError> {
+    materialize_pinned_source_with(
+        pin,
+        destination,
+        plan,
+        after_preflight,
+        before_failed_copy_cleanup,
+    )
+}
+
+fn materialize_pinned_source_with(
+    pin: &mut PinnedSource,
+    destination: &Path,
+    plan: BuildScratchPlan,
+    after_preflight: impl FnOnce(),
+    before_failed_copy_cleanup: impl FnOnce(&Path),
+) -> Result<MaterializedSource, MaterializeError> {
     if !destination.is_absolute() {
         return Err(MaterializeError::InvalidDestination);
     }
     preflight(pin, destination, plan)?;
+    after_preflight();
     fs::create_dir(destination).map_err(MaterializeError::Destination)?;
     let result = materialize_files(pin, destination);
     match result {
@@ -130,14 +158,17 @@ pub fn materialize_pinned_source(
             copied_bytes,
             live: true,
         }),
-        Err(cause) => match fs::remove_dir_all(destination) {
-            Ok(()) => Err(cause),
-            Err(source) => Err(MaterializeError::Cleanup {
-                path: destination.to_owned(),
-                cause: Box::new(cause),
-                source,
-            }),
-        },
+        Err(cause) => {
+            before_failed_copy_cleanup(destination);
+            match fs::remove_dir_all(destination) {
+                Ok(()) => Err(cause),
+                Err(source) => Err(MaterializeError::Cleanup {
+                    path: destination.to_owned(),
+                    cause: Box::new(cause),
+                    source,
+                }),
+            }
+        }
     }
 }
 

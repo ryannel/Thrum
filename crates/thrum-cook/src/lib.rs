@@ -830,6 +830,146 @@ mod tests {
         pin.close().unwrap();
     }
 
+    #[cfg(target_os = "macos")]
+    #[test]
+    #[ignore = "requires THRUM_TEST_ENOSPC_VOLUME_DIR on an exclusive task-owned APFS image"]
+    fn native_enospc_after_f4_preflight_removes_partial_input_and_allows_retry() {
+        use fs4::FileExt;
+        use thrum_source::SourceStoreErrorKind;
+
+        const MIB: u64 = 1024 * 1024;
+        struct RunGuard(PathBuf);
+        impl Drop for RunGuard {
+            fn drop(&mut self) {
+                let _ = fs::remove_dir_all(&self.0);
+            }
+        }
+
+        let volume = PathBuf::from(
+            std::env::var_os("THRUM_TEST_ENOSPC_VOLUME_DIR")
+                .expect("set THRUM_TEST_ENOSPC_VOLUME_DIR to a task-owned APFS mount"),
+        );
+        let volume_bytes = fs4::total_space(&volume).unwrap();
+        assert!(
+            (64 * MIB..=512 * MIB).contains(&volume_bytes),
+            "fault test requires a bounded 64–512 MiB volume, got {volume_bytes} bytes"
+        );
+        let lock = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(volume.join("thrum-native-enospc-test.lock"))
+            .unwrap();
+        FileExt::lock(&lock).unwrap();
+        let run = volume.join(format!("thrum-f4-enospc-{}", std::process::id()));
+        fs::create_dir(&run).unwrap();
+        let _run_guard = RunGuard(run.clone());
+        let filler_path = run.join("filler.bin");
+        let destination = run.join("input");
+
+        let fixture = Fixture::new();
+        let mut paths = fixture.write("A", false, false);
+        let mut master = fs::File::create(fixture.root().join("master.bin")).unwrap();
+        for _ in 0..(12 * MIB / 4096) {
+            master.write_all(&[0x5a; 4096]).unwrap();
+        }
+        drop(master);
+        paths.push(SourcePath::parse("master.bin").unwrap());
+        let store = NativeSourceStore::open(
+            &fixture.root().join(".engine/source.sqlite"),
+            Fixture::plan(),
+        )
+        .unwrap();
+        let root = fixture.admit(&store, 0, 1, &paths);
+        let mut pin = store.pin_current(root.generation).unwrap();
+        let scratch = BuildScratchPlan {
+            temporary_target_bytes: 16 * MIB,
+            free_headroom_bytes: 0,
+        };
+
+        let mut before_fill = 0_u64;
+        let mut after_fill = 0_u64;
+        let mut partial_bytes = 0_u64;
+        let failed = native_worktree::materialize_pinned_source_after_preflight(
+            &mut pin,
+            &destination,
+            scratch,
+            || {
+                before_fill = fs4::available_space(&run).unwrap();
+                assert!(before_fill >= 16 * MIB);
+                let mut filler = fs::File::create(&filler_path).unwrap();
+                let bytes = [0x51_u8; MIB as usize];
+                let mut written_blocks = 0_u64;
+                loop {
+                    let available = fs4::available_space(&run).unwrap();
+                    if available <= 14 * MIB {
+                        break;
+                    }
+                    if let Err(error) = filler.write_all(&bytes) {
+                        assert_eq!(error.raw_os_error(), Some(28));
+                        break;
+                    }
+                    written_blocks += 1;
+                    assert!(
+                        written_blocks <= 512,
+                        "fault volume did not fill as planned"
+                    );
+                }
+                after_fill = fs4::available_space(&run).unwrap();
+                assert!(
+                    after_fill < 15 * MIB,
+                    "fault setup left too much free space: {after_fill}"
+                );
+            },
+            |partial_root| {
+                partial_bytes = fs::metadata(partial_root.join("master.bin")).unwrap().len();
+            },
+        );
+        let failed = match failed {
+            Err(error) => error,
+            Ok(materialized) => {
+                materialized.close().unwrap();
+                panic!("native fault fixture unexpectedly completed the copy");
+            }
+        };
+        let MaterializeError::Source(source) = failed else {
+            panic!("expected native write failure after F4 preflight: {failed:?}");
+        };
+        assert_eq!(source.kind(), SourceStoreErrorKind::Output);
+        let native = std::error::Error::source(&source)
+            .and_then(|error| error.downcast_ref::<io::Error>())
+            .and_then(io::Error::raw_os_error);
+        assert_eq!(native, Some(28));
+        assert!(
+            partial_bytes > 0 && partial_bytes < 12 * MIB,
+            "expected a partial 12 MiB master, observed {partial_bytes} bytes"
+        );
+        assert!(!destination.exists());
+        eprintln!(
+            "f4_native_enospc before_fill={before_fill} after_fill={after_fill} partial_bytes={partial_bytes}"
+        );
+
+        fs::remove_file(&filler_path).unwrap();
+        let retried = materialize_pinned_source(&mut pin, &destination, scratch).unwrap();
+        assert_eq!(retried.source_root(), root);
+        let mut master = fs::File::open(destination.join("master.bin")).unwrap();
+        let mut verified_bytes = 0_u64;
+        let mut buffer = [0_u8; 64 * 1024];
+        loop {
+            let count = master.read(&mut buffer).unwrap();
+            if count == 0 {
+                break;
+            }
+            assert!(buffer[..count].iter().all(|byte| *byte == 0x5a));
+            verified_bytes += count as u64;
+        }
+        assert_eq!(verified_bytes, 12 * MIB);
+        retried.close().unwrap();
+        assert!(!destination.exists());
+        pin.close().unwrap();
+    }
+
     #[cfg(unix)]
     #[test]
     fn external_same_volume_input_owner_survives_source_admission() {
