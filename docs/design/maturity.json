@@ -558,9 +558,9 @@
         "design": "F4-FIRST-HEADLESS-BUILD.md",
         "evidence": "../evidence/i2a/F4-RETAINED-NATIVE-CANDIDATE.md",
         "implementation": "opt_in_fixture_candidate_only",
-        "functional_validation": "one macOS ARM64 sandboxed A/B build retained A and checked its independent candidate after deleting materialized input and original Cargo output; binary corruption, missing receipt, root symlink, cross-wired environment and invalid B refused",
+        "functional_validation": "one macOS ARM64 sandboxed A/B build retained A and checked its candidate in the original and a fresh verifier process after deleting materialized input and original Cargo output; a fresh child with a missing candidate failed, and binary/wrapper corruption, missing receipt, root symlink, cross-wired environment and invalid B refused",
         "experienced_quality": "not_applicable_to_headless_build_fixture",
-        "platform_performance": "one local fresh-output A build took 3349 ms; candidate copy and internal verify took 175 ms, and the first independent reload after source/output removal took 25 ms. Peak RSS and timing tails have not been measured; no cross-device claim",
+        "platform_performance": "one local fresh-output A build took 3240 ms; candidate copy and internal verify took 175 ms, and the first same-process reload after source/output removal took 25 ms. Fresh-child startup/reopen cost, peak RSS and timing tails have not been isolated; no cross-device claim",
         "scope": "A test-only helper streams and retains exact scene, executable, receipt-wrapper, raw receipt and selected build-evidence bytes in a separate candidate directory. An external report SHA-256 anchors canonical local candidate metadata; reload checks source/product identities, fixed target, file membership and hashes, selected environment/cache/wrapper relationship and the receipt-summary raw-set digest. The old candidate executes after source/output teardown and invalid B. This does not implement production publication, immutable tool/dependency roots, complete compiler/system-read closure, a reviewed release manifest or BuildRevision; buildReady stays false."
       },
       "i2a_narrowed_macos_metadata": {

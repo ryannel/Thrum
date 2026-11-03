@@ -146,6 +146,9 @@ Prove in order:
    copies the real A build into a separate candidate directory, then deletes
    its materialized source and original Cargo output before checking the
    executable and every retained file against an externally held report hash.
+   A fresh process reopens the accepted F3 root, derives the expected scene
+   product and runs the retained A executable after those temporary trees are
+   gone.
    Corruption, missing receipts, cross-wired selection and invalid B refuse.
    This is a fixture-only candidate; release review, immutable selected roots,
    full compiler/system-read closure and durable ready publication remain open.

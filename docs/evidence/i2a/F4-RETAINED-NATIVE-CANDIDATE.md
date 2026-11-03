@@ -29,7 +29,12 @@ between the cache manifest, wrapper, environment, supervisor request and scene
 declaration. It refuses nonordinary files and bounded-file violations.
 
 The fixture removes A's materialized source and original Cargo output before
-reloading and executing the candidate. Flipping a byte in the retained binary
+reloading and executing the candidate. A fresh child test process also reopens
+the durable F3 source store, derives A's expected product identity, verifies
+the candidate against the externally held report digest and executes A. This
+is a restart of the verifier process; it is not crash-safe artifact
+publication. A second child invocation with a missing candidate fails, so the
+positive subprocess cannot pass by selecting zero tests. Flipping a byte in the retained binary
 refuses until restored; withholding one raw receipt refuses; a rehashed
 environment record carrying B's `SourceRevision` still refuses. Replacing the
 candidate directory with a symlink to the same bytes also refuses. Invalid B
@@ -42,9 +47,10 @@ that digest independently.
 
 The final local run used Rust 1.99.1, Python 3.11, the opt-in macOS sandbox,
 prepared private Cargo home and rustc receipt wrapper. A's fresh-output build
-took 3,349 ms; cache preparation took 1,258 ms. Candidate copy plus its first
+took 3,240 ms; cache preparation took 1,226 ms. Candidate copy plus its first
 internal verification took 175 ms, and the first reload after source/output
-removal took 25 ms. The successful build had five compile receipts and three
+removal took 25 ms. Fresh-child startup/reopen cost was not isolated. The
+successful build had five compile receipts and three
 probes; the private cache remained at 2,923 files and 67,792,387 logical bytes.
 These are single local elapsed times, not tail or device guarantees. The copy
 streams large files through a 64 KiB buffer; the scene/JSON records are bounded

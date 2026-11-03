@@ -1182,6 +1182,33 @@ mod tests {
                 reload_started.elapsed().as_millis()
             );
             assert!(Command::new(&retained).output().unwrap().status.success());
+            let reopen_child = |candidate_dir: &Path| {
+                Command::new(std::env::current_exe().unwrap())
+                    .args([
+                        "--exact",
+                        "tests::retained_candidate_reopen_child",
+                        "--ignored",
+                    ])
+                    .env(
+                        "THRUM_CANDIDATE_CHILD_DB",
+                        fixture.root().join(".engine/source.sqlite"),
+                    )
+                    .env("THRUM_CANDIDATE_CHILD_DIR", candidate_dir)
+                    .env("THRUM_CANDIDATE_CHILD_SHA256", digest)
+                    .output()
+                    .unwrap()
+            };
+            let reopened = reopen_child(candidate);
+            assert!(
+                reopened.status.success(),
+                "{}{}",
+                String::from_utf8_lossy(&reopened.stdout),
+                String::from_utf8_lossy(&reopened.stderr)
+            );
+            assert!(String::from_utf8_lossy(&reopened.stdout).contains("1 passed"));
+            let missing = reopen_child(&candidate.with_file_name("candidate-a-missing"));
+            assert!(!missing.status.success());
+            assert!(String::from_utf8_lossy(&missing.stdout).contains("1 failed"));
             let mut binary = fs::OpenOptions::new()
                 .read(true)
                 .write(true)
@@ -1321,6 +1348,23 @@ mod tests {
             cache.assert_tool_bytes();
         }
         drop(owned_cache);
+    }
+
+    #[test]
+    #[ignore = "spawned by the opt-in native candidate qualification"]
+    fn retained_candidate_reopen_child() {
+        let database = PathBuf::from(std::env::var_os("THRUM_CANDIDATE_CHILD_DB").unwrap());
+        let candidate = PathBuf::from(std::env::var_os("THRUM_CANDIDATE_CHILD_DIR").unwrap());
+        let digest = std::env::var("THRUM_CANDIDATE_CHILD_SHA256").unwrap();
+        let mut store = NativeSourceStore::open(&database, Fixture::plan()).unwrap();
+        let root = store.current_root().unwrap().unwrap();
+        let mut pin = store.pin_current(root.generation).unwrap();
+        let product = cook_entry_scene(&mut pin, SceneTarget::Headless).unwrap();
+        let binary = candidate_output::verify(&candidate, &digest, root, &product).unwrap();
+        let ran = Command::new(&binary).output().unwrap();
+        assert!(ran.status.success());
+        assert_eq!(ran.stdout, b"thrum-headless-v1 taps=1 results=1 events=1\n");
+        pin.close().unwrap();
     }
 
     #[derive(Clone, Copy)]
