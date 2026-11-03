@@ -4,6 +4,12 @@
 specializes [N1](modules/NETWORKING.md) and C13 rather than adding another networking framework. The first local
 game still needs no transport. A different network genre can replace this protocol through the same authority and
 content boundaries after its own design; these limits describe the first profile, not a permanent engine ceiling.
+The [provisional outbound cadence study](research/N1-OUTBOUND-CADENCE-2026-11-03.md)
+records an open construction decision: 60 Hz authority groups cannot be
+collapsed into a 20 Hz latest-state sample when lifecycle or mandatory
+outcomes occur, and the current I1 replica admits only one group per tick.
+Its revised burst and multi-group admission proof must precede I2n runtime
+promotion.
 
 The [fresh review](SIMPLIFICATION-REVIEW.md) identified SR01–SR03/SR07. The bounded outcome, atomic group,
 compatibility and analytical R4 recipes below close those design gaps for the first I2n construction slice. Runtime,
@@ -337,18 +343,27 @@ calculation. No E1 water group or prediction is required for this first R4 fixtu
 | Maximum action results at admitted rate | `120 × 32` | 3,840/s |
 | Declared event cadence | `32 × 40` | 1,280/s |
 | Server clock | `64 + 24`, once/s | 88/s |
-| **Total steady server → peer** | Sum above | **156,248/s = 152.6 KiB/s** |
+| **Ordinary-cadence server → peer model** | Sum above | **156,248/s = 152.6 KiB/s** |
 | Full join baseline payload | `128 × 56 actor + 128 × 16 lifecycle + 4 × 32 descriptors + 256 manifest/cursors` | 9,600 |
 | Full join baseline on wire | Payload + Begin/Chunk/End framing, `332` | 9,932 |
 | Maximum same-epoch replacement baseline | `9,932 + 256 × 32 results + 128 × 40 events` | 23,244 |
 
-Both baseline sizes fit one 32 KiB chunk. At steady state the server spends 156,248 B/s against 262,144 B/s.
+Both baseline sizes fit one 32 KiB chunk. The ordinary-cadence model spends
+156,248 B/s against 262,144 B/s **if** results/events can share those four
+20 Hz full groups. It excludes extra group headers and repeated full state
+when mandatory per-tick lifecycle/result/event units must remain ordered.
+The [outbound cadence study](research/N1-OUTBOUND-CADENCE-2026-11-03.md)
+keeps the true worst admitted burst, per-tick CPU peak and same-tick
+multi-group replica consumer open; the table is not an R4 bandwidth pass.
 During resynchronization it suppresses replaceable 20 Hz state publications and coalesces the latest complete
-groups; mandatory outcomes/events and lifecycle remain ordered. A conservative quarter-second resync window sends
+groups; mandatory outcomes/events and lifecycle remain ordered. Under the same ordinary-cadence packing assumption,
+a quarter-second resync example sends
 two **maximum** replacement baselines (46,488 bytes), one four-group full state publication (7,552),
 128 lifecycle entries (2,048), 46 results (1,472), 64 events (2,560) and one Clock (88): **60,208 bytes**,
-below the 65,536-byte quarter-second token bucket. The
-bound deliberately counts some results/events both in baselines and as new traffic. The peer resumes its normal
+below the 65,536-byte quarter-second token bucket. This example deliberately
+counts some results/events both in baselines and as new traffic, but does not
+include extra mandatory group framing/full state; it is not the selected
+worst-case burst. The peer resumes its normal
 cadence only after BaselineAck; a later content/baseline overrun paces chunks, abandons and recaptures, or disconnects
 under the existing deadlines. This fixture also fits each StateGroup's 8 KiB limit: one group with 32 actor,
 32 lifecycle, 64 result and 64 event records is 7,008 bytes including its envelope. It reserves no delta bases.
