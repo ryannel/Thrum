@@ -95,6 +95,9 @@ required protection from a same-user clone writer.
 A ready preparer must bind the expected digest
 to the reviewed release manifest and hold the selected clone under a no-writer
 lifecycle through compiler shutdown and artifact publication.
+The [retained-root trust analysis](research/T2-MACOS-RETAINED-ROOT-TRUST-OPTIONS-2026-11-03.md)
+keeps the same-user threat boundary open: owner-clearable file flags are an
+accident barrier, not a strict exclusion of a hostile same-user process.
 
 ## macOS runtime boundary
 
