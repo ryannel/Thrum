@@ -235,6 +235,10 @@ that every intermediate or output fits. Verify the range against independent
 high-precision cases and the pinned WGSL/backend versions before claiming a
 portable diagnostic path. [WGSL floating-point evaluation](https://gpuweb.github.io/gpuweb/wgsl/#floating-point-evaluation)
 allows indeterminate runtime results after overflow, infinity or NaN.
+The [R0 arithmetic-envelope study](research/R0-ARITHMETIC-ENVELOPE-2026-11-03.md)
+supplies a fixed-p half-float counterexample and a conservative per-recipe
+real-number light/storage bound. Its actual source, WGSL intermediate and
+device proofs remain open.
 
 ## 5. Initial atmosphere, fog and transport operator
 
