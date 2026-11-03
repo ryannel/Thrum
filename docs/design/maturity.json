@@ -615,6 +615,14 @@
         "platform_performance": "six raw collection slices avoid an array-wide index; ordinary UUID strings borrow input; no measured complete-record parse latency, peak RSS, charged scratch or device path",
         "scope": "The opaque checked token binds F3's existing no-tree header walk to its exact bytes. Render collections remain raw/provisional. No embedded typed grammar, numeric object checks, global UUID/edge closure, source admission, F4 projection or ready renderer."
       },
+      "i2a_render_mesh_object_candidate": {
+        "evidence": "../evidence/render/R0-F3-MESH-OBJECT-DECODER-2026-11-03.md",
+        "implementation": "private_inactive_streaming_render_mesh_object_decoder",
+        "functional_validation": "six focused object tests cover map-only grammar, fixed-field order, decoded duplicate and anonymous repeated-ID locators, exact radius and triangle predicates, empty mesh, unreferenced extrema and callback refusal; defect-first review and full repository gate passed",
+        "experienced_quality": "not_applicable_to_inactive_source_decoder",
+        "platform_performance": "one mesh's positions/UV/triangle vectors exist during its callback and drop before the next streamed item; no measured complete-record latency, peak RSS or charged object allocation",
+        "scope": "No other render object grammars, canonical collection-wide error selection, global UUID/edge closure, F3 admission, F4 projection or ready renderer. Serde vector scratch cannot yet meet strict precharge."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."

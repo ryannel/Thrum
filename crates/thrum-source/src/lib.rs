@@ -34,6 +34,9 @@ mod render_geometry_exact;
 // Strict render-v1 envelope borrows collections ahead of shared decoding.
 #[allow(dead_code)]
 mod render_json;
+// Object-scoped geometry preparation shares exact source predicates.
+#[allow(dead_code)]
+mod render_source_objects;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;
