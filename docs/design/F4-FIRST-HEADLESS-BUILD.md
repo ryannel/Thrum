@@ -74,7 +74,8 @@ its own directory after the successful A build. A compact canonical JSON
 report names the accepted source generation and `SourceRevision`, the distinct
 `SceneProductRevision`, fixed headless target, receipt count and exact byte
 length/SHA-256 for the cooked scene, executable, raw rustc receipts, Cargo
-transcript, receipt-verifier result, supervisor request/report, admitted build
+transcript, receipt-verifier result, exact rustc receipt-wrapper executable,
+supervisor request/report, admitted build
 declaration, private-cache candidate manifest, sandbox policy and observed
 environment selection. Its SHA-256 is held outside the report. Reload refuses
 changed report or file bytes, missing/extra files, mismatched source/product

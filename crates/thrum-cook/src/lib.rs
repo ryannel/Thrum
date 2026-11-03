@@ -1113,6 +1113,7 @@ mod tests {
                 "productRevision":candidate_output::hex(product.revision().as_bytes()),
                 "cacheManifestSha256":cache_manifest_hash,
                 "cargoSha256":cache.cargo_hash,"rustcSha256":cache.rustc_hash,
+                "receiptWrapperSha256":file_sha256_hex(&a_output.join("rustc-receipt-wrapper")),
                 "selectedFiles":selected_files,
                 "sourcePath":fs::canonicalize(a_materialized.path()).unwrap(),
                 "outputPath":fs::canonicalize(&a_output).unwrap(),
@@ -1132,6 +1133,7 @@ mod tests {
                 a_output.join("environment.json"),
                 cache.manifest_path.clone(),
                 a_output.join("receipt-verification.json"),
+                a_output.join("rustc-receipt-wrapper"),
             ];
             let evidence_names = [
                 "build.sb",
@@ -1142,6 +1144,7 @@ mod tests {
                 "environment.json",
                 "private-cache-manifest.json",
                 "receipt-verification.json",
+                "rustc-receipt-wrapper",
             ];
             let evidence = evidence_paths
                 .iter()
@@ -1213,6 +1216,21 @@ mod tests {
             binary.seek(SeekFrom::Start(0)).unwrap();
             binary.write_all(&first).unwrap();
             drop(binary);
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
+            let wrapper_path = candidate.join("rustc-receipt-wrapper");
+            let mut wrapper = fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(&wrapper_path)
+                .unwrap();
+            let mut first = [0];
+            wrapper.read_exact(&mut first).unwrap();
+            wrapper.seek(SeekFrom::Start(0)).unwrap();
+            wrapper.write_all(&[first[0] ^ 1]).unwrap();
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
+            wrapper.seek(SeekFrom::Start(0)).unwrap();
+            wrapper.write_all(&first).unwrap();
+            drop(wrapper);
             assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
             let receipt_name = fs::read_dir(candidate)
                 .unwrap()
