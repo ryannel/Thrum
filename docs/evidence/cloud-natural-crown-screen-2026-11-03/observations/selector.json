@@ -1,0 +1,147 @@
+{
+  "scope": "fresh selector validation; no SciPy/image/native candidate",
+  "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "commission_sha256": "3239afc598ddf2dafc249a7e718d9f64318a189cf8a92efc6dfde61c6fa135f3",
+  "stage_sha256": {
+    "S": "6ce8c8261917d36653d7f3dee972b1a9c35a9a35ffe8d430d08a2d26c9fb4644",
+    "O": "eb84ce71c5c8d4d377bb5182ef5b78561f78c7db123aa39eb43a1181b9b95546"
+  },
+  "S_voxels": 19208,
+  "O_voxels": 2779,
+  "S_bbox_xyz_m": [
+    [
+      131,
+      301,
+      171
+    ],
+    [
+      271,
+      335,
+      261
+    ]
+  ],
+  "dS": {
+    "file": "dS.f64",
+    "bytes": 3538944,
+    "sha256": "a75cbd297901fc4620e5a51e431b154b3dfbc5435c69eeac2a52e8f4001ce875"
+  },
+  "dO": {
+    "file": "dO.f64",
+    "bytes": 3538944,
+    "sha256": "856bb4ea2fb3c65f59a99d8fd1d040f769f9aebd95285b302d7d69baf51e7673"
+  },
+  "denominator_min_m": 2.8284271247461903,
+  "independent_oracle": [
+    {
+      "index_zyx": [
+        31,
+        43,
+        54
+      ],
+      "dS_m": 0.0,
+      "brute_dS_m": 0.0
+    },
+    {
+      "index_zyx": [
+        0,
+        38,
+        0
+      ],
+      "dS_m": 59.93329625508679,
+      "brute_dS_m": 59.93329625508679
+    },
+    {
+      "index_zyx": [
+        20,
+        50,
+        40
+      ],
+      "dS_m": 7.211102550927978,
+      "brute_dS_m": 7.211102550927978
+    },
+    {
+      "index_zyx": [
+        71,
+        63,
+        95
+      ],
+      "dS_m": 73.97296803562772,
+      "brute_dS_m": 73.97296803562772
+    },
+    {
+      "index_zyx": [
+        31,
+        43,
+        80
+      ],
+      "dS_m": 12.328828005937952,
+      "brute_dS_m": 12.328828005937952
+    },
+    {
+      "index_zyx": [
+        35,
+        42,
+        52
+      ],
+      "dS_m": 0.0,
+      "brute_dS_m": 0.0
+    },
+    {
+      "index_zyx": [
+        31,
+        43,
+        54
+      ],
+      "dO_m": 44.45222154178574,
+      "brute_dO_m": 44.45222154178574
+    },
+    {
+      "index_zyx": [
+        0,
+        38,
+        0
+      ],
+      "dO_m": 58.309518948453004,
+      "brute_dO_m": 58.309518948453004
+    },
+    {
+      "index_zyx": [
+        20,
+        50,
+        40
+      ],
+      "dO_m": 46.73328578219169,
+      "brute_dO_m": 46.73328578219169
+    },
+    {
+      "index_zyx": [
+        71,
+        63,
+        95
+      ],
+      "dO_m": 97.48846085563153,
+      "brute_dO_m": 97.48846085563153
+    },
+    {
+      "index_zyx": [
+        31,
+        43,
+        80
+      ],
+      "dO_m": 18.439088914585774,
+      "brute_dO_m": 18.439088914585774
+    },
+    {
+      "index_zyx": [
+        35,
+        42,
+        52
+      ],
+      "dO_m": 36.66060555964672,
+      "brute_dO_m": 36.66060555964672
+    }
+  ],
+  "elapsed_s": 0.012882541865110397,
+  "process_highwater_bytes": 44204032,
+  "script_sha256": "e124d46ca00bf3f85630ae40bce10da50bc4bfc70dc2f5bc9a813adb085905a9"
+}

@@ -1,0 +1,110 @@
+{
+  "scope": "one native S/O selector EDT stage only, no optical distance/density candidate",
+  "stage": "S",
+  "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "commission_sha256": "3239afc598ddf2dafc249a7e718d9f64318a189cf8a92efc6dfde61c6fa135f3",
+  "core_result_sha256": "edabb93a8dc64a745128bd69a1842748e585817284d017d8c514d1bc1c781fce",
+  "script_sha256": "9d56c43ca3f7c65a6d070bd4b8b41bbbe225eb31d00e619c4afbacbad9632c31",
+  "crop_origin_xyz_m": [
+    112,
+    224,
+    144
+  ],
+  "crop_dims_xyz": [
+    96,
+    64,
+    72
+  ],
+  "crop_shape_zyx": [
+    72,
+    64,
+    96
+  ],
+  "threshold_float32_hex": "0x3d27ef9e",
+  "native_y_min_m": 300,
+  "seed_index_zyx": [
+    31,
+    43,
+    54
+  ],
+  "S_voxels": 19208,
+  "O_voxels": 2779,
+  "component_count": 12,
+  "S_bbox_xyz_m": [
+    [
+      131,
+      301,
+      171
+    ],
+    [
+      271,
+      335,
+      261
+    ]
+  ],
+  "distance": {
+    "file": "dS.f64",
+    "bytes": 3538944,
+    "sha256": "a75cbd297901fc4620e5a51e431b154b3dfbc5435c69eeac2a52e8f4001ce875"
+  },
+  "distance_definition": "Float64 SciPy ndimage distance_transform_edt(~set,sampling=(2,2,2)); exact zero at source native centres; shape[Z,Y,X]",
+  "independent_oracle": [
+    {
+      "index_zyx": [
+        31,
+        43,
+        54
+      ],
+      "dS_m": 0.0,
+      "brute_dS_m": 0.0
+    },
+    {
+      "index_zyx": [
+        0,
+        38,
+        0
+      ],
+      "dS_m": 59.93329625508679,
+      "brute_dS_m": 59.93329625508679
+    },
+    {
+      "index_zyx": [
+        20,
+        50,
+        40
+      ],
+      "dS_m": 7.211102550927978,
+      "brute_dS_m": 7.211102550927978
+    },
+    {
+      "index_zyx": [
+        71,
+        63,
+        95
+      ],
+      "dS_m": 73.97296803562772,
+      "brute_dS_m": 73.97296803562772
+    },
+    {
+      "index_zyx": [
+        31,
+        43,
+        80
+      ],
+      "dS_m": 12.328828005937952,
+      "brute_dS_m": 12.328828005937952
+    },
+    {
+      "index_zyx": [
+        35,
+        42,
+        52
+      ],
+      "dS_m": 0.0,
+      "brute_dS_m": 0.0
+    }
+  ],
+  "wall_s": 0.19493974978104234,
+  "sampled_peak_rss_bytes": 88424448,
+  "process_highwater_bytes": 88424448
+}

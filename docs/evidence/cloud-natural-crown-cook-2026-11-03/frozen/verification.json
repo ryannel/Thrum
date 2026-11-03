@@ -1,0 +1,233 @@
+{
+  "pass": true,
+  "rho_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "distance_sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab",
+  "certificate_sha256": "942149ae4ae72f95bb893cad8c7c6795c63f87908ab4e1c002441cfdbecfdcb6",
+  "verification_recipe_sha256": "29e2f064a11c7042c6138a5c6c56c32fd60d958f7426a13a147de2ee9a5b5ae7",
+  "connectedCentreMaskMatchesIndependentSciPyLabel": true,
+  "principalNearestReachableCentroidSelection": true,
+  "centroidIndependentMaxErrorLocalM": 0.0,
+  "spheresIndependentlyRecomputed": 22,
+  "sphereSurfaceSamples": 2112,
+  "minimumSurfaceQ": 0.05316171899282142,
+  "minimumCellLower": 0.041412353513625,
+  "minimumChainOverlapLocalM": 1.0455488498966776,
+  "nativeDistanceOracles": [
+    {
+      "indexZYX": [
+        26,
+        20,
+        56
+      ],
+      "bruteSignedDistance": 26.38181191654584,
+      "EDT64": 26.38181191654584,
+      "R16": 26.375
+    },
+    {
+      "indexZYX": [
+        34,
+        44,
+        43
+      ],
+      "bruteSignedDistance": 15.362291495737216,
+      "EDT64": 15.362291495737216,
+      "R16": 15.359375
+    },
+    {
+      "indexZYX": [
+        20,
+        38,
+        63
+      ],
+      "bruteSignedDistance": 12.806248474865697,
+      "EDT64": 12.806248474865697,
+      "R16": 12.8046875
+    },
+    {
+      "indexZYX": [
+        38,
+        38,
+        57
+      ],
+      "bruteSignedDistance": 16.1245154965971,
+      "EDT64": 16.1245154965971,
+      "R16": 16.125
+    },
+    {
+      "indexZYX": [
+        27,
+        45,
+        54
+      ],
+      "bruteSignedDistance": 12.165525060596439,
+      "EDT64": 12.165525060596439,
+      "R16": 12.1640625
+    },
+    {
+      "indexZYX": [
+        0,
+        0,
+        0
+      ],
+      "bruteSignedDistance": -74.35052118176442,
+      "EDT64": -74.35052118176442,
+      "R16": -74.375
+    },
+    {
+      "indexZYX": [
+        17,
+        29,
+        47
+      ],
+      "bruteSignedDistance": -2.0,
+      "EDT64": -2.0,
+      "R16": -2.0
+    },
+    {
+      "indexZYX": [
+        34,
+        58,
+        94
+      ],
+      "bruteSignedDistance": -47.74934554525329,
+      "EDT64": -47.74934554525329,
+      "R16": -47.75
+    },
+    {
+      "indexZYX": [
+        51,
+        23,
+        45
+      ],
+      "bruteSignedDistance": -8.94427190999916,
+      "EDT64": -8.94427190999916,
+      "R16": -8.9453125
+    },
+    {
+      "indexZYX": [
+        68,
+        52,
+        92
+      ],
+      "bruteSignedDistance": -53.14132102234569,
+      "EDT64": -53.14132102234569,
+      "R16": -53.15625
+    },
+    {
+      "indexZYX": [
+        13,
+        17,
+        43
+      ],
+      "bruteSignedDistance": -8.48528137423857,
+      "EDT64": -8.48528137423857,
+      "R16": -8.484375
+    },
+    {
+      "indexZYX": [
+        30,
+        46,
+        90
+      ],
+      "bruteSignedDistance": -29.46183972531247,
+      "EDT64": -29.46183972531247,
+      "R16": -29.46875
+    },
+    {
+      "indexZYX": [
+        47,
+        11,
+        41
+      ],
+      "bruteSignedDistance": -21.354156504062622,
+      "EDT64": -21.354156504062622,
+      "R16": -21.359375
+    },
+    {
+      "indexZYX": [
+        64,
+        40,
+        88
+      ],
+      "bruteSignedDistance": -32.49615361854384,
+      "EDT64": -32.49615361854384,
+      "R16": -32.5
+    },
+    {
+      "indexZYX": [
+        9,
+        5,
+        39
+      ],
+      "bruteSignedDistance": -27.712812921102035,
+      "EDT64": -27.712812921102035,
+      "R16": -27.71875
+    },
+    {
+      "indexZYX": [
+        26,
+        34,
+        86
+      ],
+      "bruteSignedDistance": -11.661903789690601,
+      "EDT64": -11.661903789690601,
+      "R16": -11.6640625
+    },
+    {
+      "indexZYX": [
+        43,
+        63,
+        37
+      ],
+      "bruteSignedDistance": -19.697715603592208,
+      "EDT64": -19.697715603592208,
+      "R16": -19.703125
+    },
+    {
+      "indexZYX": [
+        60,
+        28,
+        84
+      ],
+      "bruteSignedDistance": -16.1245154965971,
+      "EDT64": -16.1245154965971,
+      "R16": -16.125
+    },
+    {
+      "indexZYX": [
+        5,
+        57,
+        35
+      ],
+      "bruteSignedDistance": -35.66510900025401,
+      "EDT64": -35.66510900025401,
+      "R16": -35.65625
+    },
+    {
+      "indexZYX": [
+        22,
+        22,
+        82
+      ],
+      "bruteSignedDistance": -17.549928774784245,
+      "EDT64": -17.549928774784245,
+      "R16": -17.546875
+    },
+    {
+      "indexZYX": [
+        39,
+        51,
+        33
+      ],
+      "bruteSignedDistance": 4.47213595499958,
+      "EDT64": 4.47213595499958,
+      "R16": 4.47265625
+    }
+  ],
+  "strictPositivePotentialCellsChecked": 81541,
+  "endpointContinuousBoundAndNativeZero": true,
+  "frameRightHandedAndDataDerived": true,
+  "elapsed_s": 0.15268245805054903,
+  "process_highwater_bytes": 87932928,
+  "scope": "Finite independent native/closed-cell/connectivity/frame checks; ideal half-trilinear field only, not portableGPUfilter/art/admission/lifecycle proof"
+}

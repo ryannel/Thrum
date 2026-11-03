@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Package file hashes, lossless selected-rho fresh restore and eight small retained oracles; no full source recook, GPU or art admission",
+  "command_verify_only": "/opt/homebrew/bin/python3.14 docs/evidence/cloud-natural-crown-screen-2026-11-03/verify.py --verify-only",
+  "command_fresh_restore": "/opt/homebrew/bin/python3.14 docs/evidence/cloud-natural-crown-screen-2026-11-03/verify.py --output /private/tmp/thrum-natural-crown-restore-20261103-a1",
+  "fresh_output_did_not_preexist": true,
+  "restored_file_bytes": 884736,
+  "restored_file_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "oracles_passed": [
+    "complete package file inventory/hash",
+    "lossless selected R16 payload identity",
+    "six faces plus adjacent sample planes zero",
+    "known lower skirt exact zero",
+    "native amount and positive counts",
+    "root/head/path pre-distance cell lower",
+    "analytic revised framing and tile/pixel bound",
+    "six image receipts, camera scopes and zero old/new borders"
+  ],
+  "limits": "Fresh restore proves selected rho bytes and retained evidence consistency. Exact full selector regeneration needs the separately retained raw master and other dependency payloads. Final optical distance/new frame are separate identities."
+}

@@ -1,0 +1,67 @@
+{
+  "scope": "Functional tests only; monitor/elapsed instrumentation is not throughput or target-runtime admission",
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "sampleIntervalMs": 25,
+  "phases": [
+    {
+      "phase": "contracts",
+      "command": [
+        "node",
+        "tests/world/contracts.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 143228928,
+      "samples": 17,
+      "elapsedSeconds": 0.9586540833115578,
+      "log": "run-logs/contracts.log",
+      "adverse": null
+    },
+    {
+      "phase": "native",
+      "command": [
+        "node",
+        "tests/world/native.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 134430720,
+      "samples": 6,
+      "elapsedSeconds": 0.3506703330203891,
+      "log": "run-logs/native.log",
+      "adverse": null
+    },
+    {
+      "phase": "source",
+      "command": [
+        "node",
+        "tests/source/run.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 195674112,
+      "samples": 32,
+      "elapsedSeconds": 1.8504375419579446,
+      "log": "run-logs/source.log",
+      "adverse": null
+    },
+    {
+      "phase": "render",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "tests/render/adapter-publish.test.mjs",
+        "tests/render/assets.test.mjs",
+        "tests/render/integration-contract.test.mjs",
+        "tests/render/source-query.test.mjs",
+        "tests/render/trace.test.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 151633920,
+      "samples": 5,
+      "elapsedSeconds": 0.29731925018131733,
+      "log": "run-logs/render-serial.log",
+      "adverse": null
+    }
+  ],
+  "pass": true
+}

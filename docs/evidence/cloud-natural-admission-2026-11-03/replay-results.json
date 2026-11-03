@@ -1,0 +1,222 @@
+{
+  "scope": "CPU source/admission/native field replay; no GPU/art/production/motion acceptance",
+  "sourcePins": {
+    "sourceBuild": "17fca3a6a1012a52",
+    "sourceHashes": {
+      "clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+      "weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+      "math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+      "admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+      "admission-policy.provenance.json": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49",
+      "model.js": "e21f9f5163f0a183136ce02a2d2cc9d6d5f6459943acfc5fa3254ba8ec8ae70e",
+      "reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+    },
+    "cookMetadataSHA256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339",
+    "cookFreezeSHA256": "c099851c2aa79c6aa7cfeb954656ed27e796f365e28b9274bebb6cba7554b1bc",
+    "originalAdmissionSHA256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+    "originalHelperSHA256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+  },
+  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+  "node": "v24.16.0",
+  "maxSampledWorkerRSSBytes": 113688576,
+  "parentReserveBytes": 25165824,
+  "sourcePhysicsUnchanged": true,
+  "totalFieldPoints": 3488,
+  "positiveFieldPoints": 1504,
+  "maxIndependentConsumerQ": 1.6653345369377348e-16,
+  "cases": {
+    "wet1200": {
+      "stats": {
+        "births": 32,
+        "bodyBirths": 13,
+        "billowBirths": 19,
+        "recoveryBirths": 0,
+        "failedBirths": 4,
+        "weatherCancelledSlots": 0,
+        "capacityFailures": 0,
+        "retired": 26,
+        "healthyEstablishments": 29,
+        "cancelledEstablishments": 0,
+        "maxSlots": 7,
+        "maxPriorCurrentIDs": 7,
+        "maxReferenceParts": 6,
+        "admissionNodeTests": 6672,
+        "controlPointUpdates": 0,
+        "sourceSteps": 4800,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 18
+      },
+      "firstFailedBirth": {
+        "time": 370,
+        "type": "failed-birth",
+        "role": "BILLOW",
+        "scheduled": 370,
+        "reason": "no-certified-catalogue-or-root",
+        "parentCandidates": [
+          9
+        ]
+      },
+      "exception": null,
+      "eventsFile": "wet1200.json"
+    },
+    "defaultDry900": {
+      "stats": {
+        "births": 13,
+        "bodyBirths": 5,
+        "billowBirths": 8,
+        "recoveryBirths": 0,
+        "failedBirths": 2,
+        "weatherCancelledSlots": 12,
+        "capacityFailures": 0,
+        "retired": 13,
+        "healthyEstablishments": 11,
+        "cancelledEstablishments": 1,
+        "maxSlots": 7,
+        "maxPriorCurrentIDs": 7,
+        "maxReferenceParts": 6,
+        "admissionNodeTests": 2655,
+        "controlPointUpdates": 8175232,
+        "sourceSteps": 3600,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 9
+      },
+      "firstFailedBirth": {
+        "time": 370,
+        "type": "failed-birth",
+        "role": "BILLOW",
+        "scheduled": 370,
+        "reason": "no-certified-catalogue-or-root",
+        "parentCandidates": [
+          9
+        ]
+      },
+      "exception": null,
+      "eventsFile": "defaultDry900.json"
+    },
+    "off150on200": {
+      "stats": {
+        "births": 15,
+        "bodyBirths": 7,
+        "billowBirths": 8,
+        "recoveryBirths": 0,
+        "failedBirths": 2,
+        "weatherCancelledSlots": 1,
+        "capacityFailures": 0,
+        "retired": 10,
+        "healthyEstablishments": 10,
+        "cancelledEstablishments": 2,
+        "maxSlots": 7,
+        "maxPriorCurrentIDs": 7,
+        "maxReferenceParts": 6,
+        "admissionNodeTests": 2315,
+        "controlPointUpdates": 0,
+        "sourceSteps": 2400,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 8
+      },
+      "firstFailedBirth": {
+        "time": 420,
+        "type": "failed-birth",
+        "role": "BILLOW",
+        "scheduled": 420,
+        "reason": "no-certified-catalogue-or-root",
+        "parentCandidates": [
+          8
+        ]
+      },
+      "exception": null,
+      "eventsFile": "off150on200.json"
+    },
+    "clearRecovery750": {
+      "stats": {
+        "births": 9,
+        "bodyBirths": 4,
+        "billowBirths": 5,
+        "recoveryBirths": 1,
+        "failedBirths": 0,
+        "weatherCancelledSlots": 12,
+        "capacityFailures": 0,
+        "retired": 3,
+        "healthyEstablishments": 4,
+        "cancelledEstablishments": 1,
+        "maxSlots": 7,
+        "maxPriorCurrentIDs": 7,
+        "maxReferenceParts": 6,
+        "admissionNodeTests": 691,
+        "controlPointUpdates": 0,
+        "sourceSteps": 3000,
+        "maxControlPitch": 128,
+        "maxK": 2.029999999999998,
+        "exposurePublications": 3
+      },
+      "firstFailedBirth": null,
+      "exception": null,
+      "eventsFile": "clearRecovery750.json"
+    },
+    "initialOff400": {
+      "stats": {
+        "births": 6,
+        "bodyBirths": 3,
+        "billowBirths": 3,
+        "recoveryBirths": 1,
+        "failedBirths": 0,
+        "weatherCancelledSlots": 5,
+        "capacityFailures": 0,
+        "retired": 0,
+        "healthyEstablishments": 3,
+        "cancelledEstablishments": 0,
+        "maxSlots": 6,
+        "maxPriorCurrentIDs": 6,
+        "maxReferenceParts": 4,
+        "admissionNodeTests": 411,
+        "controlPointUpdates": 0,
+        "sourceSteps": 1600,
+        "maxControlPitch": 128,
+        "maxK": 1.348000000000001,
+        "exposurePublications": 1
+      },
+      "firstFailedBirth": null,
+      "exception": null,
+      "eventsFile": "initialOff400.json"
+    },
+    "changedWind900": {
+      "stats": {
+        "births": 19,
+        "bodyBirths": 8,
+        "billowBirths": 11,
+        "recoveryBirths": 1,
+        "failedBirths": 8,
+        "weatherCancelledSlots": 0,
+        "capacityFailures": 0,
+        "retired": 13,
+        "healthyEstablishments": 13,
+        "cancelledEstablishments": 2,
+        "maxSlots": 7,
+        "maxPriorCurrentIDs": 7,
+        "maxReferenceParts": 6,
+        "admissionNodeTests": 3208,
+        "controlPointUpdates": 3448926,
+        "sourceSteps": 3600,
+        "maxControlPitch": 128,
+        "maxK": 1.522500000000002,
+        "exposurePublications": 10
+      },
+      "firstFailedBirth": {
+        "time": 370,
+        "type": "failed-birth",
+        "role": "BILLOW",
+        "scheduled": 370,
+        "reason": "no-certified-catalogue-or-root",
+        "parentCandidates": [
+          9
+        ]
+      },
+      "exception": null,
+      "eventsFile": "changedWind900.json"
+    }
+  }
+}

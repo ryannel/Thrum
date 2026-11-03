@@ -1,0 +1,16 @@
+✔ presentation uploads are keyed; paused camera redraw does not clone/upload grids (0.702375ms)
+✔ real integrated index verifies two LOCAL templates and pinned 32³ noise (33.003875ms)
+✔ actual source clock presents retained seed through growth onset to common renderer packing (5.901209ms)
+✔ actual 100s source poses query positive native BODY and B without a remap (15.9155ms)
+✔ integrated source state packs age and stable control slot (0.667625ms)
+✔ fixed material M and interpolated exposure erode once; raw source stays separate (0.922583ms)
+✔ exposure samples each template domain, not a global 0..512 grid (0.249791ms)
+✔ completion after a fixture edit retains submitted frame revision and source time (0.384458ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 253.896709

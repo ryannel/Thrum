@@ -1,0 +1,28 @@
+{
+  "scope": "Functional tests only; monitor/elapsed instrumentation is not throughput or target-runtime admission",
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "sampleIntervalMs": 25,
+  "phases": [
+    {
+      "phase": "render",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "tests/render/adapter-publish.test.mjs",
+        "tests/render/assets.test.mjs",
+        "tests/render/integration-contract.test.mjs",
+        "tests/render/source-query.test.mjs",
+        "tests/render/trace.test.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 138149888,
+      "samples": 5,
+      "elapsedSeconds": 0.27760020876303315,
+      "log": "run-logs/render-serial.log",
+      "adverse": null
+    }
+  ],
+  "pass": true
+}

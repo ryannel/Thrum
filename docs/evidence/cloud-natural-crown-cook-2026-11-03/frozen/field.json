@@ -1,0 +1,52 @@
+{
+  "rounding_contract": "F64EDT sign ->F32scratch ->F32disjoint signed merge ->R16",
+  "direct_f64_to_half_bit_differences": 0,
+  "distance_half_error_max_local_m": 0.03124237432848531,
+  "distance_half_error_mean_local_m": 0.003585889068523636,
+  "distance_range_local_m": [
+    -74.4375,
+    29.734375
+  ],
+  "raw_integral_local_m3": 41878.89717388153,
+  "reference_integral_local_m3": 39944.08047022355,
+  "reference_attenuation_fraction": 0.046200278283943574,
+  "rho_positive_native_count": 71863,
+  "q_positive_native_count": 71809,
+  "strict_positive_trilinear_bounds_rho_q": [
+    [
+      [
+        115.0,
+        237.0,
+        147.0
+      ],
+      [
+        293.0,
+        339.0,
+        281.0
+      ]
+    ],
+    [
+      [
+        115.0,
+        237.0,
+        147.0
+      ],
+      [
+        289.0,
+        339.0,
+        281.0
+      ]
+    ]
+  ],
+  "q_bound_method": "unionofclosedcellswithmaxrho>0ANDmaxd>-8; notnativeqpositivebbox",
+  "exact_zero_collar_native_voxels": 2,
+  "endpoint_local_m": 125.9482421875,
+  "endpoint_all_native_zero_Mmin": true,
+  "distance_sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab",
+  "cell_lower_sha256": "46bae0c2f0015a1c17d4eee3d368dc879b331b1acd3a429318f06b42fde3701a",
+  "recipe_sha256": "006a9dedb2f2431bdb4dc2182924183d526f58e4223a3244b627110267e804e6",
+  "rho_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "commission_sha256": "e482b4c40ab5324054a429717f801b5089295bfc6e525f8480552dcc191d3dc3",
+  "elapsed_s": 0.03833429189398885,
+  "process_highwater_bytes": 96681984
+}

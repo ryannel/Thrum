@@ -1,0 +1,20 @@
+{
+  "original_early_guard_bytes": 117440512,
+  "peak_rss_bytes": 24281088,
+  "python": "/opt/homebrew/bin/python3.14",
+  "restored_fields": {
+    "density.r16f": {
+      "bytes": 884736,
+      "sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09"
+    },
+    "distance.r16f": {
+      "bytes": 884736,
+      "sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab"
+    }
+  },
+  "restored_metadata_sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339",
+  "restored_selected_bytes": 1769472,
+  "scope": "Fresh restore to a newly created root; selected bytes and original metadata, no rerun of EDT, no GPU/art/admission claim",
+  "status": "PASS",
+  "temporary_output_cleaned": true
+}

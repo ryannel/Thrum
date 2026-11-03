@@ -1,0 +1,22 @@
+{
+  "scope": "Functional tests only; monitor/elapsed instrumentation is not throughput or target-runtime admission",
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "sampleIntervalMs": 25,
+  "phases": [
+    {
+      "phase": "native",
+      "command": [
+        "node",
+        "tests/world/native.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 136396800,
+      "samples": 6,
+      "elapsedSeconds": 0.3512007500976324,
+      "log": "run-logs/native.log",
+      "adverse": null
+    }
+  ],
+  "pass": true
+}

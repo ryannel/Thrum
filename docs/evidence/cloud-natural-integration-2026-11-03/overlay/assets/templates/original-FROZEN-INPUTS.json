@@ -1,0 +1,29 @@
+{
+  "scope": "Newnaturalcrownoriginalopticalmetadata plusunchangedBODY; provenanceonly, notadopted",
+  "files": {
+    "body.density.r16f": {
+      "bytes": 6291456,
+      "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19"
+    },
+    "body.distance.r16f": {
+      "bytes": 6291456,
+      "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14"
+    },
+    "body.json": {
+      "bytes": 9097,
+      "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+    },
+    "crown-b.density.r16f": {
+      "bytes": 884736,
+      "sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09"
+    },
+    "crown-b.distance.r16f": {
+      "bytes": 884736,
+      "sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab"
+    },
+    "crown-b.json": {
+      "bytes": 15164,
+      "sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339"
+    }
+  }
+}

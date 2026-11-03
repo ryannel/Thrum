@@ -1,0 +1,19 @@
+{
+  "stage": "inside",
+  "class": "decodedFloat32rho>=Float32(.001)",
+  "inside_count": 67216,
+  "f64_sha256": "52646db9b4c9a9ad93d7141649510bdcc593838734db902939e11cea75120b7e",
+  "f32_sha256": "98fb3691501fc4000c22235715fb773b7d4c73bf1bd97058900259e1fda6a66e",
+  "range": [
+    0.0,
+    29.732137494637012
+  ],
+  "python": "3.14.10 (main, Oct 25 2026, 17:12:00) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "recipe_sha256": "97785fb3e2b1a3241ebf8a54acfe3962440ab3639af64a8a63783ad921699680",
+  "rho_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "commission_sha256": "e482b4c40ab5324054a429717f801b5089295bfc6e525f8480552dcc191d3dc3",
+  "elapsed_s": 0.21121029183268547,
+  "process_highwater_bytes": 88719360
+}

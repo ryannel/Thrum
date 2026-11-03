@@ -1,0 +1,13 @@
+{
+  "annotated_metadata_sha256": "8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704",
+  "build": "ae5533ec5335b4ca",
+  "elapsed_wall_s": 0.154,
+  "original_metadata_sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339",
+  "scope": "Final capture-inventory package verified, then fresh 17f baseline restore + six text overlays + two optical fields; exact 39-file served identity, no tests/GPU/browser/art claim",
+  "selected_d_sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab",
+  "selected_rho_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "served_files": 39,
+  "source_sha256": "e21f9f5163f0a183136ce02a2d2cc9d6d5f6459943acfc5fa3254ba8ec8ae70e",
+  "status": "PASS",
+  "temporary_output_cleaned": true
+}

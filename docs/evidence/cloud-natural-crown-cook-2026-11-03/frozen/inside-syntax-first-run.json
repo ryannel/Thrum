@@ -1,0 +1,8 @@
+{
+  "stage": "inside",
+  "exitCode": 1,
+  "sampled_peak_rss_bytes": 3948544,
+  "elapsed_s": 0.06694887485355139,
+  "failure": null,
+  "recipe_sha256": "437116397d52543d8b7e1bf15a953c15c75347164f96ef327289c95b71fa74e5"
+}

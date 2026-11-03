@@ -1,0 +1,10 @@
+{
+  "definition": "EDT distance to native vertices ofbadclosedcells minus sqrt3 and .0501; safe lower localradius",
+  "candidate_6m_centres": 6258,
+  "safe_radius_sha256": "61a20ea1dd6bfe62432e85aa846f8fd5f490f1c4ce22286289508a775718d779",
+  "recipe_sha256": "97785fb3e2b1a3241ebf8a54acfe3962440ab3639af64a8a63783ad921699680",
+  "rho_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "commission_sha256": "e482b4c40ab5324054a429717f801b5089295bfc6e525f8480552dcc191d3dc3",
+  "elapsed_s": 0.15068116690963507,
+  "process_highwater_bytes": 92913664
+}

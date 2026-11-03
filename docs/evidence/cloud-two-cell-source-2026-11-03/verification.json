@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Fresh dependency-only restore and sequential guarded CPU functional validation; no GPU/browser/benchmark or art qualification",
+  "cpuContractRevision": "1a0a01c2c8735b74",
+  "sourcePinsSHA256": "39f186b0cc90b991a7484d51acbf0dc5dea6fc31967c6f433f8fb2b78540e3a2",
+  "archiveSHA256": "e5bb9ef145fdfef4f47a09a2d95832302dbbff0e838200ac8d4a87c468ca7dc7",
+  "command": "python3 docs/evidence/cloud-two-cell-source-2026-11-03/restore.py --output /tmp/thrum-two-cell-restored-20261103 --test",
+  "freshAbsentOutput": true,
+  "decodedInputsVerified": 5,
+  "archiveMemberHashesVerified": true,
+  "ownedCodePinsVerified": true,
+  "node": "v24.16.0",
+  "host": "Darwin",
+  "pass": true,
+  "guardedResults": {
+    "scope": "Functional tests only; monitor/elapsed instrumentation is not throughput or target-runtime admission",
+    "earlyBytes": 234881024,
+    "hardBytes": 268435456,
+    "sampleIntervalMs": 25,
+    "phases": [
+      {
+        "phase": "contracts",
+        "command": [
+          "node",
+          "tests/world/contracts.mjs"
+        ],
+        "exitCode": 0,
+        "sampledProcessTreePeakBytes": 143228928,
+        "samples": 17,
+        "elapsedSeconds": 0.9586540833115578,
+        "log": "run-logs/contracts.log",
+        "adverse": null
+      },
+      {
+        "phase": "native",
+        "command": [
+          "node",
+          "tests/world/native.mjs"
+        ],
+        "exitCode": 0,
+        "sampledProcessTreePeakBytes": 134430720,
+        "samples": 6,
+        "elapsedSeconds": 0.3506703330203891,
+        "log": "run-logs/native.log",
+        "adverse": null
+      },
+      {
+        "phase": "source",
+        "command": [
+          "node",
+          "tests/source/run.mjs"
+        ],
+        "exitCode": 0,
+        "sampledProcessTreePeakBytes": 195674112,
+        "samples": 32,
+        "elapsedSeconds": 1.8504375419579446,
+        "log": "run-logs/source.log",
+        "adverse": null
+      },
+      {
+        "phase": "render",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "tests/render/adapter-publish.test.mjs",
+          "tests/render/assets.test.mjs",
+          "tests/render/integration-contract.test.mjs",
+          "tests/render/source-query.test.mjs",
+          "tests/render/trace.test.mjs"
+        ],
+        "exitCode": 0,
+        "sampledProcessTreePeakBytes": 151633920,
+        "samples": 5,
+        "elapsedSeconds": 0.29731925018131733,
+        "log": "run-logs/render-serial.log",
+        "adverse": null
+      }
+    ],
+    "pass": true
+  },
+  "retainedFreshReceipts": {
+    "observations/fresh-restore/guarded-all-results.json": {
+      "bytes": 1716,
+      "sha256": "cfedfd9870f52530a787dc303303caa31d159d2a40307d9895e90578a8276adc"
+    },
+    "observations/fresh-restore/tests--world--contracts-results.json": {
+      "bytes": 914,
+      "sha256": "f8c5dd164176c558b168adf1c1f5e0785b96eec5964135e1b8be001a68732fbd"
+    },
+    "observations/fresh-restore/tests--world--native-results.json": {
+      "bytes": 10826,
+      "sha256": "46d551b29b73ff1e1d9939394d99bd9e2d396e992f6a17fec4b6388c5172d315"
+    },
+    "observations/fresh-restore/tests--source--suite-results.json": {
+      "bytes": 25174,
+      "sha256": "b5670b082f0d8abd6231ac4abeb69bcd5bc58b7d79058f564ab34d8550c17e77"
+    },
+    "observations/fresh-restore/run-logs--contracts.log": {
+      "bytes": 822,
+      "sha256": "8dac412ec285bb8cc4e03851284b9ca74ca6fab39c7bb4f07a324dbc142ca51b"
+    },
+    "observations/fresh-restore/run-logs--native.log": {
+      "bytes": 2175,
+      "sha256": "37ece5e9b12faee985438f46e81315d95354296dadc2141318ab7c128750bb16"
+    },
+    "observations/fresh-restore/run-logs--source.log": {
+      "bytes": 222,
+      "sha256": "8253ead71c292fd76fb568b3372c90d584d58931c5b2f5aa99dd87fe1d403a27"
+    },
+    "observations/fresh-restore/run-logs--render-serial.log": {
+      "bytes": 854,
+      "sha256": "8628f80ef5e5bfc76009e6d224ca80ca28829450cc11d37b2c0059d0fd020113"
+    }
+  },
+  "originalAdverseRun": "observations/guarded-concurrent-stopped.json",
+  "cleanup": "Only the disposable fresh restore is removed after retaining its receipts; frozen scratch proof and shared inputs are retained."
+}

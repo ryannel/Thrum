@@ -1,0 +1,83 @@
+{
+  "build": "ae5533ec5335b4ca",
+  "files": {
+    "README.md": {
+      "bytes": 5506,
+      "sha256": "4551a671eb21418743e004533478486c53979ddba794cab6dd6c06956e175e1f"
+    },
+    "dependencies.json": {
+      "bytes": 1334,
+      "sha256": "e538ac440ce539899a806fcff590b335d84c8a3fb59a95c53e88417ce09b45ef"
+    },
+    "frozen/ASSEMBLY.json": {
+      "bytes": 9802,
+      "sha256": "091975bce8e84f03560f383ef873aeec31feaa8e2a711a264abb8fc3e9188f95"
+    },
+    "frozen/FREEZE.json": {
+      "bytes": 3967,
+      "sha256": "7606e040240ba4417ec632a4182dcd6248f456e22e730d0f4c9b8dae832e879a"
+    },
+    "frozen/serve.py": {
+      "bytes": 3413,
+      "sha256": "08c83357fb47a4b7a1c54ee025a207a970d27597bc9c20b7eb59c2c1df961468"
+    },
+    "observations/inventory.json": {
+      "bytes": 7778,
+      "sha256": "b840ec9c945aea437879bd50cde5c7760726c29f8d4c6d5d8d33902d2def8408"
+    },
+    "observations/receipts-and-stills.zip": {
+      "bytes": 5339776,
+      "sha256": "7e62fde9927ce9a8b54015c3373b9daed007c6eb3b97f89b44f5360772722a85"
+    },
+    "observations/system-accelerated-16x-40s-ae5533ec5335b4ca-96264ef8-8.webm": {
+      "bytes": 2848735,
+      "sha256": "b48d33ec2ce7d0b7b5e5a73d90fd12909d1dbffe871afba33b2356196336ff1a"
+    },
+    "observations/system-breakup-1x-90s-ae5533ec5335b4ca-96264ef8-7.webm": {
+      "bytes": 1950632,
+      "sha256": "6c36c882cbbdcc12c779da7d627286748c0f6aaac1434f7f17558d2aba728548"
+    },
+    "observations/system-renewal-1x-90s-ae5533ec5335b4ca-96264ef8-6.webm": {
+      "bytes": 3870695,
+      "sha256": "6073afc1b8060d905bce0f99a6134702f58de9e6fe1ce77a0ee4e3ceb46085b5"
+    },
+    "observations/system-t220000-mode0-ae5533ec5335b4ca-96264ef8-2.png": {
+      "bytes": 395334,
+      "sha256": "a450f984a07b834387841a8dc0891533452df51fed5003dc82c691322e2cdc10"
+    },
+    "overlay/assets/admission/admission.json": {
+      "bytes": 168039,
+      "sha256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee"
+    },
+    "overlay/assets/input-index.json": {
+      "bytes": 2491,
+      "sha256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7"
+    },
+    "overlay/assets/templates/crown-b.json": {
+      "bytes": 15642,
+      "sha256": "8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704"
+    },
+    "overlay/assets/templates/original-FROZEN-INPUTS.json": {
+      "bytes": 953,
+      "sha256": "60054a49e5edb232177a40de2fe60ad18ff36ccb253d42345b360b6b5b30d62c"
+    },
+    "overlay/assets/templates/original-crown-b.json": {
+      "bytes": 15164,
+      "sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339"
+    },
+    "overlay/index.html": {
+      "bytes": 5548,
+      "sha256": "f026b0b84ea11415549d080e4e742de1208402272c34c2ef39fa9523fa0a0023"
+    },
+    "restore-verification.json": {
+      "bytes": 799,
+      "sha256": "d27590ee816f9e475b3409e69bd5216fefbdb1507893a48cd37c3d84a7e10f40"
+    },
+    "restore.py": {
+      "bytes": 6261,
+      "sha256": "6b97548cba9ebb7d4e837505be82b032f586f95b72d81f71a520e45904fd2793"
+    }
+  },
+  "schema": 1,
+  "scope": "Observed ae5533ec diagnostic overlay and captured evidence; HASHED UNQUALIFIED"
+}

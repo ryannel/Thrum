@@ -1,0 +1,168 @@
+{
+  "scope": "one actual-source220 source-only comparison, not final distance/lighting/art admission",
+  "view": "front",
+  "mode": "isolated",
+  "camera": {
+    "yaw": 0,
+    "pitch": -0.05,
+    "distance": 2000,
+    "panX": 0,
+    "panY": 0,
+    "position": [
+      1057.3123672719425,
+      1236.6107331614191,
+      2695.3298817896566
+    ],
+    "target": [
+      1057.3123672719425,
+      1351.5628224839793,
+      398.2042828812342
+    ]
+  },
+  "source_time": 220,
+  "part_ids": [
+    5
+  ],
+  "source_part_tuple_sha256": "10bd92d38e25d2fe6130a1fdbe0ea669fed4cff39a9cf5b83ed17e7f3ba92862",
+  "arrays": [
+    {
+      "name": "raw crop (clipped diagnostic)",
+      "origin_xyz_m": [
+        112.0,
+        224.0,
+        144.0
+      ],
+      "span_xyz_m": [
+        192.0,
+        128.0,
+        144.0
+      ],
+      "dims_xyz": [
+        96,
+        64,
+        72
+      ]
+    },
+    {
+      "name": "old v2 B (old domain)",
+      "origin_xyz_m": [
+        104.0,
+        160.0,
+        128.0
+      ],
+      "span_xyz_m": [
+        192.0,
+        192.0,
+        192.0
+      ],
+      "dims_xyz": [
+        96,
+        96,
+        96
+      ]
+    },
+    {
+      "name": "natural S/O (pre-distance)",
+      "origin_xyz_m": [
+        112.0,
+        224.0,
+        144.0
+      ],
+      "span_xyz_m": [
+        192.0,
+        128.0,
+        144.0
+      ],
+      "dims_xyz": [
+        96,
+        64,
+        72
+      ]
+    }
+  ],
+  "body_domain": {
+    "origin": [
+      64.0,
+      176.0,
+      0.0
+    ],
+    "span": [
+      384.0,
+      128.0,
+      512.0
+    ]
+  },
+  "world_ray_bounds": [
+    [
+      -34.04677063869008,
+      452.08567511319575,
+      -287.7332054770967
+    ],
+    [
+      1909.6127589431221,
+      2440.0124510531728,
+      1446.334462645731
+    ]
+  ],
+  "sampling": {
+    "pixels": [
+      608,
+      342
+    ],
+    "vertical_fov_degrees": 48,
+    "max_world_step_m": 8,
+    "rows_per_tile": 3,
+    "depth_per_tile": 8,
+    "query_points_per_tile": 14592,
+    "tile_count": 3230,
+    "valid_ray_samples": 28443416,
+    "framing_rev2_sha256": "fde97e154e777cd7120521954a562e1eb5c1a1bf6b47a26492a21a37dfeabb90"
+  },
+  "comparator": [
+    {
+      "tau_max": 1.8871523907125343,
+      "opacity_max": 0.8484973845844176,
+      "opacity_mean": 0.06062228233427444,
+      "projected_peak005_pixels": 27764,
+      "projected_peak041_pixels": 26462,
+      "peak005_border_pixels": 0
+    },
+    {
+      "tau_max": 1.2630014171460298,
+      "opacity_max": 0.7171960611868591,
+      "opacity_mean": 0.013863612638157722,
+      "projected_peak005_pixels": 8071,
+      "projected_peak041_pixels": 6672,
+      "peak005_border_pixels": 0
+    },
+    {
+      "tau_max": 1.140538198400539,
+      "opacity_max": 0.680353057959016,
+      "opacity_mean": 0.017054373845145795,
+      "projected_peak005_pixels": 12376,
+      "projected_peak041_pixels": 10660,
+      "peak005_border_pixels": 0
+    }
+  ],
+  "input_sha256": {
+    "cloud-component-content-v2/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "cloud-component-content-v2/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "cloud-system-proof/assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "raw_master": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "old_B": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "candidate": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+    "frozen_preflight_helper": "8e210d29a26cbd1f8714d4e6648b6a37e5a1ee1c86261c23d27fdbc2c34b8867",
+    "capture": "2eb4b6c9a88a0f18f1ea7f3b0d05fe82f7c86b30415cddc7be8311e0f209f0eb"
+  },
+  "code_sha256": "bdf6d5135e3047a73b65e47caaab8f666b4f8404438a19125101c4a90fded100",
+  "native_receipt_sha256": "21d91e6a7bda0c374c9789b1322b1e7a845288cbdb27605ae15f384a03257ac6",
+  "selector_receipt_sha256": "2eb7cf88141e64750162d49e5a5c58b30219f721d3d08dea753d930d42d88b59",
+  "image": {
+    "file": "view-isolated-front.png",
+    "bytes": 56182,
+    "sha256": "36d6f5397bc08cc885747738e25486528395571e44da5a763b5289afd3cbe0e9"
+  },
+  "wall_s": 18.068644332699478,
+  "sampled_peak_rss_bytes": 81838080,
+  "process_highwater_bytes": 82132992
+}

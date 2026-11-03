@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "scope": "External byte dependencies for exact historical rerun; selected rho restores directly from this package without them",
+  "inputs": {
+    "raw03_master": {
+      "worktree_relative": "tmp/cloud-authored-master/cloud-03-256.density.r16f",
+      "bytes": 33554432,
+      "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9"
+    },
+    "old_B_rho": {
+      "worktree_relative": "tmp/cloud-component-content-v2/crown-b.density.r16f",
+      "bytes": 1769472,
+      "sha256": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9"
+    },
+    "old_B_distance": {
+      "worktree_relative": "tmp/cloud-component-content-v2/crown-b.distance.r16f",
+      "bytes": 1769472,
+      "sha256": "28e3fef069906ae88bcf5b1b4021da339710c3851fc825b27cd58ea1442e8416"
+    },
+    "BODY_rho": {
+      "worktree_relative": "tmp/cloud-component-content-v2/body.density.r16f",
+      "bytes": 6291456,
+      "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19"
+    },
+    "BODY_distance": {
+      "worktree_relative": "tmp/cloud-component-content-v2/body.distance.r16f",
+      "bytes": 6291456,
+      "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14"
+    },
+    "shared_noise": {
+      "worktree_relative": "tmp/cloud-system-proof/assets/noise/channels-32.r16f",
+      "bytes": 65536,
+      "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11"
+    },
+    "inherited_sample_helper": {
+      "worktree_relative": "docs/evidence/cloud-crown-screen-2026-11-03/frozen/preflight.py",
+      "bytes": 15901,
+      "sha256": "8e210d29a26cbd1f8714d4e6648b6a37e5a1ee1c86261c23d27fdbc2c34b8867"
+    }
+  },
+  "retained_provenance_packages": [
+    "../cloud-authored-masters-2026-11-03/",
+    "../cloud-component-proof-2026-11-03/",
+    "../cloud-crown-screen-2026-11-03/"
+  ],
+  "selected_rho_original_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09"
+}

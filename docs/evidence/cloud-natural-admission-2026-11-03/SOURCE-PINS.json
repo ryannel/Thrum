@@ -1,0 +1,16 @@
+{
+  "sourceBuild": "17fca3a6a1012a52",
+  "sourceHashes": {
+    "clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+    "weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+    "math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+    "admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+    "admission-policy.provenance.json": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49",
+    "model.js": "e21f9f5163f0a183136ce02a2d2cc9d6d5f6459943acfc5fa3254ba8ec8ae70e",
+    "reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d"
+  },
+  "cookMetadataSHA256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339",
+  "cookFreezeSHA256": "c099851c2aa79c6aa7cfeb954656ed27e796f365e28b9274bebb6cba7554b1bc",
+  "originalAdmissionSHA256": "5ae9c1152d720d8fd6ae00fb2a74f02d477400898c12cd348e5c99314b127697",
+  "originalHelperSHA256": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e"
+}

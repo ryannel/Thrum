@@ -1,0 +1,413 @@
+{
+  "status": "HASHED UNQUALIFIED optical diagnostic",
+  "rootBall": {
+    "centerLocal": [
+      225.0,
+      265.0,
+      197.0
+    ],
+    "radiusLocal": 20.04975124224178,
+    "qMin": 0.041,
+    "cellCheck": {
+      "intersected_cells": 5184,
+      "minimum_cell_lower": 0.05267333984175
+    }
+  },
+  "S_voxels": 19208,
+  "original_S_raw_rho_weighted_centroid": [
+    198.6579957084382,
+    312.02129763802884,
+    212.50807246323072
+  ],
+  "principal_selection": "nearestreachable certified6m S nativecentre; squaredDistance/XYZ stabletie",
+  "reachable_certified_S_centres": 1216,
+  "headWitnesses": [
+    {
+      "id": "natural-head-0",
+      "centerLocal": [
+        199.0,
+        313.0,
+        213.0
+      ],
+      "radiusLocal": 9.95,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            211.0,
+            283.0,
+            205.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.07073974609175
+          }
+        },
+        {
+          "centerLocal": [
+            209.0,
+            293.0,
+            205.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.07171630859175
+          }
+        },
+        {
+          "centerLocal": [
+            207.0,
+            303.0,
+            205.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055023193357375
+          }
+        },
+        {
+          "centerLocal": [
+            203.0,
+            313.0,
+            207.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055023193357375
+          }
+        },
+        {
+          "centerLocal": [
+            199.0,
+            313.0,
+            213.0
+          ],
+          "radiusLocal": 9.95,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 720,
+            "minimum_cell_lower": 0.04161311430458543
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 24.166091947189145,
+      "cellCheck": {
+        "intersected_cells": 720,
+        "minimum_cell_lower": 0.04161311430458543
+      }
+    },
+    {
+      "id": "natural-head-1",
+      "centerLocal": [
+        239.0,
+        301.0,
+        185.0
+      ],
+      "radiusLocal": 8.19621125123532,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            233.0,
+            287.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.05133056640425
+          }
+        },
+        {
+          "centerLocal": [
+            237.0,
+            297.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.041412353513625
+          }
+        },
+        {
+          "centerLocal": [
+            239.0,
+            301.0,
+            187.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.045135498044875
+          }
+        },
+        {
+          "centerLocal": [
+            239.0,
+            301.0,
+            185.0
+          ],
+          "radiusLocal": 8.19621125123532,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 432,
+            "minimum_cell_lower": 0.045135498044875
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 23.40939982143925,
+      "cellCheck": {
+        "intersected_cells": 432,
+        "minimum_cell_lower": 0.045135498044875
+      }
+    },
+    {
+      "id": "natural-head-2",
+      "centerLocal": [
+        227.0,
+        301.0,
+        221.0
+      ],
+      "radiusLocal": 8.667797887081347,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            289.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.05133056640425
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            299.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055938720701125
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            301.0,
+            207.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.045867919919875
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            301.0,
+            217.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.056060791013625
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            301.0,
+            221.0
+          ],
+          "radiusLocal": 8.667797887081347,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 552,
+            "minimum_cell_lower": 0.044647216794875
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 24.08318915758459,
+      "cellCheck": {
+        "intersected_cells": 552,
+        "minimum_cell_lower": 0.044647216794875
+      }
+    },
+    {
+      "id": "natural-head-3",
+      "centerLocal": [
+        221.0,
+        315.0,
+        199.0
+      ],
+      "radiusLocal": 7.95,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            289.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055938720701125
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            299.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055938720701125
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            309.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.0985107421855
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            315.0,
+            199.0
+          ],
+          "radiusLocal": 7.95,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 408,
+            "minimum_cell_lower": 0.06524658202925
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 24.331050121192877,
+      "cellCheck": {
+        "intersected_cells": 408,
+        "minimum_cell_lower": 0.06524658202925
+      }
+    }
+  ],
+  "rejected_spread_candidates": [],
+  "root_to_crown_frame": {
+    "root_to_crown_orthoframe_columns": [
+      [
+        0.879291966536774,
+        0.4762831485407526,
+        -0.0
+      ],
+      [
+        -0.45705566005750947,
+        0.843795064721556,
+        0.28126502157385197
+      ],
+      [
+        0.13396179004957692,
+        -0.24731407393768046,
+        0.959630130643604
+      ]
+    ],
+    "root_head_length_local_m": 56.88585061331157,
+    "old_axis_change_degrees": 19.988156626456576
+  },
+  "selector_sha256": "2eb7cf88141e64750162d49e5a5c58b30219f721d3d08dea753d930d42d88b59",
+  "dS_sha256": "a75cbd297901fc4620e5a51e431b154b3dfbc5435c69eeac2a52e8f4001ce875",
+  "original_master_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "cell_lower_sha256": "46bae0c2f0015a1c17d4eee3d368dc879b331b1acd3a429318f06b42fde3701a",
+  "radius_sha256": "61a20ea1dd6bfe62432e85aa846f8fd5f490f1c4ce22286289508a775718d779",
+  "chain_mask_definition": "6-neighbour native-centre BFS of conservative>=6m spheres then deterministicoverlap compression; everyretainedsphereindependentlycell-intersectionchecked",
+  "recipe_sha256": "006a9dedb2f2431bdb4dc2182924183d526f58e4223a3244b627110267e804e6",
+  "rho_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+  "commission_sha256": "e482b4c40ab5324054a429717f801b5089295bfc6e525f8480552dcc191d3dc3",
+  "elapsed_s": 0.3927173330448568,
+  "process_highwater_bytes": 60080128
+}

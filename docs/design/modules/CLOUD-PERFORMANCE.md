@@ -189,3 +189,12 @@ prototype scaling terms and missing cost-recorder/consumer work. Dense control b
 prototype's per-virtual-cell allocation topology. Shared zeros/lazy exposure pages are a candidate exact reduction,
 not a proven bound on retained nonzero histories. Two-cell integration can proceed with an explicit small ledger,
 while P7 still requires a measured resident/virtual/cause recovery strategy and all-positive burst coverage.
+
+
+The [two-cell CPU producer](../../evidence/cloud-two-cell-source-2026-11-03/README.md) now exercises the fixed pair
+without concatenating exposure grids: borrowed publications expire on commit/fault, and probes request owned copies.
+Twelve focused and six native checks plus existing source/render checks pass in their recorded functional scope.
+An accidentally concurrent render-test launch exceeded the256MiB guard before termination; that adverse receipt remains.
+The identical serial test run passes under the unchanged guard. Neither this scheduling recovery nor CPU functional
+RSS establishes two-cell renderer cost, residency, throughput or the production sky budget. Actual multi-cell optical
+passes, retained consumers and valid per-pass GPU timing remain on P4a's critical path.

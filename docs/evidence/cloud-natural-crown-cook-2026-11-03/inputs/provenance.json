@@ -1,0 +1,156 @@
+{
+  "schema": "thrum.static-cloud-master-acquisition.v1",
+  "package_id": "thrum.cloud-master.jangafx-03-08.v1",
+  "official_license_page": "https://jangafx.com/software/embergen/download/free-vdb-animations",
+  "linked_archive_page": "https://www.mediafire.com/file/879onggscuon7ew/CloudPackVDB.zip/file",
+  "transfer_url": "https://download2390.mediafire.com/9rvkxds22tlgwH96YShW_3tnW1WLlb6NFsXxg5uKsKibrBjyobVIfLikX6X6w1fr1Qm8guX9q4V4HTU17pZuduN5QkCPFlHM4QBCvQJi_BrQZSucWCXuJ-IOJLqTeUNOEdYsnrdBg-ybCrMisHUqDLjh1h7EkW08CQMkDNpAypP8hPU/879onggscuon7ew/CloudPackVDB.zip",
+  "download_started_utc": "2026-11-03T00:40:41.268576+00:00",
+  "completed_utc": "2026-11-03T00:40:47.633506+00:00",
+  "license": "CC0-1.0; exact LICENSE.txt retained",
+  "authorship": "Created with EmberGen by JangaFX LLC",
+  "archive": {
+    "file": "CloudPackVDB.zip",
+    "bytes": 109761538,
+    "sha256": "3676ba4c7ac431446731f956f98e925ad3db31354b8b4adcb137dc0250595f73"
+  },
+  "archive_uncompressed_bytes": 193647672,
+  "directory": [
+    {
+      "name": "CloudPack/",
+      "bytes": 0,
+      "compressed_bytes": 0,
+      "crc32": "00000000"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/",
+      "bytes": 0,
+      "compressed_bytes": 0,
+      "crc32": "00000000"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb",
+      "bytes": 17468785,
+      "compressed_bytes": 9494412,
+      "crc32": "924e163d"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_02_variant_0000.vdb",
+      "bytes": 20159892,
+      "compressed_bytes": 11323562,
+      "crc32": "4a22a6e4"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_03_variant_0000.vdb",
+      "bytes": 17727036,
+      "compressed_bytes": 9507570,
+      "crc32": "bce411bb"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_04_variant_0000.vdb",
+      "bytes": 16198165,
+      "compressed_bytes": 8596184,
+      "crc32": "c2f56e35"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_05_variant_0000.vdb",
+      "bytes": 21389004,
+      "compressed_bytes": 12292997,
+      "crc32": "f3a85d6e"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_06_variant_0000.vdb",
+      "bytes": 18832787,
+      "compressed_bytes": 10214722,
+      "crc32": "98e86970"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_07_variant_0000.vdb",
+      "bytes": 21606926,
+      "compressed_bytes": 12287661,
+      "crc32": "0bf68ef4"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_08_variant_0000.vdb",
+      "bytes": 16358457,
+      "compressed_bytes": 8891587,
+      "crc32": "2f143466"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_09_variant_0000.vdb",
+      "bytes": 17151725,
+      "compressed_bytes": 9472666,
+      "crc32": "df3a08a4"
+    },
+    {
+      "name": "CloudPack/CloudPackVDB/cloud_10_variant_0000.vdb",
+      "bytes": 17204740,
+      "compressed_bytes": 9102214,
+      "crc32": "656a7261"
+    },
+    {
+      "name": "CloudPack/cloud_generator.ember",
+      "bytes": 79488,
+      "compressed_bytes": 13788,
+      "crc32": "86d4d375"
+    },
+    {
+      "name": "CloudPack/cloud_pack_evolve.mp4",
+      "bytes": 8451360,
+      "compressed_bytes": 7551040,
+      "crc32": "f15cd65c"
+    },
+    {
+      "name": "CloudPack/cloud_pack_seeding.png",
+      "bytes": 256734,
+      "compressed_bytes": 252051,
+      "crc32": "bf40e00f"
+    },
+    {
+      "name": "CloudPack/cloud_pack_thumbnails.png",
+      "bytes": 754497,
+      "compressed_bytes": 754497,
+      "crc32": "93648823"
+    },
+    {
+      "name": "LICENSE.txt",
+      "bytes": 6531,
+      "compressed_bytes": 2406,
+      "crc32": "a2b49b96"
+    },
+    {
+      "name": "README.txt",
+      "bytes": 1545,
+      "compressed_bytes": 817,
+      "crc32": "80acc1f6"
+    }
+  ],
+  "selected": [
+    {
+      "archive_member": "LICENSE.txt",
+      "bytes": 6531,
+      "sha256": "64473bdcf2041c5d4f2580ffdddc15d0c20e2440bed4119d032a3ec92363a21c"
+    },
+    {
+      "archive_member": "README.txt",
+      "bytes": 1545,
+      "sha256": "1a3be98b0ecbe61198b419058b132bfd2470cb6c50876bba6487b026e8f9e807"
+    },
+    {
+      "archive_member": "CloudPack/cloud_pack_thumbnails.png",
+      "bytes": 754497,
+      "sha256": "692821bc71cfa0c5f30ffa7cc7d684df157bda580026a3204fd855ab283273e3"
+    },
+    {
+      "archive_member": "CloudPack/CloudPackVDB/cloud_03_variant_0000.vdb",
+      "bytes": 17727036,
+      "sha256": "33e789b91dc050801e32f9c8cabe8392434dbe992db009bcb34d2c0df78b51be"
+    },
+    {
+      "archive_member": "CloudPack/CloudPackVDB/cloud_08_variant_0000.vdb",
+      "bytes": 16358457,
+      "sha256": "991826cf4c7515d15b49299b6e9e878a0f92f817adacd3ef2df05ec6dd2c7ce9"
+    }
+  ],
+  "selection_basis": "Official thumbnail:03 asymmetric tallCu with medium flank relief;08 compact irregular Cu; actual density still requires inspection",
+  "limits": "Static density ingredients; no complete Cb, runtime weather, cloud-family or lifecycle acceptance"
+}

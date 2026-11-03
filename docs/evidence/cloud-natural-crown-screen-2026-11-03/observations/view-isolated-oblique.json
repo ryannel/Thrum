@@ -1,0 +1,168 @@
+{
+  "scope": "one actual-source220 source-only comparison, not final distance/lighting/art admission",
+  "view": "oblique",
+  "mode": "isolated",
+  "camera": {
+    "yaw": 0.3,
+    "pitch": -0.05,
+    "distance": 2000,
+    "panX": 0,
+    "panY": 0,
+    "position": [
+      1736.159398988413,
+      1236.6107331614191,
+      2592.732187622961
+    ],
+    "target": [
+      1057.3123672719425,
+      1351.5628224839793,
+      398.2042828812342
+    ]
+  },
+  "source_time": 220,
+  "part_ids": [
+    5
+  ],
+  "source_part_tuple_sha256": "10bd92d38e25d2fe6130a1fdbe0ea669fed4cff39a9cf5b83ed17e7f3ba92862",
+  "arrays": [
+    {
+      "name": "raw crop (clipped diagnostic)",
+      "origin_xyz_m": [
+        112.0,
+        224.0,
+        144.0
+      ],
+      "span_xyz_m": [
+        192.0,
+        128.0,
+        144.0
+      ],
+      "dims_xyz": [
+        96,
+        64,
+        72
+      ]
+    },
+    {
+      "name": "old v2 B (old domain)",
+      "origin_xyz_m": [
+        104.0,
+        160.0,
+        128.0
+      ],
+      "span_xyz_m": [
+        192.0,
+        192.0,
+        192.0
+      ],
+      "dims_xyz": [
+        96,
+        96,
+        96
+      ]
+    },
+    {
+      "name": "natural S/O (pre-distance)",
+      "origin_xyz_m": [
+        112.0,
+        224.0,
+        144.0
+      ],
+      "span_xyz_m": [
+        192.0,
+        128.0,
+        144.0
+      ],
+      "dims_xyz": [
+        96,
+        64,
+        72
+      ]
+    }
+  ],
+  "body_domain": {
+    "origin": [
+      64.0,
+      176.0,
+      0.0
+    ],
+    "span": [
+      384.0,
+      128.0,
+      512.0
+    ]
+  },
+  "world_ray_bounds": [
+    [
+      -34.04677063869008,
+      452.08567511319575,
+      -287.7332054770967
+    ],
+    [
+      1909.6127589431221,
+      2440.0124510531728,
+      1446.334462645731
+    ]
+  ],
+  "sampling": {
+    "pixels": [
+      608,
+      342
+    ],
+    "vertical_fov_degrees": 48,
+    "max_world_step_m": 8,
+    "rows_per_tile": 3,
+    "depth_per_tile": 8,
+    "query_points_per_tile": 14592,
+    "tile_count": 3536,
+    "valid_ray_samples": 27632332,
+    "framing_rev2_sha256": "fde97e154e777cd7120521954a562e1eb5c1a1bf6b47a26492a21a37dfeabb90"
+  },
+  "comparator": [
+    {
+      "tau_max": 2.092183255764557,
+      "opacity_max": 0.8765826102653274,
+      "opacity_mean": 0.05775003830836543,
+      "projected_peak005_pixels": 25253,
+      "projected_peak041_pixels": 24142,
+      "peak005_border_pixels": 0
+    },
+    {
+      "tau_max": 1.2331184798875758,
+      "opacity_max": 0.7086175110596648,
+      "opacity_mean": 0.013952880002787568,
+      "projected_peak005_pixels": 8073,
+      "projected_peak041_pixels": 6625,
+      "peak005_border_pixels": 0
+    },
+    {
+      "tau_max": 1.14975893146727,
+      "opacity_max": 0.6832868902582843,
+      "opacity_mean": 0.016903289142876397,
+      "projected_peak005_pixels": 11213,
+      "projected_peak041_pixels": 9656,
+      "peak005_border_pixels": 0
+    }
+  ],
+  "input_sha256": {
+    "cloud-component-content-v2/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+    "cloud-component-content-v2/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+    "cloud-system-proof/assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "raw_master": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "old_B": "5e8f753472a4ce3af4a5901da54566c8d901d14b15fa68fccb59dcb70add6da9",
+    "candidate": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+    "frozen_preflight_helper": "8e210d29a26cbd1f8714d4e6648b6a37e5a1ee1c86261c23d27fdbc2c34b8867",
+    "capture": "ce799ee499888ab9348e94687cd7517546a705ec6b5987148d9f207acb484c3f"
+  },
+  "code_sha256": "bdf6d5135e3047a73b65e47caaab8f666b4f8404438a19125101c4a90fded100",
+  "native_receipt_sha256": "21d91e6a7bda0c374c9789b1322b1e7a845288cbdb27605ae15f384a03257ac6",
+  "selector_receipt_sha256": "2eb7cf88141e64750162d49e5a5c58b30219f721d3d08dea753d930d42d88b59",
+  "image": {
+    "file": "view-isolated-oblique.png",
+    "bytes": 51577,
+    "sha256": "bd5f93765c6e6f2d2159a45c2f43d6f467b9b94703c004f906e98549b46ae965"
+  },
+  "wall_s": 19.171562707982957,
+  "sampled_peak_rss_bytes": 81903616,
+  "process_highwater_bytes": 82264064
+}

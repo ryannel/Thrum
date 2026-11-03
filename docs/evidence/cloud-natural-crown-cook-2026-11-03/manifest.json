@@ -1,0 +1,168 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 6845,
+      "sha256": "aac08b8adc2891c3b09f86f91c635ab746958aa32ce74387d8cbb75c1c620478"
+    },
+    "dependencies.json": {
+      "bytes": 2858,
+      "sha256": "6ad29c17e790c94c033291276ac31c3d230a6da62f9bb7865aee82d194afb9c4"
+    },
+    "frozen/COMMISSION.md": {
+      "bytes": 5998,
+      "sha256": "e482b4c40ab5324054a429717f801b5089295bfc6e525f8480552dcc191d3dc3"
+    },
+    "frozen/FREEZE.json": {
+      "bytes": 7000,
+      "sha256": "c099851c2aa79c6aa7cfeb954656ed27e796f365e28b9274bebb6cba7554b1bc"
+    },
+    "frozen/PREFLIGHT.md": {
+      "bytes": 2725,
+      "sha256": "a25f71a20844367734234514bd4a6a6a21920db82796790aa2b6701c9f32a9d7"
+    },
+    "frozen/README.md": {
+      "bytes": 4107,
+      "sha256": "8e25a81efa7525df84ddc2806910a85030cfa9d5c55166267ffe89d3fd03e610"
+    },
+    "frozen/certificates.json": {
+      "bytes": 10226,
+      "sha256": "942149ae4ae72f95bb893cad8c7c6795c63f87908ab4e1c002441cfdbecfdcb6"
+    },
+    "frozen/certs-run.json": {
+      "bytes": 219,
+      "sha256": "641f7fb8d1e0ef996d71bd62a3aa9b827e2345edc45234f7ec202ce2e73f8ff9"
+    },
+    "frozen/certs.log": {
+      "bytes": 419,
+      "sha256": "43543ad9085edaa50f7652374d74c193b46a2b364728d6809240ddd53ff92c52"
+    },
+    "frozen/cook-syntax-first.py": {
+      "bytes": 11238,
+      "sha256": "437116397d52543d8b7e1bf15a953c15c75347164f96ef327289c95b71fa74e5"
+    },
+    "frozen/cook.py": {
+      "bytes": 11738,
+      "sha256": "006a9dedb2f2431bdb4dc2182924183d526f58e4223a3244b627110267e804e6"
+    },
+    "frozen/field.json": {
+      "bytes": 1583,
+      "sha256": "3d744f3a8984f008592041153649182f6646d300f2800e1d5bd6d7ee9054f620"
+    },
+    "frozen/finalize-run.json": {
+      "bytes": 92,
+      "sha256": "904748cbe89ea18aee47b193d355741ee78916844adc61c15f5bc05c0308a1a1"
+    },
+    "frozen/finalize.log": {
+      "bytes": 561,
+      "sha256": "aeffebe6881029819f8c9decb6f1badbeb7e6e50193c12d39b88148f34decd1d"
+    },
+    "frozen/finalize.py": {
+      "bytes": 6583,
+      "sha256": "136932da11c5562eaabc3fd1a9be1e1572059a1adcb9e735ce13cb103e3482d7"
+    },
+    "frozen/inside-run.json": {
+      "bytes": 221,
+      "sha256": "c977a0c801f9031d35596a702943c13c28f676e9c15c1f223d30af36d50c61ea"
+    },
+    "frozen/inside-syntax-first-run.json": {
+      "bytes": 220,
+      "sha256": "ab530b81651e715e6a1866c6570ace4b07c27a20aff4af62e4d96b4ac4cca362"
+    },
+    "frozen/inside-syntax-first.log": {
+      "bytes": 387,
+      "sha256": "1a65cb81bc5d201aee35be076bf7475e27da98d1aad82afeb678a0368cfcb3f3"
+    },
+    "frozen/inside.json": {
+      "bytes": 780,
+      "sha256": "e013836d7efea53b2d2e7b5ab0cb46a8555ee1017b76031bc96e3eeb3e2f2eff"
+    },
+    "frozen/merge-run.json": {
+      "bytes": 220,
+      "sha256": "07844baf31ab0df0f2cc636d201098105542752944abc74d155c7d44c7a2269c"
+    },
+    "frozen/natural-crown.json": {
+      "bytes": 15164,
+      "sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339"
+    },
+    "frozen/outside-run.json": {
+      "bytes": 222,
+      "sha256": "5bce69c0abd6ba60ce3fc75eb65eee3970404ec9453e54c549155c2c41844ca8"
+    },
+    "frozen/outside.json": {
+      "bytes": 780,
+      "sha256": "222cd8636c7c7c27b631b8b2db95ffc240a9563594c12ad309a6e9b21f54f642"
+    },
+    "frozen/radius-run.json": {
+      "bytes": 221,
+      "sha256": "fc19ac4559e0ed5d4fec4e95d4200cff5b4c8bd9cf49fc34fa820659d0fff7d4"
+    },
+    "frozen/radius.json": {
+      "bytes": 578,
+      "sha256": "b84a6c3f7e38956e5d98dac934b4066ea5f38e1e856e029d212a4b324d0c642d"
+    },
+    "frozen/recipe-snapshots/cook-97785fb3e2b1a3241ebf8a54acfe3962440ab3639af64a8a63783ad921699680.py": {
+      "bytes": 11239,
+      "sha256": "97785fb3e2b1a3241ebf8a54acfe3962440ab3639af64a8a63783ad921699680"
+    },
+    "frozen/run-syntax-first.log": {
+      "bytes": 251,
+      "sha256": "60890e0a979337afba7cf32f1d42191a7c4625ff43b1f2de3b5a3823c210c7fd"
+    },
+    "frozen/run.py": {
+      "bytes": 1467,
+      "sha256": "b9eb2ecd63c90d69133eaff33de01ac39034d054a1922d0923d2c174aa678b3e"
+    },
+    "frozen/support-refinement-run.log": {
+      "bytes": 411,
+      "sha256": "4c0d45cee5cd45bb802ba6cdcf384a6279927cad9e81d876724916543a75f308"
+    },
+    "frozen/verification-run.json": {
+      "bytes": 92,
+      "sha256": "8afbce306143dc00331400c4cd448ed005334ad6f3c22d599bfd47ec0f8f03c3"
+    },
+    "frozen/verification.json": {
+      "bytes": 4968,
+      "sha256": "6dd5a382d97f4e54cce666ec9f598af066ed3c5ad37c099c4de618967e28640c"
+    },
+    "frozen/verification.log": {
+      "bytes": 601,
+      "sha256": "82b7cb7458d17a9ef11044019738303fe5cdac4b2020e67cca54e43dc8fd0548"
+    },
+    "frozen/verify.py": {
+      "bytes": 6768,
+      "sha256": "29e2f064a11c7042c6138a5c6c56c32fd60d958f7426a13a147de2ee9a5b5ae7"
+    },
+    "inputs/LICENSE.txt": {
+      "bytes": 6531,
+      "sha256": "64473bdcf2041c5d4f2580ffdddc15d0c20e2440bed4119d032a3ec92363a21c"
+    },
+    "inputs/provenance.json": {
+      "bytes": 4914,
+      "sha256": "f313584bf66e003dc1c094bbcbd25f852851db35cb896b8a554190cfc1496ec7"
+    },
+    "restore-verification.json": {
+      "bytes": 745,
+      "sha256": "5db5a36826cca1a5f48d1bf91a41c88c2649466abef7375982b4773f58fbe912"
+    },
+    "selected/density.r16f.gz": {
+      "bytes": 136646,
+      "sha256": "041e77c40e4bd161df4ad4184b795f8914b54930716078b53f0e78c4eb75c015"
+    },
+    "selected/distance.r16f.gz": {
+      "bytes": 262207,
+      "sha256": "5c62df3967b8d2e9a84da53311a9154d5cd7c8285c8c0d5efd034553089a3c34"
+    },
+    "verify.py": {
+      "bytes": 3668,
+      "sha256": "838e484a0bf7f0e40d7e2c9b537c3ae15074fa461b7ece6e8827ae41b3f147cf"
+    }
+  },
+  "original_freeze_sha256": "c099851c2aa79c6aa7cfeb954656ed27e796f365e28b9274bebb6cba7554b1bc",
+  "original_metadata_sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339",
+  "schema": 1,
+  "scope": "Selected frozen optical diagnostic, HASHED UNQUALIFIED; manifest self-excluded",
+  "selected_uncompressed_sha256": {
+    "density.r16f": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+    "distance.r16f": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab"
+  }
+}

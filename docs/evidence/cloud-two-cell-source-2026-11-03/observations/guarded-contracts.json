@@ -1,0 +1,22 @@
+{
+  "scope": "Functional tests only; monitor/elapsed instrumentation is not throughput or target-runtime admission",
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "sampleIntervalMs": 25,
+  "phases": [
+    {
+      "phase": "contracts",
+      "command": [
+        "node",
+        "tests/world/contracts.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 145473536,
+      "samples": 18,
+      "elapsedSeconds": 1.049913499969989,
+      "log": "run-logs/contracts.log",
+      "adverse": null
+    }
+  ],
+  "pass": true
+}

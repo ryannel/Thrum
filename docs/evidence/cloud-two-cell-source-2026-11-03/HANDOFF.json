@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "scope": "FrozenCPU-only two independentformations/commonclock slice; noGPU/browser/art/fullP4a or runtimeperformance admission",
+  "cpuContractRevision": "1a0a01c2c8735b74",
+  "sourcePinsSHA256": "39f186b0cc90b991a7484d51acbf0dc5dea6fc31967c6f433f8fb2b78540e3a2",
+  "sourceFiles": {
+    "src/source/model.js": "a83d8e0baee61cad85816a4355fcc50ff516f5bec30785342a778d9beb6b238d",
+    "src/source/world.js": "96cdd7b1b5f1bbb0c423a0a41e2a9763ef510566246070fb62a139616aa899a4",
+    "src/source/world-reference.js": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+    "tests/world/contracts.mjs": "ef023d53b25874f847870fc146b02a8c78fe3c17d6172e99ef197daeaec280f2",
+    "tests/world/native.mjs": "c1a0d42e6d2983006fe77300e1efe07e364adcfcda193f75d2c2da032601eb75",
+    "run-guarded.py": "de4ea09b4ad1f32ae1789bc64d0a4169ad7790a084cd4c09856a6cf8ff4439c9"
+  },
+  "independentReview": "REVIEW.md: No findings on frozen source boundary",
+  "validation": {
+    "worldContracts": 12,
+    "nativeChecks": 6,
+    "sourceSuiteGroups": 8,
+    "rendererTests": 8,
+    "pass": true,
+    "sourceMathClockRendererShadersUnchanged17f": true
+  },
+  "actualNative": {
+    "pointsDirectVsBounds": 558,
+    "positive": 75,
+    "overlapSigma": 0.004508097823196331,
+    "remoteChordPoints": 65,
+    "remoteMinQ": 0.071960449218757
+  },
+  "logicalCPUControlBytes": 1886592,
+  "nativeBytesSharedOnce": 16187392,
+  "observerExposureCopyBytes": 628864,
+  "adverseScheduler": "historical-runs/guarded-all-concurrent-stopped.json",
+  "limits": [
+    "No two-cellGPU/air/fog/environment/renderedshadow or multicloudapp",
+    "No browser/process/device/throughput admission; concurrentrender harness overshoot preserved",
+    "RootYfixed; sourceingredients couplingreference withconfiginjection, not sourceart promotion",
+    "Independent reviewer checked changedCPU source/callers/receipts; pre-existing admissionhelper/content not requalified"
+  ]
+}

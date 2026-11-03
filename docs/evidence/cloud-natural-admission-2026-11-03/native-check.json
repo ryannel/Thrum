@@ -1,0 +1,26 @@
+{
+  "pass": true,
+  "rows": [
+    {
+      "template": "body",
+      "sourcePinsMatch": true,
+      "nativeAbove005": 337928,
+      "above005OutsideBVH": 0,
+      "positiveTailOutsideBVH": 2102,
+      "ballSurfacePoints": 243,
+      "minimumSampledBallQ": 0.05596797496012671,
+      "proofScope": "native sample/BVH and26direction ball checks only; continuous conservatism from cell bounds/boxes, not a sampled theorem"
+    },
+    {
+      "template": "crown-b",
+      "sourcePinsMatch": true,
+      "nativeAbove005": 60377,
+      "above005OutsideBVH": 0,
+      "positiveTailOutsideBVH": 486,
+      "ballSurfacePoints": 729,
+      "minimumSampledBallQ": 0.049908169417653525,
+      "proofScope": "native sample/BVH and26direction ball checks only; continuous conservatism from cell bounds/boxes, not a sampled theorem"
+    }
+  ],
+  "peakRssBytes": 45039616
+}

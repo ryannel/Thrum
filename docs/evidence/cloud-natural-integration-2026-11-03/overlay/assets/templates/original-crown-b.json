@@ -1,0 +1,585 @@
+{
+  "id": "natural-crown-v1-optical-diagnostic",
+  "qualification": "FROZEN HASHED UNQUALIFIED; no asset/art/admission/lifecycle adoption",
+  "source_license": "CC0-1.0 JangaFX; see ../../docs/evidence/cloud-authored-masters-2026-11-03/README.md and linked provenance",
+  "source_recipe_reference": "../cloud-natural-crown-v1/native.py",
+  "source_recipe_sha256": "6dc6db6226b6024386d970edce2f3b88eb1a50d23a576f8940f4238711802b01",
+  "source_master_reference": "../cloud-authored-master/cloud-03-256.density.r16f",
+  "source_master_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "commission_sha256": "e482b4c40ab5324054a429717f801b5089295bfc6e525f8480552dcc191d3dc3",
+  "preflight_sha256": "a25f71a20844367734234514bd4a6a6a21920db82796790aa2b6701c9f32a9d7",
+  "recipe_sha256": "006a9dedb2f2431bdb4dc2182924183d526f58e4223a3244b627110267e804e6",
+  "domain_origin_global_xyz_local_m": [
+    112.0,
+    224.0,
+    144.0
+  ],
+  "domain_span_local_m": [
+    192,
+    128,
+    144
+  ],
+  "dimensions_xyz": [
+    96,
+    64,
+    72
+  ],
+  "pitch_local_m": 2,
+  "basis_units": "LOCALmetres/density; perinstanceb=s*g, worldvolume=b^3*localvolume; no bakedworldscale",
+  "array_storage": "little-endian IEEEFloat16 scalar, Xfastest, NumPy[Z,Y,X]",
+  "texture_coordinate_contract": "uv=(materialXYZ-origin)/span; centresorigin+(index+.5)*2; return0outside domain; linearclamp nativehalf",
+  "root_global_xyz_local_m": [
+    225.0,
+    265.0,
+    197.0
+  ],
+  "domain": {
+    "origin": [
+      112.0,
+      224.0,
+      144.0
+    ],
+    "span": [
+      192,
+      128,
+      144
+    ],
+    "dims": [
+      96,
+      64,
+      72
+    ],
+    "pitch": 2
+  },
+  "density": {
+    "file": "density.r16f",
+    "bytes": 884736,
+    "sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+    "decode": "unmodified fixed pre-distance rho, no renormalisation/opacity compensation",
+    "min": 0.0,
+    "max": 0.424072265625,
+    "raw_integral_local_m3": 41878.89717388153
+  },
+  "distance": {
+    "file": "distance.r16f",
+    "bytes": 884736,
+    "sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab",
+    "sign": "positiveinside",
+    "units": "local metres",
+    "class": "decodedFloat32rho>=Float32(.001)",
+    "definition": "EDTinside-EDToutside; opposite-class nativecentres, NOTexactcontinuousisosurfaceSDF",
+    "rounding_contract": "F64EDT sign ->F32scratch ->F32disjoint signed merge ->R16",
+    "range_local_m": [
+      -74.4375,
+      29.734375
+    ],
+    "direct_F64_half_bit_differences": 0,
+    "max_half_error_vs_F64_m": 0.03124237432848531
+  },
+  "reference": {
+    "definition": "q=rho*smoothstep(-8,8,d); localhalfwidth8 mapsworld8*b; sharedliquidkappa.019",
+    "kappa_per_world_m": 0.019,
+    "tapered_integral_native_sum": 4993.010058777943,
+    "integral_local_m3": 39944.08047022355,
+    "raw_to_reference_loss_fraction": 0.046200278283943574,
+    "no_kappa_compensation": true,
+    "native_q_range": [
+      0.0,
+      0.4157208966989856
+    ]
+  },
+  "root_certificate": {
+    "centerLocal": [
+      225.0,
+      265.0,
+      197.0
+    ],
+    "radiusLocal": 20.04975124224178,
+    "qMin": 0.041,
+    "cellCheck": {
+      "intersected_cells": 5184,
+      "minimum_cell_lower": 0.05267333984175
+    }
+  },
+  "rootBall": {
+    "centerLocal": [
+      225.0,
+      265.0,
+      197.0
+    ],
+    "radiusLocal": 20.04975124224178,
+    "qMin": 0.041,
+    "cellCheck": {
+      "intersected_cells": 5184,
+      "minimum_cell_lower": 0.05267333984175
+    }
+  },
+  "root_to_crown_frame": {
+    "root_to_crown_orthoframe_columns": [
+      [
+        0.879291966536774,
+        0.4762831485407526,
+        -0.0
+      ],
+      [
+        -0.45705566005750947,
+        0.843795064721556,
+        0.28126502157385197
+      ],
+      [
+        0.13396179004957692,
+        -0.24731407393768046,
+        0.959630130643604
+      ]
+    ],
+    "root_head_length_local_m": 56.88585061331157,
+    "old_axis_change_degrees": 19.988156626456576
+  },
+  "headWitnesses": [
+    {
+      "id": "natural-head-0",
+      "centerLocal": [
+        199.0,
+        313.0,
+        213.0
+      ],
+      "radiusLocal": 9.95,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            211.0,
+            283.0,
+            205.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.07073974609175
+          }
+        },
+        {
+          "centerLocal": [
+            209.0,
+            293.0,
+            205.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.07171630859175
+          }
+        },
+        {
+          "centerLocal": [
+            207.0,
+            303.0,
+            205.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055023193357375
+          }
+        },
+        {
+          "centerLocal": [
+            203.0,
+            313.0,
+            207.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055023193357375
+          }
+        },
+        {
+          "centerLocal": [
+            199.0,
+            313.0,
+            213.0
+          ],
+          "radiusLocal": 9.95,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 720,
+            "minimum_cell_lower": 0.04161311430458543
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 24.166091947189145,
+      "cellCheck": {
+        "intersected_cells": 720,
+        "minimum_cell_lower": 0.04161311430458543
+      }
+    },
+    {
+      "id": "natural-head-1",
+      "centerLocal": [
+        239.0,
+        301.0,
+        185.0
+      ],
+      "radiusLocal": 8.19621125123532,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            233.0,
+            287.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.05133056640425
+          }
+        },
+        {
+          "centerLocal": [
+            237.0,
+            297.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.041412353513625
+          }
+        },
+        {
+          "centerLocal": [
+            239.0,
+            301.0,
+            187.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.045135498044875
+          }
+        },
+        {
+          "centerLocal": [
+            239.0,
+            301.0,
+            185.0
+          ],
+          "radiusLocal": 8.19621125123532,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 432,
+            "minimum_cell_lower": 0.045135498044875
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 23.40939982143925,
+      "cellCheck": {
+        "intersected_cells": 432,
+        "minimum_cell_lower": 0.045135498044875
+      }
+    },
+    {
+      "id": "natural-head-2",
+      "centerLocal": [
+        227.0,
+        301.0,
+        221.0
+      ],
+      "radiusLocal": 8.667797887081347,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            289.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.05133056640425
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            299.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055938720701125
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            301.0,
+            207.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.045867919919875
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            301.0,
+            217.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.056060791013625
+          }
+        },
+        {
+          "centerLocal": [
+            227.0,
+            301.0,
+            221.0
+          ],
+          "radiusLocal": 8.667797887081347,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 552,
+            "minimum_cell_lower": 0.044647216794875
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 24.08318915758459,
+      "cellCheck": {
+        "intersected_cells": 552,
+        "minimum_cell_lower": 0.044647216794875
+      }
+    },
+    {
+      "id": "natural-head-3",
+      "centerLocal": [
+        221.0,
+        315.0,
+        199.0
+      ],
+      "radiusLocal": 7.95,
+      "qMin": 0.041,
+      "rootChain": [
+        {
+          "centerLocal": [
+            225.0,
+            265.0,
+            197.0
+          ],
+          "radiusLocal": 20.04975124224178,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 5184,
+            "minimum_cell_lower": 0.05267333984175
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            289.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055938720701125
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            299.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.055938720701125
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            309.0,
+            197.0
+          ],
+          "radiusLocal": 6.0,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 232,
+            "minimum_cell_lower": 0.0985107421855
+          }
+        },
+        {
+          "centerLocal": [
+            221.0,
+            315.0,
+            199.0
+          ],
+          "radiusLocal": 7.95,
+          "qMin": 0.041,
+          "cellCheck": {
+            "intersected_cells": 408,
+            "minimum_cell_lower": 0.06524658202925
+          }
+        }
+      ],
+      "chain_max_separation_local_m": 24.331050121192877,
+      "cellCheck": {
+        "intersected_cells": 408,
+        "minimum_cell_lower": 0.06524658202925
+      }
+    }
+  ],
+  "head_selection": {
+    "original_upper_S_voxels": 19208,
+    "raw_rho_weighted_original_S_centroid": [
+      198.6579957084382,
+      312.02129763802884,
+      212.50807246323072
+    ],
+    "definition": "nearestreachable certified6m S nativecentre; squaredDistance/XYZ stabletie",
+    "reachable_certified_S_centres": 1216,
+    "witness_count": 4,
+    "data_derived_once_not_camera_rotation": true
+  },
+  "potentialSupport": {
+    "local_support_bbox_min_xyz_m": [
+      115.0,
+      237.0,
+      147.0
+    ],
+    "local_support_bbox_max_xyz_m": [
+      293.0,
+      339.0,
+      281.0
+    ],
+    "conservative_radius_about_root_local_m": 117.21774609674083,
+    "radius_method": "maxoverpositive rho nativecentres of norm(abs(centre-root)+one2mtrilinearhalo); notbboxcornerassumption",
+    "strict_positive_q_potential_bbox": [
+      [
+        115.0,
+        237.0,
+        147.0
+      ],
+      [
+        289.0,
+        339.0,
+        281.0
+      ]
+    ],
+    "q_potential_radius_local_m": 117.21774609674083,
+    "q_bound_method": "unionofclosedcellswithmaxrho>0ANDmaxd>-8; notnativeqpositivebbox",
+    "exact_zero_collar_native_voxels": 2
+  },
+  "finite_extinction": {
+    "material_M_range": [
+      0.3,
+      1
+    ],
+    "max_decoded_d_local_m": 29.734375,
+    "endpointLocal": 125.9482421875,
+    "distance_guard_local_m": 0.05,
+    "continuous_ideal_trilinear_guarantee": ".3*endpoint > maxdecodedD+8, so q=0everywhere; no hiddenicephase",
+    "native_zero_verified": true
+  },
+  "geometry_certificate_contract": {
+    "qMin": 0.041,
+    "cell_bad_threshold": 0.041001,
+    "cell_lower_error_margin": 2e-12,
+    "radius_guard_local_m": 0.05,
+    "field": "ideal trilinear of decodedrho/d R16",
+    "hardware_filter_error": "notqualified; actual GPUoracle/visualproofrequired",
+    "root_seed_or_runtime_neck": "No runtimeburial/admission/16mworldneck/renewalpass implied"
+  },
+  "verification": {
+    "file": "verification.json",
+    "sha256": "6dd5a382d97f4e54cce666ec9f598af066ed3c5ad37c099c4de618967e28640c",
+    "pass": true
+  },
+  "dependencies": {
+    "selector_json_sha256": "2eb7cf88141e64750162d49e5a5c58b30219f721d3d08dea753d930d42d88b59",
+    "dS_sha256": "a75cbd297901fc4620e5a51e431b154b3dfbc5435c69eeac2a52e8f4001ce875",
+    "cell_lower_file": "cell-lower.f64",
+    "cell_lower_sha256": "46bae0c2f0015a1c17d4eee3d368dc879b331b1acd3a429318f06b42fde3701a"
+  },
+  "not_reused": [
+    "oldopticaldistance",
+    "oldendpoint",
+    "oldsupportBVH",
+    "oldsocketcatalogue",
+    "oldprincipalframe",
+    "oldrootorheadradii"
+  ],
+  "limits": [
+    "Staticopticaldiagnostic only",
+    "Sourceappearance notaccepted",
+    "Admissionrebuild/replay/actualoptics/motionseparate",
+    "OriginalScentres preservefixedrho; taperchangesopticalamountbyreportedfraction"
+  ],
+  "metadata_recipe_sha256": "136932da11c5562eaabc3fd1a9be1e1572059a1adcb9e735ce13cb103e3482d7",
+  "metadata_stage_profile": {
+    "elapsed_s": 0.026694457978010178,
+    "process_highwater_bytes": 53854208
+  }
+}

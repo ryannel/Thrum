@@ -1,0 +1,56 @@
+{
+  "original_master": {
+    "license": "CC0-1.0 JangaFX",
+    "native_r16f_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+    "provenance_sha256": "f313584bf66e003dc1c094bbcbd25f852851db35cb896b8a554190cfc1496ec7",
+    "reference": "../cloud-authored-masters-2026-11-03/README.md"
+  },
+  "pre_distance": {
+    "historical_manifest_sha256_before_link_only_packaging_fix": "50c6157c796cb487d12ae57501ad4eda687c6a4de942ff1b0c19921421167fa6",
+    "manifest": "../cloud-natural-crown-screen-2026-11-03/manifest.json",
+    "manifest_sha256": "c1ee0709b6165d80cb443133ece75f980f5e5ca0d1991baa00199ebb1133fa4c",
+    "packaging_note": "Reader RESULT links rebased with original text preserved; selected density and recipe bytes unchanged.",
+    "recipe": "../cloud-natural-crown-screen-2026-11-03/frozen/native.py",
+    "recipe_sha256": "6dc6db6226b6024386d970edce2f3b88eb1a50d23a576f8940f4238711802b01",
+    "selected_density_sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09"
+  },
+  "schema": 1,
+  "scope": "External inputs/provenance for historical cook rerun; selected fields restore directly without these inputs",
+  "selector": {
+    "dS_f64_sha256": "a75cbd297901fc4620e5a51e431b154b3dfbc5435c69eeac2a52e8f4001ce875",
+    "dS_status": "reconstructible scratch, omitted",
+    "receipt": "../cloud-natural-crown-screen-2026-11-03/observations/selector.json",
+    "receipt_sha256": "2eb7cf88141e64750162d49e5a5c58b30219f721d3d08dea753d930d42d88b59"
+  },
+  "separate_failed_admission_replays": {
+    "changedWind900.json": {
+      "sha256": "099fc27c5776fad307b9e250b5b2d0303ae3b5436986b3269bd3418364623893",
+      "worktree_relative": "tmp/cloud-natural-crown-admission-v1/changedWind900.json"
+    },
+    "clearRecovery750.json": {
+      "sha256": "ebcf48297294374165339a3b6c7810ec360fb766723bd37c8862f65f31fdb64e",
+      "worktree_relative": "tmp/cloud-natural-crown-admission-v1/clearRecovery750.json"
+    },
+    "defaultDry900.json": {
+      "sha256": "89261d6a4a84a09f4e9dd8ab9e7514b49b3e9061090303ab6af156005477d3e2",
+      "worktree_relative": "tmp/cloud-natural-crown-admission-v1/defaultDry900.json"
+    },
+    "initialOff400.json": {
+      "sha256": "75a7847d49906f6f3714fc2b7163ca6dba5125f682861ded9bd9f949c79f9601",
+      "worktree_relative": "tmp/cloud-natural-crown-admission-v1/initialOff400.json"
+    },
+    "off150on200.json": {
+      "sha256": "d39e078fe146aab23ee0b66bc6805b0bfc30a27da7fa5ed551ff70e105113e8c",
+      "worktree_relative": "tmp/cloud-natural-crown-admission-v1/off150on200.json"
+    },
+    "wet1200.json": {
+      "sha256": "ffc1dc9febb99ab9f0f87255641fa264a202dc5c66e6e68929de7093e25bbf4a",
+      "worktree_relative": "tmp/cloud-natural-crown-admission-v1/wet1200.json"
+    }
+  },
+  "toolchain": {
+    "numpy": "2.4.6",
+    "python": "3.14.10",
+    "scipy": "1.17.1"
+  }
+}

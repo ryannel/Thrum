@@ -1,0 +1,4 @@
+  File "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/tmp/cloud-natural-crown-cook-v1/cook.py", line 114
+    rad=rr if n==0 else(radius if n==len(ch)-1 else6.);cert=ballCheck(c,rad);balls.append({'centerLocal':c.tolist(),'radiusLocal':rad,'qMin':QMIN,'cellCheck':cert})
+                        ^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: expected 'else' after 'if' expression

@@ -1,0 +1,50 @@
+{
+  "view": "front",
+  "mode": "isolated",
+  "camera": {
+    "yaw": 0,
+    "pitch": -0.05,
+    "distance": 2000,
+    "panX": 0,
+    "panY": 0,
+    "position": [
+      1057.3123672719425,
+      1291.5878193591652,
+      1596.7045953551938
+    ],
+    "target": [
+      1057.3123672719425,
+      1351.5628224839793,
+      398.2042828812342
+    ]
+  },
+  "stats": [
+    {
+      "tau_max": 1.6339899600306442,
+      "opacity_max": 0.8048506195368684,
+      "opacity_mean": 0.2617187909732189,
+      "projected_peak005_pixels": 90031,
+      "projected_peak041_pixels": 85208,
+      "peak005_border_pixels": 307
+    },
+    {
+      "tau_max": 1.318485193583907,
+      "opacity_max": 0.7324597331204794,
+      "opacity_mean": 0.0520770896702311,
+      "projected_peak005_pixels": 21928,
+      "projected_peak041_pixels": 17923,
+      "peak005_border_pixels": 0
+    },
+    {
+      "tau_max": 1.2299623985674812,
+      "opacity_max": 0.7076964314928711,
+      "opacity_mean": 0.06301919175275034,
+      "projected_peak005_pixels": 34000,
+      "projected_peak041_pixels": 29290,
+      "peak005_border_pixels": 28
+    }
+  ],
+  "source_time": 220,
+  "wall_s": 15.99254566570744,
+  "peak_bytes": 63815680
+}

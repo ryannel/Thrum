@@ -1,0 +1,1005 @@
+{
+  "time": 370,
+  "parentID": 9,
+  "candidateScale": 6,
+  "allOldIDs": [
+    9,
+    8,
+    3,
+    10,
+    6,
+    7
+  ],
+  "allOldMembership": "actualcontributing/publicationretained IDs atbirth; includesID7atage150retainedprior, not reference-onlyhistoricalIDs",
+  "rows": [
+    {
+      "siteID": "body-admission-6",
+      "parentRadiusLower": 28.021757966402316,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 3,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 135
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 3,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 102
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            169.85200000000006,
+            1571.7580570720274,
+            338.9732354928135
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 38.336690586823266,
+          "nominalOldPotentialAtCentre": 0.13398365446952668,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 24,
+          "maxSampledOldPotential": 0.17037513835923992,
+          "sampleOldID": 10
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            346.58968527389163,
+            1486.7699107693095,
+            109.73797295222039
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 30.687757419578652,
+          "nominalOldPotentialAtCentre": 0.13540318418419678,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.215246471996168,
+          "sampleOldID": 10
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            283.2806636832439,
+            1421.9849185936123,
+            318.6275911098247
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 24.857108123765904,
+          "nominalOldPotentialAtCentre": 0.09163724085524999,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.1134483236215269,
+          "sampleOldID": 10
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            291.6339373653433,
+            1561.9909178178239,
+            240.4960161863535
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 37.45764805394495,
+          "nominalOldPotentialAtCentre": 0.14086835786903543,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 25,
+          "maxSampledOldPotential": 0.24111203389055527,
+          "sampleOldID": 10
+        }
+      ]
+    },
+    {
+      "siteID": "body-admission-7",
+      "parentRadiusLower": 28.26232407735699,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 61
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 64
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            -604.4965297826765,
+            1596.0811779568808,
+            250.91049007244115
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 42.621389622951895,
+          "nominalOldPotentialAtCentre": 0.11200759428348869,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.22372472767048251,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            -356.3731290240407,
+            1446.5959393365335,
+            166.6671435661015
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 29.167718147120638,
+          "nominalOldPotentialAtCentre": 0.16257023822892794,
+          "centreOldID": 9,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.26626320385084085,
+          "sampleOldID": 6
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            -457.82618802624467,
+            1532.3346615423811,
+            351.5891496486762
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 36.88420314564693,
+          "nominalOldPotentialAtCentre": 0.10366837523484203,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.11586966170070549,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            -461.50866545805667,
+            1564.724163305368,
+            194.38431659475992
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 39.79925830431573,
+          "nominalOldPotentialAtCentre": 0.15087075136595715,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.21542899756116174,
+          "sampleOldID": 8
+        }
+      ]
+    },
+    {
+      "siteID": "body-shoulder-0",
+      "parentRadiusLower": 36.24680363762572,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 70
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 49
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            -300.20945328771484,
+            1629.41454701917,
+            479.7745849699641
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 44.52586126475374,
+          "nominalOldPotentialAtCentre": 0.04660865635385719,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 19,
+          "maxSampledOldPotential": 0.26990630146862205,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            -82.49479604746597,
+            1472.9155954536257,
+            341.51251090716426
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 30.440955623854755,
+          "nominalOldPotentialAtCentre": 0.004072604211314428,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 14,
+          "maxSampledOldPotential": 0.0451547440815062,
+          "sampleOldID": 10
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            -159.42370911372245,
+            1524.4102512295758,
+            549.5275072745692
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 35.07547464369028,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 5,
+          "maxSampledOldPotential": 0.042775072791400554,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            -166.9443862113613,
+            1593.8255030378148,
+            404.9558639370914
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 41.32284730643177,
+          "nominalOldPotentialAtCentre": 0.002388582265345504,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 18,
+          "maxSampledOldPotential": 0.1694627133976202,
+          "sampleOldID": 10
+        }
+      ]
+    },
+    {
+      "siteID": "body-shoulder-6",
+      "parentRadiusLower": 41.06660445828222,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 63
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": true,
+        "headID": "natural-head-2",
+        "centerWorld": [
+          107.37950718011706,
+          1511.702429309817,
+          -27.994732274857732
+        ],
+        "radiusWorldLower": 35.99999998172859,
+        "headUncertaintyWorld": 0,
+        "nodes": 96,
+        "referenceIDs": [
+          9,
+          8,
+          3,
+          10,
+          6,
+          7
+        ],
+        "scope": "Resolved positive subball outside conservative loss-free old support at45s; no camera/projection/beauty claim"
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            2.435116138849043,
+            1620.4172259576376,
+            -141.48379738519162
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 44.241607857930546,
+          "nominalOldPotentialAtCentre": 0.059691351511340834,
+          "centreOldID": 7,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 24,
+          "maxSampledOldPotential": 0.18099928302331245,
+          "sampleOldID": 7
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            159.2583388666793,
+            1368.8808933651012,
+            -197.5547391932982
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 21.603337924602254,
+          "nominalOldPotentialAtCentre": 0.0001079301435762377,
+          "centreOldID": 3,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 13,
+          "maxSampledOldPotential": 0.083416075282742,
+          "sampleOldID": 3
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            107.37950718011706,
+            1511.702429309817,
+            -27.994732274857732
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 34.45727615962667,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 0,
+          "maxSampledOldPotential": 0,
+          "sampleOldID": null
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            116.71264173189746,
+            1523.3852710069286,
+            -187.84592540541266
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 35.50873191236673,
+          "nominalOldPotentialAtCentre": 0.002441830141837326,
+          "centreOldID": 7,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 10,
+          "maxSampledOldPotential": 0.06982854835049583,
+          "sampleOldID": 7
+        }
+      ]
+    },
+    {
+      "siteID": "body-admission-2",
+      "parentRadiusLower": 28.021757966402316,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 70
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 59
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            -702.764,
+            1563.7580570720274,
+            418.9732354928135
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 37.98021660262939,
+          "nominalOldPotentialAtCentre": 0.06470563372448614,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.07993025071112844,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            -526.0263147261085,
+            1478.7699107693095,
+            189.7379729522204
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 30.331283435384773,
+          "nominalOldPotentialAtCentre": 0.2629278639182345,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.2629278639182345,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            -589.3353363167562,
+            1413.9849185936123,
+            398.6275911098247
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 24.50063413957203,
+          "nominalOldPotentialAtCentre": 0.017190804746835597,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 17,
+          "maxSampledOldPotential": 0.1273700793526335,
+          "sampleOldID": 8
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            -580.9820626346568,
+            1553.9909178178239,
+            320.4960161863535
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 37.10117406975107,
+          "nominalOldPotentialAtCentre": 0.08222912336009643,
+          "centreOldID": 8,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.10327606950939368,
+          "sampleOldID": 8
+        }
+      ]
+    },
+    {
+      "siteID": "body-admission-3",
+      "parentRadiusLower": 28.26232407735699,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 10,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 3,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 3,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 148
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": true,
+        "headID": "natural-head-2",
+        "centerWorld": [
+          460.4583328700912,
+          1413.1094951894834,
+          415.76794342190215
+        ],
+        "radiusWorldLower": 36,
+        "headUncertaintyWorld": 0,
+        "nodes": 107,
+        "referenceIDs": [
+          9,
+          8,
+          3,
+          10,
+          6,
+          7
+        ],
+        "scope": "Resolved positive subball outside conservative loss-free old support at45s; no camera/projection/beauty claim"
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            402.23228892378063,
+            1531.5791241372617,
+            280.53971107621925
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 36.81620477918618,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 7,
+          "maxSampledOldPotential": 0.09018108378186648,
+          "sampleOldID": 10
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            417.02509036172387,
+            1230.3387285425301,
+            287.1273576626079
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 18.727597467070225,
+          "nominalOldPotentialAtCentre": 0.027184721853945607,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 19,
+          "maxSampledOldPotential": 0.07769257225545564,
+          "sampleOldID": 10
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            460.4583328700912,
+            1413.1094951894834,
+            415.76794342190215
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 26.153938173886118,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 0,
+          "maxSampledOldPotential": 0,
+          "sampleOldID": null
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            451.72039331918467,
+            1384.3742141646064,
+            258.0532261732381
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 23.56776288164719,
+          "nominalOldPotentialAtCentre": 0.000005705290957026747,
+          "centreOldID": 10,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 9,
+          "maxSampledOldPotential": 0.08205457761593193,
+          "sampleOldID": 10
+        }
+      ]
+    },
+    {
+      "siteID": "body-admission-4",
+      "parentRadiusLower": 31.652191269857234,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 116
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 8,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 9,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 79
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            -348.91600000000005,
+            1601.2062041574063,
+            -123.42742538905327
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 40.33125571835026,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 0,
+          "maxSampledOldPotential": 0.004230137746525922,
+          "sampleOldID": 7
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            -172.17831472610845,
+            1362.1247467576372,
+            -72.32118964791039
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 18.81392455237104,
+          "nominalOldPotentialAtCentre": 0.07465903146412912,
+          "centreOldID": 3,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.21091449348011934,
+          "sampleOldID": 6
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            -235.48733631675617,
+            1559.5136260322392,
+            21.85735421400912
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 36.57892368708522,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 0,
+          "maxSampledOldPotential": 0,
+          "sampleOldID": null
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            -227.13406263465686,
+            1502.3486177937948,
+            -127.93712049013519
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 31.43407294562523,
+          "nominalOldPotentialAtCentre": 0,
+          "centreOldID": null,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 0,
+          "maxSampledOldPotential": 0.00008154210716082572,
+          "sampleOldID": 7
+        }
+      ]
+    },
+    {
+      "siteID": "body-admission-5",
+      "parentRadiusLower": 28.021757966402316,
+      "seedPlusSeparation": 22.03320826431365,
+      "originalDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 101
+      },
+      "nominalWithoutUncertaintyDecision": {
+        "pass": false,
+        "reason": "no certified resolved exterior head patch",
+        "failures": [
+          {
+            "headID": "natural-head-0",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-1",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-2",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          },
+          {
+            "headID": "natural-head-3",
+            "oldID": 7,
+            "reason": "conservative old support overlaps head"
+          }
+        ],
+        "nodes": 80
+      },
+      "heads": [
+        {
+          "headID": "natural-head-0",
+          "nominalCenter": [
+            -277.8201826096911,
+            1641.8128878282325,
+            -395.0709354041533
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 42.09185053177136,
+          "nominalOldPotentialAtCentre": 0.15349559275288593,
+          "centreOldID": 7,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.27374130025590077,
+          "sampleOldID": 7
+        },
+        {
+          "headID": "natural-head-1",
+          "nominalCenter": [
+            14.763938720779038,
+            1584.6606806206032,
+            -441.28951561355547
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 36.94815188308472,
+          "nominalOldPotentialAtCentre": 0.15359391971729397,
+          "centreOldID": 7,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.2840832631482341,
+          "sampleOldID": 7
+        },
+        {
+          "headID": "natural-head-2",
+          "nominalCenter": [
+            -129.97364835841657,
+            1648.577110853541,
+            -277.56498833443857
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 42.70063060404911,
+          "nominalOldPotentialAtCentre": 0.04079622475065417,
+          "centreOldID": 7,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.10798038011184287,
+          "sampleOldID": 7
+        },
+        {
+          "headID": "natural-head-3",
+          "nominalCenter": [
+            -127.75234332791467,
+            1658.5042508154716,
+            -437.79144587543806
+          ],
+          "positiveWorldRadiusLower": 34.416431565847354,
+          "candidateCenterUncertainty": 43.59407320062287,
+          "nominalOldPotentialAtCentre": 0.1922672707357477,
+          "centreOldID": 7,
+          "nominalSphereSamples": 27,
+          "samplesAbove005": 27,
+          "maxSampledOldPotential": 0.1990651544608411,
+          "sampleOldID": 7
+        }
+      ]
+    }
+  ],
+  "scope": "Diagnosis only of EXACTrejectedcandidates; zero-uncertaintyvariant is not an admitted source setting. Nativeq samples use loss-free nominal endpoint poses fromthecertificate, not actual future shear/erosion. Positive samples prove nominal overlap; zero samples cannot prove a sphere empty. No thresholds/poses/cadence changed."
+}

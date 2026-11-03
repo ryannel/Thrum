@@ -1,0 +1,8 @@
+✔ presentation uploads are keyed; paused camera redraw does not clone/upload grids (0.664042ms)
+
+Interrupted while running:
+
+⚠ tests/render/assets.test.mjs (tests/render/assets.test.mjs:1:1)
+⚠ tests/render/integration-contract.test.mjs (tests/render/integration-contract.test.mjs:1:1)
+⚠ tests/render/source-query.test.mjs (tests/render/source-query.test.mjs:1:1)
+⚠ tests/render/trace.test.mjs (tests/render/trace.test.mjs:1:1)

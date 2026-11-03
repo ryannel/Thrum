@@ -1,0 +1,30 @@
+{
+  "external": {
+    "baseline_build": {
+      "relative_path": "../cloud-source-integration-2026-11-03/build.json",
+      "sha256": "c3a0d084084354f9cd81089111837579e3a8be9cdbdff9a366246a987cc22855"
+    },
+    "baseline_manifest": {
+      "relative_path": "../cloud-source-integration-2026-11-03/manifest.json",
+      "sha256": "6db628862b4698204b03df10078ad05e3b5fc85d8a364afe0f8f39d3d934cd68"
+    },
+    "baseline_restore": {
+      "relative_path": "../cloud-source-integration-2026-11-03/restore.py",
+      "sha256": "82ee9f603cc1868f51c73eb043c7a8d9dbaecca3c9b646f6962f0fb416313a43"
+    },
+    "optical_density_gzip": {
+      "relative_path": "../cloud-natural-crown-cook-2026-11-03/selected/density.r16f.gz",
+      "sha256": "041e77c40e4bd161df4ad4184b795f8914b54930716078b53f0e78c4eb75c015"
+    },
+    "optical_distance_gzip": {
+      "relative_path": "../cloud-natural-crown-cook-2026-11-03/selected/distance.r16f.gz",
+      "sha256": "5c62df3967b8d2e9a84da53311a9154d5cd7c8285c8c0d5efd034553089a3c34"
+    },
+    "optical_manifest": {
+      "relative_path": "../cloud-natural-crown-cook-2026-11-03/manifest.json",
+      "sha256": "c59a45840760a4efd4d5b63c442bf0707cb9380ec0ff318ec52ef365c2f045c5"
+    }
+  },
+  "schema": 1,
+  "scope": "Exact external restore dependencies; no duplicate BODY/native renderer/source payloads"
+}

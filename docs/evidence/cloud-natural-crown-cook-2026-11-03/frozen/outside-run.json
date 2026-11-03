@@ -1,0 +1,8 @@
+{
+  "stage": "outside",
+  "exitCode": 0,
+  "sampled_peak_rss_bytes": 89309184,
+  "elapsed_s": 0.23403887543827295,
+  "failure": null,
+  "recipe_sha256": "97785fb3e2b1a3241ebf8a54acfe3962440ab3639af64a8a63783ad921699680"
+}

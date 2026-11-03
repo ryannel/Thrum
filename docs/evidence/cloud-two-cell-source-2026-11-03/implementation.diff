@@ -1,0 +1,233 @@
+--- 17f/src/source/model.js
++++ two-cell/src/source/model.js
+@@ -8,19 +8,22 @@
+ function copyPart(a,b){for(const k of Object.keys(a)){if(k==='E')b.E.set(a.E);else if(['C','K','root','u'].includes(k))b[k].splice(0,3,...a[k]);else if(k==='Qcolumns'){if(!copyBirthFrame(a,b))b.Qcolumns=a.Qcolumns.map(c=>[...c]);}else b[k]=a[k];}}
+ function rawTemplate(metadata,id){const t=metadata.templates[id];return{...t,role:id==='body'?'BODY':'BILLOW'};}
+ export class SourceModel {
+- constructor(configuration,initial=DEFAULT_CONTROLS,{dt=DT}={}){
++ constructor(configuration,initial=DEFAULT_CONTROLS,{dt=DT,cellID='cu-weather-cell-1',rootXZ=[0,0]}={}){
++  if(typeof cellID!=='string'||!/^[-A-Za-z0-9._:]{1,128}$/.test(cellID))throw Error('Invalid persistent cellID');
++  if(!Array.isArray(rootXZ)||rootXZ.length!==2||!rootXZ.every(Number.isFinite))throw Error('Invalid absolute rootXZ');
++  this.initialRootXZ=Object.freeze([...rootXZ]);
+   if(!Number.isFinite(dt)||dt<=0||dt>DT||Math.abs(DT/dt-Math.round(DT/dt))>1e-8)throw Error('Source dt must divide.25s');
+   this.configuration=configuration;this.policy=configuration.admissionPolicy??admissionPolicy;this.admission=configuration.admissionMetadata;this.policy.validateMetadata(this.admission);
+   this.templates={body:rawTemplate(this.admission,'body'),'crown-b':rawTemplate(this.admission,'crown-b')};
+   for(const[id,t]of Object.entries(this.templates)){const supplied=configuration.templates?.[id];if(supplied){const m=supplied.metadata??supplied;if(m.density?.sha256!==t.sourcePins.density.sha256||m.distance?.sha256!==t.sourcePins.distance.sha256)throw Error('Template/admission dependency mismatch '+id);}}
+-  this.initial=freeze(validateControls(initial));this.controls={...this.initial};this.intervalControls={...this.controls};this.dt=dt;this.time=0;this.previousTime=0;this.tick=0;this.region=[0,ROOT_Y,0];this.previousRegion=[...this.region];this.cellId='cu-weather-cell-1';
++  this.initial=freeze(validateControls(initial));this.controls={...this.initial};this.intervalControls={...this.controls};this.dt=dt;this.time=0;this.previousTime=0;this.tick=0;this.region=[rootXZ[0],ROOT_Y,rootXZ[1]];this.previousRegion=[...this.region];this.cellId=cellID;
+   this.stateGrids=[new Float64Array(MAX_PARTS*GRID_COUNT),new Float64Array(MAX_PARTS*GRID_COUNT)];this.current=Array.from({length:8},(_,i)=>empty(i,this.stateGrids[0].subarray(i*GRID_COUNT,(i+1)*GRID_COUNT)));this.previous=Array.from({length:8},(_,i)=>empty(i,this.stateGrids[1].subarray(i*GRID_COUNT,(i+1)*GRID_COUNT)));
+   this.exposurePrevious=new Float32Array(MAX_PARTS*GRID_COUNT);this.exposureCurrent=new Float32Array(MAX_PARTS*GRID_COUNT);this.exposureRevision=0;this.exposurePreparedTick=-1;this.exposurePreparedRevision=-1;this.exposureAllZero=true;this.lastExposureChanged=false;
+   this.commands=[];this.commandRevision=0;this.committedRevision=0;this.intervalRevision=0;this.events=[];this.eventCount=0;this.overwrittenEvents=0;this.nextID=1;this.lastBirthTime=-Infinity;this.roleEpoch=0;this.nextBody=100;this.nextBillow=70;this.billowOrdinal=0;this.referenceLease=null;
+   this.stats={births:0,bodyBirths:0,billowBirths:0,recoveryBirths:0,failedBirths:0,weatherCancelledSlots:0,capacityFailures:0,retired:0,healthyEstablishments:0,cancelledEstablishments:0,maxSlots:0,maxPriorCurrentIDs:0,maxReferenceParts:0,admissionNodeTests:0,controlPointUpdates:0,sourceSteps:0,maxControlPitch:0,maxK:0,exposurePublications:0};
+   this.admit('BODY',0,{parentless:true});for(let i=0;i<8;i++)copyPart(this.current[i],this.previous[i]);
+  }
+- fresh(initial=this.initial){return new SourceModel(this.configuration,initial,{dt:this.dt});}
++ fresh(initial=this.initial){return new SourceModel(this.configuration,initial,{dt:this.dt,cellID:this.cellId,rootXZ:this.initialRootXZ});}
+  event(type,data={}){this.eventCount++;this.events.push(freeze({time:this.time,type,...structuredClone(data)}));if(this.events.length>128){this.events.shift();this.overwrittenEvents++;}}
+  enqueue(patch,requestedTime=this.time){if(!Number.isFinite(requestedTime)||requestedTime<0)throw Error('Invalid control time');if(this.commands.length>=256)throw Error('Control history capacity256');const tick=Math.max(this.tick+1,Math.ceil((requestedTime-EPS)/this.dt)),cmd={tick,patch:{...patch},revision:this.commandRevision+1,applied:false};let c={...this.controls};for(const q of [...this.commands.filter(c=>!c.applied),cmd].sort((a,b)=>a.tick-b.tick||a.revision-b.revision))c=validateControls({...c,...q.patch});this.commandRevision++;this.commands.push(cmd);return{tick,revision:cmd.revision,activationTime:tick*this.dt,candidate:c};}
+  applyCommands(){for(const cmd of this.commands)if(!cmd.applied&&cmd.tick===this.tick){cmd.applied=true;this.controls=validateControls({...this.controls,...cmd.patch});this.committedRevision=cmd.revision;this.event('controls-committed',{revision:cmd.revision,controls:this.controls});}}
+@@ -61,12 +64,15 @@
+    if(this.time-p.born>=ROLES[p.role].lease-EPS){if(!(p.minResolved>=16))throw Error('Mature resolved neck failed ID'+p.ID);p.establishment='completed';this.stats.healthyEstablishments++;this.event('establishment-completed',{ID:p.ID,minSeed:p.minSeed,minNeck:p.minNeck,minResolved:p.minResolved});}
+   }
+  }
+- step(){this.applyCommands();const t=this.time,dt=this.dt,c={...this.controls};this.intervalControls=c;this.intervalRevision=this.committedRevision;this.previousRegion=[...this.region];const nextR=regionAdvance(this.region,c,dt),src=this.current,dst=this.previous;let exposureChanged=false;
++ step(shared=null){if(shared){
++  if(!Object.isFrozen(shared)||!Object.isFrozen(shared.controls)||!Object.isFrozen(shared.endCommands)||shared.time!==this.time||shared.tick!==this.tick||shared.dt!==this.dt||shared.controls!==this.controls||shared.revision!==this.committedRevision||this.commands.some(q=>!q.applied))throw Error('Invalid shared source interval');
++  validateControls(shared.controls);for(const cmd of shared.endCommands){if(!Object.isFrozen(cmd)||!Object.isFrozen(cmd.controls)||!Number.isSafeInteger(cmd.revision)||cmd.revision<1)throw Error('Invalid shared command barrier');validateControls(cmd.controls);}
++ }else this.applyCommands();const t=this.time,dt=this.dt,c=shared?shared.controls:{...this.controls};this.intervalControls=c;this.intervalRevision=this.committedRevision;this.previousRegion=[...this.region];const nextR=regionAdvance(this.region,c,dt),src=this.current,dst=this.previous;let exposureChanged=false;
+   for(let i=0;i<8;i++){const a=src[i],b=dst[i];copyPart(a,b);if(!a.active)continue;if(this.terminalZero(a,t))continue;
+    const target=growthTarget(a.C[0],t+dt/2,c),end=response(a.mu,a.tau,target,dt),half=response(a.mu,a.tau,target,dt/2),ig=growthIntegral(a,target,dt),mid=cloneGeometry(a);advancePose(mid,c,dt/2,growthIntegral(a,target,dt/2));mid.g=growth(a.role,half.tau);mid.b=a.s*mid.g;advancePose(b,c,dt,ig);b.mu=end.mu;b.tau=end.tau;b.g=growth(a.role,b.tau);b.b=b.s*b.g;b.Aseed=smooth(0,4,b.tau);if(a.role==='BODY'){b.C=[...nextR];b.u=[0,0,0];mid.C=regionAdvance(this.region,c,dt/2);mid.u=[0,0,0];}
+    exposureChanged=this.controlUpdate(a,b,mid,t,dt,c)||exposureChanged;const A=matrix(b),h=this.templates[b.templateID].domain.span.map(v=>v/16),pitch=Math.max(...[0,1,2].map(j=>h[j]*Math.hypot(A[0][j],A[1][j],A[2][j])));this.stats.maxControlPitch=Math.max(this.stats.maxControlPitch,pitch);this.stats.maxK=Math.max(this.stats.maxK,Math.hypot(...b.K));if(pitch>200+1e-6)throw Error('Control-grid pitch admission exceeded');
+   }
+-  this.previous=src;this.current=dst;this.region=nextR;this.previousTime=t;this.time=t+dt;this.tick++;this.stats.sourceSteps++;for(const p of this.current){const old=this.previous[p.slot];if(p.active&&old.active&&p.ID===old.ID&&this.terminalZero(p,this.time)&&this.terminalZero(old,this.previousTime)){p.active=false;this.stats.retired++;this.event('retired',{ID:p.ID});exposureChanged=true;}}this.applyCommands();this.monitor();if(this.referenceLease){for(const p of this.referenceLease.parts){const target=growthTarget(p.C[0],t+dt/2,c),end=response(p.mu,p.tau,target,dt),ig=growthIntegral(p,target,dt);advancePose(p,c,dt,ig);p.mu=end.mu;p.tau=end.tau;p.g=growth(p.role,p.tau);p.b=p.s*p.g;p.Aseed=smooth(0,4,p.tau);}if(this.time>=this.referenceLease.deadline-EPS||!this.current.some(p=>p.active&&p.ID===this.referenceLease.childID&&p.establishment==='healthy'))this.referenceLease=null;}
++  this.previous=src;this.current=dst;this.region=nextR;this.previousTime=t;this.time=t+dt;this.tick++;this.stats.sourceSteps++;for(const p of this.current){const old=this.previous[p.slot];if(p.active&&old.active&&p.ID===old.ID&&this.terminalZero(p,this.time)&&this.terminalZero(old,this.previousTime)){p.active=false;this.stats.retired++;this.event('retired',{ID:p.ID});exposureChanged=true;}}if(shared){for(const cmd of shared.endCommands){this.controls=cmd.controls;this.committedRevision=cmd.revision;this.event('controls-committed',{revision:cmd.revision,controls:this.controls});}}else this.applyCommands();this.monitor();if(this.referenceLease){for(const p of this.referenceLease.parts){const target=growthTarget(p.C[0],t+dt/2,c),end=response(p.mu,p.tau,target,dt),ig=growthIntegral(p,target,dt);advancePose(p,c,dt,ig);p.mu=end.mu;p.tau=end.tau;p.g=growth(p.role,p.tau);p.b=p.s*p.g;p.Aseed=smooth(0,4,p.tau);}if(this.time>=this.referenceLease.deadline-EPS||!this.current.some(p=>p.active&&p.ID===this.referenceLease.childID&&p.establishment==='healthy'))this.referenceLease=null;}
+   const clear=this.current.every(p=>!p.active||this.terminalZero(p))&&this.previous.every(p=>!p.active||this.terminalZero(p,this.previousTime));if(clear&&this.controls.moist&&this.controls.lift&&dryAt(this.region[0],this.time,this.controls)<.2&&this.time-this.lastBirthTime>=130-EPS){if(this.admit('BODY',this.time,{parentless:true,recovery:true})){this.roleEpoch=this.time;this.nextBody=this.time+100;this.nextBillow=this.time+70;this.billowOrdinal=0;}}
+   while(this.nextBody<=this.time+EPS){this.admit('BODY',this.nextBody);this.nextBody+=100;}while(this.nextBillow<=this.time+EPS){this.admit('BILLOW',this.nextBillow);this.billowOrdinal++;this.nextBillow+=50;}
+   const pairIDs=new Set([...this.current.filter(p=>p.active),...this.previous.filter(p=>p.active&&!this.terminalZero(p,this.previousTime))].map(p=>p.ID));this.stats.maxPriorCurrentIDs=Math.max(this.stats.maxPriorCurrentIDs,pairIDs.size);if(pairIDs.size>8)throw Error('Publication slot-ID union exceeds8');if(exposureChanged||this.lastExposureChanged)this.exposureRevision++;this.lastExposureChanged=exposureChanged;this.exposurePreparedTick=-1;return this.time;
+--- /dev/null
++++ two-cell/src/source/world.js
+@@ -0,0 +1,69 @@
++// Bounded two-cell producer. Existing SourceClock is the sole wall/source clock owner.
++import {SourceModel,DEFAULT_CONTROLS,DT,MAX_PARTS,GRID_COUNT} from './model.js';
++import {validateControls} from './weather.js';
++import {snapshotForProbe} from './reference.js';
++const EPS=1e-8,EMPTY=Object.freeze([]),leases=new WeakMap();
++const CONTROL_KEYS=Object.keys(DEFAULT_CONTROLS);
++const frozenControls=value=>Object.freeze(validateControls(value));
++export const DEFAULT_CELLS=Object.freeze([Object.freeze({cellID:'A',rootXZ:Object.freeze([0,0])}),Object.freeze({cellID:'B',rootXZ:Object.freeze([16,0])})]);
++export function qualifiedID(epoch,cellID,localID){if(!Number.isSafeInteger(epoch)||epoch<0||!Number.isSafeInteger(localID)||localID<1)throw Error('Invalid qualified source ID');return JSON.stringify([epoch,cellID,localID]);}
++function patchCopy(value){if(!value||typeof value!=='object'||Array.isArray(value)||![Object.prototype,null].includes(Object.getPrototypeOf(value)))throw Error('Weather patch must be plain data');for(const k of Object.keys(value))if(!CONTROL_KEYS.includes(k))throw Error('Unknown weather control '+k);return Object.freeze({...value});}
++function freezeObject(v){if(v&&typeof v==='object'&&!ArrayBuffer.isView(v)){for(const q of Object.values(v))freezeObject(q);Object.freeze(v);}return v;}
++export function assertWorldPublication(tuple){const lease=leases.get(tuple);if(!lease||tuple.state!=='ready')throw Error('Missing valid world publication');if(!lease.owned&&(lease.state.fault||lease.state.serial!==lease.serial))throw Error('World publication exposure lease expired or quarantined');return tuple;}
++export function snapshotWorldForProbe(tuple){assertWorldPublication(tuple);const out=Object.freeze({...tuple,groups:Object.freeze(tuple.groups.map(group=>freezeObject(snapshotForProbe(group)))),exposureOwnership:'owned observer copy'});leases.set(out,{owned:true});return out;}
++export class TwoCellWorld {
++ #cells;#definitions;#configuration;#time=0;#tick=0;#previousTime=0;#controls;#intervalControls;#revision=0;#intervalRevision=0;#commandRevision=0;#commands=[];#fault=null;#lease={serial:0,fault:null};#events=[];
++ constructor(configuration,initial=DEFAULT_CONTROLS,{cells=DEFAULT_CELLS}={}){
++  if(!Array.isArray(cells)||cells.length!==2)throw Error('Exactly two fixed cells required');const IDs=new Set();
++  this.#definitions=Object.freeze(cells.map(d=>{if(!d||typeof d.cellID!=='string'||!/^[-A-Za-z0-9._:]{1,128}$/.test(d.cellID)||IDs.has(d.cellID))throw Error('Distinct persistent cellIDs required');IDs.add(d.cellID);if(!Array.isArray(d.rootXZ)||d.rootXZ.length!==2||!d.rootXZ.every(Number.isFinite))throw Error('Invalid cell rootXZ');return Object.freeze({cellID:d.cellID,rootXZ:Object.freeze([...d.rootXZ])});}));
++  this.#configuration=configuration;this.initial=frozenControls(initial);this.#controls=this.initial;this.#intervalControls=this.initial;Object.defineProperty(this,'dt',{value:DT,enumerable:true});
++  this.#cells=this.#definitions.map(d=>{const c=new SourceModel(configuration,this.initial,{cellID:d.cellID,rootXZ:d.rootXZ});c.controls=this.#controls;c.intervalControls=this.#controls;return c;});
++ }
++ #healthy(){if(this.#fault)throw Error('Two-cell publication quarantined: '+this.#fault.cause);}
++ get time(){this.#healthy();return this.#time;} get previousTime(){this.#healthy();return this.#previousTime;} get tick(){this.#healthy();return this.#tick;}
++ get cellDefinitions(){return this.#definitions;} get fault(){return this.#fault;}
++ get commandRevision(){return this.#commandRevision;} set commandRevision(v){if(this.#tick!==0||v!==Math.max(0,...this.#commands.map(c=>c.revision)))throw Error('Invalid replay command revision');this.#commandRevision=v;for(const c of this.#cells)c.commandRevision=v;}
++ get commands(){return Object.freeze(this.#commands.map(c=>Object.freeze({...c,patch:c.patch})));}
++ set commands(list){
++  this.#healthy();if(this.#tick!==0||!Array.isArray(list)||list.length>256)throw Error('Commands can only be restored onto a fresh world');const IDs=new Set(),copy=list.map(c=>{if(!Number.isSafeInteger(c.tick)||c.tick<1||!Number.isSafeInteger(c.revision)||c.revision<1||IDs.has(c.revision)||c.applied)throw Error('Invalid replay command');IDs.add(c.revision);return{tick:c.tick,revision:c.revision,patch:patchCopy(c.patch),applied:false};});
++  this.#validatePending(copy);this.#commands=copy;this.#commandRevision=Math.max(0,...copy.map(c=>c.revision));for(const c of this.#cells)c.commandRevision=this.#commandRevision;
++ }
++ fresh(initial=this.initial){return new TwoCellWorld(this.#configuration,initial,{cells:this.#definitions});}
++ #validatePending(list){let controls=this.#controls;for(const c of list.filter(v=>!v.applied).sort((a,b)=>a.tick-b.tick||a.revision-b.revision)){if(c.tick<=this.#tick)throw Error('Missed global command barrier');controls=frozenControls({...controls,...c.patch});}return controls;}
++ enqueue(patch,requestedTime=this.#time){return this.enqueueBatch([{patch,requestedTime}])[0];}
++ enqueueBatch(entries){
++  this.#healthy();if(!Array.isArray(entries)||!entries.length||this.#commands.length+entries.length>256)throw Error('Global command history capacity256');
++  const added=entries.map((v,i)=>{const t=v.requestedTime??this.#time;if(!Number.isFinite(t)||t<0)throw Error('Invalid global command time');return{tick:Math.max(this.#tick+1,Math.ceil((t-EPS)/DT)),patch:patchCopy(v.patch),revision:this.#commandRevision+i+1,applied:false};});
++  const candidate=this.#validatePending([...this.#commands,...added]);this.#commands.push(...added);this.#commandRevision+=added.length;for(const c of this.#cells)c.commandRevision=this.#commandRevision;
++  return Object.freeze(added.map(c=>Object.freeze({tick:c.tick,revision:c.revision,activationTime:c.tick*DT,candidate})));
++ }
++ #checkCells(time,tick,controls,revision){for(const c of this.#cells)if(c.time!==time||c.tick!==tick||c.controls!==controls||c.committedRevision!==revision)throw Error('Cell barrier divergence');}
++ #quarantine(error){this.#fault=Object.freeze({state:'faulted',cause:String(error?.message??error),lastCommittedTime:this.#time,lastCommittedTick:this.#tick,unsafeCellClocks:Object.freeze(this.#cells.map(c=>Object.freeze({cellID:c.cellId,time:c.time,tick:c.tick})))});this.#lease.fault=this.#fault;this.#lease.serial++;throw Error('Two-cell publication quarantined: '+this.#fault.cause);}
++ step(){
++  this.#healthy();try{
++   this.#checkCells(this.#time,this.#tick,this.#controls,this.#revision);
++   const tick=this.#tick+1,time=this.#time+DT,pending=this.#commands.filter(c=>!c.applied&&c.tick===tick).sort((a,b)=>a.revision-b.revision);let end=this.#controls;const barrier=[];
++   for(const cmd of pending){end=frozenControls({...end,...cmd.patch});barrier.push(Object.freeze({revision:cmd.revision,controls:end}));}
++   const endRevision=barrier.length?barrier.at(-1).revision:this.#revision,interval=Object.freeze({time:this.#time,tick:this.#tick,dt:DT,controls:this.#controls,revision:this.#revision,endCommands:barrier.length?Object.freeze(barrier):EMPTY});
++   for(const c of this.#cells)c.step(interval);
++   this.#checkCells(time,tick,end,endRevision);
++   this.#previousTime=this.#time;this.#time=time;this.#tick=tick;this.#intervalControls=interval.controls;this.#intervalRevision=interval.revision;this.#controls=end;this.#revision=endRevision;
++   for(const cmd of pending){cmd.applied=true;const event=Object.freeze({time,revision:cmd.revision,type:'controls-committed',controls:barrier.find(b=>b.revision===cmd.revision).controls});this.#events.push(event);if(this.#events.length>128)this.#events.shift();}
++   this.#lease.serial++;return this.#time;
++  }catch(error){return this.#quarantine(error);}
++ }
++ presentation(requestedTime,epoch=0){
++  this.#healthy();if(!Number.isFinite(requestedTime)||!Number.isSafeInteger(epoch)||epoch<0)throw Error('Invalid world presentation request');
++  try{
++   this.#checkCells(this.#time,this.#tick,this.#controls,this.#revision);const local=this.#cells.map(c=>c.presentation(requestedTime,epoch)),first=local[0];
++   if(local.some(t=>t.time!==first.time||t.alpha!==first.alpha||t.sourceTick!==first.sourceTick||t.previousTime!==first.previousTime||t.forcingRevision!==first.forcingRevision))throw Error('Mixed source publication interval');
++   const controls=first.time<this.#time-EPS?this.#intervalControls:this.#controls;let partStart=0;
++   const groups=Object.freeze(local.map((t,i)=>Object.freeze({...t,cellID:this.#definitions[i].cellID,groupIndex:i,controls,parts:Object.freeze(t.parts.map(p=>Object.freeze({...p,ID:qualifiedID(epoch,this.#definitions[i].cellID,p.ID),parentID:p.parentID?qualifiedID(epoch,this.#definitions[i].cellID,p.parentID):null,localID:p.ID,localParentID:p.parentID,cellID:this.#definitions[i].cellID,worldEpoch:epoch,globalSlot:i*MAX_PARTS+p.slot}))),eventIdentityScope:'Local event IDs are scoped by group cellID and world epoch'})));
++   const ranges=Object.freeze(groups.map((g,i)=>{const r=Object.freeze({cellID:g.cellID,partStart,partCount:g.parts.length,slotStart:i*MAX_PARTS,slotCount:MAX_PARTS,controlElementOffset:i*MAX_PARTS*GRID_COUNT});partStart+=g.parts.length;return r;}));
++   const lo=[0,1,2].map(k=>Math.min(...groups.map(g=>g.bounds[0][k]))),hi=[0,1,2].map(k=>Math.max(...groups.map(g=>g.bounds[1][k])));
++   const tuple=Object.freeze({state:'ready',epoch,sourceTick:this.#tick,time:first.time,alpha:first.alpha,requestedTime,committedTime:this.#time,previousTime:this.#previousTime,forcingRevision:first.forcingRevision,committedRevision:this.#revision,queuedRevision:this.#commandRevision,controls,groups,formationRanges:ranges,bounds:Object.freeze([Object.freeze(lo),Object.freeze(hi)]),exposureAllZero:groups.every(g=>g.exposureAllZero),exposureOwnership:'borrowed until next world commit; snapshotWorldForProbe before await/commit',controlBytesCPU:1886592,observerControlCopyBytes:628864});
++   leases.set(tuple,{owned:false,state:this.#lease,serial:this.#lease.serial});return tuple;
++  }catch(error){return this.#quarantine(error);}
++ }
++ metadata(){if(this.#fault)return this.#fault;return{state:'ready',time:this.#time,previousTime:this.#previousTime,tick:this.#tick,dt:DT,cellDefinitions:this.#definitions,controls:this.#controls,intervalControls:this.#intervalControls,committedRevision:this.#revision,queuedRevision:this.#commandRevision,cells:this.#cells.map(c=>c.metadata()),events:[...this.#events],controlBytesCPU:1886592,scope:'Fixed two-cell CPU source only; local events are scoped by cellID; source art/GPU/air/fog/environment/cost admission unrun'};}
++}
+--- /dev/null
++++ two-cell/src/source/world-reference.js
+@@ -0,0 +1,8 @@
++// Exact CPU liquid oracle; not an index, renderer or per-query source update.
++import {evaluatePoint} from './reference.js';
++import {assertWorldPublication} from './world.js';
++function validate(tuple,x,assets,noise){assertWorldPublication(tuple);if(!Array.isArray(x)||x.length!==3||!x.every(Number.isFinite))throw Error('Invalid world query point');if(tuple.groups.length!==2||new Set(tuple.groups.map(g=>g.cellID)).size!==2)throw Error('Missing formation groups');if(!assets?.body||!assets['crown-b']||!noise||noise.length!==32**3)throw Error('Missing shared native source inputs');for(const g of tuple.groups)if(g.epoch!==tuple.epoch||g.time!==tuple.time||g.alpha!==tuple.alpha||g.sourceTick!==tuple.sourceTick||g.controls!==tuple.controls)throw Error('Mixed world query tuple');}
++export function evaluateWorld(tuple,x,assets,noise,{bounded=false,raw=false}={}){
++ validate(tuple,x,assets,noise);const groups=tuple.groups.map(g=>{const outside=bounded&&x.some((v,k)=>v<g.bounds[0][k]||v>g.bounds[1][k]),q=outside?0:evaluatePoint(g,x,assets,noise,{raw});if(!Number.isFinite(q)||q<0)throw Error('Invalid source coefficient');return{cellID:g.cellID,q,rejectedByBound:outside};});const q=groups.reduce((sum,g)=>sum+g.q,0);return{q,sigmaT:.019*q,groups,scope:'MAX inside each liquid formation; ADD independent formation extinction; no fog/air/lighting proof'};
++}
++export function deliberatelyWrongComposition(tuple,x,assets,noise){validate(tuple,x,assets,noise);const maxima=tuple.groups.map(g=>evaluatePoint(g,x,assets,noise)),proxySum=tuple.groups.reduce((sum,g)=>sum+g.parts.reduce((s,p)=>s+evaluatePoint({...g,parts:[p]},x,assets,noise),0),0);return{globalMaxSigma:.019*Math.max(...maxima),proxySumSigma:.019*proxySum};}
+--- /dev/null
++++ two-cell/tests/world/contracts.mjs
+@@ -0,0 +1,49 @@
++import assert from 'node:assert/strict';
++import {writeFile} from 'node:fs/promises';
++import {configuration} from '../source/fixtures.mjs';
++import {SourceModel,DEFAULT_CONTROLS} from '../../src/source/model.js';
++import {SourceModel as Baseline} from '../../baseline/src/source/model.js';
++import {SourceClock} from '../../src/source/clock.js';
++import {TwoCellWorld,assertWorldPublication,snapshotWorldForProbe} from '../../src/source/world.js';
++const config=await configuration(),wet={...DEFAULT_CONTROLS,dryGain:0},checks=[];
++const run=(m,t)=>{while(m.time<t-1e-9)m.step();return m;};
++const bytes=a=>new Uint8Array(a.buffer,a.byteOffset,a.byteLength);
++const compareTuple=(a,b)=>{assert.deepEqual({...a,exposurePrevious:null,exposureCurrent:null},{...b,exposurePrevious:null,exposureCurrent:null});assert.deepEqual(bytes(a.exposurePrevious),bytes(b.exposurePrevious));assert.deepEqual(bytes(a.exposureCurrent),bytes(b.exposureCurrent));};
++{
++ const old=new Baseline(config),next=new SourceModel(config);for(const t of[0,70,120,220,480,550]){run(old,t);run(next,t);compareTuple(old.presentation(t+.125,2),next.presentation(t+.125,2));assert.deepEqual(old.metadata(),next.metadata());}checks.push('default_single_source_exact_to17f');
++ const root=[12000,6700],m=new SourceModel(config,wet,{cellID:'remote',rootXZ:root});root[0]=0;assert.equal(m.region[0],12000);run(m,20);const fresh=m.fresh();assert.deepEqual(fresh.region,[12000,1239.2,6700]);assert.equal(fresh.cellId,'remote');assert.throws(()=>new SourceModel(config,wet,{rootXZ:[0,NaN]}));checks.push('absolute_origin_persistent_fresh');
++}
++{
++ const w=new TwoCellWorld(config,wet),clock=new SourceClock(w);assert.equal(clock.tuple(),clock.tuple());const initial=clock.tuple();assert.notEqual(initial.groups[0].parts[0].ID,initial.groups[1].parts[0].ID);assert.equal(initial.groups[0].parts[0].localID,1);assert.equal(initial.groups[1].parts[0].localID,1);assert.deepEqual(initial.groups[0].parts[0].C,[0,1239.2,0]);assert.deepEqual(initial.groups[1].parts[0].C,[16,1239.2,0]);assert.equal(initial.groups[0].controls,initial.groups[1].controls);assert.equal(initial.groups[1].parts[0].globalSlot,8);assert.equal(initial.formationRanges[1].controlElementOffset,8*17**3);checks.push('qualified_ID_and_separate_slot_control_ranges');
++ const before=w.metadata();assert.throws(()=>w.enqueueBatch([{patch:{meanX:1},requestedTime:1},{patch:{meanX:12,meanZ:12},requestedTime:2}]),/wind/);assert.deepEqual(w.metadata(),before);assert.equal(w.commands.length,0);checks.push('global_command_batch_rejected_atomically');
++ const controller={...wet,meanX:0,meanZ:6,shearX:0,shearZ:-.0015,uplift:.25};w.enqueue(controller,150);controller.meanZ=0;
++ run(w,149.75);assert.equal(w.presentation(150).controls.meanX,4);w.step();const p=w.presentation(150.125);assert.equal(p.time,149.875);assert.equal(p.controls.meanX,4);assert.equal(p.groups[0].controls,p.groups[1].controls);const end=w.presentation(150.25);assert.equal(end.controls.meanZ,6);for(const c of w.metadata().cells){assert.equal(c.committedRevision,1);assert.equal(c.controls.meanZ,6);}checks.push('shared_halfopen_interval_and_atomic_barrier');
++ const cellDefs=w.cellDefinitions;clock.reset(wet);assert.deepEqual(clock.model.cellDefinitions,cellDefs);assert.notEqual(clock.tuple().groups[0].parts[0].ID,initial.groups[0].parts[0].ID);checks.push('reset_epoch_and_roots');
++}
++{
++ const drive=rate=>{const c=new SourceClock(new TwoCellWorld(config,wet));c.setRate(rate,0);c.play(0);for(let t=.125;t<=120/rate+1e-9;t+=.125){c.wall(t*1000);c.pump(1e9,128);}return c;};const a=drive(1),b=drive(16);assert.equal(a.model.tick,b.model.tick);assert.deepEqual(a.model.metadata(),b.model.metadata());assert.deepEqual(a.tuple(),b.tuple());checks.push('1x16x_same_global_intervals');
++}
++{
++ const w=new TwoCellWorld(config,wet,{cells:[{cellID:'A',rootXZ:[0,0]},{cellID:'B',rootXZ:[11992.715801343124,6779.681531943434]}]});w.enqueueBatch([{patch:{frontX:0,frontStart:1,frontSpeed:0,dryGain:1},requestedTime:1}]);run(w,1);const old=w.presentation(1.25),owned=snapshotWorldForProbe(old);assert.equal(old.groups[0].exposureAllZero,true);w.step();const next=w.presentation(1.5);assert.throws(()=>assertWorldPublication(old),/expired/);assertWorldPublication(owned);assert.notEqual(owned.groups[0].exposureCurrent.buffer,next.groups[0].exposureCurrent.buffer);assert.ok(next.groups[0].exposureCurrent.some(v=>v>0));assert.ok(owned.groups[0].exposureCurrent.every(v=>v===0));assert.equal(next.groups[1].exposureAllZero,true);const state=w.metadata();assert.ok(state.cells[0].parts.some(p=>p.maxE>0));assert.ok(state.cells[1].parts.every(p=>p.maxE===0));checks.push('borrowed_expires_owned_survives_world_commit_absolute_front');
++ const clock=new SourceClock(w);await clock.seek(70);const at70=clock.tuple();assert.equal(at70.time,70);assert.equal(at70.groups[1].cellID,'B');assert.ok(at70.groups[1].parts[0].C[0]>11992);assert.equal(clock.model.commands.length,1);checks.push('existing_clock_seek_preserves_world_config_and_commands');
++}
++{
++ const w=new TwoCellWorld(config,wet);run(w,70);const earlier=w.presentation(70.25);const first=earlier.groups[0].parts.find(p=>p.localID===2);run(w,220);const later=w.presentation(220.25);const replacement=later.groups[0].parts.find(p=>p.localID===7);assert.equal(first.globalSlot,replacement.globalSlot);assert.notEqual(first.ID,replacement.ID);assertWorldPublication(snapshotWorldForProbe(later));checks.push('slot_reuse_keeps_generation_identity');
++}
++{
++ const w=new TwoCellWorld(config,wet,{cells:[{cellID:'A',rootXZ:[0,0]},{cellID:'B',rootXZ:[16,32]}]}),clock=new SourceClock(w);const prior=clock.tuple(),owned=snapshotWorldForProbe(prior),original=SourceModel.prototype.step;SourceModel.prototype.step=function(shared){if(this.cellId==='B')throw Error('injected B failure');return original.call(this,shared);};
++ try{assert.throws(()=>w.step(),/quarantined/);}finally{SourceModel.prototype.step=original;}
++ assert.equal(w.metadata().state,'faulted');assert.deepEqual(w.metadata().unsafeCellClocks.map(c=>c.tick),[1,0]);assert.throws(()=>w.presentation(.25),/quarantined/);assert.throws(()=>clock.tuple(),/quarantined/);assert.throws(()=>assertWorldPublication(prior),/quarantined/);assertWorldPublication(owned);assert.throws(()=>w.step(),/quarantined/);clock.reset(wet);assert.equal(clock.tuple().state,'ready');assert.deepEqual(clock.tuple().groups[1].parts[0].C,[16,1239.2,32]);checks.push('halfstep_failure_quarantines_cached_and_borrowed_publications_reset_recovers');
++}
++{
++ const definitions=[{cellID:'A',rootXZ:[0,0]},{cellID:'B',rootXZ:[11992.715801343124,6779.681531943434]}],w=new TwoCellWorld(config,DEFAULT_CONTROLS,{cells:definitions}),single=definitions.map(d=>new SourceModel(config,DEFAULT_CONTROLS,d)),turn={...DEFAULT_CONTROLS,meanX:0,meanZ:6,shearX:0,shearZ:-.0015,uplift:.25,dryGain:0},dry={...turn,frontX:522,frontStart:500,frontSpeed:35,dryGain:1};
++ w.enqueueBatch([{patch:turn,requestedTime:150},{patch:dry,requestedTime:500}]);for(const m of single){m.enqueue(turn,150);m.enqueue(dry,500);}
++ for(const t of[0,70,149.75,150,150.25,220,499.75,500,500.25,550]){
++  run(w,t);for(const m of single)run(m,t);const pair=w.presentation(t+.125,4);
++  for(let i=0;i<2;i++){
++   const g=pair.groups[i],{cellID,groupIndex,eventIdentityScope,...rest}=g;rest.parts=g.parts.map(p=>{const{localID,localParentID,cellID,worldEpoch,globalSlot,...base}=p;return{...base,ID:localID,parentID:localParentID};});compareTuple(rest,single[i].presentation(t+.125,4));assert.deepEqual(w.metadata().cells[i],single[i].metadata());
++  }
++ }
++ checks.push('shared_interval_physics_exact_to_separately_commanded_sources');
++}
++const result={pass:true,checks,logicalControlBanksCPUBytes:1886592,observerExposureCopyBytes:628864,scope:'FocusedCPU world authority/causality/ownership tests; no native optical queries/GPU/art/scaling/timing admission',node:process.version,maxRSSKiB:process.resourceUsage().maxRSS};await writeFile(new URL('contracts-results.json',import.meta.url),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));
+--- /dev/null
++++ two-cell/tests/world/native.mjs
+@@ -0,0 +1,19 @@
++import assert from 'node:assert/strict';
++import {writeFile} from 'node:fs/promises';
++import {configuration,nativeAssets} from '../source/fixtures.mjs';
++import {DEFAULT_CONTROLS} from '../../src/source/model.js';
++import {evaluatePoint} from '../../src/source/reference.js';
++import {TwoCellWorld,snapshotWorldForProbe} from '../../src/source/world.js';
++import {evaluateWorld,deliberatelyWrongComposition} from '../../src/source/world-reference.js';
++const config=await configuration(),{assets,noise}=await nativeAssets(),wet={...DEFAULT_CONTROLS,dryGain:0},run=(w,t)=>{while(w.time<t-1e-9)w.step();return w;},checks=[];
++const overlap=run(new TwoCellWorld(config,wet),120.25),tuple=overlap.presentation(120.25,7),roots=tuple.groups.map(g=>g.parts.find(p=>p.localID===1).C),mid=roots[0].map((v,k)=>(v+roots[1][k])/2),actual=evaluateWorld(tuple,mid,assets,noise),wrong=deliberatelyWrongComposition(tuple,mid,assets,noise);
++assert.ok(actual.groups.every(g=>g.q>0));assert.equal(actual.sigmaT,.019*(actual.groups[0].q+actual.groups[1].q));assert.ok(actual.sigmaT>wrong.globalMaxSigma);assert.ok(wrong.proxySumSigma>actual.sigmaT);checks.push('actual_overlap_positive_MAXwithin_ADDbetween_vs_both_negatives');
++let boundedPoints=0,boundedPositive=0;
++const pointChecks=(w,t)=>{let count=0,positive=0;for(const g of t.groups){const[lo,hi]=g.bounds;for(let i=0;i<80;i++){const x=lo.map((v,k)=>v+(hi[k]-v)*((i*29+k*17)%83)/82);const a=evaluateWorld(t,x,assets,noise),b=evaluateWorld(t,x,assets,noise,{bounded:true});assert.equal(a.sigmaT,b.sigmaT);assert.deepEqual(a.groups.map(g=>g.q),b.groups.map(g=>g.q));count++;if(a.sigmaT>0)positive++;}for(const p of g.parts)for(const delta of[-16,0,16]){const x=p.C.map((v,k)=>v+(k===0?delta:0));const a=evaluateWorld(t,x,assets,noise),b=evaluateWorld(t,x,assets,noise,{bounded:true});assert.equal(a.sigmaT,b.sigmaT);count++;if(a.sigmaT>0)positive++;}}const outside=[1e6,1e6,1e6];assert.equal(evaluateWorld(t,outside,assets,noise).sigmaT,0);assert.ok(evaluateWorld(t,outside,assets,noise,{bounded:true}).groups.every(g=>g.rejectedByBound));return{count,positive};};
++let numbers=pointChecks(overlap,tuple);boundedPoints+=numbers.count;boundedPositive+=numbers.positive;const tick=overlap.tick,time=overlap.time;for(let i=0;i<20;i++)evaluateWorld(tuple,mid,assets,noise);assert.equal(overlap.tick,tick);assert.equal(overlap.time,time);checks.push('native_queries_never_step_source_and_bound_rejection_exact');
++const owned=snapshotWorldForProbe(tuple),value=evaluateWorld(owned,mid,assets,noise).sigmaT;overlap.step();overlap.presentation(120.5,7);assert.equal(evaluateWorld(owned,mid,assets,noise).sigmaT,value);assert.throws(()=>evaluateWorld(tuple,mid,assets,noise),/expired/);checks.push('owned_native_observer_stable_after_commit');
++const clear=new TwoCellWorld(config,{...wet,moist:false,lift:false}).presentation(.25);assert.equal(evaluateWorld(clear,[0,1239.2,0],assets,noise).sigmaT,0);assert.throws(()=>evaluateWorld(null,mid,assets,noise),/publication/);assert.throws(()=>evaluateWorld(clear,mid,{},noise),/Missing/);checks.push('healthy_clear_missing_and_expired_differ');
++const remoteRoot=[11992.715801343124,6779.681531943434],remote=new TwoCellWorld(config,DEFAULT_CONTROLS,{cells:[{cellID:'A',rootXZ:[0,0]},{cellID:'B',rootXZ:remoteRoot}]});const turn={...DEFAULT_CONTROLS,meanX:0,meanZ:6,shearX:0,shearZ:-.0015,uplift:.25,dryGain:0},drying={...turn,frontX:522,frontStart:500,frontSpeed:35,dryGain:1};remote.enqueueBatch([{patch:turn,requestedTime:150},{patch:drying,requestedTime:500}]);run(remote,120.25);const rt=remote.presentation(120.25,2),body=rt.groups[1].parts.find(p=>p.localID===1),elev=5*Math.PI/180,az=.5,sun=[Math.cos(elev)*Math.cos(az),Math.sin(elev),Math.cos(elev)*Math.sin(az)],receiver=[0,2,0],distance=(body.C[1]-2)/sun[1],hit=receiver.map((v,k)=>v+distance*sun[k]),error=Math.hypot(...hit.map((v,k)=>v-body.C[k]));assert.ok(error<1e-6);const aCentre=rt.groups[0].parts.find(p=>p.localID===1).C;assert.ok(Math.abs(body.C[0]-aCentre[0])>8000||Math.abs(body.C[2]-aCentre[2])>8000);
++const chord=[];for(let offset=-32;offset<=32;offset++){const x=hit.map((v,k)=>v+offset*sun[k]),v=evaluateWorld(rt,x,assets,noise,{bounded:true});assert.equal(v.groups[0].q,0);assert.ok(v.groups[1].q>0);assert.equal(v.sigmaT,evaluateWorld(rt,x,assets,noise).sigmaT);chord.push({offsetWorldM:offset,qB:v.groups[1].q,sigmaT:v.sigmaT});}let tau=0;for(let i=1;i<chord.length;i++)tau+=(chord[i-1].sigmaT+chord[i].sigmaT)/2;assert.ok(tau>0);assert.equal(evaluatePoint(rt.groups[0],hit,assets,noise),0);checks.push('actual_remote_B_Sun_chord_outside_A16kmcache_omittedB_negative');numbers=pointChecks(remote,rt);boundedPoints+=numbers.count;boundedPositive+=numbers.positive;
++run(remote,150);const pre=remote.presentation(150.125,2),post=remote.presentation(150.25,2);assert.equal(pre.controls.meanX,4);assert.equal(post.controls.meanZ,6);assert.equal(post.groups[0].controls,post.groups[1].controls);run(remote,550.25);const dt=remote.presentation(550.25,2),state=remote.metadata();assert.ok(state.cells[0].parts.some(p=>p.maxE>0));assert.ok(state.cells[1].parts.every(p=>p.maxE===0));assert.deepEqual(dt.groups[0].controls,dt.groups[1].controls);const bNow=dt.groups[1].parts.find(p=>p.templateID==='body'&&p.Aseed>0);assert.ok(evaluateWorld(dt,bNow.C,assets,noise).groups[1].q>0);numbers=pointChecks(remote,dt);boundedPoints+=numbers.count;boundedPositive+=numbers.positive;checks.push('global150turn500front_atomic_absolute_world_X_distinct_E');
++const output={pass:true,checks,overlap:{presentationTime:tuple.time,epoch:tuple.epoch,roots,point:mid,actual,deliberatelyWrong:wrong},remote:{initialRootXZ:remoteRoot,presentationTime:rt.time,receiver,sun,bodyRoot:body.C,closestRayPoint:hit,rootRayErrorM:error,cacheDomain:'16km fullwidth centred at A BODY',Aroot:aCentre,positiveChordSamples:chord.length,chordRangeWorldM:[-32,32],minQ:Math.min(...chord.map(v=>v.qB)),maxQ:Math.max(...chord.map(v=>v.qB)),trapezoidTau64m:tau,chord,scope:'Finite actualR16 CPU chord and membership, not rendered shadow or allray integration proof'},front550:{presentationTime:dt.time,committedTime:remote.time,maxEStatsTime:state.time,controls:dt.controls,maxEByCell:state.cells.map(c=>({cellID:c.cellId,maxE:Math.max(0,...c.parts.map(p=>p.maxE))}))},boundedPoints,boundedPositive,sharedNativeBytes:Object.values(assets).reduce((n,a)=>n+a.density.byteLength+a.distance.byteLength,noise.byteLength),maxRSSKiB:process.resourceUsage().maxRSS,node:process.version,scope:'NativeR16 CPU liquid composition/causality oracle only; noGPU/air/fog/environment/renderedshadow/art/performance admission'};await writeFile(new URL('native-results.json',import.meta.url),JSON.stringify(output,null,2)+'\n');console.log(JSON.stringify({...output,remote:{...output.remote,chord:'retained in JSON'}}));
+--- /dev/null
++++ two-cell/run-guarded.py
+@@ -0,0 +1,27 @@
++#!/usr/bin/env python3
++"""Sequential functional checks with sampled aggregate process-tree RSS guards; not a benchmark."""
++from pathlib import Path
++import argparse,subprocess,os,time,json,signal,resource
++R=Path(__file__).resolve().parent;EARLY=224*2**20;HARD=256*2**20
++ap=argparse.ArgumentParser();ap.add_argument('--phase',choices=['contracts','native','source','render','all'],default='all');args=ap.parse_args()
++commands={'contracts':['node','tests/world/contracts.mjs'],'native':['node','tests/world/native.mjs'],'source':['node','tests/source/run.mjs'],'render':['node','--test',*map(str,sorted(Path('tests/render').glob('*.test.mjs')))]}
++# Glob relative to the proof, independent of invocation cwd.
++commands['render']=['node','--test','--test-concurrency=1',*[str(p.relative_to(R))for p in sorted((R/'tests/render').glob('*.test.mjs'))]]
++result={'scope':'Functional tests only; monitor/elapsed instrumentation is not throughput or target-runtime admission','earlyBytes':EARLY,'hardBytes':HARD,'sampleIntervalMs':25,'phases':[]};(R/'run-logs').mkdir(exist_ok=True)
++for phase in commands if args.phase=='all'else[args.phase]:
++ command=commands[phase];log=R/'run-logs'/((phase+'-serial'if phase=='render'else phase)+'.log');peak=0;samples=0;adverse=None;start=time.perf_counter()
++ with log.open('w')as output:
++  worker=subprocess.Popen(command,cwd=R,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
++  while worker.poll()is None:
++   table=subprocess.check_output(['ps','-axo','pid=,ppid=,rss='],text=True);rows={int(a[0]):(int(a[1]),int(a[2])*1024)for line in table.splitlines()if len(a:=line.split())==3};tree={os.getpid()}
++   changed=True
++   while changed:
++    new={pid for pid,(parent,rss)in rows.items()if parent in tree};changed=not new.issubset(tree);tree|=new
++   total=sum(rows[pid][1]for pid in tree if pid in rows);peak=max(peak,total);samples+=1
++   if total>=EARLY or total>=HARD:
++    adverse={'reason':'aggregate process-tree RSS reservation guard','observedBytes':total};os.killpg(worker.pid,signal.SIGTERM);break
++   time.sleep(.025)
++  try:exitCode=worker.wait(timeout=5)
++  except subprocess.TimeoutExpired:os.killpg(worker.pid,signal.SIGKILL);exitCode=worker.wait()
++ entry={'phase':phase,'command':command,'exitCode':exitCode,'sampledProcessTreePeakBytes':peak,'samples':samples,'elapsedSeconds':time.perf_counter()-start,'log':str(log.relative_to(R)),'adverse':adverse};result['phases'].append(entry);result['pass']=all(p['exitCode']==0 and p['adverse']is None for p in result['phases']);(R/('guarded-'+args.phase+'-results.json')).write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(entry),flush=True)
++ if not result['pass']:raise SystemExit(1)

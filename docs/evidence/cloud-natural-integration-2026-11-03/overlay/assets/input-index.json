@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "qualification": "UNQUALIFIED newnaturalcrown admission/replaycandidate",
+  "source_geometry_frozen_inputs_sha256": "60054a49e5edb232177a40de2fe60ad18ff36ccb253d42345b360b6b5b30d62c",
+  "source_geometry_frozen_inputs_bytes": 953,
+  "rendering": {
+    "kappa_per_world_m": 0.019,
+    "additional_scattering_abc": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  "templates": {
+    "body": {
+      "metadata": {
+        "file": "templates/body.json",
+        "bytes": 9130,
+        "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+      },
+      "original_metadata": {
+        "file": "templates/original-body.json",
+        "bytes": 9097,
+        "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+      },
+      "density": {
+        "file": "templates/body.density.r16f",
+        "bytes": 6291456,
+        "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19"
+      },
+      "distance": {
+        "file": "templates/body.distance.r16f",
+        "bytes": 6291456,
+        "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14"
+      }
+    },
+    "crown-b": {
+      "metadata": {
+        "file": "templates/crown-b.json",
+        "bytes": 15642,
+        "sha256": "8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704"
+      },
+      "original_metadata": {
+        "file": "templates/original-crown-b.json",
+        "bytes": 15164,
+        "sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339"
+      },
+      "density": {
+        "file": "templates/crown-b.density.r16f",
+        "bytes": 884736,
+        "sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09"
+      },
+      "distance": {
+        "file": "templates/crown-b.distance.r16f",
+        "bytes": 884736,
+        "sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab"
+      }
+    }
+  },
+  "noise": {
+    "file": "noise/channels-32.r16f",
+    "bytes": 65536,
+    "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+    "dimensions_xyz": [
+      32,
+      32,
+      32
+    ],
+    "metadata": {
+      "file": "noise/channels-32.json",
+      "bytes": 526,
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+    }
+  },
+  "admission": {
+    "file": "admission/admission.json",
+    "bytes": 168039,
+    "sha256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee"
+  }
+}

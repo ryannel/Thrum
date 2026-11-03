@@ -1,0 +1,214 @@
+{
+  "scope": "ONE fixed pre-distance rho source candidate, not runtime/final signed optical d",
+  "script_sha256": "6dc6db6226b6024386d970edce2f3b88eb1a50d23a576f8940f4238711802b01",
+  "commission_sha256": "3239afc598ddf2dafc249a7e718d9f64318a189cf8a92efc6dfde61c6fa135f3",
+  "source_sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+  "old_metadata_sha256": "fa7d3913c7b163ac125078ce91ee92a14b7e4a179cb38530bc253b022a1a1309",
+  "selector_sha256": "2eb7cf88141e64750162d49e5a5c58b30219f721d3d08dea753d930d42d88b59",
+  "core_sha256": "edabb93a8dc64a745128bd69a1842748e585817284d017d8c514d1bc1c781fce",
+  "path_vertices": [
+    [
+      225.0,
+      265.0,
+      197.0
+    ],
+    [
+      225.0,
+      265.0,
+      199.0
+    ],
+    [
+      225.0,
+      265.0,
+      201.0
+    ],
+    [
+      225.0,
+      267.0,
+      201.0
+    ],
+    [
+      225.0,
+      267.0,
+      203.0
+    ],
+    [
+      225.0,
+      269.0,
+      203.0
+    ],
+    [
+      225.0,
+      269.0,
+      205.0
+    ],
+    [
+      225.0,
+      271.0,
+      205.0
+    ],
+    [
+      225.0,
+      271.0,
+      207.0
+    ],
+    [
+      225.0,
+      273.0,
+      207.0
+    ],
+    [
+      225.0,
+      275.0,
+      207.0
+    ],
+    [
+      225.0,
+      277.0,
+      207.0
+    ],
+    [
+      225.0,
+      279.0,
+      207.0
+    ],
+    [
+      225.0,
+      281.0,
+      207.0
+    ],
+    [
+      225.0,
+      283.0,
+      207.0
+    ],
+    [
+      225.0,
+      285.0,
+      207.0
+    ],
+    [
+      225.0,
+      287.0,
+      207.0
+    ],
+    [
+      223.0,
+      287.0,
+      207.0
+    ],
+    [
+      223.0,
+      289.0,
+      207.0
+    ],
+    [
+      223.0,
+      291.0,
+      207.0
+    ],
+    [
+      223.0,
+      293.0,
+      207.0
+    ],
+    [
+      223.0,
+      295.0,
+      207.0
+    ],
+    [
+      221.0,
+      295.0,
+      207.0
+    ]
+  ],
+  "formula": "Float16(Float32(raw*H*F*max(Wdata,Wroot))); exact commission functions, native centres",
+  "S_preserved_raw_bytes": 19208,
+  "Gamma_protected_raw_bytes": 7913,
+  "known_skirt_xyz_m": [
+    287,
+    245,
+    161
+  ],
+  "known_skirt_rho": 0.0,
+  "selector_stats": {
+    "S_raw_sum": 2366.2071228027344,
+    "O_raw_sum": 280.0116882324219,
+    "O_candidate_sum": 0.0,
+    "W_min_max": [
+      0.0,
+      1.0
+    ],
+    "F_min_max": [
+      0.0,
+      1.0
+    ],
+    "Gamma_distance_min_max": [
+      0.0,
+      145.60219778561037
+    ]
+  },
+  "native": {
+    "sum_native": 5234.862146735191,
+    "max": 0.424072265625,
+    "positive": 71863,
+    "gt001": 67212,
+    "gt005": 61733,
+    "gt041": 46156,
+    "bbox_native_centres_xyz_m": [
+      [
+        117.0,
+        239.0,
+        149.0
+      ],
+      [
+        291.0,
+        337.0,
+        279.0
+      ]
+    ],
+    "face_nonzero": {
+      "X_min": 0,
+      "X_max": 0,
+      "Y_min": 0,
+      "Y_max": 0,
+      "Z_min": 0,
+      "Z_max": 0
+    },
+    "adjacent_face_nonzero": {
+      "X_min": 0,
+      "X_max": 0,
+      "Y_min": 0,
+      "Y_max": 0,
+      "Z_min": 0,
+      "Z_max": 0
+    }
+  },
+  "raw_cell_lower_6m_screens": {
+    "root": 0.08880615234375,
+    "head": 0.062469482421875,
+    "path_min_6m": 0.05938720703125
+  },
+  "conservative_trilinear_support_bbox_xyz_m": [
+    [
+      113.53589838486225,
+      235.53589838486224,
+      145.53589838486224
+    ],
+    [
+      294.46410161513774,
+      340.46410161513774,
+      282.46410161513774
+    ]
+  ],
+  "candidate": {
+    "file": "natural-pre-distance.r16f",
+    "bytes": 884736,
+    "sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+    "role": "reproducible temporary source-only pre-distance view input, NOT runtime asset"
+  },
+  "wall_s": 0.459134167060256,
+  "sampled_peak_rss_bytes": 55001088,
+  "process_highwater_bytes": 55246848
+}

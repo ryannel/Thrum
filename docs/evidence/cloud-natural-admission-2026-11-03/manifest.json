@@ -1,0 +1,53 @@
+{
+  "files": {
+    "DIAGNOSIS.md": {
+      "bytes": 5172,
+      "sha256": "e1a47c30ba38b1beebe75a87f2aee86c997e44fb039b794e933396f9e6acc03c"
+    },
+    "README.md": {
+      "bytes": 5856,
+      "sha256": "670f0ad2b884602e1efece30109aae8763bc49cd0894bd5d46bba9be8e8d6a6b"
+    },
+    "RECOVERY.json": {
+      "bytes": 2002,
+      "sha256": "a8a63e5f10c7e9928d90ac96b89d6b27be165e772041669a5ca16df0c1ea4269"
+    },
+    "REVIEW.md": {
+      "bytes": 1006,
+      "sha256": "9c35295762992c51110acfbf111aad72afa4c83a8bc1a2e713b4cbc302a13cb2"
+    },
+    "SOURCE-PINS.json": {
+      "bytes": 1065,
+      "sha256": "a9cf57e3ce6c2f105ea65b9d8ade513ad9af2daca3894dd8929251df9b422c03"
+    },
+    "admission-and-replay.zip": {
+      "bytes": 186834,
+      "sha256": "cebca7d526ae2f5d8254f29182aa7ba7f8050afa34bb12470dc0c9007e1175d4"
+    },
+    "first-failure-diagnosis.json": {
+      "bytes": 31894,
+      "sha256": "1239413ea7c6cc029ff1ce0f25b47b228cabcaa4607dedc7e75ff20250e80b2f"
+    },
+    "native-check.json": {
+      "bytes": 857,
+      "sha256": "5aae454d4010de33723448ed0c0d4b6f525b8ecf766b221251e6cf6d09ab8acb"
+    },
+    "replay-results.json": {
+      "bytes": 6926,
+      "sha256": "9fbb63d3aed1957650ec101e54181a3bb99a0396d0396d29c840b5ae754158df"
+    },
+    "restore-spec.json": {
+      "bytes": 10730,
+      "sha256": "26d72d57ae7933e23537a06dd64df698ee7ba40edb0052dc9409a30393472f2c"
+    },
+    "restore.py": {
+      "bytes": 1172,
+      "sha256": "0a48cd72def4b58966d729c23942f36499cbfb08ed579984bf7d5a5c980cd2e0"
+    },
+    "verify.py": {
+      "bytes": 1446,
+      "sha256": "120cc804bdcf51ec9965b5e301f26571565bf60043eded7bdb193961ab1dbeee"
+    }
+  },
+  "scope": "Failedhealthyrenewaldiagnostic; notadoption"
+}

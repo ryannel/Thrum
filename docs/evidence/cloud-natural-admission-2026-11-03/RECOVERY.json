@@ -1,0 +1,31 @@
+{
+  "pass": true,
+  "createdUTC": "2026-11-03T12:35:20.841762+00:00",
+  "archiveSHA256": "cebca7d526ae2f5d8254f29182aa7ba7f8050afa34bb12470dc0c9007e1175d4",
+  "steps": [
+    {
+      "label": "fresh exact-byte recovery",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/ryannel/Workspace/thrum/tmp/worktrees/cloud-system-design/docs/evidence/cloud-natural-admission-2026-11-03/restore.py",
+        "--output",
+        "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-natural-admission-recovery-5n94uqj3/restored"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"pass\": true, \"archiveMembers\": 59, \"externalPayloads\": 5, \"restored\": false, \"scope\": \"exactbyte verification only; no replay/GPU/timing\"}\n{\"pass\": true, \"archiveMembers\": 59, \"externalPayloads\": 5, \"restored\": true, \"scope\": \"exactbyte verification only; no replay/GPU/timing\"}\nRestored /private/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-natural-admission-recovery-5n94uqj3/restored No replay or GPU run.\n",
+      "stderr": ""
+    },
+    {
+      "label": "unchanged17f input-loader at relocated path",
+      "command": [
+        "node",
+        "/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/cloud-natural-admission-recovery-5n94uqj3/restored/verify-inputs.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"pass\":true,\"unchanged17fLoader\":true,\"indexSHA\":\"8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7\",\"frozenSHA\":\"60054a49e5edb232177a40de2fe60ad18ff36ccb253d42345b360b6b5b30d62c\",\"bodyMetadataSHA\":\"5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098\",\"crownMetadataSHA\":\"8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704\",\"dimensions\":[96,64,72],\"scope\":\"CPU nativeasset/manifest validation only, noGPU/viewer\"}\n",
+      "stderr": ""
+    }
+  ],
+  "ownedRestoreScratchRemoved": true,
+  "scope": "Exactrecovery/nativeassetloader only; no replays/timings/GPU/renderer"
+}
