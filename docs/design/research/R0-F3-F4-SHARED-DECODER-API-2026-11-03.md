@@ -62,9 +62,16 @@ operation succeeds.** On source, pressure, projection, duplicate, edge or
 deferred-predicate failure, drop every provisional projection and publish no
 candidate/product.
 
-The parser performs the whole-record 16 MiB/one-million-node/64-depth bounded
-no-tree prewalk and then consumes raw object slices through one strict typed
-grammar. Decode JSON escapes before checking keys, UUIDs and enum values;
+Reuse the existing `environment_json::record_header` whole-record 16 MiB,
+one-million-node and 64-depth **no-tree walk** at F3 dispatch. It already
+checks the envelope and traverses nested fields without retaining a value
+tree; adding a second shape-only prewalk would spend another linear parse
+without a new invariant. The selected render decoder must consume raw object
+slices through one strict typed grammar after that pass, and reconcile the
+header's generic error with its own typed diagnostic/pressure boundary. F4
+needs an equivalent checked entry when decoding the selected accepted pin;
+the API should reuse the same pass rather than repeat it. Decode JSON escapes
+before checking keys, UUIDs and enum values;
 duplicate **decoded** keys refuse. Prefer a streaming collection visitor
 with per-object scratch to an array-wide `Vec<&RawValue>` index; if the latter
 is selected for simplicity, its peak and latency must be measured and
