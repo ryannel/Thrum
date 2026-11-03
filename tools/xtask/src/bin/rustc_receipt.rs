@@ -5,6 +5,10 @@
 //! directory, retains it until every child exits, and verifies all receipts.
 
 #[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stderr,
+    reason = "a refused compiler invocation must report its error to the CLI caller"
+)]
 fn main() {
     match candidate::run() {
         Ok(code) => std::process::exit(code),
@@ -16,6 +20,10 @@ fn main() {
 }
 
 #[cfg(not(target_os = "macos"))]
+#[expect(
+    clippy::print_stderr,
+    reason = "unsupported-platform CLI use must report its error"
+)]
 fn main() {
     eprintln!("rustc receipt candidate requires macOS");
     std::process::exit(125);
@@ -109,7 +117,7 @@ mod candidate {
                 return Err("duplicate rustc environment variable".into());
             }
             Ok(Self {
-                rustc: selected.to_path_buf(),
+                rustc: PathBuf::from(rustc),
                 cwd,
                 arguments: captured_arguments,
                 environment: captured_environment,
@@ -170,7 +178,11 @@ mod candidate {
 
     fn count(bytes: &mut Vec<u8>, value: usize) {
         // All callers have already bounded counts/field lengths below u32::MAX.
-        bytes.extend_from_slice(&(value as u32).to_le_bytes());
+        bytes.extend_from_slice(
+            &u32::try_from(value)
+                .expect("validated receipt count fits u32")
+                .to_le_bytes(),
+        );
     }
 
     fn field(bytes: &mut Vec<u8>, value: &OsStr) -> Result<()> {

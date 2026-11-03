@@ -23,6 +23,10 @@ fn python(args: &[&str]) -> TaskResult {
     )
 }
 
+#[expect(
+    clippy::print_stdout,
+    reason = "the contributor CLI's help command intentionally writes to stdout"
+)]
 fn main() -> TaskResult {
     // Locate the checkout at runtime; no build-machine path is embedded in the tool.
     let root = env::current_dir()?;
