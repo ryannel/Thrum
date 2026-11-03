@@ -75,12 +75,22 @@ bounded operational control, not an SDK-wide capacity. Each successful
 submission gets a checked `(device generation, queue serial)` identity and
 retains its reserved credit until that serial's completion. A later completion
 watermark discharges all earlier same-queue serials even if their callbacks
-are delayed; old-generation callbacks cannot release new-generation credit.
+are delayed **only when the queue API certifies all work through that serial
+is complete**; a raw native command buffer's individual completion status
+does not serve as that watermark. Old-generation callbacks cannot release
+new-generation credit.
 
 A later submission may write the same scratch texture after the prior
 submission's last read, even while its completion token is pending, if all
-old uses were submitted first and no older packet can submit afterward. Ordered
-submissions on that queue execute serially. This is *queue-ordered reuse*,
+old uses were submitted first and no older packet can submit afterward. This
+requires hazard-ordered conflicting uses of the **same tracked allocation**;
+it does not require independent command buffers to run physically serially.
+The pinned wgpu-hal 30.0.1 Metal backend explicitly allows independent
+command buffers on one queue to overlap when they share no tracked resource.
+Thrum must not infer a global serial GPU schedule or reuse an untracked heap
+alias from this rule. [Apple's Metal hazard tracking](https://developer.apple.com/documentation/metal/mtlhazardtrackingmode),
+[pinned wgpu-hal Metal queue implementation](https://github.com/gfx-rs/wgpu/blob/v30.0.1/wgpu-hal/src/metal/mod.rs).
+This is *queue-ordered reuse*,
 not reclamation of the resource. The object and its logical byte charge stay
 live. [WebGPU's queue timeline](https://gpuweb.github.io/gpuweb/#queue-timeline)
 and [wgpu-hal's Queue contract](https://docs.rs/wgpu-hal/latest/wgpu_hal/trait.Queue.html)
@@ -173,5 +183,12 @@ two simultaneous views, capture/readback or a real platform surface. Those
 remain build/qualification cases, not passed evidence. The real-device run
 must capture allocation identity, submission order/completion, old/new
 overlap and actual high-water alongside frame time, and compare target budget
-and full output/surface cost separately. Pinned wgpu/backend behaviour,
-pixel/display correctness and ordinary-game visuals remain unrun.
+and full output/surface cost separately. Full four-slot backend behaviour,
+display correctness and ordinary-game visuals remain unrun.
+
+A [narrow public-wgpu Metal diagnostic](../../evidence/render/R0-GPU-LIFETIME-PUBLIC-DIAGNOSTIC-2026-11-03.md)
+subsequently verified exact red/blue readbacks after two submissions reused
+one tracked 720p texture, plus a green 1080p new texture. It checks every
+pixel after completion. It does **not** hold genuine GPU-incomplete old work,
+exercise these four scratch roles, or measure driver memory. Those parts of
+the backend premise remain unrun.
