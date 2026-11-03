@@ -57,8 +57,15 @@ two-second test-only timeout through the real collector, observes same-group
 child exit and verifies the wrapper's pending receipt in each case. The command-line
 supervisor retains its 120-second deadline.
 
-No test here proves a real interrupted Cargo compiler job's complete receipt
-closure or detached-child containment.
+A second opt-in test launches real pinned Cargo with the actual Rust receipt
+wrapper and a controlled compiler shim. The shim forwards Cargo's probes to
+the pinned Rustc, then records its PID and sleeps when Cargo starts the crate
+compile. After that marker, SIGTERM reaches the real supervisor. On this host,
+the fault report recorded a pending compile receipt and `buildReady:false`,
+and the same-group compiler child was gone. The run took 0.54 seconds. This
+tests Cargo/wrapper/supervisor interruption as one path; the controlled shim
+does not prove an interrupted production compiler's complete invocation or
+read closure, or detached-child containment.
 
 Run the opt-in process fixture from the repository root after building the
 wrapper with the pinned toolchain:
