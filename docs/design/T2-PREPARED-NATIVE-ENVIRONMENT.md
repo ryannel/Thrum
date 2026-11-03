@@ -180,8 +180,14 @@ The [cold retained-cache candidate](../evidence/i2a/T2-HELD-CARGO-CACHE-CANDIDAT
 now binds the two digest domains and a sealed manifest under a held APFS root
 lease. Five synthetic macOS fixtures cover extra-directory drift, manifest
 drift, interrupted publication, concurrent readers and lease release after a
-sidecar-close error. It has not yet been used by real Cargo or measured with a
-full private cache.
+sidecar-close error. That initial proof used a tiny synthetic cache.
+
+A subsequent [admitted A/B qualification](../evidence/i2a/T2-HELD-CACHE-NATIVE-AB-2026-11-03.md)
+did use the full sealed cache as compiler `CARGO_HOME`, with a cooperating
+guard holding its shared lease from before A until after B and final output
+checks. The one-host cold cache preparation took 1.55 seconds and verified
+open 363 ms for 2,923 files/67.8 MB. This proves consumption and lifetime
+for that fixture; it still pays full cache rehashes before A and B.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
@@ -199,14 +205,14 @@ only when its T2 owner holds matching cache and tool-root leases and validates
 the admitted dependency-selection key. A Boolean caller claim or a subprocess
 that verifies then exits cannot confer that lease on a later compiler process.
 The existing origin comparisons remain local candidate evidence until a
-reviewed release manifest and preparation job bind their acquisition. Prove a
-real metadata preparation followed by an A/B build from the sealed home.
+reviewed release manifest and preparation job bind their acquisition. The
+real metadata-to-sealed-home A/B build passed under the cooperating guard.
 The [pinned Cargo bookkeeping probe](../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md#pinned-cargo-cache-bookkeeping-probe)
 passed with `.global-cache` and `.package-cache-mutate` absent and cache writes
 denied during unsealed A/B compilation; this establishes the compiler's
-read-only behavior for that fixture, not a held cache. Prove
-mutation/extra-directory refusal, independent reopen, interrupted preparation
-and multiple concurrent read leases before removing the per-edit rehash.
+read-only behavior for that fixture. Bind the selected dependency key to a
+single T2 owner-held selection, prove real drift refusal and lifecycle
+failure, and measure warm reuse before removing the per-edit rehash.
 Measure cold clone/seal and warm selection-key, cache, tool-hash and total
 edit-to-ready costs separately; retain the full rehash on other platforms
 until their own lifecycle is qualified.
