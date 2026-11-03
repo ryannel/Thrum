@@ -6,6 +6,8 @@
 use sha2::{Digest, Sha256};
 use std::io;
 mod build_declaration;
+#[cfg(test)]
+mod candidate_output;
 mod native_worktree;
 pub use build_declaration::{
     BuildDeclaration, BuildDeclarationError, read_pinned_build_declaration,
@@ -405,7 +407,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     use std::ffi::OsString;
     use std::fs;
-    use std::io::Read;
+    use std::io::{Read, Seek, SeekFrom, Write};
     use std::path::{Path, PathBuf};
     use std::process::Command;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -1044,6 +1046,7 @@ mod tests {
         let dep_info = private_cargo_home
             .as_deref()
             .map(|home| inspect_headless_dep_info(a_materialized.path(), home, &a_output));
+        let mut verified_receipts = None;
         if rustc_wrapper.is_some() {
             let transcript = a_output.join("cargo-transcript.jsonl");
             fs::write(&transcript, &built_a.stdout).unwrap();
@@ -1075,34 +1078,164 @@ mod tests {
             assert_eq!(receipt["compiles"], 5);
             assert!(receipt["probes"].as_u64().unwrap() > 0);
             assert_eq!(receipt["buildReady"], false);
+            fs::write(a_output.join("receipt-verification.json"), &report.stdout).unwrap();
             eprintln!(
                 "admitted-headless-a rustc_receipts compiles={} probes={} set_sha256={}",
                 receipt["compiles"], receipt["probes"], receipt["receiptSetSha256"]
             );
+            verified_receipts = Some(receipt);
         }
         assert_eq!(tree_hashes(a_materialized.path()), a_files);
         let binary_name = format!("headless{}", std::env::consts::EXE_SUFFIX);
         let binary_a = a_output.join("debug").join(&binary_name);
-        let binary_a_bytes = fs::read(&binary_a).unwrap();
-        let binary_a_hash = Sha256::digest(&binary_a_bytes);
-        let ran_a = Command::new(&binary_a).output().unwrap();
+        let binary_a_bytes = fs::metadata(&binary_a).unwrap().len();
+        let binary_a_hash = file_sha256_hex(&binary_a);
+        let candidate_a = if let (Some(_), Some(cache)) = (&verified_receipts, &owned_cache) {
+            fs::copy(
+                a_materialized.path().join("build/headless.json"),
+                a_output.join("build-declaration.json"),
+            )
+            .unwrap();
+            let cache_manifest_hash = file_sha256_hex(&cache.manifest_path);
+            #[cfg(target_os = "macos")]
+            let selected_files = native_tools
+                .as_ref()
+                .unwrap()
+                .selected_files
+                .iter()
+                .map(|(path, hash)| serde_json::json!({"path":path,"sha256":hash}))
+                .collect::<Vec<_>>();
+            #[cfg(not(target_os = "macos"))]
+            let selected_files: Vec<serde_json::Value> = Vec::new();
+            let environment = serde_json::json!({
+                "format":1,"buildReady":false,"target":"headless-macos-arm64-dev-v1",
+                "sourceRevision":candidate_output::hex(a.revision.as_bytes()),
+                "productRevision":candidate_output::hex(product.revision().as_bytes()),
+                "cacheManifestSha256":cache_manifest_hash,
+                "cargoSha256":cache.cargo_hash,"rustcSha256":cache.rustc_hash,
+                "selectedFiles":selected_files,
+                "sourcePath":fs::canonicalize(a_materialized.path()).unwrap(),
+                "outputPath":fs::canonicalize(&a_output).unwrap(),
+                "closure":"local-candidate; installed roots and host runtime remain mutable"
+            });
+            fs::write(
+                a_output.join("environment.json"),
+                serde_json::to_vec(&environment).unwrap(),
+            )
+            .unwrap();
+            let evidence_paths = [
+                a_output.join("build.sb"),
+                a_output.join("build-declaration.json"),
+                a_output.join("cargo-supervisor-request.json"),
+                a_output.join("cargo-supervisor.json"),
+                a_output.join("cargo-transcript.jsonl"),
+                a_output.join("environment.json"),
+                cache.manifest_path.clone(),
+                a_output.join("receipt-verification.json"),
+            ];
+            let evidence_names = [
+                "build.sb",
+                "build-declaration.json",
+                "cargo-supervisor-request.json",
+                "cargo-supervisor.json",
+                "cargo-transcript.jsonl",
+                "environment.json",
+                "private-cache-manifest.json",
+                "receipt-verification.json",
+            ];
+            let evidence = evidence_paths
+                .iter()
+                .zip(evidence_names)
+                .map(|(source, name)| candidate_output::EvidenceFile { name, source })
+                .collect::<Vec<_>>();
+            let destination = fixture.root().join(".engine/candidate-a");
+            let retain_started = Instant::now();
+            let digest = candidate_output::retain(
+                &destination,
+                candidate_output::CandidateInput {
+                    root: a,
+                    product: &product,
+                    binary: &binary_a,
+                    receipts: &a_output.join("rustc-receipts"),
+                    evidence: &evidence,
+                    cargo_succeeded: built_a.status.success(),
+                },
+            )
+            .unwrap();
+            eprintln!(
+                "admitted-headless-a candidate_sha256={digest} retain_ms={} build_ready=false",
+                retain_started.elapsed().as_millis()
+            );
+            Some((destination, digest))
+        } else {
+            None
+        };
+        let runnable_a = candidate_a
+            .as_ref()
+            .map_or_else(|| binary_a.clone(), |(path, _)| path.join("headless"));
+        let ran_a = Command::new(runnable_a).output().unwrap();
         assert!(ran_a.status.success());
         assert_eq!(
             ran_a.stdout,
             b"thrum-headless-v1 taps=1 results=1 events=1\n"
         );
         eprintln!(
-            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={:02x?} selected_units={:02x?} dep_info={:02x?}",
+            "admitted-headless-a files={} bytes={} build_ms={} binary_bytes={} binary_sha256={} selected_units={:02x?} dep_info={:02x?}",
             a_materialized.file_count(),
             a_materialized.copied_bytes(),
             build_elapsed.as_millis(),
-            binary_a_bytes.len(),
+            binary_a_bytes,
             binary_a_hash,
             selected_units,
             dep_info
         );
         a_pin.close().unwrap();
         a_materialized.close().unwrap();
+        if let Some((candidate, digest)) = &candidate_a {
+            fs::remove_dir_all(&a_output).unwrap();
+            let reload_started = Instant::now();
+            let retained = candidate_output::verify(candidate, digest, a, &product).unwrap();
+            eprintln!(
+                "admitted-headless-a retained_reload_ms={}",
+                reload_started.elapsed().as_millis()
+            );
+            assert!(Command::new(&retained).output().unwrap().status.success());
+            let mut binary = fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(&retained)
+                .unwrap();
+            let mut first = [0];
+            binary.read_exact(&mut first).unwrap();
+            binary.seek(SeekFrom::Start(0)).unwrap();
+            binary.write_all(&[first[0] ^ 1]).unwrap();
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
+            binary.seek(SeekFrom::Start(0)).unwrap();
+            binary.write_all(&first).unwrap();
+            drop(binary);
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
+            let receipt_name = fs::read_dir(candidate)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name())
+                .find(|name| name.to_str().unwrap().ends_with(".receipt"))
+                .unwrap();
+            let receipt_path = candidate.join(&receipt_name);
+            let withheld = candidate.with_file_name("withheld.receipt");
+            fs::rename(&receipt_path, &withheld).unwrap();
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
+            fs::rename(&withheld, &receipt_path).unwrap();
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
+            #[cfg(unix)]
+            {
+                let relocated = candidate.with_file_name("candidate-a-relocated");
+                fs::rename(candidate, &relocated).unwrap();
+                std::os::unix::fs::symlink(&relocated, candidate).unwrap();
+                assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
+                fs::remove_file(candidate).unwrap();
+                fs::rename(&relocated, candidate).unwrap();
+                assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
+            }
+        }
 
         fs::write(&rule_path, b"pub fn deliberately_invalid( {\n").unwrap();
         let b = fixture.admit(&mut store, a.generation, 2, &paths);
@@ -1130,8 +1263,37 @@ mod tests {
         assert!(b_diagnostic.contains("game.rs") && b_diagnostic.contains("error"));
         assert!(!b_output.join("debug").join(binary_name).exists());
         assert_eq!(tree_hashes(b_materialized.path()), b_files);
-        assert_eq!(Sha256::digest(fs::read(&binary_a).unwrap()), binary_a_hash);
-        assert!(Command::new(&binary_a).output().unwrap().status.success());
+        if let Some((candidate, digest)) = &candidate_a {
+            let retained = candidate_output::verify(candidate, digest, a, &product).unwrap();
+            assert_eq!(file_sha256_hex(&retained), binary_a_hash);
+            assert!(Command::new(&retained).output().unwrap().status.success());
+            assert!(candidate_output::verify(candidate, digest, b, &b_product).is_err());
+            assert!(!fixture.root().join(".engine/candidate-b").exists());
+            let environment_path = candidate.join("environment.json");
+            let report_path = candidate.join("candidate.json");
+            let original_environment = fs::read(&environment_path).unwrap();
+            let original_report = fs::read(&report_path).unwrap();
+            let mut environment: serde_json::Value =
+                serde_json::from_slice(&original_environment).unwrap();
+            environment["sourceRevision"] =
+                serde_json::json!(candidate_output::hex(b.revision.as_bytes()));
+            let changed = serde_json::to_vec(&environment).unwrap();
+            fs::write(&environment_path, &changed).unwrap();
+            let mut report: serde_json::Value = serde_json::from_slice(&original_report).unwrap();
+            report["files"]["environment.json"]["bytes"] = serde_json::json!(changed.len());
+            report["files"]["environment.json"]["sha256"] =
+                serde_json::json!(candidate_output::hex(Sha256::digest(&changed)));
+            fs::write(&report_path, serde_json::to_vec(&report).unwrap()).unwrap();
+            let cross_wired_digest =
+                candidate_output::hex(Sha256::digest(fs::read(&report_path).unwrap()));
+            assert!(candidate_output::verify(candidate, &cross_wired_digest, a, &product).is_err());
+            fs::write(&environment_path, original_environment).unwrap();
+            fs::write(&report_path, original_report).unwrap();
+            assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
+        } else {
+            assert_eq!(file_sha256_hex(&binary_a), binary_a_hash);
+            assert!(Command::new(&binary_a).output().unwrap().status.success());
+        }
         b_pin.close().unwrap();
         b_materialized.close().unwrap();
         assert_eq!(store.current_root().unwrap().unwrap(), b);

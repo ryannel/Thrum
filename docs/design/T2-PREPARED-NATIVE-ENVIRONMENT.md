@@ -139,8 +139,13 @@ Prove in order:
    contain an escaped session or provide a release job identity.
 4. Bind a candidate output report to F3 source root, F4 product bytes,
    environment selection, complete receipt set and streamed executable hash.
-   Verify corruption, substitution and restart behavior. It stays
-   `buildReady:false` without a reviewed release and complete read closure.
+   The [local retained-output proof](../evidence/i2a/F4-RETAINED-NATIVE-CANDIDATE.md)
+   copies the real A build into a separate candidate directory, then deletes
+   its materialized source and original Cargo output before checking the
+   executable and every retained file against an externally held report hash.
+   Corruption, missing receipts, cross-wired selection and invalid B refuse.
+   This is a fixture-only candidate; release review, immutable selected roots,
+   full compiler/system-read closure and durable ready publication remain open.
 5. Select/review exact release and host-runtime inputs, close all permitted
    compiler/system reads, then publish and reload a durable ready manifest.
    Measure cold preparation, warm edit-to-ready tail and peak RSS separately.
