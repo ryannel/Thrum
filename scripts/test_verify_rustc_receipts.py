@@ -179,6 +179,9 @@ class VerifyRustcReceipts(unittest.TestCase):
             path.write_bytes(receipt(rustc, source, arguments, environment, completed=False))
             with self.assertRaisesRegex(ValueError, "completed execution"):
                 inspect(*args[:6])
+            self.assertTrue(parse_receipt(path.read_bytes(), allow_pending=True)["pending"])
+            with self.assertRaisesRegex(ValueError, "completed execution"):
+                parse_receipt(path.read_bytes() + b"DON", allow_pending=True)
             outside = Path(directory).resolve() / "outside.rs"
             outside.write_text("fn main() {}\n")
             escaped = [outside.as_posix().encode() if item == b"src/main.rs" else item

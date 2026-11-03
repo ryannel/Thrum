@@ -74,7 +74,7 @@ class Reader:
         return self.take(length)
 
 
-def parse_receipt(raw):
+def parse_receipt(raw, allow_pending=False):
     if len(raw) > MAX_RECEIPT:
         raise ValueError("rustc receipt is oversized")
     reader = Reader(raw)
@@ -101,7 +101,15 @@ def parse_receipt(raw):
             raise ValueError("rustc receipt environment is malformed or unordered")
         previous = name
         environment[name] = value
-    if reader.take(4) != b"PEND" or len(raw) - reader.offset < 9 or reader.take(4) != b"DONE":
+    if reader.take(4) != b"PEND":
+        raise ValueError("rustc receipt lacks completed execution")
+    if allow_pending and reader.offset == len(raw):
+        return {
+            "kind": kind, "rustc": rustc, "cwd": cwd, "arguments": arguments,
+            "environment": environment, "pending": True,
+            "sha256": hashlib.sha256(raw).hexdigest(),
+        }
+    if len(raw) - reader.offset < 9 or reader.take(4) != b"DONE":
         raise ValueError("rustc receipt lacks completed execution")
     outcome = reader.take(1)[0]
     status = int.from_bytes(reader.take(4), "little", signed=True)

@@ -15,6 +15,7 @@ import stat
 import sys
 
 from prepare_headless_cargo_home import collect_bounded
+from verify_rustc_receipts import MAX_RECEIPT, MAX_RECEIPTS, NAME, parse_receipt
 
 MAX_REQUEST = 64 * 1024
 MAX_STDOUT = 4 * 1024 * 1024
@@ -74,7 +75,62 @@ def write_json(path, value):
         stream.write(json.dumps(value, sort_keys=True, separators=(",", ":")).encode() + b"\n")
 
 
-def run(request_path):
+def observed_receipts(output):
+    """Inventory stopped-job receipts; this cannot prove every child was seen."""
+    directory = output / "rustc-receipts"
+    if not directory.exists() and not directory.is_symlink():
+        return {"kind": "absent"}
+    metadata = directory.lstat()
+    if not stat.S_ISDIR(metadata.st_mode):
+        raise ValueError("native receipt directory is aliased or irregular")
+    entries = []
+    with os.scandir(directory) as scan:
+        for entry in scan:
+            if len(entries) == MAX_RECEIPTS:
+                raise ValueError("interrupted native receipt set exceeds limit")
+            entries.append(Path(entry.path))
+    entries.sort()
+    digest = hashlib.sha256(b"thrum.interrupted-receipts.v1\0")
+    counts = {"completedSuccess": 0, "completedNonzero": 0,
+              "pending": 0, "unparsed": 0}
+    total_bytes = 0
+    for path in entries:
+        if not NAME.fullmatch(path.name):
+            raise ValueError("unexpected interrupted native receipt entry")
+        raw = ordinary_file(path, MAX_RECEIPT)
+        total_bytes += len(raw)
+        try:
+            parsed = parse_receipt(raw, allow_pending=True)
+        except ValueError:
+            state = "unparsed"
+        else:
+            if parsed.get("pending"):
+                state = "pending"
+            elif parsed["outcome"] == 0 and parsed["status"] == 0:
+                state = "completedSuccess"
+            else:
+                state = "completedNonzero"
+        counts[state] += 1
+        digest.update(path.name.encode("ascii") + b"\0")
+        digest.update(len(raw).to_bytes(8, "little"))
+        digest.update(hashlib.sha256(raw).digest())
+        digest.update(state.encode("ascii") + b"\0")
+    return {"kind": "observedOnly", "files": len(entries), "bytes": total_bytes,
+            "setSha256": digest.hexdigest(), **counts}
+
+
+def fault_report(output, kind, detail):
+    try:
+        inventory = observed_receipts(output)
+    except (OSError, ValueError) as error:
+        inventory = {"kind": "unavailable", "detail": str(error)[:256]}
+    write_json(output / "cargo-supervisor.json", {
+        "format": 1, "kind": kind, "buildReady": False,
+        "detail": detail[:512], "receiptInventory": inventory,
+    })
+
+
+def run(request_path, timeout_seconds=120):
     if not request_path.is_absolute() or request_path.is_symlink():
         raise ValueError("native supervisor request must be an ordinary absolute file")
     request = json.loads(ordinary_file(request_path, MAX_REQUEST))
@@ -97,13 +153,15 @@ def run(request_path):
     try:
         status, stdout, stderr = collect_bounded(
             command, cwd, environment, stdout_limit=MAX_STDOUT,
-            stderr_limit=MAX_STDERR, parent_pid=request["ownerPid"],
+            stderr_limit=MAX_STDERR, timeout_seconds=timeout_seconds,
+            parent_pid=request["ownerPid"],
             label="Cargo build",
         )
+    except KeyboardInterrupt as error:
+        fault_report(output, "interrupted", str(error))
+        return 125
     except Exception as error:
-        write_json(report_path, {
-            "format": 1, "kind": "supervisorError", "detail": str(error),
-        })
+        fault_report(output, "supervisorError", str(error))
         return 125
     finally:
         signal.signal(signal.SIGTERM, previous_term)

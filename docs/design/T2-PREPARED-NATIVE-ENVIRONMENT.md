@@ -132,6 +132,9 @@ Prove in order:
    failed and interrupted receipts. The local [failed-B audit](../evidence/i2a/F4-RUSTC-RECEIPTS.md)
    now reconciles one ordinary failed compile with successful units and Cargo's
    failed finish, while the supervisor checks bounded stderr separately.
+   A [fault-report slice](../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
+   now writes an unready, bounded observed-receipt inventory after a caught
+   SIGTERM or timeout; it does not prove all invocations were captured.
    Interrupted and timed-out receipt closure remains open. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.
    Measure compiler-job peak RSS separately; this profile has no hard process
