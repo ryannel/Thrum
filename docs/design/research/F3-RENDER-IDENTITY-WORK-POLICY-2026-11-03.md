@@ -129,6 +129,12 @@ path** and use checked/fallible growth where the selected guarantee says
 pressure is reportable. If a dependency cannot meet that contract, narrow
 the guarantee to the audited owner set and state the remaining failure mode
 in the host profile. No generic process-survival or OS-RSS bound follows.
+The [render scratch scope study](F3-RENDER-SCRATCH-ACCOUNT-SCOPE-2026-11-03.md)
+selects an initial owned indexed-work tier for implementation: identity,
+edge, merge and compact deferred buffers with known layouts. Serde parser
+and escaped-text scratch are outside that tier. A complete strict
+decoder-scratch claim needs a separate parser and cost decision; do not
+describe the initial tier as a bound on total F3 memory.
 
 The host work account is distinct from T2's
 [same-volume job account](T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md): that

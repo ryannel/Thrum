@@ -1,0 +1,23 @@
+# Render decoder scratch and the first F3 work-account scope
+
+3 November 2026. **Provisional implementation decision.** This note narrows the initial account claim in the [F3 render identity work policy](F3-RENDER-IDENTITY-WORK-POLICY-2026-11-03.md). It does not select a numeric allowance, change source validity, activate render admission or promise process survival under OS memory exhaustion.
+
+## What the current parser actually allocates
+
+The [inactive mesh decoder](../../evidence/render/R0-F3-MESH-OBJECT-DECODER-2026-11-03.md) parses positions, UVs and triangles into three Serde-owned growing vectors. Even if those vectors are replaced, pinned serde_json 1.0.154 has a private growable deserializer scratch buffer for escaped strings and sufficiently long numeric tokens. The decoder's borrowed-or-owned source text also allocates for escapes. The existing whole-record header walk uses the same parser family. A fixed source-byte ceiling is useful for input work, but it does not make all of these allocations precharged.
+
+On stable Rust 1.99.1, the fallible boxed-slice constructor remains under the unstable allocator API. The standard vector's exact-reservation request may receive extra allocator capacity. A post-allocation capacity reading cannot enforce a prior strict byte debit. These limitations are documented by the [Rust Box API](https://doc.rust-lang.org/std/boxed/struct.Box.html) and [Rust Vec API](https://doc.rust-lang.org/std/vec/struct.Vec.html), and were checked against the pinned local toolchain. Repository lints forbid general unsafe code; a custom raw allocator would need a narrow justified exception and its own safety proof.
+
+## First useful guarantee
+
+Select the **owned indexed-work tier** for the first account implementation: charge known-layout buffers that F3 explicitly owns for identity entries, edges, merge state and compact deferred facts before each allocation. A host reservation refusal reports retryable validation pressure, never invalid source. Drop and refund follow the buffer's real lifetime. Do not describe this tier as a complete F3 working-set, parser-scratch, RSS, or OS-allocation-failure guarantee. Source byte, depth and node limits still apply as semantic profile bounds, and the old selected root remains available if validation cannot finish.
+
+The first active render profile still needs a measured combined stage/decoder/store path, concurrent old/new source pins and F4/T2 overlap. A host setting can then be selected from observed workloads and headroom, with its charged tier named in diagnostics. No arbitrary embedded-ID limit or fixed numeric host allowance follows from this note. F4's product preparation and T2's filesystem account do not inherit F3's memory charge by implication.
+
+## Mesh-scratch representation choices
+
+The current vectors are acceptable only while the decoder is inactive and the account scope excludes them. A safe single-pass candidate uses fixed-size boxed chunks, each with a known element count and layout debit before allocation. A fixed-capacity stack directory can index chunks without directory growth; its capacity must be proved from the existing JSON node limit and chosen chunk size. Geometry projection would receive a chunked view rather than one contiguous slice, and triangle lookup must stay constant time. This avoids new unsafe code and keeps one-object scratch lifetime, but stable Box allocation can abort on actual OS exhaustion even after a successful host debit.
+
+A two-pass count/allocate/decode candidate could keep contiguous slices, but must prove exact count parsing, allocation layout, initialization/drop and the extra parse cost. The stable fallible Box API does not supply its desired failure mode. A custom allocator is a separate unsafe adapter decision, not a small local replacement for Serde vectors. Neither candidate charges the parser's private scratch or escaped source text. A complete strict decoder-scratch tier would require a dedicated bounded tokenizer/numeric decoder, or another audited parser with a precharge hook, followed by a cost comparison.
+
+Before selecting mesh chunks, compare ordinary small meshes, a large triangle-heavy object, escaped keys, malformed input and the archived dense-identity fixture against the current contiguous vectors. Record parse time, charged high-water, sampled RSS, allocation count and F4 projection cost. Test refusal before each owned chunk allocation, aborting callbacks, final-owner refund, reordered source, exact geometry and a high-count boundary derived from the node limit. Keep semantic source refusal distinct from host pressure throughout.
