@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -67,6 +68,45 @@ class HoldMacosReleaseRecords(unittest.TestCase):
                     args[0], manifest_sha, args[1], args[2], TARGET, owner,
                 )
                 sealed_cache_manifest = cargo_cache._paths(owner, cache_tree)[1]
+                guard_command = [
+                    sys.executable, str(Path(cargo_cache.__file__)), "--hold",
+                    "--owner", str(owner),
+                    "--tree-json", json.dumps(cache_tree),
+                    "--legacy-json", json.dumps(legacy),
+                    "--rust-tree-json", json.dumps(manifest["toolRoots"]["rustToolchain"]),
+                    "--linker-tree-json", json.dumps(manifest["toolRoots"]["linkerToolchain"]),
+                    "--sdk-tree-json", json.dumps(manifest["toolRoots"]["sdk"]),
+                    "--manifest-sha", cache_sha,
+                    "--release-tree-json", json.dumps(record_tree),
+                    "--release-sha", manifest_sha,
+                    "--release-source", str(args[1]),
+                    "--release-target", TARGET,
+                ]
+                request = json.dumps({"id": 7, "source": str(args[1]), "target": TARGET}) + "\n"
+                wrong_target = json.dumps({
+                    "id": 8, "source": str(args[1]), "target": "x86_64-apple-darwin",
+                }) + "\n"
+                guard = subprocess.run(
+                    guard_command, input=request + wrong_target,
+                    text=True, capture_output=True, timeout=10,
+                )
+                self.assertEqual(guard.returncode, 0, guard.stderr)
+                ready, reuse, refused = [json.loads(line) for line in guard.stdout.splitlines()]
+                self.assertEqual(ready, {"guardReady": True, "releaseManifestSha256": manifest_sha})
+                self.assertEqual(reuse, {
+                    "id": 7, "reuseKey": manifest["selectionKey"],
+                    "releaseManifestSha256": manifest_sha,
+                })
+                self.assertEqual(refused["id"], 8)
+                self.assertEqual(refused["releaseManifestSha256"], manifest_sha)
+                self.assertIn("target differs", refused["error"])
+                wrong_guard = subprocess.run(
+                    [*guard_command[:guard_command.index("--release-sha") + 1], "0" * 64,
+                     *guard_command[guard_command.index("--release-sha") + 2:]],
+                    input=request, text=True, capture_output=True, timeout=10,
+                )
+                self.assertNotEqual(wrong_guard.returncode, 0)
+                self.assertNotIn("guardReady", wrong_guard.stdout)
                 with (cargo_cache.open_sealed_cache(owner, cache_tree, legacy, cache_sha) as cache,
                       open_sealed_release_records(
                           owner, record_tree, manifest_sha, args[1], sealed_cache_manifest,
