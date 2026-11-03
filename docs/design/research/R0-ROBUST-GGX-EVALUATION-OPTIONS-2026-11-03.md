@@ -193,6 +193,12 @@ certificate per face/light/view update could avoid most fragment tests in
 such a fixture. A normal cone extends this only with bounded normal-map,
 tangent, interpolation and transform error. It is a specialized proof path,
 not a general content restriction.
+The [independent planar source-sign oracle](../../evidence/render/R0-PLANAR-SOURCE-SIGN-ORACLE-2026-11-03.md)
+now checks exact decoded-binary64 plane/Sun/camera signs for one static,
+identity-transform, flat-normal fixture. It also exhibits opposite source
+signs that narrow to identical f32 direction words. Its proof-local F4
+direction-packing bound is a separate handoff and cannot certify the shader's
+normal, magnitude or general mapped/interpolated material path.
 
 1. Extend the independent CPU oracle with both one-ratio Smith branches,
    exact dyadic represented-dot predicates and uncertainty intervals. Include
