@@ -90,8 +90,9 @@ reason in a typed receipt.
 
 ## Transaction and lifecycle
 
-1. Inventory registered roots outside the account mutex, then acquire T2's
-   short per-domain mutex. Pair the observed current-use result with
+1. Snapshot registered roots and their owner-reported charges outside the
+   account mutex, then acquire T2's short per-domain mutex. Pair that
+   snapshot with
    the current claim version, take a fresh free-space observation, and compare
    the complete simultaneous plan. Retry if the version changed. Reserve a
    claim or return a typed deferral/refusal with
@@ -143,6 +144,38 @@ The coordinator can reduce avoidable simultaneous work, but cannot promise an
 APFS physical high-water, protect against external writes, or make a compiler
 family transitive OS containment. Source/store and F4 retain native ENOSPC,
 I/O, uncertain-COMMIT and crash recovery obligations.
+
+## Cost and observation path
+
+The fast path must not repeat a complete project or compiler-output tree walk
+for every copied chunk. F3 already scans `.engine` at stage preflight and final
+verification; T2 reuses its owner-reported result and must not add another
+full scan to each F3 copy. F4's manifest preflight already visits every input;
+T2 reuses its checked projection. An instrumented output writer can report
+completed chunk growth during the existing copy stream without copying the
+payload again. The account mutation and same-domain claim comparison touch
+only active jobs and their fixed resource-class totals. One background
+compiler writer keeps that first-profile set small; the policy still records
+the actual count, lock wait and work rather than assuming an O(1) wall time.
+
+Registration and phase/cleanup state transitions are durable. Per-chunk
+progress need not fsync a job record: after host restart, the initial full
+phase claim and discovered roots conservatively reconstruct outstanding work.
+Full root inventory is required at startup, after uncertain cleanup and before
+final release; active compiler output sampling runs off the source-admission
+critical path and is a diagnostic/cancellation trigger, not exact metering.
+Choose sample cadence from measured output growth and cancellation latency;
+no fixed polling interval makes a hard cap. A recent owner-reported sample may
+avoid a redundant probe only while its filesystem domain and scope match and
+its age is reported. Native before/after-write guards remain at each owner.
+
+Measure projected versus observed bytes by class, conservative overcount and
+its resulting false deferrals, writer/claim lock hold and wait tails, per-file
+and per-chunk CPU cost, preflight/final-scan time, compiler-output sampling
+cost, cold restart inventory, and source edit-to-ready latency. Run both a
+large master and many tiny files with a retained A build and B replacement.
+If the account becomes the edit critical path, first remove duplicate scans
+and hash work; do not relax exact source/ready publication to improve latency.
 
 ## Rejection-oriented proof queue
 
