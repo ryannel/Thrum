@@ -148,7 +148,9 @@ operations. A final finite check is insufficient.
 
 ## Remaining closure
 
-The render preparation recipe still needs an exact source/binding shape for
+The [candidate fixed Sun-shadow recipe](R0-FIRST-SUN-SHADOW-RECIPE-2026-11-03.md)
+specifies a first light box, reverse-Z comparison and four-tap operator, but
+the render preparation recipe still needs an exact source/binding shape for
 Sun receiver volume, light-space projection, 2048² map, four comparison taps,
 dimensioned constant/slope bias, viewport/output extent, storage scale,
 shader/pass/operator revisions and target limits. The provisional six-face
