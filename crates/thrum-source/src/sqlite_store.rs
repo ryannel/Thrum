@@ -3796,32 +3796,8 @@ fn measure_native_store_large_admission_and_read() {
     let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
     let mut old_pin = store.pin_current(a.generation).unwrap();
 
-    let root = fixture.source_root();
-    let mut master = File::create(root.join("master.bin")).unwrap();
-    let block = [7_u8; 4096];
-    for _ in 0..(12 * MIB / block.len() as u64) {
-        master.write_all(&block).unwrap();
-    }
-    drop(master);
-    let mut declared: Vec<_> = first_stage
-        .files()
-        .iter()
-        .map(|file| file.path().clone())
-        .collect();
+    let stage = stage_12_mib_binary(&fixture, &first_stage, plan);
     let master_path = SourcePath::parse("master.bin").unwrap();
-    declared.push(master_path.clone());
-    declared.sort_unstable();
-    let stage = stage_declared_tree_with(
-        &root,
-        &declared,
-        Limits {
-            temporary: 64 * MIB,
-            free_floor: 0,
-            ..plan.into()
-        },
-        |_| {},
-    )
-    .unwrap();
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let start = Instant::now();
     let b = store
@@ -3852,6 +3828,98 @@ fn measure_native_store_large_admission_and_read() {
         usage.main_file_bytes,
         usage.wal_file_bytes,
         usage.logical_main_bytes
+    );
+}
+
+#[cfg(test)]
+fn stage_12_mib_binary(
+    fixture: &Fixture,
+    first_stage: &crate::StagedTree,
+    plan: SourceSpacePlan,
+) -> crate::StagedTree {
+    let root = fixture.source_root();
+    let mut master = File::create(root.join("master.bin")).unwrap();
+    let block = [7_u8; 4096];
+    for _ in 0..(12 * MIB / block.len() as u64) {
+        master.write_all(&block).unwrap();
+    }
+    drop(master);
+    let mut declared: Vec<_> = first_stage
+        .files()
+        .iter()
+        .map(|file| file.path().clone())
+        .collect();
+    declared.push(SourcePath::parse("master.bin").unwrap());
+    declared.sort_unstable();
+    stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            temporary: 64 * MIB,
+            free_floor: 0,
+            ..plan.into()
+        },
+        |_| {},
+    )
+    .unwrap()
+}
+
+#[test]
+#[ignore = "local release-only reader wait behind a 12 MiB accepted admission"]
+fn measure_native_reader_wait_behind_large_admission() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before reader wait");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let stage = stage_12_mib_binary(&fixture, &first_stage, plan);
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let (ready_tx, ready_rx) = std::sync::mpsc::channel();
+    let (go_tx, go_rx) = std::sync::mpsc::channel();
+    let (reader_ms, writer_remaining_ms) = std::thread::scope(|scope| {
+        let reader = scope.spawn(move || {
+            ready_rx.recv().unwrap();
+            let start = Instant::now();
+            go_tx.send(()).unwrap();
+            let mut bytes = Vec::new();
+            old_pin.copy_file_to(&scene, &mut bytes).unwrap();
+            assert!(!bytes.is_empty());
+            old_pin.close().unwrap();
+            start.elapsed().as_secs_f64() * 1000.0
+        });
+        let mut writer_start = None;
+        let (generation, _) = store
+            .owner
+            .lock()
+            .unwrap()
+            .admit_staged_candidate_probe_with_limits(
+                a.generation,
+                1,
+                2,
+                [2; 32],
+                &candidate,
+                plan.into(),
+                || {},
+                |_| {
+                    ready_tx.send(()).unwrap();
+                    go_rx.recv().unwrap();
+                    writer_start = Some(Instant::now());
+                },
+                |_| {},
+            )
+            .unwrap();
+        assert_eq!(generation, a.generation + 1);
+        let writer_remaining_ms = writer_start.unwrap().elapsed().as_secs_f64() * 1000.0;
+        (reader.join().unwrap(), writer_remaining_ms)
+    });
+    eprintln!(
+        "native_reader_behind_large_admission reader_wait_copy_ms={reader_ms:.3} writer_after_preflight_ms={writer_remaining_ms:.3}"
     );
 }
 
