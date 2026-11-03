@@ -11,8 +11,9 @@ already fixes the 160-byte view, 128-byte auxiliary view, 64-byte material
 and 192-byte object record sizes. This note resolves candidate meanings and
 product boundaries for the first six-triangle R0 proof; promotion requires
 producer and consumer agreement, Naga reflection and target validation.
-The selected first constant-light cooker itself remains unimplemented and
-currently specifies a **schema-2** entry-scene closure. Before R0 can use
+The selected first constant-light cooker now reads the **schema-2** entry-scene
+closure from an accepted pin and produces a CPU payload, but has no persistent
+product identity or exact-source build binding. Before R0 can use
 `core.scene@3`, extend that F4 closure to accept its unchanged
 `environment.source` edge and include the new scene definition hash in the
 exact-source build binding. The 160-byte Sun product and its semantic key can
@@ -48,7 +49,7 @@ alone is a ready R0 build.
 | Flat GPU mesh | For the first at-most-six-triangle recipe only, expand corners to one nonindexed 32-byte stream: **mesh-local** f32 position XYZ at byte 0, geometric normal XYZ at 12, UV0 at 24. Shadow, depth and forward consume the same immutable stream. | Avoid an unproved normal-buffer lookup and avoid pretending a six-face layout is a scalable general mesh format. Broader scenes require measured corner sharing/indexing and a new geometry product profile. |
 | Material/texture | Existing 64-byte `MaterialRecord`, three optional authored RGBA8 texture **slots per material** (base, ORM and emissive), bound typed white base/ORM/emissive and flat-normal defaults, one sampler per material. A source absent map gets the neutral binding; a present map must have a verified texture product. | The R0 shader uses the same factor/texel equations and sampled alpha across roles. A schema-1 normal map is invalid source. |
 | Camera | Typed authored initial pose, vertical FOV, near/far and fixed exposure from the selected camera ID; W1 consumes initial pose while V2 uses the committed presentation pose. | Projection/exposure depend on source semantics; current viewport supplies aspect and is not a second authored camera value. |
-| Sun/environment | The selected but unimplemented 160-byte `ConstantLightProductV1` remains a CPU f64 product contract with exact identity/units/provenance. | It is not a WGSL buffer; V3 packs target-range GPU light data from it after the admitted-source cooker exists. |
+| Sun/environment | The selected 160-byte `ConstantLightProductV1` has a pure CPU codec and accepted-pin schema-2 cooker; persistent product/build identity and the schema-3 scene bridge remain open. | It is not a WGSL buffer; V3 will pack target-range GPU light data after exact-source build binding exists. |
 | Local lights | Four stable W1 identities and authored descriptors, with coherent W1 positions from the packet sample. | V3 owns one registry and no renderer-local light state. |
 | WGSL/pipelines | Canonical expanded WGSL, Naga validation/reflection, pass ABI and full immutable descriptors. Six geometry tuples (`opaque/mask × shadow/depth/forward`) plus tone, spatial AA and output; optional UI adds its declared tuple. | Light count is runtime data within the first-profile four-local capacity, not a shader variant. Every required tuple is device-ready before the view is admitted. |
 
