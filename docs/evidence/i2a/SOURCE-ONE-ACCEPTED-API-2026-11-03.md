@@ -1,0 +1,9 @@
+# One production-facing accepted-source store — 3 November 2026
+
+The format-2 `ProvisionalSourceStore` was an experimental implementation with a separate selection, outcome, blob and intent schema and its own fixed small profile. No production crate, example or tool imported it; its users were its in-crate fixtures. Exporting it alongside `NativeSourceStore` presented two apparent source authorities even though provisional publication cannot certify accepted source.
+
+`thrum-source` now compiles the provisional module only for its own test target and no longer exports it from the normal library. The 64 MiB/4,096-file provisional limits therefore cannot accidentally become a public accepted-source policy. Its recovery, checkpoint, fault and cost fixtures still run in the crate suite. The accepted store retains the production-facing API, validated staged-byte admission, exact keyed outcome, owning read leases, cooperating owner lock and selected-head audit. Existing cook and headless consumers compile and pass unchanged.
+
+The strict envelope header still validates every record ID in production; only the test-only provisional reader retains that ID in the returned header. The manifest's test-only `source_path` convenience accessor is likewise excluded from the production library. These are compile-boundary changes, with no source or world-update path added.
+
+`RUSTC_WRAPPER= ./dev check` passes, including the provisional fixtures and affected consumers. This does not migrate existing provisional databases into accepted source, add format-2 publication intents to the accepted schema, prove process interruption of the complete public admission path, or close disk/retention planning. Provisional files remain distinguishable by their path and incompatible schema and must never be opened as accepted roots.

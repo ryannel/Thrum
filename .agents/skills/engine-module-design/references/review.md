@@ -45,6 +45,11 @@ where an implementer would still have to invent a core mechanism, query or updat
 the full composition, not only plausibility of its individual techniques. An essential interaction deferred until
 after the attractive component is complete is an incomplete design.
 
+For a build-ready plan, try constructing a hard component and a coupled case using only its saved inputs and
+instructions. Trace the creator's first use and one source or configuration change through preparation, loading and
+invalidation. Record missing choices before supplying remedies; verify the revised plan against the actual saved
+documents. Paper walkthroughs establish clarity, not running behaviour or visual quality.
+
 Use targeted depth for consequential uncertainty or different expertise. Give neutral questions and relevant raw
 artifacts; broad discovery and focused verification serve different roles. Divide independent work where useful,
 while one owner integrates contracts. Do not prescribe a reviewer quota or repeat passes for ceremonial agreement.

@@ -1,8 +1,7 @@
 # Contributing to Thrum
 
 Use Rust 1.99.1 and Python 3.11+. `./dev` selects the pinned Rust toolchain even if a standalone
-Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. The bootstrap has no external
-crate dependencies; checks use locked offline Cargo commands.
+Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. Run `rustup run 1.99.1 cargo fetch --locked` once on a clean copy; checks then use locked offline Cargo commands.
 
 | Command | What it does |
 | --- | --- |
@@ -10,12 +9,16 @@ crate dependencies; checks use locked offline Cargo commands.
 | `./dev check` | Repository checks and their tests, rustfmt, Clippy and workspace tests |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
 | `./dev check-web` | Compile the portable core for `wasm32-unknown-unknown` |
+| `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
 | `./dev fmt` | Apply rustfmt |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
 This is a portable library compile check, not a browser runtime/rendering test. CI describes Linux,
 macOS and Windows checks, plus Wasm compilation; a configured job is not evidence it has run.
+On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets
+`aarch64-apple-ios`, `aarch64-apple-ios-sim` and `aarch64-linux-android` installed with `rustup target add --toolchain 1.99.1`.
+It compiles only `thrum-core`; app packages, native activity/UI, devices and lifecycle remain separate checks.
 `THRUM_PYTHON` can select the Python executable. Build products use `target/`, or an explicitly
 owned `CARGO_TARGET_DIR`. `cargo clean` affects that build directory; inspect ownership before cleanup.
 
@@ -36,8 +39,17 @@ Add a crate only for a demonstrated boundary, reuse or platform/build need. Regi
 [architecture policy](.config/architecture.toml); all workspace crates inherit common package/lint settings.
 The dependency guard checks direct workspace edges of every dependency kind, including renamed and
 target-specific edges. It does not prove semantic authority or validate all optional feature combinations.
+Every `Cargo.toml` under `crates/`, `tools/` or `examples/` must join the workspace and architecture registry. Direct
+third-party dependencies require an exact `=version` registry requirement and a policy entry with declared
+license, purpose and target/build cost; the guard cannot verify the upstream license or transitive closure.
 Record dependency purpose, exact version/license and target costs before adding external libraries. Do
 not vendor Bevy code without source revision, applicable license/notices and a maintenance rationale.
+
+`./dev check` is the hard gate: pinned rustfmt, workspace Clippy, Rust tests and repository checks.
+Clippy's default checks plus `dbg_macro`, `todo` and `unimplemented` catch likely mistakes and unfinished
+code. We deliberately have no file/function line limit, folder file count or literal count gate. A fixed
+argument-count lint is also disabled; review large signatures in context instead of forcing wrapper types.
+Warnings from optional style review are advice, not a reason to split coherent code mechanically.
 
 For capability design and performance-sensitive implementation, use the owning design's
 [cost account](docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design). Consider repeated cheap work,

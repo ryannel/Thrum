@@ -1,0 +1,7 @@
+I1 record fixture host=macos/aarch64 profile=release
+record/fixed: clones_and_drops_per_batch=4096 batch_ns[p50/p95/p99]=7042/7084/7209
+record/one_shared_payload: clones_and_drops_per_batch=4096 batch_ns[p50/p95/p99]=14292/14375/19125
+record/fixed_check: validations_per_batch=4096 batch_ns[p50/p95/p99]=1042/1042/1084
+record/one_shared_payload_check: validations_per_batch=4096 batch_ns[p50/p95/p99]=2500/2500/2541
+payload/shared_1024: equality_checks_per_batch=4096 batch_ns[p50/p95/p99]=85958/96834/104167
+payload/distinct_equal_1024: equality_checks_per_batch=4096 batch_ns[p50/p95/p99]=103625/105916/107208

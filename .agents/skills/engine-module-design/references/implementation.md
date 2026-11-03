@@ -31,6 +31,11 @@ behaviour it replaces; keep its replacement on the critical path. Narrow the pro
 interaction that could expose an incompatible representation. Correct design assumptions exposed by the running
 proof and carry those corrections through affected consumers.
 
+Make the first promised visual checkpoint an actual rendered interaction with the required cue visible; label a solver
+or geometry inspector as a diagnostic. Exercise the prepared product and runtime path the plan selected, rather than
+accepting a tool's own output as proof that its consumer works. When a source or recipe changes, rebuild the affected
+products and recheck the loaded artifact before carrying forward visual or performance evidence.
+
 ## Make the governing model produce the behaviour
 
 Use established relationships for behaviour meant to be simulated, including driving inputs, coupling and time

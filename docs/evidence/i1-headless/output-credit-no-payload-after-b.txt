@@ -1,0 +1,9 @@
+I1 changed replica fixture host=macos/aarch64 profile=release
+changed_tick/64: submit_step_replica_ack_ns[p50/p95/p99/max] prototype=(583, 625, 791, 9417) charged=(583, 625, 750, 7708) charged_index_bytes=8456
+changed_stages/64: step_ns[p50/p95/p99/max] prototype=(333, 375, 458, 9125) charged=(417, 459, 542, 4750) replica_ack_ns[p50/p95/p99/max] prototype=(167, 209, 250, 3583) charged=(83, 125, 125, 250)
+host_changed_tick/64: submit_callback_ack_ns[p50/p95/p99/max] prototype=(708, 917, 1083, 50292) charged=(667, 833, 917, 11292) protected=(666, 791, 917, 10917)
+host_many_changes/64: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary=(2583, 3250, 3500, 12875) protected=(2416, 2750, 3166, 10875)
+changed_tick/4096: submit_step_replica_ack_ns[p50/p95/p99/max] prototype=(916, 1042, 1250, 18541) charged=(916, 1042, 1250, 11042) charged_index_bytes=540680
+changed_stages/4096: step_ns[p50/p95/p99/max] prototype=(625, 750, 875, 6834) charged=(750, 875, 1042, 10708) replica_ack_ns[p50/p95/p99/max] prototype=(208, 250, 292, 17875) charged=(83, 125, 125, 500)
+host_changed_tick/4096: submit_callback_ack_ns[p50/p95/p99/max] prototype=(1000, 1125, 1417, 19333) charged=(917, 1042, 1292, 31250) protected=(958, 1083, 1292, 8584)
+host_many_changes/4096: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary=(2958, 3125, 3917, 14333) protected=(2750, 3792, 9000, 80791)

@@ -5,8 +5,15 @@ limits and failure rules. This family document retains the wider responsibility;
 
 **Current design closure:** the [initial protocol](../NETWORK-SPEC.md) resolves the
 [SR01–SR03/SR07 review](../SIMPLIFICATION-REVIEW.md) with committed per-action results, atomic full groups,
-one gameplay semantic identity and an analytical R4 workload. It is ready for the first I2n construction slice;
-transport, runtime, latency and device proof remain unrun. The authority model and early I2n milestone stand.
+one gameplay semantic identity and an analytical R4 workload. The
+[reviewed provisional cadence study](../research/N1-OUTBOUND-CADENCE-2026-11-03.md)
+reopens the 60-to-20 Hz outbound burst and same-tick multi-group replica
+consumer before a production queue/codec can qualify. Transport, runtime,
+latency and device proof remain unrun. The authority model and early I2n
+milestone stand.
+The [first R4 payload codec](../../evidence/integration/N1-R4-PAYLOAD-CODEC-2026-11-03.md)
+now checks fixed framing and local result shape in a registered crate; it
+does not validate the envelope or admit a semantic group to a replica.
 
 Selected architectural direction, 1 November 2026. The user requires future multiplayer as a first-class citizen to
 avoid rebuilding the engine around it later. N1 is an optional runtime responsibility with contracts designed now;
@@ -115,10 +122,11 @@ and outcome lookup provide durable retry semantics when a game needs them, after
 authoritative recovery root.
 
 Authoritative simulation runs at its selected fixed tick. Replication cadence may be lower and does not change that
-tick or physical quality. After commit, N1 reads a purpose-specific immutable replication projection with the same
-bounded-reader discipline as other consumers. It does not read a mutable solver or serialize a render packet. Slow
-peers cannot retain world snapshots indefinitely: coalesce outbound state before submission, release leases, and
-resynchronize/disconnect when declared age/queue limits are exceeded.
+tick or physical quality. After commit, N1 briefly leases a purpose-specific immutable world snapshot to copy a
+bounded, N1-owned replication projection, then releases the W1 lease before remote send or acknowledgement. It does
+not read a mutable solver or serialize a render packet. Only N1-owned projection, result and event bytes may wait for
+a remote peer. Coalesce outbound state before submission and resynchronize/disconnect when declared age/queue limits
+are exceeded; remote ACK and queue age never govern W1 snapshot release.
 
 Each replicated schema declares fields, visibility/ownership audience, units, quantization/error bounds and dependency
 groups. Dependent fields in a group are from one committed revision; partial updates must not form an impossible pose,

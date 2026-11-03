@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/thrum-core", "tools/xtask"]
+members = ["crates/thrum-core", "crates/thrum-mobile-shell", "crates/thrum-network", "crates/thrum-source", "crates/thrum-cook", "crates/thrum-jobs", "examples/i1-mobile-game", "tools/xtask"]
 default-members = ["crates/thrum-core"]
 resolver = "3"
 
@@ -15,3 +15,9 @@ missing_docs = "warn"
 
 [workspace.lints.clippy]
 all = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+# A fixed argument count can force needless parameter structs. Review API shape
+# against ownership and call sites instead of using this numeric gate.
+too_many_arguments = { level = "allow", priority = 1 }

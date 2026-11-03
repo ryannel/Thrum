@@ -3,7 +3,7 @@
 **Initial implementation specification:** [FOUNDATION-SPEC.md](../FOUNDATION-SPEC.md) now selects the concrete baseline mechanisms,
 limits and failure rules. This family document retains the wider responsibility; specification does not imply runtime qualification.
 
-1 November 2026. **Design status:** selected operating model for F3/F4/W1/W2/P7 under the [architecture decisions](../ARCHITECTURE-DECISIONS.md), subject to detailed schema/adapter design and open game-scale/device floors. **Implementation and qualification:** unbuilt. This design follows the [architecture brief](../ARCHITECTURE-BRIEF.md), [programme](../DESIGN-PROGRAMME.md), [shared contracts](../CONTRACTS.md) and [network session contract](NETWORKING.md). Its source inspection is recorded in [world/content sources](../research/WORLD-CONTENT-SOURCES.md). It does not promote current Broadsides code or its water experiments into the target engine.
+1 November 2026, revised 2 November. **Design status:** selected operating model for F3/F4/W1/W2/P7 under the [architecture decisions](../ARCHITECTURE-DECISIONS.md), subject to detailed schema/adapter design and open game-scale/device floors. **Implementation and qualification:** bounded headless W1 and provisional F3 staged/test-only root proofs exist; the general admitted-source lease, F4 cooker and world/content runtime remain unbuilt. This design follows the [architecture brief](../ARCHITECTURE-BRIEF.md), [programme](../DESIGN-PROGRAMME.md), [shared contracts](../CONTRACTS.md) and [network session contract](NETWORKING.md). Its source inspection is recorded in [world/content sources](../research/WORLD-CONTENT-SOURCES.md). It does not promote current Broadsides code or its water experiments into the target engine.
 
 ## Commission and capability coverage
 
@@ -40,6 +40,113 @@ Authored placement and deterministic procedural placement produce the same valid
 Terrain is a W2 geometry product family, not the world coordinate model. A landscape may cook heightfield and far meshes; caves/interiors use meshes or signed-distance-derived products as selected by their physics/render consumers. Cooked collision/nav/shadow/ray proxies may differ, but each product carries source ID, material/surface mapping, spatial bounds and declared positional/silhouette/coverage error. V2 selects LOD by projected error: perspective `e_px ≈ e_m f_px/z`, orthographic `e_px ≈ e_m s_px_per_m`. Orthographic LOD therefore cannot use distance alone. Hysteresis avoids oscillation; independently selected adjacent LODs require stitched borders, skirts or a shared boundary sample rule with an error bound. Collision and nav do not switch merely because a camera zooms.
 
 ## Import, cook and runtime residency
+
+### First headless source-to-scene product slice
+
+The first F4 implementation accepts an F3 `PinnedSource` only. It reads the verified
+`project.json` and the single declared entry scene through the pin; no mutable checkout
+path is accepted by the API. The fixed project parser names the entry ID, while the
+authenticated manifest locates its stable `core.scene` record path. The fixed scene
+parser retains its optional caption. A missing or incompatible record refuses the cook
+without publishing a product. The source root remains F3 authority; F4 owns the derived
+`SceneProduct` and its typed `SceneProductRevision`.
+
+The v1 headless product key hashes a domain/version tag, target, the exact verified
+project and scene input digests. The project bytes already contain the entry ID,
+and the scene bytes already contain the caption. It does not hash the
+whole `SourceRevision`: unrelated admitted files may advance the root without recooking
+an unchanged scene. The product retains its source-root provenance separately. This
+first profile has one entry scene and one CPU-only target. The product has a compact
+bounded byte encoding and independent content hash. A load requires expected hash,
+product revision and accepted root from a trusted future build manifest; it checks
+byte integrity, format, product-key inputs and identity. Provenance stays in the
+manifest, so identical scene products from different accepted roots have identical
+encoded bytes. This is still not a `BuildRevision` or runnable game: code
+binary/toolchain/schema closure, durable product publication/manifest and run/save
+pins remain later F4/F1/P7 work. A complete build key must add those inputs before
+W1 or N1 may activate a world.
+
+The cook path allocates two bounded record buffers, parses only the selected project and
+scene, and scans manifest record metadata once for the entry ID. Its cost is `O(project
+bytes + scene bytes + manifest entries)` plus the native store's verified chunk reads;
+it is offline and never runs in a world callback. At the admitted 100,000-entry maximum,
+the one-time ID scan may need an index if it becomes a repeated cook bottleneck. Avoid
+an always-live ID map until a workload justifies its memory. The product retains only
+the caption and fixed identity/provenance/input digests; the input buffers are dropped
+after cooking. Serialization allocates one bounded output buffer; load hashes the
+bytes once before decoding fixed fields.
+The [first executable proof](../../evidence/i2a/F4-HEADLESS-SCENE-COOK.md) checks edits,
+unrelated files, historical pins and failure retention. End-to-end edit-to-ready,
+product storage and runtime performance are still unqualified.
+
+### Linked native rule-source check before a ready build
+
+The first static-code integration can verify a supplied admitted Rust rule-file
+path against length and SHA-256 metadata from a compiling game module. F4 compares
+that metadata with the authenticated manifest before touching SQLite, then
+streams the pinned blob to a sink so the native store verifies its actual chunks.
+The result is a typed `LinkedRuleSource` with path and digest. A changed code file
+refuses this match; the prior run and source/product identities remain independent.
+The check uses the pin's bounded read scratch, with no copied source tree and no
+work inside the game callback. A production builder can emit fixed-size metadata
+without embedding complete source files in the game binary.
+
+This check does **not** attest that the executable was built from that file. A
+target-ready `BuildRevision` still needs an exact retained binary identity,
+toolchain/dependency and schema closure, trusted target manifest and run-start
+verification. The test-only `i1-mobile-game` integration exercises a real
+`include_bytes!` of its rule module to derive test metadata, an accepted scene product, a subsequent
+unmatched code edit and an action on the old authority/replica. Native source/cook
+tooling is only a development dependency of that example, leaving its phone
+runtime dependency closure unchanged. The [proof record](../../evidence/i2a/F4-LINKED-RULE-SOURCE.md)
+states the residual build and save obligations.
+
+### Temporary native build inputs from an accepted pin
+
+An external native compiler requires ordinary files. F4 can materialize the
+first-profile authenticated tree from one `PinnedSource` into a newly created
+absolute directory under a caller-owned private build parent. Relative paths
+refuse so CWD changes cannot redirect owner cleanup. It streams and verifies
+each file through F3's pinned copy API, creates no second whole-tree manifest,
+and never reads the working checkout. A caller-selected plan estimates file and
+directory allocation using the volume's allocation granularity, then checks
+the per-tree target and observed free headroom before creating the destination.
+This is early planning, not a physical reservation or aggregate managed-temp
+quota; real write faults still clean up or report a partial tree. The output owner retains the accepted
+root, count and copied-byte sum while a compiler uses the tree. An existing
+destination refuses before mutation; an error removes the partial new tree or
+reports its path if cleanup fails. Explicit close reports cleanup failure, and
+drop attempts cleanup for ordinary scope exit. No file is synced because this
+is temporary compiler input, not a durable accepted source or product.
+
+Cost is `O(total selected source bytes + file count × log(manifest entries) +
+total path bytes)` through the pinned path lookup and planning, plus metadata
+creation. Sorted manifest paths let the preflight count new directory prefixes
+against only the previous path, and the copy holds one portable-path clone at
+a time. The first
+implementation copies the complete admitted tree, not just Rust files, so a
+large game needs an explicitly selected build-input subset/closure before
+claiming efficient full-project compilation. A private parent limits exposure
+to ordinary concurrent writers; this is not a sandbox
+for untrusted build scripts. T2 must bind the exact target/toolchain/dependency
+closure, isolate compiler writes from the input tree and verify its binary
+artifact before publishing a `BuildRevision`. The [native materialization
+proof](../../evidence/i2a/F4-PINNED-MATERIALIZATION.md) measures the small
+fixture only.
+
+### Fixed first headless build declaration
+
+The [selected native build profile](../F4-FIRST-HEADLESS-BUILD.md) names one
+strict `build/headless.json` file in the admitted tree. F4 checks its fixed
+format and key set, portable input paths, accepted-manifest membership, package
+spelling and entry-scene match against the cooked product from the same source
+root. The declaration is bounded to 64 KiB and parsed off the game callback.
+It does not parse Cargo or attest an executable. An admitted source with invalid
+build metadata stays accepted but fails build preparation while earlier ready
+identities remain independent. The [bounded proof](../../evidence/i2a/F4-BUILD-DECLARATION.md)
+checks a duplicate key and a missing named toolchain file. T2 compiler isolation,
+complete package closure, artifact retention and verified `BuildRevision`
+publication remain the next implementation gates.
 
 The [first-use review](../FIRST-USE-WALKTHROUGHS.md) makes reimport a concrete authoring obligation: F3/F4 preserve
 source-to-canonical identity correspondence, while T1 records game-owned overrides and exposes mapping conflicts.

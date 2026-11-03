@@ -1,11 +1,12 @@
 # Rendering specification: portable shaders, materials and transport
 
-1 November 2026. This closes the remaining *initial portable render path* decisions behind
+1 November 2026, revised 2 November. This closes the remaining *initial portable render path* decisions behind
 [selected architecture](ARCHITECTURE-DECISIONS.md),
 [C4](CONTRACTS.md),
 [rendering](modules/RENDERING.md) and
-[environment](modules/ENVIRONMENT.md). No code was built or
-device measured. The limits below are **design admission targets**, not measured performance,
+[environment](modules/ENVIRONMENT.md). An [isolated R0 GPU diagnostic](../evidence/render/R0-GPU-DIAGNOSTIC-2026-11-02.md)
+has since run, but no integrated renderer was built or device-performance qualified.
+The limits below are **design admission targets**, not measured performance,
 hardware support floors or permission to substitute physical gameplay content. [The baseline specification](BASELINE-SPEC.md) owns
 the combined workload; [N1](NETWORK-SPEC.md) owns the selected network protocol; F4 remains the only cook/product authority, V1 the only GPU
 device/submission authority, V3 transport and E1 environmental fields.
@@ -60,6 +61,8 @@ forward shading, sorted by declared group and writes no opaque depth; intersecti
 refractive transparency remains explicitly approximate. Water uses its own typed
 material/interface provider, not a hidden metallic-roughness flag. A required imported
 extension must map to this closure with stated loss or fail admission.
+An exact ordered-alpha capability is selected separately below; choosing sorted alpha
+does not grant its event/overflow or refracted-path promises.
 
 For `c_i=n·ω_i>0`, `c_o=n·ω_o>0`, `c_h=n·h`, `h=normalize(ω_i+ω_o)`, use
 `f_r=(1-m)(1-F)base/π + D_GGX G_2 F/(4c_i c_o)`, otherwise zero.
@@ -80,10 +83,42 @@ conformance, not a decision deferred to visual trial.
 Texture inputs are four fixed slots: base-colour/alpha, tangent-space normal, ORM
 (occlusion/roughness/metalness) and emissive, plus one material sampler. Base/emissive
 colour textures decode sRGB to the linear working basis; data maps remain linear.
-Missing optional slots bind neutral typed defaults (white base, flat normal, ORM
-`(1,1,0)`, black emissive) so the material layout does not multiply variants.
-Normal mapping requires a validated tangent basis; otherwise author a no-normal-map
-material or cook tangents with a declared method. Material factors, alpha cutoff and
+Missing optional slots bind typed multiplicative defaults (white base, flat
+normal, ORM `(1,1,1)`, white emissive) so the material layout does not
+multiply variants. Native factor defaults are white base RGBA, zero emissive
+radiance, roughness `1`, metalness `0`, occlusion strength `1` and normal scale
+`1`. Base/alpha, roughness, metalness and occlusion-strength factors are finite
+in `[0,1]`; emissive radiance factors are finite and nonnegative in cd/m².
+The effective closure uses decoded/filter-sampled texels and these equations:
+
+```text
+baseRGBA = baseFactorRGBA * baseTexelRGBA
+emissionRGB = emissiveRadianceFactorRGB * emissiveTexelRGB
+metalness = metallicFactor * ORM.b
+perceptualRoughness = max(0.045, roughnessFactor * ORM.g)
+alphaGGX = perceptualRoughness²
+AO = 1 + occlusionStrength * (ORM.r - 1)
+```
+
+The BRDF's `base`, `m` and `roughness` are these effective values.
+Base/emissive RGB are decoded from sRGB before linear filtering and
+multiplication; base alpha and ORM remain linear. The roughness floor applies
+**after** factor/texture multiplication and **before** squaring. AO modulates
+only selected indirect light, including the authored R0 ambient Lambert term;
+it does not change direct Sun/local lighting, emission, geometric/cloud
+visibility or terminal background. The native metalness default is dielectric;
+an imported format's different defaults are materialized during conversion.
+For example, glTF 2.0 gives absent emissive and metallic/roughness texture
+components an implicit value of one, while its metallic factor defaults to
+one; its independent texture coordinates, transforms and samplers require
+lossless conversion or explicit refusal under Thrum's one-sampler ORM layout.
+[Khronos glTF 2.0 materials](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials).
+Texture-presence flags may skip absent reads but cannot change these results.
+An absent normal map uses the admitted geometric/shading normal and does not
+evaluate a tangent basis. A present normal map requires a validated tangent
+basis and a separately supported evaluator; the first bounded R0 proof refuses
+it before ready-product publication. A later mapped-normal profile must cook
+tangents with a declared method. Material factors, alpha cutoff and
 texture-presence flags are uniform data, not compile-time variants. Structural shader
 specialization is limited initially to alpha mode (`opaque/mask/blend`), geometry
 interface (`static/skinned/instanced`), pass role, and chosen material closure/provider.
@@ -109,7 +144,10 @@ Matrices are column-major. A `ViewRecord` contains `viewProj` and
 `cameraXYZ_time` at 128 and `preExposure_invExposure_jitterXY` at 144; 160-byte
 record, 256-byte dynamic-uniform stride. A `MaterialRecord` is four 16-byte
 vectors at offsets 0/16/32/48: base RGBA, emissive RGB+alpha cutoff,
-`(occlusion,roughness,metalness,normalScale)`, and four `u32` flags/IDs; 64 bytes.
+`(occlusionStrength,roughnessFactor,metallicFactor,normalScale)`, and four
+`u32` flags/IDs; 64 bytes. Material products, default textures, shaders and
+representation certificates pin one material-semantic/evaluator revision in
+their keys; equal byte layout alone cannot authorize mixed meanings.
 An `ObjectRecord` stores current/previous model matrices (0/64), three normal
 matrix columns padded as `vec4` (128/144/160), and a `vec4<u32>` of stable
 instance index, skin offset, flags and source generation (176); 192-byte stride.
@@ -220,6 +258,22 @@ reset. This prevents format saturation without inventing a second lighting
 unit. `p` and output gamut/tone policy are versioned view metadata. Reject
 NaN/negative light intensity and invalid exposure at authoring/runtime
 boundaries; large HDR values are not silently clamped before V4.
+Before an f32 shader path is admitted, derive finite ranges for its inputs and
+intermediates, including division, normalization, discriminants, light/source
+accumulation, pre-exposure and alpha-record storage. Check a dangerous
+operation's preconditions **before** evaluating it, or use a bounded algebraic
+form; a final nonfinite test cannot certify an earlier WGSL runtime overflow.
+Outside the proved range, return a typed unsupported/failure status before
+that operation and gate current output/history. The range and f16 packing
+error belong to the selected provider/profile; `p > 0` alone does not prove
+that every intermediate or output fits. Verify the range against independent
+high-precision cases and the pinned WGSL/backend versions before claiming a
+portable diagnostic path. [WGSL floating-point evaluation](https://gpuweb.github.io/gpuweb/wgsl/#floating-point-evaluation)
+allows indeterminate runtime results after overflow, infinity or NaN.
+The [R0 arithmetic-envelope study](research/R0-ARITHMETIC-ENVELOPE-2026-11-03.md)
+supplies a fixed-p half-float counterexample and a conservative per-recipe
+real-number light/storage bound. Its actual source, WGSL intermediate and
+device proofs remain open.
 
 ## 5. Initial atmosphere, fog and transport operator
 
@@ -362,3 +416,170 @@ pipeline counts/preparation time, visual error and complete frame/residency
 trace. A failed numerical or device target narrows that profile or requires
 an explicit provider redesign; it does not silently redefine the selected
 transport or physical world. No such evidence exists in this handoff.
+
+## 7. Bounded R3 transparency and regional optical profiles
+
+The [R3 gap-closure study](research/R3-OPTICS-AND-TRANSPARENCY-DESIGN-2026-11-02.md)
+and [integration decision](research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
+select a distinct `BoundedAlpha2` exact nonrefractive coverage profile beside
+the approximate sorted baseline. Its first implementation uses a finite per-pixel
+fragment append with checked counters, deterministic depth/owner sort and a
+GPU status reduction **before** V4 display/history commit. A third required
+event or counter/storage overflow is a current-view failure, never a silently
+discarded pane. The seven-walk depth-peel proposal remains a comparison
+implementation; neither path has device performance proof. Alpha on a ray
+after refraction is found through the complete regional geometry, not the
+original screen's first-segment records. Raster event, bent-ray alpha,
+interface, path branch and BVH visit limits are separate admitted counts.
+
+`R3-RegionalVirtual-D` selects actual camera-side occupied-water boundaries,
+Snell/Fresnel/TIR, covered regional rigid/deforming/cutout/coverage-alpha
+geometry and the joint air/fog/water single-scattering operator. Source-side
+underwater direct light uses a **named virtual horizontal cover interface**
+above the admitted physical wave/stage envelope, with virtual-water and air
+segments, complete blocker queries on those model paths and one named Sun,
+cloud and medium partition. This resolves the otherwise undefined mean-plane
+query for a wet receiver above mean level. It does not represent actual-wave
+focusing, source-ray parallax or focused caustics; geometry completeness
+within this virtual model is not physical source-path equivalence. Source
+rays from an outside-water receiver/sample that cross any real water interface
+are ineligible for this model. A separate
+conditional [focused-light challenger](research/R3-FOCUSED-LIGHT-CHALLENGER-2026-11-02.md)
+has finite source-cell flux bounds but no admitted real-time or focused
+single-scattering image closure. The full focused/fall source profile remains
+open in [WATER-OPTICS](modules/WATER-OPTICS.md).
+
+The first portable water optical proof is `R3-RegionalAbsorption-P`: one
+admitted graph/bed water volume and at most one water-interface event per camera
+path, actual camera refraction/TIR, complete supported regional geometry and
+bounded alpha, with water absorption
+but no water single-scattering shafts/haze. It changes visual quality by an
+authored profile; it does not change physical water, rain, contact or saved
+state. Portable scattering expansion requires certified source-query work
+removal and remains provisional. The render study's 720p portable transient
+worksheet totals 38.008 MiB before allocator overhead and other consumers;
+its query and bandwidth counts, the desktop two-view case and all named-device
+quality/performance gates remain unmeasured. F2 rejects a recipe that cannot
+reserve its full concurrent graph, rather than dropping required optical
+events or source visibility at runtime.
+
+## 8. R0 first rendered game contract and proof
+
+This section selects the first bounded V1–V4 integration from the
+[render implementor walk](research/RENDER-IMPLEMENTOR-DOGFOOD-2026-11-02.md).
+It is a **design and build contract**, not a claim that a renderer or target
+pipeline already exists. I2a's admitted source/build/save path remains the
+production prerequisite. A synthetic pinned fixture may exercise the GPU
+mechanisms in isolation, with its evidence labelled accordingly.
+
+**Fixture and authority.** One admitted R0 recipe has one perspective camera,
+one static geometry interface, opaque and masked metallic-roughness materials,
+one directional Sun with a shadow, four unshadowed local lights, fixed authored
+ambient and exposure, and an optional flat UI overlay. There is no water,
+weather, terrain, air/fog, animation, transparent geometry or temporal AA in
+this first proof. F3/F4 identify the immutable source/build and actual reachable
+mesh/material/shader/pass products; W1 supplies one committed world endpoint.
+V2 extracts a view packet without stepping the world. V1 alone prepares GPU
+resources and submits passes; V3 supplies light/material/visibility; V4 owns
+scene-to-display conversion. No private feature queue or first-draw shader
+compile is part of this profile.
+
+**View packet and GPU ABI.** A packet names world/source/build, presentation,
+device and view generations, source sample serial and committed endpoint,
+stable camera/view identity, viewport, projection, current world-relative
+origin and product leases. View identity is not a quality-profile ID. A
+skipped, failed or unsubmitted view does not advance its history/sample
+record. The first spatial profile consumes no retained colour history; it
+still records the sample actually submitted so later providers cannot infer
+one from global frame parity. A changed origin, camera cut, device generation,
+size or incompatible source/product revision invalidates prior correspondence.
+For a later temporal profile, submitted metadata and accepted-history
+metadata are distinct: a GPU-rejected sample cannot advance the previous
+pose, exposure, source epoch or history image used by its successor. The first
+temporal proof resets history whenever acceptance is unknown to the CPU;
+retaining history across delayed GPU acceptance requires an explicit GPU-owned
+metadata path or bounded delayed lease protocol. Submission completion alone
+does not certify an accepted sample.
+Retain the 160-byte `ViewRecord` above. Group 0 binding 1 adds a versioned
+128-byte `ViewAuxRecord`: unjittered inverse view-projection at 0, viewport
+size/inverse size at 64, finite near/far plus view scale/storage ratio at 80,
+split current/prior presentation times at 96, and u32 camera/history/source
+flags at 112. Its byte layout and the existing records are checked against
+Naga reflection; CPU packers write checked scalar offsets into zeroed storage.
+Use right-handed Y-up world, camera forward −Z, WebGPU clip depth [0,1],
+finite reverse-Z depth (clear 0, greater comparison) and unjittered matrices
+for correspondence. Perspective and orthographic projection/reconstruction
+must pass independent point/ray round trips before the wider view promise.
+
+**First pass and resource closure.** V1's typed graph declares scope,
+format/usage, initialized subresource reads and writes, clear/load behavior,
+producer/pipeline generation, external side effect and last use. Its R0 order
+is Sun shadow, opaque/masked depth, opaque/masked forward lighting into
+scene-linear RGBA16Float, tone/encode, spatial AA, optional UI and final output.
+Visibility includes casters outside the camera frustum. The 2048² D32 Sun
+map uses a fixed authored light-space receiver volume and four equal-weight
+comparison taps; constant/slope bias is an authored, dimensioned recipe value
+converted through the actual map projection. Masked shadow, depth and forward
+evaluate the same UV/alpha cutoff and geometry. A missing required role or a
+light/instance list exceeding its declared capacity rejects view readiness;
+it never becomes an opaque mask, omitted shadow or truncated light. Off-state
+passes/resources retire after their final CPU reader and GPU completion.
+
+**Light and display.** R0 ambient is a typed isotropic diffuse irradiance in
+linear Rec.709 photometric RGB, in lux; the reference fixture uses
+`[1000,1000,1000]`. Its Lambert contribution is
+`AO*(1-metallic)*base*E_ambient/pi`, with no second hemisphere or cosine factor.
+The separate terminal background is black radiance in cd/m². Sun lux and
+local candela use section 4's direct-light convention; neither ambient nor
+background stands in for an unselected reflection source. V4 uses a positive
+authored fixed exposure `e` and first-fixture storage scale `p=1/1024`.
+After undoing storage scale, set `C_e=e*L`,
+`C_t=C_e/(1+Y(C_e))`, then `C_d=C_t/max(1,max(C_t.r,C_t.g,C_t.b))`.
+Encode `C_d` to sRGB for the spatial filter, decode its result to
+display-linear for UI composition, then encode the selected output once,
+either in the shader or by an sRGB attachment conversion, never both.
+Negative or nonfinite radiance and a value outside the admitted half-float/pre-exposure
+envelope are diagnosed rather than clamped into a plausible image. This
+simple SDR curve is a bounded first profile; it is not an HDR, automatic
+exposure or photographic-look promise.
+
+**Finite demand and proof.** The spatial fixture reaches six geometry-role
+tuples (opaque/mask × depth/shadow/forward), tone, spatial AA and output,
+plus one UI tuple only if the authored fixture uses it: nine or ten boot
+descriptors, within BASELINE-SPEC's ten-tuple worksheet and the 16-tuple
+R0 recipe cap. Velocity roles are available to a separately admitted
+temporal profile/transition but are not prepared or retained by unused R0
+spatial content. F4 enumerates the actual descriptors/keys and V1 verifies
+target formats, layouts and device readiness before the first playable view.
+Pass declarations and allocation traces account for shadow, HDR, display
+intermediate, output, uploads and pending retirement at their simultaneous
+peak; aliasing is counted only when lifetimes and descriptors permit it.
+The first proof checks source/build and GPU ABI identity, mask agreement,
+BRDF/colour cards, projection round trips, first input-to-visible result,
+pipeline failure, stale packet, device loss and source restart. Inspect moving
+native-resolution output, then record cold preparation, per-pass CPU/GPU,
+allocation/bytes and sustained whole-frame pacing against BASELINE-SPEC's
+named target. These are unrun gates.
+
+The [bounded first resource-lifetime schedule](research/R0-RESOURCE-LIFETIME-SCHEDULE-2026-11-03.md)
+selects one queue and four scratch textures for an isolated 720p spatial proof.
+Its [logical oracle](../evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
+tests frame credits, held submissions and resize retirement. It does not
+establish a real output surface, F4 leases, GPU allocation or target viability.
+The [synthetic four-role Metal chain](../evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
+executes those scratch formats and one output path with exact offscreen pixels;
+it does not yet execute the authored R0 game, a two-credit held-frame resize
+or measured device-memory residency.
+
+**Spatial implementation input.** The selected spatial operator is FXAA 3.11
+Quality on the encoded scene image. Its exact reference bytes, provenance and
+first port configuration are [pinned here](../evidence/render/FXAA-SOURCE-SELECTION-2026-11-02.md).
+An isolated [masked GPU diagnostic](../evidence/render/R0-GPU-DIAGNOSTIC-2026-11-02.md)
+ran a first WGSL port on Metal. Before calling the pass complete, promote a
+versioned port with its notices, offline Naga validation, independent
+reference-image checks and whole-R0 cost. NVIDIA's
+[FXAA integration paper](https://developer.download.nvidia.com/assets/gamedev/files/sdk/11/FXAA_WhitePaper.pdf)
+describes the order and single-pass method; a redistributor's
+[archived source copy](https://github.com/GameTechDev/CMAA2/blob/071c6b0857559f4e36f614362e6d2aab1b61938a/Projects/CMAA2/FXAA/Fxaa3_11.h)
+exposes the 2014 NVIDIA redistribution terms. Neither a visually similar
+filter nor an unverified licence assumption satisfies this port gate.
