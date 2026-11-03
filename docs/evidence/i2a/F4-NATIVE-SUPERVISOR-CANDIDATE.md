@@ -113,3 +113,23 @@ script are not yet bound to reviewed release inputs. Host SIGKILL, complete
 interrupted rustc invocation/child audit, compiler/system reads and retained
 target publication remain unqualified. Compiler-job RSS has no hard process
 memory ceiling.
+
+## Real Cargo timeout companion
+
+At exact local source commit `6b7dd3fe524be7d91bc31b977b78572c92aaa568`, the same opt-in supervisor suite
+passed all ten macOS fixtures in 9.64 seconds. The real pinned Cargo test now
+executes the controlled sleeping compiler shim twice: one run sends SIGTERM
+after the compile PID marker; the other lets a six-second test-only supervisor
+deadline expire. Both runs use the actual Rust receipt wrapper, return status
+125, retain an unready report and a well-formed pending compile receipt, and
+observe the same-group shim gone before the test finishes. The timeout branch
+requires `supervisorError` with the exact `Cargo build timed out` detail, so
+an unrelated supervisor error cannot count as a timeout pass. The normal
+`RUSTC_WRAPPER= ./dev check` passed at the code change; its opt-in cases are
+skipped unless the environment above enables them.
+
+This extends the tested **Cargo/wrapper/supervisor fault path**. The sleeping
+shim is controlled test code, not a reviewed Rustc/Xcode helper, and the
+fault inventory counts only observed receipts. No complete interrupted
+invocation closure, detached-child containment, release family review,
+representative timeout tail or ready build follows from this test.

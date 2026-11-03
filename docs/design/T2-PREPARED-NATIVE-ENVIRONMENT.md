@@ -298,8 +298,9 @@ Prove in order:
    A [fault-report slice](../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
    now writes an unready, bounded observed-receipt inventory after a caught
    SIGTERM or timeout. A real pinned Cargo process with the actual receipt
-   wrapper and a controlled sleeping compiler shim exercised the SIGTERM path;
-   it does not prove all invocations were captured.
+   wrapper and a controlled sleeping compiler shim exercised both SIGTERM and
+   a six-second test-only timeout, retained a pending receipt and stopped the
+   same-group compiler; it does not prove all invocations were captured.
    Interrupted and timed-out receipt closure remains open. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.
    Measure compiler-job peak RSS separately; this profile has no hard process
