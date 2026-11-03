@@ -492,6 +492,10 @@
         "evidence": "../evidence/i2a/SOURCE-ONE-ACCEPTED-API-2026-11-03.md",
         "scope": "The separate format-2 ProvisionalSourceStore is compiled only for in-crate tests, so NativeSourceStore is the sole production-facing accepted-source store export. The full repository gate still runs provisional recovery and fault fixtures and the cook/headless accepted consumers. This is a public-boundary cleanup, not migration of provisional databases or qualification of complete accepted-admission interruption, physical planning or general source closure."
       },
+      "i2a_accepted_stage_kill": {
+        "evidence": "../evidence/i2a/SOURCE-ACCEPTED-STAGE-KILL-2026-11-03.md",
+        "scope": "A child process using the production accepted candidate-admission core is killed after B's staged file and manifest blobs are verified, before final root/outcome commit. Fresh open under the cooperating owner lock sees A selected, no B keyed outcome and a complete retained B manifest; public retry commits B while an A lease retains exact old scene bytes. This is one local precommit interruption point, not final-COMMIT process-kill, host power-loss or complete RecoveryRoot qualification."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
