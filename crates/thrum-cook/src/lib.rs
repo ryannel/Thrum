@@ -9,11 +9,16 @@ mod build_declaration;
 #[cfg(test)]
 mod candidate_output;
 mod constant_light;
+mod constant_light_source;
 mod native_worktree;
 pub use build_declaration::{
     BuildDeclaration, BuildDeclarationError, read_pinned_build_declaration,
 };
 pub use constant_light::{ConstantLightError, ConstantLightInputV1, ConstantLightProductV1};
+pub use constant_light_source::{
+    ConstantLightRecordInput, ConstantLightRecordKind, PinnedConstantLight,
+    PinnedConstantLightError, cook_pinned_constant_light,
+};
 pub use native_worktree::{
     BuildScratchPlan, MaterializeError, MaterializedSource, materialize_pinned_source,
 };
