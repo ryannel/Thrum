@@ -4147,6 +4147,91 @@ fn native_store_reader_blocked_wal_defers_and_recovers_admission() {
 }
 
 #[test]
+#[ignore = "local sustained public admission under reader-blocked WAL probe"]
+fn measure_native_phased_sustained_blocked_wal() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before sustained WAL");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let checkpoint: (i64, i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(checkpoint.0, 0);
+    let reader = Connection::open(fixture.database()).unwrap();
+    reader.execute_batch("BEGIN").unwrap();
+    let _: i64 = reader
+        .query_row("SELECT generation FROM root WHERE id=1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    let started = Instant::now();
+    let mut selected = a;
+    let mut completed = 0;
+    let mut deferred_wal = None;
+    for index in 2_u8..=17 {
+        let stage = stage_n_mib_binary(&fixture, &first_stage, plan, 4, index);
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        let result = store.admit(
+            selected.generation,
+            1,
+            i64::from(index),
+            [index; 32],
+            &candidate,
+        );
+        match result {
+            Ok(next) => {
+                selected = next;
+                completed += 1;
+            }
+            Err(error) if error.kind() == SourceStoreErrorKind::SpacePressure => {
+                assert_eq!(store.current_root().unwrap(), Some(selected));
+                assert_eq!(
+                    store.outcome(1, i64::from(index), [index; 32]).unwrap(),
+                    None
+                );
+                deferred_wal = Some(store.space_usage().unwrap().wal_file_bytes);
+                reader.execute_batch("COMMIT").unwrap();
+                selected = store
+                    .admit(
+                        selected.generation,
+                        1,
+                        i64::from(index),
+                        [index; 32],
+                        &candidate,
+                    )
+                    .unwrap();
+                break;
+            }
+            Err(error) => panic!("unexpected sustained WAL admission error: {error}"),
+        }
+        old_pin.copy_file_to(&scene, &mut io::sink()).unwrap();
+    }
+    let blocked_wal = deferred_wal.expect("reader-blocked WAL must defer admission");
+    old_pin.copy_file_to(&scene, &mut io::sink()).unwrap();
+    old_pin.close().unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(selected));
+    eprintln!(
+        "native_phased_sustained_wal completed={completed} blocked_wal_bytes={blocked_wal} recovered_wal_bytes={} elapsed_ms={:.3}",
+        store.space_usage().unwrap().wal_file_bytes,
+        started.elapsed().as_secs_f64() * 1000.0
+    );
+}
+
+#[test]
 #[ignore = "local release native admission and pinned-read cost probe"]
 fn measure_native_store_small_admission_and_read() {
     let fixture = Fixture::new();
@@ -4265,7 +4350,7 @@ fn stage_12_mib_binary(
     first_stage: &crate::StagedTree,
     plan: SourceSpacePlan,
 ) -> crate::StagedTree {
-    stage_n_mib_binary(fixture, first_stage, plan, 12)
+    stage_n_mib_binary(fixture, first_stage, plan, 12, 7)
 }
 
 #[cfg(test)]
@@ -4274,10 +4359,11 @@ fn stage_n_mib_binary(
     first_stage: &crate::StagedTree,
     plan: SourceSpacePlan,
     size_mib: u64,
+    fill: u8,
 ) -> crate::StagedTree {
     let root = fixture.source_root();
     let mut master = File::create(root.join("master.bin")).unwrap();
-    let block = [7_u8; 4096];
+    let block = [fill; 4096];
     for _ in 0..(size_mib * MIB / block.len() as u64) {
         master.write_all(&block).unwrap();
     }
@@ -4379,7 +4465,7 @@ fn measure_native_phased_reader_progress() {
         .map(|value| value.parse::<u64>().unwrap())
         .unwrap_or(12);
     assert!(matches!(size_mib, 12 | 64));
-    let stage = stage_n_mib_binary(&fixture, &first_stage, plan, size_mib);
+    let stage = stage_n_mib_binary(&fixture, &first_stage, plan, size_mib, 7);
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
     let done = std::sync::atomic::AtomicBool::new(false);
