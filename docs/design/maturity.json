@@ -679,6 +679,14 @@
         "platform_performance": "no combined parser allocation/RSS, charged peak, full authored fixture, F3/F4 latency or device measurement; no array-wide object index is retained",
         "scope": "No operation-wide global UUID or typed/same-root/slot-format edge closure, deferred instance bounds, F3 admission, F4 selected-pin publication or ready renderer."
       },
+      "i2a_scene3_local_candidate": {
+        "evidence": "../evidence/render/R0-F3-SCENE3-LOCAL-DECODER-2026-11-03.md",
+        "implementation": "private_inactive_scene3_local_decoder_and_unregistered_immutable_definition",
+        "functional_validation": "nine focused tests cover required/optional typed facts, escaped equivalence, duplicate and unknown ordering, map/null refusal, decoded text and UUID scratch bounds, exact header byte/node/depth boundaries, checked-token reuse, byte-identical authored fixture and descriptor hash; independent code review found no blocker",
+        "experienced_quality": "not_applicable_to_inactive_source_decoder",
+        "platform_performance": "no measured near-limit parser CPU or allocation/RSS, full candidate closure, accepted-pin F4 cook or device cost",
+        "scope": "Scene@3 descriptor remains unregistered and F3 dispatch refuses it; no typed-edge/global closure, source admission, F4 selected scene compatibility or ready renderer."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."

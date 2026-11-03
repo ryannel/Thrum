@@ -2,7 +2,8 @@
 
 3 November 2026. This candidate refines the [first admitted render-source
 handoff](R0-FIRST-ADMITTED-RENDER-SOURCE-2026-11-03.md). It is a proposed
-built-in source meaning, not an implemented schema or a ready render product.
+built-in source meaning with inactive local scene/render decoders, not an
+admitted schema or a ready render product.
 F3, W1, F4, V2/V3 and V4 must agree on these exact meanings before assigning
 definition hashes. Existing `core.scene@1/@2` and the constant-light source
 retain their current meanings.
@@ -26,10 +27,14 @@ The render record has the normal strict source envelope (`id`, `type`,
 `local_lights`. Arrays have canonical UUID identity independent of order;
 order only has the explicitly stated meaning for mesh vertices/triangles and
 texture bytes. Each embedded object has one canonical RFC 4122 UUID `id`.
+Canonical source UUID spelling is exactly 36 ASCII bytes with lowercase hex,
+hyphens in the standard positions, a version nibble `1` through `8` and a
+variant nibble `8`, `9`, `a` or `b`, matching the current source checker.
 Semantic cook keys and deterministic product enumeration sort identity-keyed
 entries by UUID; reordering those JSON arrays alone cannot change their
 meaning or force a different product. Mesh vertex, triangle and texture-byte
-order remain inputs to their respective products.
+order remain inputs to their respective products. `uv0[i]` belongs to
+`positions_m[i]`; changing UV order with unchanged positions changes meaning.
 Structural collection diagnostics rank `cameras`, `meshes`, `instances`,
 `materials`, `textures`, then `local_lights`, independent of JSON field order.
 The active-camera edge is checked only after complete structure and global
@@ -94,6 +99,11 @@ but unresolved map is never an absence.
 | Material | Required `id`, `alpha_mode` (`opaque` or `mask`), `two_sided` boolean and one `sampler`; `alpha_cutoff` is required for mask and forbidden for opaque. Optional `base_factor_rgba` linear dimensionless f64[4], `emissive_radiance_factor_cd_m2` linear Rec.709 f64[3], `metallic_factor`, `roughness_factor` and `occlusion_strength` take the native factor defaults and composition in RENDER-SPEC §2. Optional typed `base_texture`, `orm_texture`, `emissive_texture` references share `uv0` and that sampler. Base and alpha factors, metallic, roughness, occlusion strength and cutoff lie in `[0,1]`; emissive factor is nonnegative. Schema 1 has no authored normal-map or smooth-normal field; F4 binds the flat-normal ABI default and native normal scale `1`. |
 | Texture | `id`, positive integer `width` and `height`, `format` (`rgba8-srgb` for base/emissive or `rgba8-linear` for data), and canonical padded RFC 4648 base64 `rgba8` bytes. Exactly `4×width×height` decoded bytes are present in upper-left-origin row-major order, with no row padding or mip levels. Validate checked dimension multiplication and encoded/decoded length before allocation. |
 | Point local light | `id`, authored initial `position_m` f64[3], nonnegative `luminous_intensity_cd` f64, nonnegative f64[3] `unit_luminance_linear_rec709` with `|Y(c)-1|≤1e-9`, and nonnegative `radius_m` f64. W1 owns its identity and committed position; R0 supports a static light at its authored position, and V3 applies inverse-square illumination outside the declared emitter radius. |
+
+Texture dimensions are positive JSON `u64` integer tokens and triangle
+indices are JSON `u32` integer tokens; exponent or decimal spellings are not
+accepted as integers merely because their mathematical values are integral.
+UV components are finite binary64 values without an authored range clamp.
 
 Material field diagnostics use this schema order: `id`, `alpha_mode`,
 `two_sided`, `sampler`, `alpha_cutoff`, `base_factor_rgba`,
