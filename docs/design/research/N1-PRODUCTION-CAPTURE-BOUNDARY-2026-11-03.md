@@ -60,8 +60,8 @@ are useful construction slices, not proof that a public split is safe.
 
 The selected fixture copies 48 group payloads and retains 16 framed messages
 per ordinary three-tick state-only window. Its four queue/ledger owners reserve
-1,169,376 Rust bytes; the actual 49.90/69.29 µs state-only/result-traffic
-medians are selected Apple M3 Max observations, not whole-game budgets. Per
+1,169,376 Rust bytes; the current atomic batch path measures 54.89/76.89 µs
+for state-only/result traffic on Apple M3 Max, not whole-game budgets. Per
 tick work scales with peers × partitions × actors for full-state projection,
 then with peers × emitted units for validation/copy/sequence and with admitted
 mandatory identities for journals. A fully shared global encoded group would
@@ -88,6 +88,8 @@ schema API should remain the same whichever internal path wins.
    fit an atomic R4 group or a declared rate cannot fit the simultaneous
    queue/journal reserve.
 2. Build the private peer owner and a complete per-peer capture transaction.
+   The [four-group queue preflight](../../evidence/integration/N1-ATOMIC-CAPTURE-BATCH-2026-11-03.md)
+   now proves the byte/cursor slice; whole-peer producer and lifecycle state remain open.
    Prove a capacity refusal after a multi-partition plan does not leave a
    partially publishable tick, and a projection-hook unwind poisons the peer,
    while other peers and the authority advance. Account any staging scratch.

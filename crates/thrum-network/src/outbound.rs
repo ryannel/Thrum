@@ -66,6 +66,8 @@ pub enum OutboundError {
     Watermark,
     /// Sixteen unsent slots are occupied; caller must resync/close the peer.
     Capacity,
+    /// An atomic capture plan exceeds the four-partition first profile.
+    BatchCapacity,
 }
 
 /// Transfer refusal. A poisoned queue must close its peer; a sink error is
@@ -93,98 +95,23 @@ struct Partition {
     resolved_through: u64,
 }
 
-/// One borrowed, N1-owned payload awaiting exact sent-frame reservation.
-pub struct QueuedGroup<'a> {
-    /// Stable partition, interest generation, exact tick and watermark.
-    pub header: GroupHeader,
-    /// Copied fixed R4 payload bytes.
-    pub payload: &'a [u8],
-    /// Partial state, lifecycle, result, event, generation or watermark prevents
-    /// coalescing this unit before submission.
-    pub mandatory: bool,
-}
-
-/// One finite peer's pre-submission units. Payload bytes are in one fixed
-/// backing allocation; metadata and chronological order are inline.
-pub struct UnsentQueue {
-    key: PeerKey,
-    payloads: Box<[u8]>,
+// Copying this small metadata is enough to preflight an entire capture batch;
+// the 111 KiB payload arena is never cloned or modified before all checks pass.
+#[derive(Clone, Copy)]
+struct QueueState {
     slots: [Option<Slot>; MAX_UNSENT_GROUPS],
     order: [u8; MAX_UNSENT_GROUPS],
     len: usize,
     partitions: [Option<Partition>; MAX_PARTITIONS],
     last_barrier_tick: u64,
-    transfer_in_progress: bool,
 }
 
-impl UnsentQueue {
-    /// Reserve the exact payload arena after validating baseline cursors.
-    /// No N1 queue allocation occurs when the capability is disabled.
-    pub fn from_baseline(key: PeerKey, seeds: &[PartitionSeed]) -> Result<Self, OutboundError> {
-        if key.match_id == [0; 16] || key.connection_epoch == 0 {
-            return Err(OutboundError::WrongIdentity);
-        }
-        if seeds.is_empty() || seeds.len() > MAX_PARTITIONS {
-            return Err(OutboundError::InvalidBaseline);
-        }
-        let mut partitions = [None; MAX_PARTITIONS];
-        for (i, seed) in seeds.iter().enumerate() {
-            if seed.interest_generation == 0
-                || seeds[..i]
-                    .iter()
-                    .any(|prior| prior.group_id == seed.group_id)
-                || seed.sample_tick != seeds[0].sample_tick
-            {
-                return Err(OutboundError::InvalidBaseline);
-            }
-            partitions[i] = Some(Partition {
-                group_id: seed.group_id,
-                interest_generation: seed.interest_generation,
-                last_tick: seed.sample_tick,
-                resolved_through: seed.resolved_through,
-            });
-        }
-        Ok(Self {
-            key,
-            payloads: vec![0; PAYLOAD_STORAGE_BYTES].into_boxed_slice(),
-            slots: [None; MAX_UNSENT_GROUPS],
-            order: [0; MAX_UNSENT_GROUPS],
-            len: 0,
-            partitions,
-            last_barrier_tick: seeds[0].sample_tick,
-            transfer_in_progress: false,
-        })
-    }
-
-    /// Number of retained, still-unsubmitted units.
-    pub fn len(&self) -> usize {
-        self.len
-    }
-    /// Exact peer and connection incarnation bound at baseline admission.
-    pub fn identity(&self) -> PeerKey {
-        self.key
-    }
-    /// Whether no unit is awaiting submission.
-    pub fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-    /// Fixed Rust owner bytes and exact payload arena, excluding allocator metadata.
-    pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>() + self.payloads.len()
-    }
-
-    /// Validate and copy a complete R4 payload at the authority publication
-    /// barrier. State-only units can replace only the last unit for their own
-    /// partition incarnation, and move to the chronological tail. Mandatory
-    /// bytes are never coalesced. No envelope sequence is assigned here.
-    pub fn capture(
+impl QueueState {
+    fn plan_capture(
         &mut self,
         payload: &[u8],
         validator: &impl OutboundValidator,
-    ) -> Result<(), OutboundError> {
-        if self.transfer_in_progress {
-            return Err(OutboundError::Poisoned);
-        }
+    ) -> Result<usize, OutboundError> {
         let group = r4::decode(payload).map_err(OutboundError::Framing)?;
         let index = self
             .partitions
@@ -248,8 +175,6 @@ impl UnsentQueue {
                 .position(Option::is_none)
                 .expect("free slot under capacity")
         };
-        let start = slot * r4::MAX_PAYLOAD_BYTES;
-        self.payloads[start..start + payload.len()].copy_from_slice(payload);
         self.slots[slot] = Some(Slot {
             header: group.header,
             len: payload.len() as u16,
@@ -269,6 +194,131 @@ impl UnsentQueue {
             resolved_through: group.header.resolved_through,
         });
         self.last_barrier_tick = group.header.commit_tick;
+        Ok(slot)
+    }
+}
+
+/// One borrowed, N1-owned payload awaiting exact sent-frame reservation.
+pub struct QueuedGroup<'a> {
+    /// Stable partition, interest generation, exact tick and watermark.
+    pub header: GroupHeader,
+    /// Copied fixed R4 payload bytes.
+    pub payload: &'a [u8],
+    /// Partial state, lifecycle, result, event, generation or watermark prevents
+    /// coalescing this unit before submission.
+    pub mandatory: bool,
+}
+
+/// One finite peer's pre-submission units. Payload bytes are in one fixed
+/// backing allocation; metadata and chronological order are inline.
+pub struct UnsentQueue {
+    key: PeerKey,
+    payloads: Box<[u8]>,
+    state: QueueState,
+    transfer_in_progress: bool,
+}
+
+impl UnsentQueue {
+    /// Reserve the exact payload arena after validating baseline cursors.
+    /// No N1 queue allocation occurs when the capability is disabled.
+    pub fn from_baseline(key: PeerKey, seeds: &[PartitionSeed]) -> Result<Self, OutboundError> {
+        if key.match_id == [0; 16] || key.connection_epoch == 0 {
+            return Err(OutboundError::WrongIdentity);
+        }
+        if seeds.is_empty() || seeds.len() > MAX_PARTITIONS {
+            return Err(OutboundError::InvalidBaseline);
+        }
+        let mut partitions = [None; MAX_PARTITIONS];
+        for (i, seed) in seeds.iter().enumerate() {
+            if seed.interest_generation == 0
+                || seeds[..i]
+                    .iter()
+                    .any(|prior| prior.group_id == seed.group_id)
+                || seed.sample_tick != seeds[0].sample_tick
+            {
+                return Err(OutboundError::InvalidBaseline);
+            }
+            partitions[i] = Some(Partition {
+                group_id: seed.group_id,
+                interest_generation: seed.interest_generation,
+                last_tick: seed.sample_tick,
+                resolved_through: seed.resolved_through,
+            });
+        }
+        Ok(Self {
+            key,
+            payloads: vec![0; PAYLOAD_STORAGE_BYTES].into_boxed_slice(),
+            state: QueueState {
+                slots: [None; MAX_UNSENT_GROUPS],
+                order: [0; MAX_UNSENT_GROUPS],
+                len: 0,
+                partitions,
+                last_barrier_tick: seeds[0].sample_tick,
+            },
+            transfer_in_progress: false,
+        })
+    }
+
+    /// Number of retained, still-unsubmitted units.
+    pub fn len(&self) -> usize {
+        self.state.len
+    }
+    /// Exact peer and connection incarnation bound at baseline admission.
+    pub fn identity(&self) -> PeerKey {
+        self.key
+    }
+    /// Whether no unit is awaiting submission.
+    pub fn is_empty(&self) -> bool {
+        self.state.len == 0
+    }
+    /// Fixed Rust owner bytes and exact payload arena, excluding allocator metadata.
+    pub fn reserved_capacity_bytes(&self) -> usize {
+        std::mem::size_of::<Self>() + self.payloads.len()
+    }
+
+    /// Validate and copy a complete R4 payload at the authority publication
+    /// barrier. State-only units can replace only the last unit for their own
+    /// partition incarnation, and move to the chronological tail. Mandatory
+    /// bytes are never coalesced. No envelope sequence is assigned here.
+    pub fn capture(
+        &mut self,
+        payload: &[u8],
+        validator: &impl OutboundValidator,
+    ) -> Result<(), OutboundError> {
+        if self.transfer_in_progress {
+            return Err(OutboundError::Poisoned);
+        }
+        let slot = self.state.plan_capture(payload, validator)?;
+        let start = slot * r4::MAX_PAYLOAD_BYTES;
+        self.payloads[start..start + payload.len()].copy_from_slice(payload);
+        Ok(())
+    }
+
+    /// Atomically preflight and capture up to four chronological groups.
+    /// Schema hooks run against a copy of small queue metadata; payload bytes
+    /// and live cursors remain unchanged on any refusal or hook unwind.
+    /// The caller still owns whole-tick schema and membership completeness.
+    pub fn capture_batch(
+        &mut self,
+        payloads: &[&[u8]],
+        validator: &impl OutboundValidator,
+    ) -> Result<(), OutboundError> {
+        if self.transfer_in_progress {
+            return Err(OutboundError::Poisoned);
+        }
+        if payloads.len() > MAX_PARTITIONS {
+            return Err(OutboundError::BatchCapacity);
+        }
+        let mut candidate = self.state;
+        let mut destinations = [0usize; MAX_PARTITIONS];
+        for (index, payload) in payloads.iter().enumerate() {
+            destinations[index] = candidate.plan_capture(payload, validator)?;
+        }
+        for (payload, slot) in payloads.iter().zip(destinations) {
+            let start = slot * r4::MAX_PAYLOAD_BYTES;
+            self.payloads[start..start + payload.len()].copy_from_slice(payload);
+        }
+        self.state = candidate;
         Ok(())
     }
 
@@ -278,15 +328,15 @@ impl UnsentQueue {
         if self.transfer_in_progress {
             return Err(OutboundError::Poisoned);
         }
-        if self.len == 0 {
+        if self.state.len == 0 {
             return Ok(None);
         }
         Ok(Some(self.next_unit_unchecked()))
     }
 
     fn next_unit_unchecked(&self) -> QueuedGroup<'_> {
-        let slot = self.order[0] as usize;
-        let meta = self.slots[slot].expect("ordered occupied slot");
+        let slot = self.state.order[0] as usize;
+        let meta = self.state.slots[slot].expect("ordered occupied slot");
         let start = slot * r4::MAX_PAYLOAD_BYTES;
         QueuedGroup {
             header: meta.header,
@@ -306,7 +356,7 @@ impl UnsentQueue {
         if self.transfer_in_progress {
             return Err(TransferError::Poisoned);
         }
-        if self.len == 0 {
+        if self.state.len == 0 {
             return Ok(false);
         }
         // If the external sink unwinds after an uncertain publication, this
@@ -317,10 +367,10 @@ impl UnsentQueue {
             self.transfer_in_progress = false;
             return Err(TransferError::Sink(error));
         }
-        let slot = self.order[0] as usize;
-        self.order.copy_within(1..self.len, 0);
-        self.len -= 1;
-        self.slots[slot] = None;
+        let slot = self.state.order[0] as usize;
+        self.state.order.copy_within(1..self.state.len, 0);
+        self.state.len -= 1;
+        self.state.slots[slot] = None;
         self.transfer_in_progress = false;
         Ok(true)
     }

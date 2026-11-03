@@ -236,11 +236,12 @@ fn capture_publication(
                 });
             }
         }
+        let mut payloads = [[0u8; r4::MAX_PAYLOAD_BYTES]; 4];
+        let mut lengths = [0usize; 4];
         for (partition, partition_actors) in actors.iter().enumerate() {
             let controlled = partition == peer_index;
             let one = outcome.filter(|_| controlled);
-            let mut payload = [0u8; r4::MAX_PAYLOAD_BYTES];
-            let len = r4::encode(
+            lengths[partition] = r4::encode(
                 GroupInput {
                     header: GroupHeader {
                         group_id: partition as u32 + 1,
@@ -253,18 +254,19 @@ fn capture_publication(
                     results: one.as_slice(),
                     events: &[],
                 },
-                &mut payload,
+                &mut payloads[partition],
             )
             .unwrap();
-            queue
-                .capture(
-                    &payload[..len],
-                    &PartitionSchema {
-                        controlled_group: peer.0 as u32,
-                    },
-                )
-                .unwrap();
         }
+        let batch: [&[u8]; 4] = std::array::from_fn(|index| &payloads[index][..lengths[index]]);
+        queue
+            .capture_batch(
+                &batch,
+                &PartitionSchema {
+                    controlled_group: peer.0 as u32,
+                },
+            )
+            .unwrap();
     }
 }
 
@@ -407,7 +409,7 @@ fn measure_real_w1_to_n1_result_burst_path() {
 fn measure_real_w1_to_n1_path<const RESULTS: bool>(kind: &str) {
     use std::hint::black_box;
 
-    const WINDOWS: u64 = 2_000;
+    const WINDOWS: u64 = 10_000;
     const WARMUP_WINDOWS: u64 = 10;
     let origin = Instant::now();
     let mut host = host(origin);

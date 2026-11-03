@@ -2243,12 +2243,13 @@
         "evidence": "../evidence/integration/N1-R4-RESULT-PROGRESS-2026-11-03.md"
       },
       "unsent_payload_queue": {
-        "implementation": "registered thrum-network 16-slot exact R4 payload arena, inline ordered metadata, complete-partition-only state coalescing and poison-on-unwind transfer boundary",
-        "functional_validation": "seven focused tests cover owned bytes, chronology, partial-state and mandatory preservation, P+1 refusal, retryable no-mutation sink error and uncertain-transfer poison; independent review found and corrected three contract faults and found no remaining transfer issue",
+        "implementation": "registered thrum-network 16-slot exact R4 payload arena, inline ordered metadata, complete-partition-only state coalescing, atomic four-group metadata preflight and poison-on-unwind transfer boundary",
+        "functional_validation": "ten focused queue tests cover owned bytes, chronology, partial-state and mandatory preservation, P+1 refusal, retryable no-mutation sink error, uncertain-transfer poison, batch capacity/schema/framing refusal, hook unwind and repeated-slot exact length; independent review found no batch alias or atomicity defect",
         "platform_performance": "seven Apple M3 Max release-process samples after peer-key binding: median 1939.0 ns per four-peer three-tick state-only window with 48 small captures and 16 no-op transfers; four queues reserve 447328 Rust bytes. No 32-actor mandatory burst, allocator-call, RSS, W1 callback, sent-ledger or transport measurement",
-        "scope": "Pre-submission payload bytes are bound to one match, peer and connection epoch. Game validator must certify complete partition state and dependency closure; the separate queue-to-sent method now reserves ordinary frame bytes/ACK metadata before sequence assignment and refuses a mismatched ledger. No W1 adapter, full event history, baseline ACK ledger or full bandwidth/whole-callback qualification.",
+        "scope": "Pre-submission payload bytes are bound to one match, peer and connection epoch. The four-group capture batch preflights queue metadata without cloning its 111 KiB payload arena; game validator and producer still owe complete partition/dependency closure. The separate queue-to-sent method reserves ordinary frame bytes/ACK metadata before sequence assignment and refuses a mismatched ledger. A test-only W1 adapter uses the batch; production whole-peer owner, full event history, baseline ACK ledger and full bandwidth/whole-callback qualification remain open.",
         "evidence": "../evidence/integration/N1-UNSENT-QUEUE-2026-11-03.md",
-        "isolated_cost_samples": "../evidence/integration/N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv"
+        "isolated_cost_samples": "../evidence/integration/N1-UNSENT-QUEUE-COST-SAMPLES-2026-11-03.csv",
+        "atomic_batch_evidence": "../evidence/integration/N1-ATOMIC-CAPTURE-BATCH-2026-11-03.md"
       },
       "authority_result_retirement": {
         "implementation": "registered thrum-network bounded 256-result server retirement frontier with match, peer and connection-epoch key; independent admitted-higher identities and one occupied exact receipt",
@@ -2275,13 +2276,14 @@
         "isolated_cost_samples": "../evidence/integration/N1-QUEUE-SENT-TRANSFER-COST-SAMPLES-2026-11-03.csv"
       },
       "w1_to_n1_capture_fixture": {
-        "implementation": "test-only complete-partition projection from real W1 HostPublication snapshots into four peer-bound unsent queues and ordinary sent ledgers; production thrum-network retains no thrum-core dependency",
+        "implementation": "test-only complete-partition projection from real W1 HostPublication snapshots through atomic four-group capture into four peer-bound unsent queues and ordinary sent ledgers; production thrum-network retains no thrum-core dependency",
         "functional_validation": "one no-socket fixture changes W1 on nine consecutive 60 Hz ticks, proves the four controlled actors inhabit their result partitions, advances with peer 4 holding unacknowledged frames beyond eight snapshot pages, refuses wrong authority and stale epoch without retiring its host result, then retires exact ledger and host histories on valid ACK; full repository check passes",
-        "platform_performance": "seven Apple M3 Max fresh release-process samples: median 49903.8 ns per three-tick idle state-only window and 69288.0 ns for four actual inputs/results on each of three ticks, over 2000 measured windows per process. Both include W1 callbacks, complete 128-cell projection to 48 R4 captures, queue coalescing, exact framed writes and full byte checksum; the result probe also invokes authority result retirement. Four queues plus ledgers reserve 1169376 Rust bytes. No complete lifecycle/event burst, allocator-call count, RSS, transport or whole-game/device tails",
+        "platform_performance": "current atomic batch path, seven Apple M3 Max fresh release-process samples over 10000 measured windows per process: median 54892.9 ns per three-tick idle state-only window and 76887.7 ns for four actual inputs/results on each of three ticks. Same-length single-group reference medians are 54428.4/75912.9 ns; sequential observations do not establish a causal speed difference. Both paths include W1 callbacks, 128-cell projection, 48 R4 captures, queue coalescing, exact writes and full byte checksum; the result probe invokes authority result retirement. Four queues plus ledgers reserve 1169376 Rust bytes; the batch fixture also uses 27776 transient stack bytes per peer capture. No complete lifecycle/event burst, allocator-call count, RSS, transport or whole-game/device tails",
         "scope": "Selected local fixture only. The W1-to-R4 mapping, complete-state game validator and four-peer schedule are hardcoded in an integration test, not reusable production admission. No authenticated wire receipt, client replica, event/lifecycle closure, unified baseline session or socket path.",
         "evidence": "../evidence/integration/N1-W1-CAPTURE-2026-11-03.md",
         "isolated_cost_samples": "../evidence/integration/N1-W1-CAPTURE-COST-SAMPLES-2026-11-03.csv",
-        "result_traffic_cost_samples": "../evidence/integration/N1-W1-RESULT-BURST-COST-SAMPLES-2026-11-03.csv"
+        "result_traffic_cost_samples": "../evidence/integration/N1-W1-RESULT-BURST-COST-SAMPLES-2026-11-03.csv",
+        "current_atomic_batch_cost_samples": "../evidence/integration/N1-ATOMIC-CAPTURE-BATCH-COST-SAMPLES-2026-11-03.csv"
       },
       "baseline_physical_staging_oracle": {
         "implementation": "private test-only 65944-byte fixed Begin/End and two-chunk physical frame arena with eight logical chunk entries and retained sequence tombstones",
