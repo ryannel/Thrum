@@ -2127,12 +2127,13 @@
       "outbound_cadence_design": {
         "design": "research/N1-OUTBOUND-CADENCE-2026-11-03.md",
         "decision": "provisional",
-        "implementation": "private selected-inline cadence and sent-frame ACK models only",
-        "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two cadence model tests preserve mandatory chronology and reject partial-update coalescing. Two sent-frame model tests stage an eight-chunk replacement behind a rejected sequence and refuse omitted mandatory IDs; no production multi-group oracle is run",
+        "implementation": "private selected-inline cadence, sent-frame ACK and composite replica models only",
+        "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two cadence model tests preserve mandatory chronology and reject partial-update coalescing. Two sent-frame model tests stage an eight-chunk replacement behind a rejected sequence and refuse omitted mandatory IDs. Three composite replica model tests admit same-tick partitions with distinct sample ages and atomically refuse stale, colliding or cross-partition reassigned state; no production N1 owner is run",
         "platform_performance": "ordinary 20 Hz R4 byte model is a lower-bound scenario; mandatory burst and four-peer CPU/RSS unmeasured",
-        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. Stable baseline partition identity, per-partition interest generation, envelope submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are specified but unimplemented. The private ledger model verifies two chunk credits and exact supersession arithmetic, not wire validation, concurrent queues or a runtime ACK owner. The cadence model supplies its own completeness marker and separate replica reference lanes; schema-checked completeness, one confirmed multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
+        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. Stable baseline partition identity, per-partition interest generation, envelope submission sequence, exact ACK ledger, bounded baseline-reserved frame bytes, independent chunk ACK and baseline supersession are specified but unimplemented. The private ledger model verifies two chunk credits and exact supersession arithmetic, not wire validation, concurrent queues or a runtime ACK owner. The cadence model supplies its own completeness marker and separate replica reference lanes. A private clone-backed composite replica model verifies same-tick partitions, independent sample ages and assignment retained after visibility loss; schema-checked completeness, a production multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
         "model_oracle_evidence": "../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md",
-        "baseline_ack_oracle_evidence": "../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md"
+        "baseline_ack_oracle_evidence": "../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md",
+        "multi_group_replica_oracle_evidence": "../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md"
       }
     }
   ],
