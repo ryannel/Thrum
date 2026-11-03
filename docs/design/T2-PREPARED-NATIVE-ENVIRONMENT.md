@@ -76,20 +76,22 @@ must not silently restore global metadata access to make a build pass.
 ## macOS runtime boundary
 
 The local profile still permits named system-library, preferences and
-configuration subtrees and global file metadata. `dyld` can resolve libraries
+configuration subtrees. The initial global file-metadata grant has been
+removed in the local candidate, but metadata and data reads remain available
+within those selected subtrees. `dyld` can resolve libraries
 through the OS shared cache; visible library paths alone are not a complete
 runtime-byte inventory. The first ready build therefore needs a human-reviewed
 host-runtime trust policy and exact selected OS/runtime evidence alongside the
 official-HTTPS tool/dependency manifest. Until then the candidate may measure
 and narrow permissions, but may not turn a sandbox success into readiness.
 
-The first isolation proof will generate ancestor metadata grants only for
-selected input/output/cache/tool/support/runtime paths. It will explicitly
-select and verify any Xcode `libxcrun.dylib` or equivalent support file the
-link step needs; a probe of the Command Line Tools tree is not proof that its
-bytes were loaded. It will deny an existing unrelated file and directory
-metadata request while allowing selected controls, then run A/B under the
-same generated policy. Unsupported Xcode discovery fails rather than widening
+The first isolation proof generates additional ancestor metadata grants only
+for selected input/output/cache/tool/support/runtime paths. It selects Xcode
+`libxcrun.dylib` support paths for reads, denies existing unrelated file and
+directory metadata requests while allowing selected controls, and runs A/B
+under the generated policy. A probe of the Command Line Tools tree is not
+proof that its bytes were loaded, and the support files are not yet selected
+by immutable hashes. Unsupported Xcode discovery must fail rather than widen
 the read grant. The selected release matcher and this policy generator must
 consume one cold environment identity before publication is possible.
 
@@ -122,9 +124,10 @@ Prove in order:
    support/library byte after preparation and during compilation: a ready
    mechanism must prevent either mutation from changing the selected inputs.
 2. Remove global metadata permission. Positive selected reads and negative
-   existing-file/ancestor probes must pass under the generated policy; A
+   existing-file/directory probes must pass under the generated policy; A
    compiles, invalid B fails, and A still executes the same authority/replica
-   game. Keep the candidate unready while host-runtime reads remain broad.
+   game. This local candidate proof has passed; keep it unready while
+   host-runtime reads remain broad.
 3. Bound Cargo stdout/stderr, time and descendant lifetime; audit successful,
    failed and interrupted receipts. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.

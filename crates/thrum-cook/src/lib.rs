@@ -1020,6 +1020,8 @@ mod tests {
             cache.assert_tool_bytes();
             cache.assert_reusable_source(checkout, a_materialized.path());
         }
+        let native_tools =
+            std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").map(|_| select_native_sandbox_tools());
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
         let built_a = cargo_build_headless(
@@ -1028,6 +1030,7 @@ mod tests {
             checkout,
             private_cargo_home.as_deref(),
             rustc_wrapper.as_deref(),
+            native_tools.as_ref(),
         );
         let build_elapsed = started.elapsed();
         assert!(
@@ -1120,6 +1123,7 @@ mod tests {
             checkout,
             private_cargo_home.as_deref(),
             rustc_wrapper.as_deref(),
+            native_tools.as_ref(),
         );
         assert!(!built_b.status.success());
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
@@ -1666,13 +1670,16 @@ mod tests {
         checkout: &Path,
         private_cargo_home: Option<&Path>,
         rustc_wrapper: Option<&Path>,
+        native_tools: Option<&NativeSandboxTools>,
     ) -> std::process::Output {
         fs::create_dir_all(output).unwrap();
         let output = fs::canonicalize(output).unwrap();
         let input = fs::canonicalize(input).unwrap();
         let sandbox = std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some();
         let mut command = if sandbox {
-            sandboxed_cargo_command(&input, &output, checkout, private_cargo_home)
+            let selected = native_tools.expect("sandbox needs one selected tool environment");
+            selected.assert_files_unchanged();
+            sandboxed_cargo_command(&input, &output, checkout, private_cargo_home, selected)
         } else {
             Command::new(env!("CARGO"))
         };
@@ -1694,7 +1701,7 @@ mod tests {
         } else {
             command.env("RUSTC_WRAPPER", "");
         }
-        command
+        let result = command
             .current_dir(input)
             .args([
                 "build",
@@ -1710,32 +1717,68 @@ mod tests {
             .env("CARGO_INCREMENTAL", "0")
             .env("CARGO_NET_OFFLINE", "true")
             .output()
-            .unwrap()
+            .unwrap();
+        if let Some(selected) = native_tools {
+            selected.assert_files_unchanged();
+        }
+        result
     }
 
     #[cfg(target_os = "macos")]
-    fn sandboxed_cargo_command(
-        input: &Path,
-        output: &Path,
-        checkout: &Path,
-        private_cargo_home: Option<&Path>,
-    ) -> Command {
-        fs::create_dir_all(output.join("tmp")).unwrap();
-        let output = fs::canonicalize(output).unwrap();
-        let checkout = fs::canonicalize(checkout).unwrap();
-        let input = fs::canonicalize(input).unwrap();
-        let cargo_home = private_cargo_home
-            .map(Path::to_path_buf)
-            .unwrap_or_else(|| {
-                std::env::var_os("CARGO_HOME")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|| {
-                        PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo")
-                    })
-            });
-        let cargo_home = fs::canonicalize(cargo_home).unwrap();
+    struct NativeSandboxTools {
+        toolchain: PathBuf,
+        linker: PathBuf,
+        linker_root: PathBuf,
+        sdk: PathBuf,
+        linker_variable: String,
+        support: Vec<PathBuf>,
+        selected_files: Vec<(PathBuf, String)>,
+    }
+
+    #[cfg(target_os = "macos")]
+    impl NativeSandboxTools {
+        fn assert_files_unchanged(&self) {
+            for (path, hash) in &self.selected_files {
+                assert!(path.is_file() && !path.is_symlink());
+                assert_eq!(
+                    file_sha256_hex(path),
+                    *hash,
+                    "selected tool changed: {}",
+                    path.display()
+                );
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    struct NativeSandboxTools;
+
+    #[cfg(not(target_os = "macos"))]
+    impl NativeSandboxTools {
+        fn assert_files_unchanged(&self) {
+            panic!("macOS sandbox qualification only");
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn select_native_sandbox_tools() -> NativeSandboxTools {
         let toolchain =
             fs::canonicalize(Path::new(env!("CARGO")).parent().unwrap().parent().unwrap()).unwrap();
+        let rustc_version = Command::new(toolchain.join("bin/rustc"))
+            .arg("-vV")
+            .output()
+            .unwrap();
+        assert!(rustc_version.status.success());
+        let rustc_version = String::from_utf8(rustc_version.stdout).unwrap();
+        let host = rustc_version
+            .lines()
+            .find_map(|line| line.strip_prefix("host: "))
+            .unwrap();
+        assert!(host.ends_with("-apple-darwin"));
+        let linker_variable = format!(
+            "CARGO_TARGET_{}_LINKER",
+            host.to_ascii_uppercase().replace('-', "_")
+        );
         let developer = std::env::var_os("DEVELOPER_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
@@ -1774,8 +1817,8 @@ mod tests {
                 path.extension()
                     .is_some_and(|extension| extension == "xctoolchain")
             })
-            .unwrap_or(&developer);
-        let profile = output.join("build.sb");
+            .unwrap_or(&developer)
+            .to_path_buf();
         let mut support = vec![developer.join("usr/lib/libxcrun.dylib")];
         let command_line_tools =
             PathBuf::from("/Library/Developer/CommandLineTools/usr/lib/libxcrun.dylib");
@@ -1791,15 +1834,83 @@ mod tests {
                 file.display()
             );
         }
+        let selected_files = std::iter::once(&linker)
+            .chain(support.iter())
+            .map(|path| (path.clone(), file_sha256_hex(path)))
+            .collect();
+        NativeSandboxTools {
+            toolchain,
+            linker,
+            linker_root,
+            sdk,
+            linker_variable,
+            support,
+            selected_files,
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn select_native_sandbox_tools() -> NativeSandboxTools {
+        panic!("macOS sandbox qualification only");
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn selected_native_file_recheck_refuses_changed_or_aliased_bytes() {
+        let fixture = Fixture::new();
+        let file = fixture.root().join("selected-tool");
+        fs::write(&file, b"initial tool bytes").unwrap();
+        let selection = NativeSandboxTools {
+            toolchain: PathBuf::new(),
+            linker: PathBuf::new(),
+            linker_root: PathBuf::new(),
+            sdk: PathBuf::new(),
+            linker_variable: String::new(),
+            support: Vec::new(),
+            selected_files: vec![(file.clone(), file_sha256_hex(&file))],
+        };
+        selection.assert_files_unchanged();
+        fs::write(&file, b"changed tool bytes").unwrap();
+        assert!(std::panic::catch_unwind(|| selection.assert_files_unchanged()).is_err());
+        fs::remove_file(&file).unwrap();
+        let other = fixture.root().join("other-tool");
+        fs::write(&other, b"initial tool bytes").unwrap();
+        std::os::unix::fs::symlink(&other, &file).unwrap();
+        assert!(std::panic::catch_unwind(|| selection.assert_files_unchanged()).is_err());
+    }
+
+    #[cfg(target_os = "macos")]
+    fn sandboxed_cargo_command(
+        input: &Path,
+        output: &Path,
+        checkout: &Path,
+        private_cargo_home: Option<&Path>,
+        selected: &NativeSandboxTools,
+    ) -> Command {
+        fs::create_dir_all(output.join("tmp")).unwrap();
+        let output = fs::canonicalize(output).unwrap();
+        let checkout = fs::canonicalize(checkout).unwrap();
+        let input = fs::canonicalize(input).unwrap();
+        let cargo_home = private_cargo_home
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| {
+                std::env::var_os("CARGO_HOME")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| {
+                        PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo")
+                    })
+            });
+        let cargo_home = fs::canonicalize(cargo_home).unwrap();
+        let profile = output.join("build.sb");
         let paths = SandboxPaths {
             input: &input,
             output: &output,
             cargo_home: &cargo_home,
-            toolchain: &toolchain,
-            linker_root,
-            sdk: &sdk,
+            toolchain: &selected.toolchain,
+            linker_root: &selected.linker_root,
+            sdk: &selected.sdk,
         };
-        fs::write(&profile, headless_sandbox_profile(paths, &support)).unwrap();
+        fs::write(&profile, headless_sandbox_profile(paths, &selected.support)).unwrap();
         let blocked_read = sandbox_command(&profile, paths, "/bin/cat")
             .arg(checkout.join("Cargo.toml"))
             .output()
@@ -1878,33 +1989,18 @@ mod tests {
             }
         }
         let mut command = sandbox_command(&profile, paths, env!("CARGO"));
-        let rustc_version = Command::new(toolchain.join("bin/rustc"))
-            .arg("-vV")
-            .output()
-            .unwrap();
-        assert!(rustc_version.status.success());
-        let rustc_version = String::from_utf8(rustc_version.stdout).unwrap();
-        let host = rustc_version
-            .lines()
-            .find_map(|line| line.strip_prefix("host: "))
-            .unwrap();
-        assert!(host.ends_with("-apple-darwin"));
-        let linker_variable = format!(
-            "CARGO_TARGET_{}_LINKER",
-            host.to_ascii_uppercase().replace('-', "_")
-        );
         command
             .env_clear()
             .env("HOME", cargo_home.parent().unwrap())
             .env("CARGO_HOME", &cargo_home)
-            .env("RUSTC", toolchain.join("bin/rustc"))
+            .env("RUSTC", selected.toolchain.join("bin/rustc"))
             .env(
                 "PATH",
-                format!("{}:/usr/bin:/bin", toolchain.join("bin").display()),
+                format!("{}:/usr/bin:/bin", selected.toolchain.join("bin").display()),
             )
             .env("RUSTFLAGS", "")
-            .env(linker_variable, linker)
-            .env("SDKROOT", sdk)
+            .env(&selected.linker_variable, &selected.linker)
+            .env("SDKROOT", &selected.sdk)
             .env("LC_ALL", "C")
             .env("TMPDIR", output.join("tmp"));
         command
@@ -1916,6 +2012,7 @@ mod tests {
         _output: &Path,
         _checkout: &Path,
         _private_cargo_home: Option<&Path>,
+        _selected: &NativeSandboxTools,
     ) -> Command {
         panic!("macOS sandbox qualification only");
     }

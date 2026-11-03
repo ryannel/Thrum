@@ -1,6 +1,6 @@
 # Narrow macOS compiler metadata candidate
 
-3 November 2026. **One local ARM64 A/B proof; `buildReady:false`.** This tests
+3 November 2026. **Local ARM64 A/B candidate; `buildReady:false`.** This tests
 the first isolation step in the [prepared native environment design](../../design/T2-PREPARED-NATIVE-ENVIRONMENT.md).
 It does not select a trusted release, retain immutable tool roots or publish a
 target build.
@@ -13,7 +13,8 @@ those paths; the earlier selected data-read subtrees retain their read
 permissions, including metadata. It selects the active
 Xcode developer tree's `libxcrun.dylib` and, when installed, the Command Line
 Tools copy as explicit file reads. An absent or aliased selected support file
-refuses. These are path selections, not yet immutable byte identities.
+refuses. The selected Clang and support files are checked by hash around each
+build, but their installed bytes are not retained immutably.
 
 The fixture runs an allowed `/private/etc/hosts` data and metadata control,
 then requires an existing `/usr/share` or `/System/Applications` file to fail
@@ -37,6 +38,18 @@ source and private-cache inventories were unchanged. Reproduce from this
 repository with the command in [the receipt proof](F4-RUSTC-RECEIPTS.md#qualification).
 The test needs macOS permission to apply `sandbox-exec` and an installed
 Xcode/Command Line Tools layout.
+
+A subsequent candidate refactor selects the Rust toolchain path, Rust host
+linker variable, Xcode Clang, linker root, SDK and support paths once before A.
+The same in-memory selection drives both A and B sandbox commands. It hashes
+Clang and the selected support files at selection and rechecks their ordinary
+path and byte identity before and after each compile. A focused macOS test
+refuses a changed file and a selected path replaced with a symlink. The
+opt-in A/B run passed again with five compiles and three probes; its A compile
+took 3,329 ms under uncontrolled host load. This is path/byte drift detection
+at the two check points, not a held immutable snapshot or complete release
+selection. Cargo/Rustc and the private cache retain their separate existing
+checks; the SDK root is still only a selected path in this fixture.
 
 The remaining allowed system subtrees are broad, and neither the Xcode support
 files nor host-runtime bytes are selected by a reviewed release manifest.
