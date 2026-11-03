@@ -335,6 +335,10 @@ pub struct CompiledGraph {
 
 impl FrameGraph {
     /// Add a resource; its identity is local to this graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the resource has no valid units.
     pub fn resource(
         &mut self,
         descriptor: ResourceDescriptor,
@@ -345,7 +349,7 @@ impl FrameGraph {
         }
         let id = ResourceId {
             index: self.resources.len(),
-            owner: self.owner.clone(),
+            owner: Arc::clone(&self.owner),
         };
         self.resources.push(Resource { descriptor, scope });
         Ok(id)
@@ -379,6 +383,11 @@ impl FrameGraph {
     }
     /// Validate closure and initialization, derive hazards and reuse. This is
     /// preparation work (quadratic in declared accesses), never per-instance work.
+    ///
+    /// # Errors
+    ///
+    /// Returns a graph error for invalid resource identity, access, pipeline
+    /// closure or uninitialized reads.
     pub fn compile(
         &self,
         generation: u64,
@@ -474,7 +483,7 @@ impl FrameGraph {
                 bounds.map(|(first, last)| Lifetime {
                     resource: ResourceId {
                         index: id,
-                        owner: self.owner.clone(),
+                        owner: Arc::clone(&self.owner),
                     },
                     first,
                     last,

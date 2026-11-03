@@ -75,6 +75,10 @@ pub struct TextureClasses {
 }
 impl TextureClasses {
     /// Check order, dimensions, mips and queried device limits before allocation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an ABI error for an invalid class or insufficient device limits.
     pub fn new(
         arrays: [TextureArrayDescriptor; 4],
         limits: &wgpu::Limits,
@@ -102,6 +106,10 @@ impl TextureClasses {
         Ok(Self { arrays })
     }
     /// Four 1×1 default-only arrays used by the synthetic diagnostic.
+    ///
+    /// # Errors
+    ///
+    /// Returns an ABI error if the device cannot support the default classes.
     pub fn defaults(limits: &wgpu::Limits) -> Result<Self, AbiError> {
         Self::new(
             [
@@ -160,6 +168,10 @@ impl Default for MaterialRecord {
 }
 impl MaterialRecord {
     /// Validate semantics and encode the exact shared 80-byte record.
+    ///
+    /// # Errors
+    ///
+    /// Returns an ABI error if a factor or texture layer is invalid.
     pub fn pack(&self, textures: &TextureClasses) -> Result<[u8; MATERIAL_BYTES], AbiError> {
         if !self.base_rgba.iter().all(|x| unit(*x))
             || !self.emissive_cutoff[..3]
@@ -220,6 +232,10 @@ impl InstanceRecord {
         }
     }
     /// Check finite transforms and indexed material bounds before packing.
+    ///
+    /// # Errors
+    ///
+    /// Returns an ABI error for a nonfinite transform or invalid material index.
     pub fn pack(&self, materials: u32) -> Result<[u8; INSTANCE_BYTES], AbiError> {
         if self.ids[1] >= materials {
             return Err(AbiError::MaterialIndex);
@@ -270,6 +286,10 @@ pub enum AbiError {
 
 /// Validate storage-table sizes before allocation, including the queried binding
 /// size limit. No truncation, implicit chunking or per-object uniform fallback.
+///
+/// # Errors
+///
+/// Returns an ABI error if either table cannot fit the device limits.
 pub fn table_bytes(
     materials: usize,
     instances: usize,
