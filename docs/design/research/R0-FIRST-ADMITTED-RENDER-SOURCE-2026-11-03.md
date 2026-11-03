@@ -59,6 +59,12 @@ source-error and shader path are proved. An absent map binds the neutral typed
 texture but the flat-normal shader path must not evaluate a nonexistent
 tangent basis. The geometric normal is derived from winding; an independently
 authored flat-normal vector cannot override the source plane predicate.
+Material factor/texel composition follows [RENDER-SPEC §2](../RENDER-SPEC.md#2-material-closure-and-binding-abi):
+white bound emissive and ORM `(1,1,1)` are multiplicative identities, while
+native default emissive and metallic factors are zero. F3 validates authored
+factor/texture domains; F4 derives cooked effective extrema and pins the
+material-semantic/evaluator revision. An absent texture reference differs from
+an unresolved or wrong-type present reference, which F3 refuses.
 
 ## Cook and certificate identity
 

@@ -259,6 +259,11 @@ histories through the same owner-directed mechanism; resetting V4 alone is insuf
 One scene light registry defines source geometry, spectrum/colour/intensity convention and transform/time. Environment
 providers supply illumination and attenuation; drawing a sky is optional. Materials expose a selected shading closure
 and surface properties; a style policy may alter that closure explicitly rather than hide multipliers in every feature.
+V3 owns versioned composition of material factors, decoded textures and
+absent-map semantics. The [metallic-roughness equations](RENDER-SPEC.md#2-material-closure-and-binding-abi)
+make bound missing textures multiplicative identities while native factor
+defaults carry non-emitting/dielectric meaning. Their occlusion-strength term
+modulates selected indirect light only, not direct transport or emission.
 Linear scene-referred colour is kept separate from display transforms; V4 owns exposure/tone mapping/output encoding.
 W1 owns authored light identity/source descriptors and E1 owns its celestial/environment drivers. V3 owns their
 render transport evaluation. A headless physical surface model uses a declared E1 irradiance/thermal provider and

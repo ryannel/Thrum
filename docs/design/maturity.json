@@ -222,7 +222,7 @@
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact explicit-setup/type registration and requirement validation, finite target/tier shader closure, keyed model bindings, supported presentation transitions and cost model; no general provider search by default."
@@ -662,7 +662,7 @@
       },
       "initial_specifications": {
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Cook formats, target products, crash-recovery and quota adapter details.",
@@ -1356,7 +1356,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Pass/resource graph allocation, shader build and backend feature mapping."
@@ -1399,7 +1399,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Draw/instance layouts, projected bounds/LOD error and CPU/GPU culling details."
@@ -1452,7 +1452,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Material closure/layering, clustered bins, shadow/probe update and transparency transport."
@@ -1495,7 +1495,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Spatial AA/display transform baseline; temporal input/validity and provider-specific filters."
@@ -1588,7 +1588,7 @@
       },
       "initial_specifications": {
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Provider schemas and shared field/force/transport couplings before dependent implementation."
@@ -1665,7 +1665,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Scattering closure/LUT parameterization, source lighting and bounded ray segments."
@@ -1708,7 +1708,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557"
+        "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling."
@@ -2127,7 +2127,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "35638277f4abe5e487d9820c65ac8a07fc7238b4aaf5af0e815085dce3865cb3",
+  "contract_sha256": "99db31a8d93ef6f27245689cf0f8923f2669c5d130689af55922b33fc554fb73",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -2872,11 +2872,11 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "711c8855b921c00ed0a5dfdf15d261c868c5858099f9f26844b2c11f48799b9a",
     "contract_revision": "C4",
-    "contract_sha256": "35638277f4abe5e487d9820c65ac8a07fc7238b4aaf5af0e815085dce3865cb3",
+    "contract_sha256": "99db31a8d93ef6f27245689cf0f8923f2669c5d130689af55922b33fc554fb73",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-      "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557",
+      "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
     },
@@ -3253,7 +3253,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "3f14950f81c5b7e5bd0c64ccfb66612da40ffb812c81b0bb79bf01b26ef38117",
-      "CONTRACTS.md": "35638277f4abe5e487d9820c65ac8a07fc7238b4aaf5af0e815085dce3865cb3",
+      "CONTRACTS.md": "99db31a8d93ef6f27245689cf0f8923f2669c5d130689af55922b33fc554fb73",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -3269,7 +3269,7 @@
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "README.md": "a0b7fccb416abb4dfbaccf100db390b58fdc9c2a61013f3f4129591f24e3af5a",
-      "RENDER-SPEC.md": "522519e26ce8b03be7064b52226771de65f998e23928378b6baf88a8acd5f557",
+      "RENDER-SPEC.md": "b06ac65e2318b5f793452274dc066dba38bc708d1f99fd12db6a20b98343ce5e",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
       "SKILL-FORWARD-REVIEW.md": "63b02385a26c07a826cbbd050fc11480f512b18d692b6f395fd82d39219a76ce",
