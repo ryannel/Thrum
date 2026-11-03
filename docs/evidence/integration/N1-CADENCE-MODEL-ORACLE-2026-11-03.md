@@ -12,7 +12,8 @@ with state 7, updates it to 8 and despawns it. The private model stages
 committed tick groups without retaining snapshots, coalesces the first
 partition's three **complete** state-only replacements to tick 3, and emits
 the second partition's tick-1, tick-2 and tick-3 units in order. The two
-tick-3 groups share a commit tick and receive distinct contiguous wire IDs.
+tick-3 groups share a commit tick and receive distinct contiguous model
+envelope sequences; their partition identities stay stable.
 The test applies each partition to an independent reference `Replica` lane,
 checks the transient after each mandatory transition and compares final
 state with W1. A separate counterexample stages partial updates to
@@ -30,7 +31,8 @@ raising the watermark to 8. Tick 6 carries the ordinary full sample. The
 reference replica admits all three units, their individually resolved
 results, event link and watermarks. An empty unit for the other partition
 does not produce a wire group. The two release windows emit four units each,
-with wire IDs 1–8; the final boundary sample is within its tick-6 unit.
+with model envelope sequences 1–8; the final boundary sample is within its
+tick-6 unit.
 For every result-bearing unit, the test independently reads the controller
 from the committed W1 snapshot at that tick and requires exactly one
 matching full controller update. Removing the unchanged controller record
