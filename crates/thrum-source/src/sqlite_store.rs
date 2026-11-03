@@ -70,6 +70,7 @@ thread_local! {
     static CLEANUP_SLICE_STATS: Cell<(u64, u64, u64)> = const { Cell::new((0, 0, 0)) };
     static BEFORE_APPEND_SQL: RefCell<Option<BlobSqlHook>> = const { RefCell::new(None) };
     static BEFORE_CLEANUP_SQL: RefCell<Option<BlobSqlHook>> = const { RefCell::new(None) };
+    static AFTER_CLEANUP_COMMIT: RefCell<Option<BlobSqlHook>> = const { RefCell::new(None) };
 }
 
 #[cfg(test)]
@@ -2099,6 +2100,8 @@ impl SqliteStoreCore {
                 return Err(StoreError::StaleBlobWriter);
             }
             tx.commit()?;
+            #[cfg(test)]
+            AFTER_CLEANUP_COMMIT.with(|pending| run_blob_sql_hook(pending, hash, index));
         }
     }
 
@@ -4841,6 +4844,221 @@ fn accepted_malformed_partial_cleanup_resumes_after_sql_failure() {
     );
     b_pin.close().unwrap();
     a_pin.close().unwrap();
+}
+
+#[test]
+fn accepted_kill_mid_large_cleanup_child() {
+    let Some(directory) = std::env::var_os("THRUM_TEST_ACCEPTED_LARGE_CLEANUP_KILL_DIR") else {
+        return;
+    };
+    let marker =
+        PathBuf::from(std::env::var_os("THRUM_TEST_ACCEPTED_LARGE_CLEANUP_KILL_MARKER").unwrap());
+    let fixture = std::mem::ManuallyDrop::new(Fixture(PathBuf::from(directory)));
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    // The parent has already written master.bin and retained its own B stage.
+    // Reconstruct the same declared tree without trying to stage a three-file
+    // A source while that fourth file exists in the source root.
+    let declared = [
+        "master.bin",
+        "project.json",
+        "scenes/main.scene.json",
+        "schemas/history.registry.json",
+    ]
+    .map(|path| SourcePath::parse(path).unwrap());
+    let stage_b = stage_declared_tree_with(
+        &fixture.source_root(),
+        &declared,
+        Limits {
+            temporary: 3 * 1028 * MIB,
+            free_floor: 0,
+            ..plan.into()
+        },
+        |_| {},
+    )
+    .unwrap();
+    let master = SourcePath::parse("master.bin").unwrap();
+    let hash = *stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap()
+        .sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let (state, count, first, last, total_bytes): (i64, i64, i64, i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1),
+                    (SELECT min(chunk_index) FROM blob_chunks WHERE hash=?1),
+                    (SELECT max(chunk_index) FROM blob_chunks WHERE hash=?1),
+                    (SELECT sum(length(bytes)) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                ))
+            },
+        )
+        .unwrap();
+    assert_eq!((state, count, first, last), (0, 255, 1, 255));
+    assert_eq!(total_bytes, 255 * CHUNK_BYTES as i64);
+    AFTER_CLEANUP_COMMIT.with(|pending| {
+        *pending.borrow_mut() = Some(BlobSqlHook {
+            hash,
+            index: 128,
+            run: Box::new(move || signal_and_wait_for_kill(&marker)),
+        });
+    });
+    store.admit(1, 1, 2, [2; 32], &candidate_b).unwrap();
+    panic!("child passed the 128th durable cleanup commit");
+}
+
+#[test]
+#[ignore = "local 256-chunk accepted cleanup process-kill scale proof"]
+fn measure_accepted_cleanup_kill_after_128_durable_deletes() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A retained during large B cleanup");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 1028, 46);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let master_file = stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap();
+    let hash = *master_file.sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let mut scratch = Vec::new();
+    let admission = store.owner.admission().unwrap();
+    let mut short_input = stage_b
+        .open(&master)
+        .unwrap()
+        .take(256 * CHUNK_BYTES as u64);
+    assert!(matches!(
+        store.stage_blob_phased(
+            &mut short_input,
+            master_file.length(),
+            hash,
+            &mut scratch,
+            &mut || {},
+        ),
+        Err(StoreError::InputIo)
+    ));
+    drop(admission);
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .execute(
+            "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    drop(store);
+
+    let marker = fixture.0.join("accepted-large-cleanup.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::accepted_kill_mid_large_cleanup_child")
+        .arg("--nocapture")
+        .env("THRUM_TEST_ACCEPTED_LARGE_CLEANUP_KILL_DIR", &fixture.0)
+        .env("THRUM_TEST_ACCEPTED_LARGE_CLEANUP_KILL_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .unwrap();
+    kill_after_marker_with_deadline(child, &marker, Duration::from_secs(120), || {
+        assert_eq!(
+            NativeSourceStore::open(&database, plan)
+                .err()
+                .unwrap()
+                .kind(),
+            SourceStoreErrorKind::Busy
+        );
+    });
+
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(a));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
+    let (state, count, first, last, total_bytes): (i64, i64, i64, i64, i64) = reopened
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1),
+                    (SELECT min(chunk_index) FROM blob_chunks WHERE hash=?1),
+                    (SELECT max(chunk_index) FROM blob_chunks WHERE hash=?1),
+                    (SELECT sum(length(bytes)) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                ))
+            },
+        )
+        .unwrap();
+    assert_eq!((state, count, first, last), (0, 127, 1, 127));
+    assert_eq!(total_bytes, 127 * CHUNK_BYTES as i64);
+    let mut a_pin = reopened.pin_current(a.generation).unwrap();
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    let b = reopened
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    copied.clear();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    let mut b_pin = reopened.pin_current(b.generation).unwrap();
+    assert_eq!(
+        b_pin.copy_file_to(&master, &mut io::sink()).unwrap(),
+        1028 * MIB
+    );
+    b_pin.close().unwrap();
+    a_pin.close().unwrap();
+    drop(reopened);
+    let final_owner = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(final_owner.current_root().unwrap(), Some(b));
+    assert_eq!(final_owner.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    eprintln!(
+        "accepted_cleanup_kill_256 durable_deletes=128 retained_after_kill={count} retained_bytes={total_bytes} final_generation={}",
+        b.generation,
+    );
 }
 
 #[test]

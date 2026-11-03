@@ -103,8 +103,42 @@ host run, not a latency promise. It does not measure the SELECT work preceding
 each deletion, an allocation high-water or a concurrent A read during the
 cleanup loop.
 
+## Accepted-owner kill between 256-chunk cleanup transactions
+
+An opt-in **release** test extended the malformed B case to a real owner
+process kill. The parent accepted A, seeded the first 1,024 MiB of a 1,028 MiB
+B master as 256 four-MiB chunks, removed index zero, then closed its accepted
+owner and every pin. The child opened that same database and reconstructed
+the same validated B source from the existing four declared files. Its
+test-only hook fired **after** the descending index-128 deletion committed:
+255 through 128 inclusive are 128 durable one-row cleanup transactions. At
+the marker, a second accepted owner was `Busy`; the parent killed the child
+while it waited between transactions.
+
+After reopening, A was still selected, B had no keyed outcome, and its
+header remained `state=0`. Exactly indices **1–127** remained, each four MiB:
+127 rows and 532,676,608 retained bytes. A newly acquired A pin returned
+exact scene bytes. The parent retried B using its retained validated stage;
+cleanup and restaging completed, B became generation A+1 with its exact keyed
+outcome, and a B pin authenticated the complete 1,028 MiB master. Another
+owner reopen found the same B root and outcome. The child’s orphaned stage
+was removed with the owned fixture at test closeout.
+
+The one local Rust 1.99.1/macOS arm64 run passed. The complete release test
+reported 18.26 seconds, including staging, 128 child cleanup commits,
+process kill, reopened retry, full B-pin streaming and checks; it is **not**
+a cleanup latency or disk-peak measurement. The hook adds no production
+work. It proves process-kill recovery *between committed cleanup slices*,
+not killing inside a DELETE/COMMIT, power loss, concurrent A-pin progress
+during cleanup, or physical allocation high-water. Reproduce the opt-in
+case with:
+
+```sh
+RUSTC_WRAPPER= rustup run 1.99.1 cargo test --offline --locked --release -p thrum-source measure_accepted_cleanup_kill_after_128_durable_deletes -- --ignored --nocapture --test-threads=1
+```
+
 The normal accepted-owner crash, reader-blocked WAL and cleanup tests, and
-both opt-in scale tests, passed.
+the matching-prefix and successful-cleanup cost probes, passed.
 An independent adversarial review corrected the child fixture lifetime,
 the kill deadline, the update oracle and the seed/retry timer scope before
 this checkpoint.
@@ -172,8 +206,8 @@ RUSTC_WRAPPER= rustup run 1.99.1 cargo test --offline --locked -p thrum-source m
 
 ## Still open for the full F3 gate
 
-An interrupted hundreds-chunk cleanup, native-volume-induced SQLite
-`SQLITE_FULL` during ordinary cleanup and final publication,
+Native-volume-induced SQLite `SQLITE_FULL` during ordinary cleanup and
+final publication,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
