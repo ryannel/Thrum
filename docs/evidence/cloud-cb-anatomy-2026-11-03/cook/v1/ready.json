@@ -1,0 +1,15 @@
+{
+  "build": "f30d926dcc6695fc",
+  "url": "http://127.0.0.1:8149/build/f30d926dcc6695fc/index.html",
+  "payload_files": 53,
+  "payload_bytes": 147176442,
+  "source_native_sha256": "380ea5597b04696a1a4a949bee84a6eaffa9c66935b96b376e00b4a4bfbe0fbe",
+  "source_coarse_sha256": "48eb891eadc04becbdb791a796912d546ee7245e467f4736aa3fbb627d84f46c",
+  "all_payload_hashes_verified": true,
+  "node_test_exit": 0,
+  "node_test_stdout": "Both exact R16 fields/metadata, finite scalar sums, pinned world pose/pitch, native attachment/collars/cookRSS, dimension rejection and unchanged adb renderer/light/shadow/reflection shader files pass. Browser/GPU/anatomy art unqualified.",
+  "node_test_process_peak_rss_bytes": 356466688,
+  "owned_two_directory_logical_bytes": 363715574,
+  "unique_inode_bytes_including_shared_source_inputs": 216914934,
+  "scope": "No browser/GPU result yet. RSS via Darwin childgetrusage; logical file paths include hardlink aliases. Files unchanged after proof start."
+}

@@ -2,7 +2,7 @@
   "schema": 1,
   "scope": "Preliminary held/analytic cloud geometry operator comparison; not selected lifecycle/source or runtime budget admission",
   "file_count": 239,
-  "retained_bytes_excluding_manifest": 57633039,
+  "retained_bytes_excluding_manifest": 57633166,
   "exact_builds": [
     "81c3f43f76b490fa",
     "173d261dc10b86c2",
@@ -31,8 +31,8 @@
       "sha256": "a896bbd99ffea1c86a866c4bbad8d264bd8d607ba88b877c61ddc90b1f75d608"
     },
     "checks/summary.json": {
-      "bytes": 3966,
-      "sha256": "bce880cc36de27e1ee6f9d57427abfcf18a5723b53f7111edc26d93abe3027c7"
+      "bytes": 4093,
+      "sha256": "2e07bed96d66b52c852ebf65452aad03755e3a8c09ad021716a341017b4ded86"
     },
     "common/assets/channels-32.json": {
       "bytes": 526,

@@ -1,0 +1,34 @@
+{
+  "source_license": "CC0-1.0",
+  "provenance": "docs/evidence/cloud-authored-masters-2026-11-03/inputs/provenance.json",
+  "inputs": [
+    {
+      "file": "inputs/cloud-03-256.density.r16f",
+      "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+      "bytes": 33554432,
+      "source": "tmp/cloud-authored-master/cloud-03-256.density.r16f",
+      "policy": "Read-only hardlink; never chmod/modify shared inode"
+    },
+    {
+      "file": "inputs/cloud-03-256.json",
+      "sha256": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3",
+      "bytes": 7054,
+      "source": "tmp/cloud-authored-master/cloud-03-256.json",
+      "policy": "Copied original metadata"
+    },
+    {
+      "file": "inputs/cloud-08-256.density.r16f",
+      "sha256": "4c55318ec1664d40e73a0eed0bcfeefd5563a1b65bb60564f80b3ffbd5fad990",
+      "bytes": 33554432,
+      "source": "tmp/cloud-authored-master/cloud-08-256.density.r16f",
+      "policy": "Read-only hardlink; never chmod/modify shared inode"
+    },
+    {
+      "file": "inputs/cloud-08-256.json",
+      "sha256": "1c1697fd738697446b3e8b903795541771dfb17b1193f3d7af2126da6babc9e5",
+      "bytes": 7048,
+      "source": "tmp/cloud-authored-master/cloud-08-256.json",
+      "policy": "Copied original metadata"
+    }
+  ]
+}

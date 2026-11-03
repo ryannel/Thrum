@@ -1,0 +1,212 @@
+{
+  "schema": 1,
+  "scope": "Two rejected frozen storm-anatomy inputs, no lifecycle/art/performance admission",
+  "file_count": 51,
+  "retained_bytes_excluding_manifest": 28673957,
+  "files": {
+    "OWNER.md": {
+      "bytes": 328,
+      "sha256": "a09d854cde2743bd9e45b4c2a2e82c8c40652e104a193131b2cc7a2525895044"
+    },
+    "README.md": {
+      "bytes": 6221,
+      "sha256": "078aa1bce3c83cca7b42048c67a9446e30ad370f46518e3e140477168202f910"
+    },
+    "builds.json": {
+      "bytes": 17615,
+      "sha256": "248f7b65ba7f4794fcd4af518d2a75c1090ddf82985ecd1e7b7dfbcc4042e53a"
+    },
+    "cook/initial-negative/initial-cook.py": {
+      "bytes": 13338,
+      "sha256": "9b08bea0cfd51ff9eae704d1bc564a86009aafc9507130836f807b1b2095adc5"
+    },
+    "cook/initial-negative/initial-metrics.json": {
+      "bytes": 41842,
+      "sha256": "3080527e2fe72d9aa987f55cf404a93e257a95b94adb6f71df506bfb6bda839b"
+    },
+    "cook/initial-negative/initial-projections.png": {
+      "bytes": 313289,
+      "sha256": "08871ace3962365d856069dc71a2b108b63534870fc59357b7618c3692be715c"
+    },
+    "cook/source-inputs.json": {
+      "bytes": 1300,
+      "sha256": "df2a1946912aa24b00288ab55c6dc9935faa1170bfef7f306bc42c95fc50b49e"
+    },
+    "cook/v1/README.md": {
+      "bytes": 3493,
+      "sha256": "242fd3ee278b63bdc5deec5e970d397bbf6ff8a5128deceba7700b5c1fa7a7d2"
+    },
+    "cook/v1/cb-anatomy-256.json": {
+      "bytes": 36472,
+      "sha256": "84fdb497d6dd4e36e0823821397137f941719122bdfe598f3f332f7bd39b5726"
+    },
+    "cook/v1/cb-anatomy-384.json": {
+      "bytes": 82737,
+      "sha256": "5a99de0dd96c27512c8b69ce7242951bc435e630f9651ad6c8141abe0aa6901b"
+    },
+    "cook/v1/cook.py": {
+      "bytes": 15123,
+      "sha256": "8e71df69da2099c40d3fd2cd1af4790e1bc157bd0b56e8b32d07049a1ce91220"
+    },
+    "cook/v1/finalize.py": {
+      "bytes": 3341,
+      "sha256": "df14afea81b5af1e7cdd85afe520d3d0410f69692145c9df0b585fe618f4c278"
+    },
+    "cook/v1/inputs.json": {
+      "bytes": 1300,
+      "sha256": "df2a1946912aa24b00288ab55c6dc9935faa1170bfef7f306bc42c95fc50b49e"
+    },
+    "cook/v1/projections.png": {
+      "bytes": 312589,
+      "sha256": "78c6403ca30549a4ef8a32bf09d87a795243cc0c3bd80140a3cccfc36441324a"
+    },
+    "cook/v1/ready.json": {
+      "bytes": 986,
+      "sha256": "9e399fdd41eb128bf0b43109b9c28f0854d2458b9ebd16e5cc15752e5c07fed9"
+    },
+    "cook/v1/resolution-diagnostics.json": {
+      "bytes": 1451,
+      "sha256": "1429bcacc5b95ac212c96c20b17c7727e7abcd686afe3d5f173ed8bb83961097"
+    },
+    "cook/v2/bulk-diagnostics.json": {
+      "bytes": 558858,
+      "sha256": "b56a2ab31b23e301b6bc8fbb343511fac06feb65107f7693ecf54261647a89e8"
+    },
+    "cook/v2/cb-anatomy-256.json": {
+      "bytes": 41350,
+      "sha256": "452350f61c9e13fe609fdfc6b979d2650cf7f38fa35f2ea5b213aa5b4f1ab9c3"
+    },
+    "cook/v2/cb-anatomy-384.json": {
+      "bytes": 87824,
+      "sha256": "bc5b29ddf667957e4b051281bc30b2acc8bf3c9dcf628250c762ab958c508bcc"
+    },
+    "cook/v2/cook-bulk.py": {
+      "bytes": 20238,
+      "sha256": "dea009480f3af739a889bd32394095de3d7f45ce4f6f955d1b30785c327fa128"
+    },
+    "cook/v2/finalize.py": {
+      "bytes": 3341,
+      "sha256": "df14afea81b5af1e7cdd85afe520d3d0410f69692145c9df0b585fe618f4c278"
+    },
+    "cook/v2/finish-bulk.py": {
+      "bytes": 2420,
+      "sha256": "3ccef16406f408a054bb59d13a10ca00f4cc22dcb48e6ecfc83e9309b3c4e72c"
+    },
+    "cook/v2/inputs.json": {
+      "bytes": 1300,
+      "sha256": "df2a1946912aa24b00288ab55c6dc9935faa1170bfef7f306bc42c95fc50b49e"
+    },
+    "cook/v2/native-central-slices.png": {
+      "bytes": 154833,
+      "sha256": "bf334095e6d4e1191699dfb165bd638e1b7304bf55b9f398cba4fe76bc6cb9ef"
+    },
+    "cook/v2/native-functions.txt": {
+      "bytes": 8385,
+      "sha256": "3355faefe9292f605e7e6bc0be21316d81c1f6babec986cbb317b14e985efd45"
+    },
+    "cook/v2/native-linecuts.png": {
+      "bytes": 32849,
+      "sha256": "5197e87bb21d30faec7fb640f013b4bf5460d2d5a52b6ff37f7a15da0c50c285"
+    },
+    "cook/v2/projections.png": {
+      "bytes": 304822,
+      "sha256": "8788ddef92bbb2301a62864535689cd78cef3ffeb6adf66199e57f29ca6bd65a"
+    },
+    "cook/v2/ready.json": {
+      "bytes": 516,
+      "sha256": "d2695fcd8a7cd24ff408c3332a6d58f31777f8f540fb1ccceeea161b420e4350"
+    },
+    "cook/v2/resolution-diagnostics.json": {
+      "bytes": 1450,
+      "sha256": "6aab7c140e3e3b605ef7e24f78f67febd84f1170b3a5c6055be51f904f957538"
+    },
+    "cook/v2/smooth-loft-negative-bulk-diagnostics.json": {
+      "bytes": 560077,
+      "sha256": "c2729df7246c8ac0c61dd98e2d1c906941fe2108aa84476092b8a21a1f5e4cc9"
+    },
+    "cook/v2/smooth-loft-negative-cook-bulk.py": {
+      "bytes": 16072,
+      "sha256": "8e0e6d536acb4e64d98d960e0702875612329d252144aa625d78aac8352c02ce"
+    },
+    "cook/v2/smooth-loft-negative-native-central-slices.png": {
+      "bytes": 143424,
+      "sha256": "8dc5f55964e123c83754c29059ce48ce421fb84490354e1b5c33c9cdfb0bbb0f"
+    },
+    "cook/v2/smooth-loft-negative-projections.png": {
+      "bytes": 297089,
+      "sha256": "73c7b9dad6111c91af6dae961b2c9dd6ac9a517122ce528b9cb8aa932432a514"
+    },
+    "instrument-0ab02b3a38d03427.zip": {
+      "bytes": 12298754,
+      "sha256": "866b7edd909c71b7b1126c7f0b819baa8191e6df9a8798e3275de84b19498d4a"
+    },
+    "instrument-f30d926dcc6695fc.zip": {
+      "bytes": 10349232,
+      "sha256": "51756e326df9402ae237620dddec89ec3bca31a218f8662ae9687b7bb30cbdef"
+    },
+    "observations/master-cb-anatomy-384-oblique-mode0-0ab02b3a38d03427-80842a3a-1.json": {
+      "bytes": 124712,
+      "sha256": "716747178a859657d50c265c650a7a547b6730bb622d0842ce8095d071e12147"
+    },
+    "observations/master-cb-anatomy-384-oblique-mode0-0ab02b3a38d03427-80842a3a-1.png": {
+      "bytes": 461449,
+      "sha256": "a8918abd1ac950ca9822fa13258a3fc57e7b730af15a19cf6a313273b23d165f"
+    },
+    "observations/master-cb-anatomy-384-oblique-mode0-f30d926dcc6695fc-76fa7225-1.json": {
+      "bytes": 118562,
+      "sha256": "1f6a5a1b821176c641a44364cf99964048558cd3bc12a989f0fa524d2ed2e638"
+    },
+    "observations/master-cb-anatomy-384-oblique-mode0-f30d926dcc6695fc-76fa7225-1.png": {
+      "bytes": 481742,
+      "sha256": "f65479d223314e32a35bbae08ae5cd0e4054b3e0131c4dcad0f6763fc2898afd"
+    },
+    "observations/master-cb-anatomy-384-oblique-mode0-f30d926dcc6695fc-76fa7225-2.json": {
+      "bytes": 118556,
+      "sha256": "682b888da9ff2ee7b9a01a11fab124ca818f5d1bb9525251ca4e4cf5b6c02900"
+    },
+    "observations/master-cb-anatomy-384-oblique-mode0-f30d926dcc6695fc-76fa7225-2.png": {
+      "bytes": 478077,
+      "sha256": "58248e23df68d786c3ee9f2241e0a629fb3e1364a0ce6798b0f7e2ef65922727"
+    },
+    "observations/master-cb-anatomy-384-side-mode0-0ab02b3a38d03427-80842a3a-3.json": {
+      "bytes": 124724,
+      "sha256": "1ebc40411ea93e3a1b1be71475bec012c5f59cec3466b93e5a78d311891755db"
+    },
+    "observations/master-cb-anatomy-384-side-mode0-0ab02b3a38d03427-80842a3a-3.png": {
+      "bytes": 387295,
+      "sha256": "873919b72cd1aa86eaf04830c8ca005b698900e2404a8cd9e22afe504815cc2b"
+    },
+    "observations/master-cb-anatomy-384-side-mode0-f30d926dcc6695fc-76fa7225-3.json": {
+      "bytes": 118573,
+      "sha256": "ab57f6963152291591f39a1e72cb763da5c7a20967774033a859f0b1a2a003ce"
+    },
+    "observations/master-cb-anatomy-384-side-mode0-f30d926dcc6695fc-76fa7225-3.png": {
+      "bytes": 395931,
+      "sha256": "9b6599185afdd2db248be21cf3213d754201c0c72806c9cb8162e8fe02bf7d30"
+    },
+    "observations/upload-cb-anatomy-0ab02b3a38d03427-80842a3a-2.json": {
+      "bytes": 125106,
+      "sha256": "7319de2905e6244d57418ebc752835819c30df4d9700d8194214fbfdbef04a37"
+    },
+    "recovery.json": {
+      "bytes": 530,
+      "sha256": "2e7d1e6089c11e302926fe4e65ca843b6225646aec83faaf21945a37fcc96855"
+    },
+    "refresh-manifest.py": {
+      "bytes": 706,
+      "sha256": "c78227131a97ac93deaa63fdede4a63d9f74db30536b2050f7af264ba698e680"
+    },
+    "restore.py": {
+      "bytes": 2364,
+      "sha256": "037f536bbfc85832b1e88d918d8d7c2f8d572c87d04ae3978b931cba8eaa93c2"
+    },
+    "test-recovery.py": {
+      "bytes": 727,
+      "sha256": "2817a0660b8939218b578f8f9a4495ef35fb36b051d69f59a0809e84993f6fc6"
+    },
+    "verify.py": {
+      "bytes": 644,
+      "sha256": "73dbe39a3552ba46df83c13417241a6c96457f1d524f5fc667361b5928e4986b"
+    }
+  }
+}

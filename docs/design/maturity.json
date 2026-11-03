@@ -1113,7 +1113,7 @@
         "C13"
       ],
       "next_design_package": "D2",
-      "remaining_detailed_design": "Renderer/air/consumer baseline retained, but profiles2/3/4 fail actual source anatomy and breakup. Replacement source lifecycle is reopened: static CC0 3D ingredients are qualified only as inputs; local geometry-versus-fade contrast is witnessed but static remnants fail full breakup. Finish authored growth, spatial phase, parent/material maps, ownership, filtering, recovery and full-sky costs. Five families, complete air/light/view, consumer accuracy and engine bindings remain open.",
+      "remaining_detailed_design": "Renderer/air/consumer baseline retained; transport profiles2/3/4 and both frozen Cb assemblies fail actual anatomy. Local support removal differs from fade, but full breakup remains unaccepted. Finite authored material has a reviewed liquid Cu interaction commissioned; exact general cap/phase/family authoring, mixed-sky controls/cost, complete air/light/view and engine bindings remain unfinished.",
       "qualification": "D0/R0 then CF01-CF05 isolated, M1 combinations, CW01-CW04 weather and FS01-FS04 full skies; Q7 complete workload. Five families and storm development required for current commission. Engine bindings follow construction dependencies; no legacy qualification transfers.",
       "parent": "E1",
       "existing_candidate": {
@@ -1125,8 +1125,8 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "34edfd1f42b3e6d020cf4ece477e7859a6c56cbcce40d91e06e7dc22a5234227",
-      "current_design_delta": "3 November source reassessment rejects pulse/transport morphology after native and 1x/16x evidence; no Houdini or full cached lifecycle required. Retains Nubis3-style 3D optical/render lineage, Hillaire air, voxel light, BSM and independent views. Exact CC0 static masters/cooks and sampled R16 input path pass scoped checks; complete replacement live source and combined visuals/budgets are unfinished. Prior source/PDE and whole-GPU failures remain evidence, not a selected foundation. Local SDF removal now differs visibly from matched-integral fade in native stills/sampled1x16x contacts; no whole breakup/lifecycle acceptance.",
+      "current_design_sha256": "d68a7b041d71af6de3164c321aeccb6f25970ca2d0946aa6fbc98529f8d00701",
+      "current_design_delta": "3 November source reassessment rejects pulse/transport morphology after native and 1x/16x evidence; no Houdini or full cached lifecycle required. Retains Nubis3-style 3D optical/render lineage, Hillaire air, voxel light, BSM and independent views. Exact CC0 static masters/cooks and sampled R16 input path pass scoped checks; complete replacement live source and combined visuals/budgets are unfinished. Prior source/PDE and whole-GPU failures remain evidence, not a selected foundation. Local SDF removal now differs visibly from matched-integral fade in native stills/sampled1x16x contacts; no whole breakup/lifecycle acceptance. Reviewed finite-material liquid Cu pilot commissioned; direct sparse point field closes sampling semantics, not cost. Actual frozen Cb inputs reject skeletal and smooth-column anatomy.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -1213,7 +1213,7 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "source_reopened_geometry_operator_scoped_result_full_lifecycle_unfinished",
+        "status": "finite_material_Cu_pilot_commissioned_Cb_authoring_rejected_complete_source_unselected",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
@@ -1311,6 +1311,24 @@
           "correctness": "exact_three_build_restore_CPU_matched_native_integral_scoped_tests_actual_GPU_tolerance_and_uniform_noisy_endpoint_checks_pass_reviewed_failure_capacity_fixes",
           "experienced_quality": "native_views_and_sampled_1x16x_geometry_contracts_and_opens_vs_matched_alpha_but_static_horns_no_lobe_growth_or_drift_continuous_playback_unjudged_full_breakup_unaccepted",
           "performance": "logical_renderer_78528524_bytes_not_process_residency_no_production_or_target_fullsky_admission"
+        },
+        "cb_anatomy_discrimination": {
+          "record": "../evidence/cloud-cb-anatomy-2026-11-03/README.md",
+          "builds": [
+            "f30d926dcc6695fc",
+            "0ab02b3a38d03427"
+          ],
+          "correctness": "exact_archive_recovery_both_scoped_tests_and_final_actual_all_native_GPU_half_upload_zero_differences",
+          "experienced_quality": "both_rejected_actual_native_oblique_side_skeletal_void_then_smooth_filled_column_unchanged_optics",
+          "performance": "diagnostic_384_dense_source_logical_GPU124600332_bytes_no_timing_or_pool_admission"
+        },
+        "finite_material_source_proposal": {
+          "design": "modules/CLOUD-AUTHORED-SOURCE.md",
+          "review": "../evidence/cloud-cohort-design-2026-11-03/README.md",
+          "decision": "provisional_liquid_Cu_coupling_pilot_only",
+          "correctness": "independent_analytical_review_closes_fresh_rest_wind_seed_burial_scale_units_endpoint_control_pitch_clock_and_front_coupling_no_runtime_pass",
+          "experienced_quality": "unproved_new_pilot_no_general_family_or_lifecycle_acceptance",
+          "performance": "sparse_template_core_counts_independently_reproduced_actual_atlas_query_and_fullsky_cost_unproved"
         }
       }
     },

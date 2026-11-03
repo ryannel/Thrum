@@ -1,0 +1,21 @@
+{
+  "scope": "Exact archive/source recovery and retained Node tests, no browser/GPU/art admission",
+  "one_build_at_a_time": true,
+  "temporary_outputs_removed": true,
+  "results": [
+    {
+      "build": "f30d926dcc6695fc",
+      "served_files": 53,
+      "payload_bytes": 147176442,
+      "archive_bytes": 10349232,
+      "source_file_count": 57
+    },
+    {
+      "build": "0ab02b3a38d03427",
+      "served_files": 55,
+      "payload_bytes": 147746760,
+      "archive_bytes": 12298754,
+      "source_file_count": 59
+    }
+  ]
+}

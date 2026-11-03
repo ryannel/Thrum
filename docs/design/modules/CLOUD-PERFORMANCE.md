@@ -121,6 +121,8 @@ Re-accept moving quality for any approximation. A microbenchmark alone never est
 
 ## Retained velocity evaluation options
 
+These are retained execution options for the earlier flow provider, whose morphology is now rejected. The [finite-material candidate](CLOUD-AUTHORED-SOURCE.md) has no per-voxel flow consumer and allocates no unused velocity cache. Preserve the code, equivalence oracles and full-sky comparison option; a change of source technique is not evidence that caching loses. Compare equivalent outputs within a relevant admitted provider, and record when an old option is inapplicable rather than claiming an unmatched speedup.
+
 The native source retains two private execution paths: evaluate prescribed velocity in each q pass, or prepare a
 same-time float32 vector field once per source tick and load it in those passes. This is GPU arithmetic reuse;
 no CPU speedup is presumed. At the dense pilot's614,400 cells, a vec4f field is9.375MiB. It is scratch for the

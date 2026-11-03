@@ -1,0 +1,32 @@
+{
+  "native_side": 384,
+  "comparison_side": 256,
+  "downsample": "Exact separable overlap average of384piecewise-constant cells, thenbinary16; not centre sampling",
+  "kappa_per_m": 0.0045,
+  "relative_density_integral_error": -1.0205167674248727e-06,
+  "coarse_to_native_peak_ratio": 0.7923458540042523,
+  "radiographic_comparison": {
+    "front_alongZ": {
+      "max_abs_tau_error_vs_native_footprint_average": 0.00024016015231609344,
+      "mean_abs_tau_error": 7.658952362987778e-06,
+      "max_abs_T_error_vs_native_footprint_average": 0.005177892196378986,
+      "mean_abs_T_error": 9.729427789318476e-05
+    },
+    "side_alongX": {
+      "max_abs_tau_error_vs_native_footprint_average": 0.000262286514043808,
+      "mean_abs_tau_error": 6.726586256889102e-06,
+      "max_abs_T_error_vs_native_footprint_average": 0.008590487448278783,
+      "mean_abs_T_error": 8.21386527602418e-05
+    },
+    "top_alongY": {
+      "max_abs_tau_error_vs_native_footprint_average": 0.00027644370372126303,
+      "mean_abs_tau_error": 6.6391706579826765e-06,
+      "max_abs_T_error_vs_native_footprint_average": 0.008734342718417443,
+      "mean_abs_T_error": 7.356204283736777e-05
+    }
+  },
+  "scope": "Three orthographic footprint-average optical-depth/transmittance comparisons; not arbitrary-ray/beauty alias qualification",
+  "recipe_sha256": "df14afea81b5af1e7cdd85afe520d3d0410f69692145c9df0b585fe618f4c278",
+  "python": "3.14.10",
+  "numpy": "2.4.6"
+}

@@ -1,7 +1,7 @@
 # Atmospherics technique selection and source map
 
-2 November 2026. Current runtime selection/research support for the [cloud migration](../modules/CLOUD-MIGRATION.md).
-The [production baseline](../modules/CLOUD-PRODUCTION-BASELINE.md) now locks the mechanisms. This is a selected implementation specification with qualification gates, not a claim of completed implementation or a recovered
+3 November 2026. Renderer selection and reopened source/research support for the [cloud migration](../modules/CLOUD-MIGRATION.md).
+The [production baseline](../modules/CLOUD-PRODUCTION-BASELINE.md) retains rendering and explicitly rejects the prior default morphology. The [finite-material candidate](../modules/CLOUD-AUTHORED-SOURCE.md) commissions only a bounded Cu interaction. This is a scoped specification with qualification gates, not a claim of completed implementation or a recovered
 studio architecture. The [capabilities](../modules/CLOUD-CAPABILITIES.md) retain the full commissioned experience.
 
 ## Selection
@@ -9,7 +9,7 @@ studio architecture. The [capabilities](../modules/CLOUD-CAPABILITIES.md) retain
 | Responsibility | Selected direction | Basis and important limit |
 | --- | --- | --- |
 | Clear atmosphere, horizon and aerial perspective | Hillaire's complete transmittance + multiple-scattering + sky-view + aerial-perspective LUT family; RGB aerial extinction is our extension/validated alternative to mean-alpha fast AP; a bounded direct segment integrator for spatial shadows/overlap | Author paper and MIT comparison code; Bevy's current sky/PBR/environment joins. A Sun-only transmittance LUT does not complete this system. |
-| Cloud morphology and lifecycle | Native runtime sparse3D optical control, bounded advection/local source-loss and persistent IDs under live weather; no Houdini or lifecycle clips | Nubis³ establishes3D morphology/up-rez/rendering; our live optical source is an explicit adaptation. Smolder supports an optional prepared-volume provider, not the required dynamic lifecycle. New content must demonstrate local renewal and topology change. |
+| Cloud morphology and lifecycle | Native live3D source contract retained; rejected transport morphology replaced provisionally by finite authored material with persistent cell IDs. No Houdini or lifecycle clips; full source remains unselected | Nubis³ establishes3D morphology/up-rez/rendering; our live optical source is an explicit adaptation. Smolder supports an optional prepared-volume provider, not the required dynamic lifecycle. New content must demonstrate local renewal and topology change. |
 | Runtime density | Cooked low-frequency fields, bounded detail and conservative occupied-region traversal; projected-footprint LOD | Nubis Evolved/³; Smolder brick occupancy. Detail noise decorates the lifecycle and cannot create the missing lifecycle by assertion. |
 | Direct light and cloud shadows | Receiver Beer shadows; current3D point-to-Sun visibility cache plus2local Sun samples, complete direct-ray oracle/fallback | Nubis³ slides125–127/154 disclose voxel tail caching plus2local samples; Epic documents BSM/secondary rays. Our dimensions/current cadence are adaptations; a column total cannot give arbitrary interior tau. K48 is retired from baseline. |
 | Cloud multiple scattering | Two-lobe HG with liquid/ice settings, primary plus one additional MS approximation octave; current runtime voxel ambient accessibility and disk-excluded clear-sky upper-hemisphere mean | Epic single-octave game recommendation and published cloud-lighting lineage. Fitted liquid closure is an optional comparator, not a prerequisite or accepted thick/ice light model. |
@@ -63,8 +63,8 @@ cloud costs2.2–4ms at960x540 with named optimizations. Those are **their** sou
 Our point caches use complete source-to-boundary tails, current generation and independent consumers, with measured
 error/fallback and full update cost. No8-frame amortization transfers automatically to fast-changing weather.
 
-The native source uses bounded MacCormack semi-Lagrangian scalar advection plus exact positive local reaction and
-authored internal velocities/phase-class transfer. [Selle et al., author paper](https://faculty.cc.gatech.edu/~jarek/papers/maccormack.pdf)
+The rejected native transport source used bounded MacCormack semi-Lagrangian scalar advection plus exact positive local reaction and
+authored internal velocities/phase-class transfer. Its operators remain references; they are not the current morphology target. [Selle et al., author paper](https://faculty.cc.gatech.edu/~jarek/papers/maccormack.pdf)
 supports the advection/limiter, not cloud art quality. Root inspected the author-hosted abstract and limiter/reversion
 passages after the original Stanford locator returned404. Genus rules and the reduced E1 control law are explicit Thrum
 choices; [source alternatives/reconciliation](../../evidence/cloud-dynamic-revision-2026-11-02/source-review.md) retains

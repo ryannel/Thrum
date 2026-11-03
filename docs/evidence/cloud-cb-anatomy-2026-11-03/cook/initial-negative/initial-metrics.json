@@ -1,0 +1,1647 @@
+{
+  "status": "Rejected preliminary anatomy: low body separated/weak pickup, confirmed in native projections",
+  "output_sha256": "30dd78e0b893c528e2a1f680d2c68595133756385441fbda89f4480f49f3804d",
+  "stats": {
+    "peak": 0.66943359375,
+    "sum": 196634.39894086123,
+    "nonzero": 3865784,
+    "invalid": 0,
+    "support_bbox_min_xyz": [
+      26,
+      30,
+      73
+    ],
+    "support_bbox_max_xyz": [
+      374,
+      316,
+      327
+    ],
+    "minimum_zero_collar_voxels_xyz": [
+      9,
+      30,
+      56
+    ],
+    "connected_6_neighbor_relative_peak": {
+      "0": {
+        "components": 2,
+        "substantial_components_ge_512_voxels": 2,
+        "positive_voxels": 3865784,
+        "largest_fraction": 0.9988491338367586,
+        "largest_component_voxels": [
+          3861335,
+          4449
+        ]
+      },
+      "0.01": {
+        "components": 1549,
+        "substantial_components_ge_512_voxels": 9,
+        "positive_voxels": 2805120,
+        "largest_fraction": 0.9931632158339038,
+        "largest_component_voxels": [
+          2785942,
+          3478,
+          2203,
+          2017,
+          1791,
+          1404,
+          1252,
+          572
+        ]
+      },
+      "0.05": {
+        "components": 2147,
+        "substantial_components_ge_512_voxels": 6,
+        "positive_voxels": 2105144,
+        "largest_fraction": 0.5705809198800652,
+        "largest_component_voxels": [
+          1201155,
+          871136,
+          22209,
+          1630,
+          619,
+          576,
+          475,
+          413
+        ]
+      },
+      "0.1": {
+        "components": 5153,
+        "substantial_components_ge_512_voxels": 7,
+        "positive_voxels": 1324685,
+        "largest_fraction": 0.46102960326417225,
+        "largest_component_voxels": [
+          610719,
+          609304,
+          65537,
+          10180,
+          7976,
+          1912,
+          1686,
+          341
+        ]
+      },
+      "0.3": {
+        "components": 3645,
+        "substantial_components_ge_512_voxels": 13,
+        "positive_voxels": 43903,
+        "largest_fraction": 0.08113340773979,
+        "largest_component_voxels": [
+          3562,
+          2945,
+          2668,
+          1916,
+          1524,
+          1479,
+          1411,
+          834
+        ]
+      }
+    },
+    "horizontal_neck_sections": [
+      {
+        "height_world_m": 18.229166666666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 54.6875,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 91.14583333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 127.60416666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 164.0625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 200.52083333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 236.97916666666669,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 273.4375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 309.89583333333337,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 346.3541666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 382.8125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 419.27083333333337,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 455.7291666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 492.18750000000006,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 528.6458333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 565.1041666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 601.5625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 638.0208333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 674.4791666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 710.9375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 747.3958333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 783.8541666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 820.3125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 856.7708333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 893.2291666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 929.6875000000001,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 966.1458333333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1002.6041666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1039.0625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1075.5208333333335,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1111.9791666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1148.4375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1184.8958333333335,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1221.3541666666667,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 1257.8125,
+        "area_above_05peak_m2": 2929.6875
+      },
+      {
+        "height_world_m": 1294.2708333333335,
+        "area_above_05peak_m2": 72265.625
+      },
+      {
+        "height_world_m": 1330.7291666666667,
+        "area_above_05peak_m2": 359375.0
+      },
+      {
+        "height_world_m": 1367.1875,
+        "area_above_05peak_m2": 1124023.4375
+      },
+      {
+        "height_world_m": 1403.6458333333335,
+        "area_above_05peak_m2": 1908203.125
+      },
+      {
+        "height_world_m": 1440.1041666666667,
+        "area_above_05peak_m2": 2724609.375
+      },
+      {
+        "height_world_m": 1476.5625,
+        "area_above_05peak_m2": 4196289.0625
+      },
+      {
+        "height_world_m": 1513.0208333333335,
+        "area_above_05peak_m2": 6219726.5625
+      },
+      {
+        "height_world_m": 1549.4791666666667,
+        "area_above_05peak_m2": 7676757.8125
+      },
+      {
+        "height_world_m": 1585.9375,
+        "area_above_05peak_m2": 8529296.875
+      },
+      {
+        "height_world_m": 1622.3958333333335,
+        "area_above_05peak_m2": 9253906.25
+      },
+      {
+        "height_world_m": 1658.8541666666667,
+        "area_above_05peak_m2": 10266601.5625
+      },
+      {
+        "height_world_m": 1695.3125,
+        "area_above_05peak_m2": 12434570.3125
+      },
+      {
+        "height_world_m": 1731.7708333333335,
+        "area_above_05peak_m2": 14971679.6875
+      },
+      {
+        "height_world_m": 1768.2291666666667,
+        "area_above_05peak_m2": 17191406.25
+      },
+      {
+        "height_world_m": 1804.6875000000002,
+        "area_above_05peak_m2": 18911132.8125
+      },
+      {
+        "height_world_m": 1841.1458333333335,
+        "area_above_05peak_m2": 20023437.5
+      },
+      {
+        "height_world_m": 1877.6041666666667,
+        "area_above_05peak_m2": 20449218.75
+      },
+      {
+        "height_world_m": 1914.0625000000002,
+        "area_above_05peak_m2": 20645507.8125
+      },
+      {
+        "height_world_m": 1950.5208333333335,
+        "area_above_05peak_m2": 20833007.8125
+      },
+      {
+        "height_world_m": 1986.9791666666667,
+        "area_above_05peak_m2": 20901367.1875
+      },
+      {
+        "height_world_m": 2023.4375000000002,
+        "area_above_05peak_m2": 20876953.125
+      },
+      {
+        "height_world_m": 2059.8958333333335,
+        "area_above_05peak_m2": 20620117.1875
+      },
+      {
+        "height_world_m": 2096.354166666667,
+        "area_above_05peak_m2": 20674804.6875
+      },
+      {
+        "height_world_m": 2132.8125,
+        "area_above_05peak_m2": 20875000.0
+      },
+      {
+        "height_world_m": 2169.2708333333335,
+        "area_above_05peak_m2": 20926757.8125
+      },
+      {
+        "height_world_m": 2205.729166666667,
+        "area_above_05peak_m2": 21071289.0625
+      },
+      {
+        "height_world_m": 2242.1875,
+        "area_above_05peak_m2": 20887695.3125
+      },
+      {
+        "height_world_m": 2278.6458333333335,
+        "area_above_05peak_m2": 20396484.375
+      },
+      {
+        "height_world_m": 2315.104166666667,
+        "area_above_05peak_m2": 19821289.0625
+      },
+      {
+        "height_world_m": 2351.5625,
+        "area_above_05peak_m2": 19295898.4375
+      },
+      {
+        "height_world_m": 2388.0208333333335,
+        "area_above_05peak_m2": 18700195.3125
+      },
+      {
+        "height_world_m": 2424.479166666667,
+        "area_above_05peak_m2": 17772460.9375
+      },
+      {
+        "height_world_m": 2460.9375,
+        "area_above_05peak_m2": 16961914.0625
+      },
+      {
+        "height_world_m": 2497.3958333333335,
+        "area_above_05peak_m2": 15991210.9375
+      },
+      {
+        "height_world_m": 2533.854166666667,
+        "area_above_05peak_m2": 15039062.5
+      },
+      {
+        "height_world_m": 2570.3125,
+        "area_above_05peak_m2": 14192382.8125
+      },
+      {
+        "height_world_m": 2606.7708333333335,
+        "area_above_05peak_m2": 13457031.25
+      },
+      {
+        "height_world_m": 2643.229166666667,
+        "area_above_05peak_m2": 12439453.125
+      },
+      {
+        "height_world_m": 2679.6875,
+        "area_above_05peak_m2": 11513671.875
+      },
+      {
+        "height_world_m": 2716.1458333333335,
+        "area_above_05peak_m2": 10657226.5625
+      },
+      {
+        "height_world_m": 2752.604166666667,
+        "area_above_05peak_m2": 9850585.9375
+      },
+      {
+        "height_world_m": 2789.0625,
+        "area_above_05peak_m2": 9099609.375
+      },
+      {
+        "height_world_m": 2825.5208333333335,
+        "area_above_05peak_m2": 8368164.0625
+      },
+      {
+        "height_world_m": 2861.979166666667,
+        "area_above_05peak_m2": 7554687.5
+      },
+      {
+        "height_world_m": 2898.4375,
+        "area_above_05peak_m2": 6543945.3125
+      },
+      {
+        "height_world_m": 2934.8958333333335,
+        "area_above_05peak_m2": 5471679.6875
+      },
+      {
+        "height_world_m": 2971.354166666667,
+        "area_above_05peak_m2": 4489257.8125
+      },
+      {
+        "height_world_m": 3007.8125,
+        "area_above_05peak_m2": 3747070.3125
+      },
+      {
+        "height_world_m": 3044.2708333333335,
+        "area_above_05peak_m2": 3150390.625
+      },
+      {
+        "height_world_m": 3080.729166666667,
+        "area_above_05peak_m2": 2455078.125
+      },
+      {
+        "height_world_m": 3117.1875,
+        "area_above_05peak_m2": 1827148.4375
+      },
+      {
+        "height_world_m": 3153.6458333333335,
+        "area_above_05peak_m2": 1306640.625
+      },
+      {
+        "height_world_m": 3190.104166666667,
+        "area_above_05peak_m2": 1011718.75
+      },
+      {
+        "height_world_m": 3226.5625,
+        "area_above_05peak_m2": 883789.0625
+      },
+      {
+        "height_world_m": 3263.0208333333335,
+        "area_above_05peak_m2": 930664.0625
+      },
+      {
+        "height_world_m": 3299.479166666667,
+        "area_above_05peak_m2": 1007812.5
+      },
+      {
+        "height_world_m": 3335.9375,
+        "area_above_05peak_m2": 1129882.8125
+      },
+      {
+        "height_world_m": 3372.3958333333335,
+        "area_above_05peak_m2": 1242187.5
+      },
+      {
+        "height_world_m": 3408.854166666667,
+        "area_above_05peak_m2": 1328125.0
+      },
+      {
+        "height_world_m": 3445.3125,
+        "area_above_05peak_m2": 1368164.0625
+      },
+      {
+        "height_world_m": 3481.7708333333335,
+        "area_above_05peak_m2": 1477539.0625
+      },
+      {
+        "height_world_m": 3518.229166666667,
+        "area_above_05peak_m2": 1602539.0625
+      },
+      {
+        "height_world_m": 3554.6875000000005,
+        "area_above_05peak_m2": 1843750.0
+      },
+      {
+        "height_world_m": 3591.1458333333335,
+        "area_above_05peak_m2": 2157226.5625
+      },
+      {
+        "height_world_m": 3627.604166666667,
+        "area_above_05peak_m2": 2473632.8125
+      },
+      {
+        "height_world_m": 3664.0625000000005,
+        "area_above_05peak_m2": 2701171.875
+      },
+      {
+        "height_world_m": 3700.5208333333335,
+        "area_above_05peak_m2": 2964843.75
+      },
+      {
+        "height_world_m": 3736.979166666667,
+        "area_above_05peak_m2": 3117187.5
+      },
+      {
+        "height_world_m": 3773.4375000000005,
+        "area_above_05peak_m2": 3256835.9375
+      },
+      {
+        "height_world_m": 3809.8958333333335,
+        "area_above_05peak_m2": 3596679.6875
+      },
+      {
+        "height_world_m": 3846.354166666667,
+        "area_above_05peak_m2": 3828125.0
+      },
+      {
+        "height_world_m": 3882.8125000000005,
+        "area_above_05peak_m2": 4018554.6875
+      },
+      {
+        "height_world_m": 3919.2708333333335,
+        "area_above_05peak_m2": 4321289.0625
+      },
+      {
+        "height_world_m": 3955.729166666667,
+        "area_above_05peak_m2": 4455078.125
+      },
+      {
+        "height_world_m": 3992.1875000000005,
+        "area_above_05peak_m2": 4531250.0
+      },
+      {
+        "height_world_m": 4028.6458333333335,
+        "area_above_05peak_m2": 4583007.8125
+      },
+      {
+        "height_world_m": 4065.104166666667,
+        "area_above_05peak_m2": 4663085.9375
+      },
+      {
+        "height_world_m": 4101.5625,
+        "area_above_05peak_m2": 4736328.125
+      },
+      {
+        "height_world_m": 4138.020833333334,
+        "area_above_05peak_m2": 4756835.9375
+      },
+      {
+        "height_world_m": 4174.479166666667,
+        "area_above_05peak_m2": 4806640.625
+      },
+      {
+        "height_world_m": 4210.9375,
+        "area_above_05peak_m2": 5029296.875
+      },
+      {
+        "height_world_m": 4247.395833333334,
+        "area_above_05peak_m2": 5122070.3125
+      },
+      {
+        "height_world_m": 4283.854166666667,
+        "area_above_05peak_m2": 5140625.0
+      },
+      {
+        "height_world_m": 4320.3125,
+        "area_above_05peak_m2": 5108398.4375
+      },
+      {
+        "height_world_m": 4356.770833333334,
+        "area_above_05peak_m2": 5101562.5
+      },
+      {
+        "height_world_m": 4393.229166666667,
+        "area_above_05peak_m2": 5234375.0
+      },
+      {
+        "height_world_m": 4429.6875,
+        "area_above_05peak_m2": 5368164.0625
+      },
+      {
+        "height_world_m": 4466.145833333334,
+        "area_above_05peak_m2": 5465820.3125
+      },
+      {
+        "height_world_m": 4502.604166666667,
+        "area_above_05peak_m2": 5553710.9375
+      },
+      {
+        "height_world_m": 4539.0625,
+        "area_above_05peak_m2": 5615234.375
+      },
+      {
+        "height_world_m": 4575.520833333334,
+        "area_above_05peak_m2": 5684570.3125
+      },
+      {
+        "height_world_m": 4611.979166666667,
+        "area_above_05peak_m2": 5723632.8125
+      },
+      {
+        "height_world_m": 4648.4375,
+        "area_above_05peak_m2": 5718750.0
+      },
+      {
+        "height_world_m": 4684.895833333334,
+        "area_above_05peak_m2": 5595703.125
+      },
+      {
+        "height_world_m": 4721.354166666667,
+        "area_above_05peak_m2": 5434570.3125
+      },
+      {
+        "height_world_m": 4757.8125,
+        "area_above_05peak_m2": 5403320.3125
+      },
+      {
+        "height_world_m": 4794.270833333334,
+        "area_above_05peak_m2": 5482421.875
+      },
+      {
+        "height_world_m": 4830.729166666667,
+        "area_above_05peak_m2": 5489257.8125
+      },
+      {
+        "height_world_m": 4867.1875,
+        "area_above_05peak_m2": 5472656.25
+      },
+      {
+        "height_world_m": 4903.645833333334,
+        "area_above_05peak_m2": 5389648.4375
+      },
+      {
+        "height_world_m": 4940.104166666667,
+        "area_above_05peak_m2": 5386718.75
+      },
+      {
+        "height_world_m": 4976.5625,
+        "area_above_05peak_m2": 5437500.0
+      },
+      {
+        "height_world_m": 5013.020833333334,
+        "area_above_05peak_m2": 5429687.5
+      },
+      {
+        "height_world_m": 5049.479166666667,
+        "area_above_05peak_m2": 5404296.875
+      },
+      {
+        "height_world_m": 5085.9375,
+        "area_above_05peak_m2": 5254882.8125
+      },
+      {
+        "height_world_m": 5122.395833333334,
+        "area_above_05peak_m2": 5220703.125
+      },
+      {
+        "height_world_m": 5158.854166666667,
+        "area_above_05peak_m2": 5153320.3125
+      },
+      {
+        "height_world_m": 5195.3125,
+        "area_above_05peak_m2": 5127929.6875
+      },
+      {
+        "height_world_m": 5231.770833333334,
+        "area_above_05peak_m2": 5168945.3125
+      },
+      {
+        "height_world_m": 5268.229166666667,
+        "area_above_05peak_m2": 5242187.5
+      },
+      {
+        "height_world_m": 5304.6875,
+        "area_above_05peak_m2": 5391601.5625
+      },
+      {
+        "height_world_m": 5341.145833333334,
+        "area_above_05peak_m2": 5480468.75
+      },
+      {
+        "height_world_m": 5377.604166666667,
+        "area_above_05peak_m2": 5486328.125
+      },
+      {
+        "height_world_m": 5414.0625,
+        "area_above_05peak_m2": 5522460.9375
+      },
+      {
+        "height_world_m": 5450.520833333334,
+        "area_above_05peak_m2": 5486328.125
+      },
+      {
+        "height_world_m": 5486.979166666667,
+        "area_above_05peak_m2": 5504882.8125
+      },
+      {
+        "height_world_m": 5523.4375,
+        "area_above_05peak_m2": 5743164.0625
+      },
+      {
+        "height_world_m": 5559.895833333334,
+        "area_above_05peak_m2": 6041015.625
+      },
+      {
+        "height_world_m": 5596.354166666667,
+        "area_above_05peak_m2": 6263671.875
+      },
+      {
+        "height_world_m": 5632.8125,
+        "area_above_05peak_m2": 6538085.9375
+      },
+      {
+        "height_world_m": 5669.270833333334,
+        "area_above_05peak_m2": 6741210.9375
+      },
+      {
+        "height_world_m": 5705.729166666667,
+        "area_above_05peak_m2": 6908203.125
+      },
+      {
+        "height_world_m": 5742.1875,
+        "area_above_05peak_m2": 6987304.6875
+      },
+      {
+        "height_world_m": 5778.645833333334,
+        "area_above_05peak_m2": 7051757.8125
+      },
+      {
+        "height_world_m": 5815.104166666667,
+        "area_above_05peak_m2": 7167968.75
+      },
+      {
+        "height_world_m": 5851.5625,
+        "area_above_05peak_m2": 7371093.75
+      },
+      {
+        "height_world_m": 5888.020833333334,
+        "area_above_05peak_m2": 7555664.0625
+      },
+      {
+        "height_world_m": 5924.479166666667,
+        "area_above_05peak_m2": 7755859.375
+      },
+      {
+        "height_world_m": 5960.9375,
+        "area_above_05peak_m2": 7918945.3125
+      },
+      {
+        "height_world_m": 5997.395833333334,
+        "area_above_05peak_m2": 7869140.625
+      },
+      {
+        "height_world_m": 6033.854166666667,
+        "area_above_05peak_m2": 7826171.875
+      },
+      {
+        "height_world_m": 6070.3125,
+        "area_above_05peak_m2": 7857421.875
+      },
+      {
+        "height_world_m": 6106.770833333334,
+        "area_above_05peak_m2": 7882812.5
+      },
+      {
+        "height_world_m": 6143.229166666667,
+        "area_above_05peak_m2": 7901367.1875
+      },
+      {
+        "height_world_m": 6179.6875,
+        "area_above_05peak_m2": 7810546.875
+      },
+      {
+        "height_world_m": 6216.145833333334,
+        "area_above_05peak_m2": 7781250.0
+      },
+      {
+        "height_world_m": 6252.604166666667,
+        "area_above_05peak_m2": 7706054.6875
+      },
+      {
+        "height_world_m": 6289.0625,
+        "area_above_05peak_m2": 7649414.0625
+      },
+      {
+        "height_world_m": 6325.520833333334,
+        "area_above_05peak_m2": 7577148.4375
+      },
+      {
+        "height_world_m": 6361.979166666667,
+        "area_above_05peak_m2": 7599609.375
+      },
+      {
+        "height_world_m": 6398.4375,
+        "area_above_05peak_m2": 7543945.3125
+      },
+      {
+        "height_world_m": 6434.895833333334,
+        "area_above_05peak_m2": 7502929.6875
+      },
+      {
+        "height_world_m": 6471.354166666667,
+        "area_above_05peak_m2": 7386718.75
+      },
+      {
+        "height_world_m": 6507.8125,
+        "area_above_05peak_m2": 7265625.0
+      },
+      {
+        "height_world_m": 6544.270833333334,
+        "area_above_05peak_m2": 7093750.0
+      },
+      {
+        "height_world_m": 6580.729166666667,
+        "area_above_05peak_m2": 6960937.5
+      },
+      {
+        "height_world_m": 6617.1875,
+        "area_above_05peak_m2": 6826171.875
+      },
+      {
+        "height_world_m": 6653.645833333334,
+        "area_above_05peak_m2": 6704101.5625
+      },
+      {
+        "height_world_m": 6690.104166666667,
+        "area_above_05peak_m2": 6631835.9375
+      },
+      {
+        "height_world_m": 6726.5625,
+        "area_above_05peak_m2": 6373046.875
+      },
+      {
+        "height_world_m": 6763.020833333334,
+        "area_above_05peak_m2": 6223632.8125
+      },
+      {
+        "height_world_m": 6799.479166666667,
+        "area_above_05peak_m2": 6170898.4375
+      },
+      {
+        "height_world_m": 6835.9375,
+        "area_above_05peak_m2": 6155273.4375
+      },
+      {
+        "height_world_m": 6872.395833333334,
+        "area_above_05peak_m2": 6023437.5
+      },
+      {
+        "height_world_m": 6908.854166666667,
+        "area_above_05peak_m2": 5904296.875
+      },
+      {
+        "height_world_m": 6945.3125,
+        "area_above_05peak_m2": 5854492.1875
+      },
+      {
+        "height_world_m": 6981.770833333334,
+        "area_above_05peak_m2": 5858398.4375
+      },
+      {
+        "height_world_m": 7018.229166666667,
+        "area_above_05peak_m2": 5936523.4375
+      },
+      {
+        "height_world_m": 7054.687500000001,
+        "area_above_05peak_m2": 5982421.875
+      },
+      {
+        "height_world_m": 7091.145833333334,
+        "area_above_05peak_m2": 6102539.0625
+      },
+      {
+        "height_world_m": 7127.604166666667,
+        "area_above_05peak_m2": 6083984.375
+      },
+      {
+        "height_world_m": 7164.062500000001,
+        "area_above_05peak_m2": 5855468.75
+      },
+      {
+        "height_world_m": 7200.520833333334,
+        "area_above_05peak_m2": 5840820.3125
+      },
+      {
+        "height_world_m": 7236.979166666667,
+        "area_above_05peak_m2": 5761718.75
+      },
+      {
+        "height_world_m": 7273.437500000001,
+        "area_above_05peak_m2": 5738281.25
+      },
+      {
+        "height_world_m": 7309.895833333334,
+        "area_above_05peak_m2": 5658203.125
+      },
+      {
+        "height_world_m": 7346.354166666667,
+        "area_above_05peak_m2": 5659179.6875
+      },
+      {
+        "height_world_m": 7382.812500000001,
+        "area_above_05peak_m2": 5683593.75
+      },
+      {
+        "height_world_m": 7419.270833333334,
+        "area_above_05peak_m2": 5780273.4375
+      },
+      {
+        "height_world_m": 7455.729166666667,
+        "area_above_05peak_m2": 5689453.125
+      },
+      {
+        "height_world_m": 7492.187500000001,
+        "area_above_05peak_m2": 5686523.4375
+      },
+      {
+        "height_world_m": 7528.645833333334,
+        "area_above_05peak_m2": 5782226.5625
+      },
+      {
+        "height_world_m": 7565.104166666667,
+        "area_above_05peak_m2": 5724609.375
+      },
+      {
+        "height_world_m": 7601.562500000001,
+        "area_above_05peak_m2": 5681640.625
+      },
+      {
+        "height_world_m": 7638.020833333334,
+        "area_above_05peak_m2": 5662109.375
+      },
+      {
+        "height_world_m": 7674.479166666667,
+        "area_above_05peak_m2": 5534179.6875
+      },
+      {
+        "height_world_m": 7710.937500000001,
+        "area_above_05peak_m2": 5368164.0625
+      },
+      {
+        "height_world_m": 7747.395833333334,
+        "area_above_05peak_m2": 5232421.875
+      },
+      {
+        "height_world_m": 7783.854166666667,
+        "area_above_05peak_m2": 5068359.375
+      },
+      {
+        "height_world_m": 7820.312500000001,
+        "area_above_05peak_m2": 4964843.75
+      },
+      {
+        "height_world_m": 7856.770833333334,
+        "area_above_05peak_m2": 4845703.125
+      },
+      {
+        "height_world_m": 7893.229166666667,
+        "area_above_05peak_m2": 4783203.125
+      },
+      {
+        "height_world_m": 7929.687500000001,
+        "area_above_05peak_m2": 4651367.1875
+      },
+      {
+        "height_world_m": 7966.145833333334,
+        "area_above_05peak_m2": 4565429.6875
+      },
+      {
+        "height_world_m": 8002.604166666667,
+        "area_above_05peak_m2": 4387695.3125
+      },
+      {
+        "height_world_m": 8039.062500000001,
+        "area_above_05peak_m2": 4291992.1875
+      },
+      {
+        "height_world_m": 8075.520833333334,
+        "area_above_05peak_m2": 4100585.9375
+      },
+      {
+        "height_world_m": 8111.979166666667,
+        "area_above_05peak_m2": 3919921.875
+      },
+      {
+        "height_world_m": 8148.437500000001,
+        "area_above_05peak_m2": 3674804.6875
+      },
+      {
+        "height_world_m": 8184.895833333334,
+        "area_above_05peak_m2": 3422851.5625
+      },
+      {
+        "height_world_m": 8221.354166666668,
+        "area_above_05peak_m2": 3229492.1875
+      },
+      {
+        "height_world_m": 8257.8125,
+        "area_above_05peak_m2": 3120117.1875
+      },
+      {
+        "height_world_m": 8294.270833333334,
+        "area_above_05peak_m2": 2961914.0625
+      },
+      {
+        "height_world_m": 8330.729166666668,
+        "area_above_05peak_m2": 2810546.875
+      },
+      {
+        "height_world_m": 8367.1875,
+        "area_above_05peak_m2": 2709960.9375
+      },
+      {
+        "height_world_m": 8403.645833333334,
+        "area_above_05peak_m2": 2704101.5625
+      },
+      {
+        "height_world_m": 8440.104166666668,
+        "area_above_05peak_m2": 2777343.75
+      },
+      {
+        "height_world_m": 8476.5625,
+        "area_above_05peak_m2": 2725585.9375
+      },
+      {
+        "height_world_m": 8513.020833333334,
+        "area_above_05peak_m2": 2581054.6875
+      },
+      {
+        "height_world_m": 8549.479166666668,
+        "area_above_05peak_m2": 2383789.0625
+      },
+      {
+        "height_world_m": 8585.9375,
+        "area_above_05peak_m2": 2314453.125
+      },
+      {
+        "height_world_m": 8622.395833333334,
+        "area_above_05peak_m2": 2241210.9375
+      },
+      {
+        "height_world_m": 8658.854166666668,
+        "area_above_05peak_m2": 2258789.0625
+      },
+      {
+        "height_world_m": 8695.3125,
+        "area_above_05peak_m2": 2418945.3125
+      },
+      {
+        "height_world_m": 8731.770833333334,
+        "area_above_05peak_m2": 2440429.6875
+      },
+      {
+        "height_world_m": 8768.229166666668,
+        "area_above_05peak_m2": 2463867.1875
+      },
+      {
+        "height_world_m": 8804.6875,
+        "area_above_05peak_m2": 2762695.3125
+      },
+      {
+        "height_world_m": 8841.145833333334,
+        "area_above_05peak_m2": 3088867.1875
+      },
+      {
+        "height_world_m": 8877.604166666668,
+        "area_above_05peak_m2": 3566406.25
+      },
+      {
+        "height_world_m": 8914.0625,
+        "area_above_05peak_m2": 4089843.75
+      },
+      {
+        "height_world_m": 8950.520833333334,
+        "area_above_05peak_m2": 4425781.25
+      },
+      {
+        "height_world_m": 8986.979166666668,
+        "area_above_05peak_m2": 4840820.3125
+      },
+      {
+        "height_world_m": 9023.4375,
+        "area_above_05peak_m2": 5128906.25
+      },
+      {
+        "height_world_m": 9059.895833333334,
+        "area_above_05peak_m2": 5458984.375
+      },
+      {
+        "height_world_m": 9096.354166666668,
+        "area_above_05peak_m2": 6095703.125
+      },
+      {
+        "height_world_m": 9132.8125,
+        "area_above_05peak_m2": 6646484.375
+      },
+      {
+        "height_world_m": 9169.270833333334,
+        "area_above_05peak_m2": 6946289.0625
+      },
+      {
+        "height_world_m": 9205.729166666668,
+        "area_above_05peak_m2": 7000976.5625
+      },
+      {
+        "height_world_m": 9242.1875,
+        "area_above_05peak_m2": 7304687.5
+      },
+      {
+        "height_world_m": 9278.645833333334,
+        "area_above_05peak_m2": 7553710.9375
+      },
+      {
+        "height_world_m": 9315.104166666668,
+        "area_above_05peak_m2": 8086914.0625
+      },
+      {
+        "height_world_m": 9351.5625,
+        "area_above_05peak_m2": 9229492.1875
+      },
+      {
+        "height_world_m": 9388.020833333334,
+        "area_above_05peak_m2": 10624023.4375
+      },
+      {
+        "height_world_m": 9424.479166666668,
+        "area_above_05peak_m2": 11500976.5625
+      },
+      {
+        "height_world_m": 9460.9375,
+        "area_above_05peak_m2": 12237304.6875
+      },
+      {
+        "height_world_m": 9497.395833333334,
+        "area_above_05peak_m2": 12678710.9375
+      },
+      {
+        "height_world_m": 9533.854166666668,
+        "area_above_05peak_m2": 13176757.8125
+      },
+      {
+        "height_world_m": 9570.3125,
+        "area_above_05peak_m2": 13450195.3125
+      },
+      {
+        "height_world_m": 9606.770833333334,
+        "area_above_05peak_m2": 13940429.6875
+      },
+      {
+        "height_world_m": 9643.229166666668,
+        "area_above_05peak_m2": 14341796.875
+      },
+      {
+        "height_world_m": 9679.6875,
+        "area_above_05peak_m2": 14646484.375
+      },
+      {
+        "height_world_m": 9716.145833333334,
+        "area_above_05peak_m2": 14998046.875
+      },
+      {
+        "height_world_m": 9752.604166666668,
+        "area_above_05peak_m2": 15245117.1875
+      },
+      {
+        "height_world_m": 9789.0625,
+        "area_above_05peak_m2": 15389648.4375
+      },
+      {
+        "height_world_m": 9825.520833333334,
+        "area_above_05peak_m2": 15535156.25
+      },
+      {
+        "height_world_m": 9861.979166666668,
+        "area_above_05peak_m2": 15899414.0625
+      },
+      {
+        "height_world_m": 9898.4375,
+        "area_above_05peak_m2": 16018554.6875
+      },
+      {
+        "height_world_m": 9934.895833333334,
+        "area_above_05peak_m2": 16359375.0
+      },
+      {
+        "height_world_m": 9971.354166666668,
+        "area_above_05peak_m2": 16554687.5
+      },
+      {
+        "height_world_m": 10007.8125,
+        "area_above_05peak_m2": 16712890.625
+      },
+      {
+        "height_world_m": 10044.270833333334,
+        "area_above_05peak_m2": 16750000.0
+      },
+      {
+        "height_world_m": 10080.729166666668,
+        "area_above_05peak_m2": 16546875.0
+      },
+      {
+        "height_world_m": 10117.1875,
+        "area_above_05peak_m2": 16296875.0
+      },
+      {
+        "height_world_m": 10153.645833333334,
+        "area_above_05peak_m2": 16010742.1875
+      },
+      {
+        "height_world_m": 10190.104166666668,
+        "area_above_05peak_m2": 15667968.75
+      },
+      {
+        "height_world_m": 10226.5625,
+        "area_above_05peak_m2": 15102539.0625
+      },
+      {
+        "height_world_m": 10263.020833333334,
+        "area_above_05peak_m2": 14394531.25
+      },
+      {
+        "height_world_m": 10299.479166666668,
+        "area_above_05peak_m2": 13875000.0
+      },
+      {
+        "height_world_m": 10335.9375,
+        "area_above_05peak_m2": 13413085.9375
+      },
+      {
+        "height_world_m": 10372.395833333334,
+        "area_above_05peak_m2": 12799804.6875
+      },
+      {
+        "height_world_m": 10408.854166666668,
+        "area_above_05peak_m2": 12430664.0625
+      },
+      {
+        "height_world_m": 10445.3125,
+        "area_above_05peak_m2": 12220703.125
+      },
+      {
+        "height_world_m": 10481.770833333334,
+        "area_above_05peak_m2": 11877929.6875
+      },
+      {
+        "height_world_m": 10518.229166666668,
+        "area_above_05peak_m2": 11427734.375
+      },
+      {
+        "height_world_m": 10554.6875,
+        "area_above_05peak_m2": 10816406.25
+      },
+      {
+        "height_world_m": 10591.145833333334,
+        "area_above_05peak_m2": 10274414.0625
+      },
+      {
+        "height_world_m": 10627.604166666668,
+        "area_above_05peak_m2": 9601562.5
+      },
+      {
+        "height_world_m": 10664.0625,
+        "area_above_05peak_m2": 8896484.375
+      },
+      {
+        "height_world_m": 10700.520833333334,
+        "area_above_05peak_m2": 8167968.75
+      },
+      {
+        "height_world_m": 10736.979166666668,
+        "area_above_05peak_m2": 7329101.5625
+      },
+      {
+        "height_world_m": 10773.4375,
+        "area_above_05peak_m2": 6329101.5625
+      },
+      {
+        "height_world_m": 10809.895833333334,
+        "area_above_05peak_m2": 5317382.8125
+      },
+      {
+        "height_world_m": 10846.354166666668,
+        "area_above_05peak_m2": 4685546.875
+      },
+      {
+        "height_world_m": 10882.8125,
+        "area_above_05peak_m2": 3833984.375
+      },
+      {
+        "height_world_m": 10919.270833333334,
+        "area_above_05peak_m2": 3158203.125
+      },
+      {
+        "height_world_m": 10955.729166666668,
+        "area_above_05peak_m2": 2560546.875
+      },
+      {
+        "height_world_m": 10992.1875,
+        "area_above_05peak_m2": 2083984.375
+      },
+      {
+        "height_world_m": 11028.645833333334,
+        "area_above_05peak_m2": 1873046.875
+      },
+      {
+        "height_world_m": 11065.104166666668,
+        "area_above_05peak_m2": 1728515.625
+      },
+      {
+        "height_world_m": 11101.5625,
+        "area_above_05peak_m2": 1658203.125
+      },
+      {
+        "height_world_m": 11138.020833333334,
+        "area_above_05peak_m2": 1501953.125
+      },
+      {
+        "height_world_m": 11174.479166666668,
+        "area_above_05peak_m2": 1281250.0
+      },
+      {
+        "height_world_m": 11210.9375,
+        "area_above_05peak_m2": 1066406.25
+      },
+      {
+        "height_world_m": 11247.395833333334,
+        "area_above_05peak_m2": 914062.5
+      },
+      {
+        "height_world_m": 11283.854166666668,
+        "area_above_05peak_m2": 690429.6875
+      },
+      {
+        "height_world_m": 11320.3125,
+        "area_above_05peak_m2": 500000.0
+      },
+      {
+        "height_world_m": 11356.770833333334,
+        "area_above_05peak_m2": 341796.875
+      },
+      {
+        "height_world_m": 11393.229166666668,
+        "area_above_05peak_m2": 162109.375
+      },
+      {
+        "height_world_m": 11429.6875,
+        "area_above_05peak_m2": 61523.4375
+      },
+      {
+        "height_world_m": 11466.145833333334,
+        "area_above_05peak_m2": 16601.5625
+      },
+      {
+        "height_world_m": 11502.604166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11539.0625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11575.520833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11611.979166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11648.4375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11684.895833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11721.354166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11757.8125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11794.270833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11830.729166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11867.1875,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11903.645833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11940.104166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 11976.5625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12013.020833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12049.479166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12085.9375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12122.395833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12158.854166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12195.3125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12231.770833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12268.229166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12304.6875,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12341.145833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12377.604166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12414.0625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12450.520833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12486.979166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12523.4375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12559.895833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12596.354166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12632.8125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12669.270833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12705.729166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12742.1875,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12778.645833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12815.104166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12851.5625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12888.020833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12924.479166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12960.9375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 12997.395833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13033.854166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13070.3125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13106.770833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13143.229166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13179.6875,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13216.145833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13252.604166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13289.0625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13325.520833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13361.979166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13398.4375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13434.895833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13471.354166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13507.8125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13544.270833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13580.729166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13617.1875,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13653.645833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13690.104166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13726.5625,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13763.020833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13799.479166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13835.9375,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13872.395833333334,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13908.854166666668,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13945.3125,
+        "area_above_05peak_m2": 0.0
+      },
+      {
+        "height_world_m": 13981.770833333334,
+        "area_above_05peak_m2": 0.0
+      }
+    ]
+  },
+  "recipe": {
+    "file": "cook.py",
+    "sha256": "9b08bea0cfd51ff9eae704d1bc564a86009aafc9507130836f807b1b2095adc5",
+    "python": "3.14.10",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "peak_process_rss_bytes": 431259648
+  }
+}

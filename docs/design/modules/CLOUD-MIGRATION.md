@@ -11,7 +11,7 @@ lighting -> Hillaire air + Beer receiver shadows + one cloud MS octave -> joint 
 reflections -> per-view reconstruction**. [Provider selection](CLOUD-PROVIDERS.md) is replaceable; the
 [complete atmosphere coverage map](ATMOSPHERE-SYSTEM.md) separates delivered optics/weather from neighbouring effects.
 Houdini and complete baked lifecycle playback are removed. The renderer has production lineage; the dynamic source
-and exact combined image/cost are unproved. Contradictory native/motion evidence rejects the pulse/transport morphology; authored3D ingredients and bounded geometry-versus-fade discrimination now precede another live source implementation. Visual success leads selection; lower cost wins only at equivalent accepted
+and exact combined image/cost are unproved. Contradictory native/motion evidence rejects pulse/transport morphology. Local geometry-versus-fade contrast is witnessed but does not accept breakup. A [reviewed finite-material Cu pilot](CLOUD-AUTHORED-SOURCE.md) and complete-surface static Cb authoring now address those separate failures. Visual success leads selection; lower cost wins only at equivalent accepted
 quality, behaviour and consumer scope. POCs verify this selected model, not an indefinite algorithm competition.
 
 ## Progress and completion semantics
@@ -102,7 +102,7 @@ are retained. All-stage checkboxes remain open where their complete contract is 
 - [x] Retain first dense Cu reference with empty-field birth, transported growth, simultaneous young/old support and spatial dry-front loss; soft morphology and64x throughput fail acceptance.
 
 - [ ] Generate pinned native3D base/erosion/strand ingredients; no paid tool, clip library or bulk asset prerequisite.
-- [ ] Implement bounded source advection/local reaction with small independent CPU oracle, halos, source birth/support and immutable snapshot.
+- [ ] Implement the reviewed finite-material Cu pilot: local source growth/loss, fresh material wind maps, actual burial/neck certificates, bounded lifetime and one immutable interpolated source tuple; compare an independent CPU oracle and actual GPU query. Retain prior advection tests as optional flow-provider evidence.
 - [ ] One Cu undergoes actual local growth, continuing mature replacement and irregular breakup under live source/dry controls.
 - [ ] Change wind direction/shear and move a new dry/lift front **after** development starts; existing matter/IDs respond.
 - [ ] Compare resolved fixed/world-locked beauty and source regions at normal1x and actual16x/64x; inspect topology and material transport.
@@ -129,7 +129,7 @@ are retained. All-stage checkboxes remain open where their complete contract is 
 
 ## P1b — representative live source regimes before layout/library freeze
 
-Active bounded risk proof: repair the Cb low-body seed, supply-to-cap transport and phase-coherent optical query.
+Active bounded proofs: implement the reviewed liquid Cu birth/renewal/moving-breakup interaction, and separately qualify complete frozen Cb anatomy. Prior low-body/feed/transport/phase work is retained below as rejected source history.
 Keep P1a/P4a gates open; this early Cb discrimination does not promote a family or skip coupled acceptance.
 [Source, phase/filter/grid reviews, actual images and cost receipts](../../evidence/cloud-storm-source-2026-11-02/README.md)
 are retained. [Thermal/asymmetric-cap/local-breakup proof](../../evidence/cloud-billowing-2026-11-02/README.md) now has real1x/16x clips and bounded120s shutdown fragmentation. [Expanding-interior checkpoint](../../evidence/cloud-core-growth-2026-11-02/README.md) corrects the analytical sheet-forming flow and proves native filled density/fed cap. [Bounded material renewal](../../evidence/cloud-material-renewal-2026-11-02/README.md) reduces indefinite texture streaking with actual reset/motion/cost evidence, but art remains soft/stacked and shutdown chiefly fades. [Causal-feed/path proof](../../evidence/cloud-connected-feed-2026-11-03/README.md) closes bounded pickup and cap transport with actual young/optical density, trajectories and90s1x motion, but confirms a smooth shaft. The [front-normal proof](../../evidence/cloud-front-growth-2026-11-03/README.md) passes its operators/work mask but rejects the resulting depleted shelf anatomy and dissolving shutdown. Stop extending profiles2/3/4 as default morphology. Next prove authored3D anatomy through unchanged optics, then complete its local live-development/material/ice/cost contract before lifecycle construction; the720s downwind chart exit requires regional exchange. Record actual1x/16x motion alongside held source images; do not tune
@@ -142,7 +142,10 @@ lighting or opacity to hide that failed cue. Regional exchange remains necessary
 - [x] Preserve [front-normal stencil/mask proof and rejected1x/16x source anatomy](../../evidence/cloud-front-growth-2026-11-03/README.md); this does not accept the source or budgets.
 - [x] Retain [static CC0 master/cook/shared-optical proof](../../evidence/cloud-authored-masters-2026-11-03/README.md), including source-resolution loss and exact GPU scalar uploads; no full Cu/Cb/lifecycle or cost acceptance.
 - [x] Preserve [SDF/density-subtraction/matched-integral-alpha discrimination](../../evidence/cloud-geometry-operators-2026-11-03/README.md): actual native views,1x/16xclips and sampled contacts, numerical/tolerance/endpoint checks and reviewed failure fixes. Support erosion differs from fade; static thin remnants still fail full breakup. Continuous playback/whole lifecycle are not accepted.
-- [ ] Prove a broad frozen authored3D formation from front/side/oblique, then lock its full weather-driven growth/erosion, survivor/correspondence and tower-fed-ice producer before dependent lifecycle work.
+- [x] Preserve [rejected skeletal and smooth-bulk frozen Cb inputs](../../evidence/cloud-cb-anatomy-2026-11-03/README.md), exact runnable source, native images and actual all-native GPU upload. Connectivity and occupied bulk do not establish appearance.
+- [x] Record [finite-material source reasoning and independent Cu pilot review](../../evidence/cloud-cohort-design-2026-11-03/README.md). The general source/family/performance design remains unfinished.
+- [ ] Build and inspect the bounded liquid Cu pilot through real local birth, at least two replacement intervals, changing wind/fronts and moving source-off remnants; actual1x/16x, same-source consumers and CPU/memory/cadence witnesses. No full CF01/Cb pass by this pilot alone.
+- [ ] Prove a broad frozen authored3D formation from front/side/oblique with full-surface billows and a directional connected cap. Then supply its exact runtime programme, spatial phase and weather/material/cost contract before dependent Cb lifecycle work.
 - [ ] Recover optics after a long host/background gap as an explicit new optical epoch, with current-time chart/seed alignment; preserve CPU weather and declare lost q continuity.
 - [ ] Same-ID Cu strengthens into Cb towers, cap outflow/anvil and unequal core/ice decay; no inserted/faded disk.
 - [x] Correct Ci repeated sine-comb source with [finite filament/head and anisotropic transport proof](../../evidence/cloud-cirrus-2026-11-02/README.md): actual1x/16x images, ice-only GPU regressions and bounded supply-off response; full Ci acceptance remains open.

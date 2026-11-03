@@ -1,0 +1,1 @@
+Owner: root cloud campaign. Selected negative source/anatomy evidence, not an accepted cloud source. Original CC0 ingredients/rights live in the sibling cloud-authored-masters-2026-11-03 package. Frozen instrument ZIPs preserve every exact source/data byte and include their license. No lifecycle, performance or Cb acceptance.

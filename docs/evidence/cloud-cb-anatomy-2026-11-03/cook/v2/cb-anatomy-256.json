@@ -1,0 +1,1640 @@
+{
+  "id": "thrum.cloud-cb-anatomy.frozen.bulk-v2",
+  "classification": "One authored frozen Cb anatomy challenger, not accepted source/lifecycle/art",
+  "output": {
+    "file": "cb-anatomy-256.density.r16f",
+    "sha256": "c74e336fb66f02211400bde744619b0c14b6a8e6144e85f179322e6c95f1c09f",
+    "bytes": 33554432,
+    "dimensions_xyz": [
+      256,
+      256,
+      256
+    ],
+    "storage": "little-endianR16F Xfastest numpy[Z,Y,X]",
+    "bounds_min_corner_xyz_m": [
+      -6000.0,
+      0.0,
+      -6000.0
+    ],
+    "bounds_max_corner_xyz_m": [
+      6000.0,
+      14000.0,
+      6000.0
+    ],
+    "voxel_pitch_xyz_m": [
+      46.875,
+      54.6875,
+      46.875
+    ]
+  },
+  "world_target_m": [
+    0,
+    6500,
+    0
+  ],
+  "density_weighted_centroid_world_m": [
+    -359.6901025574435,
+    5613.985858944488,
+    -50.1912146764604
+  ],
+  "stats": {
+    "sum": 99573.53939300776,
+    "peak": 0.5458984375,
+    "nonzero": 1676838,
+    "invalid": 0,
+    "zero_faces": true
+  },
+  "anatomy": {
+    "composition": "max(q_f30d,window*(.075+.45*sample03)); q_floor adds actual bulk density, kappa unchanged; max with two broad overlapping qualified03/08body skins",
+    "node_count": 17,
+    "nodes": [
+      {
+        "id": "body-main",
+        "ingredient": "03",
+        "center_world_m": [
+          -600,
+          2950,
+          300
+        ],
+        "scale_world_per_local_m": [
+          15,
+          13,
+          14
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          -12,
+          20,
+          2
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            14.663276094661535,
+            -1.3501990778995234,
+            -2.566448286778008
+          ],
+          [
+            0.5120528844955303,
+            12.176300275084893,
+            -4.880823025592677
+          ],
+          [
+            3.1186753622663903,
+            4.349100373756258,
+            12.868213154285975
+          ]
+        ],
+        "inverse": [
+          [
+            0.06517011597627347,
+            0.002275790597757912,
+            0.01386077938785062
+          ],
+          [
+            -0.007989343656210195,
+            0.07204911405375677,
+            0.0257343217382027
+          ],
+          [
+            -0.013094123912132688,
+            -0.02490215829384019,
+            0.065654148746357
+          ]
+        ],
+        "gain": 1.0,
+        "role": "body",
+        "prefilter_sigma_native_xyz": [
+          0.08442257524472017,
+          0.2742070482567386,
+          0.15818927609948982
+        ]
+      },
+      {
+        "id": "body-rear",
+        "ingredient": "08",
+        "center_world_m": [
+          1750,
+          3000,
+          -1100
+        ],
+        "scale_world_per_local_m": [
+          12,
+          13,
+          13
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          32,
+          -20,
+          -4
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            10.151787523403245,
+            -1.498274961081216,
+            6.767882327053043
+          ],
+          [
+            -0.7098821370394941,
+            12.350603898558658,
+            3.9838627468062664
+          ],
+          [
+            -6.359031170798459,
+            -3.770643908128257,
+            10.359758994386516
+          ]
+        ],
+        "inverse": [
+          [
+            0.07049852446807811,
+            -0.0049297370627742676,
+            -0.04415993868610041
+          ],
+          [
+            -0.008865532314090041,
+            0.07308049644117551,
+            -0.022311502414960098
+          ],
+          [
+            0.04004664098847955,
+            0.023573152347966076,
+            0.061300349079210156
+          ]
+        ],
+        "gain": 0.9,
+        "role": "body",
+        "prefilter_sigma_native_xyz": [
+          0.24110225084721143,
+          0.27620501133008274,
+          0.202815612975079
+        ]
+      },
+      {
+        "id": "body-front",
+        "ingredient": "03",
+        "center_world_m": [
+          -2200,
+          2700,
+          1600
+        ],
+        "scale_world_per_local_m": [
+          10,
+          12,
+          12
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          -28,
+          15,
+          3
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            8.817375438693812,
+            -2.0627317274607835,
+            -5.271692323895447
+          ],
+          [
+            0.4620990658467739,
+            11.498913739679884,
+            -3.3863685003578503
+          ],
+          [
+            4.694715627858908,
+            2.742283834311801,
+            10.234342598426435
+          ]
+        ],
+        "inverse": [
+          [
+            0.0881737543869381,
+            0.00462099065846774,
+            0.046947156278589065
+          ],
+          [
+            -0.014324525885144332,
+            0.07985356763666587,
+            0.019043637738276397
+          ],
+          [
+            -0.036608974471496164,
+            -0.023516447919151744,
+            0.07107182360018356
+          ]
+        ],
+        "gain": 0.9,
+        "role": "body",
+        "prefilter_sigma_native_xyz": [
+          0.34680551944232846,
+          0.3237274377956285,
+          0.24902754024346363
+        ]
+      },
+      {
+        "id": "body-left",
+        "ingredient": "08",
+        "center_world_m": [
+          -2800,
+          2700,
+          -1000
+        ],
+        "scale_world_per_local_m": [
+          10,
+          12,
+          11
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          58,
+          -15,
+          -2
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            5.295964517353734,
+            -2.227763583275696,
+            9.104537281702058
+          ],
+          [
+            -0.18493915614698475,
+            11.675970429008492,
+            2.5308074267914433
+          ],
+          [
+            -8.48048096156426,
+            -1.6458383754032213,
+            5.63048973488049
+          ]
+        ],
+        "inverse": [
+          [
+            0.052959645173537344,
+            -0.001849391561469842,
+            -0.0848048096156426
+          ],
+          [
+            -0.015470580439414554,
+            0.08108312797922562,
+            -0.011429433162522372
+          ],
+          [
+            0.07524410976613272,
+            0.020915763857780524,
+            0.04653297301554123
+          ]
+        ],
+        "gain": 0.8,
+        "role": "body",
+        "prefilter_sigma_native_xyz": [
+          0.3466155153332967,
+          0.32596511119294624,
+          0.29668434773102004
+        ]
+      },
+      {
+        "id": "main-root",
+        "ingredient": "03",
+        "center_world_m": [
+          -950,
+          5000,
+          200
+        ],
+        "scale_world_per_local_m": [
+          9,
+          12,
+          14
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          -15,
+          90,
+          -5
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            8.660251682091525,
+            -3.0940099259555947,
+            -1.2201803984672146
+          ],
+          [
+            -0.7576738454643227,
+            0.2706907933577988,
+            -13.946725773284438
+          ],
+          [
+            2.3293714059226867,
+            11.59110991546882,
+            8.280425799650689e-16
+          ]
+        ],
+        "inverse": [
+          [
+            0.10691668743322869,
+            -0.00935399809215213,
+            0.02875767167805786
+          ],
+          [
+            -0.02148618004135829,
+            0.0018797971760958238,
+            0.08049381885742235
+          ],
+          [
+            -0.006225410196261297,
+            -0.07115676414941038,
+            4.1333512107998594e-18
+          ]
+        ],
+        "gain": 1.0,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.4104667785919525,
+          0.2407856133414461,
+          0.2401395823720091
+        ]
+      },
+      {
+        "id": "main-upper",
+        "ingredient": "08",
+        "center_world_m": [
+          -450,
+          7700,
+          150
+        ],
+        "scale_world_per_local_m": [
+          10,
+          13,
+          12
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          26,
+          85,
+          7
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            8.920945717723704,
+            5.49674165370342,
+            1.9119284487783634
+          ],
+          [
+            1.095354402789352,
+            1.8164484834712615,
+            -11.809356061708314
+          ],
+          [
+            -4.383711467890775,
+            11.639860226795543,
+            0.9400207521885233
+          ]
+        ],
+        "inverse": [
+          [
+            0.08920945717723704,
+            0.01095354402789352,
+            -0.04383711467890773
+          ],
+          [
+            0.03252509854262379,
+            0.010748215878528174,
+            0.06887491258458898
+          ],
+          [
+            0.01327728089429419,
+            -0.08200941709519662,
+            0.006527921890198077
+          ]
+        ],
+        "gain": 0.9,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.34784861710015197,
+          0.1946800601925831,
+          0.32766315739184615
+        ]
+      },
+      {
+        "id": "left-tower",
+        "ingredient": "03",
+        "center_world_m": [
+          -2700,
+          5200,
+          700
+        ],
+        "scale_world_per_local_m": [
+          8,
+          12,
+          11
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          57,
+          80,
+          -12
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            4.261898922927392,
+            10.127810729083292,
+            -0.6853206051047693
+          ],
+          [
+            -0.9058945812426169,
+            -0.022401650779849267,
+            -10.929228993001441
+          ],
+          [
+            -6.709364543563392,
+            6.436376931310633,
+            1.0403313350829846
+          ]
+        ],
+        "inverse": [
+          [
+            0.06659217067074048,
+            -0.014154602831915886,
+            -0.10483382099317799
+          ],
+          [
+            0.0703320189519673,
+            -0.00015556701930450925,
+            0.044697062022990515
+          ],
+          [
+            -0.005663806653758422,
+            -0.0903242065537309,
+            0.008597779628784996
+          ]
+        ],
+        "gain": 0.9,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.4858292520669171,
+          0.2407320676185797,
+          0.3804554934446936
+        ]
+      },
+      {
+        "id": "left-shoulder",
+        "ingredient": "08",
+        "center_world_m": [
+          -2200,
+          6900,
+          300
+        ],
+        "scale_world_per_local_m": [
+          9,
+          12,
+          9
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          -23,
+          72,
+          10
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            8.158682847287967,
+            -5.035464871461523,
+            0.41616920480126957
+          ],
+          [
+            1.4385959130202293,
+            2.8775206381108815,
+            -8.618171005134577
+          ],
+          [
+            3.5165801564034638,
+            10.505425669887105,
+            2.560064788092821
+          ]
+        ],
+        "inverse": [
+          [
+            0.10072447959614773,
+            0.01776044337062011,
+            0.04341456983214152
+          ],
+          [
+            -0.03496850605181614,
+            0.01998278220910334,
+            0.07295434492977157
+          ],
+          [
+            0.005137891417299623,
+            -0.10639717290289602,
+            0.03160573812460274
+          ]
+        ],
+        "gain": 0.85,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.41250161525547413,
+          0.2467497166333357,
+          0.5010078183875866
+        ]
+      },
+      {
+        "id": "rear-tower",
+        "ingredient": "03",
+        "center_world_m": [
+          1500,
+          6000,
+          -1400
+        ],
+        "scale_world_per_local_m": [
+          9,
+          13,
+          13
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          -34,
+          95,
+          10
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            7.347983660915634,
+            -6.935077507704934,
+            2.872789974036913
+          ],
+          [
+            1.2956477732243867,
+            -2.3733446652531196,
+            -12.64376350947249
+          ],
+          [
+            5.032736131236722,
+            10.736476845876386,
+            -0.9393200102227535
+          ]
+        ],
+        "inverse": [
+          [
+            0.0907158476656251,
+            0.01599565152128872,
+            0.06213254483008298
+          ],
+          [
+            -0.04103596158405285,
+            -0.014043459557710766,
+            0.06352944879216794
+          ],
+          [
+            0.016998757242821974,
+            -0.0748151686951035,
+            -0.005558106569365406
+          ]
+        ],
+        "gain": 0.9,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.4119707684200615,
+          0.19621549837042992,
+          0.27959620848210986
+        ]
+      },
+      {
+        "id": "rear-root",
+        "ingredient": "08",
+        "center_world_m": [
+          2000,
+          3900,
+          -1300
+        ],
+        "scale_world_per_local_m": [
+          10,
+          12,
+          10
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          52,
+          78,
+          -10
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            6.063081941316425,
+            9.542211235010583,
+            -0.0850594701632898
+          ],
+          [
+            -1.0690849325003435,
+            0.8508794689903596,
+            -9.91737276181843
+          ],
+          [
+            -7.88010753606722,
+            7.226493539448332,
+            1.2800321830631392
+          ]
+        ],
+        "inverse": [
+          [
+            0.06063081941316424,
+            -0.010690849325003436,
+            -0.0788010753606722
+          ],
+          [
+            0.0662653557986846,
+            0.005908885201321945,
+            0.050183982912835635
+          ],
+          [
+            -0.0008505947016329006,
+            -0.09917372761818433,
+            0.012800321830631392
+          ]
+        ],
+        "gain": 0.9,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.34778856701845584,
+          0.24126388953874284,
+          0.4386072860652448
+        ]
+      },
+      {
+        "id": "front-shoulder",
+        "ingredient": "03",
+        "center_world_m": [
+          -800,
+          4200,
+          2400
+        ],
+        "scale_world_per_local_m": [
+          10,
+          14,
+          9
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          34,
+          65,
+          15
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            8.007888022949121,
+            5.322105692466511,
+            4.165580387012494
+          ],
+          [
+            2.1457071288280765,
+            7.551426599339924,
+            -7.32834587564604
+          ],
+          [
+            -5.591929034707469,
+            10.519084908536344,
+            3.1532977604784667
+          ]
+        ],
+        "inverse": [
+          [
+            0.0800788802294912,
+            0.021457071288280755,
+            -0.055919290347074685
+          ],
+          [
+            0.02715360047176791,
+            0.038527686731326144,
+            0.05366880055375685
+          ],
+          [
+            0.05142691835817893,
+            -0.09047340587217334,
+            0.03892960198121564
+          ]
+        ],
+        "gain": 0.8,
+        "role": "tower",
+        "prefilter_sigma_native_xyz": [
+          0.3514252535660263,
+          0.17712552437771195,
+          0.4774694947361753
+        ]
+      },
+      {
+        "id": "cap-main",
+        "ingredient": "08",
+        "center_world_m": [
+          1000,
+          10300,
+          0
+        ],
+        "scale_world_per_local_m": [
+          14,
+          14,
+          20
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          90,
+          5,
+          4
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            8.551645347666142e-16,
+            0.24433369012196907,
+            19.996953903127825
+          ],
+          [
+            5.97989296033846e-17,
+            13.997867732189476,
+            -0.3490481287456699
+          ],
+          [
+            -14.0,
+            7.47145009682608e-17,
+            1.2199866483456202e-15
+          ]
+        ],
+        "inverse": [
+          [
+            4.363084361054154e-18,
+            3.0509657960910518e-19,
+            -0.07142857142857142
+          ],
+          [
+            0.001246600459805964,
+            0.0714176925111708,
+            3.8119643351153467e-19
+          ],
+          [
+            0.04999238475781956,
+            -0.0008726203218641752,
+            3.0499666208640495e-18
+          ]
+        ],
+        "gain": 0.65,
+        "role": "cap",
+        "prefilter_sigma_native_xyz": [
+          0.14306625320501848,
+          0.24070798391472475,
+          0.0
+        ]
+      },
+      {
+        "id": "cap-root",
+        "ingredient": "03",
+        "center_world_m": [
+          -900,
+          9500,
+          -300
+        ],
+        "scale_world_per_local_m": [
+          12,
+          14,
+          13
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          70,
+          15,
+          -8
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            4.064299521621902,
+            5.253840661542818,
+            11.216650994151149
+          ],
+          [
+            -0.5712000472492723,
+            12.917480301556832,
+            -4.97411139777046
+          ],
+          [
+            -11.2763114494309,
+            1.2392985766192763,
+            4.2947591641415785
+          ]
+        ],
+        "inverse": [
+          [
+            0.02822430223348543,
+            -0.003966666994786614,
+            -0.0783077183988257
+          ],
+          [
+            0.02680530949766743,
+            0.06590551174263688,
+            0.006322951921526921
+          ],
+          [
+            0.06637071594172277,
+            -0.029432611821126976,
+            0.025412776119180944
+          ]
+        ],
+        "gain": 0.8,
+        "role": "cap",
+        "prefilter_sigma_native_xyz": [
+          0.24097167633897876,
+          0.22886492179133613,
+          0.20836503364135947
+        ]
+      },
+      {
+        "id": "cap-front",
+        "ingredient": "03",
+        "center_world_m": [
+          1800,
+          10100,
+          1600
+        ],
+        "scale_world_per_local_m": [
+          11,
+          12,
+          13
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          105,
+          -10,
+          -6
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            -2.8314132802204224,
+            -0.7664636288466051,
+            12.53448775653261
+          ],
+          [
+            0.297593527538648,
+            11.963346766754288,
+            0.9524330947804496
+          ],
+          [
+            -10.62518408917975,
+            0.5393214663305735,
+            -3.3135310291743254
+          ]
+        ],
+        "inverse": [
+          [
+            -0.023400109753887784,
+            0.002459450640815274,
+            -0.08781143875355166
+          ],
+          [
+            -0.0053226640892125344,
+            0.08307879699134926,
+            0.0037452879606289834
+          ],
+          [
+            0.07416856660670182,
+            0.005635698785683136,
+            -0.019606692480321455
+          ]
+        ],
+        "gain": 0.55,
+        "role": "cap",
+        "prefilter_sigma_native_xyz": [
+          0.291293723177136,
+          0.32963641774747965,
+          0.19309306944029533
+        ]
+      },
+      {
+        "id": "cap-downwind",
+        "ingredient": "08",
+        "center_world_m": [
+          3300,
+          10400,
+          -600
+        ],
+        "scale_world_per_local_m": [
+          7,
+          9,
+          9
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          100,
+          0,
+          -4
+        ],
+        "world_from_local_centered_matrix": [
+          [
+            -1.2125762560356237,
+            0.6278082636971277,
+            8.841679297399214
+          ],
+          [
+            0.084791591822969,
+            8.978076452338417,
+            -0.6182704454940642
+          ],
+          [
+            -6.893654271085456,
+            0.0,
+            -1.5628335990023727
+          ]
+        ],
+        "inverse": [
+          [
+            -0.024746454204808657,
+            0.0017304406494483477,
+            -0.14068682185888687
+          ],
+          [
+            0.007750719304902815,
+            0.11084045002886939,
+            -3.864354430898132e-19
+          ],
+          [
+            0.10915653453579278,
+            -0.007632968462889684,
+            -0.01929424196299226
+          ]
+        ],
+        "gain": 0.35,
+        "role": "cap",
+        "prefilter_sigma_native_xyz": [
+          0.5761022571886593,
+          0.5080357605271086,
+          0.4102050601624635
+        ]
+      },
+      {
+        "id": "broad-front-body",
+        "ingredient": "03",
+        "center_world_m": [
+          -450,
+          5000,
+          600
+        ],
+        "scale_world_per_local_m": [
+          16,
+          18,
+          15
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          20,
+          90,
+          -8
+        ],
+        "gain": 0.95,
+        "role": "broad volumetric body skin overlapping interior fill",
+        "world_from_local_centered_matrix": [
+          [
+            14.888761548741861,
+            6.096449282432851,
+            -2.087596514400981
+          ],
+          [
+            -2.0924789757450517,
+            -0.8568000708739071,
+            -14.854021031123555
+          ],
+          [
+            -5.472322293210699,
+            16.914467174146353,
+            8.630936701708877e-16
+          ]
+        ],
+        "inverse": [
+          [
+            0.05815922479977289,
+            -0.008173745999004105,
+            -0.02137625895785429
+          ],
+          [
+            0.018816201488990277,
+            -0.00264444466319107,
+            0.05220514559921713
+          ],
+          [
+            -0.009278206730671028,
+            -0.06601787124943802,
+            4.208988534148983e-18
+          ]
+        ],
+        "prefilter_sigma_native_xyz": [
+          0.0,
+          0.0,
+          0.19776051385136612
+        ]
+      },
+      {
+        "id": "broad-rear-body",
+        "ingredient": "08",
+        "center_world_m": [
+          650,
+          5600,
+          -350
+        ],
+        "scale_world_per_local_m": [
+          14,
+          16,
+          12
+        ],
+        "euler_yaw_pitch_roll_deg": [
+          110,
+          65,
+          5
+        ],
+        "gain": 0.95,
+        "role": "broad volumetric body skin overlapping interior fill",
+        "world_from_local_centered_matrix": [
+          [
+            -4.770061147902541,
+            12.985221487259144,
+            5.6953198314633315
+          ],
+          [
+            -0.4173262747669282,
+            7.923781191002826,
+            -10.418960906161391
+          ],
+          [
+            -13.155696691002717,
+            -4.959608307511115,
+            -1.7345275014311878
+          ]
+        ],
+        "inverse": [
+          [
+            -0.024337046672972148,
+            -0.00212921568758637,
+            -0.06712090148470774
+          ],
+          [
+            0.05072352143460603,
+            0.03095227027735479,
+            -0.01937346995121529
+          ],
+          [
+            0.039550832162939795,
+            -0.07235389518167631,
+            -0.012045329871049917
+          ]
+        ],
+        "prefilter_sigma_native_xyz": [
+          0.143182610924304,
+          0.056374642174516695,
+          0.3105044428589987
+        ]
+      }
+    ],
+    "wind_direction_world": [
+      1,
+      0,
+      0
+    ],
+    "fringe": {
+      "role": "Only cap ingredients, downwind smoothstep1500..4400m X; density carved by fixed stretched channels",
+      "seed": 79241,
+      "noise_dimensions_zyx": [
+        96,
+        96,
+        96
+      ],
+      "noise_sigma_zyx_cells": [
+        1.4,
+        1.3,
+        9.0
+      ],
+      "noise_file": "fibres-96.r16f",
+      "noise_sha256": "7c0ce550c15feecf40ce699389a14006497242ccda3ea3c0b2221b4c65edc1e7",
+      "density_multiplier": "1-smoothstep(1500,4400,x)*(1-smoothstep(.32,.66,N))",
+      "scope": "Frozen authored directional edge content, not simulated ice phase, wind transport or dynamic fibre correspondence"
+    },
+    "bulk_loft": {
+      "height_m": [
+        900,
+        1600,
+        2500,
+        3800,
+        5300,
+        6700,
+        7800,
+        8900,
+        9800
+      ],
+      "radius_x_m": [
+        300,
+        1800,
+        2600,
+        2800,
+        2600,
+        2250,
+        1850,
+        1300,
+        350
+      ],
+      "radius_z_m": [
+        300,
+        1650,
+        2350,
+        2450,
+        2250,
+        2000,
+        1750,
+        1300,
+        350
+      ],
+      "center_x_m": [
+        -700,
+        -650,
+        -650,
+        -600,
+        -450,
+        -200,
+        0,
+        150,
+        350
+      ],
+      "center_z_m": [
+        350,
+        300,
+        250,
+        150,
+        50,
+        -50,
+        -50,
+        0,
+        0
+      ],
+      "angular_boundary": "1+.08*cos(3theta+.00019*y)+.05*sin(5theta-.00031*y)",
+      "radial_window": [
+        0.62,
+        0.92
+      ],
+      "bottom_window_m": [
+        1200,
+        1900
+      ],
+      "top_window_m": [
+        8800,
+        9800
+      ],
+      "interior_density_floor": 0.075,
+      "source_detail_gain": 0.45,
+      "detail_master": "03/256",
+      "detail_local_from_world": "local=(world-[-300,4800,100])/[14,24,16]+256; trilinear filtered density; density variation only, not stretchedCu outer geometry",
+      "composition": "max(q_f30d,window*(.075+.45*sample03)); q_floor adds actual bulk density, kappa unchanged"
+    }
+  },
+  "ingredient_sampling": [
+    {
+      "id": "body-main",
+      "sampling_box_min_xyz": [
+        71,
+        16,
+        74
+      ],
+      "sampling_box_max_xyz": [
+        273,
+        144,
+        328
+      ],
+      "sampled_voxels": 6677685,
+      "filtering": {
+        "max_abs_density_change": 0.0009812116622924805,
+        "mean_abs_density_change_full_input_cube": 1.1532572404841451e-06,
+        "peak_retention": 0.9994735561540102,
+        "relative_integral_change": 1.1639134100960291e-11,
+        "ingredient_axis_column_relative_L1": [
+          9.995748831729047e-05,
+          3.4326267475123393e-09,
+          0.00010282917781437743
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "body-rear",
+      "sampling_box_min_xyz": [
+        148,
+        22,
+        39
+      ],
+      "sampling_box_max_xyz": [
+        347,
+        142,
+        274
+      ],
+      "sampled_voxels": 5711200,
+      "filtering": {
+        "max_abs_density_change": 0.0008864402770996094,
+        "mean_abs_density_change_full_input_cube": 2.063609905886315e-06,
+        "peak_retention": 0.9983945349143997,
+        "relative_integral_change": 1.1501244401301847e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.00010439079272024911,
+          1.8595948186667302e-05,
+          0.0001192225353776207
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "body-front",
+      "sampling_box_min_xyz": [
+        28,
+        21,
+        132
+      ],
+      "sampling_box_max_xyz": [
+        214,
+        126,
+        354
+      ],
+      "sampled_voxels": 4420306,
+      "filtering": {
+        "max_abs_density_change": 0.014781087636947632,
+        "mean_abs_density_change_full_input_cube": 1.903200011593549e-05,
+        "peak_retention": 0.9926153710270904,
+        "relative_integral_change": 8.10655986782649e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0015071708971326275,
+          0.0014041304488162404,
+          0.0006750923589486108
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "body-left",
+      "sampling_box_min_xyz": [
+        2,
+        26,
+        74
+      ],
+      "sampling_box_max_xyz": [
+        201,
+        121,
+        245
+      ],
+      "sampled_voxels": 3302400,
+      "filtering": {
+        "max_abs_density_change": 0.013711024075746536,
+        "mean_abs_density_change_full_input_cube": 3.250763351831941e-05,
+        "peak_retention": 0.9751710587549836,
+        "relative_integral_change": -6.557321352573808e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0013907377301600225,
+          0.0016878698196912626,
+          0.0009045725803410475
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "main-root",
+      "sampling_box_min_xyz": [
+        97,
+        41,
+        152
+      ],
+      "sampling_box_max_xyz": [
+        226,
+        232,
+        243
+      ],
+      "sampled_voxels": 2296320,
+      "filtering": {
+        "max_abs_density_change": 0.03720143437385559,
+        "mean_abs_density_change_full_input_cube": 4.178770958983988e-05,
+        "peak_retention": 0.9881148510825511,
+        "relative_integral_change": 3.2474689604100604e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0033639201839537163,
+          0.004276642894969435,
+          2.357415600903438e-05
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "main-upper",
+      "sampling_box_min_xyz": [
+        107,
+        124,
+        135
+      ],
+      "sampling_box_max_xyz": [
+        247,
+        297,
+        257
+      ],
+      "sampled_voxels": 3017682,
+      "filtering": {
+        "max_abs_density_change": 0.012714672833681107,
+        "mean_abs_density_change_full_input_cube": 3.062021904484833e-05,
+        "peak_retention": 0.9792861795335952,
+        "relative_integral_change": 5.0205395396574204e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0010262691677940276,
+          0.002135202335738237,
+          0.0007524172891054132
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "left-tower",
+      "sampling_box_min_xyz": [
+        48,
+        66,
+        152
+      ],
+      "sampling_box_max_xyz": [
+        162,
+        219,
+        276
+      ],
+      "sampled_voxels": 2213750,
+      "filtering": {
+        "max_abs_density_change": 0.08943253755569458,
+        "mean_abs_density_change_full_input_cube": 0.00010134419993470583,
+        "peak_retention": 0.9583460264238481,
+        "relative_integral_change": 1.1485257189747244e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0069849673331271655,
+          0.010244792243062732,
+          0.002257916579811951
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "left-shoulder",
+      "sampling_box_min_xyz": [
+        67,
+        119,
+        135
+      ],
+      "sampling_box_max_xyz": [
+        175,
+        259,
+        267
+      ],
+      "sampled_voxels": 2044077,
+      "filtering": {
+        "max_abs_density_change": 0.07145330309867859,
+        "mean_abs_density_change_full_input_cube": 0.0001846541537314251,
+        "peak_retention": 0.895631944037289,
+        "relative_integral_change": 5.322431384513493e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0031680267500405665,
+          0.012953205707311028,
+          0.008691319604831261
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "rear-tower",
+      "sampling_box_min_xyz": [
+        159,
+        69,
+        82
+      ],
+      "sampling_box_max_xyz": [
+        320,
+        259,
+        211
+      ],
+      "sampled_voxels": 4022460,
+      "filtering": {
+        "max_abs_density_change": 0.038601577281951904,
+        "mean_abs_density_change_full_input_cube": 4.322747274957579e-05,
+        "peak_retention": 0.987088793861988,
+        "relative_integral_change": -4.355893423735324e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0034243000782786027,
+          0.004426260301386862,
+          0.00012600594110582673
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "rear-root",
+      "sampling_box_min_xyz": [
+        200,
+        35,
+        84
+      ],
+      "sampling_box_max_xyz": [
+        311,
+        178,
+        216
+      ],
+      "sampled_voxels": 2145024,
+      "filtering": {
+        "max_abs_density_change": 0.040479809045791626,
+        "mean_abs_density_change_full_input_cube": 0.00010059431144383694,
+        "peak_retention": 0.9388829673208842,
+        "relative_integral_change": -2.1301738151180416e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0010305900627839368,
+          0.007095649237441613,
+          0.00523238116237411
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "front-shoulder",
+      "sampling_box_min_xyz": [
+        76,
+        38,
+        184
+      ],
+      "sampling_box_max_xyz": [
+        256,
+        191,
+        352
+      ],
+      "sampled_voxels": 4710706,
+      "filtering": {
+        "max_abs_density_change": 0.06707185506820679,
+        "mean_abs_density_change_full_input_cube": 8.950743554341495e-05,
+        "peak_retention": 0.9427228595616468,
+        "relative_integral_change": 8.697698117288155e-10,
+        "ingredient_axis_column_relative_L1": [
+          0.001214034046438773,
+          0.009041149327198647,
+          0.006907393870846366
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "cap-main",
+      "sampling_box_min_xyz": [
+        71,
+        244,
+        131
+      ],
+      "sampling_box_max_xyz": [
+        376,
+        320,
+        252
+      ],
+      "sampled_voxels": 2874564,
+      "filtering": {
+        "max_abs_density_change": 0.00010827183723449707,
+        "mean_abs_density_change_full_input_cube": 2.3917479602929265e-07,
+        "peak_retention": 0.9998191847810155,
+        "relative_integral_change": 1.1222356377516007e-11,
+        "ingredient_axis_column_relative_L1": [
+          1.2330216736402358e-05,
+          3.4006278608277882e-09,
+          1.4973218464879273e-05
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "cap-root",
+      "sampling_box_min_xyz": [
+        41,
+        193,
+        86
+      ],
+      "sampling_box_max_xyz": [
+        285,
+        327,
+        278
+      ],
+      "sampled_voxels": 6383475,
+      "filtering": {
+        "max_abs_density_change": 0.0001729726791381836,
+        "mean_abs_density_change_full_input_cube": 2.131580899110169e-07,
+        "peak_retention": 0.9999192586124147,
+        "relative_integral_change": -6.347300463005467e-11,
+        "ingredient_axis_column_relative_L1": [
+          1.6547710473955166e-05,
+          1.715790171551965e-05,
+          6.0933836175288765e-06
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "cap-front",
+      "sampling_box_min_xyz": [
+        136,
+        240,
+        160
+      ],
+      "sampling_box_max_xyz": [
+        362,
+        313,
+        326
+      ],
+      "sampled_voxels": 2805266,
+      "filtering": {
+        "max_abs_density_change": 0.008398175239562988,
+        "mean_abs_density_change_full_input_cube": 1.0401693174226015e-05,
+        "peak_retention": 0.9952984181687287,
+        "relative_integral_change": 1.486477607670622e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.0008743962517344562,
+          0.0002513726890928336,
+          0.0007838430836925725
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    },
+    {
+      "id": "cap-downwind",
+      "sampling_box_min_xyz": [
+        222,
+        257,
+        130
+      ],
+      "sampling_box_max_xyz": [
+        373,
+        313,
+        215
+      ],
+      "sampled_voxels": 745104,
+      "filtering": {
+        "max_abs_density_change": 0.1351175606250763,
+        "mean_abs_density_change_full_input_cube": 0.00032776599639355267,
+        "peak_retention": 0.8817029312448699,
+        "relative_integral_change": -5.6463389519478824e-11,
+        "ingredient_axis_column_relative_L1": [
+          0.014405095487636611,
+          0.01742562557387573,
+          0.011240525147812421
+        ],
+        "scope": "Native ingredient prefilter diagnostics; not full-formation arbitrary-ray alias error or beauty qualification"
+      }
+    }
+  ],
+  "recipe": {
+    "file": "cook-bulk.py",
+    "sha256": "dea009480f3af739a889bd32394095de3d7f45ce4f6f955d1b30785c327fa128",
+    "python": "3.14.10",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "peak_process_rss_bytes": 531988480
+  },
+  "scope": [
+    "No complete lifecycle or four variants",
+    "No physical or phase-partition claim: density is scalar liquid for shared optical test",
+    "Gaussian footprint prefilter is approximate; native input resolution and max-union seams remain art limitations",
+    "Camera/source/kernel cost not production/fulls sky admission"
+  ],
+  "quality_policy": "Exact separable overlap-average of384piecewise-constant voxels thenhalf;384metadata native topology remains reference",
+  "base_negative": {
+    "build": "f30d926dcc6695fc",
+    "source_sha256": "380ea5597b04696a1a4a949bee84a6eaffa9c66935b96b376e00b4a4bfbe0fbe",
+    "recipe_sha256": "8e71df69da2099c40d3fd2cd1af4790e1bc157bd0b56e8b32d07049a1ce91220",
+    "rejection": "Skeletalarch/hollow cauliflower; path connectivity did not supply voluminous body"
+  },
+  "bulk_diagnostics": {
+    "file": "bulk-diagnostics.json",
+    "sha256": "b56a2ab31b23e301b6bc8fbb343511fac06feb65107f7693ecf54261647a89e8"
+  },
+  "source_inputs": {
+    "source_license": "CC0-1.0",
+    "provenance": "docs/evidence/cloud-authored-masters-2026-11-03/inputs/provenance.json",
+    "inputs": [
+      {
+        "file": "inputs/cloud-03-256.density.r16f",
+        "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9",
+        "bytes": 33554432,
+        "source": "tmp/cloud-authored-master/cloud-03-256.density.r16f",
+        "policy": "Read-only hardlink; never chmod/modify shared inode"
+      },
+      {
+        "file": "inputs/cloud-03-256.json",
+        "sha256": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3",
+        "bytes": 7054,
+        "source": "tmp/cloud-authored-master/cloud-03-256.json",
+        "policy": "Copied original metadata"
+      },
+      {
+        "file": "inputs/cloud-08-256.density.r16f",
+        "sha256": "4c55318ec1664d40e73a0eed0bcfeefd5563a1b65bb60564f80b3ffbd5fad990",
+        "bytes": 33554432,
+        "source": "tmp/cloud-authored-master/cloud-08-256.density.r16f",
+        "policy": "Read-only hardlink; never chmod/modify shared inode"
+      },
+      {
+        "file": "inputs/cloud-08-256.json",
+        "sha256": "1c1697fd738697446b3e8b903795541771dfb17b1193f3d7af2126da6babc9e5",
+        "bytes": 7048,
+        "source": "tmp/cloud-authored-master/cloud-08-256.json",
+        "policy": "Copied original metadata"
+      }
+    ]
+  },
+  "postprocess_recipe": {
+    "file": "finalize.py",
+    "sha256": "df14afea81b5af1e7cdd85afe520d3d0410f69692145c9df0b585fe618f4c278",
+    "peak_process_rss_bytes": 160989184
+  },
+  "resolution_diagnostics": {
+    "file": "resolution-diagnostics.json",
+    "sha256": "6aab7c140e3e3b605ef7e24f78f67febd84f1170b3a5c6055be51f904f957538"
+  },
+  "native_reference_metadata": {
+    "file": "cb-anatomy-384.json",
+    "sha256": "bc5b29ddf667957e4b051281bc30b2acc8bf3c9dcf628250c762ab958c508bcc",
+    "scope": "384native attachment/topology statistics apply to that reference, not256"
+  },
+  "bulk_finish_recipe": {
+    "file": "finish-bulk.py",
+    "sha256": "3ccef16406f408a054bb59d13a10ca00f4cc22dcb48e6ecfc83e9309b3c4e72c"
+  }
+}
