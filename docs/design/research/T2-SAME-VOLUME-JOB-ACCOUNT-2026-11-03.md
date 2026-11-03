@@ -252,9 +252,11 @@ It receives a live selected F3 store owner and canonical project root, checks
 the store path is inside that project, and compares every pin's issuing store
 path before charging or creating a job root. The binding is operational; it
 does not authenticate a same-user path replacement. The private external job
-parent is canonical, mode `0700`, owned by the project user and on the same
-`st_dev`; an exclusive lock excludes another cooperating host. Any existing
-entry other than the lock quarantines the parent at open.
+parent is the deterministic sibling `<project-name>.thrum-jobs` of the
+canonical selected project, mode `0700`, owned by the project user and on the
+same `st_dev`. A different parent for the same project refuses before creating
+a second account; an exclusive lock excludes another cooperating host at that
+parent. Any existing entry other than the lock quarantines the parent at open.
 
 The current managed-temporary target charges two filesystem allocation
 granules for parent/lock control, then the selected F4 scratch target plus two
