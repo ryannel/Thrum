@@ -30,6 +30,11 @@ Semantic cook keys and deterministic product enumeration sort identity-keyed
 entries by UUID; reordering those JSON arrays alone cannot change their
 meaning or force a different product. Mesh vertex, triangle and texture-byte
 order remain inputs to their respective products.
+Structural collection diagnostics rank `cameras`, `meshes`, `instances`,
+`materials`, `textures`, then `local_lights`, independent of JSON field order.
+The active-camera edge is checked only after complete structure and global
+identity validation. A first failing collection fixes the root's structural
+error; later collections cannot outrank it.
 The active camera, instance mesh/material, and material texture slots are
 typed UUID edges. The selected first profile requires one active perspective
 camera and exactly four point local lights; those counts are a **recipe
