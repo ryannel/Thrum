@@ -1,0 +1,222 @@
+{
+  "id": "thrum.cloud-master.jangafx-03.static-128.v1",
+  "source_file": "CloudPack/CloudPackVDB/cloud_03_variant_0000.vdb",
+  "source_sha256": "33e789b91dc050801e32f9c8cabe8392434dbe992db009bcb34d2c0df78b51be",
+  "source_metadata": {
+    "class": "unknown",
+    "embergen_version": "0.7.5.7",
+    "file_bbox_max": "(346, 571, 177)",
+    "file_bbox_min": "(22, 94, 11)",
+    "file_compression": "none",
+    "file_mem_bytes": "33479176",
+    "file_voxel_count": "4686505",
+    "grid_type": "density",
+    "is_saved_as_half_float": "True",
+    "name": "density",
+    "original_texture_resolution": "(415, 639, 223)",
+    "simulation_time": "2.683333396911621",
+    "timestep": "161"
+  },
+  "source_transform": {
+    "index_origin_world_xyz": [
+      -207.5,
+      -319.5,
+      -111.5
+    ],
+    "index_to_world_basis_rows_xyz": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "source_active_index_bbox_min_xyz": [
+    22,
+    94,
+    11
+  ],
+  "source_active_index_bbox_max_xyz": [
+    346,
+    571,
+    177
+  ],
+  "source_density_stats": {
+    "shape": [
+      325,
+      478,
+      167
+    ],
+    "nonzero": 4686505,
+    "positive_percentiles": {
+      "0": 0.0020008087158203125,
+      "1": 0.0025787353515625,
+      "25": 0.035858154296875,
+      "50": 0.078369140625,
+      "75": 0.1126708984375,
+      "95": 0.1558837890625,
+      "99": 0.316162109375,
+      "99.9": 0.50390625,
+      "100": 0.7939453125
+    },
+    "sum": 376360.63357543945,
+    "mean_full_cube": 0.01450696162520557,
+    "mean_positive": 0.08030731506217095
+  },
+  "source_grid_memory_bytes": 33479240,
+  "peak_dense_source_bytes": 103773800,
+  "orientation": {
+    "source_up_interpretation": "Z-up, consistent with source domain proportions/official default export and preview; VDB has no semantic up-axis tag",
+    "reference_url": "https://docs.jangafx.com/embergen/pages/references/How-To%20Guides/exportVDB.html",
+    "inference_evidence": "Source original domain415x639x223, both selected densities share lowest occupiedZ=11, silhouette/proportions agree with official thumbnail; no embedded semantic up-axis tag",
+    "right_handed_target_mapping": "targetXYZ=(sourceX,sourceZ,-sourceY)",
+    "center_source_index_xyz": [
+      184.0,
+      332.5,
+      94.0
+    ]
+  },
+  "authored_geometry": {
+    "extent_m_xyz": [
+      512.0,
+      512.0,
+      512.0
+    ],
+    "uniform_metres_per_source_index": 0.9640167364016736,
+    "active_extent_target_xyz_m": [
+      313.30543933054395,
+      160.99079497907948,
+      460.8
+    ],
+    "center_target_xyz_m": [
+      256.0,
+      256.0,
+      256.0
+    ],
+    "longest_active_extent_fraction": 0.9,
+    "physical_calibration": "Authored512m cube, not a claim about original atmospheric units"
+  },
+  "output": {
+    "file": "cloud-03-128.density.r16f",
+    "sha256": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+    "bytes": 4194304,
+    "dimensions_xyz": [
+      128,
+      128,
+      128
+    ],
+    "bounds_min_corner_xyz_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "bounds_max_corner_xyz_m": [
+      512.0,
+      512.0,
+      512.0
+    ],
+    "voxel_pitch_xyz_m": [
+      4.0,
+      4.0,
+      4.0
+    ],
+    "index0_center_xyz_m": [
+      2.0,
+      2.0,
+      2.0
+    ],
+    "index_center_to_local": "localXYZ=(indexXYZ+.5)*4m",
+    "storage": "little-endian IEEE754binary16 scalar; Xfastest thenYthenZ; numpy[Z,Y,X]",
+    "density_normalization_constant": 1.0,
+    "decode": "q=stored_value=raw native density voxel-average; no clamp, max normalization or explicit threshold",
+    "density_stats": {
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "nonzero": 96832,
+      "positive_percentiles": {
+        "0": 5.960464477539063e-08,
+        "1": 8.64267349243164e-06,
+        "25": 0.006534576416015625,
+        "50": 0.044464111328125,
+        "75": 0.09307861328125,
+        "95": 0.137451171875,
+        "99": 0.18017578125,
+        "99.9": 0.330810546875,
+        "100": 0.57177734375
+      },
+      "sum": 5268.390921115875,
+      "mean_full_cube": 0.002512164555128038,
+      "mean_positive": 0.05440754008092237
+    },
+    "sampling": "Exact separable overlap-average of native piecewise-constant voxel cells; zero background; not a trilinear-point sample",
+    "max_abs_half_rounding_error": 0.00020694732666015625,
+    "mean_abs_half_rounding_error_full_cube": 4.3949772343044805e-07,
+    "relative_integral_error_before_half": 3.3482146733283356e-09,
+    "relative_integral_error_after_half": 1.2499225136583826e-07,
+    "zero_faces": true,
+    "minimum_exact_zero_collar_voxels": 6,
+    "support_bbox_min_zyx": [
+      6,
+      43,
+      24
+    ],
+    "support_bbox_max_zyx": [
+      121,
+      84,
+      103
+    ]
+  },
+  "gpu_contract": "Expand q toRGBA16F as(liquid=q,ice=0,age=0,birth=0); choose and record opticalkappa independently; no wholecloudage envelope or lifecycle playback",
+  "preview": {
+    "columns": [
+      "native front Beeropacity at mapped voxel size",
+      "128front maximum q",
+      "128front Beeropacity",
+      "128side Beeropacity"
+    ],
+    "sigma_per_m": 0.02,
+    "radiographic_audit": {
+      "front": {
+        "max_abs_tau_error_vs_native_voxel_column_average": 3.683214830957349e-05,
+        "mean_abs_tau_error_vs_native_voxel_column_average": 8.323571610056425e-07,
+        "max_abs_T_error_vs_native_footprint_average": 0.0019364563064920848,
+        "mean_abs_T_error_vs_native_footprint_average": 1.6398688933480144e-05
+      },
+      "side": {
+        "max_abs_tau_error_vs_native_voxel_column_average": 3.494644564691618e-05,
+        "mean_abs_tau_error_vs_native_voxel_column_average": 7.924656291782459e-07,
+        "max_abs_T_error_vs_native_footprint_average": 0.002666602673656704,
+        "mean_abs_T_error_vs_native_footprint_average": 1.701717919265973e-05
+      }
+    },
+    "notes": "Diagnostic projections only; no source shading baked, no diffuse cloud-lighting claim"
+  },
+  "license": "CC0-1.0; retainedLICENSE.txt",
+  "recipe": {
+    "file": "cook.py",
+    "sha256": "4f66cdfeed193f09cbd901565f8ec6c09f258546d806d9c4e8909edab45f141c",
+    "python": "3.13.13 (main, Apr 25 2025, 12:39:20) [Clang 21.0.0 (clang-2100.0.123.102)]",
+    "executable": "/Applications/Blender.app/Contents/Resources/5.2/python/bin/python3.13",
+    "numpy": "2.3.4",
+    "openvdb_module_sha256": "0a3913dfac1d5b3c8fc5efe770f4fcb6cb84c6c7dfc118e01fffcc063ce975e7",
+    "openvdb_module": "/Applications/Blender.app/Contents/Resources/5.2/python/lib/python3.13/site-packages/openvdb.cpython-313-darwin.so"
+  },
+  "limits": [
+    "Static Cu ingredient only, not completeCb or accepted dynamicweather lifecycle",
+    "Conservative voxel-average filtering removes unresolved detail; native-to128 arbitrary-ray optical/beauty quality remains unqualified",
+    "Texture must be sampled in a tight localvolume; depositing into the24kmCb128grid destroys its useful spatialdetail"
+  ]
+}

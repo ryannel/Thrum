@@ -1,0 +1,20 @@
+{
+  "packages": [
+    "thrum.cloud-master.jangafx-03.static-128.v1",
+    "thrum.cloud-master.jangafx-08.static-128.v1"
+  ],
+  "projection_row_order": [
+    "cloud03",
+    "cloud08"
+  ],
+  "projection_column_order": [
+    "native front Beeropacity at mapped voxel size",
+    "128front maximum q",
+    "128front Beeropacity",
+    "128side Beeropacity"
+  ],
+  "output_hashes": {
+    "cloud-03-128.density.r16f": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844",
+    "cloud-08-128.density.r16f": "cadf6caa98017c9811690f9e311a4bbae648c659a5895b98c0839165856c21a4"
+  }
+}

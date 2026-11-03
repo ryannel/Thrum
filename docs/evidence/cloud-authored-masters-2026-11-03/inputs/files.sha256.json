@@ -1,0 +1,78 @@
+{
+  "provenance.json": {
+    "bytes": 4914,
+    "sha256": "f313584bf66e003dc1c094bbcbd25f852851db35cb896b8a554190cfc1496ec7"
+  },
+  "projection-contact.png": {
+    "bytes": 158307,
+    "sha256": "140c0e7907f069ae2af1cab357a7cc76173651c97e0b1d89b8b6c19c7f96e350"
+  },
+  "acquire.py": {
+    "bytes": 3258,
+    "sha256": "7968e24d183825e1d6b07efad569571fd98a04d71f86f8a555fe9d06c8153a95"
+  },
+  "cloud-08-128.json": {
+    "bytes": 7039,
+    "sha256": "23e8dc930738fb43009d16ed592ee5a5bf376712e5ed9d65ea362b3b25094fa2"
+  },
+  "cloud-03-128.json": {
+    "bytes": 7038,
+    "sha256": "7786196f4ee3c4f6f55e091b2b795fe16418db0b5f8282db2aba3baac2317e9c"
+  },
+  "CloudPackVDB.zip": {
+    "bytes": 109761538,
+    "sha256": "3676ba4c7ac431446731f956f98e925ad3db31354b8b4adcb137dc0250595f73"
+  },
+  "cloud-03-128.density.r16f": {
+    "bytes": 4194304,
+    "sha256": "c0365090769b38b48f33b206a0155f2cd0f34be58ba809999d4901bbd99fb844"
+  },
+  "cloud-03-projections.png": {
+    "bytes": 82890,
+    "sha256": "2f74c7dff38e3e3feb19c1ae8942bc05e4815b60540413a45a2ff55876ca4dfb"
+  },
+  "cloud-08-128.density.r16f": {
+    "bytes": 4194304,
+    "sha256": "cadf6caa98017c9811690f9e311a4bbae648c659a5895b98c0839165856c21a4"
+  },
+  "cook-index.json": {
+    "bytes": 583,
+    "sha256": "ca17a18d68f9447d0b0adaa1c5c90f7a42ceadfac92e04d09bb89d38d17552a0"
+  },
+  "README.txt": {
+    "bytes": 1545,
+    "sha256": "1a3be98b0ecbe61198b419058b132bfd2470cb6c50876bba6487b026e8f9e807"
+  },
+  "LICENSE.txt": {
+    "bytes": 6531,
+    "sha256": "64473bdcf2041c5d4f2580ffdddc15d0c20e2440bed4119d032a3ec92363a21c"
+  },
+  "OWNER.md": {
+    "bytes": 1229,
+    "sha256": "2736571ee318b0cbcabde3680e01425d4a18f5b9aa87c1fd87f8af33681be838"
+  },
+  "HANDOFF.txt": {
+    "bytes": 2547,
+    "sha256": "28781ecba36c82aad377e789c741e1f605bab2e6f421acfcd27ab82ae87f65fc"
+  },
+  "cook.py": {
+    "bytes": 9754,
+    "sha256": "4f66cdfeed193f09cbd901565f8ec6c09f258546d806d9c4e8909edab45f141c"
+  },
+  "cloud-08-projections.png": {
+    "bytes": 75525,
+    "sha256": "b5416780d1425b8be6e0531ff19dd538c040517a6318d159cf2246aceb182efd"
+  },
+  "CloudPack/cloud_pack_thumbnails.png": {
+    "bytes": 754497,
+    "sha256": "692821bc71cfa0c5f30ffa7cc7d684df157bda580026a3204fd855ab283273e3"
+  },
+  "CloudPack/CloudPackVDB/cloud_08_variant_0000.vdb": {
+    "bytes": 16358457,
+    "sha256": "991826cf4c7515d15b49299b6e9e878a0f92f817adacd3ef2df05ec6dd2c7ce9"
+  },
+  "CloudPack/CloudPackVDB/cloud_03_variant_0000.vdb": {
+    "bytes": 17727036,
+    "sha256": "33e789b91dc050801e32f9c8cabe8392434dbe992db009bcb34d2c0df78b51be"
+  }
+}

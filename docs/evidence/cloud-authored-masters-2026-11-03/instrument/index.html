@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Frozen cloud master comparison</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h1>Frozen cloud master comparison</h1><p>Static density input · shared cloud lighting, shadow and reflection · no lifecycle claim</p></header>
+<section id="controls">
+<label>Master <select id="master"><option value="03">03 · asymmetric Cu</option><option value="08">08 · compact Cu</option></select></label>
+<label>Source <select id="quality"><option value="128">128³</option><option value="256" selected>256³</option></select></label>
+<label>Distance <select id="distance"><option value="3000">3 km</option><option value="5000">5 km</option><option value="8000">8 km</option><option value="custom">Custom</option></select></label>
+<label>View <select id="camera"><option value="oblique">Oblique</option><option value="front">Front</option><option value="side">Side</option><option value="high">High</option></select></label>
+<label>Sun <select id="sun"><option value="5">5°</option><option value="30" selected>30°</option><option value="75">75°</option></select></label>
+<label>Optical κ / m <select id="kappa"><option value="0.0045">0.0045</option><option value="0.009">0.009</option><option value="0.019" selected>0.019</option><option value="0.038">0.038</option></select></label>
+<label>Display <select id="mode"><option value="0">Beauty</option><option value="5">Coefficient opacity</option><option value="6">Raw density opacity</option></select></label>
+<label>Ray steps <select id="steps"><option value="96">96</option><option value="192">192</option><option value="384">384 · reference</option></select></label>
+<label><input type="checkbox" id="full" checked>1280×720</label><label><input type="checkbox" id="mirror" checked>Reflection</label><label><input type="checkbox" id="main" checked>Main cloud</label>
+<button id="capture">Capture + receipt</button><button id="probe">Verify GPU upload</button>
+</section>
+<p id="status">Loading exact static master…</p><canvas id="canvas" width="1280" height="720"></canvas><p class="help">Drag to orbit · Shift/right drag to pan · Trackpad scroll to orbit · pinch/Ctrl scroll to zoom. The scene is quiet when idle.</p><details><summary>Receipt</summary><pre id="receipt"></pre></details>
+<script type="module" src="src/master-lab.js"></script></body></html>

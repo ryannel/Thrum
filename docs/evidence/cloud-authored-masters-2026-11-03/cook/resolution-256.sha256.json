@@ -1,0 +1,42 @@
+{
+  "cloud-08-256.json": {
+    "bytes": 7048,
+    "sha256": "1c1697fd738697446b3e8b903795541771dfb17b1193f3d7af2126da6babc9e5"
+  },
+  "projection-contact-256.png": {
+    "bytes": 222400,
+    "sha256": "90c16ad30723d4c7468cb5cb8bbe7e0667fc05ad48b8acb3eb141ed080e85efb"
+  },
+  "cloud-03-256.json": {
+    "bytes": 7054,
+    "sha256": "bb8758943e752dc7429f1501caa032ff0cbaf99f62c2e701055d607e68ce02f3"
+  },
+  "cloud-08-256-projections.png": {
+    "bytes": 108882,
+    "sha256": "fec5e78bf7550a9a8a75a8a2700afc0158323e2ededd472cf88604926ce57828"
+  },
+  "cloud-03-256.density.r16f": {
+    "bytes": 33554432,
+    "sha256": "42431f9da2d76e253d649cc35802fd1be7b23ddb698e73c6c4247ac3c90a97c9"
+  },
+  "cook-index-256.json": {
+    "bytes": 583,
+    "sha256": "09571f0a91bc5881476473cb5db08212045124c47f6703b94d10471342430b7c"
+  },
+  "cloud-08-256.density.r16f": {
+    "bytes": 33554432,
+    "sha256": "4c55318ec1664d40e73a0eed0bcfeefd5563a1b65bb60564f80b3ffbd5fad990"
+  },
+  "cloud-03-256-projections.png": {
+    "bytes": 113857,
+    "sha256": "3d7ecd33e1df001afc17f26b84536f8d74a43d2d36641ca672a4996760eb192d"
+  },
+  "cook-128-frozen.py": {
+    "bytes": 9754,
+    "sha256": "4f66cdfeed193f09cbd901565f8ec6c09f258546d806d9c4e8909edab45f141c"
+  },
+  "cook-resolution.py": {
+    "bytes": 10172,
+    "sha256": "e841c59b444d24ebe59c6a580c85c9bdcc061342bdca58026ac3dfe91f28599a"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "CloudPack/CloudPackVDB/cloud_03_variant_0000.vdb": {
+    "bytes": 17727036,
+    "sha256": "33e789b91dc050801e32f9c8cabe8392434dbe992db009bcb34d2c0df78b51be"
+  },
+  "CloudPack/CloudPackVDB/cloud_08_variant_0000.vdb": {
+    "bytes": 16358457,
+    "sha256": "991826cf4c7515d15b49299b6e9e878a0f92f817adacd3ef2df05ec6dd2c7ce9"
+  },
+  "CloudPack/cloud_generator.ember": {
+    "bytes": 79488,
+    "sha256": "3c00061ef9949157c300332848946c913bb753deb5a37903102cf32671b72964"
+  },
+  "LICENSE.txt": {
+    "bytes": 6531,
+    "sha256": "64473bdcf2041c5d4f2580ffdddc15d0c20e2440bed4119d032a3ec92363a21c"
+  },
+  "README.txt": {
+    "bytes": 1545,
+    "sha256": "1a3be98b0ecbe61198b419058b132bfd2470cb6c50876bba6487b026e8f9e807"
+  }
+}

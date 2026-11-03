@@ -1095,8 +1095,8 @@
       "scope": "selectable",
       "design": "modules/CLOUDS.md",
       "decision": "selected",
-      "design_stage": "detailed",
-      "integration_review": "reconciled",
+      "design_stage": "high_level",
+      "integration_review": "reviewed_with_gaps",
       "contracts": [
         "C01",
         "C02",
@@ -1113,7 +1113,7 @@
         "C13"
       ],
       "next_design_package": "D2",
-      "remaining_detailed_design": "Reviewed complete model retained; coarse and hierarchy sources failed actual Cu appearance. Prepared-master fallback selected; new variants/mature renewal remain open. Reviewed light-fit candidate has bounded native comparison pending complete optical qualification. R0 finite packing/operator checks pass. Expanded air/deep-light/families/weather/full-sky and actual engine bindings remain unproven/unbuilt.",
+      "remaining_detailed_design": "Renderer/air/consumer baseline retained, but profiles2/3/4 fail actual source anatomy and breakup. Replacement source lifecycle is reopened: static CC0 3D ingredients are qualified only as inputs; local geometry-versus-fade falsification precedes closing authored growth, spatial phase, parent/material maps, ownership, filtering, recovery and full-sky costs. Five families, complete air/light/view, consumer accuracy and engine bindings remain open.",
       "qualification": "D0/R0 then CF01-CF05 isolated, M1 combinations, CW01-CW04 weather and FS01-FS04 full skies; Q7 complete workload. Five families and storm development required for current commission. Engine bindings follow construction dependencies; no legacy qualification transfers.",
       "parent": "E1",
       "existing_candidate": {
@@ -1125,8 +1125,8 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten. Historical artifact path is historical_reviewed_design_artifact; new cloud review is recorded separately.",
-      "current_design_sha256": "176cd6c0ff81082119db0c501e2d7e5cb2e46768354c13ae8d16ba969e96eff8",
-      "current_design_delta": "Runtime revision removes Houdini/baked lifecycle. Selects native sparse 3D optical-control transport/source-loss under live E1 weather, Nubis3 visual/render lineage with point voxel lighting, Hillaire air, receiver BSM and independent views. Explicit replaceable provider and complete-atmosphere scope contracts. Dynamic source/combined visuals/device performance unproved; prior bounded cost fails.",
+      "current_design_sha256": "34edfd1f42b3e6d020cf4ece477e7859a6c56cbcce40d91e06e7dc22a5234227",
+      "current_design_delta": "3 November source reassessment rejects pulse/transport morphology after native and 1x/16x evidence; no Houdini or full cached lifecycle required. Retains Nubis3-style 3D optical/render lineage, Hillaire air, voxel light, BSM and independent views. Exact CC0 static masters/cooks and sampled R16 input path pass scoped checks; complete replacement live source and combined visuals/budgets are unfinished. Prior source/PDE and whole-GPU failures remain evidence, not a selected foundation.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -1140,7 +1140,7 @@
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling.",
       "historical_reviewed_design_artifact": "modules/ENVIRONMENT.md",
-      "performance_cost_design": "modelled",
+      "performance_cost_design": "needs_revision",
       "performance_cost_record": "modules/CLOUDS.md#cost-and-profile-admission",
       "cloud_system_design": {
         "mechanism_decision": "recommended",
@@ -1213,14 +1213,14 @@
         "cost_limitations": "GPU copy duration unmeasured; CPU encoding tails exceed desired allocation; complete scene/memory/startup/platform budgets remain unqualified"
       },
       "cloud_sky_expansion": {
-        "status": "native_runtime_pilot_active_visual_gate_open",
+        "status": "source_reopened_static_inputs_local_geometry_falsification_active",
         "commission": "../evidence/cloud-sky-design-2026-11-01/COMMISSION.md",
         "capabilities": "modules/CLOUD-CAPABILITIES.md",
         "sources": "research/CLOUD-SKY-SOURCES.md",
-        "implementation": "standalone_R0_rejected_coarse_and_hierarchy_sources_bounded_liquid_fit_no_engine_binding",
-        "functional_validation": "finite_R0_packing_and_field_crop_all_mip_codewords_pass; bounded_tau_tube_PL_compression_and_GPU_arithmetic_pass; lateral_point_T_gate_fails; complete_SKY_G_unproven",
-        "experienced_quality": "coarse_and_hierarchy_Cu_geometry_rejected; retained_Q1_liquid_fit_native_shadow_mirror_main_hidden_and_sampled_1x16x64x_coherence_partial; backlit_local_gradient_error_persists; newfamilies_weather_fullskies_unproven",
-        "performance": "bounded_cloud_5ms_failed; cropped_fresh_deep_GPU_p50_12_976128_p95_17_0754048ms; nonadditive_component_timestamp_intervals_rejected; full_sky_and_target_devices_unrun",
+        "implementation": "Standalone source/consumer instruments only, no engine binding. Pulse/transport source profiles2/3/4 rejected as default morphology. Exact static CC0 master/cook/sampled-R16 adapter implemented; no replacement full lifecycle.",
+        "functional_validation": "Historical R0/phase/transport/operator checks retained; current normal-front and exact masked q checks pass without art acceptance. Static master hashes/cooks/transforms and actual GPU scalar input checks pass; complete SKY_G unproven.",
+        "experienced_quality": "Coarse/hierarchy and later pulse/transport Cb morphology rejected.03/256 is a usable static Cu ingredient with native multi-angle review;08 weaker bank comparator. No replacement lifecycle, reflection-specific image, full families/weather/skies or user acceptance.",
+        "performance": "Prior bounded coupled cloud5ms failure and rejected whole-GPU totals retained in records. Latest static input14.83/42.83MiB logical renderer at128/256 only, requested staging separate; no timing/process/target-device/full-sky admission.",
         "review": "../evidence/cloud-sky-design-2026-11-01/README.md",
         "R0_record": "../evidence/cloud-sky-r0-2026-11-01/README.md",
         "correction_record": "../evidence/cloud-cu-correction-2026-11-02/README.md",
@@ -1282,6 +1282,26 @@
           "correctness": "CPU_control_replay_support_and_GPU_ice_only_finite_seed_zero_lift_transport_phase_regressions_pass",
           "experienced_quality": "native0_180_and1x16x_sampled_frames_repeated_comb_removed_tails_remain_elongated_default_faces_zero_60s_supplyoff_ice_loss_observed_full_Ci_family_unqualified",
           "performance": "no_new_GPU_resources_1024byte_CPU_table_logical30_8MiB_after_observers_no_new_quiet_or_target_fullsky_admission"
+        },
+        "runtime_source_reassessment": {
+          "record": "../evidence/cloud-front-growth-2026-11-03/README.md",
+          "earlier_interaction_records": [
+            "../evidence/cloud-core-growth-2026-11-02/README.md",
+            "../evidence/cloud-material-renewal-2026-11-02/README.md",
+            "../evidence/cloud-connected-feed-2026-11-03/README.md"
+          ],
+          "decision": "reject_profiles_2_3_4_as_default_morphology",
+          "correctness": "positive_affine_transport_material_reset_connected_feed_normal_front_and_exact_masked_q_checks_pass_with_recorded_bounds",
+          "experienced_quality": "native_and_real_1x16x_sampled_motion_remain_shaft_or_periodic_depleted_shelves_and_dissolving_shutdown",
+          "performance": "bounded_quiet_available_host_screens_no_valid_whole_GPU_or_target_full_sky_admission"
+        },
+        "authored_static_input": {
+          "record": "../evidence/cloud-authored-masters-2026-11-03/README.md",
+          "build": "adb13e8a53d0bd95",
+          "implementation": "frozen_CC0_03_08_VDB_cook_128_256_R16_sampled_single_alias_adapter_no_dynamic_source_or_engine_binding",
+          "correctness": "selected_inputs_rights_hashes_exact_gzip_restore_cook_transforms_and_actual_03_128_256_08_256_GPU_readback_G0_B0_A1_alias_pass",
+          "experienced_quality": "03_256_usable_static_Cu_ingredient_128_detail_loss_08_bank_comparator_no_full_art_lifecycle_or_reflection_acceptance",
+          "performance": "logical_renderer_bytes_128_15548428_256_44908556_requested_staging_separate_no_process_or_timing_admission"
         }
       }
     },
