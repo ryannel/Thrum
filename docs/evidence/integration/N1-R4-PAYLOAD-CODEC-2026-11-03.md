@@ -35,7 +35,8 @@ selection.
 This is **structural framing**, not semantic admission. Envelope identity,
 manifest ordinals, actor range/quaternion validity, event origin, lifecycle
 dependency closure, controller-state/result linkage, group partition
-generation and cross-group replica ordering remain unimplemented. The codec
-has no whole-path CPU, allocation-request or RSS qualification. The next
+generation and cross-group replica ordering remain unimplemented. An
+[isolated release CPU probe](N1-R4-PAYLOAD-COST-2026-11-03.md) measures only
+this codec; allocation requests, RSS and whole-path CPU remain unqualified. The next
 slice must connect validated source projection to a bounded N1-owned journal
 and one multi-group consumer before a network-performance claim.

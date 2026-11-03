@@ -2139,9 +2139,10 @@
       "r4_payload_codec": {
         "implementation": "registered thrum-network crate; bounded R4 StateGroup payload encoder and borrowed structural decoder",
         "functional_validation": "four local codec tests cover an independent literal golden vector for every fixed field, maximum-count 7008-byte complete message, round trip, count/length/refusal and malformed result range; independent read-only review found no actionable defect",
-        "platform_performance": "portable library compile passed on Wasm, iOS simulator ARM64 and Android ARM64 with pinned rustc; no browser/phone run, CPU, allocation-request, RSS or whole-path measurement",
+        "platform_performance": "portable library compile passed on Wasm, iOS simulator ARM64 and Android ARM64 with pinned rustc. Isolated Apple M3 Max release medians: ordinary 1824-byte group 44.9 ns encode/321.6 ns full-field decode scan, maximum 6944-byte payload 174.2/667.8 ns. No browser/phone run, allocation-request, RSS or whole-path measurement",
         "scope": "Fixed 32/56/16/32/40-byte payload layout and local result shape only. The 64-byte application envelope, exact manifest/actor validity, event origins, lifecycle/dependency/result closure, N1-owned journals, sent-frame ACK ledger and multi-group replica remain unimplemented.",
-        "evidence": "../evidence/integration/N1-R4-PAYLOAD-CODEC-2026-11-03.md"
+        "evidence": "../evidence/integration/N1-R4-PAYLOAD-CODEC-2026-11-03.md",
+        "isolated_cost_evidence": "../evidence/integration/N1-R4-PAYLOAD-COST-2026-11-03.md"
       }
     }
   ],

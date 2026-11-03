@@ -289,3 +289,115 @@ fn malformed_counts_lengths_and_result_ranges_refuse_before_admission() {
         Err(GroupError::InvalidResult)
     ));
 }
+
+#[test]
+#[ignore = "local isolated release-build codec cost probe"]
+fn measure_r4_payload_cost() {
+    use std::{hint::black_box, time::Instant};
+
+    let actors: [Actor; 32] = std::array::from_fn(|index| actor(index as u64 + 1));
+    let lifecycle: [Lifecycle; 32] = std::array::from_fn(|index| Lifecycle {
+        wire_id: index as u64 + 1,
+        visibility_generation: 1,
+        schema_id: 1,
+        kind: 1,
+        flags: 0,
+    });
+    let results: [ActionResult; 64] = std::array::from_fn(|index| ActionResult {
+        first_event_id: index as u64 + 100,
+        ..result(index as u64 + 1)
+    });
+    let events: [Event; 64] = std::array::from_fn(|index| Event {
+        event_id: index as u64 + 100,
+        origin_input_sequence: index as u64 + 1,
+        ..event(0)
+    });
+    let cases = [
+        (
+            "ordinary",
+            &actors[..],
+            &lifecycle[..0],
+            &results[..0],
+            &events[..0],
+            100_000,
+        ),
+        (
+            "max",
+            &actors[..],
+            &lifecycle[..],
+            &results[..],
+            &events[..],
+            30_000,
+        ),
+    ];
+    for (name, actors, lifecycle, results, events, rounds) in cases {
+        let mut bytes = [0_u8; MAX_MESSAGE_BYTES - 64];
+        let input = || GroupInput {
+            header: header(),
+            actors,
+            lifecycle,
+            results,
+            events,
+        };
+        let len = encode(input(), &mut bytes).unwrap();
+        let start = Instant::now();
+        for _ in 0..rounds {
+            let len = encode(black_box(input()), black_box(&mut bytes)).unwrap();
+            black_box(len);
+        }
+        let encode_ns = start.elapsed().as_nanos() as f64 / rounds as f64;
+        let start = Instant::now();
+        let mut checksum = 0_u64;
+        for _ in 0..rounds {
+            let view = decode(black_box(&bytes[..len])).unwrap();
+            for actor in view.actors() {
+                checksum = checksum.wrapping_add(actor.wire_id);
+                for value in actor.sector.into_iter().chain(actor.offset) {
+                    checksum = checksum.wrapping_add(value as u64);
+                }
+                for value in actor.quaternion.into_iter().chain(actor.velocity) {
+                    checksum = checksum.wrapping_add(value as u64);
+                }
+                for value in [
+                    actor.mode as u64,
+                    actor.flags as u64,
+                    actor.health as u64,
+                    actor.inventory_revision as u64,
+                    actor.owner as u64,
+                    actor.visibility_generation as u64,
+                ] {
+                    checksum = checksum.wrapping_add(value);
+                }
+            }
+            for record in view.lifecycle() {
+                checksum = checksum.wrapping_add(record.wire_id);
+                checksum = checksum.wrapping_add(record.visibility_generation as u64);
+                checksum = checksum.wrapping_add(record.schema_id as u64);
+                checksum = checksum.wrapping_add(record.kind as u64);
+                checksum = checksum.wrapping_add(record.flags as u64);
+            }
+            for result in view.results() {
+                checksum = checksum.wrapping_add(result.input_sequence);
+                checksum = checksum.wrapping_add(result.resolved_tick);
+                checksum = checksum.wrapping_add(result.first_event_id);
+                checksum = checksum.wrapping_add(result.action_type as u64);
+                checksum = checksum.wrapping_add(result.reason as u64);
+                checksum = checksum.wrapping_add(result.event_count as u64);
+                checksum = checksum.wrapping_add(result.disposition as u64);
+            }
+            for event in view.events() {
+                checksum = checksum.wrapping_add(event.event_id);
+                checksum = checksum.wrapping_add(event.commit_tick);
+                checksum = checksum.wrapping_add(event.origin_epoch);
+                checksum = checksum.wrapping_add(event.origin_input_sequence);
+                checksum = checksum.wrapping_add(event.kind as u64);
+                checksum = checksum.wrapping_add(event.ordinal as u64);
+                checksum = checksum.wrapping_add(event.flags as u64);
+            }
+        }
+        let decode_ns = start.elapsed().as_nanos() as f64 / rounds as f64;
+        println!(
+            "{name},bytes={len},encode_ns={encode_ns:.1},decode_scan_ns={decode_ns:.1},checksum={checksum}"
+        );
+    }
+}
