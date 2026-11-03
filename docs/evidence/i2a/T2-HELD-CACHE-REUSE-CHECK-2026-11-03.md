@@ -55,3 +55,37 @@ job, interrupted requests and complete T2 owner/worker failure handling have
 not been qualified. Origin review, Xcode support and host-runtime closure,
 physical allocation, memory/RSS and representative timing tails remain open.
 No ready `BuildRevision` is claimed; the runner reports `buildReady:false`.
+
+## Held build scan removal
+
+At exact local source commit `cc95a984d32b325ec855a8781804c273c749deb4`,
+the opt-in admitted A/B qualification passed again. The Rust fixture now
+skips its two explicit whole-cache `tree_hashes` calls and separate pre/post
+Cargo/Rustc byte assertions only when its persistent sealed-cache/Rust-root guard
+exists. Other private homes and non-macOS paths still take the full checks.
+The runner requires `fixture_cache_full_rehashes=0`, exactly two held reuse
+responses and no legacy reuse marker. It still independently inventories all
+four selected roots after both jobs before deleting owned scratch. The
+compiled build path still hashes selected compiler, linker and support files
+before and after each Cargo job.
+
+On this one host run, the cache held 2,923 files and 67,792,387 logical bytes
+with the same legacy and tree digests shown above. Cold cache preparation took
+1,604 ms and the combined guard cold open took 935 ms. The two source-key
+checks again reported 2 ms and 1 ms. A produced five successful compiles and
+three probes, retained an unready candidate with SHA-256
+`dd0c6724c94db58534604b718fb029ce16ad5b2131d3492e1045471d6811a504`,
+and reloaded it in 26 ms. Invalid B produced three successful compiles, one
+expected failed game compile and three probes; A remained runnable. The
+overall A/B qualification process took 25.448 seconds, including work other
+than the guarded cache checks. The outer post-build four-root inventory took
+11.690 seconds. Scratch was cleaned on success. `RUSTC_WRAPPER= ./dev check`
+passed at the code commit; independent review found no issue.
+
+The removed scans avoid repeated reads and allocations over the 67.8 MB
+private cache in this candidate. The preceding run paid roughly 150–230 ms
+for one full cache rehash; these uncontrolled end-to-end runs do not isolate
+a speedup. The outer qualifier's full inventories are cold evidence checks,
+not the warm edit path. The guard is still a cooperating child rather than
+one reviewed T2 selection owner, and compiler/support/runtime closure,
+guard-death during a job, warm edit-to-ready tails and RSS remain open.

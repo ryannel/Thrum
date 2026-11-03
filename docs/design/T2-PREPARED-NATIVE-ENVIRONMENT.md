@@ -194,6 +194,11 @@ uses one persistent guard to hold both Rust and cache leases and validate the
 source key without repeating those two full hashes. Two real A/B guard checks
 reported 2 ms and 1 ms; the qualification fixture still has separate full
 cache/tool checks, so complete warm edit cost remains unmeasured.
+The later [held build scan-removal qualification](../evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md#held-build-scan-removal)
+removed two redundant full-cache tree scans and separate pre/post Cargo/Rustc assertions
+from that fixture only while the persistent guard lives. The selected compiler
+file checks and outer post-build inventory remain; this is not a complete
+release-owner or warm edit-to-ready timing result.
 
 Retain one cache under the same private release owner and append-only lifecycle
 as the tool roots. Bind three distinct identities in its canonical record: the
