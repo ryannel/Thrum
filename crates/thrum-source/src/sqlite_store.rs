@@ -67,6 +67,7 @@ const GC_MARK_CANDIDATES: usize = 128;
 #[cfg(test)]
 thread_local! {
     static MAX_APPEND_SLICE_NS: Cell<u64> = const { Cell::new(0) };
+    static CLEANUP_SQL_PHASE: Cell<&'static str> = const { Cell::new("not_started") };
     static CLEANUP_SLICE_STATS: Cell<(u64, u64, u64)> = const { Cell::new((0, 0, 0)) };
     static BEFORE_APPEND_SQL: RefCell<Option<BlobSqlHook>> = const { RefCell::new(None) };
     static BEFORE_CLEANUP_SQL: RefCell<Option<BlobSqlHook>> = const { RefCell::new(None) };
@@ -96,6 +97,15 @@ fn run_blob_sql_hook(pending: &RefCell<Option<BlobSqlHook>>, hash: [u8; 32], ind
     if let Some(hook) = hook {
         hook();
     }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+fn lock_native_enospc_test_volume(volume: &Path) -> File {
+    // Every opt-in filler test on one task-owned image must have exclusive
+    // use of its free-space pool, even when Cargo runs ignored tests in parallel.
+    let lock = open_regular_lock(&volume.join("thrum-native-enospc-test.lock")).unwrap();
+    FileExt::lock(&lock).unwrap();
+    lock
 }
 
 #[cfg(test)]
@@ -2084,12 +2094,18 @@ impl SqliteStoreCore {
                 .checked_mul(2)
                 .and_then(|value| value.checked_add(MIB))
                 .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+            #[cfg(test)]
+            CLEANUP_SQL_PHASE.with(|phase| phase.set("wal_guard_or_checkpoint"));
             self.ensure_wal_room(allowance)?;
             #[cfg(test)]
             BEFORE_CLEANUP_SQL.with(|pending| run_blob_sql_hook(pending, hash, index));
+            #[cfg(test)]
+            CLEANUP_SQL_PHASE.with(|phase| phase.set("begin"));
             let tx = self
                 .conn
                 .transaction_with_behavior(TransactionBehavior::Immediate)?;
+            #[cfg(test)]
+            CLEANUP_SQL_PHASE.with(|phase| phase.set("delete"));
             let deleted = tx.execute(
                 "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=?2
                  AND EXISTS (SELECT 1 FROM blob_header
@@ -2099,7 +2115,11 @@ impl SqliteStoreCore {
             if deleted != 1 {
                 return Err(StoreError::StaleBlobWriter);
             }
+            #[cfg(test)]
+            CLEANUP_SQL_PHASE.with(|phase| phase.set("commit"));
             tx.commit()?;
+            #[cfg(test)]
+            CLEANUP_SQL_PHASE.with(|phase| phase.set("committed"));
             #[cfg(test)]
             AFTER_CLEANUP_COMMIT.with(|pending| run_blob_sql_hook(pending, hash, index));
         }
@@ -5181,6 +5201,7 @@ fn measure_accepted_cleanup_pressure_after_native_enospc() {
         std::env::var_os("THRUM_TEST_ENOSPC_VOLUME_DIR")
             .expect("set THRUM_TEST_ENOSPC_VOLUME_DIR to a task-owned bounded APFS volume"),
     );
+    let _volume_lock = lock_native_enospc_test_volume(&volume);
     let run = volume.join(format!("thrum-f3-cleanup-enospc-{}", std::process::id()));
     fs::create_dir(&run).unwrap();
     let database = run.join("source.sqlite");
@@ -5401,6 +5422,245 @@ fn measure_accepted_cleanup_pressure_after_native_enospc() {
 #[cfg(target_os = "macos")]
 #[test]
 #[ignore = "requires THRUM_TEST_ENOSPC_VOLUME_DIR on a task-owned bounded volume"]
+fn measure_accepted_cleanup_sqlite_full_after_native_enospc() {
+    struct RunGuard {
+        directory: PathBuf,
+        filler: PathBuf,
+    }
+
+    impl Drop for RunGuard {
+        fn drop(&mut self) {
+            BEFORE_CLEANUP_SQL.with(|pending| {
+                pending.borrow_mut().take();
+            });
+            let _ = fs::remove_file(&self.filler);
+            let _ = fs::remove_dir_all(&self.directory);
+        }
+    }
+
+    let volume = PathBuf::from(
+        std::env::var_os("THRUM_TEST_ENOSPC_VOLUME_DIR")
+            .expect("set THRUM_TEST_ENOSPC_VOLUME_DIR to a task-owned bounded APFS volume"),
+    );
+    let _volume_lock = lock_native_enospc_test_volume(&volume);
+    let run = volume.join(format!("thrum-f3-cleanup-full-{}", std::process::id()));
+    fs::create_dir(&run).unwrap();
+    let database = run.join("source.sqlite");
+    let filler = run.join("filler.bin");
+    // Unwinding closes the SQLite owner and pin before removing owned files.
+    let _run_guard = RunGuard {
+        directory: run.clone(),
+        filler: filler.clone(),
+    };
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A before real cleanup disk fault");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 68, 45);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let master_file = stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap();
+    let hash = *master_file.sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let mut scratch = Vec::new();
+    let admission = store.owner.admission().unwrap();
+    let mut short_input = stage_b.open(&master).unwrap().take(16 * CHUNK_BYTES as u64);
+    assert!(matches!(
+        store.stage_blob_phased(
+            &mut short_input,
+            master_file.length(),
+            hash,
+            &mut scratch,
+            &mut || {},
+        ),
+        Err(StoreError::InputIo)
+    ));
+    drop(admission);
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .execute(
+            "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+            params![hash.as_slice()],
+        )
+        .unwrap();
+    let checkpoint: (i64, i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .unwrap();
+    assert_eq!(checkpoint.0, 0);
+    let secure_delete: i64 = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row("PRAGMA secure_delete", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+
+    let filler_errno = Arc::new(AtomicU64::new(0));
+    let filler_bytes = Arc::new(AtomicU64::new(0));
+    let hook_errno = Arc::clone(&filler_errno);
+    let hook_bytes = Arc::clone(&filler_bytes);
+    let hook_filler = filler.clone();
+    BEFORE_CLEANUP_SQL.with(|pending| {
+        *pending.borrow_mut() = Some(BlobSqlHook {
+            hash,
+            // Fill after the first cleanup live guard, before any cleanup WAL allocation.
+            index: 15,
+            run: Box::new(move || {
+                let mut file = match File::create(&hook_filler) {
+                    Ok(file) => file,
+                    Err(error) => {
+                        hook_errno
+                            .store(error.raw_os_error().unwrap_or(1) as u64, Ordering::Relaxed);
+                        return;
+                    }
+                };
+                let block = [0xa5_u8; 4 * 1024];
+                for _ in 0..131072 {
+                    match file.write_all(&block) {
+                        Ok(()) => {
+                            hook_bytes.fetch_add(block.len() as u64, Ordering::Relaxed);
+                        }
+                        Err(error) => {
+                            hook_errno
+                                .store(error.raw_os_error().unwrap_or(1) as u64, Ordering::Relaxed);
+                            break;
+                        }
+                    }
+                }
+            }),
+        });
+    });
+    let available_before = fs4::available_space(&volume).unwrap();
+    let failed = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap_err();
+    eprintln!("cleanup_pressure_result={failed} available_before={available_before}");
+    assert!(BEFORE_CLEANUP_SQL.with(|pending| pending.borrow().is_none()));
+    let available_after = fs4::available_space(&volume).unwrap();
+    assert_eq!(filler_errno.load(Ordering::Relaxed), 28);
+    let failed_phase = CLEANUP_SQL_PHASE.with(Cell::get);
+    eprintln!(
+        "cleanup_sqlite_fault phase={failed_phase} error={failed:?} available_after={available_after}"
+    );
+    assert!(matches!(
+        &failed.0,
+        StoreError::Sql(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error {
+                code: rusqlite::ErrorCode::DiskFull,
+                ..
+            },
+            _
+        ))
+    ));
+    assert!(matches!(failed_phase, "delete" | "commit"));
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let (state, retained, first, last): (i64, i64, i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1),
+                    (SELECT min(chunk_index) FROM blob_chunks WHERE hash=?1),
+                    (SELECT max(chunk_index) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .unwrap();
+    assert_eq!((state, retained, first, last), (0, 15, 1, 15));
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    fs::remove_file(&filler).unwrap();
+    a_pin.close().unwrap();
+    drop(store);
+
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(a));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
+    let reopened_rows: (i64, i64, i64, i64) = reopened
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1),
+                    (SELECT min(chunk_index) FROM blob_chunks WHERE hash=?1),
+                    (SELECT max(chunk_index) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .unwrap();
+    assert_eq!(reopened_rows, (0, 15, 1, 15));
+    let mut a_pin = reopened.pin_current(a.generation).unwrap();
+    let b = reopened
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                copied.clear();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+            },
+            || {},
+        )
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    let mut b_pin = reopened.pin_current(b.generation).unwrap();
+    assert_eq!(
+        b_pin.copy_file_to(&master, &mut io::sink()).unwrap(),
+        68 * MIB
+    );
+    b_pin.close().unwrap();
+    a_pin.close().unwrap();
+    eprintln!(
+        "accepted_cleanup_pressure_native_enospc filler_full_kib={} available_before={} available_after={} fault_phase={failed_phase} secure_delete={secure_delete} retained_after_refusal={retained}",
+        filler_bytes.load(Ordering::Relaxed) / 1024,
+        available_before,
+        available_after,
+    );
+    drop(reopened);
+    let final_owner = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(final_owner.current_root().unwrap(), Some(b));
+    assert_eq!(final_owner.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    drop(final_owner);
+    fs::remove_dir_all(run).unwrap();
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+#[ignore = "requires THRUM_TEST_ENOSPC_VOLUME_DIR on a task-owned bounded volume"]
 fn measure_accepted_native_enospc_after_live_guard() {
     struct RunGuard {
         directory: PathBuf,
@@ -5421,6 +5681,7 @@ fn measure_accepted_native_enospc_after_live_guard() {
         return;
     };
     let volume = PathBuf::from(volume);
+    let _volume_lock = lock_native_enospc_test_volume(&volume);
     let run = volume.join(format!("thrum-f3-enospc-{}", std::process::id()));
     fs::create_dir(&run).unwrap();
     let database = run.join("source.sqlite");

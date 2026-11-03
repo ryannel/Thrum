@@ -204,10 +204,52 @@ After mounting an exclusive 384 MiB APFS image, run the ignored test with
 RUSTC_WRAPPER= rustup run 1.99.1 cargo test --offline --locked -p thrum-source measure_accepted_cleanup_pressure_after_native_enospc -- --ignored --nocapture --test-threads=1
 ```
 
+## Native SQLite full at an ordinary cleanup commit
+
+One further opt-in run on an exclusive task-owned **384 MiB APFS** image
+reached actual SQLite `SQLITE_FULL` (extended code 13) inside malformed-B
+cleanup. The test seeded sixteen four-MiB chunks of a 68 MiB B master,
+removed index zero, and explicitly truncated the WAL. The test-only filler
+ran after the first index-15 cleanup live guard, before that slice had
+allocated cleanup WAL frames. Its four-KiB writes reached native errno 28
+after 301,080 KiB of completed writes. Observed available space moved from
+316,866,560 to 8,523,776 bytes; the selected `secure_delete` setting was 0.
+The ordinary `DELETE` returned one row, then that slice's **COMMIT returned
+`SQLITE_FULL`**. This is neither the earlier filler-only error nor a
+preflight/live-guard refusal. Test-only phase markers identify the operation;
+they add no production hot-path work.
+
+The failed transaction rolled back: B remained incomplete (`state=0`) with
+exactly indices 1–15 retained, while A stayed selected and B's keyed outcome
+was absent. A's old pin read exact scene bytes **with the filler still
+present**. After filler removal and owner reopen, A/none and those B rows
+remained exact. A fresh pin read A during B retry, B's pin authenticated the
+full 68 MiB master, and a second reopen found B's exact selected root and
+keyed outcome. The test does not separately query A's keyed outcome; the
+existing accepted-store tests cover that invariant in other fault paths.
+
+This is **one local native run**, not a physical-space guarantee, a measured
+simultaneous high-water, or a power-loss proof. It exercises cleanup COMMIT,
+not cleanup DELETE failure, final source publication, another APFS state or
+another SQLite/VFS version. The task image was detached and deleted. The
+ignored regression is retained in `thrum-source`; with an exclusive bounded
+volume mounted and `THRUM_TEST_ENOSPC_VOLUME_DIR` set to its mountpoint, run:
+
+```sh
+RUSTC_WRAPPER= rustup run 1.99.1 cargo test --offline --locked -p thrum-source measure_accepted_cleanup_sqlite_full_after_native_enospc -- --ignored --nocapture --test-threads=1
+```
+
+All three opt-in filler tests now hold one test-only volume lock and use
+distinct run directories, so accidental parallel invocation cannot mix their
+free-space pressure. This fixture-isolation correction followed the one
+native run; it did not change the exercised cleanup SQL or hook phase.
+The changed source also passed `RUSTC_WRAPPER= ./dev check` after rustfmt;
+that normal gate compiles but does not run the ignored native-volume test.
+
 ## Still open for the full F3 gate
 
-Native-volume-induced SQLite `SQLITE_FULL` during ordinary cleanup and
-final publication,
+Native-volume-induced SQLite `SQLITE_FULL` during final publication, cleanup
+DELETE failure under another pressure state,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
