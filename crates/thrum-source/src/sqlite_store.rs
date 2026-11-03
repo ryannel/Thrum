@@ -300,14 +300,21 @@ fn charge_projected_blob(
 
 fn required_free_bytes(
     projected_main: u64,
-    remaining_wal: u64,
+    projected_wal: u64,
     checkpoint_debt: u64,
     free_floor: u64,
 ) -> Result<u64, StoreError> {
     projected_main
-        .checked_add(remaining_wal)
+        .checked_add(projected_wal)
         .and_then(|value| value.checked_add(checkpoint_debt))
         .and_then(|value| value.checked_add(free_floor))
+        .ok_or(StoreError::Budget(BudgetError::Overflow))
+}
+
+fn projected_wal_growth(projected_main: u64, remaining_window: u64) -> Result<u64, StoreError> {
+    projected_main
+        .checked_mul(2)
+        .map(|work| work.min(remaining_window))
         .ok_or(StoreError::Budget(BudgetError::Overflow))
 }
 
@@ -1431,9 +1438,14 @@ impl SqliteStoreCore {
         if wal >= limits.wal {
             return Err(StoreError::Budget(BudgetError::WalLimit));
         }
+        // The WAL stop is backpressure capacity, not work demanded by this
+        // candidate. Price only estimated writes for its missing blobs and
+        // metadata, capped by the currently reachable WAL window. A later
+        // checkpoint/live check still handles actual growth and blocked WAL.
+        let projected_wal = projected_wal_growth(projected_main, limits.wal - wal)?;
         let required = required_free_bytes(
             projected_main,
-            limits.wal - wal,
+            projected_wal,
             logical_main.saturating_sub(physical_main),
             limits.free_floor,
         )?;
@@ -7472,6 +7484,43 @@ fn candidate_space_preflight_reserves_existing_checkpoint_debt() {
     assert_eq!(with_debt - without_debt, debt);
     assert!(matches!(
         required_free_bytes(u64::MAX, 1, debt, 0),
+        Err(StoreError::Budget(BudgetError::Overflow))
+    ));
+}
+
+#[test]
+fn candidate_space_preflight_does_not_charge_unused_wal_stop_as_work() {
+    let fixture = Fixture::new();
+    let store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    let stage = minimal_source_stage(&fixture, "tiny marginal source");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let manifest = candidate.provisional_manifest().unwrap();
+    let revision = *manifest.revision().as_bytes();
+    for wal in [64 * MIB, 1_u64 << 40] {
+        store
+            .preflight_candidate_space(
+                &manifest,
+                revision,
+                Limits {
+                    main: 2 * GIB,
+                    wal,
+                    temporary: 64 * MIB,
+                    free_floor: 0,
+                },
+            )
+            .unwrap();
+    }
+}
+
+#[test]
+fn candidate_wal_projection_prices_work_then_caps_reachable_growth() {
+    assert_eq!(
+        projected_wal_growth(64 * 1024, 64 * MIB).unwrap(),
+        projected_wal_growth(64 * 1024, 1_u64 << 40).unwrap()
+    );
+    assert_eq!(projected_wal_growth(8 * MIB, 4 * MIB).unwrap(), 4 * MIB);
+    assert!(matches!(
+        projected_wal_growth(u64::MAX, 4 * MIB),
         Err(StoreError::Budget(BudgetError::Overflow))
     ));
 }

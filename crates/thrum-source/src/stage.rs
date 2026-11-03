@@ -32,7 +32,7 @@ static NEXT_STAGE: AtomicU64 = AtomicU64::new(0);
 pub enum StageError {
     /// File membership or portability preflight failed.
     Inventory(InventoryError),
-    /// Physical peak preflight or its monitored bound failed.
+    /// Temporary-stage preflight or a live space check failed.
     Budget(BudgetError),
     /// A source file changed, disappeared, grew, or became unsafe during copy.
     SourceDrift(SourcePath),
@@ -178,7 +178,7 @@ impl Drop for StageDirectory {
     }
 }
 
-/// Stage exact source bytes after a conservative physical-peak preflight.
+/// Stage exact source bytes after temporary-use and observed-space preflight.
 ///
 /// The v1 generated-root policy and complete declaration are checked before
 /// writing. A cooperative cross-process source lock spans scan/copy/reread.
@@ -193,9 +193,10 @@ pub fn stage_declared_tree(
 
 /// Stage a declared tree under a caller-selected native space plan.
 ///
-/// A plan permits early refusal and live free-space checks. It cannot promise
-/// a physical peak or an accepted source root; a later durable store owns
-/// SQLite failures, authenticated lineage and root/outcome publication.
+/// This provisional capture prices its temporary copy and observed free-space
+/// headroom. Main and WAL targets apply when a later accepted store can price
+/// missing blobs from authenticated staged hashes. Neither phase can promise
+/// a physical peak; that store owns SQLite failures and root/outcome publication.
 pub fn stage_declared_tree_with_plan(
     project_root: &Path,
     declared: &[SourcePath],

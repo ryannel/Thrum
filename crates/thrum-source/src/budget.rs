@@ -1,7 +1,8 @@
 //! Native staging preflight under a configurable space plan.
 //!
-//! This checks provisional capture only. It neither reserves filesystem blocks
-//! nor makes a later SQLite admission accepted.
+//! This checks the provisional copy's own temporary work. A later accepted
+//! store prices missing SQLite blobs and WAL work from the exact staged hashes.
+//! Neither check reserves filesystem blocks.
 
 use std::fs::{self, File, OpenOptions};
 use std::path::{Path, PathBuf};
@@ -11,9 +12,8 @@ use fs4::{FileExt, TryLockError};
 use crate::Inventory;
 
 const GIB: u64 = 1024 * 1024 * 1024;
-const MIB: u64 = 1024 * 1024;
 
-/// Planning thresholds for native source staging, in bytes.
+/// Planning thresholds for native source staging and admission, in bytes.
 ///
 /// A plan guides early refusal and observed free-space checks. It is not a
 /// physical quota: SQLite page growth and other processes can exceed an
@@ -69,14 +69,7 @@ impl From<SourceSpacePlan> for Limits {
     }
 }
 
-#[derive(Default)]
-struct PhysicalUsage {
-    main: u64,
-    wal: u64,
-    temporary: u64,
-}
-
-/// A provisional source stage cannot fit the selected plan or actual volume.
+/// Native source work cannot fit the selected plan or actual volume.
 #[derive(Debug)]
 pub enum BudgetError {
     /// Another cooperating native source capture holds the project lock.
@@ -85,9 +78,9 @@ pub enum BudgetError {
     UnsafeStore(PathBuf),
     /// One byte counter or rounded estimate overflowed.
     Overflow,
-    /// SQLite main-file projection exceeds the selected target.
+    /// Accepted-store SQLite main-file projection exceeds its selected target.
     MainLimit,
-    /// WAL already reached the selected stop-and-checkpoint target.
+    /// Accepted-store WAL reached its selected stop-and-checkpoint target.
     WalLimit,
     /// Existing managed temporary use plus stage projection exceeds its target.
     TemporaryLimit,
@@ -107,8 +100,6 @@ pub(crate) struct StageBudget {
     window: SourceWriterWindow,
     granularity: u64,
     projected_stage: u64,
-    projected_main: u64,
-    projected_wal: u64,
     free_floor: u64,
     temporary_limit: u64,
     written_raw: u64,
@@ -212,47 +203,17 @@ impl StageBudget {
         if granularity == 0 {
             return Err(BudgetError::Overflow);
         }
-        let usage = scan_store_usage(&window.engine_dir, granularity, limits.temporary)?;
+        let temporary = scan_store_usage(&window.engine_dir, granularity, limits.temporary)?;
         let projected_stage = projected_stage_bytes(inventory, granularity)?;
-        let projected_main = inventory
-            .total_bytes()
-            .checked_mul(2)
-            .and_then(|bytes| bytes.checked_add(64 * MIB))
-            .and_then(|bytes| {
-                bytes.checked_add((inventory.files().len() as u64).checked_mul(granularity)?)
-            })
-            .ok_or(BudgetError::Overflow)?;
-        if usage
-            .main
-            .checked_add(projected_main)
-            .ok_or(BudgetError::Overflow)?
-            > limits.main
-        {
-            return Err(BudgetError::MainLimit);
-        }
-        if usage.wal >= limits.wal {
-            return Err(BudgetError::WalLimit);
-        }
-        if usage
-            .temporary
+        if temporary
             .checked_add(projected_stage)
             .ok_or(BudgetError::Overflow)?
             > limits.temporary
         {
             return Err(BudgetError::TemporaryLimit);
         }
-        // A planning target is not a promise to fill the remaining WAL on
-        // every capture. Estimate at most two passes over projected SQLite
-        // growth, then cap new work at the selected stop target. The later
-        // store rechecks observed WAL and handles a real space fault.
-        let projected_wal = projected_main
-            .checked_mul(2)
-            .ok_or(BudgetError::Overflow)?
-            .min(limits.wal - usage.wal);
         let required_free = projected_stage
-            .checked_add(projected_main)
-            .and_then(|bytes| bytes.checked_add(projected_wal))
-            .and_then(|bytes| bytes.checked_add(limits.free_floor))
+            .checked_add(limits.free_floor)
             .ok_or(BudgetError::Overflow)?;
         let available = fs4::available_space(project_root).map_err(|source| BudgetError::Io {
             path: project_root.to_owned(),
@@ -265,8 +226,6 @@ impl StageBudget {
             window,
             granularity,
             projected_stage,
-            projected_main,
-            projected_wal,
             free_floor: limits.free_floor,
             temporary_limit: limits.temporary,
             written_raw: 0,
@@ -313,9 +272,7 @@ impl StageBudget {
 
     fn check_free(&self, project_root: &Path, incoming: u64) -> Result<(), BudgetError> {
         let required_free = incoming
-            .checked_add(self.projected_main)
-            .and_then(|bytes| bytes.checked_add(self.projected_wal))
-            .and_then(|bytes| bytes.checked_add(self.free_floor))
+            .checked_add(self.free_floor)
             .ok_or(BudgetError::Overflow)?;
         let available = fs4::available_space(project_root).map_err(|source| BudgetError::Io {
             path: project_root.to_owned(),
@@ -354,7 +311,7 @@ fn scan_store_usage(
     engine_dir: &Path,
     granularity: u64,
     temporary_limit: u64,
-) -> Result<PhysicalUsage, BudgetError> {
+) -> Result<u64, BudgetError> {
     scan_store_usage_with(engine_dir, granularity, temporary_limit, |_, _| {})
 }
 
@@ -363,8 +320,8 @@ fn scan_store_usage_with(
     granularity: u64,
     temporary_limit: u64,
     mut visit: impl FnMut(&Path, bool),
-) -> Result<PhysicalUsage, BudgetError> {
-    let mut usage = PhysicalUsage::default();
+) -> Result<u64, BudgetError> {
+    let mut temporary = 0_u64;
     let stage_root = engine_dir.join("staging");
     let mut directories = vec![engine_dir.to_owned()];
     while let Some(directory) = directories.pop() {
@@ -389,11 +346,10 @@ fn scan_store_usage_with(
                 continue;
             };
             if kind.is_dir() {
-                usage.temporary = usage
-                    .temporary
+                temporary = temporary
                     .checked_add(granularity)
                     .ok_or(BudgetError::Overflow)?;
-                if usage.temporary > temporary_limit {
+                if temporary > temporary_limit {
                     return Err(BudgetError::TemporaryLimit);
                 }
                 directories.push(path);
@@ -414,6 +370,14 @@ fn scan_store_usage_with(
                 if !opened.file_type().is_file() {
                     return Err(BudgetError::UnsafeStore(path));
                 }
+                if directory == engine_dir
+                    && matches!(
+                        entry.file_name().to_str(),
+                        Some("source.sqlite" | "source.sqlite-wal")
+                    )
+                {
+                    continue;
+                }
                 let Some(allocated) = store_io(&path, &stage_root, FileExt::allocated_size(&file))?
                 else {
                     continue;
@@ -422,15 +386,8 @@ fn scan_store_usage_with(
                 let charge = round_up(allocated.max(logical), granularity)?
                     .checked_add(granularity)
                     .ok_or(BudgetError::Overflow)?;
-                let bucket = if directory == engine_dir && entry.file_name() == "source.sqlite" {
-                    &mut usage.main
-                } else if directory == engine_dir && entry.file_name() == "source.sqlite-wal" {
-                    &mut usage.wal
-                } else {
-                    &mut usage.temporary
-                };
-                *bucket = bucket.checked_add(charge).ok_or(BudgetError::Overflow)?;
-                if usage.temporary > temporary_limit {
+                temporary = temporary.checked_add(charge).ok_or(BudgetError::Overflow)?;
+                if temporary > temporary_limit {
                     return Err(BudgetError::TemporaryLimit);
                 }
             } else {
@@ -438,7 +395,7 @@ fn scan_store_usage_with(
             }
         }
     }
-    Ok(usage)
+    Ok(temporary)
 }
 
 fn store_io<T>(
@@ -533,7 +490,7 @@ mod tests {
     }
 
     #[test]
-    fn existing_store_usage_and_writer_lock_are_visible() {
+    fn capture_does_not_charge_existing_main_or_wal_as_new_stage_work() {
         let root = std::env::temp_dir().join(format!("thrum-budget-store-{}", std::process::id()));
         fs::create_dir(&root).unwrap();
         fs::write(root.join("project.json"), b"{}").unwrap();
@@ -545,19 +502,25 @@ mod tests {
         fs::write(root.join(".engine/source.sqlite"), vec![1_u8; 4096]).unwrap();
         let inventory =
             scan_declared_tree(&root, &[SourcePath::parse("project.json").unwrap()]).unwrap();
-        let limits = Limits {
-            main: 1,
-            ..Limits::V1
-        };
-        assert!(matches!(
-            StageBudget::reserve_with_limits(&root, &inventory, window, limits),
-            Err(BudgetError::MainLimit)
-        ));
+        fs::write(root.join(".engine/source.sqlite-wal"), vec![2_u8; 4096]).unwrap();
+        let budget = StageBudget::reserve_with_limits(
+            &root,
+            &inventory,
+            window,
+            Limits {
+                main: 1,
+                wal: 1,
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+        drop(budget);
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn tiny_capture_plans_wal_work_without_charging_entire_stop_target() {
+    fn tiny_capture_projection_is_independent_of_unused_wal_stop() {
         let root =
             std::env::temp_dir().join(format!("thrum-budget-wal-plan-{}", std::process::id()));
         fs::create_dir(&root).unwrap();
@@ -565,18 +528,33 @@ mod tests {
         let inventory =
             scan_declared_tree(&root, &[SourcePath::parse("project.json").unwrap()]).unwrap();
         let window = SourceWriterWindow::acquire(&root).unwrap();
-        let plan = StageBudget::reserve_with_limits(
+        let narrow = StageBudget::reserve_with_limits(
             &root,
             &inventory,
             window,
             Limits {
+                wal: 1,
                 free_floor: 0,
                 ..Limits::V1
             },
         )
         .unwrap();
-        assert!(plan.projected_wal < 512 * MIB);
-        drop(plan);
+        let narrow_stage = narrow.projected_stage;
+        drop(narrow);
+        let window = SourceWriterWindow::acquire(&root).unwrap();
+        let wide = StageBudget::reserve_with_limits(
+            &root,
+            &inventory,
+            window,
+            Limits {
+                wal: 4 * GIB,
+                free_floor: 0,
+                ..Limits::V1
+            },
+        )
+        .unwrap();
+        assert_eq!(wide.projected_stage, narrow_stage);
+        drop(wide);
         fs::remove_dir_all(root).unwrap();
     }
 
