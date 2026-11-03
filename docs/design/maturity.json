@@ -654,7 +654,7 @@
       },
       "i2a_render_transformed_bound_candidate": {
         "evidence": "../evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md",
-        "implementation": "private_compiled_exact_transformed_box_predicate_without_decoder_caller",
+        "implementation": "retired_from_main_2026_11_03__historical_private_compiled_exact_transformed_box_predicate_without_decoder_caller",
         "functional_validation": "seven focused Rust tests and a standalone entry-point verifier match 3588 archived independent rational-oracle vectors; independent defect-first review found no actionable issue",
         "experienced_quality": "not_applicable_to_isolated_source_predicate",
         "platform_performance": "no integrated F3 decode/admission latency, charged allocation, combined RSS, target/compiler-mode or device qualification; prior 50k-instance timings are isolated evidence",
@@ -662,7 +662,7 @@
       },
       "i2a_render_geometry_exact_candidate": {
         "evidence": "../evidence/render/R0-F3-GEOMETRY-PRODUCTION-2026-11-03.md",
-        "implementation": "private_compiled_exact_local_radius_and_indexed_triangle_predicates_without_decoder_caller",
+        "implementation": "retired_from_main_2026_11_03__historical_private_compiled_exact_local_radius_and_indexed_triangle_predicates_without_decoder_caller",
         "functional_validation": "seven focused Rust tests; debug and release production-entry harness matches 8009 archived independent rational triangle vectors, 16018 indexed winding calls and 6108 Fraction radius vectors; independent reviewer matched 20009 triangle and 5000 radius vectors with no actionable issue; full repository gate passes",
         "experienced_quality": "not_applicable_to_isolated_source_predicates",
         "platform_performance": "fixed bounded fallback and no per-predicate heap allocation by inspection; no measurement of this production module in complete F3 decoding, combined memory, charged work, target latency or device path",
@@ -670,7 +670,7 @@
       },
       "i2a_render_checked_envelope_candidate": {
         "evidence": "../evidence/render/R0-F3-RENDER-ENVELOPE-2026-11-03.md",
-        "implementation": "private_checked_header_token_and_borrowed_render_v1_envelope_without_dispatch_caller",
+        "implementation": "retired_from_main_2026_11_03__historical_private_checked_header_token_and_borrowed_render_v1_envelope_without_dispatch_caller",
         "functional_validation": "three focused tests cover field reorder, in-input collection borrows, escaped equivalent keys/values, decoded duplicate/unknown/missing refusals and documentation bounds; independent defect-first review found no residual issue; full repository gate passes",
         "experienced_quality": "not_applicable_to_inactive_source_envelope",
         "platform_performance": "six raw collection slices avoid an array-wide index; ordinary UUID strings borrow input; no measured complete-record parse latency, peak RSS, charged scratch or device path",
@@ -678,7 +678,7 @@
       },
       "i2a_render_mesh_object_candidate": {
         "evidence": "../evidence/render/R0-F3-MESH-OBJECT-DECODER-2026-11-03.md",
-        "implementation": "private_inactive_streaming_render_mesh_object_decoder",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_streaming_render_mesh_object_decoder",
         "functional_validation": "six focused object tests cover map-only grammar, fixed-field order, decoded duplicate and anonymous repeated-ID locators, exact radius and triangle predicates, empty mesh, unreferenced extrema and callback refusal; defect-first review and full repository gate passed",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "one mesh's positions/UV/triangle vectors exist during its callback and drop before the next streamed item; no measured complete-record latency, peak RSS or charged object allocation",
@@ -686,7 +686,7 @@
       },
       "i2a_render_camera_object_candidate": {
         "evidence": "../evidence/render/R0-F3-CAMERA-OBJECT-DECODER-2026-11-03.md",
-        "implementation": "private_inactive_camera_source_decoder_and_known_field_priority_correction",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_camera_source_decoder_and_known_field_priority_correction",
         "functional_validation": "two focused camera tests cover authored values, exact FOV boundary, invalid quaternion and position, field reorder, escaped duplicate ID, positional refusal and unknown-key priority; eight combined object tests and full repository gate passed after independent review",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "no measured camera-heavy parse cost, combined peak RSS, charged parser scratch or device path; exact quaternion check reuses complete transformed-box predicate",
@@ -694,7 +694,7 @@
       },
       "i2a_render_collection_order_candidate": {
         "evidence": "../evidence/render/R0-F3-COLLECTION-ORDER-2026-11-03.md",
-        "implementation": "private_inactive_camera_mesh_and_instance_collection_structural_reducer",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_camera_mesh_and_instance_collection_structural_reducer",
         "functional_validation": "five focused tests cover UUID and field order under array reorder, borrowed raw-byte tie, anonymous fallback, projection suppression and early refusal, camera/instance order and collection syntax refusal",
         "experienced_quality": "not_applicable_to_inactive_source_scanner",
         "platform_performance": "one retained structural error and raw borrow rather than an array-wide index; no measured complete-record latency, charged high-water or RSS",
@@ -702,7 +702,7 @@
       },
       "i2a_render_instance_object_candidate": {
         "evidence": "../evidence/render/R0-F3-INSTANCE-OBJECT-DECODER-2026-11-03.md",
-        "implementation": "private_inactive_instance_structure_and_shared_identified_object_helper",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_instance_structure_and_shared_identified_object_helper",
         "functional_validation": "two focused instance object tests and one collection test cover typed unresolved UUIDs, signed/zero scale, reordered fields, exact quaternion, recognized duplicate and repeated unknown-key refusals; fifteen combined focused tests pass; independent adversarial review found no remaining semantic or lifetime defect",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "no combined many-instance parse/deferred-bound timing, account charge, RSS or device cost; structural quaternion check repeats work later unless representation is improved",
@@ -710,7 +710,7 @@
       },
       "i2a_render_texture_stream_candidate": {
         "evidence": "../evidence/render/R0-F3-TEXTURE-STREAM-IMPLEMENTATION-2026-11-03.md",
-        "implementation": "private_inactive_borrowed_texture_object_and_fixed_chunk_scalar_base64_decoder",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_borrowed_texture_object_and_fixed_chunk_scalar_base64_decoder",
         "functional_validation": "five focused tests cover canonical padding, equivalent JSON escapes, invalid alphabet and tail bits, dimension and field priority, callback refusal and chunk-boundary replay against independent Python byte/hash goldens; independent code review found no remaining correctness or linear-time defect; full repository gate passes",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "five fresh Apple M3 Max release processes: 1x1 check medians 528-589 ns, 1280 squared plain check 2.344-2.904 ms and replay 1.633-1.991 ms, one-escape check 4.703-5.269 ms and replay 1.836-2.008 ms; no chunk-size or feature-profile comparison, allocation/RSS/charged peak or device measurement",
@@ -718,7 +718,7 @@
       },
       "i2a_render_material_object_candidate": {
         "evidence": "../evidence/render/R0-F3-MATERIAL-OBJECT-DECODER-2026-11-03.md",
-        "implementation": "private_inactive_material_structure_nested_sampler_and_collection_scanner",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_material_structure_nested_sampler_and_collection_scanner",
         "functional_validation": "eight focused object tests cover defaults, 36 sampler combinations, mode/cutoff rules, numeric extrema, escaped semantics, strict shapes and duplicate/unknown priority; one collection test covers canonical UUID errors, zero-factor texture edges and projection suppression; independent defect-first review found no blocker",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "no measured material-heavy parse cost, combined allocation/RSS, charged source peak, F4 product or device path",
@@ -726,7 +726,7 @@
       },
       "i2a_render_local_light_object_candidate": {
         "evidence": "../evidence/render/R0-F3-LOCAL-LIGHT-OBJECT-DECODER-2026-11-03.md",
-        "implementation": "private_inactive_local_light_facts_exact_unit_luminance_predicate_and_collection_scanner",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_local_light_facts_exact_unit_luminance_predicate_and_collection_scanner",
         "functional_validation": "six exact-predicate tests and independent integer/Python rational oracles including boundary disagreement vectors; eight object and one collection tests cover signed zero, extent, escaped grammar, canonical errors, zero/five-light source counts and provisional projection; independent arithmetic and object/scanner reviews found no blocker",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "standalone Darwin arm64 optimized predicate median 3.92-3.93 ns on ordinary fixtures with no fallback and 22.88 ns on deliberate all-boundary fallback; no measured JSON/combined F3/F4 CPU, allocation/RSS, charged peak or device path",
@@ -734,7 +734,7 @@
       },
       "i2a_render_root_structural_candidate": {
         "evidence": "../evidence/render/R0-F3-RENDER-ROOT-STRUCTURAL-SCAN-2026-11-03.md",
-        "implementation": "private_inactive_complete_render_root_structural_coordinator_and_texture_collection_scanner",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_complete_render_root_structural_coordinator_and_texture_collection_scanner",
         "functional_validation": "two texture collection and ten root tests cover borrowed replay, checked dispatch-token equivalence, canonical collection/UUID ordering, raw tie, anonymous fallback, complete header refusal, provisional output and operational abort; the byte-identical selected authored render record passes local structure at 1/3/3/3/4/4 object counts; independent review found no blocker and targeted Clippy passes",
         "experienced_quality": "not_applicable_to_inactive_source_coordinator",
         "platform_performance": "no combined parser allocation/RSS, charged peak, full authored fixture, F3/F4 latency or device measurement; no array-wide object index is retained",
@@ -758,7 +758,7 @@
       },
       "i2a_scene3_local_candidate": {
         "evidence": "../evidence/render/R0-F3-SCENE3-LOCAL-DECODER-2026-11-03.md",
-        "implementation": "private_inactive_scene3_local_decoder_and_unregistered_immutable_definition",
+        "implementation": "retired_from_main_2026_11_03__historical_private_inactive_scene3_local_decoder_and_unregistered_immutable_definition",
         "functional_validation": "nine focused tests cover required/optional typed facts, escaped equivalence, duplicate and unknown ordering, map/null refusal, decoded text and UUID scratch bounds, exact header byte/node/depth boundaries, checked-token reuse, byte-identical authored fixture and descriptor hash; independent code review found no blocker",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "no measured near-limit parser CPU or allocation/RSS, full candidate closure, accepted-pin F4 cook or device cost",
@@ -766,7 +766,7 @@
       },
       "i2a_scene3_f4_environment_projection": {
         "evidence": "../evidence/render/R0-F4-SCENE3-ENVIRONMENT-PROJECTION-2026-11-03.md",
-        "implementation": "public_checked_scene2_or_scene3_environment_projection_and_actual_selected_scene_schema_provenance",
+        "implementation": "scene3_path_retired_from_main_2026_11_03__scene2_projection_retained",
         "functional_validation": "scene@3 required-render-edge and escaped-equivalence fixture; existing scene@2 and constant-light tests, source/cook suites, full repository gate on rerun and independent read-only review pass; no scene@3 accepted-pin test exists",
         "experienced_quality": "not_applicable_to_inactive_selected_source_projection",
         "platform_performance": "no paired parser CPU, allocation/RSS, accepted-pin cook or device measurement",
@@ -774,7 +774,7 @@
       },
       "i2a_render_definition_candidate": {
         "evidence": "../evidence/render/R0-F3-RENDER-DEFINITION-2026-11-03.md",
-        "implementation": "private_unregistered_immutable_render_v1_source_definition",
+        "implementation": "retired_from_main_2026_11_03__historical_private_unregistered_immutable_render_v1_source_definition",
         "functional_validation": "three focused tests pin the domain-separated golden hash, semantic mutation sensitivity and unchanged active built-in hashes/registration; independent 10451-byte digest recomputation and adversarial grammar/predicate review found no blocker",
         "experienced_quality": "not_applicable_to_inactive_source_definition",
         "platform_performance": "no combined parser CPU, allocation/RSS, F4 product or target sampler/device conformance measurement",
@@ -798,11 +798,11 @@
       },
       "i2a_provisional_verified_store": {
         "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-VERIFIED-LEASE-2026-11-02.md",
-        "scope": "An in-crate test-only provisional SQLite store takes F3-validated staged candidates, verifies copied bytes and canonical manifest, commits keyed outcomes, atomically pins the selected revision and hash-checks bounded record reads. A/B, reopen, retry, corruption, last-owner and bounded tiny-file batch cases pass. A single local 1,005-file probe reduced fresh transaction count and elapsed time but increased WAL length; physical peak, full RecoveryRoot, schema pins, accepted-source authority, F4 and runtime qualification remain open."
+        "scope": "Historical retired test-only path; Git retains the proof. An in-crate test-only provisional SQLite store takes F3-validated staged candidates, verifies copied bytes and canonical manifest, commits keyed outcomes, atomically pins the selected revision and hash-checks bounded record reads. A/B, reopen, retry, corruption, last-owner and bounded tiny-file batch cases pass. A single local 1,005-file probe reduced fresh transaction count and elapsed time but increased WAL length; physical peak, full RecoveryRoot, schema pins, accepted-source authority, F4 and runtime qualification remain open."
       },
       "i2a_provisional_publication_recovery": {
         "evidence": "../evidence/i2a/SOURCE-PROVISIONAL-PUBLICATION-RECOVERY-2026-11-02.md",
-        "scope": "Format-2 provisional intent persists before blob staging and commits selection/outcome/completion together. Four process-kill boundaries, a public-token fresh-process status recovery, valid-old-row rollback refusal and bounded retained-history checks pass. Format 1 refuses without migration. SQLite physical reservation, canonical RecoveryRoot/application recovery, power-loss qualification, retirement, accepted-source authority and F4 remain open."
+        "scope": "Historical retired test-only path; Git retains the proof. Format-2 provisional intent persists before blob staging and commits selection/outcome/completion together. Four process-kill boundaries, a public-token fresh-process status recovery, valid-old-row rollback refusal and bounded retained-history checks pass. Format 1 refuses without migration. SQLite physical reservation, canonical RecoveryRoot/application recovery, power-loss qualification, retirement, accepted-source authority and F4 remain open."
       },
       "i2a_provisional_physical_probe": {
         "evidence": "../evidence/i2a/SOURCE-PHYSICAL-ENVELOPE-2026-11-03.md",
