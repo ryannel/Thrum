@@ -1,0 +1,22 @@
+{
+  "archive_sha256": "17229d58fead7d2929b6119c09bdbb3fe49d46ea93345e1643977a2809e53ce5",
+  "members_verified": 89,
+  "byte_exact_against_retained_originals": true,
+  "archive_crc": "PASS",
+  "fresh_output_free_scalar_and_phase_checks": [
+    {
+      "script": "test_scalar.py",
+      "exit_code": 0,
+      "output": "{\"status\": \"PASS\", \"tests\": 215, \"field_executed\": false, \"versions\": {\"python\": \"3.14.10 (main, Oct 25 2026, 17:12:00) [Clang 21.0.0 (clang-2100.3.34.2)]\", \"platform\": \"macOS-26.6.2-arm64-arm-64bit-Mach-O\", \"numpy\": \"2.4.6\", \"scipy\": \"1.17.1\", \"pillow\": \"12.2.0\"}}\n"
+    },
+    {
+      "script": "test_phase.py",
+      "exit_code": 0,
+      "output": "{\"status\": \"PASS\", \"scope\": \"scalar/1D chord and mocked tree/AST/CLI phase guards only; no full scalar field\", \"checks\": [\"oblique h changes body4\", \"exact material coordinate body4 axis0\", \"exact material coordinate body4 axis1\", \"exact material coordinate body4 axis2\", \"complete domain endpoints body4\", \"native chord spacing body4\", \"oblique h changes crown5\", \"exact material coordinate crown5 axis0\", \"exact material coordinate crown5 axis1\", \"exact material coordinate crown5 axis2\", \"complete domain endpoints crown5\", \"native chord spacing crown5\", \"oblique h changes crown6\", \"exact material coordinate crown6 axis0\", \"exact material coordinate crown6 axis1\", \"exact material coordinate crown6 axis2\", \"complete domain endpoints crown6\", \"native chord spacing crown6\", \"shoulders and repeated scallops do not replace major heads\", \"full owned tree includes watchdog worker descendant only\", \"only macro field call exists\", \"no detailed field entry or detail probe implementation\", \"missing macro-only flag rejects screen.py\", \"missing macro-only flag rejects run_guard.py\", \"no full field result or guard created\"], \"count\": 25}\n"
+    }
+  ],
+  "frozen_member_pins": "PASS",
+  "full_field_rerun": false,
+  "native_GPU_timing_execution": false,
+  "owned_restore_removed_after_verification": true
+}

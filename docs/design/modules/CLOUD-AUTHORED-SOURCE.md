@@ -4,6 +4,24 @@
 
 The [failed transport sources](../../evidence/cloud-front-growth-2026-11-03/README.md), [qualified static Cu ingredients](../../evidence/cloud-authored-masters-2026-11-03/README.md), [local erosion comparison](../../evidence/cloud-geometry-operators-2026-11-03/README.md) and [rejected frozen storm anatomy](../../evidence/cloud-cb-anatomy-2026-11-03/README.md) constrain this proposal. Correct transport did not supply a good storm. A good static Cu and a correct erosion operator do not supply renewal or moving breakup. A connected storm skeleton and a filled smooth column both fail appearance.
 
+## Current source decision
+
+The [actual branching-loft screen](../../evidence/cloud-swept-macro-screen-2026-11-03/README.md) rejects that new anatomy
+before detail or native cooking. Both BODY bases fail onset-height spread; major/shoulder silhouettes fail, and actual
+crown projections are smooth clubs. Connected volume and sufficient optical depth did not supply billow hierarchy.
+The next proof traces known useful raw03 anatomy through its actual preparation, taper and overlap chain at matched
+poses. No further primitive/noise parameter search or default source adoption follows from the loft model.
+
+The independently reviewed frame correction is selected as an invariant for the next source: separate the material
+condensation-plane origin from a positive interior attachment root, anchor BODY growth at condensation height and
+compute full point velocity from the actual affine map. Ordinary BODY renewal is new parentless condensation, with
+fresh rest/exposure/strain and real birth time; old material continues unchanged. Attached crowns retain their existing
+safety/observation rules and inherit actual parent-point velocity once before wind-relative response. This supersedes
+older protected-parent BODY renewal assumptions below. Exact v2 coordinates in the retained addendum belong to the
+rejected anatomy and require new metadata/native recertification for another asset. No source91 cost or art evidence
+transfers to this change. The [single queue](CLOUD-MIGRATION.md#current-assembly-checkpoint) retains implementation,
+all-reader, actual motion and cost gates as unfinished.
+
 ## Operating model
 
 A persistent E1 weather cell owns a bounded population of finite-lived authored volume elements, called cohorts here. Each is newly condensed material with a stable ID, template/seed, birth time, local growth, erosion, phase and material map. The cell and its weather/storm causes persist while new billows replace old material. No complete lifecycle movie, Houdini dependency or fluid solver discovering the anatomy is required.

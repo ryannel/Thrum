@@ -1,0 +1,2282 @@
+{
+  "execution": {
+    "classification": "cpu-screened-integration",
+    "label": "CPU SCREEN PASSED \u00b7 GPU/ART UNQUALIFIED",
+    "sourcePinsSHA256": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+    "rootSelectedCPUImplementation": true,
+    "productionApproved": false,
+    "costGatePass": true,
+    "originalGatePass": true,
+    "coupledDryGatePass": true,
+    "independentReviewClosed": true,
+    "gpuQualified": false,
+    "artQualified": false,
+    "copyMap": {
+      "file": "policy/source-copy-map.json",
+      "bytes": 3061,
+      "sha256": "ca0cd4f73b25b708098e5c277351fc3552f0a71929ea55743e04bf18e9dde546"
+    },
+    "costReceipts": {
+      "original": {
+        "file": "policy/cost-original.json",
+        "bytes": 298588,
+        "sha256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330"
+      },
+      "coupledDry": {
+        "file": "policy/cost-two-dry.json",
+        "bytes": 97344,
+        "sha256": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e"
+      },
+      "handoff": {
+        "file": "policy/cost-handoff.json",
+        "bytes": 10640,
+        "sha256": "eb90056e79dc7350bbd636d2a5ddb1da2e15b308c6a20368500478328342ef19"
+      }
+    },
+    "reason": "Root selects exact reviewed91b967 CPU implementation for bounded optical integration. First original and coupled-dry4ms protocols pass;20.333microsecond supplement margin. GPU/art/device/provider adoption unqualified.",
+    "scope": "First bounded NodeCPU screen only;20.333microsecond margin; noGPU/art/device/runtime-provider acceptance"
+  },
+  "name": "system-t100000-mode0-6bd88ae9bef60733-85f4ee5a-1",
+  "build": "6bd88ae9bef60733",
+  "identity": {
+    "build": "6bd88ae9bef60733",
+    "files": {
+      "assets/admission/admission.json": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+      "assets/assembly.json": "83465b4ae18a0a5a83440ca97eeea6a368aa877542f4ab356348ed74952f4108",
+      "assets/input-index.json": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+      "assets/noise/channels-32.json": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a",
+      "assets/noise/channels-32.r16f": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "assets/policy/configuration.json": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7",
+      "assets/policy/cost-handoff.json": "eb90056e79dc7350bbd636d2a5ddb1da2e15b308c6a20368500478328342ef19",
+      "assets/policy/cost-original.json": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330",
+      "assets/policy/cost-two-dry.json": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e",
+      "assets/policy/source-copy-map.json": "ca0cd4f73b25b708098e5c277351fc3552f0a71929ea55743e04bf18e9dde546",
+      "assets/policy/source-pins.json": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+      "assets/templates/body.density.r16f": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19",
+      "assets/templates/body.distance.r16f": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14",
+      "assets/templates/body.json": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098",
+      "assets/templates/crown-b.density.r16f": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09",
+      "assets/templates/crown-b.distance.r16f": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab",
+      "assets/templates/crown-b.json": "8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704",
+      "assets/templates/original-FROZEN-INPUTS.json": "60054a49e5edb232177a40de2fe60ad18ff36ccb253d42345b360b6b5b30d62c",
+      "assets/templates/original-body.json": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc",
+      "assets/templates/original-crown-b.json": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339",
+      "index.html": "5233a815eeea99128458c265c88a2ef724576d2687756d1c0878f8d7caa52f44",
+      "shaders/air.wgsl": "6ea202fb30ae011b7f841414874f7e64ead0537319dea2c032119fa3b923ecdd",
+      "shaders/component-source.wgsl": "8b3456bde4b951983bfb1a9abdb7906b189c9f4bea47eb61aaa730380b7bf7f6",
+      "shaders/display.wgsl": "8c3367cc57e36edddeb100ccf187b96ee759000bff93cd40572ef05e2e492fec",
+      "shaders/light.wgsl": "65419f0ecb026794a43659fdc269ce7454fe8e9ff608b2e64d9ea6e2bf389c05",
+      "shaders/optics.wgsl": "c27dd64753d0de63731d8661d6e6f13d6291711fc0fef2a0e2fbbde18cea8356",
+      "shaders/shadow.wgsl": "d28ee4536c01500be85fba886252eed84ddaa9464fa1ef1e650845755736d0aa",
+      "shaders/view.wgsl": "15b4d669ef86f42f422058f881b095e129f8714aa0c61524129bb1c57af49374",
+      "src/bench/app.js": "a49a860af3f746901e44c55826ddb54a7a8e6e5bdfb0ddbc0bd4fbccdebcfdaf",
+      "src/bench/approval.js": "589712236e658188743c04ac3e65eddd9dffe481bee9714b4c16b9f67054977d",
+      "src/bench/failure-retention.js": "60fdd98b30c5b0f5444c44c99676582b0331768aa671d77511a8e42a94910ad1",
+      "src/bench/motion.js": "5fd76bd135f7e64ea2658490791536de7fb16710c18aedebe114236320a1a5d4",
+      "src/bench/recording-spec.js": "56486426dc740f135c1b87c385dcdc3d7a04ac0e6f8c6efa932aa3d5c3bb7596",
+      "src/bench/source-bridge.js": "43b067843ce2183fdac83191d2736234de8e9fd5f930a6a01420d9b6fb318539",
+      "src/bench/trace.js": "7b2e08ffda9199b41f79795a5cde2f96f9e379043fe18628e19ff8c58531616e",
+      "src/render/adapter.js": "9c20dc27be1e64c86189984dd0681f39c719510d12f0e7ae9c472b0dde1f6788",
+      "src/render/assets.js": "f2abcb00cfc5430245547ffa0dd532e734e7432ff440b9febe96419b0d1e4c4a",
+      "src/render/frame-lifecycle.js": "f6a58be251d8042863830abbefcd79a16408ec4036cd955664286f150f0f4f18",
+      "src/render/gpu.js": "71995a4c32fc121aa5be443ab69a6b9d8f8801fcaea950ee6eb20dbcd7d612a0",
+      "src/render/held-oracle.js": "bb826a5c073f697119abfc7f63fabb5c0e654f65251b1314c3ecdb463f2eda60",
+      "src/render/light-coverage.js": "9164d7715f8623368f264fe6c2331619c22de188bc40eda6844bc821acd03b71",
+      "src/render/light-reference.js": "e6d92248d34799017affe273cbae9800f97c1a6b7063993eaaf5f346724cc615",
+      "src/render/lighting-profile.js": "02d08c06c3161ac5ed9158f39cd78974d2fc0788d348cb4a3620f259198ca8ac",
+      "src/render/reference.js": "b9245d18b2da49a25846bc59ef9f0cc5449846e834c68ddfc93e25602f6752a9",
+      "src/render/scene.js": "3387dc872b84bf677934a6f52d8dfb94fc979711e217b82aa5c948767ddd4067",
+      "src/render/world-optics.js": "d45f069480fb963f80eb739a1fc65d0e665f15e6c8b86dca81f5253a3245398b",
+      "src/source/admission-policy.js": "86b8ef7e852c62c8300d05eb22764956ce5e3a24c120180042ab1662c8e5101e",
+      "src/source/admission-policy.provenance.json": "f5c52ef8ae54027ca0d89cb9046eb8528b56bc96d2188e61e32f6f6f193cae49",
+      "src/source/clock.js": "ee3033f17e10fbfecf89b161b6224b2a3c568db0230ade4105f7277c2825eb96",
+      "src/source/forecast-profile.js": "8b23a8061b96ef985e7fe1a8c95328d9ce7258336bedf001ce0b38505f0a9368",
+      "src/source/health-x.js": "671fa090999f2c7072b79db9e4df55b9792efd1d9f50abe2c9f6693e492f9a0f",
+      "src/source/math.js": "7f85fe25b759b7e1d37770b3e4bcea13199ef49dbb66362b0d79c621556bd862",
+      "src/source/model.js": "75306c0fe439f2e14e18e8b02e62309b42423b983dbf9ceef9d00ccd81162354",
+      "src/source/native-potential.js": "751eb275097ac5115f6d2b5a71d3260c3706177678520b9fa0faaf052d13a340",
+      "src/source/observation-capture.js": "9ae6b77a79d4dbd0b007bf0451db0026898d670b28aa1daafdadc7d6e3a34164",
+      "src/source/observed-policy.js": "c4032450e1ce58570b9e642f854e3008d1dc25d09e638bded42bc0223f36e6fe",
+      "src/source/prepared-endpoint.js": "213a44d3d84ecc3cedc95bfccda153036c1f22622759ab25e1eaba5a81dd5284",
+      "src/source/reference.js": "b31eb8987de17201c95b4a3476f9063371b036edbfbab70c9bd1ba220b2e0e9d",
+      "src/source/weather-zero.js": "abff5bf555bbafb46da4a714c343e1462d28bc97cbd82cb0f6c845f341305d76",
+      "src/source/weather.js": "f24443c657883ac5952ef24a91eb9a7fc4e35935d91633495fd87f3b5b8309da",
+      "src/source/world-reference.js": "f4c3b8a184a042b33f2d8216aab9222ea3038a3bd1e0851b5d51a7a126776589",
+      "src/source/world.js": "cb791b9992bf3359a3892328c80eb54c78e369c6ca4e9c7aa79ed0e9ab02d947",
+      "style.css": "2777e311275761435b29f9e8dde0af2b84d0624bc4c727281ad7b3565b896f0a"
+    }
+  },
+  "observation": "85f4ee5a",
+  "host": {
+    "adapter": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": null,
+      "description": null,
+      "name": null,
+      "isFallbackAdapter": false,
+      "enabledDeviceFeatures": [
+        "core-features-and-limits",
+        "timestamp-query"
+      ],
+      "deviceLimits": {
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxBufferSize": 268435456,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "preferredCanvasFormat": "bgra8unorm"
+    },
+    "screen": [
+      1728,
+      1117
+    ],
+    "visibilityState": "visible",
+    "viewportCssPixels": [
+      1280,
+      720
+    ],
+    "visualViewport": {
+      "width": 1280,
+      "height": 720,
+      "scale": 1,
+      "offsetLeft": 0,
+      "offsetTop": 0
+    },
+    "canvasCssPixels": [
+      896.40625,
+      504.2265625
+    ],
+    "canvasBackingPixels": [
+      1280,
+      720
+    ],
+    "devicePixelRatio": 2
+  },
+  "source": {
+    "sourceTime": 100,
+    "sourceTick": 401,
+    "previousTime": 100,
+    "committedTime": 100.25,
+    "requestedTime": 100.25,
+    "alpha": 0,
+    "epoch": 3,
+    "forcingRevision": 0,
+    "controls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontStart": 420,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 0
+    },
+    "formationRanges": [
+      {
+        "cellID": "A",
+        "partStart": 0,
+        "partCount": 3,
+        "slotStart": 0,
+        "slotCount": 8,
+        "controlElementOffset": 0
+      },
+      {
+        "cellID": "B",
+        "partStart": 3,
+        "partCount": 3,
+        "slotStart": 8,
+        "slotCount": 8,
+        "controlElementOffset": 39304
+      }
+    ],
+    "groups": [
+      {
+        "cellID": "A",
+        "groupIndex": 0,
+        "bounds": [
+          [
+            -488.98400000000186,
+            1070.914969442889,
+            -584
+          ],
+          [
+            854.9119999999981,
+            1776.1853290159047,
+            1296
+          ]
+        ],
+        "region": [
+          347.83999999999816,
+          1239.2,
+          0
+        ],
+        "parts": [
+          {
+            "ID": "[3,\"A\",1]",
+            "parentID": null,
+            "slot": 0,
+            "templateID": "body",
+            "role": "BODY",
+            "C": [
+              347.83999999999816,
+              1239.2,
+              0
+            ],
+            "Qcolumns": [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            "s": 4,
+            "g": 1,
+            "b": 4,
+            "Aseed": 1,
+            "K": [
+              0.5480000000000003,
+              0,
+              0
+            ],
+            "root": [
+              299,
+              233,
+              167
+            ],
+            "born": 0,
+            "age": 100,
+            "ageE": 0,
+            "establishment": "parentless",
+            "localID": 1,
+            "localParentID": 0,
+            "cellID": "A",
+            "worldEpoch": 3,
+            "globalSlot": 0
+          },
+          {
+            "ID": "[3,\"A\",2]",
+            "parentID": "[3,\"A\",1]",
+            "slot": 1,
+            "templateID": "crown-b",
+            "role": "BILLOW",
+            "C": [
+              127.47590638794817,
+              1297.474680602552,
+              436
+            ],
+            "Qcolumns": [
+              [
+                0.9628349885613408,
+                -0.25968768692993566,
+                0.07423684565809018
+              ],
+              [
+                0.26778578967890804,
+                0.9536809794919585,
+                -0.1370526381380126
+              ],
+              [
+                -0.035207385095894786,
+                0.1518386476117378,
+                0.9877780872947299
+              ]
+            ],
+            "s": 6,
+            "g": 0.7011354032152755,
+            "b": 4.206812419291653,
+            "Aseed": 1,
+            "K": [
+              0.08997174482378373,
+              0,
+              0
+            ],
+            "root": [
+              225,
+              265,
+              197
+            ],
+            "born": 70,
+            "age": 30,
+            "ageE": 0,
+            "establishment": "healthy",
+            "localID": 2,
+            "localParentID": 1,
+            "cellID": "A",
+            "worldEpoch": 3,
+            "globalSlot": 1
+          },
+          {
+            "ID": "[3,\"A\",3]",
+            "parentID": "[3,\"A\",1]",
+            "slot": 2,
+            "templateID": "body",
+            "role": "BODY",
+            "C": [
+              347.83999999999816,
+              1239.2,
+              0
+            ],
+            "Qcolumns": [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            "s": 4,
+            "g": 0.015625,
+            "b": 0.0625,
+            "Aseed": 0,
+            "K": [
+              0,
+              0,
+              0
+            ],
+            "root": [
+              299,
+              233,
+              167
+            ],
+            "born": 100,
+            "age": 0,
+            "ageE": 0,
+            "establishment": "healthy",
+            "localID": 3,
+            "localParentID": 1,
+            "cellID": "A",
+            "worldEpoch": 3,
+            "globalSlot": 2
+          }
+        ],
+        "exposureRevision": 0,
+        "stats": {
+          "births": 3,
+          "bodyBirths": 2,
+          "billowBirths": 1,
+          "recoveryBirths": 0,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 0,
+          "healthyEstablishments": 0,
+          "cancelledEstablishments": 0,
+          "maxSlots": 3,
+          "maxPriorCurrentIDs": 3,
+          "maxReferenceParts": 1,
+          "admissionNodeTests": 1,
+          "controlPointUpdates": 0,
+          "sourceSteps": 401,
+          "maxControlPitch": 128,
+          "maxK": 0.5500000000000003,
+          "exposurePublications": 1
+        },
+        "statsTime": 100.25,
+        "statsScope": "Committed source counters; observer outcomes use causal growthPolicy publication",
+        "growthPolicy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "clock-qualified",
+          "stats": {
+            "opportunities": 1,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 1,
+            "exposed": 0,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 540,
+            "forecastHealthChecks": 360,
+            "declineReasons": {},
+            "siteDeclineCounts": {},
+            "predictionNodes": 1,
+            "observationNodes": 0,
+            "nativeQueries": 0,
+            "referenceSteps": 120
+          },
+          "statsTime": 100,
+          "latest": null,
+          "pending": {
+            "cellID": "A",
+            "localID": 2,
+            "birthTick": 280,
+            "birthTime": 70,
+            "deadline": 115,
+            "referenceTime": 100,
+            "referenceIDs": [
+              1
+            ],
+            "ID": "[3,\"A\",2]",
+            "referenceQualifiedIDs": [
+              "[3,\"A\",1]"
+            ]
+          },
+          "epoch": 3
+        },
+        "eventCount": 3,
+        "overwrittenEvents": 0
+      },
+      {
+        "cellID": "B",
+        "groupIndex": 1,
+        "bounds": [
+          [
+            1911.0159999999964,
+            1070.914969442889,
+            -1784
+          ],
+          [
+            3254.9119999999966,
+            1776.1853290159047,
+            96
+          ]
+        ],
+        "region": [
+          2747.8399999999965,
+          1239.2,
+          -1200
+        ],
+        "parts": [
+          {
+            "ID": "[3,\"B\",1]",
+            "parentID": null,
+            "slot": 0,
+            "templateID": "body",
+            "role": "BODY",
+            "C": [
+              2747.8399999999965,
+              1239.2,
+              -1200
+            ],
+            "Qcolumns": [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            "s": 4,
+            "g": 1,
+            "b": 4,
+            "Aseed": 1,
+            "K": [
+              0.5480000000000003,
+              0,
+              0
+            ],
+            "root": [
+              299,
+              233,
+              167
+            ],
+            "born": 0,
+            "age": 100,
+            "ageE": 0,
+            "establishment": "parentless",
+            "localID": 1,
+            "localParentID": 0,
+            "cellID": "B",
+            "worldEpoch": 3,
+            "globalSlot": 8
+          },
+          {
+            "ID": "[3,\"B\",2]",
+            "parentID": "[3,\"B\",1]",
+            "slot": 1,
+            "templateID": "crown-b",
+            "role": "BILLOW",
+            "C": [
+              2527.4759063879483,
+              1297.474680602552,
+              -764
+            ],
+            "Qcolumns": [
+              [
+                0.9628349885613408,
+                -0.25968768692993566,
+                0.07423684565809018
+              ],
+              [
+                0.26778578967890804,
+                0.9536809794919585,
+                -0.1370526381380126
+              ],
+              [
+                -0.035207385095894786,
+                0.1518386476117378,
+                0.9877780872947299
+              ]
+            ],
+            "s": 6,
+            "g": 0.7011354032152755,
+            "b": 4.206812419291653,
+            "Aseed": 1,
+            "K": [
+              0.08997174482378373,
+              0,
+              0
+            ],
+            "root": [
+              225,
+              265,
+              197
+            ],
+            "born": 70,
+            "age": 30,
+            "ageE": 0,
+            "establishment": "healthy",
+            "localID": 2,
+            "localParentID": 1,
+            "cellID": "B",
+            "worldEpoch": 3,
+            "globalSlot": 9
+          },
+          {
+            "ID": "[3,\"B\",3]",
+            "parentID": "[3,\"B\",1]",
+            "slot": 2,
+            "templateID": "body",
+            "role": "BODY",
+            "C": [
+              2747.8399999999965,
+              1239.2,
+              -1200
+            ],
+            "Qcolumns": [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            "s": 4,
+            "g": 0.015625,
+            "b": 0.0625,
+            "Aseed": 0,
+            "K": [
+              0,
+              0,
+              0
+            ],
+            "root": [
+              299,
+              233,
+              167
+            ],
+            "born": 100,
+            "age": 0,
+            "ageE": 0,
+            "establishment": "healthy",
+            "localID": 3,
+            "localParentID": 1,
+            "cellID": "B",
+            "worldEpoch": 3,
+            "globalSlot": 10
+          }
+        ],
+        "exposureRevision": 0,
+        "stats": {
+          "births": 3,
+          "bodyBirths": 2,
+          "billowBirths": 1,
+          "recoveryBirths": 0,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 0,
+          "healthyEstablishments": 0,
+          "cancelledEstablishments": 0,
+          "maxSlots": 3,
+          "maxPriorCurrentIDs": 3,
+          "maxReferenceParts": 1,
+          "admissionNodeTests": 1,
+          "controlPointUpdates": 0,
+          "sourceSteps": 401,
+          "maxControlPitch": 128,
+          "maxK": 0.5500000000000003,
+          "exposurePublications": 1
+        },
+        "statsTime": 100.25,
+        "statsScope": "Committed source counters; observer outcomes use causal growthPolicy publication",
+        "growthPolicy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "clock-qualified",
+          "stats": {
+            "opportunities": 1,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 1,
+            "exposed": 0,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 540,
+            "forecastHealthChecks": 360,
+            "declineReasons": {},
+            "siteDeclineCounts": {},
+            "predictionNodes": 1,
+            "observationNodes": 0,
+            "nativeQueries": 0,
+            "referenceSteps": 120
+          },
+          "statsTime": 100,
+          "latest": null,
+          "pending": {
+            "cellID": "B",
+            "localID": 2,
+            "birthTick": 280,
+            "birthTime": 70,
+            "deadline": 115,
+            "referenceTime": 100,
+            "referenceIDs": [
+              1
+            ],
+            "ID": "[3,\"B\",2]",
+            "referenceQualifiedIDs": [
+              "[3,\"B\",1]"
+            ]
+          },
+          "epoch": 3
+        },
+        "eventCount": 3,
+        "overwrittenEvents": 0
+      }
+    ],
+    "exposureOwnership": "GPU writes copied synchronously; no borrowed CPU arrays retained across await",
+    "cpuSourceRevision": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+    "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7",
+    "opticalEpoch": 1,
+    "inputIndexSha256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+    "sourceFrozenSha256": "60054a49e5edb232177a40de2fe60ad18ff36ccb253d42345b360b6b5b30d62c",
+    "poseUploadCount": 3,
+    "poseUploadBytes": 4800,
+    "controlUploadCount": 0,
+    "controlUploadBytes": 0,
+    "logicalGpuBytes": 22981184,
+    "scope": "Two-cell CPU source, MAX within formation/ADD between every optical query; GPU/art/cost admission requires actual browser evidence"
+  },
+  "sourceClock": {
+    "requestedTime": 100.25,
+    "committedSourceTime": 100.25,
+    "presentationTime": 100,
+    "sourceBacklog": 0,
+    "maxBacklog": 77.75,
+    "sourceStepCount": 401,
+    "sourceStepSeconds": 0.25,
+    "presentationLagSeconds": 0.25,
+    "rate": 1,
+    "playing": false,
+    "epoch": 3,
+    "seeking": false,
+    "sourceCpuMs": 19.489999294281006,
+    "backlogObservations": 4,
+    "droppedSourceSteps": 0,
+    "scope": "Backlog retained; no view steps source, no display/GPU cadence claim"
+  },
+  "presentation": {
+    "frame": 5,
+    "time": 100,
+    "epoch": 3,
+    "opticalEpoch": 1,
+    "camera": {
+      "yaw": 0.3,
+      "pitch": -0.05,
+      "distance": 2000,
+      "panX": 0,
+      "panY": 0,
+      "position": [
+        938.1417667099724,
+        1200.0416614586434,
+        1908.2851345580236
+      ],
+      "target": [
+        347.83999999999816,
+        1300,
+        0
+      ]
+    },
+    "viewSize": [
+      1280,
+      720
+    ],
+    "cacheBounds": [
+      [
+        -1875,
+        400,
+        -1666.6666259765625
+      ],
+      [
+        2125,
+        3000,
+        2333.333251953125
+      ]
+    ],
+    "cacheBoundsB": [
+      [
+        625,
+        400,
+        -2833.333251953125
+      ],
+      [
+        4625,
+        3000,
+        1166.6666259765625
+      ]
+    ],
+    "chartCoverage": [
+      {
+        "cellID": "A",
+        "bounds": [
+          [
+            -1875,
+            400,
+            -1666.6666259765625
+          ],
+          [
+            2125,
+            3000,
+            2333.333251953125
+          ]
+        ],
+        "fullWeightSourceCoverage": true,
+        "spacing": [
+          125,
+          108.33333333333333,
+          166.66666666666666
+        ]
+      },
+      {
+        "cellID": "B",
+        "bounds": [
+          [
+            625,
+            400,
+            -2833.333251953125
+          ],
+          [
+            4625,
+            3000,
+            1166.6666259765625
+          ]
+        ],
+        "fullWeightSourceCoverage": true,
+        "spacing": [
+          125,
+          108.33333333333333,
+          166.66666666666666
+        ]
+      }
+    ],
+    "receiverDomain": [
+      0,
+      0,
+      16000,
+      16000
+    ],
+    "sourceBounds": [
+      {
+        "cellID": "A",
+        "bounds": [
+          [
+            -488.98400000000186,
+            1070.914969442889,
+            -584
+          ],
+          [
+            854.9119999999981,
+            1776.1853290159047,
+            1296
+          ]
+        ]
+      },
+      {
+        "cellID": "B",
+        "bounds": [
+          [
+            1911.0159999999964,
+            1070.914969442889,
+            -1784
+          ],
+          [
+            3254.9119999999966,
+            1776.1853290159047,
+            96
+          ]
+        ]
+      }
+    ],
+    "controls": {
+      "lightingProfile": "selected-production",
+      "family": 0,
+      "provider": 0,
+      "cohorts": true,
+      "forceZero": false,
+      "sun": 30,
+      "sunAzimuth": -0.7,
+      "includeB": false,
+      "fixtureRevision": 2,
+      "mode": 0,
+      "mirror": true,
+      "main": true,
+      "fog": false,
+      "resolved": true,
+      "viewSteps": 96,
+      "extinctionScale": 4.222222222222222,
+      "preparedDensity": false,
+      "materialStructure": false,
+      "materialSpace": "world",
+      "materialFilter": false,
+      "thermals": false,
+      "materialCore": false,
+      "connectedFeed": false,
+      "frontMorph": false,
+      "neckMix": false,
+      "dualRest": false,
+      "emptyWork": false,
+      "cachedVelocity": false,
+      "alpha": 1,
+      "sourceAlpha": 0
+    },
+    "sourceKey": "1/3/401/100/0/0",
+    "look": {
+      "kappa": [
+        0.019,
+        0
+      ],
+      "MS": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "lightingProfile": {
+        "id": "selected-production",
+        "name": "SelectedProduction",
+        "a": 0.5,
+        "b": 0.5,
+        "c": 0.5,
+        "abc": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "uniformMap": {
+          "a": "p.sun.w",
+          "b": "p.domain.y",
+          "c": "p.domain.z"
+        },
+        "reference": "docs/design/modules/CLOUD-PRODUCTION-BASELINE.md:441 \u2014 Cloud source additional octave a=b=c=.5",
+        "scope": "Additional scattering approximation look parameters; source/extinction/phase function unchanged"
+      },
+      "exposure": 0.5
+    },
+    "lightBuilt": true
+  },
+  "fixtureRevision": 2,
+  "submissionPerformanceMs": 653730.9850001335,
+  "cameraMode": "oblique",
+  "focusMode": "fixed",
+  "gpuQueueCompletedPerformanceMs": 653746.8550000191,
+  "completionScope": "Queue fence completion; not GPU execution duration or scanout",
+  "committedSourceAudit": {
+    "state": "ready",
+    "time": 100.25,
+    "previousTime": 100,
+    "tick": 401,
+    "dt": 0.25,
+    "cellDefinitions": [
+      {
+        "cellID": "A",
+        "rootXZ": [
+          0,
+          0
+        ]
+      },
+      {
+        "cellID": "B",
+        "rootXZ": [
+          2400,
+          -1200
+        ]
+      }
+    ],
+    "controls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontStart": 420,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 0
+    },
+    "intervalControls": {
+      "meanX": 4,
+      "meanZ": 0,
+      "shearX": 0.002,
+      "shearZ": 0,
+      "uplift": 0.15,
+      "moist": true,
+      "lift": true,
+      "frontX": -2500,
+      "frontStart": 420,
+      "frontSpeed": 50,
+      "frontWidth": 800,
+      "dryGain": 0
+    },
+    "committedRevision": 0,
+    "queuedRevision": 0,
+    "cells": [
+      {
+        "time": 100.25,
+        "tick": 401,
+        "previousTime": 100,
+        "cellId": "A",
+        "region": [
+          348.70959999999815,
+          1239.2,
+          0
+        ],
+        "initial": {
+          "meanX": 4,
+          "meanZ": 0,
+          "shearX": 0.002,
+          "shearZ": 0,
+          "uplift": 0.15,
+          "moist": true,
+          "lift": true,
+          "frontX": -2500,
+          "frontStart": 420,
+          "frontSpeed": 50,
+          "frontWidth": 800,
+          "dryGain": 0
+        },
+        "controls": {
+          "meanX": 4,
+          "meanZ": 0,
+          "shearX": 0.002,
+          "shearZ": 0,
+          "uplift": 0.15,
+          "moist": true,
+          "lift": true,
+          "frontX": -2500,
+          "frontStart": 420,
+          "frontSpeed": 50,
+          "frontWidth": 800,
+          "dryGain": 0
+        },
+        "committedRevision": 0,
+        "queuedRevision": 0,
+        "roleEpoch": 0,
+        "nextBody": 200,
+        "nextBillow": 120,
+        "lastActualBirthTime": 100,
+        "stats": {
+          "births": 3,
+          "bodyBirths": 2,
+          "billowBirths": 1,
+          "recoveryBirths": 0,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 0,
+          "healthyEstablishments": 0,
+          "cancelledEstablishments": 0,
+          "maxSlots": 3,
+          "maxPriorCurrentIDs": 3,
+          "maxReferenceParts": 1,
+          "admissionNodeTests": 1,
+          "controlPointUpdates": 0,
+          "sourceSteps": 401,
+          "maxControlPitch": 128,
+          "maxK": 0.5500000000000003,
+          "exposurePublications": 1
+        },
+        "parts": [
+          {
+            "ID": 1,
+            "parentID": 0,
+            "templateID": "body",
+            "role": "BODY",
+            "born": 0,
+            "age": 100.25,
+            "tau": 100.25,
+            "g": 1,
+            "s": 4,
+            "C": [
+              348.70959999999815,
+              1239.2,
+              0
+            ],
+            "K": [
+              0.5500000000000003,
+              0,
+              0
+            ],
+            "maxE": 0,
+            "establishment": "parentless",
+            "minSeed": null,
+            "minNeck": null,
+            "minResolved": null
+          },
+          {
+            "ID": 2,
+            "parentID": 1,
+            "templateID": "crown-b",
+            "role": "BILLOW",
+            "born": 70,
+            "age": 30.25,
+            "tau": 30.25,
+            "g": 0.7094608532209886,
+            "s": 6,
+            "C": [
+              128.37465264036112,
+              1297.5103367319052,
+              436
+            ],
+            "K": [
+              0.09208765427217788,
+              0,
+              0
+            ],
+            "maxE": 0,
+            "establishment": "healthy",
+            "minSeed": 26.646187116535227,
+            "minNeck": 1.872160559497609,
+            "minResolved": 16.42280007530644
+          },
+          {
+            "ID": 3,
+            "parentID": 1,
+            "templateID": "body",
+            "role": "BODY",
+            "born": 100,
+            "age": 0.25,
+            "tau": 0.25,
+            "g": 0.015625,
+            "s": 4,
+            "C": [
+              348.70959999999815,
+              1239.2,
+              0
+            ],
+            "K": [
+              3.125e-05,
+              0,
+              0
+            ],
+            "maxE": 0,
+            "establishment": "healthy",
+            "minSeed": 40.53566056597354,
+            "minNeck": null,
+            "minResolved": null
+          }
+        ],
+        "referenceIDs": [
+          1
+        ],
+        "events": [
+          {
+            "time": 0,
+            "type": "birth",
+            "ID": 1,
+            "parentID": 0,
+            "role": "BODY",
+            "s": 4,
+            "site": null,
+            "cellId": "A"
+          },
+          {
+            "time": 70,
+            "type": "birth",
+            "ID": 2,
+            "parentID": 1,
+            "role": "BILLOW",
+            "s": 6,
+            "site": [
+              242,
+              246.8,
+              276
+            ],
+            "cellId": "A"
+          },
+          {
+            "time": 100,
+            "type": "birth",
+            "ID": 3,
+            "parentID": 1,
+            "role": "BODY",
+            "s": 4,
+            "site": [
+              299,
+              233,
+              167
+            ],
+            "cellId": "A"
+          }
+        ],
+        "controlBytesCPU": 943296,
+        "growthPolicy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 1,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 1,
+            "exposed": 0,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 540,
+            "forecastHealthChecks": 360,
+            "declineReasons": {},
+            "siteDeclineCounts": {},
+            "predictionNodes": 1,
+            "observationNodes": 0,
+            "nativeQueries": 0,
+            "referenceSteps": 121
+          },
+          "statsTime": 100.25,
+          "latest": null,
+          "pending": {
+            "cellID": "A",
+            "localID": 2,
+            "birthTick": 280,
+            "birthTime": 70,
+            "deadline": 115,
+            "referenceTime": 100.25,
+            "referenceIDs": [
+              1
+            ]
+          }
+        }
+      },
+      {
+        "time": 100.25,
+        "tick": 401,
+        "previousTime": 100,
+        "cellId": "B",
+        "region": [
+          2748.7095999999965,
+          1239.2,
+          -1200
+        ],
+        "initial": {
+          "meanX": 4,
+          "meanZ": 0,
+          "shearX": 0.002,
+          "shearZ": 0,
+          "uplift": 0.15,
+          "moist": true,
+          "lift": true,
+          "frontX": -2500,
+          "frontStart": 420,
+          "frontSpeed": 50,
+          "frontWidth": 800,
+          "dryGain": 0
+        },
+        "controls": {
+          "meanX": 4,
+          "meanZ": 0,
+          "shearX": 0.002,
+          "shearZ": 0,
+          "uplift": 0.15,
+          "moist": true,
+          "lift": true,
+          "frontX": -2500,
+          "frontStart": 420,
+          "frontSpeed": 50,
+          "frontWidth": 800,
+          "dryGain": 0
+        },
+        "committedRevision": 0,
+        "queuedRevision": 0,
+        "roleEpoch": 0,
+        "nextBody": 200,
+        "nextBillow": 120,
+        "lastActualBirthTime": 100,
+        "stats": {
+          "births": 3,
+          "bodyBirths": 2,
+          "billowBirths": 1,
+          "recoveryBirths": 0,
+          "failedBirths": 0,
+          "weatherCancelledSlots": 0,
+          "capacityFailures": 0,
+          "retired": 0,
+          "healthyEstablishments": 0,
+          "cancelledEstablishments": 0,
+          "maxSlots": 3,
+          "maxPriorCurrentIDs": 3,
+          "maxReferenceParts": 1,
+          "admissionNodeTests": 1,
+          "controlPointUpdates": 0,
+          "sourceSteps": 401,
+          "maxControlPitch": 128,
+          "maxK": 0.5500000000000003,
+          "exposurePublications": 1
+        },
+        "parts": [
+          {
+            "ID": 1,
+            "parentID": 0,
+            "templateID": "body",
+            "role": "BODY",
+            "born": 0,
+            "age": 100.25,
+            "tau": 100.25,
+            "g": 1,
+            "s": 4,
+            "C": [
+              2748.7095999999965,
+              1239.2,
+              -1200
+            ],
+            "K": [
+              0.5500000000000003,
+              0,
+              0
+            ],
+            "maxE": 0,
+            "establishment": "parentless",
+            "minSeed": null,
+            "minNeck": null,
+            "minResolved": null
+          },
+          {
+            "ID": 2,
+            "parentID": 1,
+            "templateID": "crown-b",
+            "role": "BILLOW",
+            "born": 70,
+            "age": 30.25,
+            "tau": 30.25,
+            "g": 0.7094608532209886,
+            "s": 6,
+            "C": [
+              2528.374652640361,
+              1297.5103367319052,
+              -764
+            ],
+            "K": [
+              0.09208765427217788,
+              0,
+              0
+            ],
+            "maxE": 0,
+            "establishment": "healthy",
+            "minSeed": 26.64618711653522,
+            "minNeck": 1.872160559497609,
+            "minResolved": 16.42280007530644
+          },
+          {
+            "ID": 3,
+            "parentID": 1,
+            "templateID": "body",
+            "role": "BODY",
+            "born": 100,
+            "age": 0.25,
+            "tau": 0.25,
+            "g": 0.015625,
+            "s": 4,
+            "C": [
+              2748.7095999999965,
+              1239.2,
+              -1200
+            ],
+            "K": [
+              3.125e-05,
+              0,
+              0
+            ],
+            "maxE": 0,
+            "establishment": "healthy",
+            "minSeed": 40.53566056597354,
+            "minNeck": null,
+            "minResolved": null
+          }
+        ],
+        "referenceIDs": [
+          1
+        ],
+        "events": [
+          {
+            "time": 0,
+            "type": "birth",
+            "ID": 1,
+            "parentID": 0,
+            "role": "BODY",
+            "s": 4,
+            "site": null,
+            "cellId": "B"
+          },
+          {
+            "time": 70,
+            "type": "birth",
+            "ID": 2,
+            "parentID": 1,
+            "role": "BILLOW",
+            "s": 6,
+            "site": [
+              242,
+              246.8,
+              276
+            ],
+            "cellId": "B"
+          },
+          {
+            "time": 100,
+            "type": "birth",
+            "ID": 3,
+            "parentID": 1,
+            "role": "BODY",
+            "s": 4,
+            "site": [
+              299,
+              233,
+              167
+            ],
+            "cellId": "B"
+          }
+        ],
+        "controlBytesCPU": 943296,
+        "growthPolicy": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "model-instance",
+          "stats": {
+            "opportunities": 1,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 1,
+            "exposed": 0,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 540,
+            "forecastHealthChecks": 360,
+            "declineReasons": {},
+            "siteDeclineCounts": {},
+            "predictionNodes": 1,
+            "observationNodes": 0,
+            "nativeQueries": 0,
+            "referenceSteps": 121
+          },
+          "statsTime": 100.25,
+          "latest": null,
+          "pending": {
+            "cellID": "B",
+            "localID": 2,
+            "birthTick": 280,
+            "birthTime": 70,
+            "deadline": 115,
+            "referenceTime": 100.25,
+            "referenceIDs": [
+              1
+            ]
+          }
+        }
+      }
+    ],
+    "events": [],
+    "controlBytesCPU": 1886592,
+    "scope": "Fixed two-cell CPU source only; local events are scoped by cellID; source art/GPU/air/fog/environment/cost admission unrun"
+  },
+  "sourceAuditTimeScope": "committed raw source audit; presented observer outcomes come only from causal publication/actualPolicyReceipt",
+  "actualPolicyReceipt": {
+    "scope": "owned-on-demand-observation-capture",
+    "namespaceSource": "caller-supplied-clock-epoch",
+    "epoch": 3,
+    "presentationTime": 100,
+    "committedTime": 100.25,
+    "previousTime": 100,
+    "sourceTick": 401,
+    "cells": [
+      {
+        "cellID": "A",
+        "enabled": true,
+        "summary": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "clock-qualified",
+          "stats": {
+            "opportunities": 1,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 1,
+            "exposed": 0,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 540,
+            "forecastHealthChecks": 360,
+            "declineReasons": {},
+            "siteDeclineCounts": {},
+            "predictionNodes": 1,
+            "observationNodes": 0,
+            "nativeQueries": 0,
+            "referenceSteps": 120
+          },
+          "statsTime": 100,
+          "latest": null,
+          "pending": {
+            "cellID": "A",
+            "localID": 2,
+            "birthTick": 280,
+            "birthTime": 70,
+            "deadline": 115,
+            "referenceTime": 100,
+            "referenceIDs": [
+              1
+            ],
+            "ID": "[3,\"A\",2]",
+            "referenceQualifiedIDs": [
+              "[3,\"A\",1]"
+            ]
+          },
+          "epoch": 3
+        },
+        "presentedActual": {
+          "available": false,
+          "reason": "no-completed-observation"
+        },
+        "committedAudit": null,
+        "interruption": null
+      },
+      {
+        "cellID": "B",
+        "enabled": true,
+        "summary": {
+          "policyID": "cu-held-predict-observe-v1",
+          "configurationPins": {
+            "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+            "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+            "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+          },
+          "identityScope": "clock-qualified",
+          "stats": {
+            "opportunities": 1,
+            "weatherSkipped": 0,
+            "capacityFailed": 0,
+            "noParent": 0,
+            "forecastDeclined": 0,
+            "births": 1,
+            "exposed": 0,
+            "occluded": 0,
+            "uncertified": 0,
+            "weatherCancelled": 0,
+            "invalid": 0,
+            "predictionPoseSteps": 540,
+            "forecastHealthChecks": 360,
+            "declineReasons": {},
+            "siteDeclineCounts": {},
+            "predictionNodes": 1,
+            "observationNodes": 0,
+            "nativeQueries": 0,
+            "referenceSteps": 120
+          },
+          "statsTime": 100,
+          "latest": null,
+          "pending": {
+            "cellID": "B",
+            "localID": 2,
+            "birthTick": 280,
+            "birthTime": 70,
+            "deadline": 115,
+            "referenceTime": 100,
+            "referenceIDs": [
+              1
+            ],
+            "ID": "[3,\"B\",2]",
+            "referenceQualifiedIDs": [
+              "[3,\"B\",1]"
+            ]
+          },
+          "epoch": 3
+        },
+        "presentedActual": {
+          "available": false,
+          "reason": "no-completed-observation"
+        },
+        "committedAudit": null,
+        "interruption": null
+      }
+    ],
+    "serializedBytes": 2414
+  },
+  "interruptionJournal": {
+    "entries": [
+      {
+        "reason": "source-seek",
+        "namespaceEpoch": 0,
+        "presentedTime": 0,
+        "committedTime": 0,
+        "sourceTick": 0,
+        "policy": "observed",
+        "fixture": "pair",
+        "observation": {
+          "epoch": 0,
+          "presentationTime": 0,
+          "committedTime": 0,
+          "sourceTick": 0,
+          "cells": [
+            {
+              "cellID": "A",
+              "enabled": true,
+              "summary": {
+                "policyID": "cu-held-predict-observe-v1",
+                "configurationPins": {
+                  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+                  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+                  "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+                },
+                "identityScope": "clock-qualified",
+                "stats": {
+                  "opportunities": 0,
+                  "weatherSkipped": 0,
+                  "capacityFailed": 0,
+                  "noParent": 0,
+                  "forecastDeclined": 0,
+                  "births": 0,
+                  "exposed": 0,
+                  "occluded": 0,
+                  "uncertified": 0,
+                  "weatherCancelled": 0,
+                  "invalid": 0,
+                  "predictionPoseSteps": 0,
+                  "forecastHealthChecks": 0,
+                  "declineReasons": {},
+                  "siteDeclineCounts": {},
+                  "predictionNodes": 0,
+                  "observationNodes": 0,
+                  "nativeQueries": 0,
+                  "referenceSteps": 0
+                },
+                "statsTime": 0,
+                "latest": null,
+                "pending": null,
+                "epoch": 0
+              },
+              "interruption": null,
+              "fullGeometryRetained": false
+            },
+            {
+              "cellID": "B",
+              "enabled": true,
+              "summary": {
+                "policyID": "cu-held-predict-observe-v1",
+                "configurationPins": {
+                  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+                  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+                  "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+                },
+                "identityScope": "clock-qualified",
+                "stats": {
+                  "opportunities": 0,
+                  "weatherSkipped": 0,
+                  "capacityFailed": 0,
+                  "noParent": 0,
+                  "forecastDeclined": 0,
+                  "births": 0,
+                  "exposed": 0,
+                  "occluded": 0,
+                  "uncertified": 0,
+                  "weatherCancelled": 0,
+                  "invalid": 0,
+                  "predictionPoseSteps": 0,
+                  "forecastHealthChecks": 0,
+                  "declineReasons": {},
+                  "siteDeclineCounts": {},
+                  "predictionNodes": 0,
+                  "observationNodes": 0,
+                  "nativeQueries": 0,
+                  "referenceSteps": 0
+                },
+                "statsTime": 0,
+                "latest": null,
+                "pending": null,
+                "epoch": 0
+              },
+              "interruption": null,
+              "fullGeometryRetained": false
+            }
+          ],
+          "scope": "Compact interruption journal; full actual geometry belongs only to explicit capture/probe receipts"
+        }
+      },
+      {
+        "reason": "fresh-policy-fixture-forcing",
+        "namespaceEpoch": 1,
+        "presentedTime": 100,
+        "committedTime": 100.25,
+        "sourceTick": 401,
+        "policy": "observed",
+        "fixture": "pair",
+        "observation": {
+          "epoch": 1,
+          "presentationTime": 100,
+          "committedTime": 100.25,
+          "sourceTick": 401,
+          "cells": [
+            {
+              "cellID": "A",
+              "enabled": true,
+              "summary": {
+                "policyID": "cu-held-predict-observe-v1",
+                "configurationPins": {
+                  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+                  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+                  "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+                },
+                "identityScope": "clock-qualified",
+                "stats": {
+                  "opportunities": 1,
+                  "weatherSkipped": 0,
+                  "capacityFailed": 0,
+                  "noParent": 0,
+                  "forecastDeclined": 0,
+                  "births": 1,
+                  "exposed": 0,
+                  "occluded": 0,
+                  "uncertified": 0,
+                  "weatherCancelled": 0,
+                  "invalid": 0,
+                  "predictionPoseSteps": 540,
+                  "forecastHealthChecks": 360,
+                  "declineReasons": {},
+                  "siteDeclineCounts": {},
+                  "predictionNodes": 1,
+                  "observationNodes": 0,
+                  "nativeQueries": 0,
+                  "referenceSteps": 120
+                },
+                "statsTime": 100,
+                "latest": null,
+                "pending": {
+                  "cellID": "A",
+                  "localID": 2,
+                  "birthTick": 280,
+                  "birthTime": 70,
+                  "deadline": 115,
+                  "referenceTime": 100,
+                  "referenceIDs": [
+                    1
+                  ],
+                  "ID": "[1,\"A\",2]",
+                  "referenceQualifiedIDs": [
+                    "[1,\"A\",1]"
+                  ]
+                },
+                "epoch": 1
+              },
+              "interruption": {
+                "identityScope": "clock-qualified-owned-observation",
+                "scope": "committed-pending-interruption-not-presented",
+                "epoch": 1,
+                "cellID": "A",
+                "localID": 2,
+                "ID": "[1,\"A\",2]",
+                "birthTick": 280,
+                "birthTime": 70,
+                "committedTime": 100.25,
+                "referenceTime": 100.25,
+                "deadline": 115,
+                "referenceIDs": [
+                  1
+                ],
+                "referenceQualifiedIDs": [
+                  "[1,\"A\",1]"
+                ],
+                "cancellation": null,
+                "outcome": "interrupted",
+                "reason": "fresh-policy-fixture-forcing"
+              },
+              "fullGeometryRetained": false
+            },
+            {
+              "cellID": "B",
+              "enabled": true,
+              "summary": {
+                "policyID": "cu-held-predict-observe-v1",
+                "configurationPins": {
+                  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+                  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+                  "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+                },
+                "identityScope": "clock-qualified",
+                "stats": {
+                  "opportunities": 1,
+                  "weatherSkipped": 0,
+                  "capacityFailed": 0,
+                  "noParent": 0,
+                  "forecastDeclined": 0,
+                  "births": 1,
+                  "exposed": 0,
+                  "occluded": 0,
+                  "uncertified": 0,
+                  "weatherCancelled": 0,
+                  "invalid": 0,
+                  "predictionPoseSteps": 540,
+                  "forecastHealthChecks": 360,
+                  "declineReasons": {},
+                  "siteDeclineCounts": {},
+                  "predictionNodes": 1,
+                  "observationNodes": 0,
+                  "nativeQueries": 0,
+                  "referenceSteps": 120
+                },
+                "statsTime": 100,
+                "latest": null,
+                "pending": {
+                  "cellID": "B",
+                  "localID": 2,
+                  "birthTick": 280,
+                  "birthTime": 70,
+                  "deadline": 115,
+                  "referenceTime": 100,
+                  "referenceIDs": [
+                    1
+                  ],
+                  "ID": "[1,\"B\",2]",
+                  "referenceQualifiedIDs": [
+                    "[1,\"B\",1]"
+                  ]
+                },
+                "epoch": 1
+              },
+              "interruption": {
+                "identityScope": "clock-qualified-owned-observation",
+                "scope": "committed-pending-interruption-not-presented",
+                "epoch": 1,
+                "cellID": "B",
+                "localID": 2,
+                "ID": "[1,\"B\",2]",
+                "birthTick": 280,
+                "birthTime": 70,
+                "committedTime": 100.25,
+                "referenceTime": 100.25,
+                "deadline": 115,
+                "referenceIDs": [
+                  1
+                ],
+                "referenceQualifiedIDs": [
+                  "[1,\"B\",1]"
+                ],
+                "cancellation": null,
+                "outcome": "interrupted",
+                "reason": "fresh-policy-fixture-forcing"
+              },
+              "fullGeometryRetained": false
+            }
+          ],
+          "scope": "Compact interruption journal; full actual geometry belongs only to explicit capture/probe receipts"
+        }
+      },
+      {
+        "reason": "source-seek",
+        "namespaceEpoch": 2,
+        "presentedTime": 0,
+        "committedTime": 0,
+        "sourceTick": 0,
+        "policy": "observed",
+        "fixture": "single",
+        "observation": {
+          "epoch": 2,
+          "presentationTime": 0,
+          "committedTime": 0,
+          "sourceTick": 0,
+          "cells": [
+            {
+              "cellID": "A",
+              "enabled": true,
+              "summary": {
+                "policyID": "cu-held-predict-observe-v1",
+                "configurationPins": {
+                  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+                  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+                  "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+                },
+                "identityScope": "clock-qualified",
+                "stats": {
+                  "opportunities": 0,
+                  "weatherSkipped": 0,
+                  "capacityFailed": 0,
+                  "noParent": 0,
+                  "forecastDeclined": 0,
+                  "births": 0,
+                  "exposed": 0,
+                  "occluded": 0,
+                  "uncertified": 0,
+                  "weatherCancelled": 0,
+                  "invalid": 0,
+                  "predictionPoseSteps": 0,
+                  "forecastHealthChecks": 0,
+                  "declineReasons": {},
+                  "siteDeclineCounts": {},
+                  "predictionNodes": 0,
+                  "observationNodes": 0,
+                  "nativeQueries": 0,
+                  "referenceSteps": 0
+                },
+                "statsTime": 0,
+                "latest": null,
+                "pending": null,
+                "epoch": 2
+              },
+              "interruption": null,
+              "fullGeometryRetained": false
+            },
+            {
+              "cellID": "B",
+              "enabled": true,
+              "summary": {
+                "policyID": "cu-held-predict-observe-v1",
+                "configurationPins": {
+                  "indexSHA256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7",
+                  "admissionSHA256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee",
+                  "policySpecificationSHA256": "e888d07d0e6d18f316446ce50591501c3266acb07e72959447af7b717d8cecd7"
+                },
+                "identityScope": "clock-qualified",
+                "stats": {
+                  "opportunities": 0,
+                  "weatherSkipped": 0,
+                  "capacityFailed": 0,
+                  "noParent": 0,
+                  "forecastDeclined": 0,
+                  "births": 0,
+                  "exposed": 0,
+                  "occluded": 0,
+                  "uncertified": 0,
+                  "weatherCancelled": 0,
+                  "invalid": 0,
+                  "predictionPoseSteps": 0,
+                  "forecastHealthChecks": 0,
+                  "declineReasons": {},
+                  "siteDeclineCounts": {},
+                  "predictionNodes": 0,
+                  "observationNodes": 0,
+                  "nativeQueries": 0,
+                  "referenceSteps": 0
+                },
+                "statsTime": 0,
+                "latest": null,
+                "pending": null,
+                "epoch": 2
+              },
+              "interruption": null,
+              "fullGeometryRetained": false
+            }
+          ],
+          "scope": "Compact interruption journal; full actual geometry belongs only to explicit capture/probe receipts"
+        }
+      }
+    ],
+    "bytes": 7301,
+    "count": 3,
+    "overwritten": 0,
+    "maxCount": 16,
+    "maxBytes": 65536
+  },
+  "ownedCaptureExposureBytes": 628864,
+  "sourceInputIndex": {
+    "version": 1,
+    "qualification": "UNQUALIFIED newnaturalcrown admission/replaycandidate",
+    "source_geometry_frozen_inputs_sha256": "60054a49e5edb232177a40de2fe60ad18ff36ccb253d42345b360b6b5b30d62c",
+    "source_geometry_frozen_inputs_bytes": 953,
+    "rendering": {
+      "kappa_per_world_m": 0.019,
+      "additional_scattering_abc": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "templates": {
+      "body": {
+        "metadata": {
+          "file": "templates/body.json",
+          "bytes": 9130,
+          "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+        },
+        "original_metadata": {
+          "file": "templates/original-body.json",
+          "bytes": 9097,
+          "sha256": "bd6f659f70dd796b9d857e809895c3fa4ed2df06d39abdffca4541d96e8664cc"
+        },
+        "density": {
+          "file": "templates/body.density.r16f",
+          "bytes": 6291456,
+          "sha256": "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19"
+        },
+        "distance": {
+          "file": "templates/body.distance.r16f",
+          "bytes": 6291456,
+          "sha256": "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14"
+        }
+      },
+      "crown-b": {
+        "metadata": {
+          "file": "templates/crown-b.json",
+          "bytes": 15642,
+          "sha256": "8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704"
+        },
+        "original_metadata": {
+          "file": "templates/original-crown-b.json",
+          "bytes": 15164,
+          "sha256": "29a35c2c171c339142db94e30cce12d1dbb350f2d449500d8192d7459cc2b339"
+        },
+        "density": {
+          "file": "templates/crown-b.density.r16f",
+          "bytes": 884736,
+          "sha256": "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09"
+        },
+        "distance": {
+          "file": "templates/crown-b.distance.r16f",
+          "bytes": 884736,
+          "sha256": "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab"
+        }
+      }
+    },
+    "noise": {
+      "file": "noise/channels-32.r16f",
+      "bytes": 65536,
+      "sha256": "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11",
+      "dimensions_xyz": [
+        32,
+        32,
+        32
+      ],
+      "metadata": {
+        "file": "noise/channels-32.json",
+        "bytes": 526,
+        "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+      }
+    },
+    "admission": {
+      "file": "admission/admission.json",
+      "bytes": 168039,
+      "sha256": "6587ca083b9b523e12a1ed2997f731fcca11f040272a40b42b14bb8878d59dee"
+    }
+  },
+  "hostAtSubmission": {
+    "visibilityState": "visible",
+    "viewportCssPixels": [
+      1280,
+      720
+    ],
+    "visualViewport": {
+      "width": 1280,
+      "height": 720,
+      "scale": 1,
+      "offsetLeft": 0,
+      "offsetTop": 0
+    },
+    "canvasCssPixels": [
+      896.40625,
+      504.2265625
+    ],
+    "canvasBackingPixels": [
+      1280,
+      720
+    ],
+    "devicePixelRatio": 2
+  },
+  "gpuAllocations": [
+    {
+      "label": "timestamp resolve 0",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp read 0",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp resolve 1",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp read 1",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp resolve 2",
+      "bytes": 256
+    },
+    {
+      "label": "timestamp read 2",
+      "bytes": 256
+    },
+    {
+      "label": "A current world light chart",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "B current world light chart",
+      "bytes": 147456,
+      "format": "rgba16float",
+      "size": [
+        32,
+        24,
+        24
+      ]
+    },
+    {
+      "label": "independent16km receiver domain",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "label": "17f clear-air transmittance",
+      "bytes": 131072,
+      "format": "rgba16float",
+      "size": [
+        256,
+        64
+      ]
+    },
+    {
+      "label": "joint optical image",
+      "bytes": 7372800,
+      "format": "rgba16float",
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "optical frame/chart 0/0",
+      "bytes": 224
+    },
+    {
+      "label": "optical frame/chart 0/1",
+      "bytes": 224
+    },
+    {
+      "label": "optical frame/chart 1/0",
+      "bytes": 224
+    },
+    {
+      "label": "optical frame/chart 1/1",
+      "bytes": 224
+    },
+    {
+      "label": "optical frame/chart 2/0",
+      "bytes": 224
+    },
+    {
+      "label": "optical frame/chart 2/1",
+      "bytes": 224
+    },
+    {
+      "label": "body shared rho",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "body shared distance",
+      "bytes": 6291456,
+      "format": "r16float",
+      "size": [
+        192,
+        64,
+        256
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "crown-b shared rho",
+      "bytes": 884736,
+      "format": "r16float",
+      "size": [
+        96,
+        64,
+        72
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "crown-b shared distance",
+      "bytes": 884736,
+      "format": "r16float",
+      "size": [
+        96,
+        64,
+        72
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "shared fixed M",
+      "bytes": 65536,
+      "format": "r16float",
+      "size": [
+        32,
+        32,
+        32
+      ],
+      "role": "Frozen shared native source input"
+    },
+    {
+      "label": "16 maps",
+      "bytes": 1536
+    },
+    {
+      "label": "2 local domains",
+      "bytes": 64
+    },
+    {
+      "label": "2 strict-positive group bounds",
+      "bytes": 64
+    },
+    {
+      "label": "two-cell prior/current exposure",
+      "bytes": 628864
+    }
+  ],
+  "completedTimestampGenerations": [
+    {
+      "generation": 1,
+      "frame": 0,
+      "sourceKey": "0/1/401/100/0/0",
+      "time": 100,
+      "epoch": 1,
+      "opticalEpoch": 0,
+      "fixtureRevision": 0,
+      "validPairs": false,
+      "dependencyOrderValid": false,
+      "rejectionReasons": [
+        "display begins before required view end"
+      ],
+      "wholeMs": null,
+      "timingScope": "Unqualified timestamp generation: positive pairs alone cannot establish pass durations when required dependencies fail.",
+      "rawNanoseconds": [
+        "2248419348840448",
+        "2248419349299200",
+        "2248419348971520",
+        "2248419349561344",
+        "2248419349299200",
+        "2248419349757952",
+        "2248419350151168",
+        "2248419356377088",
+        "2248419350282240",
+        "2248419356639232"
+      ],
+      "receiverMs": null,
+      "lightAMs": null,
+      "lightBMs": null,
+      "viewMs": null,
+      "displayMs": null
+    }
+  ],
+  "capture": {
+    "file": "system-t100000-mode0-6bd88ae9bef60733-85f4ee5a-1.png",
+    "bytes": 387128
+  }
+}

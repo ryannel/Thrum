@@ -1,0 +1,41 @@
+{
+  "scope": "rejected macro-only source screen and reviewed frame design; no native/runtime/quality/performance admission",
+  "files": {
+    "A-body-b4-macro-scalar-projections.png": {
+      "sha256": "c4434c0f0c8dd5942eea4633f44554b2261fe57d783a46a2a697ff3a233fb38c",
+      "bytes": 15292
+    },
+    "A-crown-b6-macro-scalar-projections.png": {
+      "sha256": "6ca9b12bd70db47e30df3d5cb427153c5625d8c0b0bdadd44e64a8a5fb624b64",
+      "bytes": 14086
+    },
+    "B-body-b4-macro-scalar-projections.png": {
+      "sha256": "6f38a0baf55e79a10743ba4b42ce9014d8678e2faa7d16434b383a0119112d6d",
+      "bytes": 16957
+    },
+    "README.md": {
+      "sha256": "0d887d6f79cea93873e93f4cb6b64233bb85389e1e8d1267b9b3cf58895bf806",
+      "bytes": 5930
+    },
+    "REVIEW.md": {
+      "sha256": "6078f8c5ef1d4125298d5a9764b9d6bd406ad9b97726cd99b6ef533e91de8fde",
+      "bytes": 3175
+    },
+    "baseline-close100.json": {
+      "sha256": "5e08d24401ae0a6bc201d459268d5c9731ae85e44bcf3264d1cb2a379f74df5c",
+      "bytes": 67276
+    },
+    "baseline-close100.png": {
+      "sha256": "4b23165d0e3414dd34f0dc16fe0f84558bf00749766768ac1e3e3e7ea612c857",
+      "bytes": 387128
+    },
+    "source-and-observations.zip": {
+      "sha256": "17229d58fead7d2929b6119c09bdbb3fe49d46ea93345e1643977a2809e53ce5",
+      "bytes": 983440
+    },
+    "restore-verification.json": {
+      "sha256": "d4c4eac2660bb7ab76fe05da5c887a1c4fdefb6453626490c107b0c73e4f70d7",
+      "bytes": 2071
+    }
+  }
+}
