@@ -208,6 +208,9 @@ error quarantines only the failing connection. Before concurrent accepted
 admission is qualified, a cooperating writer lock and shared recovery state
 must prevent other owners and pin cleanup from writing until fresh-open exact
 outcome resolution, or the reconciled store must use one exclusive owner.
+The [owner reconciliation study](research/SOURCE-OWNER-RECOVERY-RECONCILIATION-2026-11-03.md)
+selects one exclusive cooperating process owner with shareable read leases for
+the first integrated profile; implementation and adverse recovery proof remain open.
 
 ### Large-source and undo retention cost
 
