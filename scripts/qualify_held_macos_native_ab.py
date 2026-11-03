@@ -78,6 +78,8 @@ def main():
     parser.add_argument("--resume-owner", type=Path)
     parser.add_argument("--fault-guard", action="store_true",
                         help="kill the held guard after a pending real compiler receipt")
+    parser.add_argument("--external-output", action="store_true",
+                        help="place A/B compiler output and TMPDIR under a private root outside the admitted project")
     args = parser.parse_args()
     if args.resume_owner is None:
         owner = Path(tempfile.mkdtemp(prefix="held-ab-", dir=scratch))
@@ -145,6 +147,15 @@ def main():
             "THRUM_TEST_RETAINED_RERUN_DIAG_PATH": str(owner / "retained-rerun-failed-headless"),
             "RUSTC_WRAPPER": "",
         }
+        if args.external_output:
+            external_output = owner / "compiler-job"
+            external_output.mkdir(mode=0o700, exist_ok=True)
+            if external_output.is_symlink() or (external_output.stat().st_mode & 0o777) != 0o700:
+                raise ValueError("external compiler-output root is not private")
+            for name in ("output-a", "output-b"):
+                if (external_output / name).exists() or (external_output / name).is_symlink():
+                    raise ValueError(f"external compiler-output destination {name} already exists")
+            env["THRUM_TEST_EXTERNAL_OUTPUT_ROOT"] = str(external_output)
         if args.fault_guard:
             env["THRUM_TEST_KILL_HELD_GUARD_DURING_BUILD"] = "1"
         command = [
@@ -217,6 +228,11 @@ def main():
             return
         if status != 0:
             raise RuntimeError(f"held A/B qualification failed; see {log_path}")
+        if args.external_output:
+            if (external_output / "output-a").exists() or not (external_output / "output-b/tmp").is_dir():
+                raise ValueError("external A/B compiler-output lifecycle did not complete")
+            if b"admitted-headless external_output_root=" not in stderr:
+                raise ValueError("external compiler-output branch was not exercised")
         if b"test result: ok. 1 passed;" not in stdout:
             raise ValueError(f"held A/B test did not report one passing case: {log_path}")
         required = (

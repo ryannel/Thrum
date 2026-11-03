@@ -1138,6 +1138,29 @@ mod tests {
             "rustc receipt candidate requires private Cargo home and native sandbox"
         );
         let fixture = Fixture::new();
+        #[cfg(target_os = "macos")]
+        let external_output_root =
+            std::env::var_os("THRUM_TEST_EXTERNAL_OUTPUT_ROOT").map(|path| {
+                use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+                assert!(std::env::var_os("THRUM_TEST_NATIVE_SANDBOX").is_some());
+                let root = fs::canonicalize(path).unwrap();
+                let project = fs::canonicalize(fixture.root()).unwrap();
+                assert!(root.is_dir() && !root.starts_with(&project));
+                let root_metadata = fs::metadata(&root).unwrap();
+                let project_metadata = fs::metadata(&project).unwrap();
+                assert_eq!(root_metadata.dev(), project_metadata.dev());
+                assert_eq!(root_metadata.uid(), project_metadata.uid());
+                assert_eq!(root_metadata.permissions().mode() & 0o777, 0o700);
+                for name in ["output-a", "output-b"] {
+                    assert!(matches!(
+                        fs::symlink_metadata(root.join(name)),
+                        Err(error) if error.kind() == std::io::ErrorKind::NotFound
+                    ));
+                }
+                eprintln!("admitted-headless external_output_root={}", root.display());
+                root
+            });
         let mut paths = fixture.write("Admitted headless game", false, false);
         let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
@@ -1309,11 +1332,18 @@ mod tests {
                 );
             }
         }
+        #[cfg(target_os = "macos")]
+        let a_output = external_output_root.as_ref().map_or_else(
+            || fixture.root().join(".engine/output-a"),
+            |root| root.join("output-a"),
+        );
+        #[cfg(not(target_os = "macos"))]
         let a_output = fixture.root().join(".engine/output-a");
         let started = Instant::now();
         let built_a = cargo_build_headless(
             a_materialized.path(),
             &a_output,
+            &fixture.root().join(".engine/candidate-a"),
             checkout,
             private_cargo_home.as_deref(),
             rustc_wrapper.as_deref(),
@@ -1607,10 +1637,17 @@ mod tests {
             #[cfg(not(target_os = "macos"))]
             cache.assert_reusable_source(checkout, b_materialized.path());
         }
+        #[cfg(target_os = "macos")]
+        let b_output = external_output_root.as_ref().map_or_else(
+            || fixture.root().join(".engine/output-b"),
+            |root| root.join("output-b"),
+        );
+        #[cfg(not(target_os = "macos"))]
         let b_output = fixture.root().join(".engine/output-b");
         let built_b = cargo_build_headless(
             b_materialized.path(),
             &b_output,
+            &fixture.root().join(".engine/candidate-b"),
             checkout,
             private_cargo_home.as_deref(),
             rustc_wrapper.as_deref(),
@@ -2716,6 +2753,7 @@ mod tests {
     fn cargo_build_headless(
         input: &Path,
         output: &Path,
+        candidate: &Path,
         checkout: &Path,
         private_cargo_home: Option<&Path>,
         rustc_wrapper: Option<&Path>,
@@ -2780,12 +2818,18 @@ mod tests {
             .env("CARGO_NET_OFFLINE", "true");
         #[cfg(target_os = "macos")]
         let result = if sandbox {
-            supervised_headless_build(command, checkout, &output, cache_guard.as_deref_mut())
+            supervised_headless_build(
+                command,
+                checkout,
+                &output,
+                candidate,
+                cache_guard.as_deref_mut(),
+            )
         } else {
             command.output().unwrap()
         };
         #[cfg(not(target_os = "macos"))]
-        let _ = cache_guard;
+        let _ = (candidate, cache_guard);
         #[cfg(not(target_os = "macos"))]
         let result = command.output().unwrap();
         if let Some(selected) = native_tools {
@@ -2805,6 +2849,7 @@ mod tests {
         command: &Command,
         checkout: &Path,
         output: &Path,
+        candidate: &Path,
         mut cache_guard: Option<&mut SealedCacheGuard>,
     ) -> std::process::Output {
         use std::fmt::Write as _;
@@ -2941,7 +2986,7 @@ mod tests {
                 let pending = report.as_ref().unwrap()["receiptInventory"]["pending"]
                     .as_u64()
                     .unwrap_or(0);
-                let candidate_absent = !output.parent().unwrap().join("candidate-a").exists();
+                let candidate_absent = !candidate.exists();
                 eprintln!(
                     "admitted-headless-cache guard_loss_cleanup_kind={} pending_receipts={pending} candidate_absent={candidate_absent}",
                     report.as_ref().unwrap()["kind"],
@@ -3514,6 +3559,22 @@ mod tests {
             .output()
             .unwrap();
         assert!(!blocked_write.status.success());
+        let blocked_sibling = sandbox_command(&profile, paths, "/usr/bin/touch")
+            .arg(output.parent().unwrap().join("should-not-exist"))
+            .output()
+            .unwrap();
+        assert!(!blocked_sibling.status.success());
+        let allowed_temporary = output.join("tmp/sandbox-write-probe");
+        let allowed_write = sandbox_command(&profile, paths, "/usr/bin/touch")
+            .arg(&allowed_temporary)
+            .output()
+            .unwrap();
+        assert!(
+            allowed_write.status.success(),
+            "{}",
+            String::from_utf8_lossy(&allowed_write.stderr)
+        );
+        fs::remove_file(allowed_temporary).unwrap();
         if private_cargo_home.is_some() {
             let shared_config =
                 PathBuf::from(std::env::var_os("HOME").unwrap()).join(".cargo/config.toml");
