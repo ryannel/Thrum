@@ -297,3 +297,57 @@ main/WAL/project temporary work, compiler output, cache or retained ready
 roots; it does not perform F3 scan races, uncertain cleanup/sync faults,
 recovery of retained jobs, or readiness publication. The complete design and
 proof queue above remain open.
+
+## Next F4/T2 compiler handoff
+
+F4 owns the compiler runner: its selected invocation, supervised process
+family, cancellation, terminal outcome and output validation. T2 owns the
+same-volume job registration, class claims, scheduling and checked retirement.
+T2 must register the compiler phase and its complete output/TMPDIR claim
+durably under the existing job incarnation before F4 launches. The output
+child remains disjoint from immutable `input`; `TMPDIR` stays beneath the
+write-granted output child. T2's registered compiler phase retains its own
+input lease until checked phase retirement or keyed recovery. F4's runner
+holds a separate lease through actual family shutdown, so its read lifetime
+does not borrow the host or block unrelated B admission. If the runner
+unwinds or disappears before reporting a verified terminal outcome, T2's
+hold still blocks `close(input)` and preserves the full input claim. Dropping
+the host leaves both registered roots for restart quarantine.
+
+The refund handoff needs an F4-created terminal capability with a private
+constructor, bound to the exact job/incarnation, invocation, input and output
+root. A caller-supplied JSON report, exit code or cancellation request is
+diagnostic data, not refund authority. F4 returns the capability only after
+the selected same-group family has stopped and its report/receipts are
+resolved under the first development profile's reviewed no-detach assumption.
+T2 then verifies its own root identity and output retirement/sync before
+releasing the output claim. Missing capability, ambiguous shutdown, escaped
+child, path replacement or failed cleanup retains the full claim and
+quarantines the root and its account-owned input hold. The first
+implementation can use a generic retained value in F4's runner to carry its
+second lease without making F4 depend on
+`thrum-jobs`; `thrum-jobs` may consume the F4 terminal type through its
+existing dependency on `thrum-cook`.
+
+Once a compiler claim exists, admission of B must add every active compiler's
+conservative **remaining growth** to B's proposed growth and headroom in the
+fresh free-space comparison. The current F4-only host compares just B's
+proposed claim because its earlier completed input trees are already reflected
+in observed free bytes; applying that shortcut to an unfinished compiler
+would undercount. Keep managed-temporary and compiler/output class totals
+separate, and retain the full un-interposed compiler phase charge until a
+trusted terminal handoff and inventory establish a smaller remaining amount.
+This remains a planning decision, not a physical write limit.
+
+The first executable rejection proof must run a registered A compiler while
+F3 admits B and T2 attempts another F4 job; force aggregate deferral before a
+B root when A's remaining output claim makes the plan unaffordable. Exercise
+successful, failed, timed-out, interrupted and guard-loss F4 terminal paths,
+including a dropped/unwound runner followed by an attempted input close: the
+account-owned hold must still refuse cleanup. Check no early refund, exact A
+input/candidate survival and restart
+quarantine for uncertain output. Sample output overrun during supervision and
+measure admission wait, compiler/copy wall time, observed output growth and
+peak process memory separately. The existing test-only supervisor and
+candidate bundle are inputs to this implementation, not yet the production
+terminal capability or a ready build.
