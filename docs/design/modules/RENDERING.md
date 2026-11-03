@@ -1,5 +1,7 @@
 # Rendering — proposed module-family design
 
+**V1 reset (3 November 2026): [RENDER-SPEC](../RENDER-SPEC.md) §5 and C4 select LUT sky, joint froxels and presentation fallbacks; R3 regional optics is parked. Earlier R3 detail below is historical.**
+
 **Initial implementation specification:** [RENDER-SPEC.md](../RENDER-SPEC.md) now selects the concrete baseline mechanisms,
 limits and failure rules. This family document retains the wider responsibility; specification does not imply runtime qualification.
 The [R3 gap-closure decision](../research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)

@@ -4,9 +4,10 @@ A Rust 3D game engine being built for beautiful, flexible games on modern deskto
 WebGPU browsers and native mobile platforms. Features and visual quality are selected
 per game; local and multiplayer play share the same authoritative rules.
 
-**Status:** architecture and initial specifications are recorded. The repository now runs a
-bounded headless action/rule/authority/replica fixture, alongside contributor checks. It has no
-renderer, transport adapter or shipping game runtime yet.
+**Status:** a bounded headless authority/replica fixture runs, and provisional component
+simulation plus an offscreen GPU renderer foundation are under construction. There is no
+end-to-end lit game, real transport or shipping runtime yet. The [V1 build plan](docs/BUILD-PLAN.md)
+is the active work queue.
 
 Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or newer:
 

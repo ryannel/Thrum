@@ -11,3 +11,10 @@ workspace = true
 
 [dependencies]
 hashbrown = { version = "=0.17.1", default-features = false, features = ["inline-more"] }
+
+[dev-dependencies]
+divan = "=0.1.21"
+
+[[bench]]
+name = "v1_workload"
+harness = false

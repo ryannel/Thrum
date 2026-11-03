@@ -1,11 +1,29 @@
-# Thrum work list
+# Thrum build plan
 
-The first goal is a small game that follows one clear path: **a player acts, the game checks the action, the world changes, and players see the result**. Local and multiplayer play use the same game rules.
+## V1: one running game, then four peers
 
-This is the central to-do list. A checked box means that particular piece is done; it does not mean the larger stage is finished. The [detailed construction plan](design/CONSTRUCTION-PLAN.md) gives contributors the full sequence and technical requirements.
+Ship a reusable engine vertical slice with **10,000 entities, 1,000–2,000 moving**, a real simulation stage, clustered forward lighting and cascaded shadows, cooked asset hot reload, and a profiler showing CPU tick, CPU encode and GPU pass times. Run that same game on macOS, Chrome WebGPU and an iPhone. Then run it with **four peers through a 100 ms RTT, 20 ms jitter, 2% loss link conditioner**, with prediction and reconciliation. The core may run faster than 60 ticks/s; 60 is the first game configuration and measurement point, not an engine ceiling. Record named device results separately from code checks. The independent 3 November review motivates this reset; [C4](design/CONTRACTS.md) still owns one authority, fixed-step time, identity, validate-then-apply edits, pipeline closure and histories.
 
-**Current integration focus:** Turn the provisional source candidate and test-only SQLite proofs into one production admitted-source path, then cook, run, save and restore a small game from its pinned revision. The [holistic consolidation review](evidence/integration/FOUNDATION-CONSOLIDATION-2026-11-02.md) records what is working, what was measured and which wider claims remain open. The unchecked tasks under **Editable game and save** below are the completion gates.
-The [deep review of merged main](evidence/integration/DEEP-REVIEW-2026-11-02.md) records cross-platform and source-boundary fixes and keeps the remaining evidence limits visible.
+## Active order
+
+- [ ] **A0 + M0 reset:** the [world storage](design/decisions/A0-WORLD-STORAGE.md), [F1 jobs](design/decisions/A0-F1-JOBS.md) and [N1 transport/codec](design/decisions/A0-N1-TRANSPORT-CODEC.md) decisions are recorded. Migrate existing retained bulk evidence after a durable destination is selected.
+  - [x] Build the representative fixture and Divan benches; reset render/atmosphere contracts, retain a compact cloud reference, restore automatic CI, unify duplicate-ID checking and prune stale worktrees.
+- [ ] **A1 + M1, in parallel with separate owners:** turn the foundations into one running simulation and renderer path.
+  - [x] A1 provisional serial component world: change ticks, `InputFrame`, validated input → simulate → resolve → publish stages, checked identities and [10k-entity local cost](evidence/v1-workload/A1-SIM-2026-11-03.md). The three-candidate storage spike, rollback and parallel executor remain open.
+  - [x] M1 offscreen `thrum-render`: typed graph, optional GPU timestamps, material/instance ABI and a [synthetic 10k-instance Metal diagnostic](evidence/render/M1-OFFSCREEN-2026-11-03.md). Lit scene, cooked source and device frame budgets remain open.
+- [ ] **A2/A3/A4 + M2:** consumer-specific publication, zero-allocation steady ticks and F1 parallel execution, core simplification; a lit clustered-forward scene with CSM, exposure and a profiler on named targets.
+- [ ] **A5 + M3:** schema-driven delta transport, four-peer prediction and reconciliation; temporal rendering and GPU-driven culling.
+- [ ] **A6/A7 + M4/M5/M6:** incremental source/cook and hot reload, thin platform shells; Hillaire sky, joint froxel fog and measured clouds. Then M7/M8 terrain and FFT/LOD water, and M10 play/audio/UI. R3 optics waits until M9.
+
+The order above is the active V1 sequence. The older checklist below records completed foundation slices and open historical gates; it is **not** the active queue. New capability designs stay within two pages until a slice runs. Each landed feature gets a short timing/quality record; bulk captures and build output remain outside Git. Benchmark targets are proposed until measured on named devices: desktop tick p99 ≤2 ms, mid-phone ≤4 ms at 60 Hz, zero steady-tick heap allocations, and ≤64 kbit/s per client at 20 Hz snapshot delivery. Regressions above 10% require investigation with repeatable baselines, not a noisy single-run failure.
+
+## Parked, retained for later
+
+F3 space/limit/receipt diagnostics; T2 retained-root proofs; N1 credit and ledger extensions; publication-pool accounting; R0 exact-arithmetic predicates; R3 regional optics and exact alpha; moving-shore research; cloud cohort lab and unselected bulk evidence. Their existing code and records remain available, but none is an active V1 completion gate. The `codex/cloud-system-design` branch is a reference only and must not merge wholesale. The unfinished render index-layout probe is parked on `codex/render-index-layout-parked`.
+
+## Earlier foundation checklist
+
+A checked box means that scoped piece was done, not that the new V1 runtime or device performance is qualified. The [historical construction plan](design/CONSTRUCTION-PLAN.md), [consolidation review](evidence/integration/FOUNDATION-CONSOLIDATION-2026-11-02.md) and [deep review](evidence/integration/DEEP-REVIEW-2026-11-02.md) preserve the previous gates.
 
 ## Done
 
