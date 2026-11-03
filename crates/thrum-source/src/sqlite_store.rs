@@ -4632,6 +4632,131 @@ fn accepted_partial_retry_defers_behind_reader_blocked_wal() {
 }
 
 #[test]
+fn accepted_malformed_partial_cleanup_resumes_after_sql_failure() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        wal_stop_bytes: 40 * MIB,
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "A retained during B cleanup");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let mut a_pin = store.pin_current(a.generation).unwrap();
+    let stage_b = stage_n_mib_binary(&fixture, &stage_a, plan, 68, 42);
+    let master = SourcePath::parse("master.bin").unwrap();
+    let master_file = stage_b
+        .files()
+        .iter()
+        .find(|file| file.path() == &master)
+        .unwrap();
+    let hash = *master_file.sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let mut scratch = Vec::new();
+    let admission = store.owner.admission().unwrap();
+    let mut short_input = stage_b.open(&master).unwrap().take(16 * CHUNK_BYTES as u64);
+    assert!(matches!(
+        store.stage_blob_phased(
+            &mut short_input,
+            master_file.length(),
+            hash,
+            &mut scratch,
+            &mut || {},
+        ),
+        Err(StoreError::InputIo)
+    ));
+    drop(admission);
+    {
+        let inner = store.owner.lock().unwrap();
+        inner
+            .conn
+            .execute(
+                "DELETE FROM blob_chunks WHERE hash=?1 AND chunk_index=0",
+                params![hash.as_slice()],
+            )
+            .unwrap();
+        inner
+            .conn
+            .execute_batch(
+                "CREATE TABLE cleanup_calls (count INTEGER NOT NULL);
+                 INSERT INTO cleanup_calls VALUES (0);
+                 CREATE TRIGGER fail_second_cleanup BEFORE DELETE ON blob_chunks
+                 BEGIN
+                   UPDATE cleanup_calls SET count=count+1;
+                   SELECT CASE WHEN (SELECT count FROM cleanup_calls)=2
+                     THEN RAISE(ABORT, 'injected cleanup failure') END;
+                 END;",
+            )
+            .unwrap();
+    }
+    let failed = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap_err();
+    assert_eq!(failed.kind(), SourceStoreErrorKind::Storage);
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let (state, remaining): (i64, i64) = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state, (SELECT count(*) FROM blob_chunks WHERE hash=?1)
+             FROM blob_header WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((state, remaining), (0, 14));
+    let mut copied = Vec::new();
+    a_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    a_pin.close().unwrap();
+    drop(store);
+
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(a));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
+    let mut a_pin = reopened.pin_current(a.generation).unwrap();
+    reopened
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .execute_batch("DROP TRIGGER fail_second_cleanup")
+        .unwrap();
+    let b = reopened
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                copied.clear();
+                a_pin.copy_file_to(&scene, &mut copied).unwrap();
+                assert_eq!(copied, old_scene);
+            },
+            || {},
+        )
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+    let mut b_pin = reopened.pin_current(b.generation).unwrap();
+    assert_eq!(
+        b_pin.copy_file_to(&master, &mut io::sink()).unwrap(),
+        68 * MIB
+    );
+    b_pin.close().unwrap();
+    a_pin.close().unwrap();
+}
+
+#[test]
 fn accepted_old_pin_reads_between_new_blob_chunks() {
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {

@@ -37,6 +37,16 @@ selection makes the checkpoint boundary deterministic; it is a test policy,
 not a calibrated production threshold. A source pin alone does not hold the
 SQLite snapshot that blocks this checkpoint.
 
+A further accepted-owner test seeds sixteen B chunks and removes index zero
+to force malformed-layout cleanup. A SQL trigger aborts the second deletion
+after the first four-MiB row deletion has committed. The header remains
+incomplete with fourteen rows, A remains selected, no B outcome exists and the
+old pin still reads A. Reopen reacquires A's pin; after removing the injected
+trigger, retry resumes bounded cleanup and publishes B. A B pin authenticates
+the full 68 MiB master. This is an injected SQL failure at sixteen chunks,
+not host-volume `ENOSPC`, and it does not measure a concurrent A read during
+the cleanup loop.
+
 ## Local release observation
 
 macOS 26.6.2, arm64, pinned Rust 1.99.1, `cargo test --release -p
@@ -63,7 +73,7 @@ The seed phase's maximum append calls were 10.870, 75.045 and 72.426 ms;
 these are separate from the retry values above. The 40 MiB stop is an
 operational checkpoint threshold, not a maximum physical WAL allocation.
 
-The normal accepted-owner crash and reader-blocked WAL tests, and this opt-in
+The normal accepted-owner crash, reader-blocked WAL and cleanup tests, and this opt-in
 scale test, passed.
 An independent adversarial review corrected the child fixture lifetime,
 the kill deadline, the update oracle and the seed/retry timer scope before
@@ -71,8 +81,8 @@ this checkpoint.
 
 ## Still open for the full F3 gate
 
-Interrupted malformed-layout cleanup at scale, actual native `ENOSPC` after
-a successful guard check,
+Hundreds-chunk malformed cleanup cost and interruption, actual native
+`ENOSPC` after a successful guard check,
 whole-phase SQL maxima, temporary growth and higher-fidelity main/WAL
 allocation sampling remain unproved. The parent F3 build-plan item stays
 unchecked.
