@@ -192,3 +192,14 @@ one tracked 720p texture, plus a green 1080p new texture. It checks every
 pixel after completion. It does **not** hold genuine GPU-incomplete old work,
 exercise these four scratch roles, or measure driver memory. Those parts of
 the backend premise remain unrun.
+
+A later [strict-event Metal diagnostic](../../evidence/render/R0-GPU-INCOMPLETE-LIFETIME-2026-11-03.md)
+held three submitted command buffers GPU-incomplete across allocation of a
+separate 1080p texture. A/B used one tracked 720p allocation in queue order;
+after gate release, independent native tail events and exact full-pixel
+readbacks passed in three fresh processes. This qualifies an unfinished-old
+submission and old/new logical ownership overlap for that one texture on
+Apple M3 Max. It deliberately makes three submissions outside this schedule's
+two-credit policy and does not exercise the four-role graph, F4 leases,
+retirement, surface ownership or physical memory high-water. The native
+gate adds synchronization work and gives no ordinary-frame timing evidence.
