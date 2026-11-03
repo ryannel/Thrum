@@ -52,6 +52,9 @@ mod render_source_light;
 // One local structural pass remains inactive until global F3/F4 closure.
 #[allow(dead_code)]
 mod render_source_root;
+// Scene-v3 source grammar remains private until F3/F4 adoption.
+#[allow(dead_code)]
+mod scene_source_v3;
 // Material source meaning stays independent of target support and admission.
 #[allow(dead_code)]
 mod render_source_material;
