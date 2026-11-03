@@ -476,6 +476,10 @@
         "evidence": "../evidence/i2a/SOURCE-NATIVE-COMMIT-IO-RECOVERY-2026-11-03.md",
         "scope": "One test-only native VFS post-sync final WAL COMMIT fault proves the older accepted-store candidate quarantines its failing connection, leaves its read pin untouched and resolves B by exact outcome on fresh open. Automatic and last-close checkpoints are disabled on that connection. This is single-owner orderly-reopen evidence; other open connections are not quarantined, and writer-lock/reconciled authority, power-loss, volume-fault and cross-platform qualification remain open."
       },
+      "i2a_native_shareable_lease": {
+        "evidence": "../evidence/i2a/SOURCE-SHAREABLE-ACCEPTED-LEASE-2026-11-03.md",
+        "scope": "The accepted-source pin retains an Arc owner and short mutex-protected SQLite phases. A multi-chunk A copy admits B through the same owner during the first consumer write and still verifies A's exact bytes; a second pin reads after its store handle drops, then releases before reopen. Decode, hashing and consumer writes run outside the owner mutex. A test-only post-sync final-COMMIT fault with a live lease refuses later lease SQL, retains A's pin and recovers B's exact key after reopen. A poisoned owner refuses with RecoveryRequired. Independent connections, process lock, format-2 reconciliation, cross-owner uncertainty recovery, collector deletion and assembled performance remain open."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."

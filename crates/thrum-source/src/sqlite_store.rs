@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 #[cfg(test)]
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard};
 #[cfg(test)]
 use std::time::{Duration, Instant};
 
@@ -94,6 +95,7 @@ enum StoreError {
     Sql(rusqlite::Error),
     UncertainCommit(rusqlite::Error),
     RecoveryRequired,
+    OwnerPoisoned,
     InputIo,
     OutputIo,
     InputLength,
@@ -1909,7 +1911,7 @@ pub struct SourceStoreUsage {
 /// Broad failure category for source admission and verified reads.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SourceStoreErrorKind {
-    /// Final COMMIT outcome is uncertain; discard this owner and reopen.
+    /// Owner cannot safely continue; discard it and reopen. A final COMMIT may be uncertain.
     RecoveryRequired,
     /// The selected planning target or observed free space deferred work.
     SpacePressure,
@@ -1941,9 +1943,9 @@ impl SourceStoreError {
     /// Stable handling category; the display text carries the detail.
     pub fn kind(&self) -> SourceStoreErrorKind {
         match &self.0 {
-            StoreError::RecoveryRequired | StoreError::UncertainCommit(_) => {
-                SourceStoreErrorKind::RecoveryRequired
-            }
+            StoreError::RecoveryRequired
+            | StoreError::UncertainCommit(_)
+            | StoreError::OwnerPoisoned => SourceStoreErrorKind::RecoveryRequired,
             StoreError::Budget(
                 BudgetError::MainLimit
                 | BudgetError::WalLimit
@@ -2020,12 +2022,22 @@ impl From<rusqlite::Error> for SourceStoreError {
     }
 }
 
+struct NativeSourceOwner {
+    inner: Mutex<SqliteStoreCore>,
+}
+
+impl NativeSourceOwner {
+    fn lock(&self) -> Result<MutexGuard<'_, SqliteStoreCore>, StoreError> {
+        self.inner.lock().map_err(|_| StoreError::OwnerPoisoned)
+    }
+}
+
 /// Native append-only source authority, outside world-update callbacks.
 ///
 /// The path must be a trusted app-managed SQLite file. All accepted blobs are
 /// retained in this first profile; no collector deletion runs here.
 pub struct NativeSourceStore {
-    inner: SqliteStoreCore,
+    owner: Arc<NativeSourceOwner>,
     plan: SourceSpacePlan,
 }
 
@@ -2033,7 +2045,9 @@ impl NativeSourceStore {
     /// Open or create one native SQLite source store with a planning policy.
     pub fn open(path: &Path, plan: SourceSpacePlan) -> Result<Self, SourceStoreError> {
         let store = Self {
-            inner: SqliteStoreCore::open_with_plan(path, plan)?,
+            owner: Arc::new(NativeSourceOwner {
+                inner: Mutex::new(SqliteStoreCore::open_with_plan(path, plan)?),
+            }),
             plan,
         };
         store.current_root()?;
@@ -2044,13 +2058,12 @@ impl NativeSourceStore {
     /// This optional tooling query samples several changing values, so it is
     /// neither an atomic snapshot nor a hard reservation.
     pub fn space_usage(&self) -> Result<SourceStoreUsage, SourceStoreError> {
-        self.inner.require_clean()?;
-        let pages: i64 = self
-            .inner
+        let inner = self.owner.lock()?;
+        inner.require_clean()?;
+        let pages: i64 = inner
             .conn
             .query_row("PRAGMA page_count", [], |row| row.get(0))?;
-        let freelist: i64 = self
-            .inner
+        let freelist: i64 = inner
             .conn
             .query_row("PRAGMA freelist_count", [], |row| row.get(0))?;
         let logical_main_bytes = u64::try_from(pages)
@@ -2061,16 +2074,16 @@ impl NativeSourceStore {
             .ok()
             .and_then(|value| value.checked_mul(SQLITE_PAGE_BYTES))
             .ok_or(StoreError::Budget(BudgetError::Overflow))?;
-        let main_file_bytes = fs::metadata(&self.inner.path)
-            .map_err(|source| physical_io(&self.inner.path, source))?
+        let main_file_bytes = fs::metadata(&inner.path)
+            .map_err(|source| physical_io(&inner.path, source))?
             .len();
-        let wal = wal_path(&self.inner.path);
+        let wal = wal_path(&inner.path);
         let wal_file_bytes = match fs::metadata(&wal) {
             Ok(metadata) => metadata.len(),
             Err(error) if error.kind() == io::ErrorKind::NotFound => 0,
             Err(source) => return Err(physical_io(&wal, source).into()),
         };
-        let volume = self.inner.path.parent().ok_or(StoreError::InputIo)?;
+        let volume = inner.path.parent().ok_or(StoreError::InputIo)?;
         let volume_available_bytes =
             fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
         Ok(SourceStoreUsage {
@@ -2084,9 +2097,9 @@ impl NativeSourceStore {
 
     /// Read the selected root and verify its matching durable outcome.
     pub fn current_root(&self) -> Result<Option<AcceptedSourceRoot>, SourceStoreError> {
-        self.inner.require_clean()?;
-        let tx = self
-            .inner
+        let inner = self.owner.lock()?;
+        inner.require_clean()?;
+        let tx = inner
             .conn
             .unchecked_transaction()
             .map_err(StoreError::Sql)?;
@@ -2122,8 +2135,9 @@ impl NativeSourceStore {
         key: i64,
         request_hash: [u8; 32],
     ) -> Result<Option<AcceptedSourceRoot>, SourceStoreError> {
-        self.inner.require_clean()?;
-        let Some(row) = stored_outcome(&self.inner.conn, epoch, key)? else {
+        let inner = self.owner.lock()?;
+        inner.require_clean()?;
+        let Some(row) = stored_outcome(&inner.conn, epoch, key)? else {
             return Ok(None);
         };
         if row.request_hash != request_hash {
@@ -2143,15 +2157,16 @@ impl NativeSourceStore {
     /// failure has an uncertain outcome: discard this owner, reopen the store
     /// and query the exact key before retrying or reporting selection.
     pub fn admit(
-        &mut self,
+        &self,
         expected_generation: i64,
         epoch: i64,
         key: i64,
         request_hash: [u8; 32],
         candidate: &StagedCandidate<'_>,
     ) -> Result<AcceptedSourceRoot, SourceStoreError> {
-        self.inner.require_clean()?;
-        let (generation, revision) = self.inner.admit_staged_candidate_probe_with_limits(
+        let mut inner = self.owner.lock()?;
+        inner.require_clean()?;
+        let (generation, revision) = inner.admit_staged_candidate_probe_with_limits(
             expected_generation,
             epoch,
             key,
@@ -2168,43 +2183,48 @@ impl NativeSourceStore {
     }
 
     /// Pin and authenticate the current manifest for a build or cook read.
-    pub fn pin_current(
-        &mut self,
-        expected_generation: i64,
-    ) -> Result<PinnedSource<'_>, SourceStoreError> {
-        self.inner.require_clean()?;
-        self.inner.retry_pending_pin_releases()?;
-        let pin = self.inner.pin_current_root(expected_generation)?;
+    pub fn pin_current(&self, expected_generation: i64) -> Result<PinnedSource, SourceStoreError> {
+        let pin = {
+            let mut inner = self.owner.lock()?;
+            inner.require_clean()?;
+            inner.retry_pending_pin_releases()?;
+            inner.pin_current_root(expected_generation)?
+        };
         self.load_pin(pin)
     }
 
     /// Pin an earlier accepted root for a retained build, match or save.
     /// The supplied generation and revision must have a durable outcome.
-    pub fn pin_accepted(
-        &mut self,
-        root: AcceptedSourceRoot,
-    ) -> Result<PinnedSource<'_>, SourceStoreError> {
-        self.inner.require_clean()?;
-        self.inner.retry_pending_pin_releases()?;
-        let pin = self.inner.pin_accepted_root(root)?;
+    pub fn pin_accepted(&self, root: AcceptedSourceRoot) -> Result<PinnedSource, SourceStoreError> {
+        let pin = {
+            let mut inner = self.owner.lock()?;
+            inner.require_clean()?;
+            inner.retry_pending_pin_releases()?;
+            inner.pin_accepted_root(root)?
+        };
         self.load_pin(pin)
     }
 
-    fn load_pin(&mut self, pin: RootReadPin) -> Result<PinnedSource<'_>, SourceStoreError> {
+    fn load_pin(&self, pin: RootReadPin) -> Result<PinnedSource, SourceStoreError> {
         let loaded = (|| {
-            let tx = self
-                .inner
-                .conn
-                .transaction_with_behavior(TransactionBehavior::Deferred)?;
-            let bytes = read_complete_blob(&tx, pin.revision, FIRST_PROFILE_MANIFEST_BYTES)?;
-            tx.commit()?;
+            let bytes = {
+                let mut inner = self.owner.lock()?;
+                inner.require_clean()?;
+                let tx = inner
+                    .conn
+                    .transaction_with_behavior(TransactionBehavior::Deferred)?;
+                let bytes = read_complete_blob(&tx, pin.revision, FIRST_PROFILE_MANIFEST_BYTES)?;
+                tx.commit()?;
+                bytes
+            };
             let manifest = decode_manifest_jcs(&bytes, FIRST_PROFILE_MANIFEST_BYTES)
                 .map_err(StoreError::Manifest)?;
             if !manifest.dependency_roots().is_empty() {
                 return Err(StoreError::UnsupportedDependencyRoots);
             }
-            let tx = self
-                .inner
+            let mut inner = self.owner.lock()?;
+            inner.require_clean()?;
+            let tx = inner
                 .conn
                 .transaction_with_behavior(TransactionBehavior::Deferred)?;
             let mut lookup =
@@ -2224,7 +2244,7 @@ impl NativeSourceStore {
         })();
         match loaded {
             Ok(manifest) => Ok(PinnedSource {
-                store: self,
+                owner: Arc::clone(&self.owner),
                 root: AcceptedSourceRoot {
                     generation: pin.generation,
                     revision: SourceRevision::from_bytes(pin.revision),
@@ -2234,7 +2254,9 @@ impl NativeSourceStore {
                 scratch: Vec::new(),
             }),
             Err(error) => {
-                let _ = self.inner.release_root_pin(pin.id);
+                if let Ok(mut inner) = self.owner.lock() {
+                    let _ = inner.release_root_pin(pin.id);
+                }
                 Err(error.into())
             }
         }
@@ -2242,15 +2264,15 @@ impl NativeSourceStore {
 }
 
 /// One authenticated source manifest held by a durable read pin.
-pub struct PinnedSource<'a> {
-    store: &'a mut NativeSourceStore,
+pub struct PinnedSource {
+    owner: Arc<NativeSourceOwner>,
     root: AcceptedSourceRoot,
     manifest: TreeManifest,
     pin_id: Option<i64>,
     scratch: Vec<u8>,
 }
 
-impl PinnedSource<'_> {
+impl PinnedSource {
     /// Pinned root identity; it stays stable when another root is admitted.
     pub fn root(&self) -> AcceptedSourceRoot {
         self.root
@@ -2270,7 +2292,6 @@ impl PinnedSource<'_> {
         path: &SourcePath,
         output: &mut impl Write,
     ) -> Result<u64, SourceStoreError> {
-        self.store.inner.require_clean()?;
         let file = self
             .manifest
             .files()
@@ -2280,48 +2301,51 @@ impl PinnedSource<'_> {
             .ok_or(StoreError::MissingFile)?;
         let (length, hash) = file.blob_identity();
         let chunks = blob_chunk_count(length)?;
-        let (stored_length, stored_chunks, state): (i64, i64, i64) = self
-            .store
-            .inner
-            .conn
-            .query_row(
-                "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+        {
+            let inner = self.owner.lock()?;
+            inner.require_clean()?;
+            let (stored_length, stored_chunks, state): (i64, i64, i64) = inner
+                .conn
+                .query_row(
+                    "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+                    params![hash.as_slice()],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                )
+                .optional()?
+                .ok_or(StoreError::MissingCompleteBlob)?;
+            if stored_length != length as i64 || stored_chunks != chunks || state != 1 {
+                return Err(StoreError::CorruptRootBlob.into());
+            }
+            let actual_chunks: i64 = inner.conn.query_row(
+                "SELECT count(*) FROM blob_chunks WHERE hash=?1",
                 params![hash.as_slice()],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-            )
-            .optional()?
-            .ok_or(StoreError::MissingCompleteBlob)?;
-        if stored_length != length as i64 || stored_chunks != chunks || state != 1 {
-            return Err(StoreError::CorruptRootBlob.into());
-        }
-        let actual_chunks: i64 = self.store.inner.conn.query_row(
-            "SELECT count(*) FROM blob_chunks WHERE hash=?1",
-            params![hash.as_slice()],
-            |row| row.get(0),
-        )?;
-        if actual_chunks != chunks {
-            return Err(StoreError::InvalidChunkLayout.into());
+                |row| row.get(0),
+            )?;
+            if actual_chunks != chunks {
+                return Err(StoreError::InvalidChunkLayout.into());
+            }
         }
         let mut digest = Sha256::new();
         let mut copied = 0_u64;
-        let mut statement = self
-            .store
-            .inner
-            .conn
-            .prepare("SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2")?;
         for index in 0..chunks {
-            let mut rows = statement.query(params![hash.as_slice(), index])?;
-            let row = rows.next()?.ok_or(StoreError::MissingChunk)?;
-            let ValueRef::Blob(bytes) = row.get_ref(0)? else {
-                return Err(StoreError::InvalidChunkLayout.into());
-            };
-            let expected = (length - copied).min(CHUNK_BYTES as u64) as usize;
-            if bytes.len() != expected {
-                return Err(StoreError::InvalidChunkLayout.into());
-            }
             self.scratch.clear();
-            self.scratch.extend_from_slice(bytes);
-            drop(rows);
+            {
+                let inner = self.owner.lock()?;
+                inner.require_clean()?;
+                let mut statement = inner
+                    .conn
+                    .prepare("SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2")?;
+                let mut rows = statement.query(params![hash.as_slice(), index])?;
+                let row = rows.next()?.ok_or(StoreError::MissingChunk)?;
+                let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+                    return Err(StoreError::InvalidChunkLayout.into());
+                };
+                let expected = (length - copied).min(CHUNK_BYTES as u64) as usize;
+                if bytes.len() != expected {
+                    return Err(StoreError::InvalidChunkLayout.into());
+                }
+                self.scratch.extend_from_slice(bytes);
+            }
             digest.update(&self.scratch);
             output
                 .write_all(&self.scratch)
@@ -2337,16 +2361,18 @@ impl PinnedSource<'_> {
     /// Release the read pin and report a failed SQLite release to the caller.
     pub fn close(mut self) -> Result<(), SourceStoreError> {
         if let Some(id) = self.pin_id.take() {
-            self.store.inner.release_root_pin(id)?;
+            self.owner.lock()?.release_root_pin(id)?;
         }
         Ok(())
     }
 }
 
-impl Drop for PinnedSource<'_> {
+impl Drop for PinnedSource {
     fn drop(&mut self) {
-        if let Some(id) = self.pin_id.take() {
-            let _ = self.store.inner.release_root_pin(id);
+        if let Some(id) = self.pin_id.take()
+            && let Ok(mut inner) = self.owner.lock()
+        {
+            let _ = inner.release_root_pin(id);
         }
     }
 }
@@ -2384,8 +2410,10 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     assert_eq!(observer.counts.wal_fault_hits.load(Ordering::Relaxed), 1);
     let wal_writes = observer.counts.wal_writes.load(Ordering::Relaxed);
     let main_writes = observer.counts.main_writes.load(Ordering::Relaxed);
-    let mut store = NativeSourceStore {
-        inner: core,
+    let store = NativeSourceStore {
+        owner: Arc::new(NativeSourceOwner {
+            inner: Mutex::new(core),
+        }),
         plan: SourceSpacePlan::DEFAULT,
     };
     assert_eq!(
@@ -2405,7 +2433,7 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
         SourceStoreErrorKind::RecoveryRequired
     );
     assert!(matches!(
-        store.inner.release_root_pin(pin_a.id),
+        store.owner.lock().unwrap().release_root_pin(pin_a.id),
         Err(StoreError::RecoveryRequired)
     ));
     assert_eq!(
@@ -2419,7 +2447,7 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     drop(store);
     observer.assert_closed();
 
-    let mut reopened = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
+    let reopened = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
     let selected = reopened.current_root().unwrap().unwrap();
     assert_eq!(
         (selected.generation, selected.revision.as_bytes()),
@@ -2427,7 +2455,9 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
     );
     assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(selected));
     let retained_pin: i64 = reopened
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .query_row(
             "SELECT count(*) FROM read_pin WHERE id=?1",
@@ -2436,7 +2466,12 @@ fn accepted_store_quarantines_after_uncertain_native_final_commit() {
         )
         .unwrap();
     assert_eq!(retained_pin, 1);
-    reopened.inner.release_root_pin(pin_a.id).unwrap();
+    reopened
+        .owner
+        .lock()
+        .unwrap()
+        .release_root_pin(pin_a.id)
+        .unwrap();
 }
 
 #[test]
@@ -2528,7 +2563,7 @@ fn native_store_admits_reopens_and_streams_pinned_source() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&path, plan).unwrap();
+    let store = NativeSourceStore::open(&path, plan).unwrap();
     assert_eq!(store.current_root().unwrap(), None);
     let stage = minimal_source_stage(&fixture, "accepted source");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
@@ -2561,7 +2596,7 @@ fn native_store_admits_reopens_and_streams_pinned_source() {
         pinned.close().unwrap();
     }
     drop(store);
-    let mut store = NativeSourceStore::open(&path, plan).unwrap();
+    let store = NativeSourceStore::open(&path, plan).unwrap();
     assert_eq!(store.current_root().unwrap(), Some(accepted));
     assert_eq!(store.outcome(3, 7, [7; 32]).unwrap(), Some(accepted));
     assert_eq!(store.outcome(3, 8, [8; 32]).unwrap(), None);
@@ -2594,14 +2629,16 @@ fn native_store_failed_final_outcome_preserves_old_root_and_retry() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let first_stage = minimal_source_stage(&fixture, "first accepted scene");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
     let second_stage = minimal_source_stage(&fixture, "next accepted scene");
     let second = validate_staged_candidate(&second_stage, &[]).unwrap();
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute_batch(
             "CREATE TRIGGER abort_native_outcome BEFORE INSERT ON outcome
@@ -2614,11 +2651,17 @@ fn native_store_failed_final_outcome_preserves_old_root_and_retry() {
     );
     assert_eq!(store.current_root().unwrap(), Some(old));
     drop(store);
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     assert_eq!(store.current_root().unwrap(), Some(old));
-    assert!(stored_outcome(&store.inner.conn, 1, 2).unwrap().is_none());
+    assert!(
+        stored_outcome(&store.owner.lock().unwrap().conn, 1, 2)
+            .unwrap()
+            .is_none()
+    );
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute_batch("DROP TRIGGER abort_native_outcome")
         .unwrap();
@@ -2687,7 +2730,7 @@ fn native_store_pinned_copy_refuses_corrupt_chunk() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let stage = minimal_source_stage(&fixture, "verified read");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
@@ -2702,7 +2745,9 @@ fn native_store_pinned_copy_refuses_corrupt_chunk() {
         .blob_identity()
         .1;
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute(
             "UPDATE blob_chunks SET bytes=zeroblob(length(bytes)) WHERE hash=?1 AND chunk_index=0",
@@ -2737,7 +2782,7 @@ fn native_store_pinned_copy_reports_consumer_output_failure() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let stage = minimal_source_stage(&fixture, "output refusal");
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let root = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
@@ -2769,9 +2814,11 @@ fn native_store_drains_wal_overrun_before_candidate_preflight() {
             .kind(),
         SourceStoreErrorKind::InvalidPlan
     );
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute_batch(
             "PRAGMA wal_autocheckpoint=0;
@@ -2788,7 +2835,26 @@ fn native_store_drains_wal_overrun_before_candidate_preflight() {
 }
 
 #[test]
-fn native_store_multichunk_pin_survives_other_connection_root_advance() {
+fn native_store_multichunk_pin_survives_same_owner_root_advance_during_copy() {
+    struct UpdateOnFirstWrite<F> {
+        bytes: Vec<u8>,
+        update: Option<F>,
+    }
+
+    impl<F: FnMut()> Write for UpdateOnFirstWrite<F> {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            if let Some(mut update) = self.update.take() {
+                update();
+            }
+            self.bytes.extend_from_slice(bytes);
+            Ok(bytes.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {
         free_headroom_bytes: 0,
@@ -2818,24 +2884,32 @@ fn native_store_multichunk_pin_survives_other_connection_root_advance() {
     )
     .unwrap();
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let first = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
     let mut pinned = store.pin_current(first.generation).unwrap();
 
     fs::remove_file(root.join("master.bin")).unwrap();
     let next_stage = minimal_source_stage(&fixture, "after asset removal");
     let next_candidate = validate_staged_candidate(&next_stage, &[]).unwrap();
-    let mut second_store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
-    let second = second_store
-        .admit(first.generation, 1, 2, [2; 32], &next_candidate)
-        .unwrap();
-    assert_eq!(second.generation, 2);
-    let mut output = Vec::new();
+    let mut second = None;
+    let mut output = UpdateOnFirstWrite {
+        bytes: Vec::new(),
+        update: Some(|| {
+            second = Some(
+                store
+                    .admit(first.generation, 1, 2, [2; 32], &next_candidate)
+                    .unwrap(),
+            );
+        }),
+    };
     assert_eq!(
         pinned.copy_file_to(&asset_path, &mut output).unwrap(),
         asset.len() as u64
     );
-    assert_eq!(output, asset);
+    assert_eq!(output.bytes, asset);
+    drop(output);
+    let second = second.unwrap();
+    assert_eq!(second.generation, 2);
     pinned.close().unwrap();
     assert_eq!(store.current_root().unwrap(), Some(second));
     let mut historical = store.pin_accepted(first).unwrap();
@@ -2860,13 +2934,142 @@ fn native_store_multichunk_pin_survives_other_connection_root_advance() {
 }
 
 #[test]
+fn native_source_pin_keeps_owner_after_store_handle_drops() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let stage = minimal_source_stage(&fixture, "held source");
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let accepted = store.admit(0, 1, 1, [1; 32], &candidate).unwrap();
+    let mut pinned = store.pin_current(accepted.generation).unwrap();
+    let path = SourcePath::parse("project.json").unwrap();
+    let expected = fs::read(fixture.source_root().join(path.as_str())).unwrap();
+    drop(store);
+    fs::remove_file(fixture.source_root().join(path.as_str())).unwrap();
+
+    let mut copied = Vec::new();
+    assert_eq!(
+        pinned.copy_file_to(&path, &mut copied).unwrap(),
+        expected.len() as u64
+    );
+    assert_eq!(copied, expected);
+    pinned.close().unwrap();
+    let reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(accepted));
+    let pins: i64 = reopened
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row("SELECT count(*) FROM read_pin", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(pins, 0);
+}
+
+#[cfg(unix)]
+#[test]
+fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
+    use std::sync::atomic::Ordering;
+
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let observer = checkpoint_vfs::Observer::new("unix");
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let core =
+        SqliteStoreCore::open_with_plan_and_vfs(&database, plan, Some(observer.name())).unwrap();
+    let store = NativeSourceStore {
+        owner: Arc::new(NativeSourceOwner {
+            inner: Mutex::new(core),
+        }),
+        plan,
+    };
+    let stage_a = minimal_source_stage(&fixture, "accepted A");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut pinned = store.pin_current(a.generation).unwrap();
+    let pin_id = pinned.pin_id.unwrap();
+
+    let stage_b = minimal_source_stage(&fixture, "accepted B");
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let manifest_b = candidate_b.provisional_manifest().unwrap();
+    {
+        let mut inner = store.owner.lock().unwrap();
+        inner.stage_candidate_files(&candidate_b).unwrap();
+        inner.stage_manifest_chunked(&manifest_b).unwrap();
+    }
+    observer.arm_wal_fault(checkpoint_vfs::WalFault::AfterCommitSync);
+    assert!(matches!(
+        store
+            .owner
+            .lock()
+            .unwrap()
+            .commit_manifest_probe(a.generation, 1, 2, [2; 32], &manifest_b),
+        Err(StoreError::UncertainCommit(_))
+    ));
+    assert_eq!(observer.counts.wal_fault_hits.load(Ordering::Relaxed), 1);
+    let wal_writes = observer.counts.wal_writes.load(Ordering::Relaxed);
+    let main_writes = observer.counts.main_writes.load(Ordering::Relaxed);
+    let mut output = Vec::new();
+    assert_eq!(
+        pinned
+            .copy_file_to(&SourcePath::parse("project.json").unwrap(), &mut output)
+            .unwrap_err()
+            .kind(),
+        SourceStoreErrorKind::RecoveryRequired
+    );
+    assert_eq!(
+        pinned.close().unwrap_err().kind(),
+        SourceStoreErrorKind::RecoveryRequired
+    );
+    assert_eq!(
+        observer.counts.wal_writes.load(Ordering::Relaxed),
+        wal_writes
+    );
+    assert_eq!(
+        observer.counts.main_writes.load(Ordering::Relaxed),
+        main_writes
+    );
+    drop(store);
+    observer.assert_closed();
+
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    let b = reopened.outcome(1, 2, [2; 32]).unwrap().unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(b.generation, a.generation + 1);
+    let retained_pin: i64 = reopened
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT count(*) FROM read_pin WHERE id=?1",
+            params![pin_id],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(retained_pin, 1);
+    reopened
+        .owner
+        .lock()
+        .unwrap()
+        .release_root_pin(pin_id)
+        .unwrap();
+}
+
+#[test]
 fn native_store_sqlite_full_during_blob_preserves_root_and_retries() {
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let first_stage = minimal_source_stage(&fixture, "before sqlite full");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
@@ -2892,12 +3095,16 @@ fn native_store_sqlite_full_during_blob_preserves_root_and_retries() {
     .unwrap();
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let current_pages: i64 = store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .query_row("PRAGMA page_count", [], |row| row.get(0))
         .unwrap();
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .pragma_update(None, "max_page_count", current_pages)
         .unwrap();
@@ -2911,7 +3118,7 @@ fn native_store_sqlite_full_during_blob_preserves_root_and_retries() {
     assert_eq!(store.current_root().unwrap(), Some(old));
     assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
     drop(store);
-    let mut reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     assert_eq!(reopened.current_root().unwrap(), Some(old));
     assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
     let next = reopened.admit(1, 1, 2, [2; 32], &candidate).unwrap();
@@ -2925,17 +3132,29 @@ fn native_store_sqlite_full_in_final_transaction_rolls_back_outcome() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let first_stage = minimal_source_stage(&fixture, "old root");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
     let second_stage = minimal_source_stage(&fixture, "new root");
     let second = validate_staged_candidate(&second_stage, &[]).unwrap();
     let manifest = second.provisional_manifest().unwrap();
-    store.inner.stage_candidate_files(&second).unwrap();
-    store.inner.stage_manifest_chunked(&manifest).unwrap();
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
+        .stage_candidate_files(&second)
+        .unwrap();
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .stage_manifest_chunked(&manifest)
+        .unwrap();
+    store
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute_batch(
             "CREATE TABLE injected_outcome_payload (bytes BLOB NOT NULL);
@@ -2944,12 +3163,16 @@ fn native_store_sqlite_full_in_final_transaction_rolls_back_outcome() {
         )
         .unwrap();
     let current_pages: i64 = store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .query_row("PRAGMA page_count", [], |row| row.get(0))
         .unwrap();
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .pragma_update(None, "max_page_count", current_pages)
         .unwrap();
@@ -2960,11 +3183,13 @@ fn native_store_sqlite_full_in_final_transaction_rolls_back_outcome() {
     assert_eq!(store.current_root().unwrap(), Some(old));
     assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
     drop(store);
-    let mut reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     assert_eq!(reopened.current_root().unwrap(), Some(old));
     assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), None);
     reopened
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute_batch("DROP TRIGGER fill_on_native_outcome")
         .unwrap();
@@ -2980,17 +3205,21 @@ fn native_store_reader_blocked_wal_defers_and_recovers_admission() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let first_stage = minimal_source_stage(&fixture, "before blocked reader");
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let old = store.admit(0, 1, 1, [1; 32], &first).unwrap();
     store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .execute_batch("PRAGMA wal_autocheckpoint=0")
         .unwrap();
     let checkpoint: (i64, i64, i64) = store
-        .inner
+        .owner
+        .lock()
+        .unwrap()
         .conn
         .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
@@ -3058,7 +3287,7 @@ fn measure_native_store_small_admission_and_read() {
         free_headroom_bytes: 0,
         ..SourceSpacePlan::DEFAULT
     };
-    let mut store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     let scene_path = SourcePath::parse("scenes/main.scene.json").unwrap();
     let mut admission_ms = Vec::new();
     let mut pinned_read_ms = Vec::new();

@@ -105,7 +105,7 @@ impl Drop for MaterializedSource {
 /// partial tree before returning. These files are temporary build inputs, not
 /// a durable product or a ready build; no per-file sync is performed.
 pub fn materialize_pinned_source(
-    pin: &mut PinnedSource<'_>,
+    pin: &mut PinnedSource,
     destination: &Path,
     plan: BuildScratchPlan,
 ) -> Result<MaterializedSource, MaterializeError> {
@@ -135,7 +135,7 @@ pub fn materialize_pinned_source(
 }
 
 fn preflight(
-    pin: &PinnedSource<'_>,
+    pin: &PinnedSource,
     destination: &Path,
     plan: BuildScratchPlan,
 ) -> Result<(), MaterializeError> {
@@ -196,7 +196,7 @@ fn new_directory_count(previous: &str, current: &str) -> u64 {
 }
 
 fn materialize_files(
-    pin: &mut PinnedSource<'_>,
+    pin: &mut PinnedSource,
     destination: &Path,
 ) -> Result<(usize, u64), MaterializeError> {
     let mut copied_bytes = 0_u64;
