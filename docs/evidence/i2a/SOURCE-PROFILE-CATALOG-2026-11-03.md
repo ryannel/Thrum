@@ -49,6 +49,16 @@ parser manufactures an exact count from its serde error text.
 The typed detail is one quantity component of the C12 diagnostic envelope;
 the caller must still supply owner, stage, selected profile, outcome and a
 supported next action.
+The generic strict JSON parser now returns the exact input byte length when
+the 16 MiB record bound is exceeded, and a lower bound when it stops on the
+first excess value or container level. Duplicate keys, malformed syntax and
+trailing input remain syntax refusals without a capacity detail. Focused tests
+cover array and object value counts, depth, bytes and non-capacity failures.
+An exploratory optimized million-value dense-array parser probe took
+9.42–9.71 ms in three runs before this detail and 9.50–10.03 ms in three
+interleaved runs afterward on this host. The small difference is not a
+representative throughput or tail qualification; the excess-token probe is
+entered only after the bound is reached.
 `RUSTC_WRAPPER= ./dev check` passed after design-hash refresh: repository
 checks, 107 Python tests, workspace Clippy and Rust tests, including 195
 passing `thrum-source` unit tests (46 opt-in tests ignored). The 64 MiB
@@ -57,7 +67,7 @@ admission fixture above that encoded size remains unrun.
 
 The catalogue does **not** establish that all simultaneous maxima fit memory,
 that every parser refusal is typed, that a wider profile works, or that a
-consumer can use every F3-valid candidate. Generic JSON, schema/history,
-game and environment parser limit propagation remain open,
+consumer can use every F3-valid candidate. Schema/history, game and
+environment parser limit propagation remain open,
 as do structured disk estimate/observation receipts and full F3→F4 workload
 qualification.
