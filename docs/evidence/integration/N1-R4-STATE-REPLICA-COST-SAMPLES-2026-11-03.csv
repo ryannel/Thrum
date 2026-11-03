@@ -1,0 +1,8 @@
+process_sample,ns_per_four_peer_four_partition_sweep,four_replica_reserved_owner_bytes
+1,56133.8,61376
+2,56409.8,61376
+3,56454.1,61376
+4,57648.9,61376
+5,56602.5,61376
+6,57531.0,61376
+7,56931.6,61376
