@@ -155,7 +155,12 @@ before claiming a performance benefit.
 The [first held-root candidate](../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
 proves this lifecycle one caller-selected APFS clone at a time, including
 local full Rust, Xcode linker and SDK cold preparations. It has not held the
-complete reviewed selection through a real Cargo job. The one-host cold Xcode
+complete reviewed selection through a real Cargo job. A later
+[admitted A/B qualification](../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md)
+did hold those three sealed roots through private-cache preparation, real
+Cargo A/B, receipt checks and output verification, then rehashed them before
+owned scratch cleanup. It did not hold the cache, support or host-runtime
+inputs in that selection. The one-host cold Xcode
 pair took 33.45 seconds to clone, seal, fsync and rehash, separate from 13.18
 seconds to inventory the installed sources. This belongs to release
 preparation, not a game edit or world tick.
