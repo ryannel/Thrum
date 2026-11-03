@@ -45,9 +45,10 @@ triangle lists, including single instances), two material classes (opaque/mask),
 and four unshadowed local lights, one Sun map, fixed authored ambient, fixed exposure, no air/water/
 animation/transparent surfaces. Masked geometry includes a fence with holes and an object behind it.
 The camera can be switched between perspective and orthographic without changing world/light units.
-The content remains within the R0 64-entity/250k-visible-triangle limits. Prepare the declared velocity
-roles even when spatial reconstruction does not execute them; do not require a motion attachment when
-no active consumer reads it.
+The content remains within the R0 64-entity/250k-visible-triangle limits. The
+selected spatial R0 profile does not prepare or retain unused velocity roles or
+require a motion attachment without an active consumer; a later temporal
+profile selects those roles separately under [RENDER-SPEC §8](../RENDER-SPEC.md#8-r0-first-rendered-game-contract-and-proof).
 
 Recommendation agreed with the environment-source owner: author the exact R0 field
 `ambient_irradiance_lux: [f32;3] = [1000,1000,1000]`. It is hemispherical incident diffuse-fill
