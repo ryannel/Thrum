@@ -18,7 +18,7 @@ from hold_macos_tool_root_clone import (
     prepare_sealed_clone,
 )
 from inventory_headless_tool_roots import inventory_root
-from prepare_headless_cargo_home import root_inventory
+from prepare_headless_cargo_home import cargo_reuse_key, root_inventory, sha256_file
 
 _MAX_MANIFEST_BYTES = 4 * 1024 * 1024
 _MAX_RECORD_BYTES = 2048
@@ -155,8 +155,10 @@ def _open_sealed_file(path, maximum, expected):
 class HeldCargoCache:
     """Cold-verified cache with a cheap owner-held identity check."""
 
-    def __init__(self, root_lease, files):
+    def __init__(self, root_lease, files, manifest_bytes, legacy):
         self.root = root_lease.root
+        self.manifest_bytes = manifest_bytes
+        self.legacy = legacy.copy()
         self._root_lease = root_lease
         self._files = files
 
@@ -228,7 +230,7 @@ def open_sealed_cache(owner_parent, tree, legacy, manifest_sha):
             raise
         if root_inventory(root_lease.root) != legacy:
             raise ValueError("sealed private cache differs from its legacy identity")
-        selection = HeldCargoCache(root_lease, files)
+        selection = HeldCargoCache(root_lease, files, raw, legacy)
         selection.assert_live()
         return selection
     except BaseException:
@@ -236,6 +238,54 @@ def open_sealed_cache(owner_parent, tree, legacy, manifest_sha):
             os.close(fd)
         root_lease.close()
         raise
+
+
+class HeldNativeCacheSelection:
+    """A cold-checked Rust/cache pair; warm reuse hashes only source keys."""
+
+    def __init__(self, cache, rust_root):
+        cache.assert_live()
+        rust_root.assert_live()
+        candidate = json.loads(cache.manifest_bytes)
+        if (not isinstance(candidate, dict) or candidate.get("format") != 2
+                or candidate.get("privateRoot") != cache.legacy
+                or not isinstance(candidate.get("target"), str)
+                or not isinstance(candidate.get("reuseKey"), dict)
+                or not _digest(candidate["reuseKey"].get("sha256"))
+                or not isinstance(candidate.get("toolExecutables"), dict)
+                or set(candidate["toolExecutables"]) != {"cargo", "rustc"}):
+            raise ValueError("held cache manifest has an incompatible dependency selection")
+        selected_tools = candidate["toolExecutables"]
+        for name in ("cargo", "rustc"):
+            path = rust_root.root / "bin" / name
+            identity = selected_tools[name]
+            if (not isinstance(identity, dict)
+                    or set(identity) != {"path", "sha256", "bytes"}
+                    or identity["path"] != str(path)
+                    or not _digest(identity["sha256"])
+                    or type(identity["bytes"]) is not int or identity["bytes"] < 0
+                    or path.is_symlink() or not path.is_file()
+                    or path.stat().st_size != identity["bytes"]
+                    or sha256_file(path) != identity["sha256"]):
+                raise ValueError(f"held {name} differs from cache tool selection")
+        cache.assert_live()
+        rust_root.assert_live()
+        self.cache = cache
+        self.rust_root = rust_root
+        self.candidate = candidate
+        self.selected_tools = selected_tools
+
+    def verify_reuse(self, source, target):
+        self.cache.assert_live()
+        self.rust_root.assert_live()
+        if target != self.candidate["target"]:
+            raise ValueError("held private cache target differs from selected target")
+        actual = cargo_reuse_key(Path(source), target, self.selected_tools)
+        if actual != self.candidate["reuseKey"]:
+            raise ValueError("held private cache cannot be reused for this source")
+        self.cache.assert_live()
+        self.rust_root.assert_live()
+        return actual
 
 
 def main():
@@ -248,32 +298,58 @@ def main():
     parser.add_argument("--owner", type=Path, required=True)
     parser.add_argument("--tree-json")
     parser.add_argument("--legacy-json")
+    parser.add_argument("--rust-tree-json")
     parser.add_argument("--manifest-sha")
     args = parser.parse_args()
     if args.prepare:
         if (args.source is None or args.manifest is None
                 or any(value is not None for value in (
-                    args.tree_json, args.legacy_json, args.manifest_sha,
+                    args.tree_json, args.legacy_json, args.rust_tree_json,
+                    args.manifest_sha,
                 ))):
             parser.error("preparation needs source and manifest only")
         root, tree, legacy, manifest_sha = prepare_sealed_cache(
             args.source, args.manifest, args.owner,
         )
+        selected_manifest = json.loads(_manifest_bytes(_paths(args.owner, tree)[1])[0])
+        reuse_sha = selected_manifest.get("reuseKey", {}).get("sha256")
+        if not _digest(reuse_sha):
+            raise ValueError("sealed private cache lacks a reuse-key digest")
         print(json.dumps({"root": str(root), "tree": tree, "legacy": legacy,
-                          "manifestSha256": manifest_sha}, sort_keys=True), flush=True)
+                          "manifestSha256": manifest_sha, "reuseKeySha256": reuse_sha},
+                         sort_keys=True), flush=True)
     else:
         if (args.source is not None or args.manifest is not None
                 or any(value is None for value in (
-                    args.tree_json, args.legacy_json, args.manifest_sha,
+                    args.tree_json, args.legacy_json, args.rust_tree_json,
+                    args.manifest_sha,
                 ))):
             parser.error("holding needs tree, legacy and manifest digest only")
-        with open_sealed_cache(
-            args.owner, json.loads(args.tree_json), json.loads(args.legacy_json),
-            args.manifest_sha,
-        ) as selection:
+        with (open_sealed_cache(
+                args.owner, json.loads(args.tree_json), json.loads(args.legacy_json),
+                args.manifest_sha,
+              ) as cache_lease,
+              open_sealed_clone(args.owner, json.loads(args.rust_tree_json)) as rust_lease):
+            selected = HeldNativeCacheSelection(cache_lease, rust_lease)
             print("READY", flush=True)
-            sys.stdin.buffer.read(1)
-            selection.assert_live()
+            while raw := sys.stdin.buffer.readline(4097):
+                if len(raw) > 4096 or not raw.endswith(b"\n"):
+                    raise ValueError("held-cache request exceeds selected size")
+                request = json.loads(raw)
+                if (not isinstance(request, dict) or set(request) != {"id", "source", "target"}
+                        or type(request["id"]) is not int or request["id"] < 0
+                        or request["id"] > 0xFFFF_FFFF_FFFF_FFFF
+                        or not isinstance(request["source"], str)
+                        or not isinstance(request["target"], str)):
+                    raise ValueError("invalid held-cache reuse request")
+                try:
+                    actual = selected.verify_reuse(request["source"], request["target"])
+                    response = {"id": request["id"], "reuseKey": actual["sha256"]}
+                except (OSError, ValueError) as error:
+                    response = {"id": request["id"], "error": str(error)[:512]}
+                print(json.dumps(response, sort_keys=True, separators=(",", ":")), flush=True)
+            selected.cache.assert_live()
+            selected.rust_root.assert_live()
 
 
 if __name__ == "__main__":
