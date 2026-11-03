@@ -141,3 +141,7 @@ not a general content restriction.
 
 No angular early exit, source-wide certificate removal, complete fallback,
 physical shader safety or device performance is claimed by this note.
+The [independent offline one-ratio and represented-dot
+oracle](../../evidence/render/R0-ONE-RATIO-ORACLE-2026-11-03.md) checks the
+candidate algebra and information-loss witnesses on bounded CPU fixtures.
+It does not close the WGSL, source or device gates above.
