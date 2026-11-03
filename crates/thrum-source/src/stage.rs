@@ -16,7 +16,7 @@ use crate::budget::{
     BudgetError, Limits, SourceSpacePlan, SourceWriterWindow, StageBudget,
     create_private_directory, ensure_directory,
 };
-use crate::{InventoryError, SourcePath, scan_declared_tree};
+use crate::{InventoryError, LimitExceeded, SourcePath, scan_declared_tree};
 
 const COPY_CHUNK: usize = 4 * 1024 * 1024;
 const MAX_LFS_POINTER_BYTES: usize = 1024;
@@ -45,6 +45,16 @@ pub enum StageError {
         /// Original filesystem error.
         source: std::io::Error,
     },
+}
+
+impl StageError {
+    /// Specific source-capacity refusal from inventory, when present.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::Inventory(error) => error.limit_exceeded(),
+            _ => None,
+        }
+    }
 }
 
 /// Exact-byte metadata of one file in a provisional stage.

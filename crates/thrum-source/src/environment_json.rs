@@ -15,12 +15,12 @@ use serde_json::value::RawValue;
 use crate::record::canonical_uuid;
 use crate::{MAX_RECORD_BYTES, MAX_RECORD_NODES};
 
-const MAX_STRING_BYTES: usize = 4096;
-const MAX_EXTENSIONS: usize = 16;
-const MAX_EXTENSION_BYTES: usize = 16 * 1024;
-const MAX_TOTAL_EXTENSION_BYTES: usize = 256 * 1024;
-const MAX_EXTENSION_DEPTH: usize = 16;
-const MAX_EXTENSION_NODES: usize = 4096;
+pub(crate) const MAX_STRING_BYTES: usize = 4096;
+pub(crate) const MAX_EXTENSIONS: usize = 16;
+pub(crate) const MAX_EXTENSION_BYTES: usize = 16 * 1024;
+pub(crate) const MAX_TOTAL_EXTENSION_BYTES: usize = 256 * 1024;
+pub(crate) const MAX_EXTENSION_DEPTH: usize = 16;
+pub(crate) const MAX_EXTENSION_NODES: usize = 4096;
 const UNIT_TOLERANCE: f64 = 1e-9;
 
 /// Exact immutable descriptor bytes, hashed under the built-in definition domain.
@@ -152,7 +152,7 @@ pub(crate) fn record_header(bytes: &[u8]) -> Result<RecordHeader, serde_json::Er
 // is the number of enclosing containers: the root envelope is depth 0 and its
 // fields value starts at depth 1. Containers at depths 0..63 use the permitted
 // 64 levels. Nodes include the envelope and exclude object keys.
-const MAX_HEADER_CONTAINER_DEPTH: usize = 64;
+pub(crate) const MAX_HEADER_CONTAINER_DEPTH: usize = 64;
 
 fn count_header_node<E: serde::de::Error>(nodes: &Cell<usize>) -> Result<(), E> {
     if nodes.get() >= MAX_RECORD_NODES {

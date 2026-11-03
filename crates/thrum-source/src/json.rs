@@ -8,7 +8,7 @@ use std::cell::Cell;
 pub const MAX_RECORD_BYTES: usize = 16 * 1024 * 1024;
 /// Maximum JSON values in one v1 source record, including containers.
 pub const MAX_RECORD_NODES: usize = 1_000_000;
-const MAX_CONTAINER_DEPTH: u8 = 64;
+pub(crate) const MAX_CONTAINER_DEPTH: u8 = 64;
 
 /// A source JSON record exceeded its byte bound or failed strict syntax.
 #[derive(Debug)]

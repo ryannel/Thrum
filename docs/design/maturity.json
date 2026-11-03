@@ -149,7 +149,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437"
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact task/publication APIs, overload parameters, platform event and storage adapters.",
@@ -212,7 +212,7 @@
       },
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437",
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad",
         "RENDER-SPEC.md": "790835b67f73b05c01c3808ba495558c22ae85fa46699eff2a1a39669498bdb1"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -269,7 +269,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437"
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Schema field/codecs, migration registry, coordinate tolerances and storage primitive audit.",
@@ -532,6 +532,13 @@
         "performance_validation": "Logical work estimate only; no elapsed, WAL/main/temporary high-water, RSS or device measurement is claimed.",
         "scope": "Standalone capture prices its complete staging copy. Accepted admission prices unique missing or incomplete blobs, a marginal WAL heuristic and existing checkpoint debt. These are separate non-reserving planning checks; physical peak, diagnostic receipts, partial-prefix projection and same-volume job coordination remain open."
       },
+      "i2a_first_source_capacity_catalogue": {
+        "evidence": "../evidence/i2a/SOURCE-PROFILE-CATALOG-2026-11-03.md",
+        "implementation": "read_only_owner_backed_capacity_table_and_initial_typed_limit_details",
+        "functional_validation": "Inventory distinguishes early-stop lower bounds from exact file lengths; manifest file bounds and accepted canonical-manifest bytes return typed dimensions. Project record/schema/entry arrays refuse before decoding an extra value and return the specific dimension; candidate required-reference overflow reports the processed lower bound. Existing source revision, accepted root/outcome and F4 consumer tests remain in the repository gate.",
+        "performance_validation": "The catalogue is a static slice with no allocation or I/O; no elapsed, RSS, combined parser peak or device measurement is claimed.",
+        "scope": "Publishes distinct first F3 capacity units/scopes without entering source or product hashes. Generic JSON, schema/history, game and authored-environment parser-wide typed propagation, full C12 diagnostic envelopes, simultaneous-maximum qualification, wider profiles and F4 target-support reporting remain open."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
@@ -631,7 +638,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437",
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad",
         "RENDER-SPEC.md": "790835b67f73b05c01c3808ba495558c22ae85fa46699eff2a1a39669498bdb1"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -842,7 +849,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437"
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Typed entity/component APIs, table/sparse implementation, transform and command details.",
@@ -900,7 +907,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437",
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad",
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -1210,7 +1217,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437"
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "RecoveryRoot format, adapters, operation epochs, save/replay envelope and migration."
@@ -1889,7 +1896,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437"
+        "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Operation registry, transaction/undo and durable retry/recovery interfaces."
@@ -2760,7 +2767,7 @@
     "contract_sha256": "093bd2e4e4d724efdc22d746e4bbb9899795c1d049849d5b7ded85d1e2d92154",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
-      "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437",
+      "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad",
       "RENDER-SPEC.md": "790835b67f73b05c01c3808ba495558c22ae85fa46699eff2a1a39669498bdb1",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "754c40465b4866428dc8959c11e145668e3a34048065c0dcbd228a47b640bb14"
@@ -3143,7 +3150,7 @@
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
       "FIRST-USE-WALKTHROUGHS.md": "38402601329f448342ba86c97878adb62e079846b0ba3345f86430202d9e7eac",
-      "FOUNDATION-SPEC.md": "51294c249bc11a9e76c6170da3d04020a1865d17f932fe896bff7123fbb1c437",
+      "FOUNDATION-SPEC.md": "cae695bbb223684f6eb8941b246169fa54876827288cffe8dc14e23bf5c93fad",
       "FROM-SCRATCH-WALKTHROUGHS.md": "5f64e1fc79ba65819654b42cde2877945d5a8532fc3e11f5d4f70119fa2c988c",
       "HOST-AND-PLATFORMS.md": "c1ecb3cb84c845327a5ba05ef17ed80559328d8f68b5a0793f06a7f1465586dc",
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",

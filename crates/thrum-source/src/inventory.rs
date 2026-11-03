@@ -7,13 +7,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::path::validate_path_refs;
-use crate::{PathError, SourcePath, validate_paths};
+use crate::{
+    LimitExceeded, ObservedQuantity, PathError, SourceDimension, SourcePath, validate_paths,
+};
 
 /// Exact top-level roots excluded from v1 source membership by policy.
 /// No unknown generated file is excluded by extension or wildcard.
 const EXCLUDED_TOP_LEVEL: [&str; 3] = [".git", ".engine", "target"];
-const MAX_ENTRIES: usize = 100_000;
-const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
+pub(crate) const MAX_ENTRIES: usize = 100_000;
+const MAX_FILE_BYTES: u64 = crate::manifest::MAX_BLOB_BYTES;
 
 /// One regular source file observed by the preflight scan.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -88,10 +90,20 @@ pub enum InventoryError {
     UndeclaredFile(SourcePath),
     /// A declared file is absent.
     MissingFile(SourcePath),
-    /// More than 100,000 source file/directory entries were encountered.
-    TooManyEntries,
+    /// The source file/directory count exceeded the selected scan profile.
+    TooManyEntries {
+        /// Inclusive maximum used by this scan.
+        allowed: usize,
+        /// Lower bound from declared files or early-stop traversal.
+        observed: ObservedQuantity,
+    },
     /// One source file exceeded the 16 GiB v1 blob limit.
-    FileTooLarge(SourcePath),
+    FileTooLarge {
+        /// Source path whose byte length exceeded the profile.
+        path: SourcePath,
+        /// Exact observed file byte length.
+        observed: u64,
+    },
     /// The observed byte count overflowed.
     TotalOverflow,
     /// Filesystem enumeration or metadata failed; the path gives context.
@@ -101,6 +113,25 @@ pub enum InventoryError {
         /// Original filesystem error.
         source: std::io::Error,
     },
+}
+
+impl InventoryError {
+    /// Structured capacity refusal where this scan stopped at a known bound.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooManyEntries { allowed, observed } => Some(LimitExceeded {
+                dimension: SourceDimension::InventoryEntries,
+                allowed: *allowed as u64,
+                observed: *observed,
+            }),
+            Self::FileTooLarge { observed, .. } => Some(LimitExceeded::exact(
+                SourceDimension::FileBytes,
+                MAX_FILE_BYTES,
+                *observed,
+            )),
+            _ => None,
+        }
+    }
 }
 
 /// Scan one complete declared tree without creating a stage or source revision.
@@ -123,7 +154,10 @@ fn scan_declared_tree_with_hook(
     mut before_directory: impl FnMut(&Path),
 ) -> Result<Inventory, InventoryError> {
     if declared.len() > max_entries {
-        return Err(InventoryError::TooManyEntries);
+        return Err(InventoryError::TooManyEntries {
+            allowed: max_entries,
+            observed: ObservedQuantity::AtLeast(declared.len() as u64),
+        });
     }
     validate_paths(declared).map_err(InventoryError::Path)?;
     let root_metadata =
@@ -162,7 +196,10 @@ fn scan_declared_tree_with_hook(
             }
             entry_count += 1;
             if entry_count > max_entries {
-                return Err(InventoryError::TooManyEntries);
+                return Err(InventoryError::TooManyEntries {
+                    allowed: max_entries,
+                    observed: ObservedQuantity::AtLeast(entry_count as u64),
+                });
             }
             let path = entry.path();
             let relative = path
@@ -190,7 +227,10 @@ fn scan_declared_tree_with_hook(
                     return Err(InventoryError::UnsupportedEntry(path));
                 }
                 if metadata.len() > MAX_FILE_BYTES {
-                    return Err(InventoryError::FileTooLarge(source_path));
+                    return Err(InventoryError::FileTooLarge {
+                        path: source_path,
+                        observed: metadata.len(),
+                    });
                 }
                 total_bytes = total_bytes
                     .checked_add(metadata.len())
@@ -399,17 +439,27 @@ mod tests {
     #[test]
     fn empty_directories_count_against_tree_entry_bound() {
         let fixture = Fixture::new();
-        for index in 0..4 {
+        for index in 0..5 {
             fs::create_dir(fixture.0.join(format!("empty-{index}"))).unwrap();
         }
-        assert!(matches!(
-            scan_declared_tree_with_hook(&fixture.0, &[], 3, |_| {}),
-            Err(InventoryError::TooManyEntries)
-        ));
+        let Err(error) = scan_declared_tree_with_hook(&fixture.0, &[], 3, |_| {}) else {
+            panic!("four entries must exceed a three-entry scan profile");
+        };
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::InventoryEntries,
+                allowed: 3,
+                observed: ObservedQuantity::AtLeast(4),
+            })
+        );
         let oversized = declared(&["a", "b", "c", "d"]);
         assert!(matches!(
             scan_declared_tree_with_hook(&fixture.0, &oversized, 3, |_| {}),
-            Err(InventoryError::TooManyEntries)
+            Err(InventoryError::TooManyEntries {
+                allowed: 3,
+                observed: ObservedQuantity::AtLeast(4)
+            })
         ));
     }
 }

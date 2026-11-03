@@ -3,24 +3,45 @@
 //! This checks one supplied `core.project` schema 2 record. The staged-tree
 //! validator must still check every declared path and record identity.
 
+use std::cell::Cell;
 use std::fmt;
 
 use serde::de::{DeserializeSeed, Error as _, MapAccess, SeqAccess, Visitor};
 
 use crate::record::canonical_uuid;
-use crate::{MAX_RECORD_BYTES, SourcePath};
+use crate::{LimitExceeded, MAX_RECORD_BYTES, ObservedQuantity, SourceDimension, SourcePath};
 
-const MAX_RECORDS: usize = 4_096;
-const MAX_SCHEMAS: usize = 256;
+pub(crate) const MAX_RECORDS: usize = 4_096;
+pub(crate) const MAX_SCHEMAS: usize = 256;
 const HISTORY_PATH: &str = "schemas/history.registry.json";
 
 /// A first-profile project declaration failed fixed syntax or bounds.
 #[derive(Debug)]
 pub enum ProjectV2Error {
     /// Exact JSON bytes exceed the 16 MiB source record limit.
-    TooLarge,
-    /// Syntax, identity, duplicate key, path shape, order or count refused.
+    TooLarge {
+        /// Exact encoded record byte length.
+        observed: u64,
+    },
+    /// A bounded declaration array had at least one more element.
+    Limit(LimitExceeded),
+    /// Syntax, identity, duplicate key, path shape or order refused.
     Invalid(serde_json::Error),
+}
+
+impl ProjectV2Error {
+    /// Specific bounded-project capacity refusal, when present.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooLarge { observed } => Some(LimitExceeded::exact(
+                SourceDimension::RecordBytes,
+                MAX_RECORD_BYTES as u64,
+                *observed,
+            )),
+            Self::Limit(limit) => Some(*limit),
+            Self::Invalid(_) => None,
+        }
+    }
 }
 
 /// Parsed `core.project` schema 2 declaration; not yet a validated tree.
@@ -37,7 +58,7 @@ impl ProjectV2 {
         &self.id
     }
 
-    /// Sorted declared scene and game-record paths.
+    /// Sorted declared scene, game and built-in record paths.
     pub fn record_paths(&self) -> &[SourcePath] {
         &self.record_paths
     }
@@ -64,32 +85,47 @@ impl ProjectV2 {
 /// not check path membership in a staged tree or resolve entry-scene IDs.
 pub fn parse_project_v2(bytes: &[u8]) -> Result<ProjectV2, ProjectV2Error> {
     if bytes.len() > MAX_RECORD_BYTES {
-        return Err(ProjectV2Error::TooLarge);
+        return Err(ProjectV2Error::TooLarge {
+            observed: bytes.len() as u64,
+        });
     }
+    let exceeded = Cell::new(None);
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
-    let project = ProjectSeed
-        .deserialize(&mut deserializer)
-        .map_err(ProjectV2Error::Invalid)?;
+    let project = ProjectSeed {
+        exceeded: &exceeded,
+    }
+    .deserialize(&mut deserializer)
+    .map_err(|error| {
+        exceeded
+            .get()
+            .map_or(ProjectV2Error::Invalid(error), ProjectV2Error::Limit)
+    })?;
     deserializer.end().map_err(ProjectV2Error::Invalid)?;
     Ok(project)
 }
 
-struct ProjectSeed;
+struct ProjectSeed<'a> {
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for ProjectSeed {
+impl<'de> DeserializeSeed<'de> for ProjectSeed<'_> {
     type Value = ProjectV2;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_map(ProjectVisitor)
+        deserializer.deserialize_map(ProjectVisitor {
+            exceeded: self.exceeded,
+        })
     }
 }
 
-struct ProjectVisitor;
+struct ProjectVisitor<'a> {
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for ProjectVisitor {
+impl<'de> Visitor<'de> for ProjectVisitor<'_> {
     type Value = ProjectV2;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -109,7 +145,11 @@ impl<'de> Visitor<'de> for ProjectVisitor {
                     record_type = Some(map.next_value::<String>()?);
                 }
                 "schema" if schema.is_none() => schema = Some(map.next_value::<u64>()?),
-                "fields" if fields.is_none() => fields = Some(map.next_value_seed(FieldsSeed)?),
+                "fields" if fields.is_none() => {
+                    fields = Some(map.next_value_seed(FieldsSeed {
+                        exceeded: self.exceeded,
+                    })?);
+                }
                 "documentation" if !documentation_seen => {
                     let _: String = map.next_value()?;
                     documentation_seen = true;
@@ -140,22 +180,28 @@ struct ProjectFields {
     entry_scenes: Vec<String>,
 }
 
-struct FieldsSeed;
+struct FieldsSeed<'a> {
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for FieldsSeed {
+impl<'de> DeserializeSeed<'de> for FieldsSeed<'_> {
     type Value = ProjectFields;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_map(FieldsVisitor)
+        deserializer.deserialize_map(FieldsVisitor {
+            exceeded: self.exceeded,
+        })
     }
 }
 
-struct FieldsVisitor;
+struct FieldsVisitor<'a> {
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for FieldsVisitor {
+impl<'de> Visitor<'de> for FieldsVisitor<'_> {
     type Value = ProjectFields;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -175,19 +221,23 @@ impl<'de> Visitor<'de> for FieldsVisitor {
                     record_paths = Some(map.next_value_seed(PathArraySeed {
                         limit: MAX_RECORDS,
                         kind: PathKind::Record,
+                        exceeded: self.exceeded,
                     })?);
                 }
                 "project.schemas" if schema_paths.is_none() => {
                     schema_paths = Some(map.next_value_seed(PathArraySeed {
                         limit: MAX_SCHEMAS,
                         kind: PathKind::Schema,
+                        exceeded: self.exceeded,
                     })?);
                 }
                 "project.registryHistory" if history_path.is_none() => {
                     history_path = Some(map.next_value::<String>()?);
                 }
                 "project.entryScenes" if entry_scenes.is_none() => {
-                    entry_scenes = Some(map.next_value_seed(EntryArraySeed)?);
+                    entry_scenes = Some(map.next_value_seed(EntryArraySeed {
+                        exceeded: self.exceeded,
+                    })?);
                 }
                 _ => return Err(A::Error::custom("duplicate or unsupported project field")),
             }
@@ -220,12 +270,22 @@ enum PathKind {
     Schema,
 }
 
-struct PathArraySeed {
-    limit: usize,
-    kind: PathKind,
+impl PathKind {
+    fn dimension(self) -> SourceDimension {
+        match self {
+            Self::Record => SourceDimension::ProjectRecords,
+            Self::Schema => SourceDimension::ProjectSchemas,
+        }
+    }
 }
 
-impl<'de> DeserializeSeed<'de> for PathArraySeed {
+struct PathArraySeed<'a> {
+    limit: usize,
+    kind: PathKind,
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
+
+impl<'de> DeserializeSeed<'de> for PathArraySeed<'_> {
     type Value = Vec<SourcePath>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
@@ -235,16 +295,18 @@ impl<'de> DeserializeSeed<'de> for PathArraySeed {
         deserializer.deserialize_seq(PathArrayVisitor {
             limit: self.limit,
             kind: self.kind,
+            exceeded: self.exceeded,
         })
     }
 }
 
-struct PathArrayVisitor {
+struct PathArrayVisitor<'a> {
     limit: usize,
     kind: PathKind,
+    exceeded: &'a Cell<Option<LimitExceeded>>,
 }
 
-impl<'de> Visitor<'de> for PathArrayVisitor {
+impl<'de> Visitor<'de> for PathArrayVisitor<'_> {
     type Value = Vec<SourcePath>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -255,7 +317,11 @@ impl<'de> Visitor<'de> for PathArrayVisitor {
         let mut paths: Vec<SourcePath> = Vec::new();
         loop {
             if paths.len() >= self.limit {
-                sequence.next_element_seed(RejectExtraSeed)?;
+                sequence.next_element_seed(RejectExtraSeed {
+                    dimension: self.kind.dimension(),
+                    allowed: self.limit as u64,
+                    exceeded: self.exceeded,
+                })?;
                 break;
             }
             let Some(text) = sequence.next_element::<String>()? else {
@@ -279,22 +345,28 @@ impl<'de> Visitor<'de> for PathArrayVisitor {
     }
 }
 
-struct EntryArraySeed;
+struct EntryArraySeed<'a> {
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for EntryArraySeed {
+impl<'de> DeserializeSeed<'de> for EntryArraySeed<'_> {
     type Value = Vec<String>;
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
     ) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_seq(EntryArrayVisitor)
+        deserializer.deserialize_seq(EntryArrayVisitor {
+            exceeded: self.exceeded,
+        })
     }
 }
 
-struct EntryArrayVisitor;
+struct EntryArrayVisitor<'a> {
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> Visitor<'de> for EntryArrayVisitor {
+impl<'de> Visitor<'de> for EntryArrayVisitor<'_> {
     type Value = Vec<String>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -305,7 +377,11 @@ impl<'de> Visitor<'de> for EntryArrayVisitor {
         let mut entries: Vec<String> = Vec::new();
         loop {
             if entries.len() >= MAX_RECORDS {
-                sequence.next_element_seed(RejectExtraSeed)?;
+                sequence.next_element_seed(RejectExtraSeed {
+                    dimension: SourceDimension::ProjectEntryScenes,
+                    allowed: MAX_RECORDS as u64,
+                    exceeded: self.exceeded,
+                })?;
                 break;
             }
             let Some(id) = sequence.next_element::<String>()? else {
@@ -323,15 +399,24 @@ impl<'de> Visitor<'de> for EntryArrayVisitor {
     }
 }
 
-struct RejectExtraSeed;
+struct RejectExtraSeed<'a> {
+    dimension: SourceDimension,
+    allowed: u64,
+    exceeded: &'a Cell<Option<LimitExceeded>>,
+}
 
-impl<'de> DeserializeSeed<'de> for RejectExtraSeed {
+impl<'de> DeserializeSeed<'de> for RejectExtraSeed<'_> {
     type Value = ();
 
     fn deserialize<D: serde::Deserializer<'de>>(
         self,
         _deserializer: D,
     ) -> Result<Self::Value, D::Error> {
+        self.exceeded.set(Some(LimitExceeded {
+            dimension: self.dimension,
+            allowed: self.allowed,
+            observed: ObservedQuantity::AtLeast(self.allowed + 1),
+        }));
         Err(D::Error::custom("project declaration count limit"))
     }
 }
@@ -386,6 +471,13 @@ mod tests {
     #[test]
     fn wrong_role_duplicate_unknown_and_bad_version_refuse() {
         let valid = project();
+        assert!(
+            parse_project_v2(valid.replace("\"schema\":2", "\"schema\":1").as_bytes())
+                .err()
+                .unwrap()
+                .limit_exceeded()
+                .is_none()
+        );
         for changed in [
             valid.replace("\"schema\":2", "\"schema\":1"),
             valid.replace("\"schema\":2", "\"schema\":2,\"schema\":2"),
@@ -419,7 +511,55 @@ mod tests {
             &format!("{paths},[[[0]]]"),
         );
         let error = parse_project_v2(bytes.as_bytes()).err().unwrap();
-        assert!(format!("{error:?}").contains("count limit"));
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::ProjectRecords,
+                allowed: MAX_RECORDS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_RECORDS as u64 + 1),
+            })
+        );
+    }
+
+    #[test]
+    fn schema_and_entry_limits_identify_the_array_before_extra_value_decode() {
+        let schemas = (0..MAX_SCHEMAS)
+            .map(|index| format!("\"schemas/s{index:03}.schema.json\""))
+            .collect::<Vec<_>>()
+            .join(",");
+        let with_schemas = project().replace(
+            "\"schemas/marker.schema.json\"",
+            &format!("{schemas},[[[0]]]"),
+        );
+        assert_eq!(
+            parse_project_v2(with_schemas.as_bytes())
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::ProjectSchemas,
+                allowed: MAX_SCHEMAS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_SCHEMAS as u64 + 1),
+            })
+        );
+
+        let entries = (0..MAX_RECORDS)
+            .map(|index| format!("\"{index:08x}-0000-4000-8000-000000000000\""))
+            .collect::<Vec<_>>()
+            .join(",");
+        let with_entries =
+            project().replace(&format!("\"{SCENE_ID}\""), &format!("{entries},[[[0]]]"));
+        assert_eq!(
+            parse_project_v2(with_entries.as_bytes())
+                .err()
+                .unwrap()
+                .limit_exceeded(),
+            Some(LimitExceeded {
+                dimension: SourceDimension::ProjectEntryScenes,
+                allowed: MAX_RECORDS as u64,
+                observed: ObservedQuantity::AtLeast(MAX_RECORDS as u64 + 1),
+            })
+        );
     }
 
     #[test]

@@ -11,9 +11,10 @@ use sha2::{Digest, Sha256};
 
 use crate::path::{PathError, SourcePath, validate_path_refs};
 use crate::record::{RecordEnvelope, canonical_uuid};
+use crate::{LimitExceeded, SourceDimension};
 
 pub(crate) const MAX_ENTRIES: usize = 100_000;
-const MAX_BLOB_BYTES: u64 = 16 * 1024 * 1024 * 1024;
+pub(crate) const MAX_BLOB_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 const HEX: &[u8; 16] = b"0123456789abcdef";
 
 /// SHA-256 of the RFC 8785 JCS form of one v1 tree manifest.
@@ -89,7 +90,7 @@ impl ManifestEntry {
         record: Option<RecordDescriptor>,
     ) -> Result<Self, ManifestError> {
         if length > MAX_BLOB_BYTES {
-            return Err(ManifestError::BlobTooLarge);
+            return Err(ManifestError::BlobTooLarge { observed: length });
         }
         Ok(Self {
             path,
@@ -122,15 +123,40 @@ pub enum ManifestError {
     /// Project ID is not a canonical lowercase UUID.
     ProjectId,
     /// Too many file entries for the v1 source profile.
-    TooManyEntries,
+    TooManyEntries {
+        /// Exact number of supplied files.
+        observed: usize,
+    },
     /// One file exceeds the v1 immutable blob bound.
-    BlobTooLarge,
+    BlobTooLarge {
+        /// Exact supplied file byte length.
+        observed: u64,
+    },
     /// File paths are not portable and unambiguous.
     Path(PathError),
     /// Two root records share a durable ID.
     DuplicateRecordId,
     /// Two declared dependency roots are identical.
     DuplicateDependencyRoot,
+}
+
+impl ManifestError {
+    /// Structured capacity refusal for manifest construction.
+    pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
+        match self {
+            Self::TooManyEntries { observed } => Some(LimitExceeded::exact(
+                SourceDimension::ManifestFiles,
+                MAX_ENTRIES as u64,
+                *observed as u64,
+            )),
+            Self::BlobTooLarge { observed } => Some(LimitExceeded::exact(
+                SourceDimension::FileBytes,
+                MAX_BLOB_BYTES,
+                *observed,
+            )),
+            _ => None,
+        }
+    }
 }
 
 /// V1 source metadata sorted by UTF-8 byte order, before durable admission.
@@ -171,7 +197,9 @@ impl TreeManifest {
             return Err(ManifestError::ProjectId);
         }
         if files.len() > MAX_ENTRIES {
-            return Err(ManifestError::TooManyEntries);
+            return Err(ManifestError::TooManyEntries {
+                observed: files.len(),
+            });
         }
         validate_path_refs(files.iter().map(|entry| &entry.path)).map_err(ManifestError::Path)?;
         let mut ids = HashSet::new();
@@ -518,6 +546,25 @@ mod tests {
                 Sha256::digest(oracle).as_slice()
             );
         }
+    }
+
+    #[test]
+    fn file_length_refusal_reports_exact_profile_dimension() {
+        let error = ManifestEntry::new(
+            SourcePath::parse("master.bin").unwrap(),
+            MAX_BLOB_BYTES + 1,
+            [0; 32],
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.limit_exceeded(),
+            Some(LimitExceeded::exact(
+                SourceDimension::FileBytes,
+                MAX_BLOB_BYTES,
+                MAX_BLOB_BYTES + 1,
+            ))
+        );
     }
 
     #[test]

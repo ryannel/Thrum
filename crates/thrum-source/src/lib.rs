@@ -16,6 +16,7 @@ mod manifest;
 mod manifest_json;
 mod meaning;
 mod path;
+mod profile;
 pub mod project_v2_json;
 #[cfg(test)]
 mod provisional_store;
@@ -39,6 +40,10 @@ pub use meaning::{
     compare_meaning_histories, compare_type_version_histories,
 };
 pub use path::{PathError, SourcePath, validate_paths};
+pub use profile::{
+    LimitExceeded, ObservedQuantity, SourceCapacity, SourceCapacityUnit, SourceDimension,
+    first_source_profile,
+};
 pub use record::{RecordEnvelope, RecordError, validate_record_envelope};
 pub use semantic::{BootstrapError, BootstrapProfile, BootstrapScene, validate_bootstrap_profile};
 pub use sqlite_store::{

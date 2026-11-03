@@ -9,8 +9,9 @@ use crate::manifest::{write_decimal, write_hex, write_jcs_string};
 
 const FIELD_DOMAIN: &[u8] = b"thrum-f3-field-meaning-v1\0";
 const TYPE_VERSION_DOMAIN: &[u8] = b"thrum-f3-type-version-v1\0";
-const MAX_SYMBOL_BYTES: usize = 128;
+pub(crate) const MAX_SYMBOL_BYTES: usize = 128;
 pub(crate) const MAX_FIELDS: usize = 128;
+pub(crate) const MAX_TEXT_BYTES: u16 = 4_096;
 
 /// Required or optional presence of a known field in the first schema profile.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -105,7 +106,7 @@ pub fn field_meaning_signature(field: FieldDefinition<'_>) -> Result<[u8; 32], D
     write_jcs_string(&mut digest, field.field_id);
     match field.kind {
         FieldKind::Text { max_utf8_bytes } => {
-            if !(1..=4096).contains(&max_utf8_bytes) {
+            if !(1..=MAX_TEXT_BYTES).contains(&max_utf8_bytes) {
                 return Err(DefinitionError::TextLimit);
             }
             digest.update(b",\"kind\":\"text\",\"maxUtf8Bytes\":");
