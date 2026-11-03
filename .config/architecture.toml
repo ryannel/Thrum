@@ -60,6 +60,12 @@ license = "MIT OR Apache-2.0"
 purpose = "Precharged, fixed-capacity confirmed replica object index with inspectable table allocation"
 target_cost = "One pinned crate with no transitive dependencies in the selected feature set; measure native, Wasm and phone lookup, churn and rehash tails before qualification"
 
+[external_dependencies.hecs]
+requirement = "=0.11.2"
+license = "MIT OR Apache-2.0"
+purpose = "Private W1 typed component storage selected by the three-candidate V1 workload spike"
+target_cost = "Three normal transitive crates in the selected profile; A1 measures checked-handle adaptation, serial and parallel queries, four-peer extraction, rollback and native/Wasm cost before qualification"
+
 [external_dependencies.winit]
 requirement = "=0.30.13"
 license = "Apache-2.0"

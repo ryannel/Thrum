@@ -251,7 +251,7 @@ fn invalid_batch_and_numeric_failure_preserve_the_complete_committed_endpoint() 
     assert_eq!(numeric.step(&[]), Err(SimError::NonFinite));
     assert_eq!(numeric.tick(), 0);
     assert_eq!(
-        *numeric
+        numeric
             .get(target)
             .expect("test setup or assertion requires a value")
             .position,
