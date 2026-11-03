@@ -133,3 +133,29 @@ shim is controlled test code, not a reviewed Rustc/Xcode helper, and the
 fault inventory counts only observed receipts. No complete interrupted
 invocation closure, detached-child containment, release family review,
 representative timeout tail or ready build follows from this test.
+
+## Real Cargo completion companion
+
+At exact local source commit `485fde7a82480a737bb51da3d50820c3a8ecc2c0`,
+the opt-in macOS suite passed all eleven tests in 9.43 seconds. Its new
+no-dependency package ran pinned Cargo twice through the real Rustc receipt
+wrapper and bounded supervisor: valid source returned Cargo 0 and produced an
+executable; invalid code returned Cargo 101, Rustc 1 and no executable. Both
+jobs used locked offline Cargo under a network-denying sandbox. Each produced
+five successful probe receipts and one completed compile receipt, with no
+pending receipt. The fixture checked the selected Rustc path, canonical
+working directory, stripped wrapper control variables, compiler source
+argument, status pairing and retained stdout/stderr byte lengths and SHA-256
+hashes against the supervisor report. The report remained `buildReady:false`.
+The routine `RUSTC_WRAPPER= ./dev check` also passed at that source commit;
+the macOS process cases are opt-in.
+
+Independent review found two fixture cleanup hazards and both were corrected:
+the outer runner now owns its supervisor process and lets the supervisor's
+shorter internal deadline or graceful SIGTERM clean the Cargo group; it keeps
+temporary inputs when shutdown is uncertain. Signal-terminated or unreported
+supervisors cannot trigger scratch deletion. The final review had no findings.
+This proof covers complete **observed** receipts for a real single-package
+compile and its ordinary compile error. It does not establish that Cargo
+cannot bypass the wrapper, inventory Xcode linker helpers, verify release
+family no-detach behavior, close compiler reads, or publish a ready build.

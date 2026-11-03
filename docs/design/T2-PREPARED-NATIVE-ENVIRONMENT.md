@@ -301,6 +301,11 @@ Prove in order:
    wrapper and a controlled sleeping compiler shim exercised both SIGTERM and
    a six-second test-only timeout, retained a pending receipt and stopped the
    same-group compiler; it does not prove all invocations were captured.
+   A separate real pinned Cargo success/invalid-code fixture also checks the
+   bounded supervisor report, hashed diagnostics and every observed completed
+   Rustc receipt. Its small no-dependency package exercises the real compiler
+   but does not inventory the selected Xcode helper family or prove that every
+   invocation in a release build was captured.
    Interrupted and timed-out receipt closure remains open. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.
    Measure compiler-job peak RSS separately; this profile has no hard process
