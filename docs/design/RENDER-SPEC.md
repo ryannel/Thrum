@@ -83,10 +83,42 @@ conformance, not a decision deferred to visual trial.
 Texture inputs are four fixed slots: base-colour/alpha, tangent-space normal, ORM
 (occlusion/roughness/metalness) and emissive, plus one material sampler. Base/emissive
 colour textures decode sRGB to the linear working basis; data maps remain linear.
-Missing optional slots bind neutral typed defaults (white base, flat normal, ORM
-`(1,1,0)`, black emissive) so the material layout does not multiply variants.
-Normal mapping requires a validated tangent basis; otherwise author a no-normal-map
-material or cook tangents with a declared method. Material factors, alpha cutoff and
+Missing optional slots bind typed multiplicative defaults (white base, flat
+normal, ORM `(1,1,1)`, white emissive) so the material layout does not
+multiply variants. Native factor defaults are white base RGBA, zero emissive
+radiance, roughness `1`, metalness `0`, occlusion strength `1` and normal scale
+`1`. Base/alpha, roughness, metalness and occlusion-strength factors are finite
+in `[0,1]`; emissive radiance factors are finite and nonnegative in cd/m².
+The effective closure uses decoded/filter-sampled texels and these equations:
+
+```text
+baseRGBA = baseFactorRGBA * baseTexelRGBA
+emissionRGB = emissiveRadianceFactorRGB * emissiveTexelRGB
+metalness = metallicFactor * ORM.b
+perceptualRoughness = max(0.045, roughnessFactor * ORM.g)
+alphaGGX = perceptualRoughness²
+AO = 1 + occlusionStrength * (ORM.r - 1)
+```
+
+The BRDF's `base`, `m` and `roughness` are these effective values.
+Base/emissive RGB are decoded from sRGB before linear filtering and
+multiplication; base alpha and ORM remain linear. The roughness floor applies
+**after** factor/texture multiplication and **before** squaring. AO modulates
+only selected indirect light, including the authored R0 ambient Lambert term;
+it does not change direct Sun/local lighting, emission, geometric/cloud
+visibility or terminal background. The native metalness default is dielectric;
+an imported format's different defaults are materialized during conversion.
+For example, glTF 2.0 gives absent emissive and metallic/roughness texture
+components an implicit value of one, while its metallic factor defaults to
+one; its independent texture coordinates, transforms and samplers require
+lossless conversion or explicit refusal under Thrum's one-sampler ORM layout.
+[Khronos glTF 2.0 materials](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials).
+Texture-presence flags may skip absent reads but cannot change these results.
+An absent normal map uses the admitted geometric/shading normal and does not
+evaluate a tangent basis. A present normal map requires a validated tangent
+basis and a separately supported evaluator; the first bounded R0 proof refuses
+it before ready-product publication. A later mapped-normal profile must cook
+tangents with a declared method. Material factors, alpha cutoff and
 texture-presence flags are uniform data, not compile-time variants. Structural shader
 specialization is limited initially to alpha mode (`opaque/mask/blend`), geometry
 interface (`static/skinned/instanced`), pass role, and chosen material closure/provider.
@@ -112,7 +144,10 @@ Matrices are column-major. A `ViewRecord` contains `viewProj` and
 `cameraXYZ_time` at 128 and `preExposure_invExposure_jitterXY` at 144; 160-byte
 record, 256-byte dynamic-uniform stride. A `MaterialRecord` is four 16-byte
 vectors at offsets 0/16/32/48: base RGBA, emissive RGB+alpha cutoff,
-`(occlusion,roughness,metalness,normalScale)`, and four `u32` flags/IDs; 64 bytes.
+`(occlusionStrength,roughnessFactor,metallicFactor,normalScale)`, and four
+`u32` flags/IDs; 64 bytes. Material products, default textures, shaders and
+representation certificates pin one material-semantic/evaluator revision in
+their keys; equal byte layout alone cannot authorize mixed meanings.
 An `ObjectRecord` stores current/previous model matrices (0/64), three normal
 matrix columns padded as `vec4` (128/144/160), and a `vec4<u32>` of stable
 instance index, skin offset, flags and source generation (176); 192-byte stride.
@@ -484,7 +519,7 @@ passes/resources retire after their final CPU reader and GPU completion.
 **Light and display.** R0 ambient is a typed isotropic diffuse irradiance in
 linear Rec.709 photometric RGB, in lux; the reference fixture uses
 `[1000,1000,1000]`. Its Lambert contribution is
-`(1-metallic)*base*E_ambient/pi`, with no second hemisphere or cosine factor.
+`AO*(1-metallic)*base*E_ambient/pi`, with no second hemisphere or cosine factor.
 The separate terminal background is black radiance in cd/m². Sun lux and
 local candela use section 4's direct-light convention; neither ambient nor
 background stands in for an unselected reflection source. V4 uses a positive
