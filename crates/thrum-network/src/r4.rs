@@ -137,6 +137,10 @@ impl ActionResult {
 
 /// One exact 40-byte R4 event with an optional input origin.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "event_id distinguishes the event's identity from its origin input sequence"
+)]
 pub struct Event {
     /// Match-scoped event ID.
     pub event_id: u64,
@@ -363,6 +367,18 @@ impl Event {
 /// Encode one bounded R4 payload into caller-owned storage, without allocating.
 /// The caller must separately validate manifest ordinals, partition membership,
 /// actor ranges and dependency/result/event closure before publication.
+///
+/// # Errors
+///
+/// Returns an error for invalid R4 counts, framing, result shape or destination capacity.
+///
+/// # Panics
+///
+/// Panics only if a checked record count no longer fits the fixed `u16` field.
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "the small borrowed command value is the stable hot-path encoder input"
+)]
 pub fn encode(input: GroupInput<'_>, destination: &mut [u8]) -> Result<usize, GroupError> {
     let counts = [
         input.actors.len(),
@@ -399,7 +415,13 @@ pub fn encode(input: GroupInput<'_>, destination: &mut [u8]) -> Result<usize, Gr
         input.header.resolved_through.to_le_bytes(),
     );
     for count in counts {
-        put(destination, &mut cursor, (count as u16).to_le_bytes());
+        put(
+            destination,
+            &mut cursor,
+            u16::try_from(count)
+                .expect("bounded R4 record count")
+                .to_le_bytes(),
+        );
     }
     for actor in input.actors {
         actor.write(&mut destination[cursor..cursor + ACTOR_BYTES]);
@@ -424,6 +446,10 @@ pub fn encode(input: GroupInput<'_>, destination: &mut [u8]) -> Result<usize, Gr
 /// Parse fixed framing and local result shape before any decoded allocation.
 /// This is not replica admission: manifest ordinals, actor ranges, event
 /// origins, lifecycle and result/event closure remain consumer checks.
+///
+/// # Errors
+///
+/// Returns an error for invalid R4 counts, framing, result shape or destination capacity.
 pub fn decode(payload: &[u8]) -> Result<GroupView<'_>, GroupError> {
     if payload.len() < HEADER_BYTES {
         return Err(GroupError::LengthMismatch);

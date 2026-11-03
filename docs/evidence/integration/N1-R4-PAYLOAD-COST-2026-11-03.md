@@ -1,5 +1,7 @@
 # Isolated R4 payload codec cost — 2026-11-03
 
+> Status after the code-quality cleanup: the ignored timing probe described here was removed from the active test tree. This page retains its historical result; the former test source is at `git show 6493763:crates/thrum-network/tests/r4_payload.rs`. The quoted command is a historical reproduction recipe and needs a maintained benchmark before use again.
+
 The ignored `measure_r4_payload_cost` test in
 `crates/thrum-network/tests/r4_payload.rs` measured the pinned release build
 on MacBook Pro Mac15,11 (Apple M3 Max, arm64). It runs seven fresh test

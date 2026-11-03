@@ -141,6 +141,10 @@ pub struct Replica {
 impl Replica {
     /// Construct from an already staged baseline, after the supplied game
     /// validator has checked its complete schema and dependency closure.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, schema, lifecycle, capacity or progress.
     pub fn from_baseline(
         seeds: &[PartitionSeed<'_>],
         codes: LifecycleCodes,
@@ -254,14 +258,14 @@ impl Replica {
     /// Reserved owner bytes in Rust values and Vec element capacities.
     /// Allocator bookkeeping and unrelated game-validator storage are excluded.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>()
-            + self.partitions.capacity() * std::mem::size_of::<Partition>()
-            + self.assignments.capacity() * std::mem::size_of::<Assignment>()
-            + self.scratch.capacity() * std::mem::size_of::<Actor>()
+        size_of::<Self>()
+            + self.partitions.capacity() * size_of::<Partition>()
+            + self.assignments.capacity() * size_of::<Assignment>()
+            + self.scratch.capacity() * size_of::<Actor>()
             + self
                 .partitions
                 .iter()
-                .map(|partition| partition.actors.capacity() * std::mem::size_of::<Actor>())
+                .map(|partition| partition.actors.capacity() * size_of::<Actor>())
                 .sum::<usize>()
     }
 
@@ -275,6 +279,10 @@ impl Replica {
     /// Admit one decoded state/lifecycle-only R4 payload. Outcomes, events and
     /// watermarks are refused until their own bounded atomic progress path is
     /// installed. A schema failure or generic refusal publishes no state.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, schema, lifecycle, capacity or progress.
     pub fn admit(
         &mut self,
         group: &GroupView<'_>,
@@ -286,6 +294,10 @@ impl Replica {
     /// Admit event-free results and state together after exact progress
     /// preflight. The result inventory commits only after state admission is
     /// known to succeed. Event-bearing groups still refuse before mutation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid baseline, schema, lifecycle, capacity or progress.
     pub fn admit_with_progress(
         &mut self,
         group: &GroupView<'_>,
@@ -362,7 +374,7 @@ impl Replica {
                 let at = self
                     .assignments
                     .binary_search_by_key(&actor.wire_id, |row| row.wire_id)
-                    .unwrap_err();
+                    .expect_err("checked unassigned actor");
                 self.assignments.insert(
                     at,
                     Assignment {
@@ -515,7 +527,8 @@ impl Replica {
                 if self.scratch.len() == MAX_PARTITION_ACTORS {
                     return Err(ReplicaError::ActorCapacity);
                 }
-                self.scratch.insert(pos.unwrap_err(), actor);
+                self.scratch
+                    .insert(pos.expect_err("checked absent lifecycle actor"), actor);
             }
         }
         for (i, actor) in group.actors().enumerate() {

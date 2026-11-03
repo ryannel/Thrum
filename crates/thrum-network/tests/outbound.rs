@@ -63,7 +63,10 @@ fn seed(group_id: u32) -> PartitionSeed {
 
 fn payload(group_id: u32, tick: u64, mandatory: bool) -> ([u8; r4::MAX_PAYLOAD_BYTES], usize) {
     let mut bytes = [0u8; r4::MAX_PAYLOAD_BYTES];
-    let actors = [actor(u64::from(group_id), tick as u16)];
+    let actors = [actor(
+        u64::from(group_id),
+        u16::try_from(tick).expect("bounded test value"),
+    )];
     let events = [Event {
         event_id: tick,
         commit_tick: tick,
@@ -88,7 +91,7 @@ fn payload(group_id: u32, tick: u64, mandatory: bool) -> ([u8; r4::MAX_PAYLOAD_B
         },
         &mut bytes,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     (bytes, size)
 }
 
@@ -102,19 +105,38 @@ fn state_only_coalesces_to_chronological_tail_across_other_partition() {
         UnsentQueue::from_baseline(invalid, &[seed(10)]).err(),
         Some(OutboundError::WrongIdentity)
     );
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)])
+        .expect("test operation should succeed");
     let reserved = queue.reserved_capacity_bytes();
     let (mut first, size) = payload(10, 1, false);
-    queue.capture(&first[..size], &Schema).unwrap();
+    queue
+        .capture(&first[..size], &Schema)
+        .expect("test operation should succeed");
     first[..size].fill(0);
-    assert_eq!(queue.peek_next().unwrap().unwrap().header.commit_tick, 1);
+    assert_eq!(
+        queue
+            .peek_next()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .header
+            .commit_tick,
+        1
+    );
     let (middle, size) = payload(20, 2, true);
-    queue.capture(&middle[..size], &Schema).unwrap();
+    queue
+        .capture(&middle[..size], &Schema)
+        .expect("test operation should succeed");
     let (last, size) = payload(10, 3, false);
-    queue.capture(&last[..size], &Schema).unwrap();
+    queue
+        .capture(&last[..size], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(queue.len(), 2);
     assert_eq!(
-        queue.peek_next().unwrap().unwrap().header,
+        queue
+            .peek_next()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .header,
         GroupHeader {
             group_id: 20,
             interest_generation: 1,
@@ -126,38 +148,74 @@ fn state_only_coalesces_to_chronological_tail_across_other_partition() {
         queue
             .transfer_next(|unit| {
                 assert!(unit.mandatory);
-                assert_eq!(r4::decode(unit.payload).unwrap().events().len(), 1);
+                assert_eq!(
+                    r4::decode(unit.payload)
+                        .expect("test operation should succeed")
+                        .events()
+                        .len(),
+                    1
+                );
                 Ok::<_, ()>(())
             })
-            .unwrap()
+            .expect("test operation should succeed")
     );
-    assert_eq!(queue.peek_next().unwrap().unwrap().header.commit_tick, 3);
-    assert_eq!(queue.peek_next().unwrap().unwrap().payload, &last[..size]);
+    assert_eq!(
+        queue
+            .peek_next()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .header
+            .commit_tick,
+        3
+    );
+    assert_eq!(
+        queue
+            .peek_next()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .payload,
+        &last[..size]
+    );
     assert_eq!(queue.reserved_capacity_bytes(), reserved);
 }
 
 #[test]
 fn mandatory_barrier_prevents_crossing_and_failed_transfer_retains_bytes() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    let mut queue =
+        UnsentQueue::from_baseline(key(1), &[seed(10)]).expect("test operation should succeed");
     for (tick, mandatory) in [(1, false), (2, true), (3, false)] {
         let (bytes, size) = payload(10, tick, mandatory);
-        queue.capture(&bytes[..size], &Schema).unwrap();
+        queue
+            .capture(&bytes[..size], &Schema)
+            .expect("test operation should succeed");
     }
     assert_eq!(queue.len(), 3);
-    let before = queue.peek_next().unwrap().unwrap().payload.to_vec();
+    let before = queue
+        .peek_next()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed")
+        .payload
+        .to_vec();
     assert_eq!(
         queue.transfer_next(|_| Err::<(), _>("no ledger credit")),
         Err(TransferError::Sink("no ledger credit"))
     );
     assert_eq!(queue.len(), 3);
-    assert_eq!(queue.peek_next().unwrap().unwrap().payload, before);
+    assert_eq!(
+        queue
+            .peek_next()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .payload,
+        before
+    );
     let mut ticks = Vec::new();
     while queue
         .transfer_next(|unit| {
             ticks.push(unit.header.commit_tick);
             Ok::<_, ()>(())
         })
-        .unwrap()
+        .expect("test operation should succeed")
     {}
     assert_eq!(ticks, [1, 2, 3]);
     assert!(queue.is_empty());
@@ -165,11 +223,14 @@ fn mandatory_barrier_prevents_crossing_and_failed_transfer_retains_bytes() {
 
 #[test]
 fn seventeenth_mandatory_unit_refuses_without_consuming_tick_or_slot() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    let mut queue =
+        UnsentQueue::from_baseline(key(1), &[seed(10)]).expect("test operation should succeed");
     let reserved = queue.reserved_capacity_bytes();
     for tick in 1..=16 {
         let (bytes, size) = payload(10, tick, true);
-        queue.capture(&bytes[..size], &Schema).unwrap();
+        queue
+            .capture(&bytes[..size], &Schema)
+            .expect("test operation should succeed");
     }
     let (seventeenth, size) = payload(10, 17, true);
     assert_eq!(
@@ -177,20 +238,29 @@ fn seventeenth_mandatory_unit_refuses_without_consuming_tick_or_slot() {
         Err(OutboundError::Capacity)
     );
     assert_eq!(queue.len(), 16);
-    queue.transfer_next(|_| Ok::<_, ()>(())).unwrap();
-    queue.capture(&seventeenth[..size], &Schema).unwrap();
+    queue
+        .transfer_next(|_| Ok::<_, ()>(()))
+        .expect("test operation should succeed");
+    queue
+        .capture(&seventeenth[..size], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(queue.len(), 16);
     assert_eq!(queue.reserved_capacity_bytes(), reserved);
 }
 
 #[test]
 fn batch_capacity_refusal_preserves_coalesced_bytes_and_all_cursors() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)])
+        .expect("test operation should succeed");
     let (old, old_len) = payload(10, 1, false);
-    queue.capture(&old[..old_len], &Schema).unwrap();
+    queue
+        .capture(&old[..old_len], &Schema)
+        .expect("test operation should succeed");
     for tick in 2..=16 {
         let (unit, len) = payload(20, tick, true);
-        queue.capture(&unit[..len], &Schema).unwrap();
+        queue
+            .capture(&unit[..len], &Schema)
+            .expect("test operation should succeed");
     }
     let (new_state, state_len) = payload(10, 17, false);
     let (mandatory, mandatory_len) = payload(20, 17, true);
@@ -200,13 +270,20 @@ fn batch_capacity_refusal_preserves_coalesced_bytes_and_all_cursors() {
         Err(OutboundError::Capacity)
     );
     assert_eq!(queue.len(), 16);
-    let first = queue.peek_next().unwrap().unwrap();
+    let first = queue
+        .peek_next()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(first.header.commit_tick, 1);
     assert_eq!(first.payload, &old[..old_len]);
     for _ in 0..2 {
-        queue.transfer_next(|_| Ok::<_, ()>(())).unwrap();
+        queue
+            .transfer_next(|_| Ok::<_, ()>(()))
+            .expect("test operation should succeed");
     }
-    queue.capture_batch(&batch, &Schema).unwrap();
+    queue
+        .capture_batch(&batch, &Schema)
+        .expect("test operation should succeed");
     assert_eq!(queue.len(), 16);
     let mut last_two = Vec::new();
     while queue
@@ -214,7 +291,7 @@ fn batch_capacity_refusal_preserves_coalesced_bytes_and_all_cursors() {
             last_two.push(unit.header);
             Ok::<_, ()>(())
         })
-        .unwrap()
+        .expect("test operation should succeed")
     {}
     assert_eq!(last_two[last_two.len() - 2].group_id, 10);
     assert_eq!(last_two[last_two.len() - 1].group_id, 20);
@@ -243,7 +320,8 @@ fn batch_schema_failure_and_hook_unwind_leave_queue_unmodified() {
         }
     }
 
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)])
+        .expect("test operation should succeed");
     let (first, first_len) = payload(10, 1, false);
     let (second, second_len) = payload(20, 1, false);
     let malformed = &second[..second_len - 1];
@@ -265,7 +343,9 @@ fn batch_schema_failure_and_hook_unwind_leave_queue_unmodified() {
         .is_err()
     );
     assert!(queue.is_empty());
-    queue.capture_batch(&batch, &Schema).unwrap();
+    queue
+        .capture_batch(&batch, &Schema)
+        .expect("test operation should succeed");
     assert_eq!(queue.len(), 2);
     assert_eq!(
         queue.capture_batch(&[batch[0]; 5], &Schema),
@@ -276,7 +356,8 @@ fn batch_schema_failure_and_hook_unwind_leave_queue_unmodified() {
 
 #[test]
 fn empty_batch_is_noop_and_repeated_destination_uses_final_exact_length() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    let mut queue =
+        UnsentQueue::from_baseline(key(1), &[seed(10)]).expect("test operation should succeed");
     assert_eq!(queue.capture_batch(&[], &Schema), Ok(()));
     assert!(queue.is_empty());
     let (long, long_len) = payload(10, 1, false);
@@ -296,38 +377,59 @@ fn empty_batch_is_noop_and_repeated_destination_uses_final_exact_length() {
         },
         &mut short,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     queue
         .capture_batch(&[&long[..long_len], &short[..short_len]], &Schema)
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(queue.len(), 1);
-    let final_unit = queue.peek_next().unwrap().unwrap();
+    let final_unit = queue
+        .peek_next()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(final_unit.header.commit_tick, 2);
     assert_eq!(final_unit.payload, &short[..short_len]);
-    assert_eq!(r4::decode(final_unit.payload).unwrap().actors().len(), 0);
+    assert_eq!(
+        r4::decode(final_unit.payload)
+            .expect("test operation should succeed")
+            .actors()
+            .len(),
+        0
+    );
 }
 
 #[test]
 fn malformed_and_stale_group_refuse_without_queue_mutation() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    let mut queue =
+        UnsentQueue::from_baseline(key(1), &[seed(10)]).expect("test operation should succeed");
     let (bytes, size) = payload(10, 1, false);
     assert_eq!(
         queue.capture(&bytes[..size - 1], &Schema),
         Err(OutboundError::Framing(r4::GroupError::LengthMismatch))
     );
     assert!(queue.is_empty());
-    queue.capture(&bytes[..size], &Schema).unwrap();
+    queue
+        .capture(&bytes[..size], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(
         queue.capture(&bytes[..size], &Schema),
         Err(OutboundError::StaleTick)
     );
     assert_eq!(queue.len(), 1);
-    assert_eq!(queue.peek_next().unwrap().unwrap().header.commit_tick, 1);
+    assert_eq!(
+        queue
+            .peek_next()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .header
+            .commit_tick,
+        1
+    );
 }
 
 #[test]
 fn partial_actor_updates_cannot_erase_each_other() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    let mut queue =
+        UnsentQueue::from_baseline(key(1), &[seed(10)]).expect("test operation should succeed");
     for (tick, id) in [(1, 101), (2, 102)] {
         let mut bytes = [0u8; r4::MAX_PAYLOAD_BYTES];
         let size = r4::encode(
@@ -338,15 +440,17 @@ fn partial_actor_updates_cannot_erase_each_other() {
                     commit_tick: tick,
                     resolved_through: 0,
                 },
-                actors: &[actor(id, tick as u16)],
+                actors: &[actor(id, u16::try_from(tick).expect("bounded test value"))],
                 lifecycle: &[],
                 results: &[],
                 events: &[],
             },
             &mut bytes,
         )
-        .unwrap();
-        queue.capture(&bytes[..size], &PartialSchema).unwrap();
+        .expect("test operation should succeed");
+        queue
+            .capture(&bytes[..size], &PartialSchema)
+            .expect("test operation should succeed");
     }
     assert_eq!(queue.len(), 2);
     let mut ids = Vec::new();
@@ -355,24 +459,27 @@ fn partial_actor_updates_cannot_erase_each_other() {
             assert!(unit.mandatory);
             ids.push(
                 r4::decode(unit.payload)
-                    .unwrap()
+                    .expect("test operation should succeed")
                     .actors()
                     .next()
-                    .unwrap()
+                    .expect("test operation should succeed")
                     .wire_id,
             );
             Ok::<_, ()>(())
         })
-        .unwrap()
+        .expect("test operation should succeed")
     {}
     assert_eq!(ids, [101, 102]);
 }
 
 #[test]
 fn capture_refuses_cross_partition_time_regression() {
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)])
+        .expect("test operation should succeed");
     let (later, later_size) = payload(10, 3, false);
-    queue.capture(&later[..later_size], &Schema).unwrap();
+    queue
+        .capture(&later[..later_size], &Schema)
+        .expect("test operation should succeed");
     let (earlier, earlier_size) = payload(20, 2, false);
     assert_eq!(
         queue.capture(&earlier[..earlier_size], &Schema),
@@ -380,7 +487,9 @@ fn capture_refuses_cross_partition_time_regression() {
     );
     assert_eq!(queue.len(), 1);
     let (equal, equal_size) = payload(20, 3, false);
-    queue.capture(&equal[..equal_size], &Schema).unwrap();
+    queue
+        .capture(&equal[..equal_size], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(queue.len(), 2);
     let mut groups = Vec::new();
     while queue
@@ -388,7 +497,7 @@ fn capture_refuses_cross_partition_time_regression() {
             groups.push((unit.header.commit_tick, unit.header.group_id));
             Ok::<_, ()>(())
         })
-        .unwrap()
+        .expect("test operation should succeed")
     {}
     assert_eq!(groups, [(3, 10), (3, 20)]);
 }
@@ -397,9 +506,12 @@ fn capture_refuses_cross_partition_time_regression() {
 fn unwound_external_transfer_poisons_queue_until_peer_teardown() {
     use std::panic::{AssertUnwindSafe, catch_unwind};
 
-    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    let mut queue =
+        UnsentQueue::from_baseline(key(1), &[seed(10)]).expect("test operation should succeed");
     let (bytes, size) = payload(10, 1, true);
-    queue.capture(&bytes[..size], &Schema).unwrap();
+    queue
+        .capture(&bytes[..size], &Schema)
+        .expect("test operation should succeed");
     let caught = catch_unwind(AssertUnwindSafe(|| {
         let _: Result<bool, TransferError<()>> =
             queue.transfer_next(|_| panic!("uncertain sink publication"));
@@ -414,66 +526,5 @@ fn unwound_external_transfer_poisons_queue_until_peer_teardown() {
     assert_eq!(
         queue.transfer_next(|_| Ok::<_, ()>(())),
         Err(TransferError::Poisoned)
-    );
-}
-
-#[test]
-#[ignore = "isolated release-mode four-peer state-only queue cost probe"]
-fn measure_four_peer_three_tick_state_only_queue() {
-    use std::{hint::black_box, time::Instant};
-
-    let seeds = [seed(10), seed(20), seed(30), seed(40)];
-    let mut queues: [UnsentQueue; 4] =
-        std::array::from_fn(|i| UnsentQueue::from_baseline(key(i as u64 + 1), &seeds).unwrap());
-    let reserved: usize = queues
-        .iter()
-        .map(UnsentQueue::reserved_capacity_bytes)
-        .sum();
-    let mut payloads = [[0u8; r4::MAX_PAYLOAD_BYTES]; 4];
-    let mut lengths = [0; 4];
-    for (group, seed) in seeds.iter().enumerate() {
-        let (bytes, size) = payload(seed.group_id, 1, false);
-        payloads[group] = bytes;
-        lengths[group] = size;
-    }
-    const WINDOWS: u64 = 2_000;
-    let start = Instant::now();
-    let mut checksum = 0u64;
-    for window in 0..WINDOWS {
-        for within in 1..=3 {
-            let tick = window * 3 + within;
-            for group in 0..4 {
-                payloads[group][8..16].copy_from_slice(&tick.to_le_bytes());
-                for queue in &mut queues {
-                    queue
-                        .capture(&payloads[group][..lengths[group]], &Schema)
-                        .unwrap();
-                }
-            }
-        }
-        for queue in &mut queues {
-            assert_eq!(queue.len(), 4);
-            while queue
-                .transfer_next(|unit| {
-                    for &byte in unit.payload {
-                        checksum = checksum.rotate_left(3) ^ u64::from(byte);
-                    }
-                    Ok::<_, ()>(())
-                })
-                .unwrap()
-            {}
-        }
-    }
-    black_box(checksum);
-    assert_eq!(
-        reserved,
-        queues
-            .iter()
-            .map(UnsentQueue::reserved_capacity_bytes)
-            .sum()
-    );
-    println!(
-        "n1_four_peer_three_tick_state_only_queue_window_ns={:.1} reserved_owner_bytes={reserved}",
-        start.elapsed().as_nanos() as f64 / WINDOWS as f64
     );
 }

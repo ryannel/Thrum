@@ -81,33 +81,40 @@ fn payload(tick: u64, group_id: u32, event_count: usize) -> Vec<u8> {
         },
         &mut bytes,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     bytes.truncate(len);
     bytes
 }
 
 fn four_partition_peer() -> OrdinaryPeer {
     let seeds: [_; 4] = std::array::from_fn(|index| PartitionSeed {
-        group_id: index as u32 + 1,
+        group_id: u32::try_from(index).expect("bounded test value") + 1,
         interest_generation: 1,
         sample_tick: 0,
         resolved_through: 0,
     });
-    OrdinaryPeer::from_baseline(key(), &seeds, 0, 0).unwrap()
+    OrdinaryPeer::from_baseline(key(), &seeds, 0, 0).expect("test operation should succeed")
 }
 
 fn mixed_queued_and_sent_peer() -> OrdinaryPeer {
     let mut peer = four_partition_peer();
-    let first: [_; 4] = std::array::from_fn(|index| payload(1, index as u32 + 1, 32));
+    let first: [_; 4] = std::array::from_fn(|index| {
+        payload(1, u32::try_from(index).expect("bounded test value") + 1, 32)
+    });
     let borrowed: [&[u8]; 4] = std::array::from_fn(|index| first[index].as_slice());
-    peer.capture_batch(&borrowed, &StructuralOnly).unwrap();
+    peer.capture_batch(&borrowed, &StructuralOnly)
+        .expect("test operation should succeed");
     assert_eq!(peer.submit_next(0), Ok(Some(1)));
     assert_eq!(peer.submit_next(0), Ok(Some(2)));
     for sequence in 1..=2 {
-        let frame = peer.next_write().unwrap().unwrap();
+        let frame = peer
+            .next_write()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed");
         assert_eq!(frame.sequence, sequence);
         let length = frame.first.len() + frame.second.len();
-        peer.accept_written(sequence, length).unwrap();
+        peer.accept_written(sequence, length)
+            .expect("test operation should succeed");
     }
     assert_eq!(peer.queued_groups(), 2);
     assert_eq!(peer.outstanding_frames(), 2);
@@ -117,10 +124,15 @@ fn mixed_queued_and_sent_peer() -> OrdinaryPeer {
 #[test]
 fn aggregate_event_pressure_refuses_whole_tick_before_mutation() {
     let mut peer = four_partition_peer();
-    let first: [_; 4] = std::array::from_fn(|index| payload(1, index as u32 + 1, 32));
+    let first: [_; 4] = std::array::from_fn(|index| {
+        payload(1, u32::try_from(index).expect("bounded test value") + 1, 32)
+    });
     let first_refs: [&[u8]; 4] = std::array::from_fn(|index| first[index].as_slice());
-    peer.capture_batch(&first_refs, &StructuralOnly).unwrap();
-    let second: [_; 4] = std::array::from_fn(|index| payload(2, index as u32 + 1, 32));
+    peer.capture_batch(&first_refs, &StructuralOnly)
+        .expect("test operation should succeed");
+    let second: [_; 4] = std::array::from_fn(|index| {
+        payload(2, u32::try_from(index).expect("bounded test value") + 1, 32)
+    });
     let second_refs: [&[u8]; 4] = std::array::from_fn(|index| second[index].as_slice());
     assert_eq!(
         peer.capture_batch(&second_refs, &StructuralOnly),
@@ -139,10 +151,12 @@ fn aggregate_result_pressure_refuses_before_fifth_tick() {
         sample_tick: 0,
         resolved_through: 0,
     };
-    let mut peer = OrdinaryPeer::from_baseline(key(), &[seed], 0, 0).unwrap();
+    let mut peer =
+        OrdinaryPeer::from_baseline(key(), &[seed], 0, 0).expect("test operation should succeed");
     for tick in 1..=4 {
         let group = payload(tick, 1, 0);
-        peer.capture_batch(&[&group], &StructuralOnly).unwrap();
+        peer.capture_batch(&[&group], &StructuralOnly)
+            .expect("test operation should succeed");
     }
     let fifth = payload(5, 1, 0);
     assert_eq!(
@@ -157,7 +171,9 @@ fn aggregate_result_pressure_refuses_before_fifth_tick() {
 #[test]
 fn mixed_queued_and_sent_events_share_one_credit() {
     let mut peer = mixed_queued_and_sent_peer();
-    let second: [_; 4] = std::array::from_fn(|index| payload(2, index as u32 + 1, 16));
+    let second: [_; 4] = std::array::from_fn(|index| {
+        payload(2, u32::try_from(index).expect("bounded test value") + 1, 16)
+    });
     let borrowed: [&[u8]; 4] = std::array::from_fn(|index| second[index].as_slice());
     assert_eq!(
         peer.capture_batch(&borrowed, &StructuralOnly),
@@ -171,7 +187,9 @@ fn mixed_queued_and_sent_events_share_one_credit() {
 
 #[test]
 fn failed_authority_ack_keeps_credit_until_exact_retry() {
-    let second: [_; 4] = std::array::from_fn(|index| payload(2, index as u32 + 1, 16));
+    let second: [_; 4] = std::array::from_fn(|index| {
+        payload(2, u32::try_from(index).expect("bounded test value") + 1, 16)
+    });
     let borrowed: [&[u8]; 4] = std::array::from_fn(|index| second[index].as_slice());
 
     let mut refused = mixed_queued_and_sent_peer();
@@ -198,9 +216,11 @@ fn failed_authority_ack_keeps_credit_until_exact_retry() {
             assert_eq!(through, 64);
             Ok::<(), &str>(())
         })
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(retried.outstanding_frames(), 0);
-    retried.capture_batch(&borrowed, &StructuralOnly).unwrap();
+    retried
+        .capture_batch(&borrowed, &StructuralOnly)
+        .expect("test operation should succeed");
     assert_eq!(retried.queued_groups(), 6);
     assert_eq!(retried.last_sequence(), 2);
     assert_eq!(retried.phase(), PeerPhase::Ordinary);
@@ -212,9 +232,16 @@ fn exact_ack_releases_aggregate_credit_for_next_mandatory_tick() {
     let reserved = peer.reserved_capacity_bytes();
     let mut authority_frontier = 0;
     for tick in 1..=3 {
-        let groups: [_; 4] = std::array::from_fn(|index| payload(tick, index as u32 + 1, 32));
+        let groups: [_; 4] = std::array::from_fn(|index| {
+            payload(
+                tick,
+                u32::try_from(index).expect("bounded test value") + 1,
+                32,
+            )
+        });
         let borrowed: [&[u8]; 4] = std::array::from_fn(|index| groups[index].as_slice());
-        peer.capture_batch(&borrowed, &StructuralOnly).unwrap();
+        peer.capture_batch(&borrowed, &StructuralOnly)
+            .expect("test operation should succeed");
         assert_eq!(peer.queued_groups(), 4);
         for group_index in 0..4 {
             let sequence = (tick - 1) * 4 + group_index + 1;
@@ -222,13 +249,16 @@ fn exact_ack_releases_aggregate_credit_for_next_mandatory_tick() {
         }
         for group_index in 0..4 {
             let sequence = (tick - 1) * 4 + group_index + 1;
-            let frame = peer.next_write().unwrap().unwrap();
+            let frame = peer
+                .next_write()
+                .expect("test operation should succeed")
+                .expect("test operation should succeed");
             assert_eq!(frame.sequence, sequence);
             let mut bytes = Vec::from(frame.first);
             bytes.extend_from_slice(frame.second);
-            let message = envelope::decode(&bytes).unwrap();
-            let group = r4::decode(message.payload).unwrap();
-            let group_id = ((sequence - 1) % 4 + 1) as u32;
+            let message = envelope::decode(&bytes).expect("test operation should succeed");
+            let group = r4::decode(message.payload).expect("test operation should succeed");
+            let group_id = u32::try_from((sequence - 1) % 4 + 1).expect("four partitions");
             assert_eq!(message.header.message_sequence, sequence);
             assert_eq!(
                 (group.header.commit_tick, group.header.group_id),
@@ -238,8 +268,16 @@ fn exact_ack_releases_aggregate_credit_for_next_mandatory_tick() {
             assert_eq!(group.results().len(), if group_id == 1 { 64 } else { 0 });
             assert_eq!(group.events().len(), 32);
             let first_event = (tick - 1) * 256 + u64::from(group_id - 1) * 64 + 1;
-            assert_eq!(group.events().next().unwrap().event_id, first_event);
-            peer.accept_written(sequence, bytes.len()).unwrap();
+            assert_eq!(
+                group
+                    .events()
+                    .next()
+                    .expect("test operation should succeed")
+                    .event_id,
+                first_event
+            );
+            peer.accept_written(sequence, bytes.len())
+                .expect("test operation should succeed");
         }
         let through = tick * 4;
         peer.acknowledge_through(key(), through, |_, result_through| {
@@ -247,7 +285,7 @@ fn exact_ack_releases_aggregate_credit_for_next_mandatory_tick() {
             authority_frontier = result_through;
             Ok::<(), ()>(())
         })
-        .unwrap();
+        .expect("test operation should succeed");
     }
     assert_eq!(peer.queued_groups(), 0);
     assert_eq!(peer.outstanding_frames(), 0);

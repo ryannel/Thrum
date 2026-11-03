@@ -1,5 +1,7 @@
 # Ordinary sent-frame ledger slice — 2026-11-03
 
+> Status after the code-quality cleanup: the ignored timing probe described here was removed from the active test tree. This page retains its historical result; the former test source is at `git show 6493763:crates/thrum-network/tests/sent.rs`. The quoted command is a historical reproduction recipe and needs a maintained benchmark before use again.
+
 `thrum-network::sent::OrdinaryLedger` owns exact submitted StateGroup bytes
 after external game-schema and closure certification. One peer/epoch reserves a
 160 KiB circular byte arena and 112 inline sequence entries. Each entry charges

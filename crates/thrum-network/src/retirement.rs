@@ -50,6 +50,10 @@ pub struct AuthorityRetirement {
 impl AuthorityRetirement {
     /// Start from a verified same-epoch authority-retired prefix. A new
     /// peer/connection incarnation requires a new instance and baseline.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid identity, retirement ordering or capacity.
     pub fn new(key: PeerKey, retired_through: u64) -> Result<Self, RetirementError<()>> {
         if key.connection_epoch == 0 || key.match_id == [0; 16] {
             return Err(RetirementError::WrongIdentity);
@@ -84,14 +88,18 @@ impl AuthorityRetirement {
     }
     /// Reserved Rust value/Vec capacity bytes, excluding allocator metadata.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>()
+        size_of::<Self>()
             + (self.higher.capacity() + self.candidate.capacity() + self.receipt.capacity())
-                * std::mem::size_of::<u64>()
+                * size_of::<u64>()
     }
 
     /// Copy one exact result-ID receipt after a validated ledger admission
     /// ACK. This helper does not authenticate the wire ACK itself. A refusal
     /// never overwrites an already occupied receipt or public frontier.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid identity, retirement ordering or capacity.
     pub fn stage(&mut self, key: PeerKey, ids: &[u64]) -> Result<(), RetirementError<()>> {
         if self.authority_call_in_progress {
             return Err(RetirementError::Poisoned);
@@ -138,6 +146,10 @@ impl AuthorityRetirement {
     /// its contiguous-prefix ACK. It must leave authority unchanged on Err.
     /// An unwind poisons this helper and requires peer teardown. On ordinary
     /// callback error the copied receipt stays occupied for retry.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid identity, retirement ordering or capacity.
     pub fn finish<E>(
         &mut self,
         key: PeerKey,

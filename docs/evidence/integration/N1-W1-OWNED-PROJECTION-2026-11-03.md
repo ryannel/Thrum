@@ -1,5 +1,7 @@
 # Real W1 capture through N1 peer owners — 2026-11-03
 
+> Status after the code-quality cleanup: the ignored timing probe described here was removed from the active test tree. This page retains its historical result; the former test source is at `git show 6493763:crates/thrum-network/tests/w1_capture.rs`. The quoted command is a historical reproduction recipe and needs a maintained benchmark before use again.
+
 The new no-socket fixture consumes real `HeadlessHost` authority
 publications from a 128-cell world. It extracts four 32-actor partitions once
 per tick, then uses one reusable `CaptureScratch` to encode the complete

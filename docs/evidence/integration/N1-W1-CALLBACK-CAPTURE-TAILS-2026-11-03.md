@@ -1,5 +1,7 @@
 # W1 callback plus N1 capture tails — 2026-11-03
 
+> Status after the code-quality cleanup: the ignored timing probe described here was removed from the active test tree. This page retains its historical result; the former test source is at `git show 6493763:crates/thrum-network/tests/w1_capture.rs`. The quoted command is a historical reproduction recipe and needs a maintained benchmark before use again.
+
 This release-only, no-socket fixture times each `HeadlessHost::on_callback`
 through complete four-peer R4 projection, schema-validated atomic queue
 capture and callback-report drop. It uses the actual 128-cell authority, four

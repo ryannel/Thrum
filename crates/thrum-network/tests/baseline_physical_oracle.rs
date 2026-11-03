@@ -123,8 +123,12 @@ impl PhysicalBaseline {
         let mut payload = [0u8; 120];
         payload[..8].copy_from_slice(&self.baseline_id.to_le_bytes());
         payload[8..16].copy_from_slice(&capture_tick.to_le_bytes());
-        payload[16..20].copy_from_slice(&(self.image_len as u32).to_le_bytes());
-        payload[20..22].copy_from_slice(&(self.chunk_count as u16).to_le_bytes());
+        payload[16..20].copy_from_slice(
+            &(u32::try_from(self.image_len).expect("bounded test value")).to_le_bytes(),
+        );
+        payload[20..22].copy_from_slice(
+            &(u16::try_from(self.chunk_count).expect("bounded test value")).to_le_bytes(),
+        );
         payload[24..56].fill(1); // Fixed test protocol hash.
         payload[56..88].fill(2); // Fixed test semantic hash.
         payload[88..120].copy_from_slice(&self.image_sha256);
@@ -158,9 +162,10 @@ impl PhysicalBaseline {
             .iter()
             .position(Option::is_none)
             .ok_or(Refusal::Credit)?;
-        let mut payload = [0u8; 12 + CHUNK_BYTES];
+        let mut payload = vec![0u8; 12 + CHUNK_BYTES];
         payload[..8].copy_from_slice(&self.baseline_id.to_le_bytes());
-        payload[8..12].copy_from_slice(&(index as u32).to_le_bytes());
+        payload[8..12]
+            .copy_from_slice(&(u32::try_from(index).expect("bounded test value")).to_le_bytes());
         payload[12..12 + data.len()].copy_from_slice(data);
         let start = slot * CHUNK_FRAME_BYTES;
         let len = envelope::encode(
@@ -251,9 +256,15 @@ impl PhysicalBaseline {
             return Err(Refusal::Sequence);
         }
         if self.begin.is_some_and(|frame| frame.sequence == sequence) {
-            self.begin.as_mut().unwrap().written += count;
+            self.begin
+                .as_mut()
+                .expect("test operation should succeed")
+                .written += count;
         } else if self.end.is_some_and(|frame| frame.sequence == sequence) {
-            self.end.as_mut().unwrap().written += count;
+            self.end
+                .as_mut()
+                .expect("test operation should succeed")
+                .written += count;
         } else {
             self.chunks[..self.next_chunk]
                 .iter_mut()
@@ -309,9 +320,11 @@ fn key() -> PeerKey {
 }
 
 fn write_all(stager: &mut PhysicalBaseline) {
-    while let Some(frame) = stager.next_write().unwrap() {
+    while let Some(frame) = stager.next_write().expect("test operation should succeed") {
         let remaining = frame.bytes.len() - frame.accepted;
-        stager.accept_written(frame.sequence, remaining).unwrap();
+        stager
+            .accept_written(frame.sequence, remaining)
+            .expect("test operation should succeed");
     }
 }
 
@@ -319,14 +332,17 @@ fn write_all(stager: &mut PhysicalBaseline) {
 fn eight_chunks_use_two_physical_credits_and_keep_exact_tombstones() {
     // Every chunk has distinct bytes, so a wrong image offset is observable.
     let image: Vec<u8> = (0..IMAGE_BYTES)
-        .map(|offset| ((offset / CHUNK_BYTES) * 17 + offset % 251) as u8)
+        .map(|offset| {
+            u8::try_from(((offset / CHUNK_BYTES) * 17 + offset % 251) % 256).expect("byte pattern")
+        })
         .collect(); // Separate immutable image owner.
-    let mut stager = PhysicalBaseline::new(key(), 41, 2, image.len(), [3; 32]).unwrap();
+    let mut stager = PhysicalBaseline::new(key(), 41, 2, image.len(), [3; 32])
+        .expect("test operation should succeed");
     assert_eq!(stager.bytes.len(), STORAGE_BYTES);
-    assert!(std::mem::size_of::<PhysicalBaseline>() + STORAGE_BYTES <= 96 * 1024);
-    stager.begin(3, 100).unwrap();
-    let begin =
-        envelope::decode(&stager.bytes[BEGIN_OFFSET..BEGIN_OFFSET + BEGIN_FRAME_BYTES]).unwrap();
+    assert!(size_of::<PhysicalBaseline>() + STORAGE_BYTES <= 96 * 1024);
+    stager.begin(3, 100).expect("test operation should succeed");
+    let begin = envelope::decode(&stager.bytes[BEGIN_OFFSET..BEGIN_OFFSET + BEGIN_FRAME_BYTES])
+        .expect("test operation should succeed");
     assert_eq!(begin.header.kind, Kind::BaselineBegin);
     assert_eq!(begin.header.message_sequence, 3);
     assert_eq!(begin.header.match_id, key().match_id);
@@ -335,16 +351,21 @@ fn eight_chunks_use_two_physical_credits_and_keep_exact_tombstones() {
     assert_eq!(begin.header.acknowledged_sequence, 0);
     assert_eq!(begin.payload[..8], 41u64.to_le_bytes());
     assert_eq!(begin.payload[8..16], 100u64.to_le_bytes());
-    assert_eq!(begin.payload[16..20], (IMAGE_BYTES as u32).to_le_bytes());
+    assert_eq!(
+        begin.payload[16..20],
+        (u32::try_from(IMAGE_BYTES).expect("bounded test value")).to_le_bytes()
+    );
     assert_eq!(begin.payload[20..22], 8u16.to_le_bytes());
     assert_eq!(begin.payload[22..24], [0; 2]);
     assert_eq!(begin.payload[24..56], [1; 32]);
     assert_eq!(begin.payload[56..88], [2; 32]);
     assert_eq!(begin.payload[88..120], [3; 32]);
-    stager.submit_chunk(4, 0, &image[..CHUNK_BYTES]).unwrap();
+    stager
+        .submit_chunk(4, 0, &image[..CHUNK_BYTES])
+        .expect("test operation should succeed");
     stager
         .submit_chunk(5, 1, &image[CHUNK_BYTES..2 * CHUNK_BYTES])
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(
         stager.retained_bytes,
         BEGIN_FRAME_BYTES + 2 * CHUNK_FRAME_BYTES
@@ -356,13 +377,24 @@ fn eight_chunks_use_two_physical_credits_and_keep_exact_tombstones() {
     );
     assert_eq!(stager.last_sequence, 5);
     assert_eq!(stager.chunk_ack(key(), 41, 1), Err(Refusal::Premature));
-    let begin_frame = stager.next_write().unwrap().unwrap();
+    let begin_frame = stager
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(
-        envelope::decode(begin_frame.bytes).unwrap().header.kind,
+        envelope::decode(begin_frame.bytes)
+            .expect("test operation should succeed")
+            .header
+            .kind,
         Kind::BaselineBegin
     );
-    stager.accept_written(3, 5).unwrap();
-    let frame = stager.next_write().unwrap().unwrap();
+    stager
+        .accept_written(3, 5)
+        .expect("test operation should succeed");
+    let frame = stager
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!((frame.sequence, frame.accepted), (3, 5));
     write_all(&mut stager);
     assert_eq!(stager.chunk_ack(key(), 42, 1), Err(Refusal::Stale));
@@ -372,16 +404,24 @@ fn eight_chunks_use_two_physical_credits_and_keep_exact_tombstones() {
         ..key()
     };
     assert_eq!(stager.chunk_ack(wrong, 41, 1), Err(Refusal::Stale));
-    stager.chunk_ack(key(), 41, 1).unwrap(); // Out-of-order staging ACK.
+    stager
+        .chunk_ack(key(), 41, 1)
+        .expect("test operation should succeed"); // Out-of-order staging ACK.
     let chunk0_before = stager.bytes[..CHUNK_FRAME_BYTES].to_vec();
     stager
         .submit_chunk(6, 2, &image[2 * CHUNK_BYTES..3 * CHUNK_BYTES])
-        .unwrap();
-    assert_eq!(stager.chunks[2].unwrap().slot, Some(1));
+        .expect("test operation should succeed");
+    assert_eq!(
+        stager.chunks[2]
+            .expect("test operation should succeed")
+            .slot,
+        Some(1)
+    );
     assert_eq!(stager.chunk_ack(key(), 41, 1), Err(Refusal::Stale));
     assert_eq!(stager.slot_owner, [Some(0), Some(2)]);
     assert_eq!(&stager.bytes[..CHUNK_FRAME_BYTES], chunk0_before);
-    let chunk2 = envelope::decode(&stager.bytes[CHUNK_FRAME_BYTES..2 * CHUNK_FRAME_BYTES]).unwrap();
+    let chunk2 = envelope::decode(&stager.bytes[CHUNK_FRAME_BYTES..2 * CHUNK_FRAME_BYTES])
+        .expect("test operation should succeed");
     assert_eq!(chunk2.header.message_sequence, 6);
     assert_eq!(chunk2.payload[..8], 41u64.to_le_bytes());
     assert_eq!(chunk2.payload[8..12], 2u32.to_le_bytes());
@@ -390,23 +430,30 @@ fn eight_chunks_use_two_physical_credits_and_keep_exact_tombstones() {
         &image[2 * CHUNK_BYTES..3 * CHUNK_BYTES]
     );
     write_all(&mut stager);
-    stager.chunk_ack(key(), 41, 0).unwrap();
+    stager
+        .chunk_ack(key(), 41, 0)
+        .expect("test operation should succeed");
     for index in 3..8 {
         let start = index * CHUNK_BYTES;
         stager
             .submit_chunk(index as u64 + 4, index, &image[start..start + CHUNK_BYTES])
-            .unwrap();
+            .expect("test operation should succeed");
         write_all(&mut stager);
-        stager.chunk_ack(key(), 41, index - 1).unwrap();
+        stager
+            .chunk_ack(key(), 41, index - 1)
+            .expect("test operation should succeed");
     }
-    stager.chunk_ack(key(), 41, 7).unwrap();
+    stager
+        .chunk_ack(key(), 41, 7)
+        .expect("test operation should succeed");
     assert_eq!(stager.retained_bytes, BEGIN_FRAME_BYTES);
     assert_eq!(stager.tombstones(), 9);
-    stager.end(12).unwrap();
+    stager.end(12).expect("test operation should succeed");
     write_all(&mut stager);
     assert_eq!(stager.retained_bytes, BEGIN_FRAME_BYTES + END_FRAME_BYTES);
     assert_eq!(stager.tombstones(), 10);
-    let end = envelope::decode(&stager.bytes[END_OFFSET..END_OFFSET + END_FRAME_BYTES]).unwrap();
+    let end = envelope::decode(&stager.bytes[END_OFFSET..END_OFFSET + END_FRAME_BYTES])
+        .expect("test operation should succeed");
     assert_eq!(end.header.kind, Kind::BaselineEnd);
     assert_eq!(end.header.message_sequence, 12);
     assert_eq!(end.payload, 41u64.to_le_bytes());
@@ -418,8 +465,9 @@ fn partial_final_chunk_and_uncertain_write_keep_exact_sequence_and_bytes() {
     assert!(PhysicalBaseline::new(key(), 1, 0, 0, [0; 32]).is_err());
     assert!(PhysicalBaseline::new(key(), 1, 0, IMAGE_BYTES + 1, [0; 32]).is_err());
     let image = vec![0x7b; CHUNK_BYTES + 1];
-    let mut stager = PhysicalBaseline::new(key(), 5, 0, image.len(), [9; 32]).unwrap();
-    stager.begin(1, 1).unwrap();
+    let mut stager = PhysicalBaseline::new(key(), 5, 0, image.len(), [9; 32])
+        .expect("test operation should succeed");
+    stager.begin(1, 1).expect("test operation should succeed");
     assert_eq!(
         stager.submit_chunk(3, 0, &image[..CHUNK_BYTES]),
         Err(Refusal::Sequence)
@@ -429,11 +477,18 @@ fn partial_final_chunk_and_uncertain_write_keep_exact_sequence_and_bytes() {
         Err(Refusal::Invalid)
     );
     assert_eq!(stager.last_sequence, 1);
-    stager.submit_chunk(2, 0, &image[..CHUNK_BYTES]).unwrap();
+    stager
+        .submit_chunk(2, 0, &image[..CHUNK_BYTES])
+        .expect("test operation should succeed");
     assert_eq!(stager.end(3), Err(Refusal::Premature));
-    stager.submit_chunk(3, 1, &image[CHUNK_BYTES..]).unwrap();
+    stager
+        .submit_chunk(3, 1, &image[CHUNK_BYTES..])
+        .expect("test operation should succeed");
     assert_eq!(
-        stager.chunks[1].unwrap().frame.len,
+        stager.chunks[1]
+            .expect("test operation should succeed")
+            .frame
+            .len,
         envelope::HEADER_BYTES + 12 + 1
     );
     let snapshot = stager.bytes[..CHUNK_FRAME_BYTES].to_vec();

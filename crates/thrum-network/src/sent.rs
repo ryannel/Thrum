@@ -139,6 +139,14 @@ impl OrdinaryLedger {
     /// Start a new peer/epoch with no outstanding ordinary frames. Sequence
     /// zero is reserved for initial Hello; a nonzero seed is for a verified
     /// existing same-epoch baseline/control prefix.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a previously checked internal size or ownership invariant is broken.
     pub fn new(
         key: PeerKey,
         last_sequence: u64,
@@ -174,8 +182,8 @@ impl OrdinaryLedger {
 
     /// Current exact reserved Rust value/arena bytes, excluding allocator metadata.
     pub fn reserved_capacity_bytes(&self) -> usize {
-        std::mem::size_of::<Self>() + self.arena.len() + self.retirement.reserved_capacity_bytes()
-            - std::mem::size_of::<AuthorityRetirement>()
+        size_of::<Self>() + self.arena.len() + self.retirement.reserved_capacity_bytes()
+            - size_of::<AuthorityRetirement>()
     }
     /// Exact retained frame bytes, including charged 12-byte per-frame padding.
     pub fn retained_frame_bytes(&self) -> usize {
@@ -228,6 +236,14 @@ impl OrdinaryLedger {
     /// On refusal, the queue retains the original unit and no sequence is
     /// consumed. This is the no-socket owner-to-owner boundary; the W1
     /// capture producer and authenticated session remain separate gates.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a previously checked internal size or ownership invariant is broken.
     pub fn submit_next_from_queue(
         &mut self,
         queue: &mut UnsentQueue,
@@ -257,6 +273,14 @@ impl OrdinaryLedger {
     /// caller must certify game schema, complete closure and match-lifetime
     /// event-ID policy before calling. This owner deduplicates pending events,
     /// while a future session/event owner handles admitted-history replay.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a previously checked internal size or ownership invariant is broken.
     pub fn submit_state_group(
         &mut self,
         key: PeerKey,
@@ -352,6 +376,10 @@ impl OrdinaryLedger {
 
     /// First incomplete frame in stream order. Both slices are immutable
     /// until an admission ACK or explicit peer teardown.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
     pub fn next_write(&self) -> Result<Option<FrameParts<'_>>, WriteError> {
         if self.is_poisoned() {
             return Err(WriteError::Poisoned);
@@ -376,6 +404,14 @@ impl OrdinaryLedger {
 
     /// Record only bytes whose transport adapter knows it accepted. The
     /// adapter must close/quarantine on uncertain write disposition.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a previously checked internal size or ownership invariant is broken.
     pub fn accept_written(&mut self, sequence: u64, count: usize) -> Result<(), WriteError> {
         if self.is_poisoned() {
             return Err(WriteError::Poisoned);
@@ -411,6 +447,10 @@ impl OrdinaryLedger {
     /// ordinary frame. It is never admission ACK and frees no retained bytes
     /// or identities. Replacement framing is a separate later owner; until
     /// then the peer must close rather than resume ordinary submission.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
     pub fn reject_state_group(&mut self, key: PeerKey, sequence: u64) -> Result<(), RejectError> {
         if self.is_poisoned() {
             return Err(RejectError::Poisoned);
@@ -441,6 +481,16 @@ impl OrdinaryLedger {
     /// frame/journal bytes only after the authority result frontier accepts
     /// its exact identities. A callback error retains the occupied receipt
     /// for an exact retry; an unwind poisons retirement and requires close.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid peer state, frame capacity, write or acknowledgement.
+    ///
+    /// # Panics
+    ///
+    /// The caller's authority callback may panic. Such an unwind poisons the
+    /// retirement owner; an internal size or ownership invariant failure can
+    /// also panic.
     pub fn acknowledge_through<E>(
         &mut self,
         key: PeerKey,

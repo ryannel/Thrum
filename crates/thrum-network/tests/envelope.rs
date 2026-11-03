@@ -17,7 +17,8 @@ fn header(kind: Kind) -> Header {
 fn exact_golden_header_and_borrowed_payload() {
     let payload = [0x91, 0xa2, 0xb3];
     let mut encoded = [0u8; 67];
-    let size = envelope::encode(header(Kind::StateGroup), &payload, &mut encoded).unwrap();
+    let size = envelope::encode(header(Kind::StateGroup), &payload, &mut encoded)
+        .expect("test operation should succeed");
     assert_eq!(size, 67);
     let expected = [
         b'E', b'N', b'G', b'1', 1, 0, 10, 0, 3, 0, 0, 0, 0, 0, 0, 0, b'0', b'1', b'2', b'3', b'4',
@@ -26,7 +27,7 @@ fn exact_golden_header_and_borrowed_payload() {
         0x28, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x91, 0xa2, 0xb3,
     ];
     assert_eq!(encoded, expected);
-    let decoded = envelope::decode(&encoded).unwrap();
+    let decoded = envelope::decode(&encoded).expect("test operation should succeed");
     assert_eq!(decoded.header, header(Kind::StateGroup));
     assert_eq!(decoded.payload, payload);
     assert_eq!(decoded.payload.as_ptr(), encoded[64..].as_ptr());
@@ -35,7 +36,7 @@ fn exact_golden_header_and_borrowed_payload() {
 #[test]
 fn malformed_header_and_length_refuse() {
     let mut bytes = [0u8; 64];
-    envelope::encode(header(Kind::Clock), &[], &mut bytes).unwrap();
+    envelope::encode(header(Kind::Clock), &[], &mut bytes).expect("test operation should succeed");
     assert!(matches!(
         envelope::decode(&bytes[..63]),
         Err(EnvelopeError::Length)
@@ -57,7 +58,10 @@ fn malformed_header_and_length_refuse() {
         let mut recognized = bytes;
         recognized[6] = ordinal;
         assert_eq!(
-            envelope::decode(&recognized).unwrap().header.kind as u8,
+            envelope::decode(&recognized)
+                .expect("test operation should succeed")
+                .header
+                .kind as u8,
             ordinal
         );
     }
@@ -80,8 +84,13 @@ fn hello_zero_identity_and_exact_size_caps() {
         acknowledged_sequence: 0,
     };
     let mut bytes = [0u8; 64];
-    envelope::encode(hello, &[], &mut bytes).unwrap();
-    assert_eq!(envelope::decode(&bytes).unwrap().header, hello);
+    envelope::encode(hello, &[], &mut bytes).expect("test operation should succeed");
+    assert_eq!(
+        envelope::decode(&bytes)
+            .expect("test operation should succeed")
+            .header,
+        hello
+    );
     for invalid in [
         Header {
             message_sequence: 1,
@@ -104,10 +113,17 @@ fn hello_zero_identity_and_exact_size_caps() {
     let payload = vec![0x5a; envelope::MAX_MESSAGE_BYTES - envelope::HEADER_BYTES];
     let mut max = vec![0u8; envelope::MAX_MESSAGE_BYTES];
     assert_eq!(
-        envelope::encode(header(Kind::BaselineChunk), &payload, &mut max).unwrap(),
+        envelope::encode(header(Kind::BaselineChunk), &payload, &mut max)
+            .expect("test operation should succeed"),
         envelope::MAX_MESSAGE_BYTES
     );
-    assert_eq!(envelope::decode(&max).unwrap().payload.len(), payload.len());
+    assert_eq!(
+        envelope::decode(&max)
+            .expect("test operation should succeed")
+            .payload
+            .len(),
+        payload.len()
+    );
     assert_eq!(
         envelope::encode(header(Kind::Clock), &payload, &mut max[..63]),
         Err(EnvelopeError::DestinationTooSmall)
@@ -115,13 +131,13 @@ fn hello_zero_identity_and_exact_size_caps() {
     assert_eq!(
         envelope::encode(
             header(Kind::Clock),
-            &[0u8; envelope::MAX_MESSAGE_BYTES],
+            &vec![0u8; envelope::MAX_MESSAGE_BYTES],
             &mut max
         ),
         Err(EnvelopeError::MessageTooLarge)
     );
     assert!(matches!(
-        envelope::decode(&[0u8; envelope::MAX_MESSAGE_BYTES + 1]),
+        envelope::decode(&vec![0u8; envelope::MAX_MESSAGE_BYTES + 1]),
         Err(EnvelopeError::MessageTooLarge)
     ));
 }

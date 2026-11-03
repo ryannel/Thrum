@@ -66,7 +66,7 @@ fn setup() -> (Replica, Progress) {
         },
         &Schema,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     let progress = Progress::from_baseline(
         10,
         1,
@@ -84,7 +84,7 @@ fn setup() -> (Replica, Progress) {
             },
         ],
     )
-    .unwrap();
+    .expect("test operation should succeed");
     (replica, progress)
 }
 
@@ -113,8 +113,8 @@ fn admit(
         },
         &mut bytes,
     )
-    .unwrap();
-    let view = r4::decode(&bytes[..size]).unwrap();
+    .expect("test operation should succeed");
+    let view = r4::decode(&bytes[..size]).expect("test operation should succeed");
     replica.admit_with_progress(&view, progress, &Schema)
 }
 
@@ -122,7 +122,8 @@ fn admit(
 fn higher_result_waits_for_gap_then_watermark_advances_exactly() {
     let (mut replica, mut progress) = setup();
     let reserved = progress.reserved_capacity_bytes();
-    admit(&mut replica, &mut progress, 1, 11, 6, &[result(8, 1)], &[]).unwrap();
+    admit(&mut replica, &mut progress, 1, 11, 6, &[result(8, 1)], &[])
+        .expect("test operation should succeed");
     assert_eq!(replica.actor(1), Some((actor(11), 1)));
     assert_eq!(progress.resolved_through(), 6);
     assert_eq!(progress.pending_count(), 2);
@@ -140,7 +141,8 @@ fn higher_result_waits_for_gap_then_watermark_advances_exactly() {
         ))
     );
     assert_eq!(replica.actor(1), Some((actor(11), 1)));
-    admit(&mut replica, &mut progress, 2, 12, 8, &[result(7, 2)], &[]).unwrap();
+    admit(&mut replica, &mut progress, 2, 12, 8, &[result(7, 2)], &[])
+        .expect("test operation should succeed");
     assert_eq!(progress.resolved_through(), 8);
     assert_eq!(progress.pending_count(), 0);
     assert_eq!(
@@ -174,15 +176,16 @@ fn state_refusal_does_not_commit_preflighted_result() {
         },
         &mut bytes,
     )
-    .unwrap();
-    let view = r4::decode(&bytes[..size]).unwrap();
+    .expect("test operation should succeed");
+    let view = r4::decode(&bytes[..size]).expect("test operation should succeed");
     assert_eq!(
         replica.admit_with_progress(&view, &mut progress, &Schema),
         Err(ProgressAdmissionError::State(ReplicaError::Schema))
     );
     assert_eq!(replica.actor(1), Some((actor(10), 0)));
     assert_eq!(progress.resolved_through(), 6);
-    admit(&mut replica, &mut progress, 1, 11, 6, &[result(8, 1)], &[]).unwrap();
+    admit(&mut replica, &mut progress, 1, 11, 6, &[result(8, 1)], &[])
+        .expect("test operation should succeed");
 }
 
 #[test]
@@ -217,7 +220,8 @@ fn event_bearing_result_refuses_before_state_or_progress() {
 
 #[test]
 fn finite_registration_refuses_before_next_sequence() {
-    let mut progress = Progress::from_baseline(10, 1, 0, &[]).unwrap();
+    let mut progress =
+        Progress::from_baseline(10, 1, 0, &[]).expect("test operation should succeed");
     let reserved = progress.reserved_capacity_bytes();
     for expected in 1..=256 {
         assert_eq!(progress.reserve_input(5), Ok(expected));
@@ -258,7 +262,7 @@ fn baseline_sample_time_refuses_old_newly_reported_result() {
         },
         &Schema,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     let mut progress = Progress::from_baseline(
         10,
         1,
@@ -269,7 +273,7 @@ fn baseline_sample_time_refuses_old_newly_reported_result() {
             resolved: false,
         }],
     )
-    .unwrap();
+    .expect("test operation should succeed");
     assert_eq!(
         admit(&mut replica, &mut progress, 11, 99, 7, &[result(7, 5)], &[]),
         Err(ProgressAdmissionError::Progress(
@@ -300,8 +304,9 @@ fn baseline_individually_resolved_higher_input_closes_after_gap() {
             },
         ],
     )
-    .unwrap();
-    admit(&mut replica, &mut progress, 1, 11, 8, &[result(7, 1)], &[]).unwrap();
+    .expect("test operation should succeed");
+    admit(&mut replica, &mut progress, 1, 11, 8, &[result(7, 1)], &[])
+        .expect("test operation should succeed");
     assert_eq!(progress.resolved_through(), 8);
     assert_eq!(progress.pending_count(), 0);
 }

@@ -40,7 +40,7 @@ fn payload_for_partition(
         },
         &mut bytes,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     bytes.truncate(len);
     bytes
 }
@@ -86,23 +86,28 @@ fn actor() -> Actor {
 }
 
 fn write_all(ledger: &mut OrdinaryLedger) {
-    while let Some(frame) = ledger.next_write().unwrap() {
+    while let Some(frame) = ledger.next_write().expect("test operation should succeed") {
         let sequence = frame.sequence;
         let remaining = frame.first.len() + frame.second.len() - frame.accepted_bytes;
-        ledger.accept_written(sequence, remaining).unwrap();
+        ledger
+            .accept_written(sequence, remaining)
+            .expect("test operation should succeed");
     }
 }
 
 #[test]
 fn exact_result_identity_survives_frame_and_journal_retirement_across_gap() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 6).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 6).expect("test operation should succeed");
     let reserved = ledger.reserved_capacity_bytes();
     let group8 = payload(1, &[], &[result(8)], &[]);
     assert_eq!(ledger.submit_state_group(key(), &group8, 0), Ok(1));
-    let frame = ledger.next_write().unwrap().unwrap();
+    let frame = ledger
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(frame.sequence, 1);
-    assert!(frame.second.is_empty());
-    let decoded = envelope::decode(frame.first).unwrap();
+    assert_eq!(frame.second, []);
+    let decoded = envelope::decode(frame.first).expect("test operation should succeed");
     assert_eq!(decoded.header.message_sequence, 1);
     assert_eq!(decoded.payload, group8);
     assert_eq!(
@@ -134,9 +139,11 @@ fn exact_result_identity_survives_frame_and_journal_retirement_across_gap() {
         .acknowledge_through(key(), 2, |_, _| -> Result<(), ()> {
             panic!("higher result cannot advance authority yet")
         })
-        .unwrap();
+        .expect("test operation should succeed");
     let group7 = payload(3, &[], &[result(7)], &[]);
-    ledger.submit_state_group(key(), &group7, 0).unwrap();
+    ledger
+        .submit_state_group(key(), &group7, 0)
+        .expect("test operation should succeed");
     write_all(&mut ledger);
     let mut called = 0;
     ledger
@@ -146,7 +153,7 @@ fn exact_result_identity_survives_frame_and_journal_retirement_across_gap() {
             called += 1;
             Ok::<_, ()>(())
         })
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(called, 1);
     assert_eq!(ledger.result_retired_through(), 9);
     assert_eq!(ledger.admitted_higher_result_count(), 0);
@@ -155,7 +162,7 @@ fn exact_result_identity_survives_frame_and_journal_retirement_across_gap() {
 
 #[test]
 fn physical_ring_splits_frame_without_wrap_padding_or_alias() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let actors = [actor(); 32];
     let group = payload(1, &actors, &[], &[]);
     let charge = envelope::HEADER_BYTES + group.len() + 12;
@@ -169,32 +176,41 @@ fn physical_ring_splits_frame_without_wrap_padding_or_alias() {
     );
     assert_eq!(ledger.last_sequence(), 86);
     for sequence in 1..=5 {
-        let frame = ledger.next_write().unwrap().unwrap();
+        let frame = ledger
+            .next_write()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed");
         assert_eq!(frame.sequence, sequence);
         ledger
             .accept_written(sequence, frame.first.len() + frame.second.len())
-            .unwrap();
+            .expect("test operation should succeed");
     }
     ledger
         .acknowledge_through(key(), 5, |_, _| -> Result<(), ()> {
             panic!("state-only ACK has no authority result advance")
         })
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(ledger.retained_frame_bytes(), 81 * charge);
     assert_eq!(ledger.submit_state_group(key(), &group, 0), Ok(87));
     for sequence in 6..=86 {
-        let frame = ledger.next_write().unwrap().unwrap();
+        let frame = ledger
+            .next_write()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed");
         assert_eq!(frame.sequence, sequence);
         ledger
             .accept_written(sequence, frame.first.len() + frame.second.len())
-            .unwrap();
+            .expect("test operation should succeed");
     }
-    let frame = ledger.next_write().unwrap().unwrap();
+    let frame = ledger
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(frame.sequence, 87);
-    assert!(!frame.second.is_empty());
+    assert_ne!(frame.second, []);
     let mut joined = frame.first.to_vec();
     joined.extend_from_slice(frame.second);
-    let decoded = envelope::decode(&joined).unwrap();
+    let decoded = envelope::decode(&joined).expect("test operation should succeed");
     assert_eq!(decoded.header.message_sequence, 87);
     assert_eq!(decoded.payload, group);
     assert_eq!(ledger.retained_frame_bytes(), 82 * charge);
@@ -202,7 +218,7 @@ fn physical_ring_splits_frame_without_wrap_padding_or_alias() {
 
 #[test]
 fn exact_capacity_refuses_before_sequence_or_journal_mutation() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let empty = payload(1, &[], &[], &[]);
     for sequence in 1..=112 {
         assert_eq!(ledger.submit_state_group(key(), &empty, 0), Ok(sequence));
@@ -215,7 +231,8 @@ fn exact_capacity_refuses_before_sequence_or_journal_mutation() {
     assert_eq!(ledger.last_sequence(), 112);
     assert_eq!(ledger.retained_frame_bytes(), bytes);
 
-    let mut result_ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut result_ledger =
+        OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let results: Vec<_> = (1..=64).map(result).collect();
     for block in 0..4 {
         let results: Vec<_> = results
@@ -224,7 +241,7 @@ fn exact_capacity_refuses_before_sequence_or_journal_mutation() {
             .collect();
         result_ledger
             .submit_state_group(key(), &payload(1, &[], &results, &[]), 0)
-            .unwrap();
+            .expect("test operation should succeed");
     }
     assert_eq!(
         result_ledger.submit_state_group(key(), &payload(1, &[], &[result(257)], &[]), 0),
@@ -232,12 +249,12 @@ fn exact_capacity_refuses_before_sequence_or_journal_mutation() {
     );
     assert_eq!(result_ledger.last_sequence(), 4);
 
-    let mut event_ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut event_ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     for block in 0..2 {
         let events: Vec<_> = (1..=64).map(|id| event(id + block * 64)).collect();
         event_ledger
             .submit_state_group(key(), &payload(1, &[], &[], &events), 0)
-            .unwrap();
+            .expect("test operation should succeed");
     }
     assert_eq!(
         event_ledger.submit_state_group(key(), &payload(1, &[], &[], &[event(129)]), 0),
@@ -248,9 +265,11 @@ fn exact_capacity_refuses_before_sequence_or_journal_mutation() {
 
 #[test]
 fn callback_refusal_retains_exact_receipt_and_wrong_ack_cannot_retarget_it() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let group = payload(1, &[], &[result(1)], &[]);
-    ledger.submit_state_group(key(), &group, 0).unwrap();
+    ledger
+        .submit_state_group(key(), &group, 0)
+        .expect("test operation should succeed");
     write_all(&mut ledger);
     assert_eq!(
         ledger.acknowledge_through(key(), 1, |_, _| Err("busy")),
@@ -280,12 +299,17 @@ fn callback_refusal_retains_exact_receipt_and_wrong_ack_cannot_retarget_it() {
 
 #[test]
 fn known_partial_write_keeps_sequence_and_uncertain_write_quarantines() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let group = payload(1, &[], &[], &[]);
-    ledger.submit_state_group(key(), &group, 0).unwrap();
+    ledger
+        .submit_state_group(key(), &group, 0)
+        .expect("test operation should succeed");
     assert_eq!(ledger.accept_written(2, 1), Err(WriteError::WrongSequence));
     assert_eq!(ledger.accept_written(1, 5), Ok(()));
-    let frame = ledger.next_write().unwrap().unwrap();
+    let frame = ledger
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(frame.sequence, 1);
     assert_eq!(frame.accepted_bytes, 5);
     assert_eq!(
@@ -304,9 +328,11 @@ fn known_partial_write_keeps_sequence_and_uncertain_write_quarantines() {
 #[test]
 fn unwound_authority_callback_quarantines_both_owners() {
     use std::panic::{AssertUnwindSafe, catch_unwind};
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let group = payload(1, &[], &[result(1)], &[]);
-    ledger.submit_state_group(key(), &group, 0).unwrap();
+    ledger
+        .submit_state_group(key(), &group, 0)
+        .expect("test operation should succeed");
     write_all(&mut ledger);
     let caught = catch_unwind(AssertUnwindSafe(|| {
         let _: Result<u64, AckError<()>> =
@@ -333,14 +359,16 @@ fn wrong_epoch_duplicate_identity_and_sequence_exhaustion_do_not_mutate() {
         connection_epoch: 8,
         ..key()
     };
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let group = payload(1, &[], &[result(1)], &[event(1)]);
     assert_eq!(
         ledger.submit_state_group(wrong, &group, 0),
         Err(SubmitError::WrongIdentity)
     );
     assert_eq!(ledger.last_sequence(), 0);
-    ledger.submit_state_group(key(), &group, 0).unwrap();
+    ledger
+        .submit_state_group(key(), &group, 0)
+        .expect("test operation should succeed");
     let bytes = ledger.retained_frame_bytes();
     assert_eq!(
         ledger.submit_state_group(key(), &group, 0),
@@ -349,7 +377,8 @@ fn wrong_epoch_duplicate_identity_and_sequence_exhaustion_do_not_mutate() {
     assert_eq!(ledger.last_sequence(), 1);
     assert_eq!(ledger.retained_frame_bytes(), bytes);
 
-    let mut exhausted = OrdinaryLedger::new(key(), u64::MAX, 0).unwrap();
+    let mut exhausted =
+        OrdinaryLedger::new(key(), u64::MAX, 0).expect("test operation should succeed");
     assert_eq!(
         exhausted.submit_state_group(key(), &group, 0),
         Err(SubmitError::SequenceExhausted)
@@ -359,12 +388,14 @@ fn wrong_epoch_duplicate_identity_and_sequence_exhaustion_do_not_mutate() {
 
 #[test]
 fn exact_reject_blocks_admission_and_new_ordinary_sequences_without_releasing_ids() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 6).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 6).expect("test operation should succeed");
     let first = payload(1, &[], &[result(7)], &[]);
     let rejected = payload(2, &[], &[result(9)], &[event(90)]);
     let later = payload(3, &[], &[], &[]);
     for group in [&first, &rejected, &later] {
-        ledger.submit_state_group(key(), group, 0).unwrap();
+        ledger
+            .submit_state_group(key(), group, 0)
+            .expect("test operation should succeed");
     }
     assert_eq!(
         ledger.reject_state_group(key(), 2),
@@ -385,7 +416,9 @@ fn exact_reject_blocks_admission_and_new_ordinary_sequences_without_releasing_id
         Err(RejectError::UnknownSequence)
     );
     let retained = ledger.retained_frame_bytes();
-    ledger.reject_state_group(key(), 2).unwrap();
+    ledger
+        .reject_state_group(key(), 2)
+        .expect("test operation should succeed");
     assert_eq!(ledger.rejected_sequence(), Some(2));
     assert_eq!(
         ledger.acknowledge_through(key(), 3, |_, _| -> Result<(), ()> {
@@ -405,7 +438,7 @@ fn exact_reject_blocks_admission_and_new_ordinary_sequences_without_releasing_id
             assert_eq!(through, 7);
             Ok::<_, ()>(())
         })
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(ledger.result_retired_through(), 7);
     assert_eq!(ledger.outstanding_entries(), 2);
     assert_eq!(
@@ -420,18 +453,34 @@ fn exact_reject_blocks_admission_and_new_ordinary_sequences_without_releasing_id
 
 #[test]
 fn reject_stops_exposing_later_assigned_but_unwritten_frame() {
-    let mut ledger = OrdinaryLedger::new(key(), 0, 0).unwrap();
+    let mut ledger = OrdinaryLedger::new(key(), 0, 0).expect("test operation should succeed");
     let group = payload(1, &[], &[], &[]);
-    ledger.submit_state_group(key(), &group, 0).unwrap();
-    ledger.submit_state_group(key(), &group, 0).unwrap();
-    let first = ledger.next_write().unwrap().unwrap();
+    ledger
+        .submit_state_group(key(), &group, 0)
+        .expect("test operation should succeed");
+    ledger
+        .submit_state_group(key(), &group, 0)
+        .expect("test operation should succeed");
+    let first = ledger
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     assert_eq!(first.sequence, 1);
     ledger
         .accept_written(1, first.first.len() + first.second.len())
-        .unwrap();
-    assert_eq!(ledger.next_write().unwrap().unwrap().sequence, 2);
+        .expect("test operation should succeed");
+    assert_eq!(
+        ledger
+            .next_write()
+            .expect("test operation should succeed")
+            .expect("test operation should succeed")
+            .sequence,
+        2
+    );
     let retained = ledger.retained_frame_bytes();
-    ledger.reject_state_group(key(), 1).unwrap();
+    ledger
+        .reject_state_group(key(), 1)
+        .expect("test operation should succeed");
     assert_eq!(
         ledger.next_write().err(),
         Some(WriteError::ReplacementRequired)
@@ -443,84 +492,4 @@ fn reject_stops_exposing_later_assigned_but_unwritten_frame() {
     assert_eq!(ledger.retained_frame_bytes(), retained);
     assert_eq!(ledger.outstanding_entries(), 2);
     assert_eq!(ledger.last_sequence(), 2);
-}
-
-#[test]
-#[ignore = "local release-only coalesced state-only sent-frame cost probe"]
-fn measure_four_peer_coalesced_state_only_release_shape() {
-    use std::hint::black_box;
-    use std::time::Instant;
-
-    let mut groups: [_; 4] = std::array::from_fn(|partition| {
-        let actors: [_; 32] = std::array::from_fn(|index| Actor {
-            wire_id: (partition * 32 + index + 1) as u64,
-            quaternion: [0, 0, 0, 32767],
-            visibility_generation: 1,
-            ..actor()
-        });
-        payload_for_partition(3, partition as u32 + 1, &actors, &[], &[])
-    });
-    let keys: [_; 4] = std::array::from_fn(|index| PeerKey {
-        peer_id: index as u64 + 1,
-        connection_epoch: index as u64 + 101,
-        ..key()
-    });
-    let mut ledgers: Vec<_> = keys
-        .iter()
-        .map(|&key| OrdinaryLedger::new(key, 0, 0).unwrap())
-        .collect();
-    let reserved: usize = ledgers
-        .iter()
-        .map(OrdinaryLedger::reserved_capacity_bytes)
-        .sum();
-    const WINDOWS: u64 = 2_000;
-    let start = Instant::now();
-    let mut checksum = 0u64;
-    for window in 0..WINDOWS {
-        let tick = window * 3 + 3;
-        for group in &mut groups {
-            group[8..16].copy_from_slice(&tick.to_le_bytes());
-        }
-        for (ledger, &key) in ledgers.iter_mut().zip(&keys) {
-            for group in &groups {
-                checksum ^= black_box(ledger.submit_state_group(key, black_box(group), 0).unwrap());
-            }
-            while let Some(frame) = ledger.next_write().unwrap() {
-                for &byte in frame.first.iter().chain(frame.second) {
-                    checksum = checksum
-                        .wrapping_mul(16_777_619)
-                        .wrapping_add(u64::from(byte));
-                }
-                let sequence = frame.sequence;
-                let remaining = frame.first.len() + frame.second.len() - frame.accepted_bytes;
-                ledger.accept_written(sequence, remaining).unwrap();
-            }
-            let through = ledger.last_sequence();
-            checksum ^= ledger
-                .acknowledge_through(key, through, |_, _| Ok::<_, ()>(()))
-                .unwrap();
-            black_box(&*ledger);
-        }
-    }
-    let elapsed = start.elapsed();
-    assert_eq!(
-        ledgers
-            .iter()
-            .map(OrdinaryLedger::retained_frame_bytes)
-            .sum::<usize>(),
-        0
-    );
-    assert_eq!(
-        ledgers
-            .iter()
-            .map(OrdinaryLedger::reserved_capacity_bytes)
-            .sum::<usize>(),
-        reserved
-    );
-    println!(
-        "n1_sent_four_peer_coalesced_release_shape_ns={:.1} reserved_rust_bytes={} checksum={}",
-        elapsed.as_nanos() as f64 / WINDOWS as f64,
-        reserved,
-        black_box(checksum)
-    );
 }

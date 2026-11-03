@@ -42,7 +42,7 @@ fn peer_for(identity: PeerKey) -> OrdinaryPeer {
         0,
         0,
     )
-    .unwrap()
+    .expect("test operation should succeed")
 }
 
 fn peer() -> OrdinaryPeer {
@@ -69,7 +69,7 @@ fn two_partition_peer_for(identity: PeerKey) -> OrdinaryPeer {
         0,
         0,
     )
-    .unwrap()
+    .expect("test operation should succeed")
 }
 
 fn two_partition_peer() -> OrdinaryPeer {
@@ -78,12 +78,12 @@ fn two_partition_peer() -> OrdinaryPeer {
 
 fn four_partition_peer() -> OrdinaryPeer {
     let seeds: [_; 4] = std::array::from_fn(|index| PartitionSeed {
-        group_id: index as u32 + 5,
+        group_id: u32::try_from(index).expect("bounded test value") + 5,
         interest_generation: 1,
         sample_tick: 0,
         resolved_through: 0,
     });
-    OrdinaryPeer::from_baseline(key(), &seeds, 0, 0).unwrap()
+    OrdinaryPeer::from_baseline(key(), &seeds, 0, 0).expect("test operation should succeed")
 }
 
 fn push_group(
@@ -99,7 +99,7 @@ fn push_group(
         velocity: [0; 3],
         mode: 7,
         flags: 0,
-        health: tick as u16,
+        health: u16::try_from(tick).expect("bounded test value"),
         inventory_revision: 0,
         owner: 0,
         visibility_generation: 1,
@@ -127,7 +127,7 @@ fn payload(tick: u64, result: bool) -> Vec<u8> {
         velocity: [0; 3],
         mode: 7,
         flags: 0,
-        health: tick as u16,
+        health: u16::try_from(tick).expect("bounded test value"),
         inventory_revision: 0,
         owner: 0,
         visibility_generation: 1,
@@ -158,25 +158,32 @@ fn payload(tick: u64, result: bool) -> Vec<u8> {
         },
         &mut bytes,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     bytes.truncate(len);
     bytes
 }
 
 fn write_next(peer: &mut OrdinaryPeer, expected_tick: u64) {
-    let frame = peer.next_write().unwrap().unwrap();
+    let frame = peer
+        .next_write()
+        .expect("test operation should succeed")
+        .expect("test operation should succeed");
     let sequence = frame.sequence;
     let count = frame.first.len() + frame.second.len();
     let mut bytes = Vec::with_capacity(count);
     bytes.extend_from_slice(frame.first);
     bytes.extend_from_slice(frame.second);
-    let message = envelope::decode(&bytes).unwrap();
+    let message = envelope::decode(&bytes).expect("test operation should succeed");
     assert_eq!(message.header.message_sequence, sequence);
     assert_eq!(
-        r4::decode(message.payload).unwrap().header.commit_tick,
+        r4::decode(message.payload)
+            .expect("test operation should succeed")
+            .header
+            .commit_tick,
         expected_tick
     );
-    peer.accept_written(sequence, count).unwrap();
+    peer.accept_written(sequence, count)
+        .expect("test operation should succeed");
 }
 
 #[test]
@@ -185,9 +192,12 @@ fn one_owner_coalesces_before_sequence_and_retries_exact_ack_receipt() {
     let first = payload(1, false);
     let second = payload(2, false);
     let result = payload(3, true);
-    peer.capture_batch(&[&first], &Schema).unwrap();
-    peer.capture_batch(&[&second], &Schema).unwrap();
-    peer.capture_batch(&[&result], &Schema).unwrap();
+    peer.capture_batch(&[&first], &Schema)
+        .expect("test operation should succeed");
+    peer.capture_batch(&[&second], &Schema)
+        .expect("test operation should succeed");
+    peer.capture_batch(&[&result], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(peer.queued_groups(), 2);
     assert_eq!(peer.last_sequence(), 0);
     assert_eq!(peer.submit_next(0), Ok(Some(1)));
@@ -234,8 +244,12 @@ fn failed_capture_closes_only_this_peer_without_assigning_a_sequence() {
         ..key()
     });
     let first = payload(1, true);
-    failed.capture_batch(&[&first], &Schema).unwrap();
-    healthy.capture_batch(&[&first], &Schema).unwrap();
+    failed
+        .capture_batch(&[&first], &Schema)
+        .expect("test operation should succeed");
+    healthy
+        .capture_batch(&[&first], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(
         failed.capture_batch(&[&first], &Schema),
         Err(PeerError::Operation(OutboundError::StaleTick))
@@ -261,7 +275,8 @@ fn caught_schema_hook_unwind_cannot_resume_publication() {
     let mut peer = peer();
     let first = payload(1, false);
     let second = payload(2, false);
-    peer.capture_batch(&[&first], &Schema).unwrap();
+    peer.capture_batch(&[&first], &Schema)
+        .expect("test operation should succeed");
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let _ = peer.capture_batch(&[&second], &PanicSchema);
     }));
@@ -277,12 +292,14 @@ fn frame_pressure_retains_queued_unit_and_retries_after_admission() {
     let mut peer = peer();
     for tick in 1..=112 {
         let group = payload(tick, false);
-        peer.capture_batch(&[&group], &Schema).unwrap();
+        peer.capture_batch(&[&group], &Schema)
+            .expect("test operation should succeed");
         assert_eq!(peer.submit_next(0), Ok(Some(tick)));
     }
     assert_eq!(peer.outstanding_frames(), 112);
     let waiting = payload(113, false);
-    peer.capture_batch(&[&waiting], &Schema).unwrap();
+    peer.capture_batch(&[&waiting], &Schema)
+        .expect("test operation should succeed");
     assert_eq!(
         peer.submit_next(0),
         Err(PeerError::Operation(TransferError::Sink(
@@ -308,17 +325,27 @@ fn frame_pressure_retains_queued_unit_and_retries_after_admission() {
 fn exact_reject_and_uncertain_write_require_close() {
     let mut rejected = peer();
     let group = payload(1, false);
-    rejected.capture_batch(&[&group], &Schema).unwrap();
-    rejected.submit_next(0).unwrap();
+    rejected
+        .capture_batch(&[&group], &Schema)
+        .expect("test operation should succeed");
+    rejected
+        .submit_next(0)
+        .expect("test operation should succeed");
     write_next(&mut rejected, 1);
-    rejected.reject_state_group(key(), 1).unwrap();
+    rejected
+        .reject_state_group(key(), 1)
+        .expect("test operation should succeed");
     assert_eq!(rejected.phase(), PeerPhase::RequiresClose);
     assert_eq!(rejected.outstanding_frames(), 1);
     assert_eq!(rejected.submit_next(0), Err(PeerError::RequiresClose));
 
     let mut uncertain = peer();
-    uncertain.capture_batch(&[&group], &Schema).unwrap();
-    uncertain.submit_next(0).unwrap();
+    uncertain
+        .capture_batch(&[&group], &Schema)
+        .expect("test operation should succeed");
+    uncertain
+        .submit_next(0)
+        .expect("test operation should succeed");
     uncertain.quarantine_uncertain_write();
     assert_eq!(uncertain.phase(), PeerPhase::RequiresClose);
     assert!(matches!(
@@ -332,8 +359,9 @@ fn exact_reject_and_uncertain_write_require_close() {
 fn caught_authority_ack_unwind_closes_the_peer_with_frame_retained() {
     let mut peer = peer();
     let result = payload(1, true);
-    peer.capture_batch(&[&result], &Schema).unwrap();
-    peer.submit_next(0).unwrap();
+    peer.capture_batch(&[&result], &Schema)
+        .expect("test operation should succeed");
+    peer.submit_next(0).expect("test operation should succeed");
     write_next(&mut peer, 1);
     let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let _ = peer.acknowledge_through(key(), 1, |_, _| -> Result<(), ()> {
@@ -355,7 +383,7 @@ fn projected_capture_requires_each_admitted_partition_at_one_tick() {
     let mut scratch = CaptureScratch::new();
     assert_eq!(
         scratch.reserved_capacity_bytes(),
-        std::mem::size_of::<CaptureScratch>() + 4 * r4::MAX_PAYLOAD_BYTES
+        size_of::<CaptureScratch>() + 4 * r4::MAX_PAYLOAD_BYTES
     );
     let mut peer = two_partition_peer();
     peer.capture_projected(
@@ -366,7 +394,7 @@ fn projected_capture_requires_each_admitted_partition_at_one_tick() {
         },
         &Schema,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     assert_eq!(peer.queued_groups(), 2);
     assert_eq!(peer.submit_next(0), Ok(Some(1)));
     write_next(&mut peer, 1);
@@ -387,7 +415,7 @@ fn projected_capture_requires_each_admitted_partition_at_one_tick() {
             },
             &Schema,
         )
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(other.queued_groups(), 2);
 
     let mut missing = two_partition_peer();
@@ -430,6 +458,12 @@ fn projected_capture_requires_each_admitted_partition_at_one_tick() {
 
 #[test]
 fn projected_capture_fault_and_unwind_close_without_partial_queue_mutation() {
+    struct RejectSix;
+    impl OutboundValidator for RejectSix {
+        fn group(&self, group: &r4::GroupView<'_>) -> Option<StateCoverage> {
+            (group.header.group_id != 6).then_some(StateCoverage::CompletePartition)
+        }
+    }
     let mut scratch = CaptureScratch::new();
     let mut refused = two_partition_peer();
     assert_eq!(
@@ -462,12 +496,6 @@ fn projected_capture_fault_and_unwind_close_without_partial_queue_mutation() {
     assert_eq!(panicked.queued_groups(), 0);
     assert_eq!(panicked.last_sequence(), 0);
 
-    struct RejectSix;
-    impl OutboundValidator for RejectSix {
-        fn group(&self, group: &r4::GroupView<'_>) -> Option<StateCoverage> {
-            (group.header.group_id != 6).then_some(StateCoverage::CompletePartition)
-        }
-    }
     let mut invalid_schema = two_partition_peer();
     assert_eq!(
         invalid_schema.capture_projected(
@@ -519,6 +547,6 @@ fn ignored_fifth_scratch_emission_cannot_publish_four_partial_groups() {
             },
             &Schema,
         )
-        .unwrap();
+        .expect("test operation should succeed");
     assert_eq!(healthy.queued_groups(), 4);
 }

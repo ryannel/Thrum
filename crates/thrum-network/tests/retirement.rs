@@ -12,10 +12,12 @@ fn key() -> PeerKey {
 
 #[test]
 fn admitted_higher_identity_survives_independent_journal_reuse() {
-    let mut retirement = AuthorityRetirement::new(key(), 6).unwrap();
+    let mut retirement = AuthorityRetirement::new(key(), 6).expect("test operation should succeed");
     let reserved = retirement.reserved_capacity_bytes();
     let mut calls = Vec::new();
-    retirement.stage(key(), &[8]).unwrap();
+    retirement
+        .stage(key(), &[8])
+        .expect("test operation should succeed");
     assert_eq!(
         retirement.stage(key(), &[9]),
         Err(RetirementError::ReceiptOccupied)
@@ -28,7 +30,7 @@ fn admitted_higher_identity_survives_independent_journal_reuse() {
         }),
         Ok(6)
     );
-    assert!(calls.is_empty());
+    assert_eq!(calls, Vec::new());
     assert_eq!(retirement.admitted_higher_count(), 1);
 
     // The physical sent journal can recycle a slot once result 8's frame is
@@ -38,7 +40,9 @@ fn admitted_higher_identity_survives_independent_journal_reuse() {
     recycled_journal_slot = Some(99);
     assert_eq!(recycled_journal_slot, Some(99));
 
-    retirement.stage(key(), &[9]).unwrap();
+    retirement
+        .stage(key(), &[9])
+        .expect("test operation should succeed");
     assert_eq!(
         retirement.finish(key(), |_, through| {
             calls.push(through);
@@ -46,7 +50,9 @@ fn admitted_higher_identity_survives_independent_journal_reuse() {
         }),
         Ok(6)
     );
-    retirement.stage(key(), &[7]).unwrap();
+    retirement
+        .stage(key(), &[7])
+        .expect("test operation should succeed");
     assert_eq!(
         retirement.finish(key(), |_, through| {
             calls.push(through);
@@ -57,7 +63,9 @@ fn admitted_higher_identity_survives_independent_journal_reuse() {
     assert_eq!(calls, [9]);
     assert_eq!(retirement.admitted_higher_count(), 0);
     assert_eq!(retirement.reserved_capacity_bytes(), reserved);
-    retirement.stage(key(), &[8]).unwrap();
+    retirement
+        .stage(key(), &[8])
+        .expect("test operation should succeed");
     let duplicate: Result<u64, RetirementError<()>> =
         retirement.finish(key(), |_, _| panic!("already retired"));
     assert_eq!(duplicate, Ok(9));
@@ -65,8 +73,10 @@ fn admitted_higher_identity_survives_independent_journal_reuse() {
 
 #[test]
 fn authority_refusal_keeps_exact_receipt_for_retry() {
-    let mut retirement = AuthorityRetirement::new(key(), 6).unwrap();
-    retirement.stage(key(), &[7]).unwrap();
+    let mut retirement = AuthorityRetirement::new(key(), 6).expect("test operation should succeed");
+    retirement
+        .stage(key(), &[7])
+        .expect("test operation should succeed");
     assert_eq!(
         retirement.finish(key(), |_, _| Err("authority busy")),
         Err(RetirementError::Authority("authority busy"))
@@ -90,8 +100,10 @@ fn authority_refusal_keeps_exact_receipt_for_retry() {
 #[test]
 fn unwound_authority_ack_poisons_frontier_and_receipt() {
     use std::panic::{AssertUnwindSafe, catch_unwind};
-    let mut retirement = AuthorityRetirement::new(key(), 6).unwrap();
-    retirement.stage(key(), &[7]).unwrap();
+    let mut retirement = AuthorityRetirement::new(key(), 6).expect("test operation should succeed");
+    retirement
+        .stage(key(), &[7])
+        .expect("test operation should succeed");
     let caught = catch_unwind(AssertUnwindSafe(|| {
         let _: Result<u64, RetirementError<()>> =
             retirement.finish(key(), |_, _| panic!("uncertain authority ACK"));
@@ -110,7 +122,7 @@ fn unwound_authority_ack_poisons_frontier_and_receipt() {
 
 #[test]
 fn identity_and_finite_window_refuse_without_overwriting_receipt() {
-    let mut retirement = AuthorityRetirement::new(key(), 6).unwrap();
+    let mut retirement = AuthorityRetirement::new(key(), 6).expect("test operation should succeed");
     let wrong = PeerKey {
         connection_epoch: 43,
         ..key()
@@ -153,7 +165,9 @@ fn identity_and_finite_window_refuse_without_overwriting_receipt() {
         Err(RetirementError::NoReceipt)
     );
 
-    retirement.stage(key(), &[7]).unwrap();
+    retirement
+        .stage(key(), &[7])
+        .expect("test operation should succeed");
     assert_eq!(
         retirement.finish(wrong, |_, _| Ok::<_, ()>(())),
         Err(RetirementError::WrongIdentity)
@@ -163,18 +177,20 @@ fn identity_and_finite_window_refuse_without_overwriting_receipt() {
 
 #[test]
 fn callback_must_recheck_current_authority_incarnation() {
-    let mut retirement = AuthorityRetirement::new(key(), 6).unwrap();
-    retirement.stage(key(), &[7]).unwrap();
+    let mut retirement = AuthorityRetirement::new(key(), 6).expect("test operation should succeed");
+    retirement
+        .stage(key(), &[7])
+        .expect("test operation should succeed");
     let current_authority = PeerKey {
         connection_epoch: 43,
         ..key()
     };
     assert_eq!(
         retirement.finish(key(), |expected, _| {
-            if expected != current_authority {
-                Err("stale authority epoch")
-            } else {
+            if expected == current_authority {
                 Ok(())
+            } else {
+                Err("stale authority epoch")
             }
         }),
         Err(RetirementError::Authority("stale authority epoch"))
@@ -185,8 +201,11 @@ fn callback_must_recheck_current_authority_incarnation() {
 
 #[test]
 fn sequence_boundary_does_not_wrap() {
-    let mut retirement = AuthorityRetirement::new(key(), u64::MAX - 1).unwrap();
-    retirement.stage(key(), &[u64::MAX]).unwrap();
+    let mut retirement =
+        AuthorityRetirement::new(key(), u64::MAX - 1).expect("test operation should succeed");
+    retirement
+        .stage(key(), &[u64::MAX])
+        .expect("test operation should succeed");
     assert_eq!(
         retirement.finish(key(), |_, through| {
             assert_eq!(through, u64::MAX);
@@ -194,7 +213,9 @@ fn sequence_boundary_does_not_wrap() {
         }),
         Ok(u64::MAX)
     );
-    retirement.stage(key(), &[u64::MAX]).unwrap();
+    retirement
+        .stage(key(), &[u64::MAX])
+        .expect("test operation should succeed");
     let duplicate: Result<u64, RetirementError<()>> =
         retirement.finish(key(), |_, _| panic!("no new prefix"));
     assert_eq!(duplicate, Ok(u64::MAX));

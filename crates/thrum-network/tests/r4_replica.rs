@@ -75,7 +75,7 @@ fn baseline() -> Replica {
         CODES,
         &GameSchema,
     )
-    .unwrap()
+    .expect("test operation should succeed")
 }
 
 fn admit(
@@ -102,17 +102,17 @@ fn admit(
         },
         &mut bytes,
     )
-    .unwrap();
-    let view = r4::decode(&bytes[..size]).unwrap();
+    .expect("test operation should succeed");
+    let view = r4::decode(&bytes[..size]).expect("test operation should succeed");
     replica.admit(&view, &GameSchema)
 }
 
 #[test]
 fn same_tick_partitions_and_distinct_sample_ages() {
     let mut replica = baseline();
-    admit(&mut replica, 10, 1, 1, &[actor(1, 11, 1)], &[]).unwrap();
-    admit(&mut replica, 20, 1, 1, &[actor(2, 21, 1)], &[]).unwrap();
-    admit(&mut replica, 10, 1, 3, &[actor(1, 13, 1)], &[]).unwrap();
+    admit(&mut replica, 10, 1, 1, &[actor(1, 11, 1)], &[]).expect("test operation should succeed");
+    admit(&mut replica, 20, 1, 1, &[actor(2, 21, 1)], &[]).expect("test operation should succeed");
+    admit(&mut replica, 10, 1, 3, &[actor(1, 13, 1)], &[]).expect("test operation should succeed");
     assert_eq!(replica.actor(1), Some((actor(1, 13, 1), 3)));
     assert_eq!(replica.actor(2), Some((actor(2, 21, 1), 1)));
     assert_eq!(replica.partition_sample(20), Some((1, 1)));
@@ -179,7 +179,8 @@ fn leave_and_reentry_retain_home_and_generation() {
         admit(&mut replica, 20, 1, 1, &[], &[life(2, 1, CODES.leave)]),
         Err(ReplicaError::InterestGeneration)
     );
-    admit(&mut replica, 20, 2, 1, &[], &[life(2, 1, CODES.leave)]).unwrap();
+    admit(&mut replica, 20, 2, 1, &[], &[life(2, 1, CODES.leave)])
+        .expect("test operation should succeed");
     assert_eq!(replica.actor(2), None);
     assert_eq!(replica.assignment_count(), 2);
     assert_eq!(
@@ -212,13 +213,15 @@ fn leave_and_reentry_retain_home_and_generation() {
         &[actor(2, 22, 2)],
         &[life(2, 2, CODES.reenter)],
     )
-    .unwrap();
+    .expect("test operation should succeed");
     assert_eq!(replica.actor(2), Some((actor(2, 22, 2), 2)));
 }
 
 #[test]
 fn full_partition_can_exchange_actors_without_temp_overflow() {
-    let actors: Vec<_> = (1..=32).map(|id| actor(id, id as u16, 1)).collect();
+    let actors: Vec<_> = (1..=32)
+        .map(|id| actor(id, u16::try_from(id).expect("bounded test value"), 1))
+        .collect();
     let mut replica = Replica::from_baseline(
         &[PartitionSeed {
             group_id: 10,
@@ -229,7 +232,7 @@ fn full_partition_can_exchange_actors_without_temp_overflow() {
         CODES,
         &GameSchema,
     )
-    .unwrap();
+    .expect("test operation should succeed");
     admit(
         &mut replica,
         10,
@@ -238,7 +241,7 @@ fn full_partition_can_exchange_actors_without_temp_overflow() {
         &[actor(33, 33, 1)],
         &[life(33, 1, CODES.spawn), life(1, 1, CODES.despawn)],
     )
-    .unwrap();
+    .expect("test operation should succeed");
     assert_eq!(replica.actor(1), None);
     assert_eq!(replica.actor(33), Some((actor(33, 33, 1), 1)));
     assert_eq!(replica.visible_count(), 32);
@@ -247,13 +250,15 @@ fn full_partition_can_exchange_actors_without_temp_overflow() {
 #[test]
 fn terminal_destruction_after_leave_retires_home_without_visibility() {
     let mut replica = baseline();
-    admit(&mut replica, 20, 2, 1, &[], &[life(2, 1, CODES.leave)]).unwrap();
+    admit(&mut replica, 20, 2, 1, &[], &[life(2, 1, CODES.leave)])
+        .expect("test operation should succeed");
     assert_eq!(
         admit(&mut replica, 10, 1, 1, &[], &[life(2, 1, CODES.despawn)]),
         Err(ReplicaError::CrossPartition)
     );
     assert_eq!(replica.partition_sample(10), Some((1, 0)));
-    admit(&mut replica, 20, 2, 2, &[], &[life(2, 1, CODES.despawn)]).unwrap();
+    admit(&mut replica, 20, 2, 2, &[], &[life(2, 1, CODES.despawn)])
+        .expect("test operation should succeed");
     assert_eq!(replica.assignment_count(), 2);
     assert_eq!(replica.actor(2), None);
     assert_eq!(
@@ -285,7 +290,7 @@ fn invisible_churn_refuses_257th_assignment_without_poisoning_other_partition() 
             &[actor(id, 1, 1)],
             &[life(id, 1, CODES.spawn)],
         )
-        .unwrap();
+        .expect("test operation should succeed");
         tick += 1;
         admit(
             &mut replica,
@@ -295,7 +300,7 @@ fn invisible_churn_refuses_257th_assignment_without_poisoning_other_partition() 
             &[],
             &[life(id, 1, CODES.despawn)],
         )
-        .unwrap();
+        .expect("test operation should succeed");
     }
     assert_eq!(replica.assignment_count(), 256);
     assert_eq!(replica.visible_count(), 2);
@@ -313,7 +318,7 @@ fn invisible_churn_refuses_257th_assignment_without_poisoning_other_partition() 
     );
     assert_eq!(replica.partition_sample(20), Some((1, tick)));
     assert_eq!(replica.actor(257), None);
-    admit(&mut replica, 10, 1, 1, &[actor(1, 11, 1)], &[]).unwrap();
+    admit(&mut replica, 10, 1, 1, &[actor(1, 11, 1)], &[]).expect("test operation should succeed");
     assert_eq!(replica.actor(1), Some((actor(1, 11, 1), 1)));
     assert_eq!(replica.reserved_capacity_bytes(), reserved);
 }
@@ -360,76 +365,12 @@ fn outcomes_and_watermark_refuse_before_state_changes() {
             },
             &mut bytes,
         )
-        .unwrap();
-        let view = r4::decode(&bytes[..size]).unwrap();
+        .expect("test operation should succeed");
+        let view = r4::decode(&bytes[..size]).expect("test operation should succeed");
         assert_eq!(
             replica.admit(&view, &GameSchema),
             Err(ReplicaError::UnsupportedOutcome)
         );
     }
     assert_eq!(replica.actor(1), Some((actor(1, 10, 1), 0)));
-}
-
-#[test]
-#[ignore = "isolated release-mode state-only four-peer admission cost probe"]
-fn measure_four_peer_state_only_admission() {
-    use std::{hint::black_box, time::Instant};
-
-    let actors: [[Actor; 32]; 4] = std::array::from_fn(|group| {
-        std::array::from_fn(|slot| actor((group * 32 + slot + 1) as u64, 10, 1))
-    });
-    let seeds: [PartitionSeed<'_>; 4] = std::array::from_fn(|group| PartitionSeed {
-        group_id: (group + 1) as u32,
-        interest_generation: 1,
-        sample_tick: 0,
-        actors: &actors[group],
-    });
-    let mut replicas: [Replica; 4] =
-        std::array::from_fn(|_| Replica::from_baseline(&seeds, CODES, &GameSchema).unwrap());
-    let reserved: usize = replicas.iter().map(Replica::reserved_capacity_bytes).sum();
-    let mut payloads = [[0u8; r4::MAX_PAYLOAD_BYTES]; 4];
-    let mut lengths = [0; 4];
-    for group in 0..4 {
-        lengths[group] = r4::encode(
-            GroupInput {
-                header: GroupHeader {
-                    group_id: (group + 1) as u32,
-                    interest_generation: 1,
-                    commit_tick: 1,
-                    resolved_through: 0,
-                },
-                actors: &actors[group],
-                lifecycle: &[],
-                results: &[],
-                events: &[],
-            },
-            &mut payloads[group],
-        )
-        .unwrap();
-    }
-    const SWEEPS: u64 = 10_000;
-    let start = Instant::now();
-    for tick in 1..=SWEEPS {
-        for group in 0..4 {
-            payloads[group][8..16].copy_from_slice(&tick.to_le_bytes());
-            let view = r4::decode(&payloads[group][..lengths[group]]).unwrap();
-            for replica in &mut replicas {
-                replica.admit(&view, &GameSchema).unwrap();
-            }
-        }
-    }
-    let nanos_per_sweep = start.elapsed().as_nanos() as f64 / SWEEPS as f64;
-    assert!(
-        replicas
-            .iter()
-            .all(|replica| replica.partition_sample(4) == Some((1, SWEEPS)))
-    );
-    black_box(replicas[0].actor(128));
-    assert_eq!(
-        reserved,
-        replicas.iter().map(Replica::reserved_capacity_bytes).sum()
-    );
-    println!(
-        "r4_replica_four_peer_state_only_sweep_ns={nanos_per_sweep:.1} reserved_owner_bytes={reserved}"
-    );
 }
