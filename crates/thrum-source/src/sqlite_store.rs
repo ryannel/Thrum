@@ -7149,6 +7149,86 @@ fn measure_maximum_phased_manifest_reader_progress() {
 }
 
 #[test]
+#[ignore = "local maximum-profile final reference-closure contention probe"]
+fn measure_maximum_manifest_closure_reader_wait() {
+    const PROJECT_ID: &str = "2a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "before maximum closure");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let one_byte_files: Vec<_> = (0_u8..=255)
+        .map(|byte| {
+            let bytes = [byte];
+            (Sha256::digest(bytes).into(), bytes)
+        })
+        .collect();
+    for group in one_byte_files.chunks(SMALL_BATCH_FILES) {
+        store
+            .owner
+            .lock()
+            .unwrap()
+            .stage_small_blob_batch(group.iter().map(|(hash, bytes)| (*hash, bytes.as_slice())))
+            .unwrap();
+    }
+    let files = (0..100_000)
+        .map(|index| {
+            ManifestEntry::new(
+                SourcePath::parse(&format!("src/file-{index:06}.bin")).unwrap(),
+                1,
+                one_byte_files[index % 256].0,
+                None,
+            )
+            .unwrap()
+        })
+        .collect();
+    let manifest = TreeManifest::new(PROJECT_ID, Vec::new(), files).unwrap();
+    let revision = *manifest.revision().as_bytes();
+    let mut scratch = store.owner.admission().unwrap();
+    store
+        .stage_manifest_phased(&manifest, &mut scratch)
+        .unwrap();
+    drop(scratch);
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let (go_tx, go_rx) = std::sync::mpsc::channel();
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (reader_ms, commit_ms, generation) = std::thread::scope(|scope| {
+        let old_pin_ref = &mut old_pin;
+        let reader = scope.spawn(move || {
+            go_rx.recv().unwrap();
+            let start = Instant::now();
+            started_tx.send(()).unwrap();
+            old_pin_ref.copy_file_to(&scene, &mut io::sink()).unwrap();
+            start.elapsed().as_secs_f64() * 1000.0
+        });
+        let mut inner = store.owner.lock().unwrap();
+        go_tx.send(()).unwrap();
+        started_rx.recv().unwrap();
+        let start = Instant::now();
+        let generation = inner
+            .commit_verified_manifest_probe(a.generation, 1, 2, [2; 32], revision, &manifest)
+            .unwrap();
+        let commit_ms = start.elapsed().as_secs_f64() * 1000.0;
+        drop(inner);
+        (reader.join().unwrap(), commit_ms, generation)
+    });
+    old_pin.close().unwrap();
+    assert_eq!(generation, a.generation + 1);
+    assert_eq!(
+        store.current_root().unwrap().unwrap().generation,
+        generation
+    );
+    eprintln!(
+        "maximum_manifest_closure files=100000 reader_wait_copy_ms={reader_ms:.3} commit_ms={commit_ms:.3}"
+    );
+}
+
+#[test]
 #[ignore = "local small-file SQLite transaction amplification probe"]
 fn measure_small_blob_transaction_cost() {
     let fixture = Fixture::new();
