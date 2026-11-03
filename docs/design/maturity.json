@@ -591,6 +591,14 @@
         "platform_performance": "three-element immutable lookup; no integrated cook/cache or device measurement",
         "scope": "F4 can retrieve F3's exact built-in meaning hashes after separate source authentication. Lookup grants no source authority, product identity, build readiness or runtime capability."
       },
+      "i2a_render_transformed_bound_candidate": {
+        "evidence": "../evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md",
+        "implementation": "private_compiled_exact_transformed_box_predicate_without_decoder_caller",
+        "functional_validation": "seven focused Rust tests and a standalone entry-point verifier match 3588 archived independent rational-oracle vectors; independent defect-first review found no actionable issue",
+        "experienced_quality": "not_applicable_to_isolated_source_predicate",
+        "platform_performance": "no integrated F3 decode/admission latency, charged allocation, combined RSS, target/compiler-mode or device qualification; prior 50k-instance timings are isolated evidence",
+        "scope": "Finite box/quaternion input, closed transformed world extent and signed/zero scale are checked with a certified interval and exact 84-limb fallback. Upstream exact vertex radius and tight extrema, triangle predicates, shared render decoder/closure, host work policy, admission dispatch, F4 product and ready renderer remain open."
+      },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",
         "scope": "Seven fresh-process samples each compare matched 4,096-record provisional baseline, one selected constant light, 2,047 unselected source/light pairs and byte-heavy opaque selected workloads. Candidate elapsed ranges overlap; process CPU and peak RSS include other work. The retained source and raw samples establish no speedup, regression, maximum-source memory gate, edit-to-ready budget, durable admission, F4 or device qualification."

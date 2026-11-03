@@ -222,6 +222,10 @@ The independently reproduced [normalized-dyadic follow-up](../../evidence/render
 keeps the 84-limb argument and lowers selected all-fallback medians to
 119–312 ms per 50,000 instances, including unique transforms. It remains
 predicate-only and does not select a host work allowance or prove F3 peak.
+A [private production predicate slice](../../evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md)
+now matches all 3,588 archived rational vectors through its entry point.
+No shared decoder calls it yet, so source admission and complete-path costs
+remain unqualified.
 
 The exact-dyadic triangle rule needs a bounded adaptive implementation: a
 proved fast filter may accept clear cases, with a fixed-width/exact fallback
