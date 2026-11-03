@@ -176,6 +176,7 @@ def main():
                 "admitted-headless-cache tree_sha256",
                 "admitted-headless-cache legacy_sha256",
                 "admitted-headless-cache fixture_cache_full_rehashes=0",
+                "admitted-headless-cache real_materialized_lock_drift_refused=true",
                 "admitted-headless-a rustc_receipts",
                 "admitted-headless-a candidate_sha256",
                 "admitted-headless-a retained_reload_ms",
