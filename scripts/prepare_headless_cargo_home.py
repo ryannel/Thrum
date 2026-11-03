@@ -71,7 +71,40 @@ def copy_checked(source, destination, expected=None):
     return {"sha256": actual, "bytes": length}
 
 
+def metadata_sandbox_profile(source, cargo_home, cargo):
+    """Grant metadata to selected ancestors and data to selected cold inputs."""
+    inputs = (source.resolve(), cargo_home.resolve(), cargo.parent.parent.resolve())
+    system_reads = (
+        Path("/System/Library"), Path("/System/Cryptexes"), Path("/usr/lib"),
+        Path("/private/etc/ssl/openssl.cnf"), Path("/dev/null"), Path("/dev/urandom"),
+    )
+
+    def literal(path):
+        value = str(path)
+        if any(ord(char) < 32 or char in ('"', "\\") for char in value):
+            raise ValueError("metadata sandbox path cannot be represented")
+        return f'(literal "{value}")'
+
+    ancestors = sorted({parent for path in (*inputs, *system_reads)
+                        for parent in (path, *path.parents)}, key=str)
+    return (
+        '(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n'
+        '(allow mach-lookup)\n(allow sysctl-read)\n'
+        '(allow file-read-metadata ' + ' '.join(map(literal, ancestors)) + ')\n'
+        '(allow file-read* (literal "/") '
+        '(subpath "/System/Library") (subpath "/System/Cryptexes") '
+        '(subpath "/usr/lib") '
+        + ' '.join(map(literal, system_reads[3:])) + ' '
+        '(subpath (param "SOURCE")) (subpath (param "CARGO_HOME")) '
+        '(subpath (param "TOOLCHAIN")))\n'
+        '(allow file-write* (subpath (param "CARGO_HOME")) '
+        '(literal "/dev/null"))\n'
+    )
+
+
 def cargo_metadata(cargo, rustc, source, cargo_home, target, scratch):
+    source = source.resolve(strict=True)
+    cargo_home = cargo_home.resolve(strict=True)
     environment = {
         "HOME": str(cargo_home.parent),
         "CARGO_HOME": str(cargo_home),
@@ -91,18 +124,7 @@ def cargo_metadata(cargo, rustc, source, cargo_home, target, scratch):
     ]
     if sys.platform == "darwin":
         profile = scratch / "metadata.sb"
-        profile.write_text(
-            '(version 1)\n(deny default)\n(deny network*)\n(allow process*)\n'
-            '(allow mach-lookup)\n(allow sysctl-read)\n(allow file-read-metadata)\n'
-            '(allow file-read* (literal "/") (subpath "/System") '
-            '(subpath "/usr") (subpath "/Library") (subpath "/Applications") '
-            '(subpath "/opt") (subpath "/private/etc") (subpath "/var/select") '
-            '(subpath "/private/var/select") (subpath "/dev") '
-            '(subpath (param "SOURCE")) (subpath (param "CARGO_HOME")) '
-            '(subpath (param "TOOLCHAIN")))\n'
-            '(allow file-write* (subpath (param "CARGO_HOME")) '
-            '(literal "/dev/null"))\n'
-        )
+        profile.write_text(metadata_sandbox_profile(source, cargo_home, cargo))
         command = [
             "/usr/bin/sandbox-exec",
             "-D", f"SOURCE={source.resolve()}",

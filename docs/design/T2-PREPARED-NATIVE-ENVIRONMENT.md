@@ -86,6 +86,12 @@ private-cache metadata phase now uses the selected cloned Cargo/Rustc in the
 [later A/B qualification](../evidence/i2a/T2-SELECTED-METADATA-TOOLS-2026-11-03.md).
 Xcode discovery and selected support files still use installed paths before
 the metadata sandbox, and same-user writes to the clones remain possible.
+The [later metadata sandbox reduction](../evidence/i2a/T2-METADATA-SANDBOX-READS-2026-11-03.md)
+also limits its file data to selected source/cache/tool roots and named macOS
+runtime paths, with metadata reads inside those subtrees and on their path
+ancestors. It preserves broad
+process permission and selected system-library/cryptex reads; it does not
+prove complete implicit-read closure.
 The compiler sandbox itself now denies installed support-file data and
 metadata reads in both installed-root and retained-clone A/B fixtures; direct
 selected Cargo/Rustc/Clang does not need those exceptions in this bounded
