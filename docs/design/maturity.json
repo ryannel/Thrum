@@ -264,7 +264,7 @@
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
       "current_design_sha256": "e52095ea1d50d25c26991db0425a62cc3b0aaf626ced1fca01d7aa296b889b4b",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 consumers reconciled. The E1 constant-light subset now has provisional staged F3 typed parsing, source binding, built-in meaning hashes and declared UUID closure. Authored rain schema 2, fixture records, F4 products, durable E1 admission and runtime remain open. Prior reviewed hash retained; no runtime promotion.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 consumers reconciled. The E1 constant-light subset has provisional staged F3 typed parsing, source binding, built-in meaning hashes and declared UUID closure; its production read-only numeric projection now exposes the same checked parser values for F4. Authored rain schema 2, fixture records, authenticated selected-pin cooking, exact F4 build identity and runtime remain open. Prior reviewed hash retained; no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
         "A01",
@@ -574,6 +574,14 @@
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
+      },
+      "i2a_constant_light_numeric_projection": {
+        "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-PROJECTION-2026-11-03.md",
+        "implementation": "read_only_checked_environment_scene_light_projection_from_existing_f3_parsers",
+        "functional_validation": "three focused projection tests, 14 environment parser tests, 213 thrum-source tests and full repository check pass; existing built-in definition hashes and staged closure behavior remain unchanged; defect-first review found no actionable issue",
+        "experienced_quality": "not_applicable_to_source_projection",
+        "platform_performance": "no assembled latency or peak memory measurement; the projection retains a few decoded f64 values during one record parse and runs no tick/view work",
+        "scope": "Byte-slice parsing exposes F3-valid raw numeric values and checked IDs/edges without source authority. Authenticated selected pin traversal, complete typed closure, F4 cook/product identity and build publication remain separate gates."
       },
       "i2a_constant_light_cost": {
         "evidence": "../evidence/i2a/F3-CONSTANT-LIGHT-COST-2026-11-03.md",

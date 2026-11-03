@@ -32,6 +32,10 @@ mod stage;
 
 pub use bootstrap_json::{SceneRecord, parse_scene};
 pub use budget::{SourceSpacePlan, StageScanPhase, StageSpacePressure};
+pub use environment_json::{
+    AuthoredEnvironment, AuthoredSun, EnvironmentLightIdentity, EnvironmentScene,
+    parse_authored_environment, parse_environment_light_identity, parse_environment_scene,
+};
 pub use inventory::{Inventory, InventoryError, InventoryFile, scan_declared_tree};
 pub use json::{JsonError, MAX_RECORD_BYTES, MAX_RECORD_NODES, parse_record_json};
 pub use manifest::{ManifestEntry, ManifestError, RecordDescriptor, SourceRevision, TreeManifest};
