@@ -1,0 +1,12 @@
+[package]
+name = "t2-space-composition-probe"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+thrum-source = { path = "../../crates/thrum-source" }
+thrum-cook = { path = "../../crates/thrum-cook" }
+serde_json = "1.0.154"
+fs4 = "1.1.0"

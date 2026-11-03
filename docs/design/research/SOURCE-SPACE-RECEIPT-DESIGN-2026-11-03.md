@@ -86,6 +86,63 @@ admitted byte tree without changing its exact source identity. The selected
 F4 build may still fail for its own space or target support after F3 accepts
 the source.
 
+## Project temporary bucket across F3 and F4
+
+The current F3 stage scanner deliberately walks the project `.engine` tree,
+excluding only its top-level `source.sqlite` and `source.sqlite-wal` files.
+It therefore charges retained F4 materialized input trees placed there,
+alongside F3 provisional stages, against F3's selected managed-temporary
+target. This is a project-bucket observation at an F3 capture boundary, not
+an allocation reservation. Keep that existing scope while proving the next
+cross-owner case. Narrowing F3 to `.engine/staging` alone would silently stop
+observing known project scratch before T2 has another coordinator.
+
+F4's current `BuildScratchPlan` checks one *new materialized tree*: its own
+rounded projection, per-tree target and one observed volume-availability
+sample. It does not scan sibling materializations or share F3's project
+bucket. A first tree can remain owned while a second tree individually passes
+the same 16 MiB target even when their aggregate `.engine` charge exceeds
+16 MiB. F3 may then refuse a tiny new edit on its next temporary scan. That
+is coherent local behavior but not a composed 16 MiB process or project
+guarantee. Private Cargo cache and compiler output outside `.engine` are
+absent from that scanner; the filesystem availability probe still sees their
+allocation only as a non-atomic free-space change.
+
+The next public-API proof uses an accepted A with an approximately 12 MiB
+unchanged master. Close A's provisional stage after acceptance. Hold one A
+pin and two distinct `MaterializedSource` owners under `.engine`, each with
+an individually sufficient 16 MiB `BuildScratchPlan`. Record each actual
+copied byte count and the rounded project charge; both F4 operations should
+succeed while their combined charge exceeds 16 MiB. Try a tiny B scene edit
+with F3's 16 MiB managed-temporary target: its whole-tree stage projection
+remains about 12 MiB, but the existing scan should return a typed
+`TemporaryScan` lower bound over the target before new stage publication.
+Assert A remains selected and both F4 trees remain intact. Close both F4
+owners, retry the same B edit, and verify the source identity is independent
+of this operational refusal. A bounded image is unnecessary for this
+ownership proof; a separate same-volume fault test is still required for
+real copy/compile pressure.
+
+T2 owns the later *cooperating* same-volume schedule and account. F3 supplies
+the staged/admitted demand and actual source-store outcome; F4 supplies
+build-input, product and retained-candidate requirements and lifetimes. T2's
+prepared-environment and compiler-job owners supply their cache/tool/output
+observations and lifetimes. T2 must count known retained scratch once,
+recognize distinct output and cache locations, and compare projected new work with
+fresh availability without subtracting already allocated bytes twice. It
+must serialize or defer work when its selected operational policy cannot
+support simultaneous jobs, while each owner still handles native write,
+sync and cleanup faults. No T2 estimate certifies a physical APFS peak or
+prevents an unrelated writer from racing it. The public-API proof above
+defines the current asymmetry; it does not select a general T2 allocator or
+claim F4 has implemented aggregate admission.
+F4 owner retirement during an F3 scan is a separate interaction: the current
+scanner tolerates a disappearing F3 staging path, but an independently
+removed F4 build-input path can produce an ordinary I/O refusal. The
+coordinator must serialize those cooperating lifecycle transitions or prove
+safe bounded retry after an independently verified disappearance. F3 must not
+delete F4-owned trees to force progress.
+
 ## Executable proof before claiming the slice
 
 - At stage preflight, inject independent early scan, post-scan temporary-target
