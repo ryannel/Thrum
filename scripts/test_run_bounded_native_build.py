@@ -255,6 +255,114 @@ class NativeBuildSupervisor(unittest.TestCase):
                         except ProcessLookupError:
                             pass
 
+    @unittest.skipUnless(os.environ.get("THRUM_TEST_NATIVE_SUPERVISOR_PROCESS") == "1",
+                         "opt-in macOS Cargo interruption proof")
+    def test_interrupted_cargo_compile_retains_pending_wrapper_receipt(self):
+        wrapper = Path(os.environ["THRUM_TEST_RUSTC_RECEIPT_WRAPPER"])
+        self.assertTrue(wrapper.is_absolute() and wrapper.is_file() and not wrapper.is_symlink())
+        cargo = Path(subprocess.check_output(
+            ["rustup", "which", "cargo", "--toolchain", "1.99.1"], text=True).strip())
+        rustc = Path(subprocess.check_output(
+            ["rustup", "which", "rustc", "--toolchain", "1.99.1"], text=True).strip())
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request, output = self.request(root)
+            source = root / "source"
+            (source / "src").mkdir()
+            (source / "Cargo.toml").write_text(
+                '[package]\nname = "thrum_interrupt_fixture"\nversion = "0.1.0"\n'
+                'edition = "2024"\n')
+            (source / "src/main.rs").write_text('fn main() {}\n')
+            receipt_dir = output / "rustc-receipts"
+            receipt_dir.mkdir()
+            compile_pidfile = output / "compile.pid"
+            compiler = output / "sleeping-rustc"
+            compiler.write_text(
+                f"#!{sys.executable}\n"
+                "import os,pathlib,sys,time\n"
+                f"if '--emit' in sys.argv or any(a.startswith('--emit=') for a in sys.argv):\n"
+                f"    marker=pathlib.Path({str(compile_pidfile)!r})\n"
+                "    temporary=marker.with_suffix('.tmp')\n"
+                "    temporary.write_text(str(os.getpid()))\n"
+                "    temporary.replace(marker)\n"
+                "    time.sleep(30)\n"
+                f"os.execv({str(rustc)!r}, [{str(rustc)!r}, *sys.argv[1:]])\n")
+            compiler.chmod(0o700)
+            data = json.loads(request.read_text())
+            data["ownerPid"] = os.getpid()
+            data["environment"] = {
+                "CARGO_HOME": str(root / "cargo-home"),
+                "CARGO_TARGET_DIR": str(output / "target"),
+                "PATH": "/usr/bin:/bin",
+                "RUSTC": str(compiler),
+                "RUSTC_WRAPPER": str(wrapper),
+                "THRUM_SELECTED_RUSTC": str(compiler),
+                "THRUM_RECEIPT_DIR": str(receipt_dir),
+            }
+            (root / "cargo-home").mkdir()
+            data["command"] = [
+                "/usr/bin/sandbox-exec", "-p", "(version 1)(allow default)(deny network*)",
+                str(cargo), "build", "--offline", "--manifest-path", str(source / "Cargo.toml"),
+            ]
+            request.write_text(json.dumps(data))
+            runner = (
+                "import pathlib,sys;import run_bounded_native_build as native;"
+                f"sys.exit(native.run(pathlib.Path({str(request)!r})))"
+            )
+            supervisor = subprocess.Popen(
+                [sys.executable, "-c", runner], cwd=Path(__file__).parent,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+            compile_pid = None
+            try:
+                deadline = time.monotonic() + 12
+                while not compile_pidfile.exists() and time.monotonic() < deadline:
+                    if supervisor.poll() is not None:
+                        break
+                    time.sleep(0.01)
+                if not compile_pidfile.exists():
+                    _, stderr = supervisor.communicate(timeout=6)
+                    report = output / "cargo-supervisor.json"
+                    self.fail("Cargo did not start a wrapped compile: "
+                              + stderr.decode(errors="replace")
+                              + (report.read_text() if report.exists() else "no report"))
+                compile_pid = int(compile_pidfile.read_text())
+                os.kill(supervisor.pid, signal.SIGTERM)
+                _, stderr = supervisor.communicate(timeout=6)
+                self.assertEqual(supervisor.returncode, 125,
+                                 stderr.decode(errors="replace"))
+                report = json.loads((output / "cargo-supervisor.json").read_text())
+                self.assertEqual(report["kind"], "interrupted")
+                self.assertFalse(report["buildReady"])
+                self.assertEqual(report["receiptInventory"]["kind"], "observedOnly")
+                self.assertGreaterEqual(report["receiptInventory"]["pending"], 1)
+                parsed = [parse_receipt(path.read_bytes(), allow_pending=True)
+                          for path in receipt_dir.iterdir()]
+                self.assertTrue(any(item.get("pending") and item["rustc"] == os.fsencode(compiler)
+                                    for item in parsed))
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    try:
+                        os.kill(compile_pid, 0)
+                    except ProcessLookupError:
+                        break
+                    time.sleep(0.01)
+                else:
+                    self.fail("same-group Cargo compiler survived supervisor interruption")
+            finally:
+                if supervisor.poll() is None:
+                    supervisor.terminate()
+                    try:
+                        supervisor.communicate(timeout=6)
+                    except subprocess.TimeoutExpired:
+                        supervisor.kill()
+                        supervisor.communicate()
+                if compile_pid is not None:
+                    try:
+                        os.kill(compile_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
 
 if __name__ == "__main__":
     unittest.main()
