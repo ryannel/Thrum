@@ -132,7 +132,11 @@ Prove in order:
    failed and interrupted receipts. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.
    Measure compiler-job peak RSS separately; this profile has no hard process
-   memory ceiling.
+   memory ceiling. The [withdrawn Rust collector experiment](../evidence/i2a/F4-BOUNDED-NATIVE-BUILD.md)
+   identifies interruption, escaped-descendant and inherited-stdin faults
+   that the next supervisor proof must reject. A [Python supervisor candidate](../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
+   now bounds the local A/B build and detects owner loss, but cannot yet
+   contain an escaped session or provide a release job identity.
 4. Bind a candidate output report to F3 source root, F4 product bytes,
    environment selection, complete receipt set and streamed executable hash.
    Verify corruption, substitution and restart behavior. It stays

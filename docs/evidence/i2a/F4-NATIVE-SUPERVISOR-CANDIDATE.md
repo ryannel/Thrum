@@ -1,0 +1,49 @@
+# Native build supervisor candidate
+
+3 November 2026. **Local macOS ARM64 test adapter; `buildReady:false`.** This
+qualifies a bounded development-build control path in the [prepared native
+environment](../../design/T2-PREPARED-NATIVE-ENVIRONMENT.md). It does not close
+the compiler's selected reads or publish a target `BuildRevision`.
+
+The earlier [Rust collector experiment](F4-BOUNDED-NATIVE-BUILD.md) was
+withdrawn after review found unsafe interruption, unbounded cleanup joins and
+inherited stdin. The candidate reuses the Python Cargo-metadata collector. It
+closes child stdin, checks a fixed launching-owner PID at most every 100 ms,
+bounds escaped-descendant pipe cleanup waits, and uses macOS
+[`kqueue` process-exit events](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kevent.2.html)
+or Linux `waitid` to observe child exit without reaping. It sends SIGKILL to the owned
+process group before releasing the leader PID. It refuses an inherited-pipe
+descendant and stops a same-group descendant with closed pipes before success.
+The local macOS kernel returns `EPERM` when only the unreaped exited leader
+remains; this candidate tolerates it under an assumption that the selected
+Cargo/Rustc/Clang family does not change privilege. That assumption and
+same-group containment are not release-qualified.
+
+For the sandboxed A/B fixture, Rust serializes its selected `sandbox-exec`
+command, working directory, clean child environment, output root and owner
+PID into an exclusive request in the fresh output tree. Python checks the
+request and parent before launch and runs Cargo without a shell. It retains
+at most 4 MiB stdout and 1 MiB stderr for a 120-second deadline, then writes
+exclusive diagnostic files and a small hash/length/status report. Rust caps
+and hashes those files independently, including the 4 KiB report, and accepts
+only Cargo exit 0 or the first-profile compile failure 101 as completed. A
+SIGTERM handler routes ordinary termination through collector cleanup.
+
+Sixteen focused metadata-collector tests cover Ctrl-C cleanup, closed stdin,
+parent disappearance, output limit, retained pipes, an escaped-session child
+and a same-group child with closed pipes, plus a fast-exit observation race.
+The escaped-session case returns in
+a bounded interval but leaves that escaped process for fixture cleanup; it
+does **not** prove containment. Three supervisor protocol tests cover output
+binding, wrong-parent/aliased-request refusal and unexpected Cargo status.
+The real sandboxed admitted A/B build passed: five compile receipts and three
+probes reconciled, invalid B failed and A remained executable. A's fresh
+Cargo step took 3,671 and 3,470 ms in two uncontrolled runs. Neither is an
+overhead or tail-performance comparison.
+
+An escaped session can still outlive the group; a complete release adapter
+needs a retained job identity or equivalent containment. Python and its
+script are not yet bound to reviewed release inputs. Host SIGKILL, full
+failed/interrupted rustc receipt audit, compiler/system reads and retained
+target publication remain unqualified. Compiler-job RSS has no hard process
+memory ceiling.

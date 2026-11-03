@@ -563,6 +563,15 @@
         "platform_performance": "three uncontrolled fresh-output A compiles took 1491, 1341 and 3329 ms on one host; no tail, memory or platform claim",
         "scope": "The test fixture limits additional metadata-only grants to ancestors of selected source, private dependency, tool, SDK, output and named runtime paths; selected data-read subtrees retain their read permissions. It adds explicit Xcode support-file paths, canonicalizes compiler input/output paths and proves checkout, input-write and unrelated system data/metadata denial while A builds and remains runnable after invalid B. One in-memory Xcode/tool selection drives both A and B; selected Clang/support file bytes are checked before and after each build, and changed/symlinked paths refuse. Immutable tool retention, SDK/support release provenance, host runtime, complete compiler reads, bounded Cargo process handling, reviewed release inputs and durable output publication remain open; buildReady is false."
       },
+      "i2a_native_build_supervisor_candidate": {
+        "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
+        "evidence": "../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md",
+        "implementation": "macos_opt_in_test_adapter_candidate_only",
+        "functional_validation": "sixteen Python collector fixtures, three supervisor protocol fixtures and two sandboxed admitted A/B builds passed; five compiles and three probes reconciled",
+        "experienced_quality": "not_applicable_to_headless_build_control",
+        "platform_performance": "two uncontrolled fresh-output A compiles took 3671 and 3470 ms; no supervisor overhead, tail, RSS or cross-platform conclusion",
+        "scope": "The selected macOS A/B test command now runs through an engine-owned Python supervisor with closed Cargo stdin, 4 MiB/1 MiB retained diagnostic limits, a 120-second deadline, owner-PID checks, no-reap process-group cleanup and a Rust-verified output hash/status report. The local A/B build still keeps prior A runnable after invalid B. This candidate does not contain escaped sessions, retain a release job identity, authenticate the Python/tool roots, audit failed/interrupted compiler receipts or publish a ready BuildRevision."
+      },
       "i2a_admitted_headless_compile": {
         "design": "F4-FIRST-HEADLESS-BUILD.md",
         "evidence": "../evidence/i2a/F4-ADMITTED-HEADLESS-COMPILE.md",
