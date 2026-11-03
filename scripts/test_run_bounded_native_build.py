@@ -287,12 +287,15 @@ class NativeBuildSupervisor(unittest.TestCase):
                                                broken, expected_status)
                 finally:
                     supervisor = job.get("supervisor")
-                    clean = supervisor is None or supervisor.poll() is not None
-                    if not clean:
+                    status = None if supervisor is None else supervisor.poll()
+                    report = root / "output/cargo-supervisor.json"
+                    clean = supervisor is None or (status in (0, 101, 125) and report.is_file())
+                    if supervisor is not None and status is None:
                         try:
                             supervisor.terminate()
                             supervisor.communicate(timeout=8)
-                            clean = True
+                            clean = (supervisor.returncode in (0, 101, 125)
+                                     and report.is_file())
                         except (OSError, subprocess.TimeoutExpired):
                             supervisor.kill()
                             try:
