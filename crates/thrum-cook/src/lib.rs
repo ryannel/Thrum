@@ -2454,6 +2454,7 @@ mod tests {
         for support in selected.support.iter().map(PathBuf::as_path).chain([
             Path::new("/Library/Preferences/com.apple.loginwindow.plist"),
             Path::new("/private/etc/hosts"),
+            Path::new("/usr/bin/uname"),
         ]) {
             assert!(
                 support.is_file(),
@@ -2513,6 +2514,16 @@ mod tests {
             String::from_utf8_lossy(&allowed_ssl.stderr)
         );
         assert_eq!(allowed_ssl.stdout, fs::read(selected_ssl_config).unwrap());
+        let allowed_random = sandbox_command(&profile, paths, "/usr/bin/head")
+            .args(["-c", "1", "/dev/urandom"])
+            .output()
+            .unwrap();
+        assert!(allowed_random.status.success());
+        let denied_zero = sandbox_command(&profile, paths, "/usr/bin/head")
+            .args(["-c", "1", "/dev/zero"])
+            .output()
+            .unwrap();
+        assert!(!denied_zero.status.success());
         let allowed_metadata = sandbox_command(&profile, paths, "/usr/bin/stat")
             .arg(readable_system_file)
             .output()
@@ -2622,9 +2633,9 @@ mod tests {
             "/System/Library",
             "/System/Cryptexes",
             "/usr/lib",
-            "/usr/bin",
             MACOS_OPENSSL_CONFIG,
-            "/dev",
+            "/dev/null",
+            "/dev/urandom",
             "/",
         ];
         let mut ancestors = BTreeSet::new();
@@ -2650,9 +2661,9 @@ mod tests {
             profile.push(' ');
             profile.push_str(&literal(&ancestor));
         }
-        profile.push_str(")\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") (subpath \"/usr/bin\") ");
+        profile.push_str(")\n(allow file-read* (literal \"/\") (subpath \"/System/Library\") (subpath \"/System/Cryptexes\") (subpath \"/usr/lib\") ");
         profile.push_str(&literal(Path::new(MACOS_OPENSSL_CONFIG)));
-        profile.push_str(" (subpath \"/dev\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\"))");
+        profile.push_str(" (literal \"/dev/null\") (literal \"/dev/urandom\") (subpath (param \"INPUT\")) (subpath (param \"OUTPUT\")) (subpath (param \"CARGO_HOME\")) (subpath (param \"TOOLCHAIN\")) (subpath (param \"LINKER_ROOT\")) (subpath (param \"SDK\"))");
         profile.push_str(
             ")\n(allow file-write* (subpath (param \"OUTPUT\")) (literal \"/dev/null\"))\n",
         );
