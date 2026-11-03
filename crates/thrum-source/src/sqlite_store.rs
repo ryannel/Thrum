@@ -328,6 +328,41 @@ fn root_identity(tx: &Transaction<'_>) -> Result<(i64, Option<[u8; 32]>), StoreE
     Ok((generation, revision.ok_or(StoreError::CorruptRootBlob)?))
 }
 
+fn verify_selected_outcome_head(
+    conn: &Connection,
+    generation: i64,
+    revision: Option<[u8; 32]>,
+) -> Result<(), StoreError> {
+    // The retained outcome index makes this a top-two lookup, not a scan of
+    // every historical publication on each owner open or root observation.
+    let mut statement = conn.prepare(
+        "SELECT generation, revision FROM outcome INDEXED BY outcome_generation ORDER BY generation DESC LIMIT 2",
+    )?;
+    let mut rows = statement.query([])?;
+    let latest = rows.next()?;
+    match (generation, revision, latest) {
+        (0, None, None) => Ok(()),
+        (1.., Some(selected_revision), Some(row)) => {
+            let latest_generation: i64 = row.get(0)?;
+            let latest_revision = match row.get_ref(1)? {
+                ValueRef::Blob(bytes) => <[u8; 32]>::try_from(bytes).ok(),
+                _ => None,
+            };
+            if latest_generation != generation || latest_revision != Some(selected_revision) {
+                return Err(StoreError::CorruptRootOutcome);
+            }
+            if let Some(row) = rows.next()? {
+                let second_generation: i64 = row.get(0)?;
+                if second_generation == generation {
+                    return Err(StoreError::CorruptRootOutcome);
+                }
+            }
+            Ok(())
+        }
+        _ => Err(StoreError::CorruptRootOutcome),
+    }
+}
+
 fn stored_outcome(
     conn: &Connection,
     epoch: i64,
@@ -2178,22 +2213,13 @@ impl NativeSourceStore {
             .unchecked_transaction()
             .map_err(StoreError::Sql)?;
         let (generation, revision) = root_identity(&tx)?;
+        verify_selected_outcome_head(&tx, generation, revision)?;
         let selected = match (generation, revision) {
             (0, None) => None,
-            (1.., Some(revision)) => {
-                let matched: bool = tx.query_row(
-                    "SELECT EXISTS(SELECT 1 FROM outcome WHERE generation=?1 AND revision=?2)",
-                    params![generation, revision.as_slice()],
-                    |row| row.get(0),
-                )?;
-                if !matched {
-                    return Err(StoreError::CorruptRootOutcome.into());
-                }
-                Some(AcceptedSourceRoot {
-                    generation,
-                    revision: SourceRevision::from_bytes(revision),
-                })
-            }
+            (1.., Some(revision)) => Some(AcceptedSourceRoot {
+                generation,
+                revision: SourceRevision::from_bytes(revision),
+            }),
             _ => return Err(StoreError::CorruptRootOutcome.into()),
         };
         tx.commit()?;
@@ -2699,6 +2725,65 @@ fn native_store_admits_reopens_and_streams_pinned_source() {
         SourceStoreErrorKind::StaleGeneration
     );
     assert!(wal_path(&path).exists());
+}
+
+#[test]
+fn native_open_refuses_rolled_back_selection_and_duplicate_latest_outcome() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "head A");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let stage_b = minimal_source_stage(&fixture, "head B");
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let b = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap();
+    drop(store);
+
+    let conn = Connection::open(&database).unwrap();
+    conn.execute(
+        "UPDATE root SET generation=?1, revision=?2 WHERE id=1",
+        params![a.generation, a.revision.as_bytes().as_slice()],
+    )
+    .unwrap();
+    drop(conn);
+    assert_eq!(
+        NativeSourceStore::open(&database, plan)
+            .err()
+            .unwrap()
+            .kind(),
+        SourceStoreErrorKind::CorruptStore
+    );
+
+    let conn = Connection::open(&database).unwrap();
+    conn.execute(
+        "UPDATE root SET generation=?1, revision=?2 WHERE id=1",
+        params![b.generation, b.revision.as_bytes().as_slice()],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO outcome (epoch,key,request_hash,generation,revision) VALUES (1,3,?1,?2,?3)",
+        params![
+            [3_u8; 32].as_slice(),
+            b.generation,
+            b.revision.as_bytes().as_slice()
+        ],
+    )
+    .unwrap();
+    drop(conn);
+    assert_eq!(
+        NativeSourceStore::open(&database, plan)
+            .err()
+            .unwrap()
+            .kind(),
+        SourceStoreErrorKind::CorruptStore
+    );
 }
 
 #[test]
