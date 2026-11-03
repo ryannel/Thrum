@@ -1132,7 +1132,7 @@ mod tests {
                 .collect::<Vec<_>>();
             let destination = fixture.root().join(".engine/candidate-a");
             let retain_started = Instant::now();
-            let digest = candidate_output::retain(
+            let digest = candidate_output::publish(
                 &destination,
                 candidate_output::CandidateInput {
                     root: a,

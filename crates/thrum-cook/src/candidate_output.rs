@@ -8,6 +8,7 @@ use std::{
     fs,
     io::{self, Read, Write},
     path::{Path, PathBuf},
+    sync::atomic::{AtomicU64, Ordering},
 };
 use thrum_source::AcceptedSourceRoot;
 
@@ -18,6 +19,7 @@ const MAX_FILES: usize = 128;
 const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_REPORT_BYTES: u64 = 32 * 1024;
 const MAX_JSON_BYTES: u64 = 128 * 1024;
+static NEXT_STAGE: AtomicU64 = AtomicU64::new(0);
 const EVIDENCE: [&str; 9] = [
     "build.sb",
     "build-declaration.json",
@@ -141,8 +143,8 @@ fn copy_stamped(source: &Path, destination: &Path) -> io::Result<serde_json::Val
         output.write_all(&buffer[..count])?;
         digest.update(&buffer[..count]);
     }
-    output.sync_all()?;
     fs::set_permissions(destination, source_metadata.permissions())?;
+    output.sync_all()?;
     let hash = hex(digest.finalize());
     if stamp(destination, MAX_FILE_BYTES)? != (length, hash.clone()) {
         return Err(io::Error::new(
@@ -169,7 +171,7 @@ fn read_small_json(path: &Path) -> io::Result<serde_json::Value> {
     serde_json::from_slice(&read_bounded(path, MAX_JSON_BYTES)?).map_err(invalid_json)
 }
 
-/// Copy a successfully checked local build into an owned, separate directory.
+/// Fill an owned, new and empty staging directory with a checked local build.
 /// The caller has already checked Cargo's status, units, dep-info and receipt
 /// reconciliation. This layer retains their evidence and refuses incomplete
 /// copies; it cannot close compiler reads or authenticate release origins.
@@ -182,13 +184,12 @@ pub(crate) fn retain(path: &Path, input: CandidateInput<'_>) -> io::Result<Strin
             "candidate inputs are not a successful matching build",
         ));
     }
-    if path.exists() {
-        return Err(io::Error::new(
-            io::ErrorKind::AlreadyExists,
-            "candidate destination exists",
+    let stage = fs::symlink_metadata(path)?;
+    if !stage.is_dir() || stage.file_type().is_symlink() || fs::read_dir(path)?.next().is_some() {
+        return Err(invalid(
+            "candidate stage is not an empty ordinary directory",
         ));
     }
-    fs::create_dir(path)?;
     let mut files = BTreeMap::new();
     let scene = input.product.artifact();
     let scene_path = path.join(SCENE);
@@ -272,6 +273,70 @@ pub(crate) fn retain(path: &Path, input: CandidateInput<'_>) -> io::Result<Strin
     let digest = hex(Sha256::digest(encoded));
     verify(path, &digest, input.root, input.product)?;
     Ok(digest)
+}
+
+/// Install a verified, unready bundle as one directory entry. The parent is
+/// exclusively owned by the caller: no other writer may claim `destination`.
+/// A killed writer can leave only an ignored staging directory before rename;
+/// a failed parent sync can leave a visible but unselected candidate.
+pub(crate) fn publish(destination: &Path, input: CandidateInput<'_>) -> io::Result<String> {
+    publish_directory(destination, |stage| retain(stage, input))
+}
+
+fn publish_directory<T>(
+    destination: &Path,
+    build: impl FnOnce(&Path) -> io::Result<T>,
+) -> io::Result<T> {
+    if !destination.is_absolute() || destination.file_name().is_none() {
+        return Err(invalid("candidate destination must be absolute"));
+    }
+    let parent = destination
+        .parent()
+        .ok_or_else(|| invalid("candidate destination lacks parent"))?;
+    let parent_metadata = fs::symlink_metadata(parent)?;
+    if !parent_metadata.is_dir() || parent_metadata.file_type().is_symlink() {
+        return Err(invalid("candidate parent is not an ordinary directory"));
+    }
+    if fs::symlink_metadata(destination).is_ok() {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "candidate destination exists",
+        ));
+    }
+    let mut stage = None;
+    for _ in 0..64 {
+        let sequence = NEXT_STAGE.fetch_add(1, Ordering::Relaxed);
+        let candidate = parent.join(format!(
+            ".thrum-candidate-stage-{}-{sequence}",
+            std::process::id()
+        ));
+        match fs::create_dir(&candidate) {
+            Ok(()) => {
+                stage = Some(candidate);
+                break;
+            }
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(error),
+        }
+    }
+    let stage = stage.ok_or_else(|| invalid("candidate staging names exhausted"))?;
+    let result = (|| {
+        let result = build(&stage)?;
+        fs::File::open(&stage)?.sync_all()?;
+        if fs::symlink_metadata(destination).is_ok() {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "candidate destination appeared during staging",
+            ));
+        }
+        fs::rename(&stage, destination)?;
+        fs::File::open(parent)?.sync_all()?;
+        Ok(result)
+    })();
+    if result.is_err() && stage.exists() {
+        let _ = fs::remove_dir_all(stage);
+    }
+    result
 }
 
 /// Reload using only retained adjacent files. `expected_product` supplies the
@@ -416,4 +481,140 @@ pub(crate) fn verify(
 
 fn invalid_json(error: serde_json::Error) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error)
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::{
+        process::{Child, Command, Stdio},
+        thread,
+        time::{Duration, Instant},
+    };
+
+    struct ChildGuard(Child);
+
+    impl Drop for ChildGuard {
+        fn drop(&mut self) {
+            if self.0.try_wait().ok().flatten().is_none() {
+                let _ = self.0.kill();
+                let _ = self.0.wait();
+            }
+        }
+    }
+
+    fn test_root() -> PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "thrum-candidate-publish-{}-{}",
+            std::process::id(),
+            NEXT_STAGE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn failed_stage_and_existing_destination_preserve_prior_candidate() {
+        let root = test_root();
+        let destination = root.join("candidate");
+        let failed = publish_directory(&destination, |stage| -> io::Result<()> {
+            fs::write(stage.join("partial"), b"incomplete")?;
+            Err(invalid("fixture build failed"))
+        });
+        assert!(failed.is_err());
+        assert!(!destination.exists());
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 0);
+
+        publish_directory(&destination, |stage| {
+            let mut file = fs::File::create(stage.join("complete"))?;
+            file.write_all(b"old candidate")?;
+            file.sync_all()
+        })
+        .unwrap();
+        assert_eq!(
+            fs::read(destination.join("complete")).unwrap(),
+            b"old candidate"
+        );
+        let replacement = publish_directory(&destination, |_stage| -> io::Result<()> {
+            panic!("existing destination must refuse before staging")
+        });
+        assert_eq!(
+            replacement.unwrap_err().kind(),
+            io::ErrorKind::AlreadyExists
+        );
+        assert_eq!(
+            fs::read(destination.join("complete")).unwrap(),
+            b"old candidate"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn process_kill_during_stage_does_not_expose_candidate() {
+        let root = test_root();
+        let destination = root.join("candidate");
+        let marker = root.join("entered");
+        let child = Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "candidate_output::tests::staged_publish_child",
+                "--ignored",
+                "--nocapture",
+            ])
+            .env("THRUM_CANDIDATE_PUBLISH_CHILD_ROOT", &root)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        let mut child = ChildGuard(child);
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !marker.exists() && Instant::now() < deadline {
+            assert!(
+                child.0.try_wait().unwrap().is_none(),
+                "stage child exited early"
+            );
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(marker.exists(), "stage child did not enter build callback");
+        child.0.kill().unwrap();
+        child.0.wait().unwrap();
+        assert!(!destination.exists());
+        assert!(fs::read_dir(&root).unwrap().any(|entry| {
+            entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .starts_with(".thrum-candidate-stage-")
+        }));
+
+        publish_directory(&destination, |stage| {
+            let mut file = fs::File::create(stage.join("complete"))?;
+            file.write_all(b"surviving candidate")?;
+            file.sync_all()
+        })
+        .unwrap();
+        assert_eq!(
+            fs::read(destination.join("complete")).unwrap(),
+            b"surviving candidate"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    #[ignore = "spawned by candidate publication interruption test"]
+    fn staged_publish_child() {
+        let Some(root) = std::env::var_os("THRUM_CANDIDATE_PUBLISH_CHILD_ROOT") else {
+            return;
+        };
+        let root = PathBuf::from(root);
+        publish_directory(&root.join("candidate"), |stage| {
+            let mut file = fs::File::create(stage.join("partial"))?;
+            file.write_all(b"incomplete")?;
+            file.sync_all()?;
+            fs::write(root.join("entered"), b"ready")?;
+            thread::sleep(Duration::from_secs(30));
+            Ok(())
+        })
+        .unwrap();
+    }
 }
