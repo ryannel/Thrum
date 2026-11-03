@@ -6,10 +6,10 @@ Ship a reusable engine vertical slice with **10,000 entities, 1,000–2,000 movi
 
 ## Active order
 
-- [ ] **A0 + M0 reset:** the [world storage](design/decisions/A0-WORLD-STORAGE.md), [F1 jobs](design/decisions/A0-F1-JOBS.md) and [N1 transport/codec](design/decisions/A0-N1-TRANSPORT-CODEC.md) decisions are recorded. Migrate existing retained bulk evidence after a durable destination is selected.
+- [x] **A0 + M0 reset:** the [world storage](design/decisions/A0-WORLD-STORAGE.md), [F1 jobs](design/decisions/A0-F1-JOBS.md) and [N1 transport/codec](design/decisions/A0-N1-TRANSPORT-CODEC.md) decisions are recorded. Existing retained evidence stays in Git for now, as selected on 3 November; future bulk output still follows the [storage rules](ASSET-LIFECYCLE.md).
   - [x] Build the representative fixture and Divan benches; reset render/atmosphere contracts, retain a compact cloud reference, restore automatic CI, unify duplicate-ID checking and prune stale worktrees.
 - [ ] **A1 + M1, in parallel with separate owners:** turn the foundations into one running simulation and renderer path.
-  - [x] A1 provisional serial component world: change ticks, `InputFrame`, validated input → simulate → resolve → publish stages, checked identities and [10k-entity local cost](evidence/v1-workload/A1-SIM-2026-11-03.md). The three-candidate storage spike, rollback and parallel executor remain open.
+  - [x] A1 provisional serial component world: change ticks, `InputFrame`, validated input → simulate → resolve → publish stages, checked identities and [10k-entity local cost](evidence/v1-workload/A1-SIM-2026-11-03.md). The [three-candidate storage spike](evidence/v1-workload/A1-STORAGE-SPIKE-2026-11-03.md) has correctness and local timing; general component transitions, production rollback and parallel executor remain open.
   - [x] M1 offscreen `thrum-render`: typed graph, optional GPU timestamps, material/instance ABI and a [synthetic 10k-instance Metal diagnostic](evidence/render/M1-OFFSCREEN-2026-11-03.md). Lit scene, cooked source and device frame budgets remain open.
 - [ ] **A2/A3/A4 + M2:** consumer-specific publication, zero-allocation steady ticks and F1 parallel execution, core simplification; a lit clustered-forward scene with CSM, exposure and a profiler on named targets.
 - [ ] **A5 + M3:** schema-driven delta transport, four-peer prediction and reconciliation; temporal rendering and GPU-driven culling.
