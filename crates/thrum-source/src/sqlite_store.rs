@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 #[cfg(test)]
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 #[cfg(test)]
 use std::time::{Duration, Instant};
 
@@ -1865,6 +1865,7 @@ impl SqliteStoreCore {
             request_hash,
             revision,
             |_| Ok(()),
+            None,
         )
     }
 
@@ -1898,6 +1899,7 @@ impl SqliteStoreCore {
             request_hash,
             revision,
             manifest,
+            None,
         )
     }
 
@@ -1909,6 +1911,7 @@ impl SqliteStoreCore {
         request_hash: [u8; 32],
         revision: [u8; 32],
         manifest: &TreeManifest,
+        publication_gate: Option<&RwLock<bool>>,
     ) -> Result<i64, StoreError> {
         if !manifest.dependency_roots().is_empty() {
             return Err(StoreError::UnsupportedDependencyRoots);
@@ -1934,6 +1937,7 @@ impl SqliteStoreCore {
                 }
                 Ok(())
             },
+            publication_gate,
         )
     }
 
@@ -1946,6 +1950,7 @@ impl SqliteStoreCore {
         request_hash: [u8; 32],
         revision: [u8; 32],
         refs: &[ClosureRef],
+        publication_gate: Option<&RwLock<bool>>,
     ) -> Result<i64, StoreError> {
         self.commit_with_closure(
             expected_generation,
@@ -1954,6 +1959,7 @@ impl SqliteStoreCore {
             request_hash,
             revision,
             |tx| check_prepared_manifest_closure(tx, refs),
+            publication_gate,
         )
     }
 
@@ -1965,6 +1971,7 @@ impl SqliteStoreCore {
         request_hash: [u8; 32],
         revision: [u8; 32],
         check_closure: impl FnMut(&Transaction<'_>) -> Result<(), StoreError>,
+        publication_gate: Option<&RwLock<bool>>,
     ) -> Result<i64, StoreError> {
         self.commit_with_closure_after_sql(
             expected_generation,
@@ -1973,6 +1980,7 @@ impl SqliteStoreCore {
             request_hash,
             revision,
             check_closure,
+            publication_gate,
             || {},
         )
     }
@@ -1985,6 +1993,7 @@ impl SqliteStoreCore {
         request_hash: [u8; 32],
         revision: [u8; 32],
         mut check_closure: impl FnMut(&Transaction<'_>) -> Result<(), StoreError>,
+        publication_gate: Option<&RwLock<bool>>,
         after_sql: impl FnOnce(),
     ) -> Result<i64, StoreError> {
         self.require_clean()?;
@@ -2023,6 +2032,12 @@ impl SqliteStoreCore {
             return Err(StoreError::MissingCompleteBlob);
         }
         check_closure(&tx)?;
+        // Existing pins may read on the owner's separate read-only connection
+        // while closure is checked. Drain those short reads before publishing
+        // root/outcome and hold the gate until the COMMIT outcome is known.
+        let mut publication = publication_gate
+            .map(|gate| gate.write().map_err(|_| StoreError::OwnerPoisoned))
+            .transpose()?;
         let next = generation
             .checked_add(1)
             .ok_or(StoreError::StaleGeneration)?;
@@ -2042,6 +2057,9 @@ impl SqliteStoreCore {
         tx.set_drop_behavior(rusqlite::DropBehavior::Ignore);
         if let Err(error) = tx.commit() {
             self.recovery_required = true;
+            if let Some(ref mut quarantined) = publication {
+                **quarantined = true;
+            }
             return Err(StoreError::UncertainCommit(error));
         }
         Ok(next)
@@ -2191,6 +2209,9 @@ impl From<rusqlite::Error> for SourceStoreError {
 }
 
 struct NativeSourceOwner {
+    // Drop the reader before the writer, with the owner lock held through both.
+    read_conn: Mutex<Connection>,
+    read_gate: RwLock<bool>,
     inner: Mutex<SqliteStoreCore>,
     admission_scratch: Mutex<Vec<u8>>,
     _lock: File,
@@ -2205,6 +2226,24 @@ impl NativeSourceOwner {
         self.admission_scratch
             .lock()
             .map_err(|_| StoreError::OwnerPoisoned)
+    }
+
+    fn with_read_conn<T>(
+        &self,
+        read: impl FnOnce(&Connection) -> Result<T, StoreError>,
+    ) -> Result<T, StoreError> {
+        let quarantined = self
+            .read_gate
+            .read()
+            .map_err(|_| StoreError::OwnerPoisoned)?;
+        if *quarantined {
+            return Err(StoreError::RecoveryRequired);
+        }
+        let conn = self
+            .read_conn
+            .lock()
+            .map_err(|_| StoreError::OwnerPoisoned)?;
+        read(&conn)
     }
 }
 
@@ -2283,11 +2322,22 @@ impl NativeSourceStore {
                 return Err(physical_io(&lock_path, source).into());
             }
         }
+        let core = SqliteStoreCore::open_with_plan_and_vfs(&database, plan, vfs)?;
+        let read_conn = if let Some(vfs) = vfs {
+            Connection::open_with_flags_and_vfs(&database, OpenFlags::SQLITE_OPEN_READ_ONLY, vfs)?
+        } else {
+            Connection::open_with_flags(&database, OpenFlags::SQLITE_OPEN_READ_ONLY)?
+        };
+        if !read_conn.set_db_config(DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, true)?
+            || !read_conn.db_config(DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE)?
+        {
+            return Err(StoreError::UnsupportedStoreMode.into());
+        }
         let store = Self {
             owner: Arc::new(NativeSourceOwner {
-                inner: Mutex::new(SqliteStoreCore::open_with_plan_and_vfs(
-                    &database, plan, vfs,
-                )?),
+                read_conn: Mutex::new(read_conn),
+                read_gate: RwLock::new(false),
+                inner: Mutex::new(core),
                 admission_scratch: Mutex::new(Vec::new()),
                 _lock: lock,
             }),
@@ -2465,6 +2515,7 @@ impl NativeSourceStore {
                     request_hash,
                     revision,
                     &manifest,
+                    Some(&self.owner.read_gate),
                 )?
             };
             Ok(generation)
@@ -2817,27 +2868,28 @@ impl PinnedSource {
         let (length, hash) = file.blob_identity();
         let chunks = blob_chunk_count(length)?;
         {
-            let inner = self.owner.lock()?;
-            inner.require_clean()?;
-            let (stored_length, stored_chunks, state): (i64, i64, i64) = inner
-                .conn
-                .query_row(
-                    "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
-                    params![hash.as_slice()],
-                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-                )
-                .optional()?
-                .ok_or(StoreError::MissingCompleteBlob)?;
+            let (stored_length, stored_chunks, state): (i64, i64, i64) =
+                self.owner.with_read_conn(|conn| {
+                    let header = conn
+                        .query_row(
+                            "SELECT length, chunk_count, state FROM blob_header WHERE hash=?1",
+                            params![hash.as_slice()],
+                            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                        )
+                        .optional()?
+                        .ok_or(StoreError::MissingCompleteBlob)?;
+                    let actual_chunks: i64 = conn.query_row(
+                        "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+                        params![hash.as_slice()],
+                        |row| row.get(0),
+                    )?;
+                    if actual_chunks != chunks {
+                        return Err(StoreError::InvalidChunkLayout);
+                    }
+                    Ok(header)
+                })?;
             if stored_length != length as i64 || stored_chunks != chunks || state != 1 {
                 return Err(StoreError::CorruptRootBlob.into());
-            }
-            let actual_chunks: i64 = inner.conn.query_row(
-                "SELECT count(*) FROM blob_chunks WHERE hash=?1",
-                params![hash.as_slice()],
-                |row| row.get(0),
-            )?;
-            if actual_chunks != chunks {
-                return Err(StoreError::InvalidChunkLayout.into());
             }
         }
         let mut digest = Sha256::new();
@@ -2845,21 +2897,22 @@ impl PinnedSource {
         for index in 0..chunks {
             self.scratch.clear();
             {
-                let inner = self.owner.lock()?;
-                inner.require_clean()?;
-                let mut statement = inner
-                    .conn
-                    .prepare("SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2")?;
-                let mut rows = statement.query(params![hash.as_slice(), index])?;
-                let row = rows.next()?.ok_or(StoreError::MissingChunk)?;
-                let ValueRef::Blob(bytes) = row.get_ref(0)? else {
-                    return Err(StoreError::InvalidChunkLayout.into());
-                };
-                let expected = (length - copied).min(CHUNK_BYTES as u64) as usize;
-                if bytes.len() != expected {
-                    return Err(StoreError::InvalidChunkLayout.into());
-                }
-                self.scratch.extend_from_slice(bytes);
+                self.owner.with_read_conn(|conn| {
+                    let mut statement = conn.prepare(
+                        "SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2",
+                    )?;
+                    let mut rows = statement.query(params![hash.as_slice(), index])?;
+                    let row = rows.next()?.ok_or(StoreError::MissingChunk)?;
+                    let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+                        return Err(StoreError::InvalidChunkLayout);
+                    };
+                    let expected = (length - copied).min(CHUNK_BYTES as u64) as usize;
+                    if bytes.len() != expected {
+                        return Err(StoreError::InvalidChunkLayout);
+                    }
+                    self.scratch.extend_from_slice(bytes);
+                    Ok(())
+                })?;
             }
             digest.update(&self.scratch);
             output
@@ -4021,6 +4074,133 @@ fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
         .unwrap()
         .release_root_pin(pin_id)
         .unwrap();
+}
+
+#[test]
+fn accepted_old_pin_reads_during_final_closure_transaction() {
+    let fixture = Fixture::new();
+    let store = NativeSourceStore::open(&fixture.database(), SourceSpacePlan::DEFAULT).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "accepted A");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let path = SourcePath::parse("project.json").unwrap();
+    let expected = fs::read(fixture.source_root().join(path.as_str())).unwrap();
+
+    let stage_b = minimal_source_stage(&fixture, "accepted B");
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let manifest_b = candidate_b.provisional_manifest().unwrap();
+    let revision_b = *manifest_b.revision().as_bytes();
+    {
+        let mut inner = store.owner.lock().unwrap();
+        inner.stage_candidate_files(&candidate_b).unwrap();
+        inner.stage_manifest_chunked(&manifest_b).unwrap();
+    }
+    let refs = prepare_manifest_closure(&manifest_b).unwrap();
+    let (go_tx, go_rx) = std::sync::mpsc::channel();
+    let (done_tx, done_rx) = std::sync::mpsc::channel();
+    let (committed, copied) = std::thread::scope(|scope| {
+        let old_pin_ref = &mut old_pin;
+        let reader = scope.spawn(move || {
+            go_rx.recv().unwrap();
+            let mut copied = Vec::new();
+            let result = old_pin_ref.copy_file_to(&path, &mut copied);
+            done_tx.send(()).unwrap();
+            (result, copied)
+        });
+        let mut inner = store.owner.lock().unwrap();
+        let committed = inner.commit_with_closure(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            revision_b,
+            |tx| {
+                check_prepared_manifest_closure(tx, &refs)?;
+                go_tx.send(()).unwrap();
+                done_rx
+                    .recv_timeout(Duration::from_secs(2))
+                    .map_err(|_| StoreError::OutputIo)?;
+                Ok(())
+            },
+            Some(&store.owner.read_gate),
+        );
+        drop(inner);
+        (committed, reader.join().unwrap())
+    });
+    assert_eq!(committed.unwrap(), a.generation + 1);
+    assert_eq!(copied.0.unwrap(), expected.len() as u64);
+    assert_eq!(copied.1, expected);
+    assert_eq!(store.current_root().unwrap().unwrap().generation, 2);
+    old_pin.close().unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn accepted_reader_waiting_at_publication_sees_uncertain_commit_quarantine() {
+    let fixture = Fixture::new();
+    let observer = checkpoint_vfs::Observer::new("unix");
+    let store = NativeSourceStore::open_with_vfs(
+        &fixture.database(),
+        SourceSpacePlan::DEFAULT,
+        Some(observer.name()),
+    )
+    .unwrap();
+    let stage_a = minimal_source_stage(&fixture, "accepted A");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+
+    let stage_b = minimal_source_stage(&fixture, "accepted B");
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let manifest_b = candidate_b.provisional_manifest().unwrap();
+    let revision_b = *manifest_b.revision().as_bytes();
+    {
+        let mut inner = store.owner.lock().unwrap();
+        inner.stage_candidate_files(&candidate_b).unwrap();
+        inner.stage_manifest_chunked(&manifest_b).unwrap();
+    }
+    let refs = prepare_manifest_closure(&manifest_b).unwrap();
+    let (go_tx, go_rx) = std::sync::mpsc::channel();
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let path = SourcePath::parse("project.json").unwrap();
+    let (commit, read) = std::thread::scope(|scope| {
+        let old_pin_ref = &mut old_pin;
+        let reader = scope.spawn(move || {
+            go_rx.recv().unwrap();
+            started_tx.send(()).unwrap();
+            old_pin_ref.copy_file_to(&path, &mut io::sink())
+        });
+        let mut inner = store.owner.lock().unwrap();
+        let commit = inner.commit_with_closure_after_sql(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            revision_b,
+            |tx| check_prepared_manifest_closure(tx, &refs),
+            Some(&store.owner.read_gate),
+            || {
+                observer.arm_wal_fault(checkpoint_vfs::WalFault::AfterCommitSync);
+                go_tx.send(()).unwrap();
+                started_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+                std::thread::sleep(Duration::from_millis(10));
+            },
+        );
+        drop(inner);
+        (commit, reader.join().unwrap())
+    });
+    assert!(matches!(commit, Err(StoreError::UncertainCommit(_))));
+    assert_eq!(
+        read.unwrap_err().kind(),
+        SourceStoreErrorKind::RecoveryRequired
+    );
+    assert_eq!(
+        old_pin.close().unwrap_err().kind(),
+        SourceStoreErrorKind::RecoveryRequired
+    );
+    drop(store);
+    observer.assert_closed();
 }
 
 #[test]
@@ -6865,6 +7045,7 @@ fn process_kill_before_root_commit_child() {
             [2; 32],
             revision,
             |_| Ok(()),
+            None,
             || {
                 signal_and_wait_for_kill(&marker);
             },
@@ -7406,10 +7587,26 @@ fn measure_maximum_manifest_closure_reader_wait() {
         let start = Instant::now();
         let generation = match prepared.as_deref() {
             Some(refs) => inner
-                .commit_prepared_manifest_probe(a.generation, 1, 2, [2; 32], revision, refs)
+                .commit_prepared_manifest_probe(
+                    a.generation,
+                    1,
+                    2,
+                    [2; 32],
+                    revision,
+                    refs,
+                    Some(&store.owner.read_gate),
+                )
                 .unwrap(),
             None => inner
-                .commit_verified_manifest_probe(a.generation, 1, 2, [2; 32], revision, &manifest)
+                .commit_verified_manifest_probe(
+                    a.generation,
+                    1,
+                    2,
+                    [2; 32],
+                    revision,
+                    &manifest,
+                    Some(&store.owner.read_gate),
+                )
                 .unwrap(),
         };
         let commit_ms = start.elapsed().as_secs_f64() * 1000.0;
