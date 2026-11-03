@@ -280,6 +280,15 @@ root rather than reconstructing claims. A process kill after registration has
 been exercised. The [focused proof](../../evidence/integration/T2-F4-JOB-HOST-2026-11-03.md)
 records the exact cases and limitations.
 
+Input access now requires an owned per-job read lease. The host can admit or
+close B while A's lease exists, but A's explicit close reports active readers
+and retains its full claim. The job owner disarms F4's implicit path cleanup
+when the last reference disappears after host destruction, preserving the
+registered root for restart quarantine. This is one allocation per admitted
+job and one reference-count operation per lease, outside F4's streamed copy.
+It does not supervise a compiler process; a future compiler owner must retain
+the lease through the entire process family and pair it with output claims.
+
 One [bounded same-volume APFS fault](../../evidence/integration/T2-REGISTERED-F4-NATIVE-FAULT-2026-11-03.md)
 now reaches native `ENOSPC` during a registered F4 copy after its own
 preflight. Checked input/root retirement precedes refund, and the same pin

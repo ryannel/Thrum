@@ -8,4 +8,4 @@
 mod unix;
 
 #[cfg(unix)]
-pub use unix::{JobError, JobId, JobSpacePlan, MaterializationHost, SpacePressure};
+pub use unix::{InputLease, JobError, JobId, JobSpacePlan, MaterializationHost, SpacePressure};

@@ -3,6 +3,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use fs4::{FileExt, TryLockError};
 use thrum_cook::{
@@ -66,6 +67,8 @@ pub enum JobError {
     Overflow,
     /// An ID is not owned by this live host.
     UnknownJob(JobId),
+    /// One or more input leases still retain this job's source tree.
+    ReadersActive(JobId),
     /// The pin belongs to a different native source store than this project.
     SourceStoreMismatch {
         /// Canonical path selected by the host's live source-store owner.
@@ -84,12 +87,47 @@ pub enum JobError {
     Materialize(MaterializeError),
 }
 
-struct ActiveMaterialization {
+struct OwnedMaterialization {
     root: PathBuf,
     root_directory: File,
-    input: MaterializedSource,
+    input: Option<MaterializedSource>,
     input_directory: File,
     claim_bytes: u64,
+}
+
+impl Drop for OwnedMaterialization {
+    fn drop(&mut self) {
+        // Host destruction can precede the last reader. Keep the registered
+        // tree after either owner leaves; restart must inspect it explicitly.
+        if let Some(input) = self.input.take() {
+            input.retain_for_recovery();
+        }
+    }
+}
+
+/// Owned read lifetime for one complete immutable F4 input tree.
+/// Hold this through all reads, including a supervised compiler's lifetime.
+pub struct InputLease {
+    job: Arc<OwnedMaterialization>,
+}
+
+impl InputLease {
+    /// Path valid while this lease is held by a cooperating reader.
+    pub fn path(&self) -> &Path {
+        self.job
+            .input
+            .as_ref()
+            .expect("leased job retains its input")
+            .path()
+    }
+}
+
+impl std::ops::Deref for InputLease {
+    type Target = Path;
+
+    fn deref(&self) -> &Self::Target {
+        self.path()
+    }
 }
 
 /// Exclusive first-host account for F4 input jobs on one Unix filesystem.
@@ -109,18 +147,8 @@ pub struct MaterializationHost {
     incarnation: u128,
     next_id: u64,
     active_claim_bytes: u64,
-    active: BTreeMap<JobId, ActiveMaterialization>,
+    active: BTreeMap<JobId, Arc<OwnedMaterialization>>,
     quarantined: bool,
-}
-
-impl Drop for MaterializationHost {
-    fn drop(&mut self) {
-        // Registered roots survive an owner exit or path-identity fault.
-        // The next host inventories them and refuses new work until recovery.
-        for (_, job) in std::mem::take(&mut self.active) {
-            job.input.retain_for_recovery();
-        }
-    }
 }
 
 impl MaterializationHost {
@@ -356,13 +384,13 @@ impl MaterializationHost {
                 }
                 self.active.insert(
                     id,
-                    ActiveMaterialization {
+                    Arc::new(OwnedMaterialization {
                         root,
                         root_directory,
-                        input,
+                        input: Some(input),
                         input_directory,
                         claim_bytes: claim,
-                    },
+                    }),
                 );
                 Ok(id)
             }
@@ -381,13 +409,21 @@ impl MaterializationHost {
         }
     }
 
-    /// The complete immutable F4 input retained under this host's owner.
-    pub fn input_path(&self, id: JobId) -> Result<&Path, JobError> {
+    /// Lease the complete immutable F4 input without blocking other jobs.
+    pub fn input_lease(&self, id: JobId) -> Result<InputLease, JobError> {
         self.ensure_parent_identity()?;
         let job = self.active.get(&id).ok_or(JobError::UnknownJob(id))?;
         ensure_root_identity(&job.root_directory, &job.root)?;
-        ensure_input_identity(&job.input_directory, job.input.path())?;
-        Ok(job.input.path())
+        ensure_input_identity(
+            &job.input_directory,
+            job.input
+                .as_ref()
+                .expect("active job retains its input")
+                .path(),
+        )?;
+        Ok(InputLease {
+            job: Arc::clone(job),
+        })
     }
 
     /// Release only after checked F4 cleanup and durable job-root retirement.
@@ -402,12 +438,30 @@ impl MaterializationHost {
             self.quarantined = true;
             return Err(error);
         }
-        if let Err(error) = ensure_input_identity(&job.input_directory, job.input.path()) {
+        if let Err(error) = ensure_input_identity(
+            &job.input_directory,
+            job.input
+                .as_ref()
+                .expect("active job retains its input")
+                .path(),
+        ) {
             self.quarantined = true;
             return Err(error);
         }
         let job = self.active.remove(&id).expect("checked active job exists");
-        if let Err(source) = job.input.close() {
+        let mut job = match Arc::try_unwrap(job) {
+            Ok(job) => job,
+            Err(job) => {
+                self.active.insert(id, job);
+                return Err(JobError::ReadersActive(id));
+            }
+        };
+        if let Err(source) = job
+            .input
+            .take()
+            .expect("active job retains its input")
+            .close()
+        {
             self.quarantined = true;
             return Err(io_error(&job.root.join("input"), source));
         }
@@ -826,7 +880,7 @@ mod tests {
                 assert_eq!(admitted_b.generation, 2);
             })
             .unwrap();
-        let input = host.input_path(id).unwrap();
+        let input = host.input_lease(id).unwrap();
         assert_eq!(
             fs::read(input.join("scenes/main.scene.json")).unwrap(),
             a_scene
@@ -839,8 +893,58 @@ mod tests {
             stage_declared_tree_with_plan(&fixture.project, &declared_paths(), source_plan())
                 .unwrap();
         validate_staged_candidate(&stage_with_complete_a, &[]).unwrap();
+        drop(input);
         host.close(id).unwrap();
         assert_eq!(host.active_claim_bytes(), 0);
+    }
+
+    #[test]
+    fn active_reader_blocks_only_its_own_refund_while_another_job_is_admitted() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let mut pin = store.pin_current(1).unwrap();
+        let plan = JobSpacePlan {
+            managed_temporary_target_bytes: 40 * MIB,
+            free_headroom_bytes: 0,
+        };
+        let mut host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, plan).unwrap();
+        let a = host.materialize(&mut pin, scratch()).unwrap();
+        let reader = host.input_lease(a).unwrap();
+        let b = host.materialize(&mut pin, scratch()).unwrap();
+        assert!(reader.join("master.bin").is_file());
+        let both_claims = host.active_claim_bytes();
+        assert!(matches!(host.close(a), Err(JobError::ReadersActive(id)) if id == a));
+        assert_eq!(host.active_claim_bytes(), both_claims);
+        assert!(reader.join("master.bin").is_file());
+        host.close(b).unwrap();
+        assert!(host.active_claim_bytes() > 0);
+        drop(reader);
+        host.close(a).unwrap();
+        assert_eq!(host.active_claim_bytes(), 0);
+        drop(host);
+        MaterializationHost::open(&fixture.project, &store, &fixture.jobs, plan).unwrap();
+    }
+
+    #[test]
+    fn lease_outliving_host_preserves_registered_input_for_restart_quarantine() {
+        let fixture = Fixture::new();
+        let store = fixture.accepted_store();
+        let mut pin = store.pin_current(1).unwrap();
+        let mut host =
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
+        let id = host.materialize(&mut pin, scratch()).unwrap();
+        let reader = host.input_lease(id).unwrap();
+        let root = reader.parent().unwrap().to_owned();
+        drop(host);
+        assert!(root.join("registration").is_file());
+        assert!(reader.join("master.bin").is_file());
+        drop(reader);
+        assert!(root.join("input/master.bin").is_file());
+        assert!(matches!(
+            MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()),
+            Err(JobError::Quarantined(path)) if path == root
+        ));
     }
 
     #[test]
@@ -1046,7 +1150,8 @@ mod tests {
 
         fs::remove_file(&filler_path).unwrap();
         let retried = host.materialize(&mut pin, scratch()).unwrap();
-        let mut master = File::open(host.input_path(retried).unwrap().join("master.bin")).unwrap();
+        let reader = host.input_lease(retried).unwrap();
+        let mut master = File::open(reader.join("master.bin")).unwrap();
         let mut verified_bytes = 0_u64;
         let mut buffer = [0_u8; 64 * 1024];
         loop {
@@ -1059,6 +1164,8 @@ mod tests {
         }
         assert_eq!(verified_bytes, 12 * MIB);
         assert_eq!(store.current_root().unwrap(), Some(pin.root()));
+        drop(master);
+        drop(reader);
         host.close(retried).unwrap();
         assert_eq!(host.active_claim_bytes(), 0);
         pin.close().unwrap();
@@ -1072,7 +1179,7 @@ mod tests {
         let mut host =
             MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
         let id = host.materialize(&mut pin, scratch()).unwrap();
-        let root = host.input_path(id).unwrap().parent().unwrap().to_owned();
+        let root = host.input_lease(id).unwrap().parent().unwrap().to_owned();
         fs::write(root.join("unexpected"), b"unknown retained owner").unwrap();
         assert!(matches!(host.close(id), Err(JobError::Quarantined(_))));
         assert!(host.active_claim_bytes() > 0);
@@ -1098,7 +1205,12 @@ mod tests {
         let first = host.materialize(&mut pin, scratch()).unwrap();
         let granularity = fs4::allocation_granularity(&fixture.jobs).unwrap();
         let root_claim = 16 * MIB + 2 * granularity;
-        assert!(host.input_path(first).unwrap().join("master.bin").is_file());
+        assert!(
+            host.input_lease(first)
+                .unwrap()
+                .join("master.bin")
+                .is_file()
+        );
         assert_eq!(host.active_claim_bytes(), root_claim);
         let refused = host.materialize(&mut pin, scratch()).unwrap_err();
         assert!(matches!(
@@ -1131,7 +1243,7 @@ mod tests {
         assert_ne!(first, second);
         assert!(matches!(host.close(first), Err(JobError::UnknownJob(id)) if id == first));
         assert!(
-            host.input_path(second)
+            host.input_lease(second)
                 .unwrap()
                 .join("master.bin")
                 .is_file()
@@ -1163,7 +1275,7 @@ mod tests {
             Err(JobError::Busy)
         ));
         let id = host.materialize(&mut pin, scratch()).unwrap();
-        let root = host.input_path(id).unwrap().parent().unwrap().to_owned();
+        let root = host.input_lease(id).unwrap().parent().unwrap().to_owned();
         pin.close().unwrap();
         drop(host);
         assert!(root.join("registration").is_file());
@@ -1182,7 +1294,7 @@ mod tests {
         let mut host =
             MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
         let id = host.materialize(&mut pin, scratch()).unwrap();
-        let root = host.input_path(id).unwrap().parent().unwrap().to_owned();
+        let root = host.input_lease(id).unwrap().parent().unwrap().to_owned();
         let old_parent = fixture.base.join("old-jobs");
         fs::rename(&fixture.jobs, &old_parent).unwrap();
         fs::DirBuilder::new()
@@ -1223,7 +1335,7 @@ mod tests {
         let mut host =
             MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
         let id = host.materialize(&mut pin, scratch()).unwrap();
-        let root = host.input_path(id).unwrap().parent().unwrap().to_owned();
+        let root = host.input_lease(id).unwrap().parent().unwrap().to_owned();
         let moved = fixture.jobs.join("moved-job");
         fs::rename(&root, &moved).unwrap();
         fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
@@ -1247,7 +1359,7 @@ mod tests {
         let mut host =
             MaterializationHost::open(&fixture.project, &store, &fixture.jobs, account()).unwrap();
         let id = host.materialize(&mut pin, scratch()).unwrap();
-        let input = host.input_path(id).unwrap().to_owned();
+        let input = host.input_lease(id).unwrap().to_owned();
         let original = input.with_file_name("old-input");
         fs::rename(&input, &original).unwrap();
         fs::create_dir(&input).unwrap();
