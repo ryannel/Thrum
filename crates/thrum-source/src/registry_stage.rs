@@ -4,7 +4,6 @@
 //! Prior-root lineage, physical peak admission and durable admission remain
 //! separate gates.
 
-use std::collections::HashSet;
 use std::io::Read;
 use std::sync::LazyLock;
 
@@ -566,19 +565,17 @@ pub fn validate_staged_registry<'a>(
     dependency_roots: &[String],
 ) -> Result<StagedRegistry<'a>, StagedRegistryError> {
     let registry = prepare_staged_registry(stage, dependency_roots)?;
-    let mut ids = HashSet::with_capacity(registry.schemas.len() + 2);
-    for id in std::iter::once(registry.project.id())
-        .chain(std::iter::once(registry.history_id.as_str()))
-        .chain(
-            registry
-                .schemas
-                .iter()
-                .map(|item| item.descriptor.record_id()),
-        )
-    {
-        if !ids.insert(id) {
-            return Err(StagedRegistryError::DuplicateRecordId(id.to_owned()));
-        }
+    let mut ids = Vec::with_capacity(registry.schemas.len() + 2);
+    ids.push(registry.project.id());
+    ids.push(registry.history_id.as_str());
+    ids.extend(
+        registry
+            .schemas
+            .iter()
+            .map(|item| item.descriptor.record_id()),
+    );
+    if let Some(id) = first_duplicate_record_id(&mut ids) {
+        return Err(StagedRegistryError::DuplicateRecordId(id.to_owned()));
     }
     Ok(registry)
 }
@@ -853,9 +850,8 @@ pub fn validate_staged_records(
     all_ids.extend(scenes.iter().map(StagedScene::id));
     all_ids.extend(games.iter().map(|item| item.summary.id()));
     all_ids.extend(builtins.iter().map(StagedBuiltin::id));
-    all_ids.sort_unstable();
-    if let Some(pair) = all_ids.windows(2).find(|pair| pair[0] == pair[1]) {
-        return Err(StagedRecordError::DuplicateRecordId(pair[0].to_owned()));
+    if let Some(id) = first_duplicate_record_id(&mut all_ids) {
+        return Err(StagedRecordError::DuplicateRecordId(id.to_owned()));
     }
 
     let mut scene_ids: Vec<_> = scenes.iter().map(StagedScene::id).collect();
@@ -928,6 +924,13 @@ pub fn validate_staged_records(
         builtins,
         required_edges,
     })
+}
+
+fn first_duplicate_record_id<'a>(ids: &mut [&'a str]) -> Option<&'a str> {
+    ids.sort_unstable();
+    ids.windows(2)
+        .find(|pair| pair[0] == pair[1])
+        .map(|pair| pair[0])
 }
 
 fn account_required_edges(
@@ -2135,6 +2138,13 @@ mod tests {
                 validate_staged_registry(&valid_structure, &[]),
                 Err(StagedRegistryError::DuplicateRecordId(id)) if id == PROJECT_ID
             ));
+        }
+    }
+
+    #[test]
+    fn registry_and_candidate_collision_passes_share_canonical_choice() {
+        for mut ids in [["b", "a", "b", "a"], ["a", "b", "a", "b"]] {
+            assert_eq!(first_duplicate_record_id(&mut ids), Some("a"));
         }
     }
 
