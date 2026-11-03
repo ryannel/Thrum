@@ -4,21 +4,23 @@ A Rust 3D game engine being built for beautiful, flexible games on modern deskto
 WebGPU browsers and native mobile platforms. Features and visual quality are selected
 per game; local and multiplayer play share the same authoritative rules.
 
-**Status:** architecture and initial specifications are recorded; this repository contains
-a compilable scaffold and contributor checks. It does not run a game yet.
+**Status:** architecture and initial specifications are recorded. The repository now runs a
+bounded headless action/rule/authority/replica fixture, alongside contributor checks. It has no
+renderer, transport adapter or shipping game runtime yet.
 
 Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or newer:
 
 ```sh
 rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+rustup run 1.99.1 cargo fetch --locked
 ./dev check
 ```
 
 On Windows, use Git Bash for `./dev`, or run
 `./dev.ps1 check` from PowerShell. Set `THRUM_PYTHON=python`
-if Python is not installed as `python3`. No third-party Rust crates are needed yet.
+if Python is not installed as `python3`. Fetch the locked Rust dependencies once before the offline checks on a clean copy.
 
-- [Build plan](docs/BUILD-PLAN.md): the next complete interaction and its acceptance criteria.
+- [Central work list](docs/BUILD-PLAN.md): checked-off slices, next actions and milestone status.
 - [Engine design](docs/design/README.md): requirements, architecture, modules and research.
 - [Contributing](CONTRIBUTING.md): commands, conventions and review evidence.
 - [Repository layout](docs/REPOSITORY.md): where work belongs and how it is retained.

@@ -43,6 +43,46 @@ class RepositoryChecks(unittest.TestCase):
             del policy["packages"]["tools"]
             self.assertTrue(any("registry mismatch" in e for e in repo_check.check_packages(root, metadata, policy)))
 
+    def test_unregistered_manifest_is_rejected_without_a_folder_count_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            registered = root / "crates" / "core" / "Cargo.toml"
+            registered.parent.mkdir(parents=True)
+            registered.write_text("[package]\nname='core'\n")
+            metadata = {"workspace_members": ["core"], "packages": [
+                {"id": "core", "name": "core", "manifest_path": str(registered)}]}
+            self.assertEqual(repo_check.check_manifest_inventory(root, metadata), [])
+            extra = root / "crates" / "new_module" / "Cargo.toml"
+            extra.parent.mkdir()
+            extra.write_text("[package]\nname='new_module'\n")
+            self.assertEqual(repo_check.check_manifest_inventory(root, metadata),
+                             ["unregistered package manifest: crates/new_module/Cargo.toml"])
+
+    def test_external_dependency_requires_exact_version_and_review_record(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            manifest = root / "crates" / "core" / "Cargo.toml"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text('[package]\nversion.workspace=true\nedition.workspace=true\nrust-version.workspace=true\npublish.workspace=true\n[lints]\nworkspace=true\n')
+            dependency = {"name": "hecs", "path": None,
+                          "source": "registry+https://github.com/rust-lang/crates.io-index",
+                          "req": "^0.11.2", "kind": None, "target": None}
+            metadata = {"workspace_members": ["core"], "packages": [
+                {"id": "core", "name": "core", "manifest_path": str(manifest),
+                 "dependencies": [dependency]}]}
+            policy = {"packages": {"core": {"manifest": "crates/core/Cargo.toml",
+                                            "allowed_workspace_dependencies": []}},
+                      "external_dependencies": {}}
+            self.assertIn("unregistered external dependency: core -> hecs",
+                          repo_check.check_packages(root, metadata, policy))
+            policy["external_dependencies"]["hecs"] = {
+                "requirement": "=0.11.2", "license": "MIT OR Apache-2.0",
+                "purpose": "private component storage", "target_cost": "review Wasm and native builds"}
+            self.assertIn("external dependency must use declared exact version: hecs",
+                          repo_check.check_packages(root, metadata, policy))
+            dependency["req"] = "=0.11.2"
+            self.assertEqual(repo_check.check_packages(root, metadata, policy), [])
+
     def test_stale_digest_is_not_silently_refreshed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

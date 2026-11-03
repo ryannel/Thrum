@@ -4,6 +4,108 @@
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-mobile-shell]
+manifest = "crates/thrum-mobile-shell/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core"]
+
+[packages.thrum-network]
+manifest = "crates/thrum-network/Cargo.toml"
+# Test-only real W1 host integration; the production N1 codec remains independent.
+allowed_workspace_dependencies = ["thrum-core"]
+
+[packages.thrum-source]
+manifest = "crates/thrum-source/Cargo.toml"
+allowed_workspace_dependencies = []
+
+[packages.thrum-cook]
+manifest = "crates/thrum-cook/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-source"]
+
+[packages.thrum-jobs]
+manifest = "crates/thrum-jobs/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-source", "thrum-cook"]
+
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
+
+[packages.i1-mobile-game]
+manifest = "examples/i1-mobile-game/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-source", "thrum-cook"]
+
+# Every direct third-party crate must be listed here with an exact Cargo
+# requirement, its declared license, purpose and target/build cost note.
+# The check validates declarations; license/provenance review remains human work.
+[external_dependencies]
+
+[external_dependencies.hashbrown]
+requirement = "=0.17.1"
+license = "MIT OR Apache-2.0"
+purpose = "Precharged, fixed-capacity confirmed replica object index with inspectable table allocation"
+target_cost = "One pinned crate with no transitive dependencies in the selected feature set; measure native, Wasm and phone lookup, churn and rehash tails before qualification"
+
+[external_dependencies.winit]
+requirement = "=0.30.13"
+license = "Apache-2.0"
+purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell"
+target_cost = "Target-specific mobile dependency with substantial platform glue and transitive closure; first iOS static-library compile measured separately, Android native build requires NDK and GameActivity packaging"
+
+[external_dependencies.wgpu]
+requirement = "=30.0.1"
+license = "MIT OR Apache-2.0"
+purpose = "Minimal native Metal/Vulkan clear surface to prove mobile presentation and surface recreation without a second world"
+target_cost = "Large target-specific native graphics closure and device/surface memory; only Metal or Vulkan enabled per mobile target, startup, surface recovery and sustained device costs remain to measure"
+
+[external_dependencies.pollster]
+requirement = "=1.0.1"
+license = "Apache-2.0/MIT"
+purpose = "Block first mobile adapter/device creation in the initial synchronous shell"
+target_cost = "Small single-purpose native dependency; startup blocking must be measured and replaced if it harms responsiveness"
+
+[external_dependencies.serde]
+requirement = "=1.0.229"
+license = "MIT OR Apache-2.0"
+purpose = "Strict bounded editable-source JSON decoding through DeserializeSeed"
+target_cost = "Native tooling only; serde derive adds a build-time proc macro for strict render-object visitors, with no reflection or simulation runtime dependency; clean-build cost remains to measure"
+
+[external_dependencies.fs4]
+requirement = "=1.1.0"
+license = "MIT OR Apache-2.0"
+purpose = "Native available-space, allocation-granularity and cooperative lock probes for source staging, build-input materialization and the first T2 job owner"
+target_cost = "Native source/cook/job tooling only; sync OS filesystem bindings, no game callback or portable core dependency"
+
+[external_dependencies.rusqlite]
+requirement = "=0.40.2"
+license = "MIT"
+purpose = "Native source blobs, manifests, root/outcome transactions and verified reader leases, including provisional snapshot qualification"
+target_cost = "Native source tooling with a bundled SQLite C build and disk I/O; no portable core or game-callback dependency. A provisional root is not accepted-source or ready-build authority"
+
+[external_dependencies.serde_json]
+requirement = "=1.0.154"
+license = "MIT OR Apache-2.0"
+purpose = "Strict source and first-profile build-declaration JSON parsing, stable round-trip f64 semantics and exact optional-value carry-through in native tooling"
+target_cost = "Native source/cook tooling only; float_roundtrip adds parser work and raw_value retains untouched source syntax, with bounded record memory separate from streaming scratch"
+
+[external_dependencies.serde_json_canonicalizer]
+requirement = "=0.4.1"
+license = "MIT"
+purpose = "Independent RFC 8785 JCS oracle for native source-manifest conformance tests"
+target_cost = "Native tooling dev-dependency only; production manifest emission streams fixed-order fields without serializer allocation"
+
+[external_dependencies.sha2]
+requirement = "=0.11.1"
+license = "MIT OR Apache-2.0"
+purpose = "SHA-256 of exact source file bytes and canonical tree manifests"
+target_cost = "Native source and cook tooling only; source-byte/product hashing scales with declared content and remains outside simulation callbacks"
+
+[external_dependencies.unicase]
+requirement = "=2.10.0"
+license = "MIT OR Apache-2.0"
+purpose = "Full Unicode case-fold collision detection for cross-target source paths"
+target_cost = "Native tooling only; allocate folded metadata once per candidate path, not during simulation"
+
+[external_dependencies.unicode-normalization]
+requirement = "=0.1.26"
+license = "MIT OR Apache-2.0"
+purpose = "NFC validation of source paths before immutable capture"
+target_cost = "Native tooling only; Unicode tables add binary/build cost and path checks occur once per candidate"

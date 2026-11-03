@@ -50,6 +50,16 @@ an explicit stop/load boundary. The barrier invariant does not require live whol
 code. A later live streaming recipe must specify scoped staging, consumer commit and peak admission before selection.
 Selected default timestep is 1/60 s, configurable for game/solver stability requirements; substeps are internal to an
 explicit solver schedule and do not create another world clock. Rendering and replication cadences are separate.
+The resolved game recipe must bind that timestep to compatible P3/E1 provider
+integration and N1 semantic timing before a run starts. A clock accepting a
+different rate alone does not authorize a solver or wire recipe written for
+1/60 s; refuse the combination or select a separately derived and qualified
+provider/protocol. Name world ticks, world seconds, callback time and transport
+deadlines separately in limits and diagnostics.
+Authored day/weather phases may have different rates, but each is a versioned deterministic map from the same F1
+world time, sampled at the committed tick. Save/replay preserves phase parameters and discontinuities. A changed
+source phase does not change the physical `dt`; any process-rate scaling and conversion of output fluxes to world
+seconds is part of the selected provider, not a second independently advancing scheduler.
 This is an engineering cadence, not a measured cost. Local play, server, replica and speculative worlds have distinct
 roles and epochs; replicas publish admitted server state, while prediction runs only its declared capture/replay closure.
 
@@ -60,7 +70,7 @@ inputs, ordering and required nondeterministic results; fixed dt alone does not 
 Suspend/long gaps follow explicit pause/catch-up policy with a work cap; never apply hidden wall-clock elapsed time
 unboundedly. Every asynchronous result has an epoch/version check before publication.
 
-F1 owns a bounded publication pool per world with whole-process admission. W1 publishes a `SnapshotId(world_epoch,tick)` **immutable read-model bundle**:
+F1 owns publication lifetimes and reports retained work and memory pressure. There is **no engine-wide hard process-memory ceiling** or requirement that native game rules fit a predeclared byte allowance. A selected bounded host profile may use a shared reservation pool for its own owner-byte guarantees; that profile is optional and its charges are not OS RSS. W1 publishes a `SnapshotId(world_epoch,tick)` **immutable read-model bundle**:
 copied or copy-on-write pages, identified events and versioned provider-sample/product handles. Published pages never
 alias arrays that the next physics/world step can mutate. Registered consumers acquire `SnapshotLease` and required
 CPU product/provider leases; raw borrowed references cannot outlive them. Baseline P3 queries execute within the
@@ -71,11 +81,29 @@ retention; they do not pin arbitrary whole-world epochs forever. V2 extraction c
 staging/GPU resource leases. Release the world snapshot only when CPU extraction and required copies finish; GPU
 submission completion governs the packet/resources independently. Region retirement cannot free leased old data.
 
-Before publishing beyond the pool's count/byte admission cap, cancel/defer optional unsubmitted stale-view work and
+When retained snapshots or optional presentation work create pressure, cancel/defer optional unsubmitted stale-view work and
 invalidate its histories, then await actual lease release. Never reuse in-use pages. A required reader that cannot
 finish causes backpressure or the explicit overload state, not unbounded retention or silent tick loss. A skipped
-view outside its retained sample horizon resets history and resumes from a valid snapshot. Exact page layout and
-caps are detailed parameters; these lifetime rules are mandatory for the design.
+view outside its retained sample horizon resets history and resumes from a valid snapshot. Count/backlog limits and
+explicit failure states remain necessary for correctness; implementation byte budgets are measured and tuned against
+named workloads rather than imposed as a universal hard memory cap.
+In a selected bounded host profile that promises admitted-input progress under competing pool use, each accepted input protects its
+future rule-created immutable output bytes separately from snapshot and group storage. Rule callbacks in that profile spend only
+their own preadmitted output allowance; pre-existing charged owners may be shared without another byte charge.
+An exhausted declared allowance is a terminal fault of that selected rule contract before the action's edits. Native rules outside
+that profile may allocate private work; their allocation, latency and retained-memory costs require measurement.
+The selected bounded structural-growth profile declares separate finite physical-slot and live-object caps. A pure typed-action
+classifier supplies a maximum spawn count before sequencing; the authority checks prepared spawns against the stored
+bound at execution. A new input that raises the possible page/root high-water must atomically fund every older pending
+input's increased future credit before its own sequence advances. Due preflight uses that admitted absolute horizon;
+clean idle ticks do not dirty pages merely because a future spawn is pending. Stable-ID-keyed lifecycle changes retain
+distinct despawn/spawn records even when one physical slot is reused before publication. A required replica's object
+headroom is part of admission, and local and multiplayer submissions use the same classifier and rule callbacks.
+An optional finite rule-scratch profile installs one authority-owned byte buffer before accepted work. Each action
+receives a fresh owner-checked generation and a cumulative range limit shared by its decision and preparation.
+Invalid or over-limit requests fault that action before edits even if game code catches the returned error. Scratch
+never enters publication or replica state; copying it to a retained output spends the action's separate output
+allowance. Allocations game code makes outside this API are not bounded by the publication pool.
 
 ## C03 Authority and interaction ordering — W1 and P3/P4/P6
 
@@ -91,6 +119,11 @@ Authoritative contact/event IDs emit once; render interpolation cannot emit dupl
 Feedback has a defined causal boundary: derive forces/constraints from a stated state, integrate, publish contacts and
 new state, then schedule dependent reactions. Same-step iterative coupling belongs inside one declared solver with
 convergence/iteration policy. No arbitrary event callback may create an implicit circular solver across modules.
+For a moving shore, E1 stages rain, finite-water flux, surface response and identified exchanges from the same
+committed endpoint. A transfer that would change the water support used to classify that same transfer requires a
+specified joint solve or an owned pending inventory with a bounded support/time lag. Merely rechecking the changed
+stage does not produce a consistent endpoint. P3 reads X[n] traction/contact; the entire accepted next state and its
+receipts publish together as X[n+1].
 
 Standalone/server authority alone commits gameplay consequences. Actor control is permission to submit validated
 intent, not arbitrary state mutation. Confirmed replica state and opt-in prediction remain distinct. Irreversible
@@ -121,13 +154,25 @@ interest/authorization and P6 visibility facts remain authoritative and independ
 
 One manifest maps logical assets and revisions to dependency-hashed runtime products. Import/cook reads the admitted immutable source revision and is separate from
 runtime loading. Filesystem watcher events cannot activate a partly written external change set. F4 owns byte/decode/derived-product availability and resource leases; W2 owns region activation;
-physics/navigation/render/audio own their representations. A region becomes active only when required products are
+physics/navigation/render/audio own their representations. For a selected project, an F4/T2 materialization host verifies that its F3 pin came from that project's source-store owner before creating build inputs. Identical accepted root bytes or generation values in two projects do not establish that binding. The store binding is operational and does not enter the source revision. A region becomes active only when required products are
 ready, or through an explicit fallback policy. Optional presentation placeholders cannot impersonate missing collision.
 W2 stages the save overlay and required collision/navigation/gameplay representations off-world, validates epochs,
 hashes and memory admission, then commits them together before the tick and opens traversal portals last. Retirement
 closes new entry first; active contacts, swept body support, joints and navigation traversals pin required products
 until resolved. If preparation or pinned residency cannot fit, apply an explicit blocked/loading transition; never
 remove the floor beneath an active body. Paths carry region/tile/obstacle generations and invalidate after changes.
+
+For terrain and other shared solid geometry, required render, collision, navigation, water-bed and receiver products
+resolve through one build-manifest binding to the admitted source revision and stable source-patch/material
+correspondence, with stated error kind, support and boundary/halo dependencies. A reusable immutable product hashes
+its actual canonical inputs and dependency products; an unrelated source edit need not change its content hash. The
+build binding still records which product set is valid for each admitted source revision and activation. Product
+hashes may differ; a visual proxy or sampled refinement threshold does not certify the physical source. Activation
+refuses a missing required product or incompatible boundary revision.
+Dynamic rain needs a cooked static geometry/receiver arrangement and a prepared runtime water-support evaluator;
+the moving first-hit partition is derived from the committed physical provider, not a GPU rain texture or a stale
+static exposure table. Required capacity, face, response, neighbour/halo and pending-transfer products/state join the
+physical activation closure. View interest cannot evict them while a retained contact or water exchange needs them.
 
 Substantive shared-prefab/gameplay edits build a new run initially. A qualified visual preview computes the entire
 affected presentation closure, reserves/prepares replacements and publishes at extraction without changing gameplay.
@@ -138,8 +183,14 @@ Initial bounded worlds and stop/load transitions use FOUNDATION-SPEC's simpler c
 
 Budget peak residency, not just steady state:
 M_peak = M_live + M_pending_decode + M_upload_staging + M_replacement_overlap + M_transient + M_reserve.
-Admission control defers new work before this bound exceeds the selected budget. Do not double count aliased or
-shared/unified allocations; retain separate measured physical, allocator-estimated and logical byte accounts.
+For a named bounded resource profile, admission defers new work before its
+logical owned-byte bound is exceeded. Other profiles use finite queues and
+observed pressure without claiming a universal process-RSS cap. Reconcile
+simultaneous claims across owners before either spends a shared staging or
+reserve allowance. Do not double count aliased or shared/unified allocations;
+retain separate measured physical, allocator-estimated and logical byte
+accounts. V1 includes concurrent views, frames in flight and fence-held old/new
+resources in the GPU lifetime account; a per-pass subtotal is not the peak.
 Retire a resource only after all CPU leases and relevant GPU submissions have completed. Eviction removes derived
 products, not durable identity or saved state. Disk/browser cache entries are optional accelerators, not authority.
 CPU snapshot/provider leases and GPU packet/fence leases are separate references in this accounting. Cancellation
@@ -171,13 +222,21 @@ A synchronized network replica and its local GPU-ready view are separate states;
 ## C07 Render scene, views and temporal data — V2 with P4/V3/V4
 
 W1 owns world state. V2 owns derived draw instances, visibility and render spatial indexes. Views own projection,
-viewport, origin-relative transforms, history identity and budget. Shadow/reflection visibility may include objects
+viewport, origin-relative transforms, history identity and budget. A stable view/camera instance ID is distinct from
+its quality profile; two cameras using the same profile have separate histories and target ownership.
+Shadow/reflection visibility may include objects
 outside the main camera. Geometry producers provide consistent current/previous deformation or explicit invalidity;
 V2 converts these into the agreed motion convention. Static cameras do not imply zero motion for animated geometry.
+For a water shoreline, V2/V3 optical occupancy and rain/terrain/P3 use one provider-specific physical wet support and
+bed correspondence. The initial shallow HLL has full-cell support on matching terrace geometry; a separately admitted
+capacity profile may have source-triangle-clipped partial cells. A visual seam, foam or residual may only change that
+support within its declared cue/error contract and cannot silently grant physical water or hide an uncovered ray.
 
 For each view/provider, retain the sample time and transforms of the image actually used as history. This is not
 necessarily tick n-1, the preceding host frame, or the last OS-displayed image. P4/E1/V5 and material animation own
-evaluable prior deformation/parameters at that history sample time, or declare invalid correspondence. Skipped views
+evaluable prior deformation/parameters at that history sample time, or declare invalid correspondence. Retained
+source/product and evaluator-parameter revisions must reconstruct the same material point; incompatible revisions
+invalidate correspondence. Skipped views
 need bounded retained data, analytic reevaluation with preserved parameters, or reset. V2 projects the corresponding
 material point through unjittered current/history transforms. Recommended vector convention is history-pixel minus
 current-pixel, top-left origin with X right/Y down, in current render-target pixels; resize resets by default unless
@@ -205,10 +264,30 @@ permit independent overlapping final composites or change gameplay/thermal autho
 One scene light registry defines source geometry, spectrum/colour/intensity convention and transform/time. Environment
 providers supply illumination and attenuation; drawing a sky is optional. Materials expose a selected shading closure
 and surface properties; a style policy may alter that closure explicitly rather than hide multipliers in every feature.
+V3 owns versioned composition of material factors, decoded textures and
+absent-map semantics. The [metallic-roughness equations](RENDER-SPEC.md#2-material-closure-and-binding-abi)
+make bound missing textures multiplicative identities while native factor
+defaults carry non-emitting/dielectric meaning. Their occlusion-strength term
+modulates selected indirect light only, not direct transport or emission.
 Linear scene-referred colour is kept separate from display transforms; V4 owns exposure/tone mapping/output encoding.
 W1 owns authored light identity/source descriptors and E1 owns its celestial/environment drivers. V3 owns their
 render transport evaluation. A headless physical surface model uses a declared E1 irradiance/thermal provider and
 shared source facts/exposure data; it never reads rendered pixels as the authority for heat or weather.
+Each environmental light handoff identifies the source and receiver direction convention, geometric or apparent
+direction, photometric/radiometric basis and which attenuation constituents are already applied. V3 owns each named
+source-to-receiver light path once; a retained cloud-shadow source need not draw visible clouds. Thermal W/m² is
+separately authored or integrated and cannot be inferred by dividing broadband lux by 683.
+For the selected bounded authored E1 source, the light handoff contains **raw**
+perpendicular Sun illuminance, geometric receiver-to-source direction,
+photometric colour, light identity, source epoch/time/support and an empty
+applied-attenuation set. E1's cloud query supplies path optical depth and its
+approximation/validity separately. V3 applies `exp(-tau_cloud)` at most once
+on each named direct source-to-receiver path, alongside geometric visibility
+and jointly evaluated air/fog. An already cloud-attenuated Sun value cannot be
+paired with that query. R0's authored isotropic ambient irradiance and terminal
+background are independent source quantities; ambient is not a second Sun or
+an inferred cloud/sky-reflection product. Other provider profiles must declare
+their own constituent ownership with equivalent no-duplication semantics.
 
 Distinguish incoming radiance, irradiance and dimensionless transmittance. Do not sum quantities with incompatible
 units or apply the same shadow/air attenuation twice. A transport query specifies its path/segment and contributing
@@ -231,13 +310,65 @@ Even disjoint `(T,S)` segments compose exactly only relative to a shared declare
 term must use incident lighting consistent with the combined scene, including other media on its light paths.
 View-ray disjointness alone does not justify independently lit preintegration. Otherwise recompute jointly or
 declare the lighting approximation and its validity.
+Grouped sorted alpha remains an explicitly approximate profile. A profile promising two exact ordered
+nonrefractive coverage events must prepare bounded event storage, deterministic ordering and current-view overflow
+status before display; it cannot silently truncate a third event. After refraction, V3 obtains first hits from the
+declared complete regional geometry, not the original camera depth/alpha capture. Camera-path, source-path,
+interface, alpha and traversal limits are distinct; incomplete support is not darkness. The selected bounded
+regional Sun policy may use a named virtual cover interface while camera occupancy uses actual admitted water.
+Its complete geometry visibility is completeness **within that light-path approximation**, not actual-interface
+focused caustics. Such focused transport remains a separate capability with its own source coverage and energy
+partition. V3 applies the chosen source path and cloud/air/fog/water constituents once.
 
 ## C09 Environmental fields and physical exchange — E1 with P3
 
 Weather/wind, atmosphere, cloud coverage, surface response, vegetation and water are separate providers with shared
 position/time semantics. Every sampled field states units, support, interpolation, validity and represented scale.
+Queries distinguish point values, cell means and face/area fluxes; carry source sample/valid intervals, reference
+height or datum, authority role and typed unavailable/outside/stale/unsupported states. Missing values do not become
+zero, calm or a camera-derived substitute. Precipitation delivered to physical consumers is water-equivalent mass
+per horizontal square metre per world second, or an identified interval mass. The exposure owner partitions that
+input once among first-hit receivers and named sinks; surface stores use true patch area. A selected material model
+may split its single liquid reservoir into film and absorbed stores without creating a second wetness authority.
 Authored constant providers are valid alternatives to dynamic simulation. Render-only detail cannot silently become
 a physical contact surface.
+The selected `authored-vertical-rain-v1` weather profile binds one immutable F1 interval plan to
+source revision, control epoch, product revisions and `[n,n+1)`. Its layered
+wind is point velocity in world m/s at a stated height/time; cloud advection
+integrates that same wind over world time. Its periodic cloud nodes store
+vertical optical depth, while its stationary rain cells store **cell-mean**
+horizontal liquid/solid flux in kg/(m²·world s). Rain integrates over the
+whole tick and cooked projected first-hit area before becoming receiver kg;
+an endpoint point rate is not an interval receipt. Committed source endpoint,
+receiver state, exchange ledgers and per-stream applied-interval cursor/digest
+publish atomically with X[n+1]. A duplicate identical interval changes no
+mass, a conflicting digest or missing predecessor refuses, and a failed tick
+retains X[n] and its cursors. A discrete source-off gate stops new rain input
+while retained material/water stores continue their response. Disabled
+precipitation intervals still publish zero-mass receipts and advance their
+stream cursors atomically. An optional
+presentation tier or second view cannot advance this source or change its
+physical receipts. The initial static-footprint exposure product refuses a
+changing first-hit ordering; the bounded moving-shore operator below is a
+separate admitted profile rather than a stale-map fallback.
+For the prescribed tide-only moving shore, the exposure product integrates
+time-varying first-hit area against interval rain across stage/source/triangle
+height events. A numerical subdivision or atom ordinal is not a durable
+receipt identity: retries of the same physical source/stream interval compare
+canonical aggregated receiver masses, then deduplicate or refuse a conflict.
+The finite-water discrete and analytic-wave branches retain their separately
+declared source operators and local error bounds.
+When wet support moves, the exposure operator binds the source interval, rain cell, geometry/receiver and physical
+water endpoint/model. It partitions each local horizontal footprint into one first-hit solid, water or named sink,
+with per-receiver error/support status; a global mass sum cannot certify the local assignment. A prescribed sea's
+received rain is an external-reservoir entry. A finite water owner receives a volume/momentum-policy receipt and
+publishes it with its face/boundary ledger. Analytic waves can create wet intervals invisible at both tick endpoints;
+an admitted moving-shore profile must resolve or bound those intervals and refuse an unmet local error/work budget.
+One material owner may hold exposed film, submerged bound coating and absorbed liquid as distinct stores, plus an
+identified pending water exchange when the same-step support feedback is deliberately deferred. Wetting, recession,
+infiltration, evaporation and runoff name every transfer; finite-water volume and material mass are not both credited
+for the same receipt. The pending inventory has a declared maximum residence and stage/shore effect and survives save,
+retry and source-off. A changed physical wet-area generation invalidates affected P5 traversal and V2 history.
 
 Phase changes conserve the represented material: melting transfers snow/ice into liquid storage; freezing reverses
 that transfer. Evaporation/runoff are named exchanges with other domains or declared sinks. A cosmetic decay field
@@ -276,6 +407,9 @@ Save schemas contain durable identities and authoritative state, not GPU handles
 P7 requests an immutable save-state capture at a committed barrier, including provider-owned durable fields. This is
 a separate purpose-specific capture, not an assumption that the render read-model contains the full save. Its bytes
 and serialization-reader leases participate in memory admission; background serialization cannot read mutable solvers.
+Moving-shore saves include the selected water model/geometry/exposure/response revisions, finite water and material
+stores, pending exchanges, named external ledgers and once-only receipt/control cursors. A failed tick leaves its
+source interval and cursors unadvanced; restore or retry cannot deliver a partial candidate twice.
 Game save compatibility and asset/tool schema evolution are versioned policies. Checkpoint at a committed boundary;
 restore content dependencies before publishing the world. Replays declare their determinism envelope and captured
 external results. Tests distinguish reproducible world state from asynchronous presentation.
@@ -308,8 +442,10 @@ Apply-back explicitly merges marked authored fields against play base and curren
 internals and earned inventory are excluded. Stopping discards unretained test state, not authored files or retained saves.
 
 Retain the exact products or qualified input/toolchain closure required by supported source/save/release roots.
-Publication, readers and collection share pin/lease rules so a new root cannot reference collected bytes. Reserve old
+Publication, readers and collection share pin/lease rules so a new root cannot reference collected bytes. Plan old
 valid data, candidate writes, retained restore closure and headroom before acceptance, counting shared content once.
+Configurable native disk thresholds guide early refusal and WAL backpressure; they are not hard physical caps. A real
+space fault keeps the prior root selected unless the atomic root/outcome transaction already committed.
 Automatic cleanup cannot delete unique masters, selected revisions or another agent's live work. An evictable asset
 cache is not a durable save. Browser runtime save durability/quota/export and native guarantees are declared separately;
 full browser authoring is outside the initial SDK. Unsupported storage loss is diagnosed, never repaired with invented state.
@@ -354,6 +490,49 @@ A frame is a dependency schedule, not the sum of every parallel job. Its lower b
 path and total work divided by available parallel capacity. Shared bandwidth, synchronization and queues can increase
 actual cost. Authors supply cost variables and worst-case work caps; coordinator reconciles simultaneous consumers.
 Quality allocation has hysteresis and bounded transition cost; it never oscillates providers every frame.
+
+Before selecting or enforcing a number, identify its **kind, owner, unit,
+timebase, scope and consequence**. Semantic/publication invariants and
+encoding/ABI rules preserve exact meaning and compatible readers. A numerical
+model's validity/error envelope needs its provider's derivation and
+outside-regime outcome. A supported capacity is a finite promise of one named
+implementation profile, not automatically a source-format or SDK-wide limit.
+Operational disk/queue/quality thresholds are configurable policy and observed
+backpressure, not guaranteed OS/driver bounds. Frame, memory, startup and
+visual objectives are named workload/device qualification targets, not
+implemented safety checks. Enlarging a processing allowance with unchanged
+meaning requires profile and cost qualification. If a limit is encoded in a
+hashed definition or product dependency, changing it also changes that
+definition and dependent cook keys, even when existing selected values and
+output bytes are unchanged. Changing meaning or encoding requires the
+corresponding schema/protocol/ABI revision.
+
+F2 resolves the compatible game/target recipe from owner-declared semantics,
+provider domains, capacities and device features. It does not own source,
+allocations or publication. F3 may accept source independently of target
+readiness; F4 validates product/build closure; F1 coordinates runtime due work,
+W1 owns committed world state, V1 owns GPU resources/fences, N1 owns peer queues,
+and T2 coordinates cooperating build/storage jobs. Reconcile simultaneous
+claims **within each shared resource domain**, counting known shared logical
+allocations once while retaining all lease/fence reasons. A bounded pool may
+guarantee only its charged owner bytes; logical reservations never imply a hard
+whole-process RSS, physical free-space or device-memory guarantee. Report
+estimates, allocator accounts and observed peaks separately.
+
+Keep identity scopes separate: exact SourceRevision does not change for
+identical admitted bytes when a disk target or parser allowance changes;
+product cook keys retain typed values,
+meaning/definition, dependency and cook/toolchain/target-class provenance even
+if output bytes happen to match; build bindings retain exact admitted source
+and target requirements; N1 gameplay compatibility includes actual time and
+physical semantics. Operational threshold/evidence changes do not enter those
+identities merely because they share a resolved recipe. On a limit refusal,
+report owner, stage, selected profile, quantity/unit/timebase, requested versus
+allowed, estimate versus observation and a supported retry, loading, wider
+profile or unsupported outcome. Required content, authoritative receipts and
+complete current output are never silently truncated to meet a cap. The
+[cross-owner limit review](research/HOLISTIC-LIMIT-POLICY-2026-11-03.md) records
+the first integration order and unresolved qualifications.
 
 Evidence identifies code/design revision, configuration, content hashes, device/backend, duration and method. Design,
 implementation, correctness, perceptual acceptance and platform/performance qualification are separate states. Human

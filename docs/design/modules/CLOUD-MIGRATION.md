@@ -40,7 +40,7 @@ readouts, usable controls, native beauty and its diagnostic views.
 | P5 Five isolated families/variation | P4b | Unbuilt |
 | P6 Dynamic weather/combined layers | P5 | Unbuilt |
 | P7 Complete standalone skies/device fixture | P6, costs screened throughout | Unbuilt |
-| P8 Thrum integration/product admission | Accepted proof + engine I1/I2/I3 dependencies | Unbuilt; no engine runtime yet |
+| P8 Thrum integration/product admission | Accepted proof + engine I1/I2/I3 dependencies | Unbuilt; bounded headless host exists, general rendering runtime not yet qualified |
 
 **Reference execution versus adoption.** A correctly bounded, independently reviewed source may run in an explicit visual-reference build while its cost gate fails, so morphology and coupled behaviour can be judged before further optimization. For12777301 this requires exact source/input pins, explicit root authorization, visible `VISUAL REFERENCE · COST GATE FAIL` and both failed cost receipts in captures. No algorithm/quality/workload/cadence fallback or false cost-pass flag is permitted. Production eligibility still requires the original and coupled-dry4ms screens plus visual/coupling/device gates; a reference image or completed recording does not check those boxes.
 
