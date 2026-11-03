@@ -306,6 +306,13 @@ These are candidate engineering proofs. Apple-origin approval, selected
 compiler read closure, runtime/support bytes and the ready publisher remain
 separate gates; this bridge cannot set `buildReady:true`.
 
+The first two steps have passed synthetic macOS fixtures: one sealed record
+bundle binds the exact cache manifest and four root inventories, collects Rust
+witnesses during the existing cold scan, and the optional persistent Python
+guard returns the selected manifest digest on startup, warm success and
+refusal. The Rust admitted A/B consumer has not selected this mode, and no
+reviewed real manifest exists. The third and fourth steps remain open.
+
 ## macOS runtime boundary
 
 The local profile still permits named system-library and configuration

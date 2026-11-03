@@ -7,6 +7,7 @@ leaves its digest name unusable rather than repairing a published selection.
 
 import hashlib
 import argparse
+from contextlib import ExitStack
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,7 @@ from hold_macos_tool_root_clone import (
     _check_entry, _checked_parent, _names, _seal_fd, open_sealed_clone,
     prepare_sealed_clone,
 )
+from hold_macos_release_records import open_sealed_release_records
 from inventory_headless_tool_roots import inventory_root
 from prepare_headless_cargo_home import cargo_reuse_key, root_inventory, sha256_file
 
@@ -345,9 +347,22 @@ def main():
     parser.add_argument("--linker-tree-json")
     parser.add_argument("--sdk-tree-json")
     parser.add_argument("--manifest-sha")
+    parser.add_argument("--release-tree-json")
+    parser.add_argument("--release-sha")
+    parser.add_argument("--release-source", type=Path)
+    parser.add_argument("--release-target")
     args = parser.parse_args()
+    release_values = (
+        args.release_tree_json, args.release_sha,
+        args.release_source, args.release_target,
+    )
+    if any(value is not None for value in release_values) and not all(
+        value is not None for value in release_values
+    ):
+        parser.error("held release selection requires all four release fields")
     if args.prepare:
         if (args.source is None or args.manifest is None
+                or any(value is not None for value in release_values)
                 or any(value is not None for value in (
                     args.tree_json, args.legacy_json, args.rust_tree_json,
                     args.linker_tree_json, args.sdk_tree_json,
@@ -372,17 +387,39 @@ def main():
                     args.manifest_sha,
                 ))):
             parser.error("holding needs tree, legacy and manifest digest only")
-        with (open_sealed_cache(
+        with ExitStack() as stack:
+            cache_lease = stack.enter_context(open_sealed_cache(
                 args.owner, json.loads(args.tree_json), json.loads(args.legacy_json),
                 args.manifest_sha,
-              ) as cache_lease,
-              open_sealed_clone(args.owner, json.loads(args.rust_tree_json)) as rust_lease,
-              open_sealed_clone(args.owner, json.loads(args.linker_tree_json)) as linker_lease,
-              open_sealed_clone(args.owner, json.loads(args.sdk_tree_json)) as sdk_lease):
-            selected = HeldNativeCacheSelection(
+            ))
+            release = None
+            if args.release_tree_json is not None:
+                release = stack.enter_context(open_sealed_release_records(
+                    args.owner, json.loads(args.release_tree_json), args.release_sha,
+                    args.release_source,
+                    _paths(args.owner, json.loads(args.tree_json))[1],
+                    args.release_target,
+                ))
+            rust_lease = stack.enter_context(open_sealed_clone(
+                args.owner, json.loads(args.rust_tree_json),
+                None if release is None else release.rust_witnesses,
+            ))
+            linker_lease = stack.enter_context(open_sealed_clone(
+                args.owner, json.loads(args.linker_tree_json),
+            ))
+            sdk_lease = stack.enter_context(open_sealed_clone(
+                args.owner, json.loads(args.sdk_tree_json),
+            ))
+            selected = (HeldNativeCacheSelection(
                 cache_lease, rust_lease, linker_lease, sdk_lease,
-            )
-            print("READY", flush=True)
+            ) if release is None else HeldNativeReleaseSelection(
+                release, cache_lease, rust_lease, linker_lease, sdk_lease,
+            ))
+            if release is None:
+                print("READY", flush=True)
+            else:
+                print(json.dumps({"guardReady": True, "releaseManifestSha256": release.manifest_sha256},
+                                 sort_keys=True, separators=(",", ":")), flush=True)
             while raw := sys.stdin.buffer.readline(4097):
                 if len(raw) > 4096 or not raw.endswith(b"\n"):
                     raise ValueError("held-cache request exceeds selected size")
@@ -396,13 +433,20 @@ def main():
                 try:
                     actual = selected.verify_reuse(request["source"], request["target"])
                     response = {"id": request["id"], "reuseKey": actual["sha256"]}
+                    if release is not None:
+                        response["releaseManifestSha256"] = release.manifest_sha256
                 except (OSError, ValueError) as error:
                     response = {"id": request["id"], "error": str(error)[:512]}
+                    if release is not None:
+                        response["releaseManifestSha256"] = release.manifest_sha256
                 print(json.dumps(response, sort_keys=True, separators=(",", ":")), flush=True)
-            selected.cache.assert_live()
-            selected.rust_root.assert_live()
-            selected.linker_root.assert_live()
-            selected.sdk_root.assert_live()
+            native = selected if release is None else selected.native
+            native.cache.assert_live()
+            native.rust_root.assert_live()
+            native.linker_root.assert_live()
+            native.sdk_root.assert_live()
+            if release is not None:
+                release.assert_live()
 
 
 if __name__ == "__main__":
