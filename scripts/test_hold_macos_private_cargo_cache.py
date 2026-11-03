@@ -148,7 +148,7 @@ class HeldMacosPrivateCargoCache(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "already exists or is incomplete"):
                 cache.prepare_sealed_cache(source, manifest, owner)
 
-    def test_held_rust_and_cache_reuse_checks_only_source_selection(self):
+    def test_held_four_roots_reuse_checks_only_source_selection(self):
         with fixture() as (cache_source, manifest, owner):
             base = owner.parent
             rust_source = base / "rust-source"
@@ -157,6 +157,13 @@ class HeldMacosPrivateCargoCache(unittest.TestCase):
             (rust_source / "bin/rustc").write_bytes(b"selected rustc")
             rust_tree = inventory_root(rust_source)
             rust_root, _ = prepare_sealed_clone(rust_source, owner, rust_tree)
+            native_roots = {}
+            for name in ("linker", "sdk"):
+                source_root = base / f"{name}-source"
+                source_root.mkdir()
+                (source_root / f"{name}.bin").write_bytes(name.encode())
+                tree = inventory_root(source_root)
+                native_roots[name] = (tree, prepare_sealed_clone(source_root, owner, tree)[0])
             source = base / "game"
             source.mkdir()
             (source / "Cargo.toml").write_text("[workspace]\n")
@@ -181,17 +188,31 @@ class HeldMacosPrivateCargoCache(unittest.TestCase):
                 cache_source, manifest, owner,
             )
             with (cache.open_sealed_cache(owner, tree, legacy, manifest_sha) as cache_lease,
-                  open_sealed_clone(owner, rust_tree) as rust_lease):
-                selected = cache.HeldNativeCacheSelection(cache_lease, rust_lease)
+                  open_sealed_clone(owner, rust_tree) as rust_lease,
+                  open_sealed_clone(owner, native_roots["linker"][0]) as linker_lease,
+                  open_sealed_clone(owner, native_roots["sdk"][0]) as sdk_lease):
+                self.assertEqual(linker_lease.root, native_roots["linker"][1])
+                self.assertEqual(sdk_lease.root, native_roots["sdk"][1])
+                selected = cache.HeldNativeCacheSelection(
+                    cache_lease, rust_lease, linker_lease, sdk_lease,
+                )
                 for field, value in (("path", "/wrong/cargo"), ("sha256", "0" * 64)):
                     changed = json.loads(cache_lease.manifest_bytes)
                     changed["toolExecutables"]["cargo"][field] = value
                     with patch.object(cache_lease, "manifest_bytes", json.dumps(changed).encode()):
                         with self.assertRaisesRegex(ValueError, "held cargo differs"):
-                            cache.HeldNativeCacheSelection(cache_lease, rust_lease)
+                            cache.HeldNativeCacheSelection(
+                                cache_lease, rust_lease, linker_lease, sdk_lease,
+                            )
                 with patch.object(cache_lease, "manifest_bytes", b"[]"):
                     with self.assertRaisesRegex(ValueError, "incompatible dependency selection"):
-                        cache.HeldNativeCacheSelection(cache_lease, rust_lease)
+                        cache.HeldNativeCacheSelection(
+                            cache_lease, rust_lease, linker_lease, sdk_lease,
+                        )
+                for lease, name in ((linker_lease, "linker"), (sdk_lease, "sdk")):
+                    with patch.object(lease, "assert_live", side_effect=ValueError(f"lost {name}")):
+                        with self.assertRaisesRegex(ValueError, f"lost {name}"):
+                            selected.verify_reuse(source, target)
                 with (patch.object(cache, "root_inventory", side_effect=AssertionError("cache scan")),
                       patch.object(cache, "sha256_file", side_effect=AssertionError("tool hash"))):
                     self.assertEqual(selected.verify_reuse(source, target), reuse)
