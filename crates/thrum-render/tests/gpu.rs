@@ -277,7 +277,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 assert!(timings.resolve_if_ready(41, &mut resolve).unwrap());
                 submit_wait(&device, &queue, resolve);
                 let values = timings.try_collect(41).unwrap().unwrap();
-                assert_eq!(values[0].name, "synthetic forward opaque");
+                assert_eq!(values[0].name.as_ref(), "synthetic forward opaque");
                 if frame >= 5 {
                     gpu_ns.push(values[0].nanoseconds);
                 }
