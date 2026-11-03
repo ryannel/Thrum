@@ -79,6 +79,10 @@ Use one accepted `PinnedSource` and one verified manifest/index per build.
 From it, F4 resolves the selected entry scene and its environment once, then
 cooks immutable mesh/vertex/index, material/default/texture, camera, local
 light, existing 160-byte Sun/ambient/background, shader and pass products.
+The current `PinnedSource::copy_file_to` authenticates a record's complete
+length and hash only when it returns successfully. F4 must discard any
+partially copied output on error and run the shared typed decoder only after
+successful verification; no product or edge decision may consume the prefix.
 Each product records a domain-separated semantic cook key, actual byte hash,
 typed dependencies and target/evaluator versions. An authenticated manifest
 binds keys to bytes; a separate build binding names the exact admitted source
