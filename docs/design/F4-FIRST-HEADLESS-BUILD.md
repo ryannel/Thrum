@@ -89,6 +89,15 @@ diagnostic evidence, not `BuildRevision` or a publication API. It does not
 authenticate original inputs, make installed tools immutable, trace implicit
 compiler reads or prove ready-root publication.
 
+The macOS fixture must not modify a retained executable inode after running
+it, even when a corruption test restores identical bytes: macOS can keep a
+stale kernel code-signature cache and kill a later launch. Binary and wrapper
+tamper tests therefore use disposable candidate copies with distinct inodes;
+the selected A artifact remains untouched. The [native signature fault
+proof](../evidence/i2a/T2-RETAINED-MACOS-SIGNATURE-2026-11-03.md) records the
+earlier failure and three corrected A/B runs. These extra copies are fixture
+work and are not part of candidate publication cost.
+
 The opt-in candidate now uses one exclusively owned, same-volume staging
 directory. Each copied file and the report are synced after final bytes and
 metadata are written; the completed bundle is verified, its directory is
