@@ -12,7 +12,11 @@ use sha2::{Digest, Sha256};
 
 use crate::bootstrap_json::parse_scene;
 use crate::environment_json::{self, ENVIRONMENT_DEFINITION, LIGHT_DEFINITION, SCENE_DEFINITION};
-use crate::game_json::{GameRecordError, GameRecordSummary, parse_game_record};
+#[cfg(test)]
+use crate::game_json::parse_game_record;
+use crate::game_json::{
+    GameRecordError, GameRecordSummary, parse_game_record_with_reference_limit,
+};
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
@@ -739,35 +743,49 @@ pub fn validate_staged_records(
                     });
                 }
             };
-            required_edges = add_required_edges(
-                required_edges,
+            account_required_edges(
+                &mut required_edges,
                 usize::from(scene.environment_source.is_some()),
-                MAX_REQUIRED_EDGES,
-            )?;
-            scenes.push(scene);
+                &mut scenes,
+                &mut games,
+                &mut builtins,
+            );
+            if required_edges <= MAX_REQUIRED_EDGES {
+                scenes.push(scene);
+            }
         } else {
             match (header.record_type.as_str(), header.schema) {
                 ("thrum.environment.authored", 1) => {
                     let parsed =
                         environment_json::parse_environment(&bytes).map_err(builtin_error)?;
-                    required_edges = add_required_edges(required_edges, 1, MAX_REQUIRED_EDGES)?;
-                    builtins.push(StagedBuiltin {
-                        path: path.clone(),
-                        id: parsed.id,
-                        label: parsed.label,
-                        definition: &BUILTIN_SCHEMAS[1],
-                        light_ref: Some(parsed.sun.light_ref),
-                    });
+                    account_required_edges(
+                        &mut required_edges,
+                        1,
+                        &mut scenes,
+                        &mut games,
+                        &mut builtins,
+                    );
+                    if required_edges <= MAX_REQUIRED_EDGES {
+                        builtins.push(StagedBuiltin {
+                            path: path.clone(),
+                            id: parsed.id,
+                            label: parsed.label,
+                            definition: &BUILTIN_SCHEMAS[1],
+                            light_ref: Some(parsed.sun.light_ref),
+                        });
+                    }
                 }
                 ("thrum.light.identity", 1) => {
                     let parsed = environment_json::parse_light(&bytes).map_err(builtin_error)?;
-                    builtins.push(StagedBuiltin {
-                        path: path.clone(),
-                        id: parsed.id,
-                        label: parsed.label,
-                        definition: &BUILTIN_SCHEMAS[2],
-                        light_ref: None,
-                    });
+                    if required_edges <= MAX_REQUIRED_EDGES {
+                        builtins.push(StagedBuiltin {
+                            path: path.clone(),
+                            id: parsed.id,
+                            label: parsed.label,
+                            definition: &BUILTIN_SCHEMAS[2],
+                            light_ref: None,
+                        });
+                    }
                 }
                 (record_type, _) if record_type.starts_with("game.") => {
                     if registry.schemas.is_empty() {
@@ -785,21 +803,26 @@ pub fn validate_staged_records(
                             })?;
                         &registry.schemas[index].descriptor
                     };
-                    let summary = parse_game_record(&bytes, descriptor).map_err(|source| {
-                        StagedRecordError::Game {
+                    let remaining = MAX_REQUIRED_EDGES.saturating_sub(required_edges);
+                    let (summary, reference_count) =
+                        parse_game_record_with_reference_limit(&bytes, descriptor, remaining)
+                            .map_err(|source| StagedRecordError::Game {
+                                path: path.clone(),
+                                source,
+                            })?;
+                    account_required_edges(
+                        &mut required_edges,
+                        reference_count,
+                        &mut scenes,
+                        &mut games,
+                        &mut builtins,
+                    );
+                    if required_edges <= MAX_REQUIRED_EDGES {
+                        games.push(StagedGame {
                             path: path.clone(),
-                            source,
-                        }
-                    })?;
-                    required_edges = add_required_edges(
-                        required_edges,
-                        summary.references().len(),
-                        MAX_REQUIRED_EDGES,
-                    )?;
-                    games.push(StagedGame {
-                        path: path.clone(),
-                        summary,
-                    });
+                            summary,
+                        });
+                    }
                 }
                 _ => {
                     return Err(StagedRecordError::UnsupportedBuiltin {
@@ -810,6 +833,12 @@ pub fn validate_staged_records(
                 }
             }
         }
+    }
+
+    if required_edges > MAX_REQUIRED_EDGES {
+        return Err(StagedRecordError::TooManyRequiredEdges {
+            observed_at_least: (MAX_REQUIRED_EDGES + 1) as u64,
+        });
     }
 
     let mut all_ids = Vec::with_capacity(2 + registry.schemas.len() + paths.len());
@@ -901,20 +930,24 @@ pub fn validate_staged_records(
     })
 }
 
-fn add_required_edges(
-    current: usize,
+fn account_required_edges(
+    current: &mut usize,
     added: usize,
-    limit: usize,
-) -> Result<usize, StagedRecordError> {
-    match current.checked_add(added) {
-        Some(edges) if edges <= limit => Ok(edges),
-        Some(edges) => Err(StagedRecordError::TooManyRequiredEdges {
-            observed_at_least: edges as u64,
-        }),
-        None => Err(StagedRecordError::TooManyRequiredEdges {
-            observed_at_least: limit as u64 + 1,
-        }),
+    scenes: &mut Vec<StagedScene>,
+    games: &mut Vec<StagedGame>,
+    builtins: &mut Vec<StagedBuiltin>,
+) {
+    let next = current
+        .saturating_add(added)
+        .min(MAX_REQUIRED_REFERENCES + 1);
+    if *current <= MAX_REQUIRED_REFERENCES && next > MAX_REQUIRED_REFERENCES {
+        // The semantic limit is reported only after every declared record's
+        // local grammar. No retained projection can be used after overflow.
+        *scenes = Vec::new();
+        *games = Vec::new();
+        *builtins = Vec::new();
     }
+    *current = next;
 }
 
 /// Check one narrow staged registry and its declared record closure together.
@@ -1714,6 +1747,69 @@ mod tests {
                 observed: ObservedQuantity::AtLeast(65_537),
             })
         );
+        // The records/ paths exhaust the edge unit before the later scenes/
+        // path. Its malformed local grammar must still win over the capacity
+        // refusal, even though retained summaries have already been dropped.
+        fixture.write(
+            "scenes/main.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":1, "fields":[]
+            }))
+            .unwrap(),
+        );
+        let malformed_after_overflow = fixture.stage(&path_refs);
+        assert!(matches!(
+            validate_staged_candidate(&malformed_after_overflow, &[]),
+            Err(StagedCandidateError::Records(StagedRecordError::Scene { path, .. }))
+                if path.as_str() == "scenes/main.scene.json"
+        ));
+        fixture.write(
+            "scenes/main.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":1, "fields":{}
+            }))
+            .unwrap(),
+        );
+        for (path, index, fields) in [
+            ("records/z001.record.json", 512, json!(game_fields)),
+            ("records/z002.record.json", 513, json!([])),
+        ] {
+            fixture.write(
+                path,
+                &serde_json::to_vec(&json!({
+                    "id":format!("30000000-0000-4000-8000-{index:012x}"),
+                    "type":"game.marker", "schema":1, "fields":fields
+                }))
+                .unwrap(),
+            );
+            records.push(path.to_owned());
+            staged_paths.push(path.to_owned());
+        }
+        records.sort_unstable();
+        project["fields"]["project.records"] = json!(records);
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        let later_path_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
+        let malformed_game_after_overflow = fixture.stage(&later_path_refs);
+        assert!(matches!(
+            validate_staged_candidate(&malformed_game_after_overflow, &[]),
+            Err(StagedCandidateError::Records(StagedRecordError::Game { path, .. }))
+                if path.as_str() == "records/z002.record.json"
+        ));
+        fixture.write(
+            "records/z002.record.json",
+            &serde_json::to_vec(&json!({
+                "id":"30000000-0000-4000-8000-000000000201",
+                "type":"game.marker", "schema":1, "fields":game_fields
+            }))
+            .unwrap(),
+        );
+        let valid_but_overflowed = fixture.stage(&later_path_refs);
+        assert!(matches!(
+            validate_staged_candidate(&valid_but_overflowed, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::TooManyRequiredEdges { .. }
+            ))
+        ));
         assert_eq!(
             validate_staged_candidate(&prior, &[])
                 .unwrap()
