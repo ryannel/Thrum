@@ -9,7 +9,7 @@
     "active": [
       "A1 simulation core",
       "M1 thrum-render core",
-      "A0 retained-evidence migration pending durable destination"
+      "A1 measured world-storage selection"
     ],
     "next_parallel": [
       "A2 consumer publication",
@@ -40,9 +40,10 @@
         "android": "not_run"
       },
       "evidence": [
-        "../evidence/v1-workload/A1-SIM-2026-11-03.md"
+        "../evidence/v1-workload/A1-SIM-2026-11-03.md",
+        "../evidence/v1-workload/A1-STORAGE-SPIKE-2026-11-03.md"
       ],
-      "scope": "Provisional serial component store and schedule; local CPU observations and scoped allocation test only. Storage selection, rollback, worker execution and integrated four-peer game remain open."
+      "scope": "Provisional serial component store and schedule; local CPU observations, three-candidate scratch spike and scoped allocation tests only. General storage selection, production rollback, worker execution and integrated four-peer game remain open."
     },
     "M1_renderer": {
       "implementation": "partial",
