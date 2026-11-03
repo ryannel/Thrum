@@ -558,10 +558,10 @@
         "design": "T2-PREPARED-NATIVE-ENVIRONMENT.md",
         "evidence": "../evidence/i2a/F4-NARROW-METADATA.md",
         "implementation": "local_opt_in_sandbox_candidate_only",
-        "functional_validation": "two macOS ARM64 admitted A/B qualifications passed; the final run included allowed controls, denied existing file and directory metadata probes, five reconciled compiles and three probes",
+        "functional_validation": "three macOS ARM64 admitted A/B qualifications passed; the final run reused one in-memory Xcode selection across A/B with five compiles and three probes, and a focused test refused changed or symlinked selected files",
         "experienced_quality": "not_applicable_to_headless_compiler_isolation",
-        "platform_performance": "two uncontrolled fresh-output A compiles took 1491 and 1341 ms on one host; no tail, memory or platform claim",
-        "scope": "The test fixture limits additional metadata-only grants to ancestors of selected source, private dependency, tool, SDK, output and named runtime paths; selected data-read subtrees retain their read permissions. It adds explicit Xcode support-file paths, canonicalizes compiler input/output paths and proves checkout, input-write and unrelated system data/metadata denial while A builds and remains runnable after invalid B. Support bytes, mutable installed tool roots, host runtime, complete compiler reads, bounded Cargo process handling, reviewed release inputs and durable output publication remain open; buildReady is false."
+        "platform_performance": "three uncontrolled fresh-output A compiles took 1491, 1341 and 3329 ms on one host; no tail, memory or platform claim",
+        "scope": "The test fixture limits additional metadata-only grants to ancestors of selected source, private dependency, tool, SDK, output and named runtime paths; selected data-read subtrees retain their read permissions. It adds explicit Xcode support-file paths, canonicalizes compiler input/output paths and proves checkout, input-write and unrelated system data/metadata denial while A builds and remains runnable after invalid B. One in-memory Xcode/tool selection drives both A and B; selected Clang/support file bytes are checked before and after each build, and changed/symlinked paths refuse. Immutable tool retention, SDK/support release provenance, host runtime, complete compiler reads, bounded Cargo process handling, reviewed release inputs and durable output publication remain open; buildReady is false."
       },
       "i2a_admitted_headless_compile": {
         "design": "F4-FIRST-HEADLESS-BUILD.md",
