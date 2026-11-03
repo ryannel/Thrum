@@ -121,6 +121,42 @@ class VerifyRustcReceipts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "oversized"):
                 inspect(*args[:6])
 
+    def test_explicit_retained_linker_and_sdk_selection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            original_linker = next(value for name, value in environment
+                                   if name == b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER")
+            retained_linker = Path(directory).resolve() / "retained-linker/usr/bin/clang"
+            retained_linker.parent.mkdir(parents=True)
+            retained_linker.write_bytes(b"selected linker")
+            retained_sdk = Path(directory).resolve() / "retained-sdk"
+            retained_sdk.mkdir()
+            selected_environment = [
+                (name, os.fsencode(retained_linker)
+                 if name == b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER"
+                 else os.fsencode(retained_sdk) if name == b"SDKROOT" else value)
+                for name, value in environment
+            ]
+            selected_arguments = [
+                b"linker=" + os.fsencode(retained_linker)
+                if value == b"linker=" + original_linker else value
+                for value in arguments
+            ]
+            (receipts / "101.receipt").write_bytes(receipt(
+                rustc, source, [b"-vV"], selected_environment, kind=0,
+            ))
+            path.write_bytes(receipt(rustc, source, selected_arguments, selected_environment))
+            self.assertEqual(inspect(*args[:6], selected_linker=retained_linker,
+                                     selected_sdk=retained_sdk)["compiles"], 1)
+            with self.assertRaisesRegex(ValueError, "differs from selected tool roots"):
+                inspect(*args[:6], selected_linker=Path(directory) / "wrong",
+                        selected_sdk=retained_sdk)
+            with self.assertRaisesRegex(ValueError, "supplied together"):
+                inspect(*args[:6], selected_linker=retained_linker)
+            with self.assertRaisesRegex(ValueError, "lacks one Xcode developer root"):
+                inspect(*args[:6])
+
     def test_failed_compile_requires_exact_failed_receipt_and_cargo_error(self):
         with tempfile.TemporaryDirectory() as directory:
             args = self.fixture(Path(directory).resolve())

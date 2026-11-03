@@ -44,7 +44,35 @@ warm edit-to-ready estimate. A second run retained all three clones at once,
 ran cloned `rustc -vV` and `cargo -vV`, and compiled a small C object through
 cloned `usr/bin/clang` with `-isysroot` pointing at the cloned SDK. It then
 removed only those owned clones and probe files. No compiler sandbox or
-admitted game source consumed this retained selection yet.
+admitted game source consumed that first probe's selection.
+
+## Sandboxed admitted A/B consumer
+
+An opt-in run then prepared the same three local exact-inventory clones under
+ignored `tmp/t2-retained-ab/` and supplied all three absolute roots to the
+existing `thrum-cook` A/B qualification through `THRUM_TEST_RETAINED_RUST_ROOT`,
+`THRUM_TEST_RETAINED_LINKER_ROOT` and `THRUM_TEST_RETAINED_SDK_ROOT`. The Rust
+test chose Cargo/Rustc and Clang/SDK from those paths for both builds, checked
+cloned Cargo/Rustc hashes against the private-cache preparer's selected
+executable hashes, and generated sandbox read grants from the selected clone
+paths. Three small sandbox controls read a byte from cloned Rustc, Clang and
+SDK `stdio.h`, while reads and metadata probes of their installed counterparts
+failed. The Xcode support-file exceptions remained at their installed paths.
+The receipt verifier now accepts an explicit linker/SDK pair and requires the
+observed rustc environment and codegen linker flag to match it. One new
+fixture accepts separate retained roots and refuses a wrong or half-selected
+pair; its other 14 fixtures still pass.
+
+The final opt-in A/B run passed on this Mac: A produced five successful rustc
+compiles and three probes, a runnable retained candidate and a fresh-process
+reload after deleting its materialized input and original Cargo output. B
+produced three successful dependency compiles, one ordinary failed game
+compile and three probes; A remained runnable. A's fresh-output compiler
+stage took 4,262 ms, private-cache preparation 1,284 ms, and candidate
+retention 207 ms in this uncontrolled run. Earlier cloned A runs took
+10,171 and 4,297 ms, so these values are **not** a paired comparison with
+the installed-root path or a warm latency claim. The clone-plus-inventory
+preparation was measured separately above and is intended as cold work.
 
 ## Boundary and next proof
 
@@ -55,12 +83,15 @@ local candidate digest, so that review has **not** happened. A successful
 helper return also does not prevent another same-user process from writing to
 the clone afterward, and the helper does not sync a durable release root.
 The selected Xcode support files outside these roots and macOS runtime reads
-are absent. The current native A/B build still reads installed roots and
-continues to report `buildReady:false`.
+are absent from the retained selection. The opt-in compiler can read cloned
+roots under the sandbox, but the default A/B path still selects installed
+roots and both paths report `buildReady:false`.
 
 Next, the release preparer must bind the expected digest to a reviewed
 exact-hash manifest, retain an owned root under an explicit no-writer
 lifecycle, include selected support files, and generate the sandbox's read
-grants and tool paths from that same retained selection. Mutations before
-launch and while compiling must refuse or be prevented; no new source, cook,
-world or multiplayer authority should be created by this helper.
+grants and tool paths from that same retained selection, including the Cargo
+metadata/preparation phase that still used installed executables in this
+proof. Mutations before launch and while compiling must refuse or be
+prevented; no new source, cook, world or multiplayer authority should be
+created by this helper.

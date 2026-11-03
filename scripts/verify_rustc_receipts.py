@@ -166,9 +166,10 @@ def flag_values(arguments, name):
     return values
 
 
-def compile_identity(receipt, roots):
+def compile_identity(receipt, roots, selected_linker=None, selected_sdk=None):
     arguments = receipt["arguments"]
-    validate_first_profile_codegen(arguments, receipt["environment"])
+    validate_first_profile_codegen(arguments, receipt["environment"],
+                                   selected_linker, selected_sdk)
     emit = flag_value(arguments, b"--emit")
     if emit not in (b"dep-info,metadata,link", b"dep-info,link"):
         raise ValueError("first profile refuses unexpected rustc emission")
@@ -243,7 +244,7 @@ def compile_manifest(receipt, roots, source_identity):
     return manifest
 
 
-def selected_xcode_linker(environment):
+def selected_xcode_linker(environment, selected_linker=None, selected_sdk=None):
     sdk_bytes = environment.get(b"SDKROOT")
     linker_bytes = environment.get(b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER")
     if not sdk_bytes or not linker_bytes:
@@ -253,6 +254,15 @@ def selected_xcode_linker(environment):
     if (not sdk.is_absolute() or sdk.is_symlink() or not sdk.is_dir()
             or not linker.is_absolute() or linker.is_symlink() or not linker.is_file()):
         raise ValueError("selected macOS SDK or linker is not ordinary and absolute")
+    if (selected_linker is None) != (selected_sdk is None):
+        raise ValueError("selected linker and SDK must be supplied together")
+    if selected_linker is not None:
+        if (not selected_linker.is_absolute() or selected_linker.is_symlink()
+                or not selected_linker.is_file() or not selected_sdk.is_absolute()
+                or selected_sdk.is_symlink() or not selected_sdk.is_dir()
+                or linker != selected_linker or sdk != selected_sdk):
+            raise ValueError("rustc linker or SDK differs from selected tool roots")
+        return linker_bytes
     developers = [parent for parent in sdk.parents
                   if parent.name == "Developer" and parent.parent.name == "Contents"]
     if len(developers) != 1:
@@ -263,7 +273,8 @@ def selected_xcode_linker(environment):
     return linker_bytes
 
 
-def validate_first_profile_codegen(arguments, environment):
+def validate_first_profile_codegen(arguments, environment,
+                                   selected_linker=None, selected_sdk=None):
     values = []
     for index, argument in enumerate(arguments):
         if (argument in (b"-O", b"-g", b"--codegen", b"--sysroot", b"--target")
@@ -278,7 +289,7 @@ def validate_first_profile_codegen(arguments, environment):
             raise ValueError("first profile refuses joined rustc codegen flags")
     if len(values) != len(set(values)):
         raise ValueError("first profile refuses duplicate rustc codegen flags")
-    linker = selected_xcode_linker(environment)
+    linker = selected_xcode_linker(environment, selected_linker, selected_sdk)
     required = {b"embed-bitcode=no", b"debuginfo=2", b"split-debuginfo=unpacked",
                 b"linker=" + linker}
     if not required.issubset(values):
@@ -332,7 +343,7 @@ def validate_cargo_probe(receipt, source):
 
 
 def inspect(receipt_dir, rustc, source, cache, output, transcript,
-            expect_failure=False):
+            expect_failure=False, selected_linker=None, selected_sdk=None):
     roots = {"source": source.resolve(strict=True), "cache": cache.resolve(strict=True),
              "output": output.resolve(strict=True)}
     if not all(path.is_absolute() and path.is_dir() and not path.is_symlink()
@@ -342,6 +353,8 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript,
         raise ValueError("receipt directory differs from selected output")
     if not rustc.is_absolute() or rustc.is_symlink() or not rustc.is_file():
         raise ValueError("selected rustc must be an ordinary absolute file")
+    if (selected_linker is None) != (selected_sdk is None):
+        raise ValueError("selected linker and SDK must be supplied together")
     entries = []
     with os.scandir(receipt_dir) as scan:
         for entry in scan:
@@ -397,7 +410,8 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript,
             validate_cargo_probe(receipt, roots["source"])
             probes += 1
             continue
-        crate, source_identity, externs, crate_types = compile_identity(receipt, roots)
+        crate, source_identity, externs, crate_types = compile_identity(
+            receipt, roots, selected_linker, selected_sdk)
         if receipt["environment"].get(b"CARGO_CRATE_NAME") != crate.encode("ascii"):
             raise ValueError("rustc child Cargo crate name differs from compile receipt")
         manifest_identity = compile_manifest(receipt, roots, source_identity)
@@ -514,10 +528,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("receipt-dir", "rustc", "source", "cache", "output", "transcript"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--selected-linker", type=Path)
+    parser.add_argument("--selected-sdk", type=Path)
     parser.add_argument("--expect-failure", action="store_true")
     args = parser.parse_args()
     report = inspect(args.receipt_dir, args.rustc, args.source, args.cache,
-                     args.output, args.transcript, args.expect_failure)
+                     args.output, args.transcript, args.expect_failure,
+                     args.selected_linker, args.selected_sdk)
     print(json.dumps(report, sort_keys=True, separators=(",", ":")))
 
 
