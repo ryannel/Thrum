@@ -73,6 +73,17 @@ within a deliberately permitted subtree, but the policy must name every
 permitted subtree and account for path-ancestor metadata and discovery. It
 must not silently restore global metadata access to make a build pass.
 
+The first [APFS clone candidate](../evidence/i2a/T2-APFS-CLONE-CANDIDATE.md)
+uses held source descriptors and explicit same-volume `fclonefileat` calls,
+then hashes the entire cloned root against an independently supplied exact
+inventory. Final digest equality can establish the selected **byte set** even
+if the installed tree changed while files were copied; it does not establish
+one instantaneous source snapshot or prevent a later write to the clone. The
+current caller uses unreviewed local digests, and the native A/B compiler
+still reads installed roots. A ready preparer must bind the expected digest
+to the reviewed release manifest and hold the selected clone under a no-writer
+lifecycle through compiler shutdown and artifact publication.
+
 ## macOS runtime boundary
 
 The local profile still permits named system-library, preferences and
