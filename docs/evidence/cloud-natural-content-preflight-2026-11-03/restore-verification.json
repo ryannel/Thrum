@@ -1,0 +1,12 @@
+{
+  "pass": true,
+  "scope": "Restore-only exact-byte recovery; recipe/base/projections/EDT/nativecook/functionaltests/GPU/timing NEVER executed",
+  "archiveMemberCount": 51,
+  "allMemberBytesHashesMatch": true,
+  "nativeInputCount": 5,
+  "nativeDecodedBytes": 14417920,
+  "allNativeBytesHashesMatch": true,
+  "sourceResultRetained": "REJECT_preflight_base_gate",
+  "disposableOutputRemovedAfterVerification": true,
+  "restoredPath": "/private/tmp/cloud-natural-preflight-restore-20261103"
+}

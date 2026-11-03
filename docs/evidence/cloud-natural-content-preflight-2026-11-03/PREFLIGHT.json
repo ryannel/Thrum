@@ -1,0 +1,18 @@
+{
+  "owner": "cloud_lifecycle_diagnosis",
+  "purpose": "Retain one rejected cheap native source-content experiment with exact recovery",
+  "plannedDurablePeakBytes": 2097152,
+  "actualArchiveBytes": 841627,
+  "sharedNativeDecodedBytes": 14417920,
+  "restoreOnlyPlannedPeakBytes": 67108864,
+  "CPUExperimentPlanMiB": 160,
+  "CPUExperimentSampledTreeBytes": 183369728,
+  "sourceVariantsGenerated": 1,
+  "nativeAssetCook": false,
+  "EDTCalls": 0,
+  "closeout": "Selectednegativeandrecipesretained; no candidateadoption or currentproofreplacement; ownedrestorecheckdisposable",
+  "CPUExperimentSampledStopBytes": 234881024,
+  "CPUExperimentDeclaredCeilingBytes": 268435456,
+  "CPUExperimentMonitorIntervalMs": 50,
+  "CPUExperimentOSHardLimitEnforced": false
+}

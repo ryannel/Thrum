@@ -1,0 +1,278 @@
+{
+  "schema": 1,
+  "scope": "Exact rejectedcheapnativepreflight; restoreonly bydefault; no EDT/assetcook/runtime/GPU/timing",
+  "archive": "negative-preflight-v3.zip",
+  "archiveSHA256": "16576b9fd0eb7ef95a2c9eb0c2dcf865424c18143e338306fb3c48422b709cea",
+  "archiveBytes": 841627,
+  "members": {
+    "tmp/cloud-natural-content-diagnosis/DIAGNOSIS.md": {
+      "bytes": 10271,
+      "sha256": "2d4e4bc48ca58ac38e1df8b96a09abd9a5ac881d9ea859d7f328fbc748d66458"
+    },
+    "tmp/cloud-natural-content-diagnosis/MANIFEST-v2.json": {
+      "bytes": 3010,
+      "sha256": "d6b0aea8a5b0a008bb9d2ead459e9120c4554082c1bc41311283e75d7ff2683c"
+    },
+    "tmp/cloud-natural-content-diagnosis/MANIFEST-v3.json": {
+      "bytes": 6149,
+      "sha256": "0d67bf693be37af773a5b2559e30d6e6fa4e9aa498c7d95bcf3f5d65668f7f8c"
+    },
+    "tmp/cloud-natural-content-diagnosis/MANIFEST.json": {
+      "bytes": 216,
+      "sha256": "4351b1ad3327f06adf94488f052cd62c4544ad55bb45b940ce2aaefef7860e84"
+    },
+    "tmp/cloud-natural-content-diagnosis/POSES-v2.json": {
+      "bytes": 3272,
+      "sha256": "c45631d52071efdaa8ac81929a71cf9c6d5b3297564cce753fadbd03a58b6954"
+    },
+    "tmp/cloud-natural-content-diagnosis/PRE-RUN-v3.json": {
+      "bytes": 565,
+      "sha256": "42fd8abdbadb574965b6ad06370b68a51ce9e4b5bd6071e3f9e8cb058af852fb"
+    },
+    "tmp/cloud-natural-content-diagnosis/PREFLIGHT-HANDOFF-v3.md": {
+      "bytes": 3092,
+      "sha256": "064371355fc4c9d2b67c61c8fcf9bb643cb46756ddd02a23152ab31c74690577"
+    },
+    "tmp/cloud-natural-content-diagnosis/PREFLIGHT-v3.md": {
+      "bytes": 1330,
+      "sha256": "d8356a7c023361bc16d747f6c48638173406e05c6e3da6fe87f3226239069a76"
+    },
+    "tmp/cloud-natural-content-diagnosis/PREFLIGHT.md": {
+      "bytes": 784,
+      "sha256": "2a6bba432222586043435b079fc7186cb83392b72f60c01cbb48653b8c992d7f"
+    },
+    "tmp/cloud-natural-content-diagnosis/RECIPE-v2.md": {
+      "bytes": 16596,
+      "sha256": "33455faaa18533b980d0773cd4cadb20a00ef44c0011af71574046b5f9fa2938"
+    },
+    "tmp/cloud-natural-content-diagnosis/REVIEW-DISPOSITIONS-v2.md": {
+      "bytes": 2187,
+      "sha256": "f5dc6939b890df06c027a37517fad8859a2acace0cc205a7f70262f036f7be96"
+    },
+    "tmp/cloud-natural-content-diagnosis/SCREEN.md": {
+      "bytes": 5166,
+      "sha256": "655f6e726a6d868d06e38575ea434af4c9dde4c81246c30956dd1dc8b6641871"
+    },
+    "tmp/cloud-natural-content-diagnosis/analyze.py": {
+      "bytes": 3708,
+      "sha256": "fc562eae39648c7874d53c907bdac22150387ad37310bec2faec63a93d5b1ec5"
+    },
+    "tmp/cloud-natural-content-diagnosis/complete-slices-v3.py": {
+      "bytes": 3356,
+      "sha256": "7ec2c1f9b9c317a7810e081f66116a30eaf98938d4f7915b01b34293df9fd5b5"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v1/DIAGNOSIS.md": {
+      "bytes": 12123,
+      "sha256": "277a17496d77d5563543f52030fec3ddb706961d60feb06d68169857dc1bdd65"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v1/MANIFEST.json": {
+      "bytes": 2207,
+      "sha256": "ee6461fd2017a0627efc8e51e02fae6af98ee8c8f22ae0fbbb87a1d472e944f5"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v1/SCREEN.md": {
+      "bytes": 4260,
+      "sha256": "689fec0f9acb9821bfe455e01315e50ab93c4784eb7f39c0787bc519cc8c335d"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v2/DIAGNOSIS.md": {
+      "bytes": 10032,
+      "sha256": "4033c5a18b68373720dc9878d8bdc0137b9873881a433d134539854cea68cd8c"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v2/MANIFEST-v2.json": {
+      "bytes": 3010,
+      "sha256": "d6b0aea8a5b0a008bb9d2ead459e9120c4554082c1bc41311283e75d7ff2683c"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v2/RECIPE-v2.md": {
+      "bytes": 15718,
+      "sha256": "6d09c37e1d823a9818d5a102e79066d07c333c79baffb74534e852f72f81d89d"
+    },
+    "tmp/cloud-natural-content-diagnosis/history/v2/SCREEN.md": {
+      "bytes": 4832,
+      "sha256": "6c3b4a81cfd1094b038846579544daf3bc5a552e39f31fd596f3875b9bad60fe"
+    },
+    "tmp/cloud-natural-content-diagnosis/noise.py": {
+      "bytes": 1567,
+      "sha256": "96ce16be4e0402e97143af3c1ddc1e9d5a41a024b21c31097b9c65b4c9046ed2"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/base-profiles.png": {
+      "bytes": 9965,
+      "sha256": "81ae0c4825e1bbe4c4055c2738dbbd26bffaa50a7e4e7f7cfd06644d336d837f"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/fixed-slices-all.json": {
+      "bytes": 3668,
+      "sha256": "7a400221ecc87d4dbafa49c8b94218bb527248737a9b3e6c31037033e22ab24e"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/fixed-slices-all.png": {
+      "bytes": 231223,
+      "sha256": "1294fd6eca1ee8eb8e4f3f01d5348ec35041cbdda4ed01047f4158883a30570c"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/fixed-slices.png": {
+      "bytes": 184410,
+      "sha256": "cae24a7a8a8c11d134c3c059091db63e011809b4efab106c9f9cb5ce3880cfe3"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/held-projections.png": {
+      "bytes": 186042,
+      "sha256": "4f37ec8cd19d866b5d68a3d84cce0964e3029c78e95e379dd979ab80843c8a7f"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/native-projections.png": {
+      "bytes": 139520,
+      "sha256": "9f0b147302a3f21bd737fd8790df22334a495cef8beec2b4ca9f275e4561b042"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight-v3/results.json": {
+      "bytes": 10233,
+      "sha256": "79395dc309449a4f04d5363f4418dca4394f530386fe814d41da9a9185e23d57"
+    },
+    "tmp/cloud-natural-content-diagnosis/preflight.py": {
+      "bytes": 14065,
+      "sha256": "a1cf25f636a71989d0ad4f9d449d1363d4e6d732ac96f4243305ca4abc536aca"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/body.guard.json": {
+      "bytes": 327,
+      "sha256": "e6906ffa95171b08f4ae1f97a95532aafd5d679158fee9f509423ac907b58063"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/body.json": {
+      "bytes": 17593,
+      "sha256": "b5f119f272efb0c388b0845d4b6b7672fd687d0e59f8f2c29bf806d85ff52828"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/body.log": {
+      "bytes": 1054,
+      "sha256": "32c7edf9fd9a9becac2bc981322b7e230c1cacefb77ab59fd0cba17e83aee551"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/cheap-preflight-v3.guard.json": {
+      "bytes": 317,
+      "sha256": "2286545e4001c836efba7ab92f27fd06f0e6106239f4c64dae7792834122d10f"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/cheap-preflight-v3.log": {
+      "bytes": 1880,
+      "sha256": "13885f1205604b27ca94a304a00ed459502f95f506a9bdf3c15e3de7f43cf8d2"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/complete-fixed-slices-v3.guard.json": {
+      "bytes": 325,
+      "sha256": "f0aab154acf1b4c66ef3233be6fe7f5998bdba5eb3ca3163bd9b5b123e729d7f"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/complete-fixed-slices-v3.log": {
+      "bytes": 29,
+      "sha256": "78cbd1b79116d2c73b45003f3cc4bdee4d8ece3e939e67094f2391f242e86291"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/crown-b.guard.json": {
+      "bytes": 329,
+      "sha256": "28866e1f26268d020fe4642a776a4a67b6992772f1a19dd5a682c82f8cfc5e0f"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/crown-b.json": {
+      "bytes": 20825,
+      "sha256": "9152a7f01b596dae40cef86ee40754b69a45e41b078205b44a9671aa4d5872c0"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/crown-b.log": {
+      "bytes": 1027,
+      "sha256": "b0619df789014a72990aaef420581e7aa4583aae01ebe51ac28ba2a3162cb652"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/noise.guard.json": {
+      "bytes": 312,
+      "sha256": "8c3303a59196f77e1078bec7dca228dbdfa6999f452b0b1665d27636daff8ad2"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/noise.json": {
+      "bytes": 927,
+      "sha256": "ec261e69af2afcbd34d9d3e06e29aa6e7298c1c2c12056316d83b16a90170efc"
+    },
+    "tmp/cloud-natural-content-diagnosis/results/noise.log": {
+      "bytes": 775,
+      "sha256": "9d830767e8bee8d0dfaf2ffe639e3dcad1a041b07e9467dca1adfff8a3e8a134"
+    },
+    "tmp/cloud-natural-content-diagnosis/run-guard.py": {
+      "bytes": 1290,
+      "sha256": "feedee0f8490de12777a6b6780063fee0854c876af5553f3236ad1a03d0af720"
+    },
+    "tmp/cloud-natural-content-review/REVIEW-v2.md": {
+      "bytes": 6325,
+      "sha256": "155652701138aca87a3c721061e9a92d68a3cdfbb66c88b8c6386c0b92fa6981"
+    },
+    "tmp/cloud-natural-content-review/REVIEW.md": {
+      "bytes": 7258,
+      "sha256": "4d64fd5a38327562b2c35773e6242d5b0404531455c7ca1ae2d7131d11557fff"
+    },
+    "tmp/cloud-natural-coupled-proof/assets/input-index.json": {
+      "bytes": 2491,
+      "sha256": "8744bca32b981b2e654f14b991bfe0c12f6504cb519cd1eaaf61f81af186ecf7"
+    },
+    "tmp/cloud-natural-coupled-proof/assets/noise/channels-32.json": {
+      "bytes": 526,
+      "sha256": "899b12378321f6e4eb7f34da42ad7a2f05049a978553ce55e030c79769b47b5a"
+    },
+    "tmp/cloud-natural-coupled-proof/assets/templates/body.json": {
+      "bytes": 9130,
+      "sha256": "5b0aa2e79671a1f36885e82a5537b0911819346f7a6cc7a03103308c5d8c9098"
+    },
+    "tmp/cloud-natural-coupled-proof/assets/templates/crown-b.json": {
+      "bytes": 15642,
+      "sha256": "8415d44a6047216964670b43e977f87820331faabf686525688fd64fbc3b0704"
+    },
+    "tmp/cloud-natural-coupled-proof/captures/system-t430003-mode0-7bf67682189662e2-f1249129-8.json": {
+      "bytes": 231660,
+      "sha256": "6f41434787561bdb85e25922e9945810a9597f6763036454602fc0ebbc1949e0"
+    }
+  },
+  "external_by_decoded_sha256": {
+    "a5440154c22f7b0a646888cc9e03f5c2998bcbf9a89e0d5d5910702dc10a8c11": {
+      "kind": "gzip",
+      "container": "../cloud-geometry-operators-2026-11-03/inputs/volumes/channels-32.r16f.gz",
+      "container_bytes": 50997,
+      "container_sha256": "66717a7dcb15e80502ed2fcb68cd8dbbc8a7810cc8870e95fd9852c78b63d6f6",
+      "decoded_bytes": 65536,
+      "destinations": [
+        "tmp/cloud-natural-coupled-proof/assets/noise/channels-32.r16f"
+      ]
+    },
+    "246d1da1510c27cce3c7b8af0fd85c389ef68b0e37dca19482bea70056b42b19": {
+      "kind": "gzip",
+      "container": "../cloud-component-proof-2026-11-03/inputs/v2-body.density.r16f.gz",
+      "container_bytes": 838091,
+      "container_sha256": "152c3dc6fce34c105fdacda3cd9c46362af1ec8cd98958b78d08337aa2cba8f5",
+      "decoded_bytes": 6291456,
+      "destinations": [
+        "tmp/cloud-natural-coupled-proof/assets/templates/body.density.r16f"
+      ]
+    },
+    "ce603988ab9269008c8f377e968c28af854f383357a2c8fa1f991bb57ea74c14": {
+      "kind": "gzip",
+      "container": "../cloud-component-proof-2026-11-03/inputs/v2-body.distance.r16f.gz",
+      "container_bytes": 2487746,
+      "container_sha256": "2fe5614f2d3f9dee90c8468132318307fad8054185d7e9657b305c56be650a42",
+      "decoded_bytes": 6291456,
+      "destinations": [
+        "tmp/cloud-natural-coupled-proof/assets/templates/body.distance.r16f"
+      ]
+    },
+    "6cf3de4e99ea6a5f79d32e1506e9375aadd1aaef6f770615ecd2b8341537ee09": {
+      "kind": "gzip",
+      "container": "../cloud-natural-crown-cook-2026-11-03/selected/density.r16f.gz",
+      "container_bytes": 136646,
+      "container_sha256": "041e77c40e4bd161df4ad4184b795f8914b54930716078b53f0e78c4eb75c015",
+      "decoded_bytes": 884736,
+      "destinations": [
+        "tmp/cloud-natural-coupled-proof/assets/templates/crown-b.density.r16f"
+      ]
+    },
+    "3dfb512a6c5367fea155801fea924ac22781b5d3f18d8eb5a429741f0e73f0ab": {
+      "kind": "gzip",
+      "container": "../cloud-natural-crown-cook-2026-11-03/selected/distance.r16f.gz",
+      "container_bytes": 262207,
+      "container_sha256": "5c62df3967b8d2e9a84da53311a9154d5cd7c8285c8c0d5efd034553089a3c34",
+      "decoded_bytes": 884736,
+      "destinations": [
+        "tmp/cloud-natural-coupled-proof/assets/templates/crown-b.distance.r16f"
+      ]
+    }
+  },
+  "preRunSHA256": "42fd8abdbadb574965b6ad06370b68a51ce9e4b5bd6071e3f9e8cb058af852fb",
+  "resultSHA256": "79395dc309449a4f04d5363f4418dca4394f530386fe814d41da9a9185e23d57",
+  "tools": {
+    "python": "3.14.10",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "pillow": "12.2.0",
+    "platform": "macOS Clang21 binary64 nativeanalysis; bitmaprecomputationidentitynotportablepromised"
+  },
+  "reproductionOnlyIfExplicitlyRequested": [
+    "python3 /OUTPUT/tmp/cloud-natural-content-diagnosis/run-guard.py reproduce-pre-distance /opt/homebrew/bin/python3.14 preflight.py",
+    "python3 /OUTPUT/tmp/cloud-natural-content-diagnosis/run-guard.py reproduce-fixed-slices /opt/homebrew/bin/python3.14 complete-slices-v3.py"
+  ]
+}

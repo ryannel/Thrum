@@ -1,0 +1,37 @@
+{
+  "scope": "Rejectedcheapnativecontentpreflight/restoreonly; no EDT/newasset/GPU/timing/adoption",
+  "files": {
+    "negative-preflight-v3.zip": {
+      "sha256": "16576b9fd0eb7ef95a2c9eb0c2dcf865424c18143e338306fb3c48422b709cea",
+      "bytes": 841627
+    },
+    "README.md": {
+      "bytes": 6607,
+      "sha256": "55d447fd31fa035b1b7c516ff6de5bed40a8a0975fae8ba72f6eb29069fab7da"
+    },
+    "restore-verification.json": {
+      "sha256": "975aa252df35372e5fb83b8e49d4acf185c68107218d9419e0a835a5524c4cbc",
+      "bytes": 492
+    },
+    "PREFLIGHT.json": {
+      "bytes": 756,
+      "sha256": "09d2f58823b5a34215ab5af05626e613f8dbf05bbf5fa1759fafada335901b8c"
+    },
+    "restore-spec.json": {
+      "sha256": "632ceca81a26f9d99e811cdd92fbe183dccde91b0bcdec1166e8732fe574ed4b",
+      "bytes": 12488
+    },
+    "restore.py": {
+      "sha256": "adf21b7b9146a34502de6c71adb2d2a83cece9ddc86798572006fc30e1310937",
+      "bytes": 2419
+    },
+    "review/REVIEW.md": {
+      "bytes": 1896,
+      "sha256": "2bc427717944658439f689f3a12ed5bfe887ca569e7718190f214164117dd31c"
+    },
+    "review/RESOLUTION.md": {
+      "bytes": 684,
+      "sha256": "ae84f5733ee6f340a01f389571eb0deb7ec1ba01eb6ef8e89e103b1c1cc275a4"
+    }
+  }
+}
