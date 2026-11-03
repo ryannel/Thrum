@@ -1,12 +1,14 @@
 # Accepted-source owner and recovery reconciliation
 
-3 November 2026. Supporting design for the [Foundation source contract](../FOUNDATION-SPEC.md#4-working-files-crash-recovery-and-gc). The accepted-source writer-lock and store-reconciliation gates remain **unchecked**. This selects a first-profile owner shape; it does not claim a migrated store or portable recovery proof.
+3 November 2026. Supporting design for the [Foundation source contract](../FOUNDATION-SPEC.md#4-working-files-crash-recovery-and-gc). The accepted-source shareable lease and cooperating owner lock are implemented in separate checked slices. Format reconciliation and the assembled planning/recovery gate remain **unchecked**. This selects a first-profile owner shape; it does not claim a migrated store or portable recovery proof.
 
 ## Required interaction
 
 The previous accepted root and a registered read pin must survive an edit that commits a newer root. A failed or interrupted final commit must leave a recoverable exact keyed outcome, while no cooperating owner, pin cleanup or checkpoint rewrites the uncertain WAL before a fresh open resolves it. Reader CPU work must not hold a SQL transaction. The lock coordinates Thrum-owned processes; it does not exclude a noncooperating process that opens the SQLite file directly.
 
-The current format-1 `NativeSourceStore` has a mutable borrowed `PinnedSource` and permits another open connection to advance the root while that pin lives. Its injected post-sync final-COMMIT fault quarantines only the failing connection. The format-2 `ProvisionalSourceStore` instead holds an exclusive `fs4` advisory lock from before SQLite open until its `Arc` owner and all leases close. It serializes SQLite access under one mutex and quarantines that owner after an uncertain final commit. Its source format, selection and publication semantics are provisional, so the lock cannot simply be copied into format 1: the accepted test that opens a second store to advance the root while the first is pinned would lose its only writer.
+The first macOS profile uses an app-managed database path. Canonicalize the parent and reject Unix hard-link database aliases so the lock and WAL name identify the same file. The current lock slice does not establish Windows path-identity behavior or protect against hostile same-user replacement of directory entries.
+
+The format-1 `NativeSourceStore` now has an owning `PinnedSource` and an exclusive cooperating owner lock from before SQLite open until its `Arc` owner and all leases close. It serializes SQLite access under one mutex and quarantines that owner after an uncertain final commit. The format-2 `ProvisionalSourceStore` independently has the same owner shape, but its source format, selection and publication semantics remain provisional. Mapping the two stores to one selected schema and lifecycle is still needed.
 
 ## Selected first-profile shape
 
@@ -18,7 +20,7 @@ This chooses serialization for the first native authoring profile, not a permane
 
 1. Map format-1 accepted root, keyed outcome, verified blobs and pins onto one selected schema and the format-2 owner lifecycle. Preserve distinct source identity and complete authenticated reads. Reject incompatible existing formats until an explicit migration is proved; do not silently initialize or overwrite either database.
 2. Give an accepted read lease a shareable owner. With lease A alive, admit B through that same owner, read A's exact bytes, release it, and reopen B and its keyed outcome. Check stale generation and changed-key refusal.
-3. Hold the sidecar lock through leases and quarantine. A second cooperating process must refuse open while any lease remains. Inject before-write, before-sync and after-sync final-COMMIT faults; the failed owner performs no later SQL or checkpoint, a fresh opener resolves the exact key, and the prior pin remains usable or retained according to the outcome. Kill the owner before/after commit and repeat the recovery check.
+3. Hold the sidecar lock through leases and quarantine. A second cooperating process must refuse open while any lease remains. The first accepted-store lock slice proves cross-process refusal and release after a killed holder, plus a live-lease post-sync final-COMMIT quarantine/reopen. Before-write and before-sync faults, killed owner before/after commit and full public-admission recovery still need qualification.
 4. Exercise a blocked reader checkpoint, sustained small-file admission and observed main/WAL/free-space peaks under the selected configurable plan. This is part of the existing native planning gate, not evidence of a hard physical cap.
 
 The owner lock is paid at open, not per game tick. SQLite mutex contention occurs only on authoring/build reads and writes; bounded chunk copies release it between operations. Retain bytes, allocation count, edit latency, reader wait and WAL high-water in the assembled source-to-build measurement. The provisional 64 MiB tree and 256 MiB SQLite limits are test-profile constraints and must not silently become the accepted native policy.

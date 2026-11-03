@@ -142,7 +142,7 @@ impl SourceWriterWindow {
     }
 }
 
-fn open_regular_lock(path: &Path) -> Result<File, BudgetError> {
+pub(crate) fn open_regular_lock(path: &Path) -> Result<File, BudgetError> {
     for _ in 0..3 {
         let existing = match fs::symlink_metadata(path) {
             Ok(metadata) if metadata.file_type().is_file() => true,
