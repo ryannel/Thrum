@@ -28,6 +28,19 @@ same-ID reconnect without consuming another slot. Unrestricted constructors
 remain prototype paths; this profile does not provide N1 socket, spectator,
 projection or queue-byte ownership.
 
+The [selected inline slow-peer probe](../evidence/i1-headless/SLOW-PEER-PROJECTION-PROBE.md)
+now tests the next owner boundary without adding a public N1 API. A local
+authority's complete committed group is copied into a per-peer owned typed
+projection before the callback publication and snapshot are released. The
+selected counter/event/rejection values contain no indirect W1 owner; generic
+game values do not gain that property from `Clone`. One slow peer retains
+complete groups for more than eight changed ticks while a fast replica applies
+and acknowledges its groups. An entry/byte/age-limited private queue refuses
+new slow inputs before authority sequencing once it needs a replacement
+baseline. This tests the intended N1 partition, not a wire codec, remote ACK,
+general schema closure or the production queue. I2n must own those mechanisms
+and preserve results, mandatory events and lifecycle through resync/close.
+
 ## Representation and cost account
 
 Select a dense slot table with a free list, generation check and stable-ID index for the finite preloaded I1 world. The `hecs` 0.11.2 private ordinary-component store remains selected for the broader W1 capability; this slice does not have heterogeneous component queries or enough dependency need to add it. Replacing the slot payload with the selected private store must preserve the public identity/barrier interface and be qualified with its actual license, dependency, Wasm and target costs before I2b. Do not expose a backend entity or Rust `TypeId` as durable/wire identity.
