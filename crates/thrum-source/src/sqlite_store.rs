@@ -169,6 +169,73 @@ impl Drop for Fixture {
     }
 }
 
+/// One accepted-store policy or filesystem-availability refusal.
+///
+/// Current accounted bytes, work estimates, policy targets and filesystem
+/// observations have distinct meanings. No variant reserves APFS blocks or
+/// guarantees a future write will retain headroom.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StoreSpacePressure {
+    /// Accounted current main bytes plus marginal candidate growth exceeds policy.
+    MainTarget {
+        /// Greater of observed main-file length and SQLite logical page bytes.
+        accounted_current_bytes: u64,
+        /// Estimated main growth for missing or incomplete candidate blobs.
+        projected_growth_bytes: u64,
+        /// Selected main-file target.
+        target_bytes: u64,
+    },
+    /// Existing WAL file reached the selected stop before candidate writes.
+    WalPreflight {
+        /// Observed WAL file length.
+        observed_wal_bytes: u64,
+        /// Selected WAL stop target.
+        stop_bytes: u64,
+    },
+    /// One shared-guard allowance itself reached the WAL stop before file stat.
+    WalAllowance {
+        /// Next requested write allowance.
+        incoming_allowance_bytes: u64,
+        /// Selected WAL stop target.
+        stop_bytes: u64,
+    },
+    /// Shared guard could not make WAL room after a checkpoint attempt.
+    WalCheckpoint {
+        /// WAL file length observed after the checkpoint attempt.
+        observed_wal_bytes: u64,
+        /// Next requested write allowance.
+        incoming_allowance_bytes: u64,
+        /// Selected WAL stop target.
+        stop_bytes: u64,
+        /// SQLite reported a reader or writer still blocking the checkpoint.
+        checkpoint_busy: bool,
+    },
+    /// Candidate preflight estimate exceeded observed filesystem availability.
+    AvailablePreflight {
+        /// Estimated marginal main growth for missing or incomplete blobs.
+        projected_main_bytes: u64,
+        /// Estimated marginal WAL growth within the current stop window.
+        projected_wal_bytes: u64,
+        /// Logical main pages not yet reflected in the main-file length.
+        checkpoint_debt_bytes: u64,
+        /// Non-atomic filesystem available-space observation.
+        observed_available_bytes: u64,
+        /// Selected desired free-space headroom.
+        headroom_bytes: u64,
+    },
+    /// Shared live guard refused its next allowance against observed availability.
+    AvailableLive {
+        /// Next bounded write or checkpoint allowance.
+        incoming_allowance_bytes: u64,
+        /// Logical main pages not yet reflected in the main-file length.
+        checkpoint_debt_bytes: u64,
+        /// Non-atomic filesystem available-space observation.
+        observed_available_bytes: u64,
+        /// Selected desired free-space headroom.
+        headroom_bytes: u64,
+    },
+}
+
 #[derive(Debug)]
 enum StoreError {
     Sql(rusqlite::Error),
@@ -207,7 +274,7 @@ enum StoreError {
     CandidateManifest(ManifestError),
     CandidateFile(StageError),
     Budget(BudgetError),
-    WalBackpressure,
+    SpacePressure(StoreSpacePressure),
     InvalidPlan,
     CorruptRootOutcome,
     MissingFile,
@@ -237,6 +304,7 @@ impl fmt::Display for StoreError {
             ),
             Self::CandidateFile(error) => write!(formatter, "candidate file: {error:?}"),
             Self::Budget(error) => write!(formatter, "physical preflight: {error:?}"),
+            Self::SpacePressure(detail) => write!(formatter, "store space pressure: {detail:?}"),
             Self::ConsumerWrite(error) => write!(formatter, "consumer output: {error}"),
             Self::OwnerBusy => write!(formatter, "another accepted-source owner holds the store"),
             other => write!(formatter, "{other:?}"),
@@ -317,6 +385,53 @@ fn required_free_bytes(
         .and_then(|value| value.checked_add(checkpoint_debt))
         .and_then(|value| value.checked_add(free_floor))
         .ok_or(StoreError::Budget(BudgetError::Overflow))
+}
+
+fn assess_preflight_available(
+    projected_main: u64,
+    projected_wal: u64,
+    checkpoint_debt: u64,
+    headroom: u64,
+    read_available: impl FnOnce() -> Result<u64, StoreError>,
+) -> Result<(), StoreError> {
+    let required = required_free_bytes(projected_main, projected_wal, checkpoint_debt, headroom)?;
+    let available = read_available()?;
+    if available < required {
+        return Err(StoreError::SpacePressure(
+            StoreSpacePressure::AvailablePreflight {
+                projected_main_bytes: projected_main,
+                projected_wal_bytes: projected_wal,
+                checkpoint_debt_bytes: checkpoint_debt,
+                observed_available_bytes: available,
+                headroom_bytes: headroom,
+            },
+        ));
+    }
+    Ok(())
+}
+
+fn assess_live_available(
+    incoming_allowance: u64,
+    checkpoint_debt: u64,
+    headroom: u64,
+    read_available: impl FnOnce() -> Result<u64, StoreError>,
+) -> Result<(), StoreError> {
+    let required = headroom
+        .checked_add(incoming_allowance)
+        .and_then(|value| value.checked_add(checkpoint_debt))
+        .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+    let available = read_available()?;
+    if available < required {
+        return Err(StoreError::SpacePressure(
+            StoreSpacePressure::AvailableLive {
+                incoming_allowance_bytes: incoming_allowance,
+                checkpoint_debt_bytes: checkpoint_debt,
+                observed_available_bytes: available,
+                headroom_bytes: headroom,
+            },
+        ));
+    }
+    Ok(())
 }
 
 fn projected_wal_growth(projected_main: u64, remaining_window: u64) -> Result<u64, StoreError> {
@@ -841,7 +956,12 @@ impl SqliteStoreCore {
 
     fn ensure_wal_room(&mut self, incoming_allowance: u64) -> Result<(), StoreError> {
         if incoming_allowance >= self.wal_guard.stop_at {
-            return Err(StoreError::WalBackpressure);
+            return Err(StoreError::SpacePressure(
+                StoreSpacePressure::WalAllowance {
+                    incoming_allowance_bytes: incoming_allowance,
+                    stop_bytes: self.wal_guard.stop_at,
+                },
+            ));
         }
         // A checkpoint can grow the main file before the next write starts.
         self.check_active_free(incoming_allowance)?;
@@ -885,7 +1005,14 @@ impl SqliteStoreCore {
                 .ok_or(StoreError::Budget(BudgetError::Overflow))?
                 >= self.wal_guard.stop_at
         {
-            return Err(StoreError::WalBackpressure);
+            return Err(StoreError::SpacePressure(
+                StoreSpacePressure::WalCheckpoint {
+                    observed_wal_bytes: after,
+                    incoming_allowance_bytes: incoming_allowance,
+                    stop_bytes: self.wal_guard.stop_at,
+                    checkpoint_busy: busy != 0,
+                },
+            ));
         }
         self.wal_guard.next_passive_at = self.wal_guard.passive_at;
         self.check_active_free(incoming_allowance)
@@ -905,17 +1032,11 @@ impl SqliteStoreCore {
         let physical_main = fs::metadata(&self.path)
             .map_err(|source| physical_io(&self.path, source))?
             .len();
-        let required = floor
-            .checked_add(incoming_allowance)
-            .and_then(|value| value.checked_add(logical_main.saturating_sub(physical_main)))
-            .ok_or(StoreError::Budget(BudgetError::Overflow))?;
+        let checkpoint_debt = logical_main.saturating_sub(physical_main);
         let volume = self.path.parent().ok_or(StoreError::InputIo)?;
-        let available =
-            fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
-        if available < required {
-            return Err(StoreError::Budget(BudgetError::FreeSpace));
-        }
-        Ok(())
+        assess_live_available(incoming_allowance, checkpoint_debt, floor, || {
+            fs4::available_space(volume).map_err(|source| physical_io(volume, source))
+        })
     }
 
     #[cfg(test)]
@@ -1441,7 +1562,11 @@ impl SqliteStoreCore {
             .ok_or(StoreError::Budget(BudgetError::Overflow))?
             > limits.main
         {
-            return Err(StoreError::Budget(BudgetError::MainLimit));
+            return Err(StoreError::SpacePressure(StoreSpacePressure::MainTarget {
+                accounted_current_bytes: main,
+                projected_growth_bytes: projected_main,
+                target_bytes: limits.main,
+            }));
         }
         let wal_path = wal_path(&self.path);
         let wal = match fs::metadata(&wal_path) {
@@ -1450,26 +1575,27 @@ impl SqliteStoreCore {
             Err(source) => return Err(physical_io(&wal_path, source)),
         };
         if wal >= limits.wal {
-            return Err(StoreError::Budget(BudgetError::WalLimit));
+            return Err(StoreError::SpacePressure(
+                StoreSpacePressure::WalPreflight {
+                    observed_wal_bytes: wal,
+                    stop_bytes: limits.wal,
+                },
+            ));
         }
         // The WAL stop is backpressure capacity, not work demanded by this
         // candidate. Price only estimated writes for its missing blobs and
         // metadata, capped by the currently reachable WAL window. A later
         // checkpoint/live check still handles actual growth and blocked WAL.
         let projected_wal = projected_wal_growth(projected_main, limits.wal - wal)?;
-        let required = required_free_bytes(
+        let checkpoint_debt = logical_main.saturating_sub(physical_main);
+        let volume = self.path.parent().ok_or(StoreError::InputIo)?;
+        assess_preflight_available(
             projected_main,
             projected_wal,
-            logical_main.saturating_sub(physical_main),
+            checkpoint_debt,
             limits.free_floor,
-        )?;
-        let volume = self.path.parent().ok_or(StoreError::InputIo)?;
-        let available =
-            fs4::available_space(volume).map_err(|source| physical_io(volume, source))?;
-        if available < required {
-            return Err(StoreError::Budget(BudgetError::FreeSpace));
-        }
-        Ok(())
+            || fs4::available_space(volume).map_err(|source| physical_io(volume, source)),
+        )
     }
 
     #[cfg(test)]
@@ -2328,13 +2454,8 @@ impl SourceStoreError {
             | StoreError::UncertainCommit(_)
             | StoreError::OwnerPoisoned => SourceStoreErrorKind::RecoveryRequired,
             StoreError::OwnerBusy => SourceStoreErrorKind::Busy,
-            StoreError::Budget(
-                BudgetError::MainLimit
-                | BudgetError::WalLimit
-                | BudgetError::StagePressure(_)
-                | BudgetError::FreeSpace,
-            )
-            | StoreError::WalBackpressure
+            StoreError::SpacePressure(_)
+            | StoreError::Budget(BudgetError::StagePressure(_))
             | StoreError::Sql(rusqlite::Error::SqliteFailure(
                 rusqlite::ffi::Error {
                     code: rusqlite::ErrorCode::DiskFull,
@@ -2387,6 +2508,14 @@ impl SourceStoreError {
             StoreError::CandidateFile(error) => error.limit_exceeded(),
             StoreError::CandidateStage(error) => error.limit_exceeded(),
             StoreError::History(error) => error.limit_exceeded(),
+            _ => None,
+        }
+    }
+
+    /// Store-local estimate or filesystem sample that caused space pressure.
+    pub fn space_pressure(&self) -> Option<StoreSpacePressure> {
+        match &self.0 {
+            StoreError::SpacePressure(detail) => Some(*detail),
             _ => None,
         }
     }
@@ -4563,13 +4692,9 @@ fn native_store_sqlite_full_during_blob_preserves_root_and_retries() {
         .conn
         .pragma_update(None, "max_page_count", current_pages)
         .unwrap();
-    assert_eq!(
-        store
-            .admit(1, 1, 2, [2; 32], &candidate)
-            .unwrap_err()
-            .kind(),
-        SourceStoreErrorKind::SpacePressure
-    );
+    let full = store.admit(1, 1, 2, [2; 32], &candidate).unwrap_err();
+    assert_eq!(full.kind(), SourceStoreErrorKind::SpacePressure);
+    assert_eq!(full.space_pressure(), None);
     assert_eq!(store.current_root().unwrap(), Some(old));
     assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
     assert_eq!(Arc::strong_count(&store.owner), 1);
@@ -4711,13 +4836,9 @@ fn native_store_reader_blocked_wal_defers_and_recovers_admission() {
     )
     .unwrap();
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-    assert_eq!(
-        store
-            .admit(1, 1, 2, [2; 32], &candidate)
-            .unwrap_err()
-            .kind(),
-        SourceStoreErrorKind::SpacePressure
-    );
+    let blocked = store.admit(1, 1, 2, [2; 32], &candidate).unwrap_err();
+    assert_eq!(blocked.kind(), SourceStoreErrorKind::SpacePressure);
+    assert!(blocked.space_pressure().is_some());
     assert_eq!(store.current_root().unwrap(), Some(old));
     assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
     let blocked_usage = store.space_usage().unwrap();
@@ -7327,6 +7448,28 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
         free_floor: 0,
         ..Limits::V1
     };
+    let pages: i64 = store
+        .conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .unwrap();
+    let accounted_main = fs::metadata(fixture.database())
+        .unwrap()
+        .len()
+        .max(pages as u64 * SQLITE_PAGE_BYTES);
+    let mut manifest_bytes = Vec::new();
+    manifest.write_jcs(&mut manifest_bytes).unwrap();
+    let mut blobs: Vec<_> = manifest
+        .files()
+        .iter()
+        .map(ManifestEntry::blob_identity)
+        .collect();
+    blobs.push((manifest_bytes.len() as u64, revision));
+    blobs.sort_unstable_by_key(|(_, hash)| *hash);
+    blobs.dedup_by_key(|(_, hash)| *hash);
+    let mut projected_main = 64 * 1024_u64;
+    for (length, _) in blobs {
+        charge_projected_blob(&mut projected_main, length, None).unwrap();
+    }
     assert!(matches!(
         store.admit_staged_candidate_probe_with_limits(
             0,
@@ -7342,8 +7485,14 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             |_| {},
             |_| {},
         ),
-        Err(StoreError::Budget(BudgetError::MainLimit))
+        Err(StoreError::SpacePressure(StoreSpacePressure::MainTarget {
+            accounted_current_bytes,
+            projected_growth_bytes,
+            target_bytes: 4096,
+        })) if accounted_current_bytes == accounted_main
+            && projected_growth_bytes == projected_main
     ));
+    let observed_wal = fs::metadata(wal_path(&fixture.database())).unwrap().len();
     assert!(matches!(
         store.admit_staged_candidate_probe_with_limits(
             0,
@@ -7356,9 +7505,26 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             |_| {},
             |_| {},
         ),
-        Err(StoreError::Budget(BudgetError::WalLimit))
+        Err(StoreError::SpacePressure(StoreSpacePressure::WalPreflight {
+            observed_wal_bytes,
+            stop_bytes: 1,
+        })) if observed_wal_bytes == observed_wal
     ));
-    let available = fs4::available_space(&fixture.0).unwrap();
+    let headroom = 1_u64 << 60;
+    assert!(matches!(
+        store.preflight_candidate_space(
+            &manifest,
+            revision,
+            Limits {
+                free_floor: headroom,
+                ..limits
+            },
+        ),
+        Err(StoreError::SpacePressure(StoreSpacePressure::AvailablePreflight {
+            headroom_bytes,
+            ..
+        })) if headroom_bytes == headroom
+    ));
     assert!(matches!(
         store.admit_staged_candidate_probe_with_limits(
             0,
@@ -7367,14 +7533,17 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             [1; 32],
             &candidate,
             Limits {
-                free_floor: available,
+                free_floor: headroom,
                 ..limits
             },
             || {},
             |_| {},
             |_| {},
         ),
-        Err(StoreError::Budget(BudgetError::FreeSpace))
+        Err(StoreError::SpacePressure(StoreSpacePressure::AvailableLive {
+            headroom_bytes,
+            ..
+        })) if headroom_bytes == headroom
     ));
     let rows: i64 = store
         .conn
@@ -7390,6 +7559,25 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
         .conn
         .query_row("PRAGMA page_count", [], |row| row.get(0))
         .unwrap();
+    let accounted_after_admit = fs::metadata(fixture.database())
+        .unwrap()
+        .len()
+        .max(pages as u64 * SQLITE_PAGE_BYTES);
+    assert!(matches!(
+        store.preflight_candidate_space(
+            &manifest,
+            revision,
+            Limits {
+                main: accounted_after_admit + 64 * 1024 - 1,
+                ..limits
+            },
+        ),
+        Err(StoreError::SpacePressure(StoreSpacePressure::MainTarget {
+            accounted_current_bytes,
+            projected_growth_bytes: 65536,
+            ..
+        })) if accounted_current_bytes == accounted_after_admit
+    ));
     store
         .preflight_candidate_space(
             &manifest,
@@ -7568,6 +7756,76 @@ fn candidate_wal_projection_prices_work_then_caps_reachable_growth() {
 }
 
 #[test]
+fn accepted_availability_details_preserve_samples_equality_and_overflow() {
+    assert!(assess_preflight_available(10, 20, 30, 40, || Ok(100)).is_ok());
+    assert!(matches!(
+        assess_preflight_available(10, 20, 30, 40, || Ok(99)),
+        Err(StoreError::SpacePressure(
+            StoreSpacePressure::AvailablePreflight {
+                projected_main_bytes: 10,
+                projected_wal_bytes: 20,
+                checkpoint_debt_bytes: 30,
+                observed_available_bytes: 99,
+                headroom_bytes: 40,
+            }
+        ))
+    ));
+    assert!(matches!(
+        assess_preflight_available(u64::MAX, 1, 0, 0, || {
+            panic!("overflow must precede I/O")
+        }),
+        Err(StoreError::Budget(BudgetError::Overflow))
+    ));
+
+    assert!(assess_live_available(10, 20, 30, || Ok(60)).is_ok());
+    assert!(matches!(
+        assess_live_available(10, 20, 30, || Ok(59)),
+        Err(StoreError::SpacePressure(
+            StoreSpacePressure::AvailableLive {
+                incoming_allowance_bytes: 10,
+                checkpoint_debt_bytes: 20,
+                observed_available_bytes: 59,
+                headroom_bytes: 30,
+            }
+        ))
+    ));
+    assert!(matches!(
+        assess_live_available(u64::MAX, 0, 1, || panic!("overflow must precede I/O")),
+        Err(StoreError::Budget(BudgetError::Overflow))
+    ));
+}
+
+#[test]
+fn incomplete_blob_keeps_full_marginal_charge_until_complete() {
+    let length = CHUNK_BYTES as u64 + 1;
+    let mut missing = 0;
+    let mut incomplete = 0;
+    let mut complete = 0;
+    charge_projected_blob(&mut missing, length, None).unwrap();
+    charge_projected_blob(&mut incomplete, length, Some((length as i64, 0))).unwrap();
+    charge_projected_blob(&mut complete, length, Some((length as i64, 1))).unwrap();
+    assert_eq!(incomplete, missing);
+    assert!(missing > 0);
+    assert_eq!(complete, 0);
+}
+
+#[test]
+fn wal_allowance_refuses_before_file_stat_with_its_policy_target() {
+    let fixture = Fixture::new();
+    let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
+    store.wal_guard.stop_at = MIB;
+    assert!(matches!(
+        store.ensure_wal_room(MIB),
+        Err(StoreError::SpacePressure(
+            StoreSpacePressure::WalAllowance {
+                incoming_allowance_bytes: MIB,
+                stop_bytes: MIB,
+            }
+        ))
+    ));
+}
+
+#[test]
 fn active_candidate_free_floor_refuses_before_blob_header_write() {
     let fixture = Fixture::new();
     let mut store = SqliteStoreCore::open(&fixture.database()).unwrap();
@@ -7590,7 +7848,9 @@ fn active_candidate_free_floor_refuses_before_blob_header_write() {
             },
             |_| {},
         ),
-        Err(StoreError::Budget(BudgetError::FreeSpace))
+        Err(StoreError::SpacePressure(
+            StoreSpacePressure::AvailableLive { .. }
+        ))
     ));
     let headers: i64 = store
         .conn
@@ -7621,7 +7881,9 @@ fn live_free_floor_refuses_before_checkpoint_can_grow_main_file() {
     store.active_free_floor = Some(1 << 60);
     assert!(matches!(
         store.ensure_wal_room(MIB),
-        Err(StoreError::Budget(BudgetError::FreeSpace))
+        Err(StoreError::SpacePressure(
+            StoreSpacePressure::AvailableLive { .. }
+        ))
     ));
     assert_eq!(fs::metadata(&wal_path).unwrap().len(), before);
 }
@@ -7677,9 +7939,19 @@ fn blocked_reader_keeps_wal_checkpoint_debt_visible() {
     };
     let third = [0x43_u8];
     let third_hash: [u8; 32] = Sha256::digest(third).into();
+    let refused = writer
+        .stage_blob(&mut third.as_slice(), 1, third_hash)
+        .unwrap_err();
+    let observed_after = fs::metadata(&wal_path).unwrap().len();
     assert!(matches!(
-        writer.stage_blob(&mut third.as_slice(), 1, third_hash),
-        Err(StoreError::WalBackpressure)
+        refused,
+        StoreError::SpacePressure(StoreSpacePressure::WalCheckpoint {
+            observed_wal_bytes,
+            incoming_allowance_bytes: MIB,
+            stop_bytes,
+            checkpoint_busy: true,
+        }) if observed_wal_bytes == observed_after
+            && stop_bytes == before + MIB - 1
     ));
     assert!(writer.wal_guard.next_passive_at > before);
     let staged_third: bool = writer
@@ -7759,7 +8031,7 @@ fn sustained_blocked_reader_defers_chunk_staging_and_resumes_after_drain() {
         let hash: [u8; 32] = Sha256::digest(&bytes).into();
         match writer.stage_blob(&mut bytes.as_slice(), bytes.len() as u64, hash) {
             Ok(()) => completed += 1,
-            Err(StoreError::WalBackpressure) => {
+            Err(StoreError::SpacePressure(StoreSpacePressure::WalCheckpoint { .. })) => {
                 deferred = Some((bytes, hash));
                 break;
             }

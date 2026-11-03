@@ -6,8 +6,9 @@ This note specifies the next narrow F3/T2 diagnostic slice. It follows the
 the [APFS study](SOURCE-APFS-PHYSICAL-ADMISSION-OPTIONS-2026-11-03.md) and
 C11/C12. It changes no source identity, disk threshold, accepted-store format
 or publication rule. Its [stage-local portion](../../evidence/i2a/SOURCE-STAGE-SPACE-DETAIL-2026-11-03.md)
-is implemented; accepted-store receipts and T2/F4 composition remain open.
-Neither the design nor that stage detail is a physical-space guarantee.
+and [accepted-store portion](../../evidence/i2a/SOURCE-STORE-SPACE-DETAIL-2026-11-03.md)
+are implemented; T2/F4 composition remains open. Neither the design nor
+those local details are a physical-space guarantee.
 
 ## Name each quantity at its owner
 
