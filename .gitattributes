@@ -20,5 +20,5 @@ docs/evidence/cloud-natural-crown-cook-2026-11-03/inputs/LICENSE.txt -text
 docs/evidence/cloud-two-cell-covered-light-2026-11-03/implementation.diff -whitespace
 
 # Keep retained publisher licence/readme payloads byte-exact, including CRLF.
-docs/evidence/cloud-natural-coupled-reference-2026-11-03/provenance/*.txt -text
-docs/evidence/cloud-assembled-source-2026-11-03/provenance/*.txt -text
+docs/evidence/cloud-natural-coupled-reference-2026-11-03/provenance/*.txt -text -whitespace
+docs/evidence/cloud-assembled-source-2026-11-03/provenance/*.txt -text -whitespace
