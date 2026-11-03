@@ -154,7 +154,7 @@ interest/authorization and P6 visibility facts remain authoritative and independ
 
 One manifest maps logical assets and revisions to dependency-hashed runtime products. Import/cook reads the admitted immutable source revision and is separate from
 runtime loading. Filesystem watcher events cannot activate a partly written external change set. F4 owns byte/decode/derived-product availability and resource leases; W2 owns region activation;
-physics/navigation/render/audio own their representations. A region becomes active only when required products are
+physics/navigation/render/audio own their representations. For a selected project, an F4/T2 materialization host verifies that its F3 pin came from that project's source-store owner before creating build inputs. Identical accepted root bytes or generation values in two projects do not establish that binding. The store binding is operational and does not enter the source revision. A region becomes active only when required products are
 ready, or through an explicit fallback policy. Optional presentation placeholders cannot impersonate missing collision.
 W2 stages the save overlay and required collision/navigation/gameplay representations off-world, validates epochs,
 hashes and memory admission, then commits them together before the tick and opens traversal portals last. Retirement
