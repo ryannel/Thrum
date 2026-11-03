@@ -184,6 +184,130 @@ fn seventeenth_mandatory_unit_refuses_without_consuming_tick_or_slot() {
 }
 
 #[test]
+fn batch_capacity_refusal_preserves_coalesced_bytes_and_all_cursors() {
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
+    let (old, old_len) = payload(10, 1, false);
+    queue.capture(&old[..old_len], &Schema).unwrap();
+    for tick in 2..=16 {
+        let (unit, len) = payload(20, tick, true);
+        queue.capture(&unit[..len], &Schema).unwrap();
+    }
+    let (new_state, state_len) = payload(10, 17, false);
+    let (mandatory, mandatory_len) = payload(20, 17, true);
+    let batch = [&new_state[..state_len], &mandatory[..mandatory_len]];
+    assert_eq!(
+        queue.capture_batch(&batch, &Schema),
+        Err(OutboundError::Capacity)
+    );
+    assert_eq!(queue.len(), 16);
+    let first = queue.peek_next().unwrap().unwrap();
+    assert_eq!(first.header.commit_tick, 1);
+    assert_eq!(first.payload, &old[..old_len]);
+    for _ in 0..2 {
+        queue.transfer_next(|_| Ok::<_, ()>(())).unwrap();
+    }
+    queue.capture_batch(&batch, &Schema).unwrap();
+    assert_eq!(queue.len(), 16);
+    let mut last_two = Vec::new();
+    while queue
+        .transfer_next(|unit| {
+            last_two.push(unit.header);
+            Ok::<_, ()>(())
+        })
+        .unwrap()
+    {}
+    assert_eq!(last_two[last_two.len() - 2].group_id, 10);
+    assert_eq!(last_two[last_two.len() - 1].group_id, 20);
+    assert_eq!(last_two[last_two.len() - 2].commit_tick, 17);
+    assert_eq!(last_two[last_two.len() - 1].commit_tick, 17);
+}
+
+#[test]
+fn batch_schema_failure_and_hook_unwind_leave_queue_unmodified() {
+    use std::cell::Cell;
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
+    struct PanicOnSecond(Cell<usize>);
+    impl OutboundValidator for PanicOnSecond {
+        fn group(&self, _: &r4::GroupView<'_>) -> Option<StateCoverage> {
+            let prior = self.0.get();
+            self.0.set(prior + 1);
+            assert_eq!(prior, 0, "second group hook unwinds");
+            Some(StateCoverage::CompletePartition)
+        }
+    }
+    struct RejectGroup20;
+    impl OutboundValidator for RejectGroup20 {
+        fn group(&self, group: &r4::GroupView<'_>) -> Option<StateCoverage> {
+            (group.header.group_id != 20).then_some(StateCoverage::CompletePartition)
+        }
+    }
+
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10), seed(20)]).unwrap();
+    let (first, first_len) = payload(10, 1, false);
+    let (second, second_len) = payload(20, 1, false);
+    let malformed = &second[..second_len - 1];
+    assert_eq!(
+        queue.capture_batch(&[&first[..first_len], malformed], &Schema),
+        Err(OutboundError::Framing(r4::GroupError::LengthMismatch))
+    );
+    assert!(queue.is_empty());
+    let batch = [&first[..first_len], &second[..second_len]];
+    assert_eq!(
+        queue.capture_batch(&batch, &RejectGroup20),
+        Err(OutboundError::Schema)
+    );
+    assert!(queue.is_empty());
+    assert!(
+        catch_unwind(AssertUnwindSafe(|| {
+            queue.capture_batch(&batch, &PanicOnSecond(Cell::new(0)))
+        }))
+        .is_err()
+    );
+    assert!(queue.is_empty());
+    queue.capture_batch(&batch, &Schema).unwrap();
+    assert_eq!(queue.len(), 2);
+    assert_eq!(
+        queue.capture_batch(&[batch[0]; 5], &Schema),
+        Err(OutboundError::BatchCapacity)
+    );
+    assert_eq!(queue.len(), 2);
+}
+
+#[test]
+fn empty_batch_is_noop_and_repeated_destination_uses_final_exact_length() {
+    let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
+    assert_eq!(queue.capture_batch(&[], &Schema), Ok(()));
+    assert!(queue.is_empty());
+    let (long, long_len) = payload(10, 1, false);
+    let mut short = [0u8; r4::MAX_PAYLOAD_BYTES];
+    let short_len = r4::encode(
+        GroupInput {
+            header: GroupHeader {
+                group_id: 10,
+                interest_generation: 1,
+                commit_tick: 2,
+                resolved_through: 0,
+            },
+            actors: &[],
+            lifecycle: &[],
+            results: &[],
+            events: &[],
+        },
+        &mut short,
+    )
+    .unwrap();
+    queue
+        .capture_batch(&[&long[..long_len], &short[..short_len]], &Schema)
+        .unwrap();
+    assert_eq!(queue.len(), 1);
+    let final_unit = queue.peek_next().unwrap().unwrap();
+    assert_eq!(final_unit.header.commit_tick, 2);
+    assert_eq!(final_unit.payload, &short[..short_len]);
+    assert_eq!(r4::decode(final_unit.payload).unwrap().actors().len(), 0);
+}
+
+#[test]
 fn malformed_and_stale_group_refuse_without_queue_mutation() {
     let mut queue = UnsentQueue::from_baseline(key(1), &[seed(10)]).unwrap();
     let (bytes, size) = payload(10, 1, false);
