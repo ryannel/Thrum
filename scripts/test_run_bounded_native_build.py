@@ -281,18 +281,33 @@ class NativeBuildSupervisor(unittest.TestCase):
         for broken, expected_status in ((False, 0), (True, 101)):
             with self.subTest(broken=broken):
                 root = Path(tempfile.mkdtemp(prefix="thrum-cargo-receipt-"))
-                safe_cleanup = True
+                job = {}
                 try:
-                    self._cargo_completed_case(root, wrapper, cargo, rustc,
+                    self._cargo_completed_case(root, job, wrapper, cargo, rustc,
                                                broken, expected_status)
-                except subprocess.TimeoutExpired as error:
-                    safe_cleanup = False
-                    self.fail(f"supervisor did not finish bounded cleanup; inspect {root}: {error}")
                 finally:
-                    if safe_cleanup:
+                    supervisor = job.get("supervisor")
+                    clean = supervisor is None or supervisor.poll() is not None
+                    if not clean:
+                        try:
+                            supervisor.terminate()
+                            supervisor.communicate(timeout=8)
+                            clean = True
+                        except (OSError, subprocess.TimeoutExpired):
+                            supervisor.kill()
+                            try:
+                                supervisor.communicate(timeout=2)
+                            except subprocess.TimeoutExpired:
+                                supervisor.stdout.close()
+                                supervisor.stderr.close()
+                                supervisor.wait(timeout=2)
+                    if clean:
                         shutil.rmtree(root)
+                    else:
+                        self.fail(f"supervisor cleanup uncertain; inspect quarantined {root}")
 
-    def _cargo_completed_case(self, root, wrapper, cargo, rustc, broken, expected_status):
+    def _cargo_completed_case(self, root, job, wrapper, cargo, rustc,
+                              broken, expected_status):
         request, output = self.request(root)
         source = root / "source"
         (source / "src").mkdir()
@@ -333,23 +348,8 @@ class NativeBuildSupervisor(unittest.TestCase):
             [sys.executable, "-c", runner], cwd=Path(__file__).parent,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
-        try:
-            _, stderr = supervisor.communicate(timeout=20)
-        except subprocess.TimeoutExpired:
-            supervisor.terminate()
-            try:
-                _, stderr = supervisor.communicate(timeout=8)
-            except subprocess.TimeoutExpired:
-                supervisor.kill()
-                try:
-                    supervisor.communicate(timeout=2)
-                except subprocess.TimeoutExpired:
-                    supervisor.stdout.close()
-                    supervisor.stderr.close()
-                    supervisor.wait(timeout=2)
-                raise
-            self.fail("supervisor exceeded outer deadline after graceful cleanup: "
-                      + stderr.decode(errors="replace"))
+        job["supervisor"] = supervisor
+        _, stderr = supervisor.communicate(timeout=20)
         self.assertEqual(supervisor.returncode, expected_status,
                          stderr.decode(errors="replace"))
         report = json.loads((output / "cargo-supervisor.json").read_text())
