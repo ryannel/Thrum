@@ -2450,6 +2450,106 @@ fn game_source_stage(fixture: &Fixture, caption: &str, game_scene_id: &str) -> c
     .unwrap()
 }
 
+const CONSTANT_LIGHT_SCENE_ID: &str = "3a5ef644-7225-4770-9f4d-e1d9c0a7d515";
+const CONSTANT_LIGHT_SOURCE_ID: &str = "10000000-0000-4000-8000-000000000001";
+const CONSTANT_LIGHT_ID: &str = "10000000-0000-4000-8000-000000000002";
+const CONSTANT_LIGHT_SOURCE_PATH: &str = "records/environment.record.json";
+const CONSTANT_LIGHT_OPAQUE_VALUE: &str =
+    r#"{ "decimal":1.00, "escaped":"\u0061", "list":[true, null, -0] }"#;
+
+fn constant_light_source_stage(
+    fixture: &Fixture,
+    illuminance_lux: i64,
+    selected_source_id: &str,
+    sun_light_id: &str,
+) -> crate::StagedTree {
+    let root = fixture.source_root();
+    for directory in ["records", "scenes", "schemas"] {
+        fs::create_dir_all(root.join(directory)).unwrap();
+    }
+    let paths = [
+        "project.json",
+        CONSTANT_LIGHT_SOURCE_PATH,
+        "records/light.record.json",
+        "scenes/main.scene.json",
+        "schemas/history.registry.json",
+    ];
+    fs::write(
+        root.join("project.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":LINEAGE_PROJECT_ID,"type":"core.project","schema":2,
+            "fields":{
+                "project.format":1,
+                "project.records":[CONSTANT_LIGHT_SOURCE_PATH,"records/light.record.json","scenes/main.scene.json"],
+                "project.schemas":[],
+                "project.registryHistory":"schemas/history.registry.json",
+                "project.entryScenes":[CONSTANT_LIGHT_SCENE_ID]
+            }
+        })).unwrap(),
+    ).unwrap();
+    fs::write(
+        root.join("scenes/main.scene.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":CONSTANT_LIGHT_SCENE_ID,"type":"core.scene","schema":2,
+            "fields":{"scene.label":"constant light entry","environment.source":selected_source_id}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        root.join(CONSTANT_LIGHT_SOURCE_PATH),
+        format!(
+            r#"{{
+  "id":"{CONSTANT_LIGHT_SOURCE_ID}","type":"thrum.environment.authored","schema":1,
+  "fields":{{
+    "profile":"constant-light-v1",
+    "sun":{{
+      "light_ref":"{sun_light_id}","toward_source_unit":[0,1,0],
+      "perpendicular_illuminance_lux":{illuminance_lux},
+      "unit_luminance_linear_rec709":[1,1,1],"angular_radius_rad":0.00465,
+      "direction_model":"geometric-straight","applied_attenuation":[]
+    }},
+    "ambient_irradiance_lux":[1000,1000,1000],"background_radiance_cd_m2":[0,0,0],
+    "unsupported":["wind","cloud_tau","precipitation","air","thermal","moon","air_quality"],
+    "x.thrum.environment.note":{CONSTANT_LIGHT_OPAQUE_VALUE}
+  }}
+}}"#
+        ),
+    )
+    .unwrap();
+    fs::write(
+        root.join("records/light.record.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":CONSTANT_LIGHT_ID,"type":"thrum.light.identity","schema":1,
+            "fields":{"driver_binding":"incoming-environment-sun"}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        root.join("schemas/history.registry.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "id":LINEAGE_HISTORY_ID,"type":"core.registry-history","schema":1,
+            "fields":{"registry.fields":[],"registry.versions":[]}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let declared = paths.map(|path| SourcePath::parse(path).unwrap());
+    stage_declared_tree_with(
+        &root,
+        &declared,
+        Limits {
+            main: 2 * GIB,
+            wal: 4 * MIB,
+            temporary: 64 * MIB,
+            free_floor: 0,
+        },
+        |_| {},
+    )
+    .unwrap()
+}
+
 #[test]
 fn candidate_history_comes_from_rehashed_stage_and_reused_blobs_are_checked() {
     let fixture = Fixture::new();
@@ -2921,6 +3021,347 @@ fn game_schema_candidate_reaches_root_with_exact_optional_bytes() {
         ))
     ));
     assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+}
+
+#[test]
+fn constant_light_candidate_reaches_root_with_reopened_exact_source_and_idempotent_retry() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = constant_light_source_stage(
+        &fixture,
+        100000,
+        CONSTANT_LIGHT_SOURCE_ID,
+        CONSTANT_LIGHT_ID,
+    );
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    assert_eq!(first.records().required_edges(), 2);
+    assert_eq!(first.records().scenes()[0].schema(), 2);
+    assert_eq!(
+        first.records().scenes()[0].environment_source(),
+        Some(CONSTANT_LIGHT_SOURCE_ID)
+    );
+    assert_eq!(first.records().builtins().len(), 2);
+    assert!(first.records().games().is_empty());
+    let (generation, first_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+    assert_eq!(generation, 1);
+    assert_eq!(
+        first_revision,
+        *first.provisional_manifest().unwrap().revision().as_bytes()
+    );
+
+    let second_stage =
+        constant_light_source_stage(&fixture, 75000, CONSTANT_LIGHT_SOURCE_ID, CONSTANT_LIGHT_ID);
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let (generation, second_revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    assert_eq!(generation, 2);
+    assert_eq!(
+        second_revision,
+        *second.provisional_manifest().unwrap().revision().as_bytes()
+    );
+    assert_ne!(first_revision, second_revision);
+    drop(store);
+
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    // Read both manifests and all their complete source blobs through the
+    // reopened store. The current checkout has already changed to revision 2.
+    for (revision, candidate, stage, expected_illuminance) in [
+        (first_revision, &first, &first_stage, 100000.0),
+        (second_revision, &second, &second_stage, 75000.0),
+    ] {
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .unwrap();
+        let manifest_bytes =
+            read_complete_blob(&tx, revision, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+        let stored_manifest =
+            decode_manifest_jcs(&manifest_bytes, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+        assert_eq!(*stored_manifest.revision().as_bytes(), revision);
+        assert_eq!(
+            stored_manifest.files(),
+            candidate.provisional_manifest().unwrap().files()
+        );
+        let identities: Vec<_> = stored_manifest
+            .files()
+            .iter()
+            .filter_map(ManifestEntry::record_identity)
+            .collect();
+        assert_eq!(
+            identities,
+            [
+                (LINEAGE_PROJECT_ID, "core.project"),
+                (CONSTANT_LIGHT_SOURCE_ID, "thrum.environment.authored"),
+                (CONSTANT_LIGHT_ID, "thrum.light.identity"),
+                (CONSTANT_LIGHT_SCENE_ID, "core.scene"),
+                (LINEAGE_HISTORY_ID, "core.registry-history"),
+            ]
+        );
+        for file in stored_manifest.files() {
+            let (length, hash) = file.blob_identity();
+            let complete = read_complete_blob(&tx, hash, crate::MAX_RECORD_BYTES).unwrap();
+            assert_eq!(complete.len() as u64, length);
+        }
+        let environment = stored_manifest
+            .files()
+            .iter()
+            .find(|file| {
+                file.record_identity()
+                    == Some((CONSTANT_LIGHT_SOURCE_ID, "thrum.environment.authored"))
+            })
+            .unwrap();
+        let environment_bytes =
+            read_complete_blob(&tx, environment.blob_identity().1, crate::MAX_RECORD_BYTES)
+                .unwrap();
+        assert_eq!(
+            environment_bytes,
+            fs::read(stage.test_directory().join(CONSTANT_LIGHT_SOURCE_PATH)).unwrap()
+        );
+        let parsed = crate::environment_json::parse_environment(&environment_bytes).unwrap();
+        assert_eq!(
+            parsed.sun.perpendicular_illuminance_lux,
+            expected_illuminance
+        );
+        assert_eq!(
+            parsed.extensions,
+            [(
+                "x.thrum.environment.note".to_owned(),
+                CONSTANT_LIGHT_OPAQUE_VALUE.to_owned()
+            )]
+        );
+        tx.commit().unwrap();
+    }
+    // A current retry and a historical retry return their original outcomes,
+    // without rewinding the current root or incrementing its generation.
+    assert_eq!(
+        store
+            .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+            .unwrap(),
+        (2, second_revision)
+    );
+    assert_eq!(
+        store
+            .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+            .unwrap(),
+        (1, first_revision)
+    );
+    assert!(matches!(
+        store.admit_staged_candidate_probe(1, 1, 2, [3; 32], &second),
+        Err(ProofError::TokenConflict)
+    ));
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+
+    // F3 refusal occurs before a typed candidate can reach the root probe.
+    for (illuminance, source_ref, light_ref, expected_error) in [
+        (-1, CONSTANT_LIGHT_SOURCE_ID, CONSTANT_LIGHT_ID, "quantity"),
+        (
+            100000,
+            CONSTANT_LIGHT_SOURCE_ID,
+            CONSTANT_LIGHT_SCENE_ID,
+            "light",
+        ),
+        (100000, CONSTANT_LIGHT_ID, CONSTANT_LIGHT_ID, "source"),
+    ] {
+        let invalid_stage =
+            constant_light_source_stage(&fixture, illuminance, source_ref, light_ref);
+        let error = validate_staged_candidate(&invalid_stage, &[])
+            .err()
+            .unwrap();
+        match (expected_error, error) {
+            (
+                "quantity",
+                crate::registry_stage::StagedCandidateError::Records(
+                    crate::registry_stage::StagedRecordError::Builtin { .. },
+                ),
+            )
+            | (
+                "light",
+                crate::registry_stage::StagedCandidateError::Records(
+                    crate::registry_stage::StagedRecordError::UnresolvedEnvironmentLight { .. },
+                ),
+            )
+            | (
+                "source",
+                crate::registry_stage::StagedCandidateError::Records(
+                    crate::registry_stage::StagedRecordError::UnresolvedEnvironmentSource {
+                        ..
+                    },
+                ),
+            ) => {}
+            (_, other) => panic!("unexpected constant-light refusal: {other:?}"),
+        }
+        assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+        assert!(stored_outcome(&store.conn, 1, 3).unwrap().is_none());
+    }
+    let outcomes: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM outcome", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(outcomes, 2);
+    drop(store);
+    let reopened = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(
+        reopened.root().unwrap(),
+        (2, Some(second_revision.to_vec()))
+    );
+}
+
+#[test]
+fn constant_light_pinned_source_reads_old_revision_after_root_advance_and_refuses_corruption() {
+    let fixture = Fixture::new();
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    let first_stage = constant_light_source_stage(
+        &fixture,
+        100000,
+        CONSTANT_LIGHT_SOURCE_ID,
+        CONSTANT_LIGHT_ID,
+    );
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let first_bytes = fs::read(fixture.source_root().join(CONSTANT_LIGHT_SOURCE_PATH)).unwrap();
+    let (_, first_revision) = store
+        .admit_staged_candidate_probe(0, 1, 1, [1; 32], &first)
+        .unwrap();
+    // This helper reads the selected root and registers its durable pin in
+    // one transaction, before another admission can change the selection.
+    let pin = store.pin_current_root(1).unwrap();
+    assert_eq!((pin.generation, pin.revision), (1, first_revision));
+    drop(first);
+    drop(first_stage);
+
+    let second_stage =
+        constant_light_source_stage(&fixture, 75000, CONSTANT_LIGHT_SOURCE_ID, CONSTANT_LIGHT_ID);
+    let second = validate_staged_candidate(&second_stage, &[]).unwrap();
+    let second_bytes = fs::read(fixture.source_root().join(CONSTANT_LIGHT_SOURCE_PATH)).unwrap();
+    let (_, second_revision) = store
+        .admit_staged_candidate_probe(1, 1, 2, [2; 32], &second)
+        .unwrap();
+    assert_ne!(first_revision, second_revision);
+    assert_ne!(first_bytes, second_bytes);
+    drop(second);
+    drop(second_stage);
+    drop(store);
+
+    let mut store = RootTransactionProof::open(&fixture.database()).unwrap();
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    assert_eq!(
+        fs::read(fixture.source_root().join(CONSTANT_LIGHT_SOURCE_PATH)).unwrap(),
+        second_bytes
+    );
+    let pinned_revision: Vec<u8> = store
+        .conn
+        .query_row(
+            "SELECT revision FROM read_pin WHERE id=?1",
+            params![pin.id],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(pinned_revision, pin.revision);
+
+    // Read A by the pinned revision, without the admission-predecessor checks
+    // against the now-current root B. No stage or checkout provides these bytes.
+    let manifest_bytes = {
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .unwrap();
+        let bytes = read_complete_blob(&tx, pin.revision, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+        tx.commit().unwrap();
+        bytes
+    };
+    let manifest = decode_manifest_jcs(&manifest_bytes, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+    assert_eq!(*manifest.revision().as_bytes(), pin.revision);
+    assert_eq!(manifest.project_id(), LINEAGE_PROJECT_ID);
+    let environment = manifest
+        .files()
+        .iter()
+        .find(|file| {
+            file.record_identity() == Some((CONSTANT_LIGHT_SOURCE_ID, "thrum.environment.authored"))
+        })
+        .unwrap();
+    let (environment_length, environment_hash) = environment.blob_identity();
+    let environment_bytes = {
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .unwrap();
+        let bytes = read_complete_blob(&tx, environment_hash, crate::MAX_RECORD_BYTES).unwrap();
+        tx.commit().unwrap();
+        bytes
+    };
+    assert_eq!(environment_bytes.len() as u64, environment_length);
+    assert_eq!(environment_bytes, first_bytes);
+    let parsed = crate::environment_json::parse_environment(&environment_bytes).unwrap();
+    assert_eq!(parsed.id, CONSTANT_LIGHT_SOURCE_ID);
+    assert_eq!(parsed.sun.light_ref, CONSTANT_LIGHT_ID);
+    assert_eq!(parsed.sun.perpendicular_illuminance_lux, 100000.0);
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+
+    // A same-length stored corruption leaves complete metadata and chunk layout
+    // intact. The next verified read must return an error, not usable bytes.
+    let corrupt_bytes = String::from_utf8(first_bytes)
+        .unwrap()
+        .replace(
+            "\"perpendicular_illuminance_lux\":100000",
+            "\"perpendicular_illuminance_lux\":999999",
+        )
+        .into_bytes();
+    assert_eq!(corrupt_bytes.len() as u64, environment_length);
+    assert_ne!(corrupt_bytes, environment_bytes);
+    assert_eq!(
+        store
+            .conn
+            .execute(
+                "UPDATE blob_chunks SET bytes=?1 WHERE hash=?2 AND chunk_index=0",
+                params![corrupt_bytes, environment_hash.as_slice()],
+            )
+            .unwrap(),
+        1
+    );
+    {
+        let tx = store
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .unwrap();
+        assert!(matches!(
+            read_complete_blob(&tx, environment_hash, crate::MAX_RECORD_BYTES),
+            Err(ProofError::CorruptRootBlob)
+        ));
+        tx.commit().unwrap();
+    }
+    store.release_root_pin(pin.id).unwrap();
+    let pin_count: i64 = store
+        .conn
+        .query_row("SELECT count(*) FROM read_pin", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(pin_count, 0);
+    assert_eq!(store.root().unwrap(), (2, Some(second_revision.to_vec())));
+    let tx = store
+        .conn
+        .transaction_with_behavior(TransactionBehavior::Deferred)
+        .unwrap();
+    let second_manifest_bytes =
+        read_complete_blob(&tx, second_revision, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+    let second_manifest =
+        decode_manifest_jcs(&second_manifest_bytes, FIRST_PROFILE_MANIFEST_BYTES).unwrap();
+    let second_environment = second_manifest
+        .files()
+        .iter()
+        .find(|file| file.record_identity() == environment.record_identity())
+        .unwrap();
+    assert_eq!(
+        read_complete_blob(
+            &tx,
+            second_environment.blob_identity().1,
+            crate::MAX_RECORD_BYTES,
+        )
+        .unwrap(),
+        second_bytes
+    );
+    tx.commit().unwrap();
 }
 
 #[test]

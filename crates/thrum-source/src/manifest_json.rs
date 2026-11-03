@@ -1,4 +1,4 @@
-//! Test-only bounded decoder for the stored canonical source manifest.
+//! Bounded internal decoder for a stored canonical source manifest.
 //!
 //! The durable store must authenticate the blob hash before decoding and
 //! constrain the byte slice with its selected physical source profile.

@@ -117,6 +117,7 @@ pub fn parse_game_record(
 /// This does not validate game semantics; the selected descriptor must parse
 /// the entire record afterward. Non-type values are traversed without a JSON
 /// tree, so field order cannot change which descriptor is selected.
+#[cfg(test)]
 pub(crate) fn game_record_type(bytes: &[u8]) -> Result<String, GameRecordError> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(GameRecordError::TooLarge);
@@ -130,10 +131,12 @@ pub(crate) fn game_record_type(bytes: &[u8]) -> Result<String, GameRecordError> 
     Ok(record_type)
 }
 
+#[cfg(test)]
 struct RecordTypeSeed<'a> {
     nodes: &'a Cell<usize>,
 }
 
+#[cfg(test)]
 impl<'de> DeserializeSeed<'de> for RecordTypeSeed<'_> {
     type Value = String;
 
@@ -145,10 +148,12 @@ impl<'de> DeserializeSeed<'de> for RecordTypeSeed<'_> {
     }
 }
 
+#[cfg(test)]
 struct RecordTypeVisitor<'a> {
     nodes: &'a Cell<usize>,
 }
 
+#[cfg(test)]
 impl<'de> Visitor<'de> for RecordTypeVisitor<'_> {
     type Value = String;
 

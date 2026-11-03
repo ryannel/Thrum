@@ -1,16 +1,18 @@
 //! Staged-byte and declaration proof for the first source-carried registry.
 //!
-//! Registry validation precedes a bounded scene/game-record closure pass.
+//! Registry validation precedes a bounded scene/game/built-in closure pass.
 //! Prior-root lineage, physical peak admission and durable admission remain
 //! separate gates.
 
 use std::collections::HashSet;
 use std::io::Read;
+use std::sync::LazyLock;
 
 use sha2::{Digest, Sha256};
 
 use crate::bootstrap_json::parse_scene;
-use crate::game_json::{GameRecordError, GameRecordSummary, game_record_type, parse_game_record};
+use crate::environment_json::{self, ENVIRONMENT_DEFINITION, LIGHT_DEFINITION, SCENE_DEFINITION};
+use crate::game_json::{GameRecordError, GameRecordSummary, parse_game_record};
 use crate::history_json::{
     CarriedHistoryError, HistoryError, compare_carried_histories, parse_registry_history,
 };
@@ -65,7 +67,7 @@ pub enum StagedRegistryError {
     DuplicateRecordId(String),
 }
 
-/// A registry's declared scene/game records failed the first closure profile.
+/// A registry's declared scene/game/built-in records failed the closure profile.
 #[derive(Debug)]
 pub enum StagedRecordError {
     /// A game record has no available game descriptor.
@@ -93,7 +95,7 @@ pub enum StagedRecordError {
         /// Bounded game parser error.
         source: GameRecordError,
     },
-    /// An ID collides with another scene, game or registry record.
+    /// An ID collides with another scene, game, built-in or registry record.
     DuplicateRecordId(String),
     /// A project entry ID does not name a staged scene.
     UnresolvedEntryScene(String),
@@ -106,6 +108,45 @@ pub enum StagedRecordError {
     },
     /// Required-edge summaries exceed this first profile's 65,536-edge cap.
     TooManyRequiredEdges,
+    /// A source envelope could not supply unambiguous type/version dispatch.
+    Envelope {
+        /// Declared source record path.
+        path: SourcePath,
+        /// Bounded discriminator parser error.
+        source: serde_json::Error,
+    },
+    /// An engine-owned built-in failed its fixed schema/profile.
+    Builtin {
+        /// Declared source record path.
+        path: SourcePath,
+        /// Fixed-schema parser error.
+        source: serde_json::Error,
+    },
+    /// This profile has no built-in for this engine-owned type/version pair.
+    UnsupportedBuiltin {
+        /// Declared source record path.
+        path: SourcePath,
+        /// Checked top-level type.
+        record_type: String,
+        /// Checked top-level version.
+        schema: u64,
+    },
+    /// The first environment closure permits exactly one entry scene.
+    EnvironmentEntrySceneCount(usize),
+    /// A scene's required environment UUID has no authored-source target.
+    UnresolvedEnvironmentSource {
+        /// Source scene ID.
+        scene_id: String,
+        /// Required authored environment target.
+        target_id: String,
+    },
+    /// An authored Sun UUID has no light identity target.
+    UnresolvedEnvironmentLight {
+        /// Source authored environment ID.
+        source_id: String,
+        /// Required light identity target.
+        target_id: String,
+    },
 }
 
 /// A first-profile staged candidate failed before deriving a manifest.
@@ -113,7 +154,7 @@ pub enum StagedRecordError {
 pub enum StagedCandidateError {
     /// Project, schema or carried history validation refused.
     Registry(StagedRegistryError),
-    /// Scene/game identity or required reference closure refused.
+    /// Scene/game/built-in identity or required reference closure refused.
     Records(StagedRecordError),
 }
 
@@ -142,7 +183,7 @@ impl StagedCandidate<'_> {
         &self.registry
     }
 
-    /// Checked scene/game identities and local required edges.
+    /// Checked scene/game/built-in identities and local required edges.
     pub fn records(&self) -> &StagedRecords {
         &self.records
     }
@@ -163,7 +204,10 @@ impl StagedCandidate<'_> {
         let project_path = fixed_path("project.json");
         let history_path = fixed_path(self.registry.project.history_path());
         let mut labels = Vec::with_capacity(
-            2 + self.registry.schemas.len() + self.records.scenes.len() + self.records.games.len(),
+            2 + self.registry.schemas.len()
+                + self.records.scenes.len()
+                + self.records.games.len()
+                + self.records.builtins.len(),
         );
         labels.push((&project_path, self.registry.project.id(), "core.project"));
         labels.push((
@@ -188,6 +232,12 @@ impl StagedCandidate<'_> {
                 .games
                 .iter()
                 .map(|item| (&item.path, item.summary.id(), item.summary.record_type())),
+        );
+        labels.extend(
+            self.records
+                .builtins
+                .iter()
+                .map(|item| (&item.path, item.id.as_str(), item.definition.record_type())),
         );
         labels.sort_unstable_by(|left, right| left.0.cmp(right.0));
 
@@ -220,6 +270,10 @@ impl StagedCandidate<'_> {
 pub struct StagedScene {
     path: SourcePath,
     id: String,
+    schema: u64,
+    label: Option<String>,
+    environment_source: Option<String>,
+    definition: Option<&'static BuiltinSchema>,
 }
 
 impl StagedScene {
@@ -231,6 +285,106 @@ impl StagedScene {
     /// Canonical stable scene ID.
     pub fn id(&self) -> &str {
         &self.id
+    }
+    /// Checked source schema version; legacy scenes retain schema 1.
+    pub fn schema(&self) -> u64 {
+        self.schema
+    }
+    /// Optional schema-2 human label; never used for reference resolution.
+    pub fn label(&self) -> Option<&str> {
+        self.label.as_deref()
+    }
+    /// Optional typed authored-source UUID selected by scene schema 2.
+    pub fn environment_source(&self) -> Option<&str> {
+        self.environment_source.as_deref()
+    }
+    /// Immutable built-in meaning for schema 2. Legacy schema 1 continues
+    /// through its existing fixed bootstrap parser.
+    pub fn definition(&self) -> Option<&'static BuiltinSchema> {
+        self.definition
+    }
+}
+
+/// Immutable SDK-owned meaning descriptor used by a fixed built-in parser.
+///
+/// Descriptor bytes use the explicit `thrum-builtin-definition-v1` language.
+/// SHA-256 hashes `thrum-f3-builtin-schema-v1\0` followed by those exact bytes.
+/// These are source schema meanings, not F4 products or admission certificates.
+pub struct BuiltinSchema {
+    record_type: &'static str,
+    schema: u64,
+    descriptor: &'static str,
+    definition_hash: [u8; 32],
+}
+
+impl BuiltinSchema {
+    /// Fixed engine-owned source type.
+    pub fn record_type(&self) -> &'static str {
+        self.record_type
+    }
+    /// Fixed source schema version.
+    pub fn schema(&self) -> u64 {
+        self.schema
+    }
+    /// Exact immutable versioned meaning descriptor bytes.
+    pub fn descriptor(&self) -> &'static str {
+        self.descriptor
+    }
+    /// Domain-separated SHA-256 of the exact descriptor bytes.
+    pub fn definition_hash(&self) -> &[u8; 32] {
+        &self.definition_hash
+    }
+}
+
+static BUILTIN_SCHEMAS: LazyLock<[BuiltinSchema; 3]> = LazyLock::new(|| {
+    [
+        ("core.scene", 2, SCENE_DEFINITION),
+        ("thrum.environment.authored", 1, ENVIRONMENT_DEFINITION),
+        ("thrum.light.identity", 1, LIGHT_DEFINITION),
+    ]
+    .map(|(record_type, schema, descriptor)| {
+        let mut digest = Sha256::new();
+        digest.update(b"thrum-f3-builtin-schema-v1\0");
+        digest.update(descriptor.as_bytes());
+        BuiltinSchema {
+            record_type,
+            schema,
+            descriptor,
+            definition_hash: digest.finalize().into(),
+        }
+    })
+});
+
+/// A checked fixed built-in identity and its required typed source edge.
+pub struct StagedBuiltin {
+    path: SourcePath,
+    id: String,
+    label: Option<String>,
+    definition: &'static BuiltinSchema,
+    light_ref: Option<String>,
+}
+
+impl StagedBuiltin {
+    /// Declared staged source path.
+    pub fn path(&self) -> &SourcePath {
+        &self.path
+    }
+    /// Canonical stable source record ID.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    /// Optional human label, never used for reference resolution.
+    pub fn label(&self) -> Option<&str> {
+        self.label.as_deref()
+    }
+    /// SDK-owned source meaning used to validate this staged record.
+    pub fn definition(&self) -> &'static BuiltinSchema {
+        self.definition
+    }
+    /// Required `thrum.light.identity` target of an authored Sun, if this
+    /// built-in is an environment source. Light identity records have no edge.
+    pub fn required_light(&self) -> Option<&str> {
+        self.light_ref.as_deref()
     }
 }
 
@@ -252,10 +406,11 @@ impl StagedGame {
     }
 }
 
-/// Checked scene/game identities and required local reference closure.
+/// Checked scene/game/built-in identities and required local reference closure.
 pub struct StagedRecords {
     scenes: Vec<StagedScene>,
     games: Vec<StagedGame>,
+    builtins: Vec<StagedBuiltin>,
     required_edges: usize,
 }
 
@@ -270,7 +425,13 @@ impl StagedRecords {
         &self.games
     }
 
-    /// Number of checked required game-to-scene references.
+    /// Engine-owned environment/light records in declared path order.
+    pub fn builtins(&self) -> &[StagedBuiltin] {
+        &self.builtins
+    }
+
+    /// Number of checked required game-to-scene, scene-to-environment and
+    /// environment-to-light references.
     pub fn required_edges(&self) -> usize {
         self.required_edges
     }
@@ -327,7 +488,7 @@ impl StagedRegistry<'_> {
 /// Rehash declared registry bytes, check reserved path membership, and join
 /// active descriptor meanings with the carried history.
 ///
-/// A complete candidate also needs scene/game-record parsing and ID/reference
+/// A complete candidate also needs scene/game/built-in parsing and ID/reference
 /// closure. The history checked here is only the candidate's own history;
 /// comparison to an authenticated predecessor belongs to durable admission.
 pub fn validate_staged_registry<'a>(
@@ -426,12 +587,12 @@ pub fn validate_staged_registry<'a>(
     })
 }
 
-/// Rehash declared scene/game bytes and resolve required local scene IDs.
+/// Rehash declared record bytes and resolve required local typed references.
 ///
-/// Game records select a sorted checked descriptor by their top-level type,
-/// independent of JSON key order. Descriptor-bound validation then parses the
-/// exact staged bytes. This result is not an authenticated lineage comparison
-/// or an admitted source root.
+/// Checked top-level type/version selects a fixed engine-owned parser or a
+/// source-carried game descriptor, independent of JSON key order. Schema-1
+/// scenes retain the existing bootstrap grammar. This result is not an
+/// authenticated lineage comparison or an admitted source root.
 pub fn validate_staged_records(
     registry: &StagedRegistry<'_>,
 ) -> Result<StagedRecords, StagedRecordError> {
@@ -442,59 +603,131 @@ pub fn validate_staged_records(
         .iter()
         .filter(|path| path.as_str().starts_with("scenes/"))
         .count();
-    let game_count = paths.len() - scene_count;
-    if game_count != 0 && registry.schemas.is_empty() {
-        return Err(StagedRecordError::GameSchemaCount(registry.schemas.len()));
-    }
     let mut scenes = Vec::with_capacity(scene_count);
-    let mut games = Vec::with_capacity(game_count);
+    let mut games = Vec::new();
+    let mut builtins = Vec::new();
     let mut required_edges = 0_usize;
     let mut bytes = Vec::new();
     for path in paths {
         let file = find_file(registry.stage, path).expect("registry checked declared membership");
         read_record_bytes_into(registry.stage, file, &mut bytes)
             .map_err(StagedRecordError::Stage)?;
-        if path.as_str().starts_with("scenes/") {
-            let scene = parse_scene(&bytes).map_err(|source| StagedRecordError::Scene {
+        let header = environment_json::record_header(&bytes).map_err(|source| {
+            StagedRecordError::Envelope {
                 path: path.clone(),
                 source,
-            })?;
-            scenes.push(StagedScene {
+            }
+        })?;
+        let builtin_error = |source| StagedRecordError::Builtin {
+            path: path.clone(),
+            source,
+        };
+        if path.as_str().starts_with("scenes/") {
+            let scene_error = |source| StagedRecordError::Scene {
                 path: path.clone(),
-                id: scene.id,
-            });
-        } else {
-            let descriptor = if registry.schemas.len() == 1 {
-                &registry.schemas[0].descriptor
-            } else {
-                let record_type =
-                    game_record_type(&bytes).map_err(|source| StagedRecordError::Game {
-                        path: path.clone(),
-                        source,
-                    })?;
-                let index = registry
-                    .schemas
-                    .binary_search_by(|item| item.descriptor.target_type().cmp(&record_type))
-                    .map_err(|_| StagedRecordError::UnknownGameType {
-                        path: path.clone(),
-                        record_type,
-                    })?;
-                &registry.schemas[index].descriptor
+                source,
             };
-            let summary = parse_game_record(&bytes, descriptor).map_err(|source| {
-                StagedRecordError::Game {
-                    path: path.clone(),
-                    source,
+            let scene = match (header.record_type.as_str(), header.schema) {
+                ("core.scene", 1) => {
+                    let parsed = parse_scene(&bytes).map_err(scene_error)?;
+                    StagedScene {
+                        path: path.clone(),
+                        id: parsed.id,
+                        schema: 1,
+                        label: None,
+                        environment_source: None,
+                        definition: None,
+                    }
                 }
-            })?;
-            required_edges = required_edges
-                .checked_add(summary.references().len())
-                .filter(|edges| *edges <= MAX_REQUIRED_EDGES)
-                .ok_or(StagedRecordError::TooManyRequiredEdges)?;
-            games.push(StagedGame {
-                path: path.clone(),
-                summary,
-            });
+                ("core.scene", 2) => {
+                    let parsed = environment_json::parse_scene(&bytes).map_err(scene_error)?;
+                    StagedScene {
+                        path: path.clone(),
+                        id: parsed.id,
+                        schema: 2,
+                        label: parsed.label,
+                        environment_source: parsed.environment_source,
+                        definition: Some(&BUILTIN_SCHEMAS[0]),
+                    }
+                }
+                _ => {
+                    return Err(StagedRecordError::UnsupportedBuiltin {
+                        path: path.clone(),
+                        record_type: header.record_type,
+                        schema: header.schema,
+                    });
+                }
+            };
+            required_edges = add_required_edges(
+                required_edges,
+                usize::from(scene.environment_source.is_some()),
+                MAX_REQUIRED_EDGES,
+            )?;
+            scenes.push(scene);
+        } else {
+            match (header.record_type.as_str(), header.schema) {
+                ("thrum.environment.authored", 1) => {
+                    let parsed =
+                        environment_json::parse_environment(&bytes).map_err(builtin_error)?;
+                    required_edges = add_required_edges(required_edges, 1, MAX_REQUIRED_EDGES)?;
+                    builtins.push(StagedBuiltin {
+                        path: path.clone(),
+                        id: parsed.id,
+                        label: parsed.label,
+                        definition: &BUILTIN_SCHEMAS[1],
+                        light_ref: Some(parsed.sun.light_ref),
+                    });
+                }
+                ("thrum.light.identity", 1) => {
+                    let parsed = environment_json::parse_light(&bytes).map_err(builtin_error)?;
+                    builtins.push(StagedBuiltin {
+                        path: path.clone(),
+                        id: parsed.id,
+                        label: parsed.label,
+                        definition: &BUILTIN_SCHEMAS[2],
+                        light_ref: None,
+                    });
+                }
+                (record_type, _) if record_type.starts_with("game.") => {
+                    if registry.schemas.is_empty() {
+                        return Err(StagedRecordError::GameSchemaCount(0));
+                    }
+                    let descriptor = if registry.schemas.len() == 1 {
+                        &registry.schemas[0].descriptor
+                    } else {
+                        let index = registry
+                            .schemas
+                            .binary_search_by(|item| item.descriptor.target_type().cmp(record_type))
+                            .map_err(|_| StagedRecordError::UnknownGameType {
+                                path: path.clone(),
+                                record_type: header.record_type.clone(),
+                            })?;
+                        &registry.schemas[index].descriptor
+                    };
+                    let summary = parse_game_record(&bytes, descriptor).map_err(|source| {
+                        StagedRecordError::Game {
+                            path: path.clone(),
+                            source,
+                        }
+                    })?;
+                    required_edges = add_required_edges(
+                        required_edges,
+                        summary.references().len(),
+                        MAX_REQUIRED_EDGES,
+                    )?;
+                    games.push(StagedGame {
+                        path: path.clone(),
+                        summary,
+                    });
+                }
+                _ => {
+                    return Err(StagedRecordError::UnsupportedBuiltin {
+                        path: path.clone(),
+                        record_type: header.record_type,
+                        schema: header.schema,
+                    });
+                }
+            }
         }
     }
 
@@ -509,6 +742,7 @@ pub fn validate_staged_records(
     );
     all_ids.extend(scenes.iter().map(StagedScene::id));
     all_ids.extend(games.iter().map(|item| item.summary.id()));
+    all_ids.extend(builtins.iter().map(StagedBuiltin::id));
     all_ids.sort_unstable();
     if let Some(pair) = all_ids.windows(2).find(|pair| pair[0] == pair[1]) {
         return Err(StagedRecordError::DuplicateRecordId(pair[0].to_owned()));
@@ -531,11 +765,70 @@ pub fn validate_staged_records(
             }
         }
     }
+    // Only an entry scene selects active forcing. Other declared scenes and
+    // sources remain content, with their required references still checked.
+    if scenes.iter().any(|scene| {
+        scene.environment_source.is_some()
+            && registry
+                .project
+                .entry_scenes()
+                .binary_search(&scene.id)
+                .is_ok()
+    }) && registry.project.entry_scenes().len() != 1
+    {
+        return Err(StagedRecordError::EnvironmentEntrySceneCount(
+            registry.project.entry_scenes().len(),
+        ));
+    }
+    let mut environment_ids: Vec<_> = builtins
+        .iter()
+        .filter(|item| item.definition.record_type() == "thrum.environment.authored")
+        .map(StagedBuiltin::id)
+        .collect();
+    let mut light_ids: Vec<_> = builtins
+        .iter()
+        .filter(|item| item.definition.record_type() == "thrum.light.identity")
+        .map(StagedBuiltin::id)
+        .collect();
+    environment_ids.sort_unstable();
+    light_ids.sort_unstable();
+    for scene in &scenes {
+        if let Some(target_id) = &scene.environment_source
+            && environment_ids.binary_search(&target_id.as_str()).is_err()
+        {
+            return Err(StagedRecordError::UnresolvedEnvironmentSource {
+                scene_id: scene.id.clone(),
+                target_id: target_id.clone(),
+            });
+        }
+    }
+    for source in &builtins {
+        if let Some(target_id) = &source.light_ref
+            && light_ids.binary_search(&target_id.as_str()).is_err()
+        {
+            return Err(StagedRecordError::UnresolvedEnvironmentLight {
+                source_id: source.id.clone(),
+                target_id: target_id.clone(),
+            });
+        }
+    }
     Ok(StagedRecords {
         scenes,
         games,
+        builtins,
         required_edges,
     })
+}
+
+fn add_required_edges(
+    current: usize,
+    added: usize,
+    limit: usize,
+) -> Result<usize, StagedRecordError> {
+    current
+        .checked_add(added)
+        .filter(|edges| *edges <= limit)
+        .ok_or(StagedRecordError::TooManyRequiredEdges)
 }
 
 /// Check one narrow staged registry and its declared record closure together.
@@ -771,6 +1064,565 @@ mod tests {
             .unwrap(),
         );
     }
+
+    const ENVIRONMENT_ID: &str = "10000000-0000-4000-8000-000000000001";
+    const LIGHT_ID: &str = "10000000-0000-4000-8000-000000000002";
+    const ENVIRONMENT_PATH: &str = "records/environment.record.json";
+    const LIGHT_PATH: &str = "records/light.record.json";
+    const BUILTIN_PATHS: &[&str] = &[
+        "project.json",
+        ENVIRONMENT_PATH,
+        LIGHT_PATH,
+        "records/marker.record.json",
+        "scenes/main.scene.json",
+        "schemas/history.registry.json",
+        "schemas/marker.schema.json",
+    ];
+
+    fn constant_light_bytes() -> Vec<u8> {
+        serde_json::to_vec(&json!({
+            "type":"thrum.environment.authored", "schema":1, "id":ENVIRONMENT_ID,
+            "fields":{
+                "label":"fixture light source", "profile":"constant-light-v1",
+                "sun":{
+                    "light_ref":LIGHT_ID, "toward_source_unit":[0,1,0],
+                    "perpendicular_illuminance_lux":100000,
+                    "unit_luminance_linear_rec709":[1,1,1], "angular_radius_rad":0.00465,
+                    "direction_model":"geometric-straight", "applied_attenuation":[]
+                },
+                "ambient_irradiance_lux":[1000,1000,1000],
+                "background_radiance_cd_m2":[0,0,0],
+                "unsupported":["wind","cloud_tau","precipitation","air","thermal","moon","air_quality"]
+            }
+        })).unwrap()
+    }
+
+    fn write_environment_records(fixture: &Fixture) {
+        fixture.write(ENVIRONMENT_PATH, &constant_light_bytes());
+        fixture.write(
+            LIGHT_PATH,
+            &serde_json::to_vec(&json!({
+                "id":LIGHT_ID, "type":"thrum.light.identity", "schema":1,
+                "fields":{"label":"shared Sun", "driver_binding":"incoming-environment-sun"}
+            }))
+            .unwrap(),
+        );
+        fixture.write(
+            "scenes/main.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":2,
+                "fields":{"scene.label":"entry", "environment.source":ENVIRONMENT_ID}
+            }))
+            .unwrap(),
+        );
+    }
+
+    fn builtin_fixture(fixture: &Fixture) {
+        basic(fixture);
+        write_environment_records(fixture);
+        let mut project: serde_json::Value =
+            serde_json::from_slice(&fs::read(fixture.0.join("project.json")).unwrap()).unwrap();
+        project["fields"]["project.records"] = json!([
+            ENVIRONMENT_PATH,
+            LIGHT_PATH,
+            "records/marker.record.json",
+            "scenes/main.scene.json"
+        ]);
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+    }
+
+    #[test]
+    fn staged_constant_light_closes_typed_edges_and_pins_builtin_meaning() {
+        let fixture = Fixture::new();
+        builtin_fixture(&fixture);
+        let stage = fixture.stage(BUILTIN_PATHS);
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        assert_eq!(candidate.records().games().len(), 1);
+        assert_eq!(candidate.records().builtins().len(), 2);
+        assert_eq!(candidate.records().required_edges(), 3);
+        let scene = &candidate.records().scenes()[0];
+        assert_eq!(scene.schema(), 2);
+        assert_eq!(scene.environment_source(), Some(ENVIRONMENT_ID));
+        assert_eq!(scene.label(), Some("entry"));
+        let source = &candidate.records().builtins()[0];
+        assert_eq!(source.id(), ENVIRONMENT_ID);
+        assert_eq!(source.required_light(), Some(LIGHT_ID));
+        assert_eq!(source.label(), Some("fixture light source"));
+        assert_eq!(
+            source.definition().record_type(),
+            "thrum.environment.authored"
+        );
+        assert_eq!(source.definition().schema(), 1);
+        assert_eq!(source.definition().descriptor(), ENVIRONMENT_DEFINITION);
+        assert_eq!(source.path().as_str(), ENVIRONMENT_PATH);
+        let light = &candidate.records().builtins()[1];
+        assert_eq!(light.required_light(), None);
+        assert_eq!(light.definition().descriptor(), LIGHT_DEFINITION);
+        assert_eq!(scene.definition().unwrap().descriptor(), SCENE_DEFINITION);
+        let identities: Vec<_> = candidate
+            .provisional_manifest()
+            .unwrap()
+            .files()
+            .iter()
+            .filter_map(|file| {
+                file.record_identity()
+                    .map(|(id, kind)| (id.to_owned(), kind.to_owned()))
+            })
+            .collect();
+        assert!(identities.contains(&(
+            ENVIRONMENT_ID.to_owned(),
+            "thrum.environment.authored".to_owned()
+        )));
+        assert!(identities.contains(&(LIGHT_ID.to_owned(), "thrum.light.identity".to_owned())));
+        // Literal digests make meaning changes visible in review, independently
+        // of a refactor in descriptor construction or staged-summary plumbing.
+        let hashes: Vec<_> = BUILTIN_SCHEMAS
+            .iter()
+            .map(|definition| hex(definition.definition_hash()))
+            .collect();
+        assert_eq!(hashes, BUILTIN_HASHES);
+    }
+
+    #[test]
+    fn staged_builtin_rejections_preserve_prior_capture_and_typed_namespace() {
+        let fixture = Fixture::new();
+        builtin_fixture(&fixture);
+        let prior = fixture.stage(BUILTIN_PATHS);
+        let prior_candidate = validate_staged_candidate(&prior, &[]).unwrap();
+        let prior_revision = prior_candidate.provisional_manifest().unwrap().revision();
+        let source = String::from_utf8(constant_light_bytes()).unwrap();
+        let light = fs::read_to_string(fixture.0.join(LIGHT_PATH)).unwrap();
+        for id in [
+            PROJECT_ID,
+            HISTORY_ID,
+            SCHEMA_ID,
+            SCENE_ID,
+            GAME_ID,
+            ENVIRONMENT_ID,
+        ] {
+            fixture.write(LIGHT_PATH, light.replace(LIGHT_ID, id).as_bytes());
+            let candidate = fixture.stage(BUILTIN_PATHS);
+            assert!(matches!(validate_staged_candidate(&candidate, &[]),
+                Err(StagedCandidateError::Records(StagedRecordError::DuplicateRecordId(found))) if found == id));
+        }
+        fixture.write(LIGHT_PATH, light.as_bytes());
+        for invalid in [
+            source.replace(LIGHT_ID, SCENE_ID),
+            source.replace("constant-light-v1", "authored-vertical-rain-v1"),
+            source.replace("thrum.environment.authored", "thrum.environment.future"),
+            source.replace(
+                "thrum.environment.authored",
+                "thrum.fixture.static_surface_receiver",
+            ),
+            source.replace("\"schema\":1", "\"schema\":2"),
+            source.replace("thrum.environment.authored", "game.marker"),
+        ] {
+            fixture.write(ENVIRONMENT_PATH, invalid.as_bytes());
+            let candidate = fixture.stage(BUILTIN_PATHS);
+            assert!(validate_staged_candidate(&candidate, &[]).is_err());
+            assert_eq!(
+                validate_staged_candidate(&prior, &[])
+                    .unwrap()
+                    .provisional_manifest()
+                    .unwrap()
+                    .revision(),
+                prior_revision
+            );
+        }
+        fixture.write(ENVIRONMENT_PATH, source.as_bytes());
+        let scene = fs::read_to_string(fixture.0.join("scenes/main.scene.json")).unwrap();
+        fixture.write(
+            "scenes/main.scene.json",
+            scene.replace(ENVIRONMENT_ID, LIGHT_ID).as_bytes(),
+        );
+        let candidate = fixture.stage(BUILTIN_PATHS);
+        assert!(matches!(validate_staged_candidate(&candidate, &[]),
+            Err(StagedCandidateError::Records(StagedRecordError::UnresolvedEnvironmentSource { target_id, .. })) if target_id == LIGHT_ID));
+        fixture.write("scenes/main.scene.json", scene.as_bytes());
+        let game = fs::read_to_string(fixture.0.join("records/marker.record.json")).unwrap();
+        fixture.write(
+            "records/marker.record.json",
+            game.replace("game.marker", "thrum.environment.authored")
+                .as_bytes(),
+        );
+        let candidate = fixture.stage(BUILTIN_PATHS);
+        assert!(matches!(
+            validate_staged_candidate(&candidate, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::Builtin { .. }
+            ))
+        ));
+        fixture.write("records/marker.record.json", game.as_bytes());
+        let schema = fs::read_to_string(fixture.0.join("schemas/marker.schema.json")).unwrap();
+        fixture.write(
+            "schemas/marker.schema.json",
+            schema
+                .replace("game.marker", "thrum.environment.authored")
+                .as_bytes(),
+        );
+        let candidate = fixture.stage(BUILTIN_PATHS);
+        assert!(matches!(
+            validate_staged_candidate(&candidate, &[]),
+            Err(StagedCandidateError::Registry(
+                StagedRegistryError::Schema { .. }
+            ))
+        ));
+        assert_eq!(
+            prior_candidate.provisional_manifest().unwrap().revision(),
+            prior_revision
+        );
+    }
+
+    #[test]
+    fn staged_production_dispatch_rejects_deep_and_dense_fields_before_excess_values() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        let prior = fixture.stage(PATHS);
+        let prior_revision = validate_staged_candidate(&prior, &[])
+            .unwrap()
+            .provisional_manifest()
+            .unwrap()
+            .revision();
+        // The bodies after the forbidden depth/node boundary are deliberately
+        // malformed. The header must refuse at the boundary before reading them.
+        let deep = format!("{{\"unused\":{}{{\"unclosed\":", "[".repeat(63));
+        let dense = format!(
+            "{{\"unused\":[{}{{\"unclosed\":",
+            "0,".repeat(crate::MAX_RECORD_NODES - 3)
+        );
+        for record_type in ["game.marker", "thrum.environment.authored"] {
+            for (fields, expected_error) in [
+                (&deep, "source header JSON nesting limit"),
+                (&dense, "source header JSON value count limit"),
+            ] {
+                // Put fields first so malformed tails cannot hide an unbounded
+                // traversal behind already-known discriminator keys.
+                let bytes = format!(
+                    r#"{{"fields":{fields},"id":"{GAME_ID}","type":"{record_type}","schema":1}}"#
+                );
+                fixture.write("records/marker.record.json", bytes.as_bytes());
+                let changed = fixture.stage(PATHS);
+                let error = validate_staged_candidate(&changed, &[]).err().unwrap();
+                match error {
+                    StagedCandidateError::Records(StagedRecordError::Envelope {
+                        source, ..
+                    }) => {
+                        assert!(source.to_string().starts_with(expected_error), "{source}");
+                    }
+                    other => panic!("unexpected staged refusal: {other:?}"),
+                }
+                assert_eq!(
+                    validate_staged_candidate(&prior, &[])
+                        .unwrap()
+                        .provisional_manifest()
+                        .unwrap()
+                        .revision(),
+                    prior_revision
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn staged_builtin_known_neighbor_edit_keeps_exact_opaque_bytes_and_changes_revision() {
+        let fixture = Fixture::new();
+        builtin_fixture(&fixture);
+        let raw = r#"{ "number": 1.00, "escaped":"\u0061", "array":[true, null, -0] }"#;
+        let source = String::from_utf8(constant_light_bytes()).unwrap().replace(
+            "\"profile\":",
+            &format!("\"x.thrum.environment.note\":{raw},\"profile\":"),
+        );
+        fixture.write(ENVIRONMENT_PATH, source.as_bytes());
+        let prior = fixture.stage(BUILTIN_PATHS);
+        let prior_candidate = validate_staged_candidate(&prior, &[]).unwrap();
+        let prior_revision = prior_candidate.provisional_manifest().unwrap().revision();
+        let edited = source.replace(
+            "\"perpendicular_illuminance_lux\":100000",
+            "\"perpendicular_illuminance_lux\":75000",
+        );
+        fixture.write(ENVIRONMENT_PATH, edited.as_bytes());
+        let changed = fixture.stage(BUILTIN_PATHS);
+        let candidate = validate_staged_candidate(&changed, &[]).unwrap();
+        assert_ne!(
+            candidate.provisional_manifest().unwrap().revision(),
+            prior_revision
+        );
+        assert_eq!(
+            candidate.records().builtins()[0]
+                .definition()
+                .definition_hash(),
+            prior_candidate.records().builtins()[0]
+                .definition()
+                .definition_hash()
+        );
+        for (stage, expected) in [(&prior, source.as_bytes()), (&changed, edited.as_bytes())] {
+            let bytes = read_record_bytes(
+                stage,
+                find_file(stage, &fixed_path(ENVIRONMENT_PATH)).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(bytes, expected);
+            assert_eq!(
+                environment_json::parse_environment(&bytes)
+                    .unwrap()
+                    .extensions,
+                [("x.thrum.environment.note".to_owned(), raw.to_owned())]
+            );
+        }
+        // Formatting alone is also an exact-byte source revision change.
+        fixture.write(ENVIRONMENT_PATH, format!("{edited}\n").as_bytes());
+        let formatted = fixture.stage(BUILTIN_PATHS);
+        assert_ne!(
+            validate_staged_candidate(&formatted, &[])
+                .unwrap()
+                .provisional_manifest()
+                .unwrap()
+                .revision(),
+            candidate.provisional_manifest().unwrap().revision()
+        );
+    }
+
+    #[test]
+    fn builtin_only_project_needs_no_game_descriptor_and_single_entry_is_enforced() {
+        let fixture = Fixture::new();
+        builtin_fixture(&fixture);
+        fs::remove_file(fixture.0.join("records/marker.record.json")).unwrap();
+        fs::remove_file(fixture.0.join("schemas/marker.schema.json")).unwrap();
+        let mut project: serde_json::Value =
+            serde_json::from_slice(&fs::read(fixture.0.join("project.json")).unwrap()).unwrap();
+        project["fields"]["project.records"] =
+            json!([ENVIRONMENT_PATH, LIGHT_PATH, "scenes/main.scene.json"]);
+        project["fields"]["project.schemas"] = json!([]);
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        fixture.write(
+            "schemas/history.registry.json",
+            &serde_json::to_vec(&json!({
+                "id":HISTORY_ID, "type":"core.registry-history", "schema":1,
+                "fields":{"registry.fields":[], "registry.versions":[]}
+            }))
+            .unwrap(),
+        );
+        let paths = [
+            "project.json",
+            ENVIRONMENT_PATH,
+            LIGHT_PATH,
+            "scenes/main.scene.json",
+            "schemas/history.registry.json",
+        ];
+        let stage = fixture.stage(&paths);
+        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+        assert!(candidate.records().games().is_empty());
+        assert!(candidate.registry().schemas().is_empty());
+        assert_eq!(candidate.records().required_edges(), 2);
+        // Declared but unselected content is valid and does not acquire an
+        // active environment binding merely by appearing in project.records.
+        fixture.write(
+            "scenes/main.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":1, "fields":{}
+            }))
+            .unwrap(),
+        );
+        let unselected = fixture.stage(&paths);
+        let unselected_candidate = validate_staged_candidate(&unselected, &[]).unwrap();
+        assert_eq!(unselected_candidate.records().required_edges(), 1);
+        assert_eq!(
+            unselected_candidate.records().scenes()[0].environment_source(),
+            None
+        );
+        let other_scene = "20000000-0000-4000-8000-000000000001";
+        project["fields"]["project.records"] = json!([
+            ENVIRONMENT_PATH,
+            LIGHT_PATH,
+            "scenes/main.scene.json",
+            "scenes/second.scene.json"
+        ]);
+        let mut entries = vec![SCENE_ID, other_scene];
+        entries.sort_unstable();
+        project["fields"]["project.entryScenes"] = json!(entries);
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        fixture.write(
+            "scenes/second.scene.json",
+            &serde_json::to_vec(
+                &json!({"id":other_scene,"type":"core.scene","schema":1,"fields":{}}),
+            )
+            .unwrap(),
+        );
+        let mut multiple_paths = paths.to_vec();
+        multiple_paths.push("scenes/second.scene.json");
+        let multiple = fixture.stage(&multiple_paths);
+        let multiple_candidate = validate_staged_candidate(&multiple, &[]).unwrap();
+        assert_eq!(multiple_candidate.records().required_edges(), 1);
+        assert!(
+            multiple_candidate
+                .records()
+                .scenes()
+                .iter()
+                .all(|scene| scene.environment_source().is_none())
+        );
+        // A non-entry scene's binding is inactive declared content. It still
+        // has a required typed edge, but does not select another active Sun.
+        let unused_scene = "40000000-0000-4000-8000-000000000001";
+        project["fields"]["project.records"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("scenes/unused.scene.json"));
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        fixture.write(
+            "scenes/unused.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":unused_scene, "type":"core.scene", "schema":2,
+                "fields":{"environment.source":ENVIRONMENT_ID}
+            }))
+            .unwrap(),
+        );
+        multiple_paths.push("scenes/unused.scene.json");
+        let unused = fixture.stage(&multiple_paths);
+        assert_eq!(
+            validate_staged_candidate(&unused, &[])
+                .unwrap()
+                .records()
+                .required_edges(),
+            2
+        );
+        // Declared sources are checked even when neither entry selects them.
+        fixture.write(
+            ENVIRONMENT_PATH,
+            &String::from_utf8(constant_light_bytes())
+                .unwrap()
+                .replace(LIGHT_ID, SCENE_ID)
+                .into_bytes(),
+        );
+        let broken = fixture.stage(&multiple_paths);
+        assert!(matches!(
+            validate_staged_candidate(&broken, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::UnresolvedEnvironmentLight { .. }
+            ))
+        ));
+        fixture.write(ENVIRONMENT_PATH, &constant_light_bytes());
+        // Selecting an environment on either entry enables the first R0/E1
+        // closure and therefore makes this multi-entry project unsupported.
+        fixture.write(
+            "scenes/main.scene.json",
+            &serde_json::to_vec(&json!({
+                "id":SCENE_ID, "type":"core.scene", "schema":2,
+                "fields":{"environment.source":ENVIRONMENT_ID}
+            }))
+            .unwrap(),
+        );
+        let selected = fixture.stage(&multiple_paths);
+        assert!(matches!(
+            validate_staged_candidate(&selected, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::EnvironmentEntrySceneCount(2)
+            ))
+        ));
+    }
+
+    #[test]
+    fn builtin_required_edges_share_the_existing_project_edge_cap() {
+        let fixture = Fixture::new();
+        basic(&fixture);
+        fs::remove_file(fixture.0.join("records/marker.record.json")).unwrap();
+        let fields: Vec<_> = (0..128)
+            .map(|i| {
+                json!({
+                    "id":format!("marker.r{i:03}"), "kind":"record-ref", "presence":"required",
+                    "targetType":"core.scene", "resolution":"required"
+                })
+            })
+            .collect();
+        let schema = serde_json::to_vec(&json!({
+            "id":SCHEMA_ID, "type":"core.schema", "schema":1,
+            "fields":{"schema.targetType":"game.marker", "schema.targetVersion":1,
+                "schema.fields":fields, "schema.optionalExtensionPrefix":null}
+        }))
+        .unwrap();
+        fixture.write("schemas/marker.schema.json", &schema);
+        let descriptor = parse_schema_descriptor(&schema).unwrap();
+        fixture.write(
+            "schemas/history.registry.json",
+            &serde_json::to_vec(&json!({
+                "id":HISTORY_ID, "type":"core.registry-history", "schema":1,
+                "fields":{
+                    "registry.fields":descriptor.fields().iter().map(|field| json!({
+                        "typeId":"game.marker", "fieldId":field.id(),
+                        "signature":hex(field.signature()), "retired":false
+                    })).collect::<Vec<_>>(),
+                    "registry.versions":[{"typeId":"game.marker", "targetVersion":1,
+                        "definitionHash":hex(descriptor.definition_hash())}]
+                }
+            }))
+            .unwrap(),
+        );
+        let game_fields: serde_json::Map<_, _> = (0..128)
+            .map(|i| (format!("marker.r{i:03}"), json!(SCENE_ID)))
+            .collect();
+        let mut records = Vec::new();
+        for index in 0..512 {
+            let path = format!("records/g{index:04}.record.json");
+            fixture.write(
+                &path,
+                &serde_json::to_vec(&json!({
+                    "id":format!("30000000-0000-4000-8000-{index:012x}"),
+                    "type":"game.marker", "schema":1, "fields":game_fields
+                }))
+                .unwrap(),
+            );
+            records.push(path);
+        }
+        records.push("scenes/main.scene.json".to_owned());
+        let mut project = json!({
+            "id":PROJECT_ID, "type":"core.project", "schema":2,
+            "fields":{"project.format":1, "project.records":records,
+                "project.schemas":["schemas/marker.schema.json"],
+                "project.registryHistory":"schemas/history.registry.json", "project.entryScenes":[SCENE_ID]}
+        });
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        let mut staged_paths = records.clone();
+        staged_paths.extend([
+            "project.json".to_owned(),
+            "schemas/marker.schema.json".to_owned(),
+            "schemas/history.registry.json".to_owned(),
+        ]);
+        let path_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
+        let prior = fixture.stage(&path_refs);
+        assert_eq!(
+            validate_staged_candidate(&prior, &[])
+                .unwrap()
+                .records()
+                .required_edges(),
+            65_536
+        );
+        write_environment_records(&fixture);
+        records.extend([ENVIRONMENT_PATH.to_owned(), LIGHT_PATH.to_owned()]);
+        records.sort_unstable();
+        project["fields"]["project.records"] = json!(records);
+        fixture.write("project.json", &serde_json::to_vec(&project).unwrap());
+        staged_paths.extend([ENVIRONMENT_PATH.to_owned(), LIGHT_PATH.to_owned()]);
+        let path_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
+        let changed = fixture.stage(&path_refs);
+        assert!(matches!(
+            validate_staged_candidate(&changed, &[]),
+            Err(StagedCandidateError::Records(
+                StagedRecordError::TooManyRequiredEdges
+            ))
+        ));
+        assert_eq!(
+            validate_staged_candidate(&prior, &[])
+                .unwrap()
+                .records()
+                .required_edges(),
+            65_536
+        );
+    }
+
+    const BUILTIN_HASHES: [&str; 3] = [
+        "75c09153b459c576f89ad3328dc6e3bac82379368cd7e3ac9317f058a2ea8aa7",
+        "8f3d060dcd716a40ebfeddcdae58cc7285d281b6bba24fa9a38ebf2000ab5cfb",
+        "9376fbe1d51794e5cae447c41ae0d02a71cd3f652830c9b650375144ac97b166",
+    ];
 
     #[test]
     fn two_game_descriptors_dispatch_by_type_and_preserve_staged_rejection() {

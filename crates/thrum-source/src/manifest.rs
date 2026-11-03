@@ -52,7 +52,6 @@ impl RecordDescriptor {
         }
     }
 
-    #[cfg(test)]
     pub(crate) fn checked_owned_parts(id: String, record_type: String) -> Self {
         debug_assert!(canonical_uuid(&id));
         Self { id, record_type }
@@ -87,16 +86,18 @@ impl ManifestEntry {
         })
     }
 
-    #[cfg(test)]
     pub(crate) fn blob_identity(&self) -> (u64, [u8; 32]) {
         (self.length, self.sha256)
     }
 
-    #[cfg(test)]
     pub(crate) fn record_identity(&self) -> Option<(&str, &str)> {
         self.record
             .as_ref()
             .map(|record| (record.id.as_str(), record.record_type.as_str()))
+    }
+
+    pub(crate) fn source_path(&self) -> &SourcePath {
+        &self.path
     }
 }
 
@@ -125,17 +126,14 @@ pub struct TreeManifest {
 }
 
 impl TreeManifest {
-    #[cfg(test)]
     pub(crate) fn files(&self) -> &[ManifestEntry] {
         &self.files
     }
 
-    #[cfg(test)]
     pub(crate) fn project_id(&self) -> &str {
         &self.project_id
     }
 
-    #[cfg(test)]
     pub(crate) fn dependency_roots(&self) -> &[String] {
         &self.dependency_roots
     }
