@@ -13,7 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use sha2::{Digest, Sha256};
 
 use crate::budget::{
-    BudgetError, Limits, SourceSpacePlan, SourceWriterWindow, StageBudget,
+    BudgetError, Limits, SourceSpacePlan, SourceWriterWindow, StageBudget, StageSpacePressure,
     create_private_directory, ensure_directory,
 };
 use crate::{InventoryError, LimitExceeded, SourcePath, scan_declared_tree};
@@ -52,6 +52,14 @@ impl StageError {
     pub fn limit_exceeded(&self) -> Option<LimitExceeded> {
         match self {
             Self::Inventory(error) => error.limit_exceeded(),
+            _ => None,
+        }
+    }
+
+    /// Stage-local policy or available-space sample that refused capture.
+    pub fn space_pressure(&self) -> Option<StageSpacePressure> {
+        match self {
+            Self::Budget(BudgetError::StagePressure(detail)) => Some(*detail),
             _ => None,
         }
     }
@@ -514,9 +522,16 @@ mod tests {
             temporary_target_bytes: 0,
             ..small_plan()
         };
+        let refused = stage_declared_tree_with_plan(&fixture.0, &paths(), refused_plan)
+            .err()
+            .unwrap();
         assert!(matches!(
-            stage_declared_tree_with_plan(&fixture.0, &paths(), refused_plan),
-            Err(StageError::Budget(BudgetError::TemporaryLimit))
+            refused.space_pressure(),
+            Some(StageSpacePressure::TemporaryScan {
+                phase: crate::StageScanPhase::Preflight,
+                charged_at_least_bytes: 1..,
+                target_bytes: 0,
+            })
         ));
         assert!(!fixture.0.join(".engine/staging").exists());
 

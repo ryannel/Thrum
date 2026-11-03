@@ -5,8 +5,9 @@ This note specifies the next narrow F3/T2 diagnostic slice. It follows the
 [marginal preflight proof](../../evidence/i2a/SOURCE-MARGINAL-SPACE-2026-11-03.md),
 the [APFS study](SOURCE-APFS-PHYSICAL-ADMISSION-OPTIONS-2026-11-03.md) and
 C11/C12. It changes no source identity, disk threshold, accepted-store format
-or publication rule. The design is not an implemented receipt or a physical
-space guarantee.
+or publication rule. Its [stage-local portion](../../evidence/i2a/SOURCE-STAGE-SPACE-DETAIL-2026-11-03.md)
+is implemented; accepted-store receipts and T2/F4 composition remain open.
+Neither the design nor that stage detail is a physical-space guarantee.
 
 ## Name each quantity at its owner
 
@@ -20,10 +21,12 @@ inside SQLite and must not be added to volume availability. Current main/WAL
 file lengths and logical page count have distinct meanings.
 
 Use fixed-size, allocation-free typed values. Keep the public diagnostic
-surface narrow: `StageError::space_pressure()` and
-`SourceStoreError::space_pressure()` return `Option<SourceSpacePressure>`, while
-the existing broad error kinds and exact operation result remain unchanged.
-The value contains an owner/stage discriminator and one of the following
+surface narrow: `StageError::space_pressure()` returns
+`Option<StageSpacePressure>` and `SourceStoreError::space_pressure()` returns
+`Option<StoreSpacePressure>` when implemented. The owner-specific types avoid
+an unnecessary public all-resource registry; a later UI can wrap them in the
+small C12 diagnostic envelope. Existing broad error kinds and exact operation
+results remain unchanged. Each value identifies a stage and one of the following
 phase-specific payloads. A store-local WAL guard can run during admission,
 pin, release or maintenance; its stage must say `StoreWalGuard` unless its
 calling operation is carried explicitly. Fields are named by their actual basis, so callers

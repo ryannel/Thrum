@@ -539,6 +539,13 @@
         "performance_validation": "The catalogue is a static slice with no allocation or I/O. Three exploratory optimized million-value dense-array parser runs took 9.42\u20139.71 ms before generic JSON typed details and 9.50\u201310.03 ms afterward on this host; no representative throughput, tail, RSS, combined parser peak or device measurement is claimed.",
         "scope": "Publishes distinct first F3 capacity units/scopes without entering source or product hashes. Schema symbol/text bounds, remaining game opaque limits and authored-environment parser-wide typed propagation, full C12 diagnostic envelopes, simultaneous-maximum qualification, wider profiles and F4 target-support reporting remain open."
       },
+      "i2a_stage_space_pressure_detail": {
+        "evidence": "../evidence/i2a/SOURCE-STAGE-SPACE-DETAIL-2026-11-03.md",
+        "implementation": "phase_specific_stage_space_pressure_from_existing_budget_checks",
+        "functional_validation": "Early and final temporary scans return lower-bound charged bytes; complete temporary preflight, copy projection and preflight/before/after-write availability return distinct typed details. Injected availability decisions assert exact samples, equality and checked overflow before I/O. Existing stage drift and old-stage preservation remain in the repository gate.",
+        "performance_validation": "The detail reuses existing scans and filesystem availability queries; no new query, allocation or measured whole-path speed claim.",
+        "scope": "Stage-only operational policy and filesystem observation reporting. No physical reservation or guaranteed headroom; accepted-store receipts, actual ENOSPC/high-water trials, T2/F4 per-volume composition and device qualification remain open."
+      },
       "i2a_constant_light_source": {
         "evidence": "../evidence/i2a/E1-CONSTANT-LIGHT-F3-2026-11-02.md",
         "scope": "Provisional staged F3 constant-light schema 1, scene schema 2 and light identity use fixed built-in definition hashes, bounded direct parsing and typed UUID closure; test-only SQLite root probes reopen two exact revisions, preserve the prior root on invalid candidates, read pinned A after root/checkout advance to B and refuse corrupt stored bytes. A local 4,096-record paired timing probe shows no established cost change. Production admitted-source lease, F4 product, editor round-trip, assembled memory/latency, runtime, visuals and device qualification remain open."
