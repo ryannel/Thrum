@@ -61,10 +61,13 @@ inventoried by streaming bounded buffers. The private cache is already copied
 into an owned directory; the installed Rust/Xcode/SDK roots are still mutable
 host locations. A cold inventory of those locations is a candidate selection
 check, not an immutable byte lease. A ready adapter must select an owned,
-immutable snapshot (including support files), or prove an equivalent retention
-mechanism that prevents substitution both before launch and while child
-processes run. Rehashing the live roots just before or after launch alone does
-not close the interval between those checks. The existing Cargo origin and Rust
+no-writer snapshot (including support files), or prove an equivalent retention
+mechanism that prevents substitution by its compiler children and cooperating
+jobs both before launch and while child processes run. Rehashing the live roots
+just before or after launch alone does not close the interval between those
+checks. The first macOS development profile trusts the local user account; it
+does not defend against a deliberately hostile same-user process. The existing
+Cargo origin and Rust
 component receipts remain adjacent evidence, not a substitute for a reviewed
 preparation job. The current wrapper and [receipt verifier](../../scripts/verify_rustc_receipts.py)
 observe invocation inputs and Cargo-reported units; they do not trace implicit
@@ -98,14 +101,15 @@ selected Cargo/Rustc/Clang does not need those exceptions in this bounded
 build. This does not remove their earlier preparation dependency or close
 other system reads. Apple's
 [file-flag rules](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemDetails/FileSystemDetails.html)
-permit an owner to clear `UF_IMMUTABLE`, so that flag alone cannot provide the
-required protection from a same-user clone writer.
+permit an owner to clear `UF_IMMUTABLE`, so that flag alone cannot exclude a
+hostile same-user clone writer.
 A ready preparer must bind the expected digest
 to the reviewed release manifest and hold the selected clone under a no-writer
 lifecycle through compiler shutdown and artifact publication.
-The [retained-root trust analysis](research/T2-MACOS-RETAINED-ROOT-TRUST-OPTIONS-2026-11-03.md)
-keeps the same-user threat boundary open: owner-clearable file flags are an
-accident barrier, not a strict exclusion of a hostile same-user process.
+The [selected retained-root boundary](research/T2-MACOS-RETAINED-ROOT-TRUST-OPTIONS-2026-11-03.md)
+trusts the local user for this development profile. Owner-clearable file flags
+remain an accident barrier, and the preparer must still prove one held
+no-writer lifecycle for its selected bytes.
 
 ## macOS runtime boundary
 
