@@ -4460,6 +4460,12 @@ fn native_store_reader_blocked_wal_defers_and_recovers_admission() {
 #[test]
 #[ignore = "local sustained public admission under reader-blocked WAL probe"]
 fn measure_native_phased_sustained_blocked_wal() {
+    #[cfg(unix)]
+    fn allocated_bytes(path: &Path) -> u64 {
+        use std::os::unix::fs::MetadataExt;
+        fs::metadata(path).unwrap().blocks() * 512
+    }
+
     let fixture = Fixture::new();
     let plan = SourceSpacePlan {
         wal_stop_bytes: 40 * MIB,
@@ -4493,6 +4499,15 @@ fn measure_native_phased_sustained_blocked_wal() {
     let mut selected = a;
     let mut completed = 0;
     let mut deferred_wal = None;
+    #[cfg(unix)]
+    let mut max_sampled_allocated = 0;
+    #[cfg(unix)]
+    let mut blocked_allocated = None;
+    #[cfg(unix)]
+    let mut recovered_allocated = None;
+    #[cfg(unix)]
+    let sample_allocated =
+        || allocated_bytes(&fixture.database()) + allocated_bytes(&wal_path(&fixture.database()));
     for index in 2_u8..=17 {
         let stage = stage_n_mib_binary(&fixture, &first_stage, plan, 4, index);
         let candidate = validate_staged_candidate(&stage, &[]).unwrap();
@@ -4507,6 +4522,10 @@ fn measure_native_phased_sustained_blocked_wal() {
             Ok(next) => {
                 selected = next;
                 completed += 1;
+                #[cfg(unix)]
+                {
+                    max_sampled_allocated = max_sampled_allocated.max(sample_allocated());
+                }
             }
             Err(error) if error.kind() == SourceStoreErrorKind::SpacePressure => {
                 assert_eq!(store.current_root().unwrap(), Some(selected));
@@ -4515,6 +4534,11 @@ fn measure_native_phased_sustained_blocked_wal() {
                     None
                 );
                 deferred_wal = Some(store.space_usage().unwrap().wal_file_bytes);
+                #[cfg(unix)]
+                {
+                    blocked_allocated = Some(sample_allocated());
+                    max_sampled_allocated = max_sampled_allocated.max(blocked_allocated.unwrap());
+                }
                 reader.execute_batch("COMMIT").unwrap();
                 selected = store
                     .admit(
@@ -4525,6 +4549,11 @@ fn measure_native_phased_sustained_blocked_wal() {
                         &candidate,
                     )
                     .unwrap();
+                #[cfg(unix)]
+                {
+                    recovered_allocated = Some(sample_allocated());
+                    max_sampled_allocated = max_sampled_allocated.max(recovered_allocated.unwrap());
+                }
                 break;
             }
             Err(error) => panic!("unexpected sustained WAL admission error: {error}"),
@@ -4539,6 +4568,12 @@ fn measure_native_phased_sustained_blocked_wal() {
         "native_phased_sustained_wal completed={completed} blocked_wal_bytes={blocked_wal} recovered_wal_bytes={} elapsed_ms={:.3}",
         store.space_usage().unwrap().wal_file_bytes,
         started.elapsed().as_secs_f64() * 1000.0
+    );
+    #[cfg(unix)]
+    eprintln!(
+        "native_phased_sustained_wal_allocated max_sampled_main_plus_wal_bytes={max_sampled_allocated} blocked_bytes={} after_retry_bytes={}",
+        blocked_allocated.unwrap(),
+        recovered_allocated.unwrap()
     );
 }
 
