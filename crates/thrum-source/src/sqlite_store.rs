@@ -239,6 +239,7 @@ fn required_free_bytes(
 struct SqliteStoreCore {
     conn: Connection,
     recovery_required: bool,
+    #[cfg(test)]
     scratch: Vec<u8>,
     path: PathBuf,
     wal_guard: WalGuard,
@@ -738,6 +739,7 @@ impl SqliteStoreCore {
         Ok(Self {
             conn,
             recovery_required: false,
+            #[cfg(test)]
             scratch: Vec::new(),
             path: path.to_owned(),
             wal_guard,
@@ -1197,6 +1199,7 @@ impl SqliteStoreCore {
         )
     }
 
+    #[cfg(test)]
     fn admit_staged_candidate_probe_with_limits(
         &mut self,
         expected_generation: i64,
@@ -1375,6 +1378,7 @@ impl SqliteStoreCore {
         Ok(())
     }
 
+    #[cfg(test)]
     fn stage_candidate_files(&mut self, candidate: &StagedCandidate<'_>) -> Result<(), StoreError> {
         let stage = candidate.registry().stage();
         let mut entries: Vec<([u8; 32], std::ops::Range<usize>)> = Vec::new();
@@ -1422,6 +1426,7 @@ impl SqliteStoreCore {
         Ok(())
     }
 
+    #[cfg(test)]
     fn stage_blob(
         &mut self,
         input: &mut impl Read,
@@ -1547,6 +1552,7 @@ impl SqliteStoreCore {
         Ok(hash)
     }
 
+    #[cfg(test)]
     fn stage_blob_with(
         &mut self,
         input: &mut impl Read,
@@ -1561,6 +1567,7 @@ impl SqliteStoreCore {
         result
     }
 
+    #[cfg(test)]
     fn stage_blob_with_scratch(
         &mut self,
         input: &mut impl Read,
@@ -2069,12 +2076,19 @@ impl From<rusqlite::Error> for SourceStoreError {
 
 struct NativeSourceOwner {
     inner: Mutex<SqliteStoreCore>,
+    admission_scratch: Mutex<Vec<u8>>,
     _lock: File,
 }
 
 impl NativeSourceOwner {
     fn lock(&self) -> Result<MutexGuard<'_, SqliteStoreCore>, StoreError> {
         self.inner.lock().map_err(|_| StoreError::OwnerPoisoned)
+    }
+
+    fn admission(&self) -> Result<MutexGuard<'_, Vec<u8>>, StoreError> {
+        self.admission_scratch
+            .lock()
+            .map_err(|_| StoreError::OwnerPoisoned)
     }
 }
 
@@ -2158,6 +2172,7 @@ impl NativeSourceStore {
                 inner: Mutex::new(SqliteStoreCore::open_with_plan_and_vfs(
                     &database, plan, vfs,
                 )?),
+                admission_scratch: Mutex::new(Vec::new()),
                 _lock: lock,
             }),
             plan,
@@ -2267,27 +2282,193 @@ impl NativeSourceStore {
         request_hash: [u8; 32],
         candidate: &StagedCandidate<'_>,
     ) -> Result<AcceptedSourceRoot, SourceStoreError> {
-        let mut inner = self.owner.lock()?;
-        inner.require_clean()?;
-        let (generation, revision) = inner.admit_staged_candidate_probe_with_limits(
+        self.admit_with_probes(
             expected_generation,
             epoch,
             key,
             request_hash,
             candidate,
-            self.plan.into(),
             || {},
-            |_| {},
-            |_| {},
-        )?;
+            || {},
+        )
+    }
+
+    fn admit_with_probes(
+        &self,
+        expected_generation: i64,
+        epoch: i64,
+        key: i64,
+        request_hash: [u8; 32],
+        candidate: &StagedCandidate<'_>,
+        mut after_committed_chunk: impl FnMut(),
+        before_final_commit: impl FnOnce(),
+    ) -> Result<AcceptedSourceRoot, SourceStoreError> {
+        let mut scratch = self.owner.admission()?;
+        let manifest = candidate
+            .provisional_manifest()
+            .map_err(StoreError::CandidateManifest)?;
+        let revision = *manifest.revision().as_bytes();
+        {
+            let inner = self.owner.lock()?;
+            inner.require_clean()?;
+            if let Some(generation) = inner.matching_outcome(epoch, key, request_hash, revision)? {
+                return Ok(AcceptedSourceRoot {
+                    generation,
+                    revision: SourceRevision::from_bytes(revision),
+                });
+            }
+        }
+        let limits: Limits = self.plan.into();
+        let attempted = (|| {
+            {
+                let mut inner = self.owner.lock()?;
+                inner.require_clean()?;
+                inner.active_free_floor = Some(limits.free_floor);
+                inner.ensure_wal_room(0)?;
+                inner.preflight_candidate_space(&manifest, revision, limits)?;
+                if expected_generation > 0 {
+                    inner.compare_staged_candidate_with_current_root(
+                        expected_generation,
+                        candidate,
+                    )?;
+                }
+            }
+            self.stage_candidate_files_phased(candidate, &mut scratch, &mut after_committed_chunk)?;
+            let generation = {
+                let mut inner = self.owner.lock()?;
+                inner.require_clean()?;
+                let stored_revision = inner.stage_manifest_chunked(&manifest)?;
+                if stored_revision != revision {
+                    return Err(StoreError::HashMismatch);
+                }
+                before_final_commit();
+                inner.commit_manifest_probe(
+                    expected_generation,
+                    epoch,
+                    key,
+                    request_hash,
+                    &manifest,
+                )?
+            };
+            Ok(generation)
+        })();
+        let mut inner = self.owner.lock()?;
+        inner.active_free_floor = None;
+        let generation = match attempted {
+            Ok(generation) => generation,
+            Err(error) => {
+                if inner.recovery_required {
+                    return Err(error.into());
+                }
+                if let Some(generation) =
+                    inner.matching_outcome(epoch, key, request_hash, revision)?
+                {
+                    generation
+                } else {
+                    return Err(error.into());
+                }
+            }
+        };
         Ok(AcceptedSourceRoot {
             generation,
             revision: SourceRevision::from_bytes(revision),
         })
     }
 
+    fn stage_candidate_files_phased(
+        &self,
+        candidate: &StagedCandidate<'_>,
+        scratch: &mut Vec<u8>,
+        after_committed_chunk: &mut impl FnMut(),
+    ) -> Result<(), StoreError> {
+        let stage = candidate.registry().stage();
+        let mut entries: Vec<([u8; 32], std::ops::Range<usize>)> = Vec::new();
+        let mut bytes = Vec::new();
+        for file in stage.files() {
+            if file.length() <= SMALL_BATCH_FILE_BYTES {
+                let length = usize::try_from(file.length()).map_err(|_| StoreError::InputLength)?;
+                if entries.len() == SMALL_BATCH_FILES || bytes.len() + length > SMALL_BATCH_BYTES {
+                    self.owner
+                        .lock()?
+                        .flush_candidate_batch(&mut entries, &mut bytes)?;
+                }
+                let mut reader = stage.open(file.path()).map_err(StoreError::CandidateFile)?;
+                let start = bytes.len();
+                bytes.resize(start + length, 0);
+                reader
+                    .read_exact(&mut bytes[start..])
+                    .map_err(|_| StoreError::InputIo)?;
+                let mut extra = [0_u8; 1];
+                if reader.read(&mut extra).map_err(|_| StoreError::InputIo)? != 0 {
+                    return Err(StoreError::InputLength);
+                }
+                entries.push((*file.sha256(), start..bytes.len()));
+            } else {
+                self.owner
+                    .lock()?
+                    .flush_candidate_batch(&mut entries, &mut bytes)?;
+                let mut reader = stage.open(file.path()).map_err(StoreError::CandidateFile)?;
+                self.stage_blob_phased(
+                    &mut reader,
+                    file.length(),
+                    *file.sha256(),
+                    scratch,
+                    after_committed_chunk,
+                )?;
+            }
+        }
+        self.owner
+            .lock()?
+            .flush_candidate_batch(&mut entries, &mut bytes)
+    }
+
+    fn stage_blob_phased(
+        &self,
+        input: &mut impl Read,
+        length: u64,
+        hash: [u8; 32],
+        scratch: &mut Vec<u8>,
+        after_committed_chunk: &mut impl FnMut(),
+    ) -> Result<(), StoreError> {
+        let chunk_count = blob_chunk_count(length)?;
+        scratch.resize(length.min(CHUNK_BYTES as u64).max(1) as usize, 0);
+        if self.owner.lock()?.begin_blob(length, hash, chunk_count)? {
+            return verify_supplied_blob(input, length, hash, scratch);
+        }
+        let mut digest = Sha256::new();
+        let mut remaining = length;
+        for index in 0..chunk_count {
+            let count = usize::try_from(remaining.min(CHUNK_BYTES as u64))
+                .map_err(|_| StoreError::InputLength)?;
+            input
+                .read_exact(&mut scratch[..count])
+                .map_err(|_| StoreError::InputIo)?;
+            digest.update(&scratch[..count]);
+            self.owner.lock()?.append_blob_chunk(
+                length,
+                hash,
+                chunk_count,
+                index,
+                &scratch[..count],
+            )?;
+            after_committed_chunk();
+            remaining -= count as u64;
+        }
+        let mut extra = [0_u8; 1];
+        if input.read(&mut extra).map_err(|_| StoreError::InputIo)? != 0 {
+            return Err(StoreError::InputLength);
+        }
+        if digest.finalize().as_slice() != hash {
+            return Err(StoreError::HashMismatch);
+        }
+        self.owner
+            .lock()?
+            .verify_and_complete_blob(length, hash, chunk_count, || {})
+    }
+
     /// Pin and authenticate the current manifest for a build or cook read.
     pub fn pin_current(&self, expected_generation: i64) -> Result<PinnedSource, SourceStoreError> {
+        let _admission = self.owner.admission()?;
         let pin = {
             let mut inner = self.owner.lock()?;
             inner.require_clean()?;
@@ -2300,6 +2481,7 @@ impl NativeSourceStore {
     /// Pin an earlier accepted root for a retained build, match or save.
     /// The supplied generation and revision must have a durable outcome.
     pub fn pin_accepted(&self, root: AcceptedSourceRoot) -> Result<PinnedSource, SourceStoreError> {
+        let _admission = self.owner.admission()?;
         let pin = {
             let mut inner = self.owner.lock()?;
             inner.require_clean()?;
@@ -2465,6 +2647,7 @@ impl PinnedSource {
     /// Release the read pin and report a failed SQLite release to the caller.
     pub fn close(mut self) -> Result<(), SourceStoreError> {
         if let Some(id) = self.pin_id.take() {
+            let _admission = self.owner.admission()?;
             self.owner.lock()?.release_root_pin(id)?;
         }
         Ok(())
@@ -2474,6 +2657,7 @@ impl PinnedSource {
 impl Drop for PinnedSource {
     fn drop(&mut self) {
         if let Some(id) = self.pin_id.take()
+            && let Ok(_admission) = self.owner.admission()
             && let Ok(mut inner) = self.owner.lock()
         {
             let _ = inner.release_root_pin(id);
@@ -3238,19 +3422,14 @@ fn accepted_kill_after_verified_stage_child() {
     };
     let store = NativeSourceStore::open(&database, plan).unwrap();
     store
-        .owner
-        .lock()
-        .unwrap()
-        .admit_staged_candidate_probe_with_limits(
+        .admit_with_probes(
             1,
             1,
             2,
             [2; 32],
             &candidate,
-            plan.into(),
             || {},
-            |_| {},
-            |_| signal_and_wait_for_kill(&marker),
+            || signal_and_wait_for_kill(&marker),
         )
         .unwrap();
 }
@@ -3323,6 +3502,61 @@ fn accepted_kill_after_verified_stage_retains_a_and_retries_b() {
     let reopened = NativeSourceStore::open(&database, plan).unwrap();
     assert_eq!(reopened.current_root().unwrap(), Some(b));
     assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
+}
+
+#[test]
+fn accepted_old_pin_reads_between_new_blob_chunks() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "old interleaved scene");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let old_pin = store.pin_current(a.generation).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let expected = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    let stage_b = stage_12_mib_binary(&fixture, &stage_a, plan);
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let (start_tx, start_rx) = std::sync::mpsc::channel();
+    let (done_tx, done_rx) = std::sync::mpsc::channel();
+    let b = std::thread::scope(|scope| {
+        let store_ref = &store;
+        let reader = scope.spawn(move || {
+            let mut old_pin = old_pin;
+            start_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+            let mut copied = Vec::new();
+            old_pin.copy_file_to(&scene, &mut copied).unwrap();
+            assert_eq!(copied, expected);
+            assert_eq!(store_ref.current_root().unwrap(), Some(a));
+            done_tx.send(()).unwrap();
+            old_pin.close().unwrap();
+        });
+        let mut first_chunk = true;
+        let b = store
+            .admit_with_probes(
+                a.generation,
+                1,
+                2,
+                [2; 32],
+                &candidate_b,
+                || {
+                    if first_chunk {
+                        first_chunk = false;
+                        start_tx.send(()).unwrap();
+                        done_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                    }
+                },
+                || {},
+            )
+            .unwrap();
+        reader.join().unwrap();
+        b
+    });
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(store.current_root().unwrap(), Some(b));
 }
 
 #[test]
@@ -3435,15 +3669,18 @@ fn accepted_live_lease_refuses_sql_after_uncertain_commit() {
         inner.stage_candidate_files(&candidate_b).unwrap();
         inner.stage_manifest_chunked(&manifest_b).unwrap();
     }
-    observer.arm_wal_fault(checkpoint_vfs::WalFault::AfterCommitSync);
-    assert!(matches!(
-        store
-            .owner
-            .lock()
-            .unwrap()
-            .commit_manifest_probe(a.generation, 1, 2, [2; 32], &manifest_b),
-        Err(StoreError::UncertainCommit(_))
-    ));
+    let fault = store
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {},
+            || observer.arm_wal_fault(checkpoint_vfs::WalFault::AfterCommitSync),
+        )
+        .unwrap_err();
+    assert_eq!(fault.kind(), SourceStoreErrorKind::RecoveryRequired);
     assert_eq!(observer.counts.wal_fault_hits.load(Ordering::Relaxed), 1);
     assert_eq!(
         NativeSourceStore::open(&database, plan)
@@ -3556,6 +3793,7 @@ fn native_store_sqlite_full_during_blob_preserves_root_and_retries() {
     );
     assert_eq!(store.current_root().unwrap(), Some(old));
     assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    assert_eq!(Arc::strong_count(&store.owner), 1);
     drop(store);
     let reopened = NativeSourceStore::open(&fixture.database(), plan).unwrap();
     assert_eq!(reopened.current_root().unwrap(), Some(old));
@@ -3920,6 +4158,65 @@ fn measure_native_reader_wait_behind_large_admission() {
     });
     eprintln!(
         "native_reader_behind_large_admission reader_wait_copy_ms={reader_ms:.3} writer_after_preflight_ms={writer_remaining_ms:.3}"
+    );
+}
+
+#[test]
+#[ignore = "local release-only phased writer and pinned-reader contention probe"]
+fn measure_native_phased_reader_progress() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let first_stage = minimal_source_stage(&fixture, "before phased wait");
+    let first = validate_staged_candidate(&first_stage, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let stage = stage_12_mib_binary(&fixture, &first_stage, plan);
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let done = std::sync::atomic::AtomicBool::new(false);
+    let (mut samples, writer_ms) = std::thread::scope(|scope| {
+        let writer = scope.spawn(|| {
+            let start = Instant::now();
+            let b = store
+                .admit(a.generation, 1, 2, [2; 32], &candidate)
+                .unwrap();
+            done.store(true, Ordering::Release);
+            (b, start.elapsed().as_secs_f64() * 1000.0)
+        });
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            match store.owner.admission_scratch.try_lock() {
+                Err(std::sync::TryLockError::WouldBlock) => break,
+                Ok(guard) => drop(guard),
+                Err(std::sync::TryLockError::Poisoned(_)) => panic!("admission owner poisoned"),
+            }
+            assert!(Instant::now() < deadline, "writer did not start admission");
+            std::thread::yield_now();
+        }
+        let mut samples = Vec::new();
+        while !done.load(Ordering::Acquire) && samples.len() < 1000 {
+            let start = Instant::now();
+            old_pin.copy_file_to(&scene, &mut io::sink()).unwrap();
+            samples.push(start.elapsed().as_secs_f64() * 1000.0);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let (b, writer_ms) = writer.join().unwrap();
+        assert_eq!(b.generation, a.generation + 1);
+        (samples, writer_ms)
+    });
+    assert!(!samples.is_empty());
+    old_pin.close().unwrap();
+    samples.sort_by(f64::total_cmp);
+    let p95 = samples[(samples.len() * 95 / 100).min(samples.len() - 1)];
+    eprintln!(
+        "native_phased_reader samples={} min_ms={:.3} p95_ms={p95:.3} max_ms={:.3} writer_ms={writer_ms:.3}",
+        samples.len(),
+        samples[0],
+        samples[samples.len() - 1]
     );
 }
 
