@@ -2461,9 +2461,74 @@ impl NativeSourceStore {
         if digest.finalize().as_slice() != hash {
             return Err(StoreError::HashMismatch);
         }
-        self.owner
-            .lock()?
-            .verify_and_complete_blob(length, hash, chunk_count, || {})
+        self.verify_and_complete_blob_phased(length, hash, chunk_count, scratch)
+    }
+
+    fn verify_and_complete_blob_phased(
+        &self,
+        length: u64,
+        hash: [u8; 32],
+        chunk_count: i64,
+        scratch: &mut Vec<u8>,
+    ) -> Result<(), StoreError> {
+        // The admission permit excludes cooperating writes to incomplete
+        // chunks. Copy each committed chunk under the core lock, hash outside
+        // it, then publish the complete marker in one final transaction.
+        let mut stored = Sha256::new();
+        let mut stored_length = 0_u64;
+        for index in 0..chunk_count {
+            let expected_count = usize::try_from((length - stored_length).min(CHUNK_BYTES as u64))
+                .map_err(|_| StoreError::InputLength)?;
+            scratch.clear();
+            {
+                let inner = self.owner.lock()?;
+                inner.require_clean()?;
+                let mut statement = inner
+                    .conn
+                    .prepare("SELECT bytes FROM blob_chunks WHERE hash=?1 AND chunk_index=?2")?;
+                let mut rows = statement.query(params![hash.as_slice(), index])?;
+                let row = rows.next()?.ok_or(StoreError::MissingChunk)?;
+                let ValueRef::Blob(bytes) = row.get_ref(0)? else {
+                    return Err(StoreError::InvalidChunkLayout);
+                };
+                if bytes.len() != expected_count {
+                    return Err(StoreError::InvalidChunkLayout);
+                }
+                scratch.extend_from_slice(bytes);
+            }
+            stored.update(&scratch[..]);
+            stored_length += scratch.len() as u64;
+        }
+        if stored_length != length || stored.finalize().as_slice() != hash {
+            return Err(StoreError::CorruptRootBlob);
+        }
+        let mut inner = self.owner.lock()?;
+        inner.require_clean()?;
+        inner.ensure_wal_room(MIB)?;
+        let tx = inner
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let actual_chunks: i64 = tx.query_row(
+            "SELECT count(*) FROM blob_chunks WHERE hash=?1",
+            params![hash.as_slice()],
+            |row| row.get(0),
+        )?;
+        if actual_chunks != chunk_count {
+            return Err(StoreError::InvalidChunkLayout);
+        }
+        let updated = tx.execute(
+            "UPDATE blob_header SET state=1 WHERE hash=?1 AND length=?2 AND chunk_count=?3 AND state=0",
+            params![
+                hash.as_slice(),
+                i64::try_from(length).map_err(|_| StoreError::InputLength)?,
+                chunk_count
+            ],
+        )?;
+        if updated != 1 {
+            return Err(StoreError::BlobMetadataMismatch);
+        }
+        tx.commit()?;
+        Ok(())
     }
 
     /// Pin and authenticate the current manifest for a build or cook read.
@@ -3560,6 +3625,62 @@ fn accepted_old_pin_reads_between_new_blob_chunks() {
 }
 
 #[test]
+fn accepted_phased_verification_refuses_corrupt_stored_chunk_and_retries() {
+    let fixture = Fixture::new();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&fixture.database(), plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "before corrupt stored chunk");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let stage_b = stage_12_mib_binary(&fixture, &stage_a, plan);
+    let hash = *stage_b
+        .files()
+        .iter()
+        .find(|file| file.path().as_str() == "master.bin")
+        .unwrap()
+        .sha256();
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let mut committed = 0;
+    let failed = store
+        .admit_with_probes(
+            a.generation,
+            1,
+            2,
+            [2; 32],
+            &candidate_b,
+            || {
+                committed += 1;
+                if committed == 3 {
+                    store
+                        .owner
+                        .lock()
+                        .unwrap()
+                        .conn
+                        .execute(
+                            "UPDATE blob_chunks SET bytes=?3 WHERE hash=?1 AND chunk_index=?2",
+                            params![hash.as_slice(), 0, vec![0_u8; CHUNK_BYTES]],
+                        )
+                        .unwrap();
+                }
+            },
+            || {},
+        )
+        .unwrap_err();
+    assert_eq!(failed.kind(), SourceStoreErrorKind::CorruptStore);
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    assert_eq!(committed, 3);
+    let b = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    assert_eq!(store.current_root().unwrap(), Some(b));
+}
+
+#[test]
 fn accepted_kill_after_public_admit_child() {
     let Some(directory) = std::env::var_os("THRUM_TEST_ACCEPTED_COMMITTED_KILL_DIR") else {
         return;
@@ -4075,10 +4196,20 @@ fn stage_12_mib_binary(
     first_stage: &crate::StagedTree,
     plan: SourceSpacePlan,
 ) -> crate::StagedTree {
+    stage_n_mib_binary(fixture, first_stage, plan, 12)
+}
+
+#[cfg(test)]
+fn stage_n_mib_binary(
+    fixture: &Fixture,
+    first_stage: &crate::StagedTree,
+    plan: SourceSpacePlan,
+    size_mib: u64,
+) -> crate::StagedTree {
     let root = fixture.source_root();
     let mut master = File::create(root.join("master.bin")).unwrap();
     let block = [7_u8; 4096];
-    for _ in 0..(12 * MIB / block.len() as u64) {
+    for _ in 0..(size_mib * MIB / block.len() as u64) {
         master.write_all(&block).unwrap();
     }
     drop(master);
@@ -4093,7 +4224,7 @@ fn stage_12_mib_binary(
         &root,
         &declared,
         Limits {
-            temporary: 64 * MIB,
+            temporary: (size_mib * 2).max(64) * MIB,
             free_floor: 0,
             ..plan.into()
         },
@@ -4174,7 +4305,12 @@ fn measure_native_phased_reader_progress() {
     let first = validate_staged_candidate(&first_stage, &[]).unwrap();
     let a = store.admit(0, 1, 1, [1; 32], &first).unwrap();
     let mut old_pin = store.pin_current(a.generation).unwrap();
-    let stage = stage_12_mib_binary(&fixture, &first_stage, plan);
+    let size_mib = std::env::var("THRUM_TEST_SOURCE_PROBE_MIB")
+        .ok()
+        .map(|value| value.parse::<u64>().unwrap())
+        .unwrap_or(12);
+    assert!(matches!(size_mib, 12 | 64));
+    let stage = stage_n_mib_binary(&fixture, &first_stage, plan, size_mib);
     let candidate = validate_staged_candidate(&stage, &[]).unwrap();
     let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
     let done = std::sync::atomic::AtomicBool::new(false);
@@ -4213,7 +4349,7 @@ fn measure_native_phased_reader_progress() {
     samples.sort_by(f64::total_cmp);
     let p95 = samples[(samples.len() * 95 / 100).min(samples.len() - 1)];
     eprintln!(
-        "native_phased_reader samples={} min_ms={:.3} p95_ms={p95:.3} max_ms={:.3} writer_ms={writer_ms:.3}",
+        "native_phased_reader size_mib={size_mib} samples={} min_ms={:.3} p95_ms={p95:.3} max_ms={:.3} writer_ms={writer_ms:.3}",
         samples.len(),
         samples[0],
         samples[samples.len() - 1]
