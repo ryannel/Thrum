@@ -8,6 +8,11 @@ new wire protocol. C02 and C13 keep W1 publication, authoritative results
 and replica admission as separate owners. The [private inline ownership
 probe](../../evidence/i1-headless/SLOW-PEER-PROJECTION-PROBE.md) demonstrates
 only a selected two-peer handoff; it does not qualify this cadence algorithm.
+The [private cadence model oracle](../../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md)
+now exercises ordered mandatory units, complete-state-only coalescing and a
+result-bearing unchanged controller across two three-tick windows. Its
+separate reference replica lanes do not close the production multi-group
+consumer or burst-cost gates below.
 
 ## Required outcome and owner boundary
 

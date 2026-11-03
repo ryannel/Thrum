@@ -2127,10 +2127,11 @@
       "outbound_cadence_design": {
         "design": "research/N1-OUTBOUND-CADENCE-2026-11-03.md",
         "decision": "provisional",
-        "implementation": "none",
-        "functional_validation": "independent design challenge resolved three specific lifecycle, controller-state and same-tick-unit findings; multi-group and revised burst oracle not run",
+        "implementation": "private selected-inline cadence model only",
+        "functional_validation": "independent design challenge resolved lifecycle, controller-state, same-tick-unit and ACK findings; two local model tests preserve three-tick mandatory chronology and reject partial-update coalescing, but the multi-group production oracle is not run",
         "platform_performance": "ordinary 20 Hz R4 byte model is a lower-bound scenario; mandatory burst and four-peer CPU/RSS unmeasured",
-        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed; complete same-tick partition admission and mandatory capacity handling remain open."
+        "scope": "N1-owned exact tick units, replaceable-only coalescing and 20 Hz batch release are proposed. The model supplies its own completeness marker and separate replica reference lanes; schema-checked completeness, one confirmed multi-group replica, mandatory capacity handling and actual N1 queues remain open.",
+        "model_oracle_evidence": "../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md"
       }
     }
   ],
