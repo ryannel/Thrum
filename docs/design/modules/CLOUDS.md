@@ -31,13 +31,13 @@ Standalone proof admission and actual engine/platform admission are separate.
 
 | ID | Current selected direction | Evidence / unfinished gate |
 | --- | --- | --- |
-| CD01 Source | One native runtime3D optical source/domain remains required. Pulse/transport profiles2/3/4 are rejected as default morphology; authored3D anatomy/local-geometry challenger under proof, no Houdini. | [Failed source/motion evidence](../../evidence/cloud-front-growth-2026-11-03/README.md), [qualified static ingredients](../../evidence/cloud-authored-masters-2026-11-03/README.md). Exact replacement lifecycle/scale contracts remain unfinished; Nubis³ does not prove our adaptation. |
+| CD01 Source | One native runtime3D optical source/domain remains required. Pulse/transport profiles2/3/4 are rejected as default morphology; [Finite authored material candidate](CLOUD-AUTHORED-SOURCE.md) has a reviewed Cu coupling pilot; full family authoring/control remains unfinished. No Houdini. | [Failed source/motion evidence](../../evidence/cloud-front-growth-2026-11-03/README.md), [qualified static ingredients](../../evidence/cloud-authored-masters-2026-11-03/README.md). Local erosion differs from fade but static remnants fail full breakup; both frozen Cb assemblies fail art. General lifecycle/scale admission remains unfinished; Nubis³ does not prove our adaptation. |
 | CD02 Detail | Optical frames contain structural birth, mature renewal and loss; stable coordinates and fixed optical calibration. | Watched source/reference motion and intermediate-frame comparison. |
 | CD03 Residency | Versioned current optical field snapshots and bounded runtime source/occupancy updates; shared static ingredients, current voxel light. | No baked all-cloud AO or full lifetime stream. Actual state/scratch/halo/mip/copy and1x/16x/64x work/latency qualify. |
 | CD04 Optics | Hillaire four-LUT air + RGB aerial T; two-lobe HG/one extra MS octave; current voxel Sun/ambient cache,2local Sun samples, receiver BSM and complete-ray oracle/fallback. | Complete equations/paths fixed in baseline; numerical, image, source and cost POCs qualify implementation/settings. |
 | CD05 Consumers | Main, attenuation, reflected/environment and optional CPU semantics bind independently. | Retained offscreen causes survive; no-optical-consumer GPU work retires. |
 | CD06 Reuse | Retain Beer/phase semantics, oracles, comparison inputs, reflection boundary, controls and provenance where qualified. | Replace viewer-shaped ownership, one-box assumptions, fixed sky and private final display. |
-| CD07 Far sky | Same3D source query at ordinary footprint mips and conservative occupancy to curved horizon. | Direct resolved thin-gap/terminal tests qualify LOD; no required far-transfer codec or painted horizon. |
+| CD07 Far sky | Same3D source query with admitted joint footprint sampling and conservative occupancy to curved horizon. | Direct resolved thin-gap/terminal tests qualify LOD; max of filtered parts cannot replace filtering the combined source. No required far-transfer codec or painted horizon. |
 | CD08 Weather | Live weather/front/lift/dry/storm controls and persistent source state under one height-wind provider. | Runtime W acts once plus declared internal motion; required midlife wind/front/storm response, mature renewal and survival without loading a clip. |
 | CD09 View cost | Disjoint near-prefix/far-tail integration, independent temporal histories and current spatial/fresh fallback. | Fixed formats/lifetime proposal in baseline; motion/cut/64x and fog/geometry joins qualify quality/cost. |
 | CD10 Progression | Small source/air/seam pilots -> early coupled cost screen -> all source regimes -> complete path -> families/weather/skies -> engine binding. | One active checkbox queue in CLOUD-MIGRATION. Optional research does not gate required implementation. |
@@ -68,7 +68,7 @@ capacity returns invalid/unavailable, never fabricated clear. Device recovery re
 ## One source and one transport authority
 
 Metres/seconds and scene-linear light units are explicit at boundaries. Independent constituents add coefficients;
-multiple parts or quality levels representing one condensate use a partition summing to one. Near/far levels substitute,
+multiple representations or quality levels of one condensate partition/substitute once. An internal geometry union constructs one final amount before optical sampling; it does not add proxy copies. Near/far levels substitute,
 not add. Prepared coefficients use a fixed optical calibration; liquid/ice scattering channels remain meaningful
 through interpolation/LOD. They are authored optical proxies, not conserved meteorological water by assertion.
 

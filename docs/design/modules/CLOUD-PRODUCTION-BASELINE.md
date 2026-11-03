@@ -86,11 +86,9 @@ oblique images and then1x/16xmotion. Reject shrinking cotton, carved tunnels, tr
 readable surviving fragments; reject an apparent gain that vanishes under matched extinction. A successful one-master
 operator does not supply mature renewal, new anatomy, attached growth, independent fragment motion or tower-fed ice.
 
-Independent review found unresolved full authored-producer details: complementary cap ownership cannot be max-unioned
-without losing density; wet de-erosion expands prospective support; attached motion needs the full parent-map derivative;
-phase must be spatial; filtering max-unions does not commute with max of filtered parts; coarse erosion controls need
-a weather-bandwidth bound. Those contracts must close before dependent live-part/cap/up-rez implementation. They do not
-prevent this bounded operator falsification. Keep the complete replacement source design explicitly unfinished.
+[The finite-material candidate](CLOUD-AUTHORED-SOURCE.md) now closes a bounded liquid Cu interaction before implementation: fresh rest at birth, inherited socket velocity without inherited strain or double wind, local geometric growth, irreversible age retirement, explicit front coupling and one timed direct point field. Independent review corrected impossible whole-child burial, incomplete scale/units, pitch and clock claims. A direct sparse-template query removes the need to invent a mandatory adaptive final field; conservative MAX bounds never become average material. The proposed same-cohort upper cap avoids complementary ownership transfer. General phase/cap/family recipes and mixed-sky control/cost admission remain unfinished. This is a commissioned pilot, not a new accepted default.
+
+[Two frozen Cb inputs](../../evidence/cloud-cb-anatomy-2026-11-03/README.md) are rejected by actual native images: threshold connectivity leaves a skeletal central void; adding bulk fills it but exposes a smooth column. Keep their source/diagnostics as negative evidence. The next authoring study must cover the complete body surface as well as fill the interior and connect a directional cap. Do not treat another small silhouette or numerical pass as accepted Cb anatomy.
 
 ## Native content and live source path
 
