@@ -5,8 +5,8 @@
 It is not an admitted F3 source, an F4 binding, a selected F2 recipe, or a
 target-device proof. The [reproducible archive](R0-FIRST-SHADOW-NUMERIC-PROBE-2026-11-03.tar.gz)
 contains the exact fixture bytes, generator, probe, verifier, and result JSON.
-The 6,641-byte archive has SHA-256
-`71e77c090a5c1b9967cea400878de0f34c8aa30e958bcebf9df449cc3363244a`.
+The 7,194-byte archive has SHA-256
+`bba49af6f3e58678114a78e0337bf5b77ab404e759c80ab813ca8a37dd2ac60a`.
 
 ## Fixture and oracle boundary
 
@@ -72,15 +72,19 @@ device-filtered PCF sample:
 For this +Z receiver, β=1 contributes `0.0018310546875 m` of physical
 slope allowance. That is a **study point**, not an approved β or b0. The
 caster is outside the camera's x half-width `3.0792014 m` at z=2, yet
-`−Sun` moves its receiver shadow to x≈`[1.9,2.3]`. The wrong-sign geometric
-mutation moves it to x≈`[4.9,5.3]`, outside the receiver. The separate
-verifier checks this projected interval; the wrong-sign case is not a third
-four-tap visibility run.
+`−Sun` moves its receiver shadow to x≈`[1.9,2.3]`. A **full ray reversal**
+to `+Sun` points upward from the z=2 caster: its receiver-plane parameter is
+negative and it has no forward intersection with z=0. A separate
+**horizontal-component-only sign flip** keeps the ray pointing downward but
+moves the plane intersection to x≈`[4.9,5.3]`, outside the receiver. The
+verifier checks both direction mutations. Neither is a four-tap visibility
+run.
 
 ## What remains before admission
 
 The CPU study specifies a reproducible arithmetic schedule and catches
-three semantic mistakes. It does **not** prove GPU winding/culling, masked
+camera culling, comparison-sign, full-ray reversal and horizontal-sign
+mistakes. It does **not** prove GPU winding/culling, masked
 depth/forward agreement, edge coverage, the actual four
 `textureSampleCompareLevel` results, bias adequacy, retained-map reuse,
 camera-motion stability, or contact/edge quality. A full fixture must

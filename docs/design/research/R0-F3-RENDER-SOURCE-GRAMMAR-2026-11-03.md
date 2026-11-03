@@ -84,7 +84,7 @@ but unresolved map is never an absence.
 | Embedded kind | Required content and source meaning |
 | --- | --- |
 | Camera | `id`, authored initial `position_m` f64[3], `orientation_xyzw` f64[4], `vertical_fov_rad` f64, `near_m`/`far_m` f64 and positive dimensionless `exposure`. Right-handed Y-up, camera forward −Z. The perspective angle is strictly between 0 and π and `0 < near < far`. The current viewport determines aspect at extraction, so resize does not edit source. |
-| Mesh | `id`, ordered f64 `positions_m` triples, matching ordered f64 `uv0` pairs, and ordered u32 triangle-index triples. Indices refer only to this mesh. Index order defines front-facing winding in the right-handed world; either winding is valid. UV `(0,0)` addresses the top-left image edge. |
+| Mesh | `id`, ordered f64 `positions_m` triples, matching ordered f64 `uv0` pairs, and ordered u32 `triangles` index triples. Indices refer only to this mesh. Index order defines front-facing winding in the right-handed world; either winding is valid. UV `(0,0)` addresses the top-left image edge. |
 | Instance | `id`, required `mesh` and `material` references, authored initial `translation_m` f64[3], `orientation_xyzw` f64[4], `scale` f64[3] and `two_sided` material policy through the material reference. W1 owns its committed runtime transform. The first R0 product supports identity static instance transform only; valid other TRS receives F4 `Unsupported` until transformed geometry, parity and normal certificates are proved. |
 | Material | Required `id`, `alpha_mode` (`opaque` or `mask`), `two_sided` boolean and one `sampler`; `alpha_cutoff` is required for mask and forbidden for opaque. Optional `base_factor_rgba` linear dimensionless f64[4], `emissive_radiance_factor_cd_m2` linear Rec.709 f64[3], `metallic_factor`, `roughness_factor` and `occlusion_strength` take the native factor defaults and composition in RENDER-SPEC §2. Optional typed `base_texture`, `orm_texture`, `emissive_texture` references share `uv0` and that sampler. Base and alpha factors, metallic, roughness, occlusion strength and cutoff lie in `[0,1]`; emissive factor is nonnegative. Schema 1 has no authored normal-map or smooth-normal field; F4 binds the flat-normal ABI default and native normal scale `1`. |
 | Texture | `id`, positive integer `width` and `height`, `format` (`rgba8-srgb` for base/emissive or `rgba8-linear` for data), and canonical padded RFC 4648 base64 `rgba8` bytes. Exactly `4×width×height` decoded bytes are present in upper-left-origin row-major order, with no row padding or mip levels. Validate checked dimension multiplication and encoded/decoded length before allocation. |
@@ -145,15 +145,25 @@ and exactly valid triangle cannot fit the first profile's representation,
 normal, shadow or shading error envelope. F3 source validity does not promise
 that a target device can draw it.
 
-F3 validates camera and instance quaternions as finite, nonzero and within
-`1e-9` of unit length using the same fixed-order chained binary64 `hypot`
-operation as the existing constant-light direction validation, extended to
-four components in XYZW order. F4 normalizes the authored initial rotation
-once in its typed product using the versioned evaluator; W1 consumes that
-product. F4 then canonicalizes sign (`w>0`, or at `w=0`, first nonzero x/y/z
-positive) before product/runtime use. The boundary must be checked on each
-admitted host; a changed normalization implementation changes the evaluator
-revision. The first R0 instance product accepts only zero translation,
+F3 validates camera and instance quaternions from their exact decoded-f64
+dyadic components. Let `Q=x²+y²+z²+w²` and let `ε=1/10⁹` be an exact
+rational. Require `(1−ε)²≤Q≤(1+ε)²`; this also excludes zero. This rule
+does not inherit the host-dependent binary64 `hypot` threshold of the
+existing constant-light source. The source rotation is the exact proper
+rotation represented by `q/√Q`; its matrix uses the standard quadratic
+quaternion numerator divided by `Q`, so F3's bound check needs no square
+root. Quaternion sign and nonzero scalar-equivalent encodings yield the same
+source rotation. For right-handed column vectors in XYZW order, the rows of
+the numerator `N(q)` are
+`(w²+x²−y²−z², 2(xy−wz), 2(xz+wy))`,
+`(2(xy+wz), w²−x²+y²−z², 2(yz−wx))` and
+`(2(xz−wy), 2(yz+wx), w²−x²−y²+z²)`; `R=N/Q`.
+F4 normalizes the authored initial quaternion once with a
+versioned finite-precision evaluator, canonicalizes sign (`w>0`, or at
+`w=0`, first nonzero x/y/z positive) and supplies the W1 initial pose.
+The F4 representation certificate must bound its deviation from the exact
+source rotation; an evaluator change revises the product key. The first R0
+instance product accepts only zero translation,
 unit scale, and a normalized quaternion with exactly zero x/y/z and positive
 w; an authored negative zero is equivalent to zero. It does not substitute
 an approximate identity transform. Static zero scale may remain valid
@@ -170,10 +180,37 @@ camera/light/instance positions and transformed bounds; each mesh vertex's
 local radius measured from its local origin has exact decoded-f64 squared
 norm at most `10^6` m². A rounded binary64 `hypot` may accept a point just
 outside that bound; use a certified fast comparison with exact fallback.
-These are
-existing source-profile bounds,
-not new R0 fixture constraints. A valid source can still be unrepresentable
-in the first R0 device profile.
+For this schema, form each mesh's tight closed local axis-aligned admission
+box from componentwise extrema of **all** decoded positions, including
+unreferenced vertices. An empty mesh has empty `uv0` and `triangles` and uses
+the local origin point as its admission box. An instance's transformed
+admission bound is the entire affine image
+`{t + R(q) diag(scale) p : p∈local box}`. Every coordinate of that bound
+must remain in the closed `[-10^6,10^6]` m world interval; equality admits.
+This is a conservative **box** source rule: a rotated empty corner may be
+outside the world extent even when every actual transformed mesh vertex is
+inside. It is not a claim that the rejected vertex geometry crossed the
+boundary. For example, local vertices `(1000,0,0)`, `(0,1000,0)` and
+`(-1000,0,0)`, an approximate Z rotation encoded by
+`q=(0,0,0.6,0.8)` and `t_y=999000` place actual vertices below the upper
+world bound, while the local-box corner `(1000,1000,0)` transforms above it.
+The authored box rule rejects that instance deliberately.
+
+F3 retains six f64 extrema per mesh while checking instances; for each
+world axis, the signs of the exact `R_ij·scale_j` coefficients select the
+local extrema for its lower and upper support. Compare the resulting exact
+rational bounds against ±`10^6` using a certified fast interval and exact
+fallback. An independent eight-corner rational oracle must agree, including
+at equality, one decoded step across the boundary, negative/zero scale and
+quaternion sign changes. This is `O(mesh vertices + instances)` for source
+structure before the bounded exact-arithmetic cost, rather than rescanning
+every vertex per instance. The triangle predicate's 36-limb width cannot be
+reused without a separate bound proof: quaternion products, unrestricted
+finite scales and subnormals have a wider exponent span. Measure worst-case
+all-fallback instances and combined F3 memory before activation. These are
+existing Foundation-envelope constraints with a schema-local bound shape,
+not new R0 fixture limits. A valid source can still be unrepresentable in
+the first R0 device profile.
 
 The exact-dyadic triangle rule needs a bounded adaptive implementation: a
 proved fast filter may accept clear cases, with a fixed-width/exact fallback
@@ -218,7 +255,11 @@ old/new pins, before selecting the host profile.
    dangling edges, duplicate keys and invalid base64/size arithmetic.
 2. Use independent exact-dyadic and f64 decoding oracles for ordinary,
    near-degenerate and all-fallback triangles; test both windings and extrema
-   of the v1 world envelope. Record admission latency and peak resident bytes.
+   of the v1 world envelope. Check exact quaternion norm and transformed
+   local-box support against an independent eight-corner rational oracle,
+   including conservative empty-corner rejection, all-fallback work and
+   shared-mesh many-instance cost. Record admission latency and peak resident
+   bytes.
 3. Cook all products from the same accepted pin; verify reopened product bytes
    and exact build binding. Hold A while editing/admitting B and prove no
    mixed source/product revision. Formatting-only B may reuse semantic bytes.

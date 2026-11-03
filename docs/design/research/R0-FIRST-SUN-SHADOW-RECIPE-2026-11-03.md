@@ -4,8 +4,10 @@
 [first R0 source](R0-FIRST-ADMITTED-RENDER-SOURCE-2026-11-03.md) and
 [product ABI](R0-FIRST-PRODUCT-ABI-2026-11-03.md), not an admitted fixture,
 selected complete F2 recipe or ready shader. It spells out one static
-six-triangle shadow proof. The complete source bytes, constant bias, grazing
-cutoff, target error and contact-quality limits remain to be pinned. Wider
+six-triangle shadow proof. A [reproducible candidate authored
+fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md) now saves
+the complete source bytes, without F3 admission or F4 binding. Constant bias,
+grazing cutoff, target error and contact-quality limits remain to be pinned. Wider
 scenes need a separately measured shadow profile; a single fixed 2048² map
 is not a general directional-light solution.
 
@@ -157,8 +159,9 @@ probe](../../evidence/render/R0-FIRST-SHADOW-NUMERIC-PROBE-2026-11-03.md)
 tests 13,544 source/packed projections over eight origins and an independent
 four-tap scalar oracle. The largest sampled packed depth difference is
 57.37 µm over the 6 m light span. The visibility oracle catches camera-culling
-and comparison-sign mutations; a separate geometric interval check catches
-the wrong Sun sign. These finite samples are neither a
+and comparison-sign mutations; separate ray checks refuse a fully reversed
+Sun ray with no forward receiver hit and move a horizontal-sign mutant's
+shadow outside the receiver. These finite samples are neither a
 worst-case f32/GPU raster bound nor an approved `b0_m` or retained-map
 certificate; target depth and contact quality remain proof gates above.
 
