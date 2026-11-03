@@ -1193,6 +1193,7 @@ impl SqliteStoreCore {
             limits,
             after_initial_lookup,
             |_| {},
+            |_| {},
         )
     }
 
@@ -1206,6 +1207,7 @@ impl SqliteStoreCore {
         limits: Limits,
         after_initial_lookup: impl FnOnce(),
         after_preflight: impl FnOnce(&mut Self),
+        after_verified_stage: impl FnOnce(&mut Self),
     ) -> Result<(i64, [u8; 32]), StoreError> {
         let manifest = candidate
             .provisional_manifest()
@@ -1230,6 +1232,7 @@ impl SqliteStoreCore {
             if stored_revision != revision {
                 return Err(StoreError::HashMismatch);
             }
+            after_verified_stage(self);
             let generation = self.commit_manifest_probe(
                 expected_generation,
                 epoch,
@@ -2275,6 +2278,7 @@ impl NativeSourceStore {
             self.plan.into(),
             || {},
             |_| {},
+            |_| {},
         )?;
         Ok(AcceptedSourceRoot {
             generation,
@@ -3214,6 +3218,111 @@ fn native_owner_lock_refuses_other_process_and_reopens_after_kill() {
     });
     let reopened = NativeSourceStore::open(&database, SourceSpacePlan::DEFAULT).unwrap();
     assert_eq!(reopened.current_root().unwrap(), None);
+}
+
+#[test]
+fn accepted_kill_after_verified_stage_child() {
+    let Some(directory) = std::env::var_os("THRUM_TEST_ACCEPTED_STAGE_KILL_DIR") else {
+        return;
+    };
+    let marker = PathBuf::from(std::env::var_os("THRUM_TEST_ACCEPTED_STAGE_KILL_MARKER").unwrap());
+    let fixture = Fixture(PathBuf::from(directory));
+    let database = fixture.database();
+    let stage = minimal_source_stage(&fixture, "after verified stage");
+    // The parent owns this shared fixture directory and inspects it after the kill.
+    std::mem::forget(fixture);
+    let candidate = validate_staged_candidate(&stage, &[]).unwrap();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    store
+        .owner
+        .lock()
+        .unwrap()
+        .admit_staged_candidate_probe_with_limits(
+            1,
+            1,
+            2,
+            [2; 32],
+            &candidate,
+            plan.into(),
+            || {},
+            |_| {},
+            |_| signal_and_wait_for_kill(&marker),
+        )
+        .unwrap();
+}
+
+#[test]
+fn accepted_kill_after_verified_stage_retains_a_and_retries_b() {
+    let fixture = Fixture::new();
+    let database = fixture.database();
+    let plan = SourceSpacePlan {
+        free_headroom_bytes: 0,
+        ..SourceSpacePlan::DEFAULT
+    };
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    let stage_a = minimal_source_stage(&fixture, "before verified stage kill");
+    let candidate_a = validate_staged_candidate(&stage_a, &[]).unwrap();
+    let a = store.admit(0, 1, 1, [1; 32], &candidate_a).unwrap();
+    let scene = SourcePath::parse("scenes/main.scene.json").unwrap();
+    let old_scene = fs::read(fixture.source_root().join(scene.as_str())).unwrap();
+    drop(store);
+
+    let marker = fixture.0.join("accepted-stage.ready");
+    let child = Command::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("sqlite_store::accepted_kill_after_verified_stage_child")
+        .arg("--nocapture")
+        .env("THRUM_TEST_ACCEPTED_STAGE_KILL_DIR", &fixture.0)
+        .env("THRUM_TEST_ACCEPTED_STAGE_KILL_MARKER", &marker)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    kill_after_marker(child, &marker, || {
+        assert_eq!(
+            NativeSourceStore::open(&database, plan)
+                .err()
+                .unwrap()
+                .kind(),
+            SourceStoreErrorKind::Busy
+        );
+    });
+
+    let store = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(store.current_root().unwrap(), Some(a));
+    assert_eq!(store.outcome(1, 2, [2; 32]).unwrap(), None);
+    let mut old_pin = store.pin_current(a.generation).unwrap();
+    let stage_b = minimal_source_stage(&fixture, "after verified stage");
+    let candidate_b = validate_staged_candidate(&stage_b, &[]).unwrap();
+    let b_revision = candidate_b.provisional_manifest().unwrap().revision();
+    let retained_complete: i64 = store
+        .owner
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT state FROM blob_header WHERE hash=?1",
+            params![b_revision.as_bytes().as_slice()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(retained_complete, 1);
+    let b = store
+        .admit(a.generation, 1, 2, [2; 32], &candidate_b)
+        .unwrap();
+    assert_eq!(b.generation, a.generation + 1);
+    let mut copied = Vec::new();
+    old_pin.copy_file_to(&scene, &mut copied).unwrap();
+    assert_eq!(copied, old_scene);
+    old_pin.close().unwrap();
+    drop(store);
+    let reopened = NativeSourceStore::open(&database, plan).unwrap();
+    assert_eq!(reopened.current_root().unwrap(), Some(b));
+    assert_eq!(reopened.outcome(1, 2, [2; 32]).unwrap(), Some(b));
 }
 
 #[cfg(unix)]
@@ -5301,6 +5410,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             },
             || {},
             |_| {},
+            |_| {},
         ),
         Err(StoreError::Budget(BudgetError::MainLimit))
     ));
@@ -5313,6 +5423,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
             &candidate,
             Limits { wal: 1, ..limits },
             || {},
+            |_| {},
             |_| {},
         ),
         Err(StoreError::Budget(BudgetError::WalLimit))
@@ -5330,6 +5441,7 @@ fn candidate_space_preflight_refuses_before_blob_write_and_counts_reuse_once() {
                 ..limits
             },
             || {},
+            |_| {},
             |_| {},
         ),
         Err(StoreError::Budget(BudgetError::FreeSpace))
@@ -5492,6 +5604,7 @@ fn active_candidate_free_floor_refuses_before_blob_header_write() {
             |store| {
                 store.active_free_floor = Some(1 << 60);
             },
+            |_| {},
         ),
         Err(StoreError::Budget(BudgetError::FreeSpace))
     ));
