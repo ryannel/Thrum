@@ -38,6 +38,12 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-sou
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
 
+[external_dependencies.base64]
+requirement = "=0.23.1"
+license = "MIT OR Apache-2.0"
+purpose = "Canonical RFC 4648 render texture source validation and fixed-slice decode without an F3 texel Vec"
+target_cost = "Native thrum-source only; scalar no-default-features profile avoids dependency SIMD unsafe code while fixed-chunk throughput, F4 replay cost and accelerated alternative remain to measure"
+
 [external_dependencies.hashbrown]
 requirement = "=0.17.1"
 license = "MIT OR Apache-2.0"
