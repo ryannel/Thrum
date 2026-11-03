@@ -673,6 +673,15 @@
         "evidence": "../evidence/i2a/F4-PINNED-MATERIALIZATION.md",
         "scope": "F4 streams the complete accepted first-profile manifest into a new owned absolute temporary native build directory using verified pinned reads, retaining source identity/count/copied bytes. A configurable per-tree scratch preflight checks granularity-rounded file/directory estimates and observed free headroom without promising a physical cap. A production-store test proves dirty-checkout isolation, exact small-scene output, generated-store exclusion, explicit cleanup, refusal of relative/existing destinations and space refusal before writing. Three local release probes time only three-file materialization. Compiler/toolchain execution, output bytes after independent filesystem rehash, untrusted build-script isolation, target-ready BuildRevision, product publication and large-tree cost remain unqualified."
       },
+      "i2a_external_compiler_output_fixture": {
+        "design": "research/T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md",
+        "evidence": "../evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md",
+        "implementation": "opt_in_macos_ab_fixture_only",
+        "functional_validation": "full repository check, a sandboxed pinned A success/invalid B build with external same-volume compiler output and TMPDIR, an exact-code interrupted guard-loss result with one pending receipt and no retained candidate, and independent review passed",
+        "experienced_quality": "not_applicable_to_headless_compiler_fixture",
+        "platform_performance": "one exact integrated local macOS ARM64 A/B process took 28.993 seconds including fixture preparation and checks, plus 10.741 seconds for post-build four-root inventory; the earlier guard-loss process took 25.566 seconds plus 10.949 seconds for post-build inventory; no paired placement cost, warm edit-to-ready, CPU/RSS, physical high-water or device result",
+        "scope": "An opt-in held-root fixture checks a same-owner mode-0700 output root on the admitted project's filesystem but outside its complete tree, refuses occupied A/B names, confines TMPDIR to sandbox-write-granted OUTPUT, denies writes to sibling and input paths, deletes A's original compiler output after retaining the unready A candidate, and keeps B failure from replacing A. The guard-loss check names the actual candidate path independently of output placement. This does not register a durable T2 job, compose claims with F3/F4, handle compiler-output ENOSPC or overruns, close all compiler reads, or publish a ready BuildRevision."
+      },
       "i2a_headless_build_declaration": {
         "design": "F4-FIRST-HEADLESS-BUILD.md",
         "evidence": "../evidence/i2a/F4-BUILD-DECLARATION.md",

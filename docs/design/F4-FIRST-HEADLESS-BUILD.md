@@ -61,6 +61,12 @@ and closure checks succeed. A failed compile, missing input, corrupt output,
 stale source selection or interrupted publication leaves the prior ready build
 identifiable and the newly accepted source separately available.
 
+The first macOS fixture can place compiler output in a private same-volume
+root outside the admitted project, with `TMPDIR` nested under the one
+write-granted output child. Its [A/B and guard-loss proof](../evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md)
+checks the real sandbox and retained A, but the fixture's external directory
+is not yet a durably registered T2 job or a composed space claim.
+
 The [prepared native environment design](T2-PREPARED-NATIVE-ENVIRONMENT.md)
 owns the first macOS compiler selection, generated sandbox and invocation
 binding. Its current metadata-isolation fixture is a candidate only: the

@@ -111,6 +111,12 @@ reason in a typed receipt.
    requires every temporary F4 materialization destination, compiler output
    and TMPDIR to be under a registered private T2 job root outside the
    **entire source project tree**, on the same verified filesystem domain.
+   For the first macOS compiler sandbox, put `TMPDIR` beneath that job's
+   compiler `OUTPUT` child: the write grant covers only `OUTPUT`, not the
+   whole job root or adjacent registrations. The [external-output A/B
+   fixture](../../evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md)
+   exercises this placement and its unready guard-loss path, without a T2
+   account or durable registration.
    This prevents F3's declared-tree inventory and managed-temporary scanner
    from seeing a partial F4 copy, and removes F4 retirement from F3's scan
    lock order. Register the input subdirectory before copy; hold its F4
