@@ -98,6 +98,8 @@ pub struct Input<A> {
 pub enum AdmissionError {
     /// The authority suffered a terminal game-contract fault.
     Faulted,
+    /// A result acknowledgement names a different authority incarnation.
+    WrongAuthority,
     /// Peer was not registered.
     UnknownPeer,
     /// Reconnected peer sent an old connection epoch.
@@ -2126,6 +2128,32 @@ impl<G: GameRules> Authority<G> {
         peer.completed
             .retain(|completed| completed.result.origin.sequence > through);
         Ok(())
+    }
+    /// Retire a network peer's contiguous result history only for its
+    /// current match authority and connection incarnation. The checks and
+    /// underlying ACK run under one mutable authority borrow, so a reconnect
+    /// cannot slip between them. A refusal changes no result history.
+    pub fn acknowledge_results_for_incarnation(
+        &mut self,
+        authority_id: AuthorityId,
+        peer_id: PeerId,
+        connection_epoch: u64,
+        through: u64,
+    ) -> Result<(), AdmissionError> {
+        if self.faulted {
+            return Err(AdmissionError::Faulted);
+        }
+        if self.id != authority_id {
+            return Err(AdmissionError::WrongAuthority);
+        }
+        let peer = self
+            .peers
+            .get(&peer_id)
+            .ok_or(AdmissionError::UnknownPeer)?;
+        if peer.epoch != connection_epoch {
+            return Err(AdmissionError::StaleEpoch);
+        }
+        self.acknowledge_results(peer_id, through)
     }
     /// Prototype baseline at the current committed tick. Use
     /// `try_baseline_charged` for a protected sealed authority.

@@ -10,7 +10,8 @@ allowed_workspace_dependencies = ["thrum-core"]
 
 [packages.thrum-network]
 manifest = "crates/thrum-network/Cargo.toml"
-allowed_workspace_dependencies = []
+# Test-only real W1 host integration; the production N1 codec remains independent.
+allowed_workspace_dependencies = ["thrum-core"]
 
 [packages.thrum-source]
 manifest = "crates/thrum-source/Cargo.toml"

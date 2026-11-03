@@ -10,7 +10,7 @@ use std::{
 };
 
 use crate::{
-    Admission, AdmissionError, AdmittedGroup, Authority, ChargedAdmittedGroup,
+    Admission, AdmissionError, AdmittedGroup, Authority, AuthorityId, ChargedAdmittedGroup,
     ChargedBaselineError, ChargedReplicaSetupError, ClockConfig, ClockError, ClockReport,
     ClockState, ClosedPublicationValue, ExecutionCreditSetupError, GameRules, Input, PeerId,
     PublicationCharge, PublicationPool, Replica, ReplicaError, Snapshot, StepError, TickClock,
@@ -926,6 +926,25 @@ impl<G: GameRules> HeadlessHost<G> {
         }
         self.authority
             .acknowledge_results(peer, through)
+            .map_err(HostError::Acknowledgement)
+    }
+
+    /// Admit an N1 result receipt only while the named match, peer and
+    /// connection epoch still identify this host's current authority owner.
+    /// This is the callback for a validated application ACK; it does not
+    /// authenticate that ACK or inspect its sent-frame ledger.
+    pub fn acknowledge_results_for_incarnation(
+        &mut self,
+        authority_id: AuthorityId,
+        peer: PeerId,
+        connection_epoch: u64,
+        through: u64,
+    ) -> Result<(), HostError> {
+        if self.faulted || self.authority.is_faulted() {
+            return Err(HostError::Faulted);
+        }
+        self.authority
+            .acknowledge_results_for_incarnation(authority_id, peer, connection_epoch, through)
             .map_err(HostError::Acknowledgement)
     }
 
