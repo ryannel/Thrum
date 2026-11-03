@@ -171,6 +171,15 @@
         "experienced_quality": "not_applicable_to_headless_membership",
         "platform_performance": "one optional usize per host and count/existing-ID checks only during registration; no isolated CPU, allocator, RSS or network measurement",
         "scope": "Counts distinct registered controlled PeerIds for one host lifetime; no retirement or replicated reconnect. N1 sockets, spectators, projection and queue bytes, remote ACK ownership and slow-peer snapshot isolation remain open."
+      },
+      "i1_slow_peer_projection_probe": {
+        "design": "I1-HEADLESS.md",
+        "evidence": "../evidence/i1-headless/SLOW-PEER-PROJECTION-PROBE.md",
+        "implementation": "private selected-inline typed projection and bounded outbox fixture only; no production N1 API",
+        "functional_validation": "thirteen changed authority ticks with twelve retained slow-peer groups and no W1 snapshot exhaustion; fast replica admission and ACK, delayed admission of all twelve peer-filtered groups to a slow replica, result gap, immediate event, spawn/despawn, state-only overflow refusal, 251 ms age refusal and three-tick callback pass in one focused local test",
+        "experienced_quality": "not_applicable_to_headless_probe",
+        "platform_performance": "analytical vector-capacity/entry bound only; CPU tails, allocations, RSS, four-peer aggregate and transport buffers not measured",
+        "scope": "Selected inline Counter/u64/() values cannot hide W1 owners. Generic game payloads, reliable mandatory overflow, replacement baseline, remote ACK, wire schemas and real transport remain open."
       }
     },
     {
@@ -3363,7 +3372,7 @@
   "i1_headless": {
     "as_of": "2026-11-02",
     "design": "I1-HEADLESS.md",
-    "design_sha256": "406d1d96c3ba614a57383fdfa9166fd96b83df4d32d6ac2e3f6c67059809e014",
+    "design_sha256": "24584c62c40c7aee729e04e4aa4be55df69d5b14e8d63d1b31f7a2c876ea4b3c",
     "evidence": "../evidence/i1-headless/QUALIFICATION.md",
     "implementation": "partial",
     "functional_validation": "partial",
