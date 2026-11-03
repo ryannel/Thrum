@@ -31,9 +31,6 @@ mod render_bound;
 // Exact source geometry is compiled privately ahead of the same decoder.
 #[allow(dead_code)]
 mod render_geometry_exact;
-// Shared no-tree render shape pass is compiled ahead of the strict decoder.
-#[allow(dead_code)]
-mod render_prewalk;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;
