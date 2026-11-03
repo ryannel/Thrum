@@ -196,6 +196,11 @@ This is a **candidate layout**, not a selected runtime or a measured cost:
   leaves visibility retains its partition assignment until atomic baseline
   replacement. The [composite replica oracle](../../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md)
   proves this semantic need using clone-backed trees; it is not this layout.
+  The [isolated four-peer lookup probe](../../evidence/integration/N1-MEMBERSHIP-LOOKUP-2026-11-03.md)
+  found sorted merge faster at 32/128 changed IDs and binary lookup faster
+  at eight IDs; one middle-ID binary/hash lookup is similar. It does not price
+  sorting, assignment maintenance or the whole callback, so the production
+  sparse/dense dispatch and storage choice remain open.
 - On final submission, reserve the exact framed bytes and ACK metadata in
   the 256 KiB/128-entry sent ledger **before** assigning the envelope
   sequence or freeing the unsent slot. Ordinary entries use the 160 KiB/112
