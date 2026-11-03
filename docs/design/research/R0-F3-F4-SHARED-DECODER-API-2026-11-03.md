@@ -62,9 +62,11 @@ grammar and per-object numeric rules. `RenderEvent<'_>` has closed typed
 variants for root/embedded identities, **edge declarations** and locally
 checked camera/mesh/instance/material/texture/local-light objects. It does
 not resolve an edge. UUIDs are canonical binary octets and numbers are finite
-decoded f64 values. Mesh position/UV/triangle slices and decoded texture bytes
-borrow one object-scoped scratch lifetime; a projection copies any data it
-retains. `PreparedRender` temporarily owns root ID, descriptor, counts,
+decoded f64 values. Mesh position/UV/triangle slices borrow one object-scoped
+scratch lifetime. Texture bytes instead pass through bounded borrowed decoded
+chunks: F3 validates/discards them and F4 copies them to a provisional product
+sink after verified-pin replay, as selected in the [texture stream design](R0-F3-TEXTURE-STREAM-DECODER-2026-11-03.md).
+A projection copies any data it retains. `PreparedRender` temporarily owns root ID, descriptor, counts,
 compact mesh extrema, texture formats, deferred instance TRS/mesh facts and
 canonical locators, without a full geometry/texel body. F3's operation sinks
 retain IDs and edges across all declared records for the global pass. A
