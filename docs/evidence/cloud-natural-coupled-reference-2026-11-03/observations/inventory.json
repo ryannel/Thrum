@@ -1,0 +1,491 @@
+{
+  "sourceBuild": "7bf67682189662e2",
+  "sourcePinsSHA256": "12777301a56a54c3bcc0cf29b23b7a33eb3e3cfad186dc908d04b0b22f4715cf",
+  "motion": [
+    {
+      "receipt": "captures/system-dry-1x-90s-7bf67682189662e2-f1249129-13.json",
+      "file": "system-dry-1x-90s-7bf67682189662e2-f1249129-13.webm",
+      "bytes": 1891328,
+      "sourceWindow": [
+        500,
+        590.00263499975
+      ],
+      "kind": "dry",
+      "policy": "observed",
+      "forcingRecipe": "programme",
+      "focusMode": "fixed",
+      "actualRecorderWallMs": 90008.11000013351,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "execution": {
+        "classification": "visual-reference",
+        "label": "VISUAL REFERENCE \u00b7 COST GATE FAIL",
+        "sourcePinsSHA256": "12777301a56a54c3bcc0cf29b23b7a33eb3e3cfad186dc908d04b0b22f4715cf",
+        "rootAuthorizedVisualReference": true,
+        "productionApproved": false,
+        "costGatePass": false,
+        "originalGatePass": false,
+        "coupledDryGatePass": false,
+        "independentReviewClosed": true,
+        "failureReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298420,
+            "sha256": "65fff59a92f4bd858b09fc55760c0c9dee7e87d3ecc27cd3a2fd1995c48100cd"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97347,
+            "sha256": "27ccaf7381d086ab497cef03935569d4f4c103c64aeaed418d58bb27f094a47b"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 4158,
+            "sha256": "e1dc2f95543526bbb2da3f308204ade4b829e2a43ebcb82758ff678dd9f59821"
+          }
+        },
+        "reason": "Root authorizes anatomy/coupled visual inspection before further optimization; original single dry4.203417ms and supplementary two dry7.425500ms exceed unchanged4ms gate. Correctness/review pass; no runtime adoption.",
+        "scope": "Authorization class, not measured GPU/art/full-system acceptance"
+      }
+    },
+    {
+      "receipt": "captures/system-dry-1x-90s-7bf67682189662e2-f1249129-16.json",
+      "file": "system-dry-1x-90s-7bf67682189662e2-f1249129-16.webm",
+      "bytes": 2862837,
+      "sourceWindow": [
+        500,
+        590
+      ],
+      "kind": "dry",
+      "policy": "observed",
+      "forcingRecipe": "programme",
+      "focusMode": "fixed",
+      "actualRecorderWallMs": 90010.98500013351,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "execution": {
+        "classification": "visual-reference",
+        "label": "VISUAL REFERENCE \u00b7 COST GATE FAIL",
+        "sourcePinsSHA256": "12777301a56a54c3bcc0cf29b23b7a33eb3e3cfad186dc908d04b0b22f4715cf",
+        "rootAuthorizedVisualReference": true,
+        "productionApproved": false,
+        "costGatePass": false,
+        "originalGatePass": false,
+        "coupledDryGatePass": false,
+        "independentReviewClosed": true,
+        "failureReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298420,
+            "sha256": "65fff59a92f4bd858b09fc55760c0c9dee7e87d3ecc27cd3a2fd1995c48100cd"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97347,
+            "sha256": "27ccaf7381d086ab497cef03935569d4f4c103c64aeaed418d58bb27f094a47b"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 4158,
+            "sha256": "e1dc2f95543526bbb2da3f308204ade4b829e2a43ebcb82758ff678dd9f59821"
+          }
+        },
+        "reason": "Root authorizes anatomy/coupled visual inspection before further optimization; original single dry4.203417ms and supplementary two dry7.425500ms exceed unchanged4ms gate. Correctness/review pass; no runtime adoption.",
+        "scope": "Authorization class, not measured GPU/art/full-system acceptance"
+      }
+    },
+    {
+      "receipt": "captures/system-full-16x-75s-7bf67682189662e2-f1249129-10.json",
+      "file": "system-full-16x-75s-7bf67682189662e2-f1249129-10.webm",
+      "bytes": 3820629,
+      "sourceWindow": [
+        0,
+        1200
+      ],
+      "kind": "full",
+      "policy": "observed",
+      "forcingRecipe": "wet-held",
+      "focusMode": "region",
+      "actualRecorderWallMs": 75009.98500013351,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "execution": {
+        "classification": "visual-reference",
+        "label": "VISUAL REFERENCE \u00b7 COST GATE FAIL",
+        "sourcePinsSHA256": "12777301a56a54c3bcc0cf29b23b7a33eb3e3cfad186dc908d04b0b22f4715cf",
+        "rootAuthorizedVisualReference": true,
+        "productionApproved": false,
+        "costGatePass": false,
+        "originalGatePass": false,
+        "coupledDryGatePass": false,
+        "independentReviewClosed": true,
+        "failureReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298420,
+            "sha256": "65fff59a92f4bd858b09fc55760c0c9dee7e87d3ecc27cd3a2fd1995c48100cd"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97347,
+            "sha256": "27ccaf7381d086ab497cef03935569d4f4c103c64aeaed418d58bb27f094a47b"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 4158,
+            "sha256": "e1dc2f95543526bbb2da3f308204ade4b829e2a43ebcb82758ff678dd9f59821"
+          }
+        },
+        "reason": "Root authorizes anatomy/coupled visual inspection before further optimization; original single dry4.203417ms and supplementary two dry7.425500ms exceed unchanged4ms gate. Correctness/review pass; no runtime adoption.",
+        "scope": "Authorization class, not measured GPU/art/full-system acceptance"
+      }
+    },
+    {
+      "receipt": "captures/system-renewal-1x-110s-7bf67682189662e2-f1249129-7.json",
+      "file": "system-renewal-1x-110s-7bf67682189662e2-f1249129-7.webm",
+      "bytes": 5186209,
+      "sourceWindow": [
+        320,
+        430
+      ],
+      "kind": "renewal",
+      "policy": "observed",
+      "forcingRecipe": "wet-held",
+      "focusMode": "fixed",
+      "actualRecorderWallMs": 110007.05500030518,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "execution": {
+        "classification": "visual-reference",
+        "label": "VISUAL REFERENCE \u00b7 COST GATE FAIL",
+        "sourcePinsSHA256": "12777301a56a54c3bcc0cf29b23b7a33eb3e3cfad186dc908d04b0b22f4715cf",
+        "rootAuthorizedVisualReference": true,
+        "productionApproved": false,
+        "costGatePass": false,
+        "originalGatePass": false,
+        "coupledDryGatePass": false,
+        "independentReviewClosed": true,
+        "failureReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298420,
+            "sha256": "65fff59a92f4bd858b09fc55760c0c9dee7e87d3ecc27cd3a2fd1995c48100cd"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97347,
+            "sha256": "27ccaf7381d086ab497cef03935569d4f4c103c64aeaed418d58bb27f094a47b"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 4158,
+            "sha256": "e1dc2f95543526bbb2da3f308204ade4b829e2a43ebcb82758ff678dd9f59821"
+          }
+        },
+        "reason": "Root authorizes anatomy/coupled visual inspection before further optimization; original single dry4.203417ms and supplementary two dry7.425500ms exceed unchanged4ms gate. Correctness/review pass; no runtime adoption.",
+        "scope": "Authorization class, not measured GPU/art/full-system acceptance"
+      }
+    }
+  ],
+  "probes": [
+    {
+      "receipt": "captures/system-probe-t100000-7bf67682189662e2-f1249129-2.json",
+      "sourceTime": 100,
+      "pass": true,
+      "positive": 232,
+      "points": 1072,
+      "scope": "Finite actual GPU/CPU query agreement; positive0 is no positive-cloud proof",
+      "maxAbsQ": 0.00015057314236852082,
+      "maxAbsRaw": 0.00015057314236852082,
+      "maxAbsSigma": 2.8609213699693978e-06,
+      "invalid": 0,
+      "cachedLightAccuracyQualified": false
+    },
+    {
+      "receipt": "captures/system-probe-t1200042-7bf67682189662e2-f1249129-12.json",
+      "sourceTime": 1200.0422400054965,
+      "pass": true,
+      "positive": 178,
+      "points": 1120,
+      "scope": "Finite actual GPU/CPU query agreement; positive0 is no positive-cloud proof",
+      "maxAbsQ": 0.0001320887196922249,
+      "maxAbsRaw": 0.00018419969779692735,
+      "maxAbsSigma": 2.5098607627964745e-06,
+      "invalid": 0,
+      "cachedLightAccuracyQualified": false
+    },
+    {
+      "receipt": "captures/system-probe-t430003-7bf67682189662e2-f1249129-9.json",
+      "sourceTime": 430.00328499983766,
+      "pass": true,
+      "positive": 88,
+      "points": 1104,
+      "scope": "Finite actual GPU/CPU query agreement; positive0 is no positive-cloud proof",
+      "maxAbsQ": 0.00020396919149594933,
+      "maxAbsRaw": 0.00028194975277877343,
+      "maxAbsSigma": 3.875454685293728e-06,
+      "invalid": 0,
+      "cachedLightAccuracyQualified": false
+    },
+    {
+      "receipt": "captures/system-probe-t590003-7bf67682189662e2-f1249129-15.json",
+      "sourceTime": 590.00263499975,
+      "pass": true,
+      "positive": 36,
+      "points": 1064,
+      "scope": "Finite actual GPU/CPU query agreement; positive0 is no positive-cloud proof",
+      "maxAbsQ": 0.00011210672943245958,
+      "maxAbsRaw": 0.00018992482701429836,
+      "maxAbsSigma": 2.130030653184345e-06,
+      "invalid": 0,
+      "cachedLightAccuracyQualified": false
+    },
+    {
+      "receipt": "captures/system-probe-t590004-7bf67682189662e2-f1249129-18.json",
+      "sourceTime": 590.0042850003239,
+      "pass": true,
+      "positive": 0,
+      "points": 1064,
+      "scope": "Finite actual GPU/CPU query agreement; positive0 is no positive-cloud proof",
+      "maxAbsQ": 0.0001126474088155166,
+      "maxAbsRaw": 0.00011558265584390992,
+      "maxAbsSigma": 0,
+      "invalid": 0,
+      "cachedLightAccuracyQualified": false
+    }
+  ],
+  "archivedFiles": [
+    {
+      "archiveMember": "captures/system-FAILED-870e2f2cfb477954-68dc87d5-1.json",
+      "bytes": 9215,
+      "sha256": "cc96884229f831236cb17b272fc3b6ebe805b0072aaa0ac5fefdd7a3f4d63a34",
+      "build": "870e2f2cfb477954",
+      "kind": "failure"
+    },
+    {
+      "archiveMember": "captures/system-dry-1x-90s-7bf67682189662e2-f1249129-13.json",
+      "bytes": 3251280,
+      "sha256": "76b8e07633e7bfe43cf835544e593884af16dfdfcdbd19e58cfaf86048ca3cc2",
+      "build": "7bf67682189662e2",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-dry-1x-90s-7bf67682189662e2-f1249129-16.json",
+      "bytes": 3290404,
+      "sha256": "5547855513a2be44ff550a19072df241115de49fb31aa84d5ed9350865429ea2",
+      "build": "7bf67682189662e2",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-full-16x-75s-7bf67682189662e2-f1249129-10.json",
+      "bytes": 3107459,
+      "sha256": "23037268b65fd9f9412d9b377ab21b69c1a5a65e7ae900b57ab78e3128e339e0",
+      "build": "7bf67682189662e2",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-probe-t100000-7bf67682189662e2-f1249129-2.json",
+      "bytes": 62214,
+      "sha256": "4b21fd234678c2d45b311eb313d0848ea68f9b1c18e176949fda3296622f8556",
+      "build": "7bf67682189662e2",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t1200042-7bf67682189662e2-f1249129-12.json",
+      "bytes": 201236,
+      "sha256": "29427ffc0b8f379c770bcce08518f69b4efc313e0201f045f59503c4bcbaa138",
+      "build": "7bf67682189662e2",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t430003-7bf67682189662e2-f1249129-9.json",
+      "bytes": 190310,
+      "sha256": "c044c506cf595a86e3e1b5abc2f77aa99d2d4b6c9c18b1fca6a0f8528869ec4c",
+      "build": "7bf67682189662e2",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t590003-7bf67682189662e2-f1249129-15.json",
+      "bytes": 163082,
+      "sha256": "2ac16bcdaed9267015ea87e65fee4d5a448d86174b4afa54d6c1389917e78d21",
+      "build": "7bf67682189662e2",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t590004-7bf67682189662e2-f1249129-18.json",
+      "bytes": 161861,
+      "sha256": "6ed6ed8349d81fcdf6f64b851f610fb58c07c06a89cceef53b074132a9362dea",
+      "build": "7bf67682189662e2",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-renewal-1x-110s-7bf67682189662e2-f1249129-7.json",
+      "bytes": 1959379,
+      "sha256": "8044ee755de1289f248add1ba54fb45126277ce6e8711f023d4bfd42eab6e12c",
+      "build": "7bf67682189662e2",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-7bf67682189662e2-f1249129-1.json",
+      "bytes": 56947,
+      "sha256": "26c89d8a4f56db16ecca52c0f08f1d72253a8a6c315b938020835528e7be814c",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-7bf67682189662e2-f1249129-1.png",
+      "bytes": 355789,
+      "sha256": "05961b1e7126d51df2d1347767b513d2c0c50a80617ff819f631d6a893c76fc3"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-7bf67682189662e2-f1249129-3.json",
+      "bytes": 66832,
+      "sha256": "827d4cc45b1a6631b2c4553b4473269dc784b4bc43586ecff0faffe2835cbae8",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-7bf67682189662e2-f1249129-3.png",
+      "bytes": 387128,
+      "sha256": "4b23165d0e3414dd34f0dc16fe0f84558bf00749766768ac1e3e3e7ea612c857"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-7bf67682189662e2-f1249129-4.json",
+      "bytes": 66832,
+      "sha256": "edd75314d32c6fec698861753e55dddb0a4fec2cb19c752afc754a855ad1a084",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-7bf67682189662e2-f1249129-4.png",
+      "bytes": 384015,
+      "sha256": "d645199a84f2113ea6339af12dd1c065462afa19ccc065162e1b4de3c354c9df"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode5-7bf67682189662e2-f1249129-5.json",
+      "bytes": 66834,
+      "sha256": "ab57fa04aa6f45c1719b219213e4b9afdc7a8d56e5c5ba86ee706a76946dfcda",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode5-7bf67682189662e2-f1249129-5.png",
+      "bytes": 152379,
+      "sha256": "77eb01df91a1eb22c0d2e50320e2120d2ebf7022b9b8737f03757dc91cd67370"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode6-7bf67682189662e2-f1249129-6.json",
+      "bytes": 67921,
+      "sha256": "1fd9fa6bd76ccf543e051f8ae2328f88bc68783c79ff3779aed8c3d71f2cc1c4",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode6-7bf67682189662e2-f1249129-6.png",
+      "bytes": 155685,
+      "sha256": "7ddd845b8f0e40c36298107ef01dd5617af131afaed8c8ccc1845b2d4b526760"
+    },
+    {
+      "archiveMember": "captures/system-t1200042-mode0-7bf67682189662e2-f1249129-11.json",
+      "bytes": 290653,
+      "sha256": "d649281e7f0c5a931bc7a5d07606ec7ad5931c3138fd32ecf226344f4a021291",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t1200042-mode0-7bf67682189662e2-f1249129-11.png",
+      "bytes": 360974,
+      "sha256": "e2d4b6d2d41a663adaff8982b42381f5fd740f353c7062d3560242cc052f0804"
+    },
+    {
+      "archiveMember": "captures/system-t430003-mode0-7bf67682189662e2-f1249129-8.json",
+      "bytes": 231660,
+      "sha256": "6f41434787561bdb85e25922e9945810a9597f6763036454602fc0ebbc1949e0",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t430003-mode0-7bf67682189662e2-f1249129-8.png",
+      "bytes": 404710,
+      "sha256": "f9426c815d48addc028da28887803505c30c07718991164caeb2036b3011a04c"
+    },
+    {
+      "archiveMember": "captures/system-t590003-mode0-7bf67682189662e2-f1249129-14.json",
+      "bytes": 249768,
+      "sha256": "b8e22e672c7725db4ec91ed1bdb800527cd0d3e9188aabd5dfbd313f82308cda",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t590003-mode0-7bf67682189662e2-f1249129-14.png",
+      "bytes": 331131,
+      "sha256": "c750b35acc507b2512ed2f2c9b91407a56dc7104ea04b6ad95a5b75477173ae4"
+    },
+    {
+      "archiveMember": "captures/system-t590004-mode0-7bf67682189662e2-f1249129-17.json",
+      "bytes": 265788,
+      "sha256": "128485a08ed4e0283ea35bbb2eac50da536eb2e9fc90d4c0863908bd2c11c48e",
+      "build": "7bf67682189662e2",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t590004-mode0-7bf67682189662e2-f1249129-17.png",
+      "bytes": 326019,
+      "sha256": "ad226c4f32ca4a354bb2de353f59586b69d79a4b8c52c4bebc19256668c54100"
+    },
+    {
+      "archiveMember": "inspection/close-dry-samples.png",
+      "bytes": 423953,
+      "sha256": "9bd16a6ce4bcd604e7d41dedfedc9a716b5280da8e52d3ed8817780c56a300d4"
+    },
+    {
+      "archiveMember": "inspection/pair-fast-samples.png",
+      "bytes": 438652,
+      "sha256": "7a56592493f493a76adcc55c90924cbe1702eef6973c592f643ef805aec0f232"
+    },
+    {
+      "archiveMember": "inspection/renewal-six-sampled.png",
+      "bytes": 499620,
+      "sha256": "9f3de54b97a8b4dc742580e768c130ee66b128e1fec820f067c4ac4c1b3d5308"
+    }
+  ],
+  "directClips": [
+    {
+      "file": "observations/system-dry-1x-90s-7bf67682189662e2-f1249129-13.webm",
+      "destination": "captures/system-dry-1x-90s-7bf67682189662e2-f1249129-13.webm",
+      "bytes": 1891328,
+      "sha256": "21173bdbbb7b19ea1e698e6b74f27ad873f7646a3a697ed5b8eecb60f3cc4e05"
+    },
+    {
+      "file": "observations/system-dry-1x-90s-7bf67682189662e2-f1249129-16.webm",
+      "destination": "captures/system-dry-1x-90s-7bf67682189662e2-f1249129-16.webm",
+      "bytes": 2862837,
+      "sha256": "2ea46e365959531096e912cae8e8cc0afb859a668353616c77e2b9538a0ce91f"
+    },
+    {
+      "file": "observations/system-full-16x-75s-7bf67682189662e2-f1249129-10.webm",
+      "destination": "captures/system-full-16x-75s-7bf67682189662e2-f1249129-10.webm",
+      "bytes": 3820629,
+      "sha256": "0932eb18faf3a6bc882c3af567a055a2439ddf5a02e19c22c786ec06e920a38f"
+    },
+    {
+      "file": "observations/system-renewal-1x-110s-7bf67682189662e2-f1249129-7.webm",
+      "destination": "captures/system-renewal-1x-110s-7bf67682189662e2-f1249129-7.webm",
+      "bytes": 5186209,
+      "sha256": "70a9a5664263f5c06347ecffcfa1f439040153fceef440efb57798795b893491"
+    }
+  ],
+  "scope": "Immutable original receipts/canvas streams; sampled contact sheets only, no continuouswatched/performance/artadmission"
+}

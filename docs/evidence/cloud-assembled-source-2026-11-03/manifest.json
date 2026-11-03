@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "scope": "Exact6bd/source91 bounded workingCu assembly; CPU screenPASSED, GPU/art/fullsystemadmissionunqualified",
+  "files": {
+    "PREFLIGHT.json": {
+      "bytes": 470,
+      "sha256": "f051dfa888eda778049ecf7946737e12087d9fea2bf018b89aa122e0e4e56324"
+    },
+    "README.md": {
+      "bytes": 10148,
+      "sha256": "2d0f5fe4fa198cca1a02c17f79a9a185e86247080a3706dc346752c668111bb6"
+    },
+    "assembled-6bd88ae9bef60733.zip": {
+      "bytes": 387424,
+      "sha256": "4ec3379e9c268e79efb0f897fcf6fa7ee82a2c97f192432965fffdf64ad7e99c"
+    },
+    "matched100-recovery.json": {
+      "bytes": 769,
+      "sha256": "6f800a42980cf6d4c8a33997eb428ab2dc995cf5cf0a7f24951ff293de322c0f"
+    },
+    "observations/inventory.json": {
+      "bytes": 78336,
+      "sha256": "79ebe3b374bc491b0f35dde0d84b2fe70d36b203202d9a0096d6a9b64feafd1b"
+    },
+    "observations/system-dry-1x-90s-6bd88ae9bef60733-699e3613-16.webm": {
+      "bytes": 1883684,
+      "sha256": "60db07fbe2290a1bd947c314ad2a1f92b70619b6b71351161e56347115436501"
+    },
+    "observations/system-full-16x-75s-6bd88ae9bef60733-699e3613-7.webm": {
+      "bytes": 3858136,
+      "sha256": "4f4b5e93dba6c61bd2cb0c675ac6343f8ed34480cbaf7c20c417f5b6a15d948c"
+    },
+    "observations/system-renewal-1x-110s-6bd88ae9bef60733-699e3613-4.webm": {
+      "bytes": 5146149,
+      "sha256": "31af35a26d0d77bac8c8984719156d3b99581013e81285cfe9ec75812383fc3f"
+    },
+    "observations.zip": {
+      "bytes": 5708616,
+      "sha256": "e79ffb496cb353eff8d8eb75e72cdc654ac145a1d190c2f627cc20c4a14bbefc"
+    },
+    "provenance/LICENSE.txt": {
+      "bytes": 6531,
+      "sha256": "64473bdcf2041c5d4f2580ffdddc15d0c20e2440bed4119d032a3ec92363a21c"
+    },
+    "provenance/README.txt": {
+      "bytes": 1545,
+      "sha256": "1a3be98b0ecbe61198b419058b132bfd2470cb6c50876bba6487b026e8f9e807"
+    },
+    "provenance/provenance.json": {
+      "bytes": 4914,
+      "sha256": "f313584bf66e003dc1c094bbcbd25f852851db35cb896b8a554190cfc1496ec7"
+    },
+    "provenance/selected-members.json": {
+      "bytes": 725,
+      "sha256": "be9e381a1068194ea2045b374fd298eefc2304e1d56385bba225132edc2d1ae7"
+    },
+    "restore-spec.json": {
+      "bytes": 46518,
+      "sha256": "f5c147b9b147673937ce6a56ef25093a1d45c7ba11382d5e2d93d55f99ed44ae"
+    },
+    "restore-verification.json": {
+      "bytes": 924,
+      "sha256": "9edd3d3a1cb65238ea7a97443e9d9b80e66bf6a1af2fa167d4131dd62701d397"
+    },
+    "restore.py": {
+      "bytes": 6783,
+      "sha256": "f3cb1a2817624b90954f1b3bcde1accae2818cddf6e90107969cadc737da1b25"
+    },
+    "review/REVIEW.md": {
+      "bytes": 7626,
+      "sha256": "85156f712bc71264768cbb29b4e046ebdc26e62c6541319b7189aac376eeb20e"
+    },
+    "verification/actual-matched100-pixels.json": {
+      "bytes": 422,
+      "sha256": "090380bf9da60cc4ccdee5c2fa610a42c2333146f903aae8313b60f40b3e72a5"
+    },
+    "verification/contracts.log": {
+      "bytes": 822,
+      "sha256": "d08db0d6c5ff036ab7f6b782d49b5820da92e3184bb27bcdb2e6a960b96b3f9f"
+    },
+    "verification/fresh-restore-results.json": {
+      "bytes": 2836,
+      "sha256": "c2bc911c2e03a05487e9725ff6c5d60d589f50392e41464a445d430ae998e538"
+    },
+    "verification/http-approved-source.json": {
+      "bytes": 3232,
+      "sha256": "4925d880554558e7d9d98ed52cb35e331d33fce9f9ab806b702ff32433fb460a"
+    },
+    "verification/matched100-recovered-pixels.json": {
+      "bytes": 257,
+      "sha256": "92b4bb1f7af3838f8e0484db0fad335d91c0751972a32c1aa5fc61b3271228fd"
+    },
+    "verification/native.log": {
+      "bytes": 2175,
+      "sha256": "347f36cc4233c1f8f33ffe97591c7e053f0298632179144084757959508d3d42"
+    },
+    "verification/render-serial.log": {
+      "bytes": 1672,
+      "sha256": "ff3bad815e227a9fab5528c14ab535764ae1b36b53b38d3f77c00f8d04a90d17"
+    },
+    "verification/restored-bridge.guard.json": {
+      "bytes": 518,
+      "sha256": "f5825a21a439b08d83b5bddc810e7efec6e1053fa54ae72b9225738b4827b6e2"
+    },
+    "verification/restored-bridge.log": {
+      "bytes": 1043,
+      "sha256": "b693ede474fda4c453dccd6e1f807c33c94a5b40c645a5aaa65048f14795d194"
+    },
+    "verification/source.log": {
+      "bytes": 222,
+      "sha256": "009cba8220d1f02b374b702468e32dd31846025e8f520ad95a90de8d1f869dbe"
+    },
+    "verify-matched100.py": {
+      "bytes": 882,
+      "sha256": "15d7b2d937476a5e640a4182c5e21e07d220394a5c78eb83044ea62df726b29a"
+    }
+  }
+}

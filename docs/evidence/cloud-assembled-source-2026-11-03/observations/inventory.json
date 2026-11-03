@@ -1,0 +1,2587 @@
+{
+  "sourceBuild": "6bd88ae9bef60733",
+  "observationNamespace": "699e3613",
+  "sourcePinsSHA256": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+  "motion": [
+    {
+      "receipt": "captures/system-dry-1x-90s-6bd88ae9bef60733-699e3613-16.json",
+      "file": "system-dry-1x-90s-6bd88ae9bef60733-699e3613-16.webm",
+      "bytes": 1883684,
+      "sourceWindow": [
+        500,
+        590
+      ],
+      "kind": "dry",
+      "forcingRecipe": "programme",
+      "focusMode": "fixed",
+      "actualRecorderWallMs": 90006.06999969482,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "startCamera": {
+        "yaw": 0.3,
+        "pitch": -0.05,
+        "distance": 8000,
+        "panX": 0,
+        "panY": 0,
+        "position": [
+          4082.9670668398926,
+          900.1666458345733,
+          8646.220538232086
+        ],
+        "target": [
+          1721.7599999999957,
+          1300,
+          1013.0799999999915
+        ]
+      },
+      "startControls": {
+        "lightingProfile": "selected-production",
+        "family": 0,
+        "provider": 0,
+        "cohorts": true,
+        "forceZero": false,
+        "sun": 30,
+        "sunAzimuth": -0.7,
+        "includeB": true,
+        "fixtureRevision": 17,
+        "mode": 0,
+        "mirror": true,
+        "main": true,
+        "fog": false,
+        "resolved": true,
+        "viewSteps": 96,
+        "extinctionScale": 4.222222222222222,
+        "preparedDensity": false,
+        "materialStructure": false,
+        "materialSpace": "world",
+        "materialFilter": false,
+        "thermals": false,
+        "materialCore": false,
+        "connectedFeed": false,
+        "frontMorph": false,
+        "neckMix": false,
+        "dualRest": false,
+        "emptyWork": false,
+        "cachedVelocity": false,
+        "alpha": 1,
+        "sourceAlpha": 0
+      },
+      "execution": {
+        "classification": "cpu-screened-integration",
+        "label": "CPU SCREEN PASSED \u00b7 GPU/ART UNQUALIFIED",
+        "sourcePinsSHA256": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+        "rootSelectedCPUImplementation": true,
+        "productionApproved": false,
+        "costGatePass": true,
+        "originalGatePass": true,
+        "coupledDryGatePass": true,
+        "independentReviewClosed": true,
+        "gpuQualified": false,
+        "artQualified": false,
+        "copyMap": {
+          "file": "policy/source-copy-map.json",
+          "bytes": 3061,
+          "sha256": "ca0cd4f73b25b708098e5c277351fc3552f0a71929ea55743e04bf18e9dde546"
+        },
+        "costReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298588,
+            "sha256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97344,
+            "sha256": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 10640,
+            "sha256": "eb90056e79dc7350bbd636d2a5ddb1da2e15b308c6a20368500478328342ef19"
+          }
+        },
+        "reason": "Root selects exact reviewed91b967 CPU implementation for bounded optical integration. First original and coupled-dry4ms protocols pass;20.333microsecond supplement margin. GPU/art/device/provider adoption unqualified.",
+        "scope": "First bounded NodeCPU screen only;20.333microsecond margin; noGPU/art/device/runtime-provider acceptance"
+      }
+    },
+    {
+      "receipt": "captures/system-full-16x-75s-6bd88ae9bef60733-699e3613-7.json",
+      "file": "system-full-16x-75s-6bd88ae9bef60733-699e3613-7.webm",
+      "bytes": 3858136,
+      "sourceWindow": [
+        0,
+        1200
+      ],
+      "kind": "full",
+      "forcingRecipe": "wet-held",
+      "focusMode": "region",
+      "actualRecorderWallMs": 75004.32000017166,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "startCamera": {
+        "yaw": 0.3,
+        "pitch": -0.05,
+        "distance": 8000,
+        "panX": 0,
+        "panY": 0,
+        "position": [
+          3561.207066839897,
+          900.1666458345733,
+          7033.1405382320945
+        ],
+        "target": [
+          1200,
+          1300,
+          -600
+        ]
+      },
+      "startControls": {
+        "lightingProfile": "selected-production",
+        "family": 0,
+        "provider": 0,
+        "cohorts": true,
+        "forceZero": false,
+        "sun": 30,
+        "sunAzimuth": -0.7,
+        "includeB": true,
+        "fixtureRevision": 6,
+        "mode": 0,
+        "mirror": true,
+        "main": true,
+        "fog": false,
+        "resolved": true,
+        "viewSteps": 96,
+        "extinctionScale": 4.222222222222222,
+        "preparedDensity": false,
+        "materialStructure": false,
+        "materialSpace": "world",
+        "materialFilter": false,
+        "thermals": false,
+        "materialCore": false,
+        "connectedFeed": false,
+        "frontMorph": false,
+        "neckMix": false,
+        "dualRest": false,
+        "emptyWork": false,
+        "cachedVelocity": false,
+        "alpha": 1,
+        "sourceAlpha": 0
+      },
+      "execution": {
+        "classification": "cpu-screened-integration",
+        "label": "CPU SCREEN PASSED \u00b7 GPU/ART UNQUALIFIED",
+        "sourcePinsSHA256": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+        "rootSelectedCPUImplementation": true,
+        "productionApproved": false,
+        "costGatePass": true,
+        "originalGatePass": true,
+        "coupledDryGatePass": true,
+        "independentReviewClosed": true,
+        "gpuQualified": false,
+        "artQualified": false,
+        "copyMap": {
+          "file": "policy/source-copy-map.json",
+          "bytes": 3061,
+          "sha256": "ca0cd4f73b25b708098e5c277351fc3552f0a71929ea55743e04bf18e9dde546"
+        },
+        "costReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298588,
+            "sha256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97344,
+            "sha256": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 10640,
+            "sha256": "eb90056e79dc7350bbd636d2a5ddb1da2e15b308c6a20368500478328342ef19"
+          }
+        },
+        "reason": "Root selects exact reviewed91b967 CPU implementation for bounded optical integration. First original and coupled-dry4ms protocols pass;20.333microsecond supplement margin. GPU/art/device/provider adoption unqualified.",
+        "scope": "First bounded NodeCPU screen only;20.333microsecond margin; noGPU/art/device/runtime-provider acceptance"
+      }
+    },
+    {
+      "receipt": "captures/system-renewal-1x-110s-6bd88ae9bef60733-699e3613-4.json",
+      "file": "system-renewal-1x-110s-6bd88ae9bef60733-699e3613-4.webm",
+      "bytes": 5146149,
+      "sourceWindow": [
+        320,
+        430
+      ],
+      "kind": "renewal",
+      "forcingRecipe": "wet-held",
+      "focusMode": "fixed",
+      "actualRecorderWallMs": 110008.77500009537,
+      "outcome": "recorded-fixed-controls",
+      "gpuSettled": true,
+      "droppedEncodedBytes": 0,
+      "callbackError": null,
+      "deliveredFpsClaim": false,
+      "startCamera": {
+        "yaw": 0.3,
+        "pitch": -0.05,
+        "distance": 2000,
+        "panX": 0,
+        "panY": 0,
+        "position": [
+          1703.389766709965,
+          1200.0416614586434,
+          1908.2851345580236
+        ],
+        "target": [
+          1113.0879999999906,
+          1300,
+          0
+        ]
+      },
+      "startControls": {
+        "lightingProfile": "selected-production",
+        "family": 0,
+        "provider": 0,
+        "cohorts": true,
+        "forceZero": false,
+        "sun": 30,
+        "sunAzimuth": -0.7,
+        "includeB": false,
+        "fixtureRevision": 3,
+        "mode": 0,
+        "mirror": true,
+        "main": true,
+        "fog": false,
+        "resolved": true,
+        "viewSteps": 96,
+        "extinctionScale": 4.222222222222222,
+        "preparedDensity": false,
+        "materialStructure": false,
+        "materialSpace": "world",
+        "materialFilter": false,
+        "thermals": false,
+        "materialCore": false,
+        "connectedFeed": false,
+        "frontMorph": false,
+        "neckMix": false,
+        "dualRest": false,
+        "emptyWork": false,
+        "cachedVelocity": false,
+        "alpha": 1,
+        "sourceAlpha": 0
+      },
+      "execution": {
+        "classification": "cpu-screened-integration",
+        "label": "CPU SCREEN PASSED \u00b7 GPU/ART UNQUALIFIED",
+        "sourcePinsSHA256": "91b967209009f0a19b4f25380d437f2c4c9f48b426c9655b5027721c504339a1",
+        "rootSelectedCPUImplementation": true,
+        "productionApproved": false,
+        "costGatePass": true,
+        "originalGatePass": true,
+        "coupledDryGatePass": true,
+        "independentReviewClosed": true,
+        "gpuQualified": false,
+        "artQualified": false,
+        "copyMap": {
+          "file": "policy/source-copy-map.json",
+          "bytes": 3061,
+          "sha256": "ca0cd4f73b25b708098e5c277351fc3552f0a71929ea55743e04bf18e9dde546"
+        },
+        "costReceipts": {
+          "original": {
+            "file": "policy/cost-original.json",
+            "bytes": 298588,
+            "sha256": "3b98aa7e165fbb224c21ac0abf7456ebad12dee643b8f27c01c5b7f8f8046330"
+          },
+          "coupledDry": {
+            "file": "policy/cost-two-dry.json",
+            "bytes": 97344,
+            "sha256": "c65171a8e78c6c479ee2d2c1ff97178728ef0c16915c9a02c2b25e24881d704e"
+          },
+          "handoff": {
+            "file": "policy/cost-handoff.json",
+            "bytes": 10640,
+            "sha256": "eb90056e79dc7350bbd636d2a5ddb1da2e15b308c6a20368500478328342ef19"
+          }
+        },
+        "reason": "Root selects exact reviewed91b967 CPU implementation for bounded optical integration. First original and coupled-dry4ms protocols pass;20.333microsecond supplement margin. GPU/art/device/provider adoption unqualified.",
+        "scope": "First bounded NodeCPU screen only;20.333microsecond margin; noGPU/art/device/runtime-provider acceptance"
+      }
+    }
+  ],
+  "probes": [
+    {
+      "receipt": "captures/system-probe-t100000-6bd88ae9bef60733-699e3613-2.json",
+      "sourceTime": 100,
+      "pass": true,
+      "points": 1072,
+      "positive": 232,
+      "invalid": 0,
+      "maxAbsQ": 0.00015057314236852082,
+      "maxAbsRaw": 0.00015057314236852082,
+      "maxAbsSigma": 2.8609213699693978e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              2885.1065497392337,
+              3197.654769929548
+            ]
+          ],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            347.8399963378906,
+            1239.199951171875,
+            0
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.45266667008399963,
+          "cpuMidpointTau": 0.45271437320386215,
+          "gpuT0": 0.68359375,
+          "cpuT0": 0.6358997376944282,
+          "T0Error": 0.0476940123055718,
+          "gpuT1": 0.82275390625,
+          "cpuT1": 0.7974332183289258,
+          "T1Error": 0.025320687921074225,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6669921875,
+          "cpuAmbient": 0.6391023089369623,
+          "ambientError": 0.027889878563037707,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              765.5387285898944
+            ]
+          ],
+          "tauTolerance": 0.10905428746407725,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.0719604349366824,
+          "role": "positive-B-root",
+          "x": [
+            2747.840087890625,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4526667296886444,
+          "cpuMidpointTau": 0.4527142725447287,
+          "gpuT0": 0.67626953125,
+          "cpuT0": 0.635899801703548,
+          "T0Error": 0.040369729546452016,
+          "gpuT1": 0.81982421875,
+          "cpuT1": 0.7974332584633951,
+          "T1Error": 0.022390960286604922,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6689453125,
+          "cpuAmbient": 0.6391023699920186,
+          "ambientError": 0.029842942507981363,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              765.53859037054
+            ]
+          ],
+          "tauTolerance": 0.10905428545089457,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.06878678576205492,
+          "role": "B-root-plus16X",
+          "x": [
+            2763.840087890625,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.41142189502716064,
+          "cpuMidpointTau": 0.41135297928983494,
+          "gpuT0": 0.689453125,
+          "cpuT0": 0.6627529522418044,
+          "T0Error": 0.026700172758195584,
+          "gpuT1": 0.828125,
+          "cpuT1": 0.8140964023024574,
+          "T1Error": 0.01402859769754261,
+          "profileB": 0.5,
+          "gpuAmbient": 0.67041015625,
+          "cpuAmbient": 0.6537040428037093,
+          "ambientError": 0.016706113446290694,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              741.3830077925669
+            ]
+          ],
+          "tauTolerance": 0.1082270595857967,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07153326889244645,
+          "role": "B-root-plus16Z",
+          "x": [
+            2747.840087890625,
+            1239.199951171875,
+            -1184
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4611222445964813,
+          "cpuMidpointTau": 0.46119846265039144,
+          "gpuT0": 0.66259765625,
+          "cpuT0": 0.6305275288152917,
+          "T0Error": 0.03207012743470827,
+          "gpuT1": 0.81103515625,
+          "cpuT1": 0.7940576357011446,
+          "T1Error": 0.016977520548855374,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6748046875,
+          "cpuAmbient": 0.6388735626683757,
+          "ambientError": 0.035931124831624306,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              765.53859037054
+            ]
+          ],
+          "tauTolerance": 0.10922396925300784,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            2117.68994140625,
+            399,
+            -1200
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 0.8782878518104553,
+          "cpuAmbient": 0.8782879666459635,
+          "ambientError": 1.1483550821367317e-07,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          2747.8399999999965,
+          1239.2,
+          -1200
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          2117.68994140625,
+          399,
+          -1200
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.8782879666459635,
+          "ambientDirections": [
+            0.5131518665838539,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.12171203335403646,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": true,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    },
+    {
+      "receipt": "captures/system-probe-t120000-6bd88ae9bef60733-699e3613-13.json",
+      "sourceTime": 120,
+      "pass": true,
+      "points": 1088,
+      "positive": 204,
+      "invalid": 0,
+      "maxAbsQ": 0.00021789651517639674,
+      "maxAbsRaw": 0.0002617229092485851,
+      "maxAbsSigma": 4.140287108091341e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0.7900997996330261,
+          "cpuMidpointTau": 0.7902571859823988,
+          "gpuT0": 0.4537995159626007,
+          "cpuT0": 0.4537280877712358,
+          "T0Error": 7.142819136490841e-05,
+          "gpuT1": 0.6736464500427246,
+          "cpuT1": 0.6735934142873101,
+          "T1Error": 5.3035755414487795e-05,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              13143.352682955392,
+              14787.00360454218
+            ]
+          ],
+          "tauTolerance": 0.11580514371964798,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            417.4079895019531,
+            1239.199951171875,
+            0
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4656124711036682,
+          "cpuMidpointTau": 0.4655828016263259,
+          "gpuT0": 0.64453125,
+          "cpuT0": 0.6277691336835372,
+          "T0Error": 0.01676211631646285,
+          "gpuT1": 0.80126953125,
+          "cpuT1": 0.7923188333515347,
+          "T1Error": 0.008950697898465254,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6552734375,
+          "cpuAmbient": 0.624243863514329,
+          "ambientError": 0.031029573985670966,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              591.7255890075884
+            ]
+          ],
+          "tauTolerance": 0.10931165603252653,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07196163441692535,
+          "role": "positive-B-root",
+          "x": [
+            12410.1240234375,
+            1239.199951171875,
+            6779.681640625
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.46561199426651,
+          "cpuMidpointTau": 0.46558073658684074,
+          "gpuT0": 0.67529296875,
+          "cpuT0": 0.6277704300529243,
+          "T0Error": 0.04752253869707568,
+          "gpuT1": 0.81884765625,
+          "cpuT1": 0.792319651436795,
+          "T1Error": 0.026528004813205053,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6298828125,
+          "cpuAmbient": 0.6242439842352845,
+          "ambientError": 0.005638828264715512,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              591.7253229575317
+            ]
+          ],
+          "tauTolerance": 0.10931161473173683,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.11467459353650157,
+          "role": "B-root-plus16X",
+          "x": [
+            12426.1240234375,
+            1239.199951171875,
+            6779.681640625
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4193207323551178,
+          "cpuMidpointTau": 0.4193064759446652,
+          "gpuT0": 0.701171875,
+          "cpuT0": 0.6575026556383636,
+          "T0Error": 0.04366921936163637,
+          "gpuT1": 0.8349609375,
+          "cpuT1": 0.8108653745464556,
+          "T1Error": 0.024095562953544425,
+          "profileB": 0.5,
+          "gpuAmbient": 0.626953125,
+          "cpuAmbient": 0.615610246174918,
+          "ambientError": 0.011342878825082003,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              573.4237772133947
+            ]
+          ],
+          "tauTolerance": 0.10838612951889331,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.11818343056354655,
+          "role": "B-root-plus16Z",
+          "x": [
+            12410.1240234375,
+            1239.199951171875,
+            6795.681640625
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.47791537642478943,
+          "cpuMidpointTau": 0.4779491877154964,
+          "gpuT0": 0.68115234375,
+          "cpuT0": 0.6200537025266931,
+          "T0Error": 0.06109864122330688,
+          "gpuT1": 0.822265625,
+          "cpuT1": 0.78743488780133,
+          "T1Error": 0.034830737198670025,
+          "profileB": 0.5,
+          "gpuAmbient": 0.63623046875,
+          "cpuAmbient": 0.6695493819267466,
+          "ambientError": 0.03331891317674662,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              591.7253229575317
+            ]
+          ],
+          "tauTolerance": 0.10955898375430993,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            11779.9736328125,
+            399,
+            6779.681640625
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 0.8820160627365112,
+          "cpuAmbient": 0.8820216537821954,
+          "ambientError": 5.591045684205653e-06,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          12410.12380134312,
+          1239.2,
+          6779.681531943434
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          11779.9736328125,
+          399,
+          6779.681640625
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.8820216537821954,
+          "ambientDirections": [
+            0.5280866151287819,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.11797834621780456,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": true,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    },
+    {
+      "receipt": "captures/system-probe-t120000-6bd88ae9bef60733-699e3613-15.json",
+      "sourceTime": 120,
+      "pass": true,
+      "points": 1088,
+      "positive": 102,
+      "invalid": 0,
+      "maxAbsQ": 0.00021789651517639674,
+      "maxAbsRaw": 0.0002617229092485851,
+      "maxAbsSigma": 4.140287108091341e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            417.4079895019531,
+            1239.199951171875,
+            0
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4656124711036682,
+          "cpuMidpointTau": 0.4655828016263259,
+          "gpuT0": 0.64453125,
+          "cpuT0": 0.6277691336835372,
+          "T0Error": 0.01676211631646285,
+          "gpuT1": 0.80126953125,
+          "cpuT1": 0.7923188333515347,
+          "T1Error": 0.008950697898465254,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6552734375,
+          "cpuAmbient": 0.624243863514329,
+          "ambientError": 0.031029573985670966,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              591.7255890075884
+            ]
+          ],
+          "tauTolerance": 0.10931165603252653,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07196163441692535,
+          "role": "positive-B-root",
+          "x": [
+            12410.1240234375,
+            1239.199951171875,
+            6779.681640625
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.11467459353650157,
+          "role": "B-root-plus16X",
+          "x": [
+            12426.1240234375,
+            1239.199951171875,
+            6779.681640625
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.11818343056354655,
+          "role": "B-root-plus16Z",
+          "x": [
+            12410.1240234375,
+            1239.199951171875,
+            6795.681640625
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            11779.9736328125,
+            399,
+            6779.681640625
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          12410.12380134312,
+          1239.2,
+          6779.681531943434
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          11779.9736328125,
+          399,
+          6779.681640625
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.8820216537821954,
+          "ambientDirections": [
+            0.5280866151287819,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.11797834621780456,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": false,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    },
+    {
+      "receipt": "captures/system-probe-t1200029-6bd88ae9bef60733-699e3613-11.json",
+      "sourceTime": 1200.0287200012212,
+      "pass": true,
+      "points": 1120,
+      "positive": 178,
+      "invalid": 0,
+      "maxAbsQ": 0.00019892547681577,
+      "maxAbsRaw": 0.00031298681489427826,
+      "maxAbsSigma": 3.779293486856107e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            4174.1796875,
+            1239.199951171875,
+            0
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.470626562833786,
+          "cpuMidpointTau": 0.470665078380094,
+          "gpuT0": 0.6572265625,
+          "cpuT0": 0.62458673098431,
+          "T0Error": 0.032639831515690054,
+          "gpuT1": 0.8076171875,
+          "cpuT1": 0.7903079975454569,
+          "T1Error": 0.017309189954543114,
+          "profileB": 0.5,
+          "gpuAmbient": 0.62158203125,
+          "cpuAmbient": 0.5792897851991883,
+          "ambientError": 0.04229224605081172,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              886.928070983234
+            ]
+          ],
+          "tauTolerance": 0.10941330156760189,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07196018766969126,
+          "role": "positive-B-root",
+          "x": [
+            6574.1796875,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.470626562833786,
+          "cpuMidpointTau": 0.47066499565488673,
+          "gpuT0": 0.66552734375,
+          "cpuT0": 0.6245867826533789,
+          "T0Error": 0.04094056109662114,
+          "gpuT1": 0.8125,
+          "cpuT1": 0.790308030234654,
+          "T1Error": 0.022191969765345987,
+          "profileB": 0.5,
+          "gpuAmbient": 0.61328125,
+          "cpuAmbient": 0.5792895712728104,
+          "ambientError": 0.033991678727189556,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              886.9280709832312
+            ]
+          ],
+          "tauTolerance": 0.10941329991309774,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.06878680170261162,
+          "role": "B-root-plus16X",
+          "x": [
+            6590.1796875,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4461546242237091,
+          "cpuMidpointTau": 0.4459804687183955,
+          "gpuT0": 0.68701171875,
+          "cpuT0": 0.6401962757932844,
+          "T0Error": 0.04681544295671558,
+          "gpuT1": 0.8251953125,
+          "cpuT1": 0.8001226629669256,
+          "T1Error": 0.02507264953307442,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6123046875,
+          "cpuAmbient": 0.5826908980501829,
+          "ambientError": 0.029613789449817074,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              862.7724884052582
+            ]
+          ],
+          "tauTolerance": 0.10891960937436791,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07153333323471975,
+          "role": "B-root-plus16Z",
+          "x": [
+            6574.1796875,
+            1239.199951171875,
+            -1184
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.46939754486083984,
+          "cpuMidpointTau": 0.4694238997049496,
+          "gpuT0": 0.646484375,
+          "cpuT0": 0.6253624360102713,
+          "T0Error": 0.021121938989728695,
+          "gpuT1": 0.80029296875,
+          "cpuT1": 0.7907986064797227,
+          "T1Error": 0.009494362270277334,
+          "profileB": 0.5,
+          "gpuAmbient": 0.61279296875,
+          "cpuAmbient": 0.5723931039737905,
+          "ambientError": 0.04039986477620949,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              886.9280709832312
+            ]
+          ],
+          "tauTolerance": 0.109388477994099,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            5944.02978515625,
+            399,
+            -1200
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 0.8756089806556702,
+          "cpuAmbient": 0.875620838699026,
+          "ambientError": 1.1858043355794656e-05,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              1078.7707722388093,
+              1684.4123495437523
+            ]
+          ],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          6574.179899652206,
+          1239.2,
+          -1200
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          5944.02978515625,
+          399,
+          -1200
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.875620838699026,
+          "ambientDirections": [
+            0.5024833547961037,
+            1,
+            1,
+            1
+          ],
+          "intervals": [
+            [
+              1078.7707722388093,
+              1684.4123495437523
+            ]
+          ]
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.12437916130097404,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": true,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    },
+    {
+      "receipt": "captures/system-probe-t1200029-6bd88ae9bef60733-699e3613-9.json",
+      "sourceTime": 1200.0287200012212,
+      "pass": true,
+      "points": 1120,
+      "positive": 178,
+      "invalid": 0,
+      "maxAbsQ": 0.00019892547681577,
+      "maxAbsRaw": 0.00031298681489427826,
+      "maxAbsSigma": 3.779293486856107e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            4174.1796875,
+            1239.199951171875,
+            0
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.470626562833786,
+          "cpuMidpointTau": 0.470665078380094,
+          "gpuT0": 0.6572265625,
+          "cpuT0": 0.62458673098431,
+          "T0Error": 0.032639831515690054,
+          "gpuT1": 0.8076171875,
+          "cpuT1": 0.7903079975454569,
+          "T1Error": 0.017309189954543114,
+          "profileB": 0.5,
+          "gpuAmbient": 0.62158203125,
+          "cpuAmbient": 0.5792897851991883,
+          "ambientError": 0.04229224605081172,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              886.928070983234
+            ]
+          ],
+          "tauTolerance": 0.10941330156760189,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07196018766969126,
+          "role": "positive-B-root",
+          "x": [
+            6574.1796875,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.470626562833786,
+          "cpuMidpointTau": 0.47066499565488673,
+          "gpuT0": 0.66552734375,
+          "cpuT0": 0.6245867826533789,
+          "T0Error": 0.04094056109662114,
+          "gpuT1": 0.8125,
+          "cpuT1": 0.790308030234654,
+          "T1Error": 0.022191969765345987,
+          "profileB": 0.5,
+          "gpuAmbient": 0.61328125,
+          "cpuAmbient": 0.5792895712728104,
+          "ambientError": 0.033991678727189556,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              886.9280709832312
+            ]
+          ],
+          "tauTolerance": 0.10941329991309774,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.06878680170261162,
+          "role": "B-root-plus16X",
+          "x": [
+            6590.1796875,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4461546242237091,
+          "cpuMidpointTau": 0.4459804687183955,
+          "gpuT0": 0.68701171875,
+          "cpuT0": 0.6401962757932844,
+          "T0Error": 0.04681544295671558,
+          "gpuT1": 0.8251953125,
+          "cpuT1": 0.8001226629669256,
+          "T1Error": 0.02507264953307442,
+          "profileB": 0.5,
+          "gpuAmbient": 0.6123046875,
+          "cpuAmbient": 0.5826908980501829,
+          "ambientError": 0.029613789449817074,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              862.7724884052582
+            ]
+          ],
+          "tauTolerance": 0.10891960937436791,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07153333323471975,
+          "role": "B-root-plus16Z",
+          "x": [
+            6574.1796875,
+            1239.199951171875,
+            -1184
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.46939754486083984,
+          "cpuMidpointTau": 0.4694238997049496,
+          "gpuT0": 0.646484375,
+          "cpuT0": 0.6253624360102713,
+          "T0Error": 0.021121938989728695,
+          "gpuT1": 0.80029296875,
+          "cpuT1": 0.7907986064797227,
+          "T1Error": 0.009494362270277334,
+          "profileB": 0.5,
+          "gpuAmbient": 0.61279296875,
+          "cpuAmbient": 0.5723931039737905,
+          "ambientError": 0.04039986477620949,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              886.9280709832312
+            ]
+          ],
+          "tauTolerance": 0.109388477994099,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            5944.02978515625,
+            399,
+            -1200
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 0.8756089806556702,
+          "cpuAmbient": 0.875620838699026,
+          "ambientError": 1.1858043355794656e-05,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              1078.7707722388093,
+              1684.4123495437523
+            ]
+          ],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          6574.179899652206,
+          1239.2,
+          -1200
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          5944.02978515625,
+          399,
+          -1200
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.875620838699026,
+          "ambientDirections": [
+            0.5024833547961037,
+            1,
+            1,
+            1
+          ],
+          "intervals": [
+            [
+              1078.7707722388093,
+              1684.4123495437523
+            ]
+          ]
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.12437916130097404,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": true,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    },
+    {
+      "receipt": "captures/system-probe-t430003-6bd88ae9bef60733-699e3613-6.json",
+      "sourceTime": 430.00315500020724,
+      "pass": true,
+      "points": 1104,
+      "positive": 88,
+      "invalid": 0,
+      "maxAbsQ": 0.0002036731977497555,
+      "maxAbsRaw": 0.0002815638299331624,
+      "maxAbsSigma": 3.8698308041160276e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 0.9305450320243835,
+          "cpuAmbient": 0.9305605622292683,
+          "ambientError": 1.5530204884761645e-05,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            1495.7230224609375,
+            1239.199951171875,
+            0
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.4926546812057495,
+          "cpuMidpointTau": 0.4926453479458474,
+          "gpuT0": 0.6513671875,
+          "cpuT0": 0.6110079258607347,
+          "T0Error": 0.04035926163926529,
+          "gpuT1": 0.8037109375,
+          "cpuT1": 0.7816699596765471,
+          "T1Error": 0.022040977823452934,
+          "profileB": 0.5,
+          "gpuAmbient": 0.5849609375,
+          "cpuAmbient": 0.5490735900188848,
+          "ambientError": 0.03588734748111522,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              1046.7659112325427
+            ]
+          ],
+          "tauTolerance": 0.10985290695891696,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07196032796734442,
+          "role": "positive-B-root",
+          "x": [
+            3895.722900390625,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.11976430809869376,
+          "role": "B-root-plus16X",
+          "x": [
+            3911.722900390625,
+            1239.199951171875,
+            -1200
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.10587461786825664,
+          "role": "B-root-plus16Z",
+          "x": [
+            3895.722900390625,
+            1239.199951171875,
+            -1184
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            3265.572998046875,
+            399,
+            -1200
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          3895.722974352706,
+          1239.2,
+          -1200
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          3265.572998046875,
+          399,
+          -1200
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.8685352149374792,
+          "ambientDirections": [
+            0.474140859749917,
+            1,
+            1,
+            1
+          ],
+          "intervals": [
+            [
+              772.02163282598,
+              1046.7659112325427
+            ]
+          ]
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.1314647850625208,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": false,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    },
+    {
+      "receipt": "captures/system-probe-t590003-6bd88ae9bef60733-699e3613-18.json",
+      "sourceTime": 590.0029349999465,
+      "pass": true,
+      "points": 1064,
+      "positive": 36,
+      "invalid": 0,
+      "maxAbsQ": 0.000112394957423545,
+      "maxAbsRaw": 0.0001894116532621115,
+      "maxAbsSigma": 2.135570314950111e-06,
+      "cachedLightAccuracyQualified": false,
+      "lights": [
+        {
+          "qBAtPoint": 0,
+          "role": "receiver",
+          "x": [
+            0,
+            2,
+            0
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 0,
+          "cpuIntervals": [],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "A-root",
+          "x": [
+            521.760009765625,
+            1239.199951171875,
+            2027.885498046875
+          ],
+          "weights": [
+            1,
+            0,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 1,
+          "cpuAmbient": 1,
+          "ambientError": 0,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              714.6553757669269
+            ]
+          ],
+          "tauTolerance": 0.1,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07196046960365293,
+          "role": "positive-B-root",
+          "x": [
+            2921.760009765625,
+            1239.199951171875,
+            827.885498046875
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.3497912883758545,
+          "cpuMidpointTau": 0.3497850721162571,
+          "gpuT0": 0.77197265625,
+          "cpuT0": 0.7048395631158808,
+          "T0Error": 0.06713309313411919,
+          "gpuT1": 0.8759765625,
+          "cpuT1": 0.8395472369770988,
+          "T1Error": 0.036429325522901235,
+          "profileB": 0.5,
+          "gpuAmbient": 0.740234375,
+          "cpuAmbient": 0.7266351689297271,
+          "ambientError": 0.013599206070272873,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              879.6732656330989
+            ]
+          ],
+          "tauTolerance": 0.10699570144232515,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.06878674945685549,
+          "role": "B-root-plus16X",
+          "x": [
+            2937.760009765625,
+            1239.199951171875,
+            827.885498046875
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.34187498688697815,
+          "cpuMidpointTau": 0.34181712163360845,
+          "gpuT0": 0.78076171875,
+          "cpuT0": 0.710478123907767,
+          "T0Error": 0.07028359484223301,
+          "gpuT1": 0.88134765625,
+          "cpuT1": 0.8428986439114533,
+          "T1Error": 0.038449012338546695,
+          "profileB": 0.5,
+          "gpuAmbient": 0.7353515625,
+          "cpuAmbient": 0.7273075576177469,
+          "ambientError": 0.008044004882253097,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              855.5176830551259
+            ]
+          ],
+          "tauTolerance": 0.10683634243267218,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0.07153329280792935,
+          "role": "B-root-plus16Z",
+          "x": [
+            2921.760009765625,
+            1239.199951171875,
+            843.885498046875
+          ],
+          "weights": [
+            0,
+            1,
+            0
+          ],
+          "offAllCharts": false,
+          "gpuTau": 0.3629983365535736,
+          "cpuMidpointTau": 0.3630108229788684,
+          "gpuT0": 0.7529296875,
+          "cpuT0": 0.6955789052225634,
+          "T0Error": 0.05735078227743662,
+          "gpuT1": 0.86474609375,
+          "cpuT1": 0.834013732034769,
+          "T1Error": 0.03073236171523097,
+          "profileB": 0.5,
+          "gpuAmbient": 0.74072265625,
+          "cpuAmbient": 0.7306943343323848,
+          "ambientError": 0.010028321917615157,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Cached T/A compared; approximation error UNQUALIFIED, not a cache-accuracy pass",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              0,
+              879.6732656330989
+            ]
+          ],
+          "tauTolerance": 0.10726021645957737,
+          "pass": true
+        },
+        {
+          "qBAtPoint": 0,
+          "role": "below-all-charts-B-ambient",
+          "x": [
+            2291.610107421875,
+            399,
+            827.885498046875
+          ],
+          "weights": [
+            0,
+            0,
+            1
+          ],
+          "offAllCharts": true,
+          "gpuTau": 0,
+          "cpuMidpointTau": 0,
+          "gpuT0": 1,
+          "cpuT0": 1,
+          "T0Error": 0,
+          "gpuT1": 1,
+          "cpuT1": 1,
+          "T1Error": 0,
+          "profileB": 0.5,
+          "gpuAmbient": 0.8962862491607666,
+          "cpuAmbient": 0.8963059598731993,
+          "ambientError": 1.9710712432674526e-05,
+          "directTolerance": 0.025,
+          "ambientTolerance": 0.025,
+          "cacheReferenceStatus": "Complete fallback compared at existing tolerances",
+          "gpuIntervals": 1,
+          "cpuIntervals": [
+            [
+              864.3746011589561,
+              1111.5410770683122
+            ]
+          ],
+          "tauTolerance": 0.1,
+          "pass": true
+        }
+      ],
+      "offChartWitness": {
+        "available": true,
+        "root": [
+          2921.7599999999948,
+          1239.2,
+          827.8855268277429
+        ],
+        "qBAtRoot": 0.07196044921875,
+        "point": [
+          2291.610107421875,
+          399,
+          827.885498046875
+        ],
+        "direction": [
+          0.6,
+          0.8,
+          0
+        ],
+        "definition": "Y399 below both charts; +(.6,.8,0) passes through positive BODY Broot",
+        "fullReference": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 0.8963059598731993,
+          "ambientDirections": [
+            0.5852238394927969,
+            1,
+            1,
+            1
+          ],
+          "intervals": [
+            [
+              864.3746011589561,
+              1111.5410770683122
+            ]
+          ]
+        },
+        "omittedBNegative": {
+          "tau": 0,
+          "direct": 1,
+          "ambient": 1,
+          "ambientDirections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "intervals": []
+        },
+        "occlusionDifference": 0.10369404012680072,
+        "minimumMeaningfulDifference": 0.025,
+        "positiveConfiguration": true,
+        "pass": true,
+        "scope": "Counterfactual clear-B reference must differ nontrivially; actual GPU compared to selected complete/omitted-B configuration, not a false-clear cache sentinel"
+      },
+      "scope": "Actual GPU required; finite shared-field CPU/GPU probes and matched midpoint Sun quadrature. Does not establish art, integration convergence or performance."
+    }
+  ],
+  "archivedFiles": [
+    {
+      "archiveMember": "captures/system-dry-1x-90s-6bd88ae9bef60733-699e3613-16.json",
+      "bytes": 3287724,
+      "sha256": "e4215675a950255e24234329cc8b2c53a2930805793467486585a20cb9eaca7d",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-full-16x-75s-6bd88ae9bef60733-699e3613-7.json",
+      "bytes": 3110034,
+      "sha256": "e7ce0c68ef4399a410d39a6436586b011533b57063b1177d1ff021b4459d55eb",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-probe-t100000-6bd88ae9bef60733-699e3613-2.json",
+      "bytes": 62706,
+      "sha256": "67debe2866a9fdac5b42528b5e98f0adf2178967261061affe33bfac887d078e",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t120000-6bd88ae9bef60733-699e3613-13.json",
+      "bytes": 107711,
+      "sha256": "135063a4299be70c1acdd79869cae94a36d1a318eb78fcd5887117027bcef864",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t120000-6bd88ae9bef60733-699e3613-15.json",
+      "bytes": 106605,
+      "sha256": "cb4e2ad065b630dac33500151e382797e6328809ca3660342a8d262c9ce4d6af",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t1200029-6bd88ae9bef60733-699e3613-11.json",
+      "bytes": 201678,
+      "sha256": "0ab496f2f68508279dfaa397a69164fd61e9b25c99936f3ef78f276c84920aab",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t1200029-6bd88ae9bef60733-699e3613-9.json",
+      "bytes": 201666,
+      "sha256": "7660aba152dfd63cd453494b1a8cd199aa15fde66daba089daf3c9bba964dec4",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t430003-6bd88ae9bef60733-699e3613-6.json",
+      "bytes": 190806,
+      "sha256": "703f3d995fbb60bb473d66db3c464eb66185f686255c5e4b54c4682afc3e25c7",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-probe-t590003-6bd88ae9bef60733-699e3613-18.json",
+      "bytes": 163594,
+      "sha256": "1f5cf0187a04fd8d7f5c7ee422e42de3ccf9863aa8db5ef931c75e259d13214b",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "probe"
+    },
+    {
+      "archiveMember": "captures/system-renewal-1x-110s-6bd88ae9bef60733-699e3613-4.json",
+      "bytes": 1953040,
+      "sha256": "4aebbb707d5f02143d78d112bd05f74fad03da53356e369c223216afdb95ed7f",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "motion"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-1.json",
+      "bytes": 57489,
+      "sha256": "13bc6d0a2597fc131b0a8d90ff2fbb93dfb66c8869486f357c49e7a9beb1163b",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-1.png",
+      "bytes": 355789,
+      "sha256": "05961b1e7126d51df2d1347767b513d2c0c50a80617ff819f631d6a893c76fc3"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-19.json",
+      "bytes": 153129,
+      "sha256": "f053f0ff23981ec638f58fb336f22faccb64c4c51ffd518453ac8021175fe4c7",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-19.png",
+      "bytes": 387128,
+      "sha256": "4b23165d0e3414dd34f0dc16fe0f84558bf00749766768ac1e3e3e7ea612c857"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-3.json",
+      "bytes": 67366,
+      "sha256": "d500e69bd434512984f2fed2531a121f0cc531dc8161196c61ae0c407b4a000b",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-3.png",
+      "bytes": 387128,
+      "sha256": "4b23165d0e3414dd34f0dc16fe0f84558bf00749766768ac1e3e3e7ea612c857"
+    },
+    {
+      "archiveMember": "captures/system-t120000-mode0-6bd88ae9bef60733-699e3613-12.json",
+      "bytes": 164654,
+      "sha256": "9cdbfa1dd9812b94dc4323b37fbd20874d48b07aa6308ad22f4dbea3dfdee169",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t120000-mode0-6bd88ae9bef60733-699e3613-12.png",
+      "bytes": 265015,
+      "sha256": "da2731ad52e5a0c211f678a250a60121b7d969938b8b0c73b9df0ad6ac732410"
+    },
+    {
+      "archiveMember": "captures/system-t120000-mode0-6bd88ae9bef60733-699e3613-14.json",
+      "bytes": 164511,
+      "sha256": "1b6ccead50af27f6acce378546d591c355f30215492a488b0c59df5d5046d2a2",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t120000-mode0-6bd88ae9bef60733-699e3613-14.png",
+      "bytes": 265062,
+      "sha256": "04a0d23e865f1ecebfd80516384e83b1ea83fd4784cd7a718406f9af08aeadcd"
+    },
+    {
+      "archiveMember": "captures/system-t1200029-mode0-6bd88ae9bef60733-699e3613-10.json",
+      "bytes": 291135,
+      "sha256": "faaa8d27189511995aae7965b2a8f146e1699de8b87dcc39f3386284f57ae9d5",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t1200029-mode0-6bd88ae9bef60733-699e3613-10.png",
+      "bytes": 345376,
+      "sha256": "0633ebd37eed764fe14034d76e15edb9c1c976383b9206c2ba1e26809843287a"
+    },
+    {
+      "archiveMember": "captures/system-t1200029-mode0-6bd88ae9bef60733-699e3613-8.json",
+      "bytes": 291133,
+      "sha256": "158f3f72365fe7694249d80c7ac4469f320a65451c4c8987e612c31c5c8e0847",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t1200029-mode0-6bd88ae9bef60733-699e3613-8.png",
+      "bytes": 360941,
+      "sha256": "a959f00ce7a4cd7c2740522ca3ef89b39d1e9a82e932e9c83fa36fe684d0083e"
+    },
+    {
+      "archiveMember": "captures/system-t430003-mode0-6bd88ae9bef60733-699e3613-5.json",
+      "bytes": 232268,
+      "sha256": "53993fe2df3e415aa394c3c1f8f1ca69eacfeb3127ec101efeafb257809b85f5",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t430003-mode0-6bd88ae9bef60733-699e3613-5.png",
+      "bytes": 404800,
+      "sha256": "13959fab62c5a48f2e997526561f4f6e73cd3805c88f75c53582cb66eecaa0b6"
+    },
+    {
+      "archiveMember": "captures/system-t590003-mode0-6bd88ae9bef60733-699e3613-17.json",
+      "bytes": 269551,
+      "sha256": "97d45bcfb57416d9b9c180622fe67de765e28d3d3413144fe7a7735da5ae36ef",
+      "build": "6bd88ae9bef60733",
+      "observation": "699e3613",
+      "kind": "capture"
+    },
+    {
+      "archiveMember": "captures/system-t590003-mode0-6bd88ae9bef60733-699e3613-17.png",
+      "bytes": 331094,
+      "sha256": "f98630a03769b04aa944574b633e97065836e088d9f90367297a3602c6e98c8f"
+    },
+    {
+      "archiveMember": "inspection/assembled-dry-samples.png",
+      "bytes": 407462,
+      "sha256": "8b4d301581d9a17e2408efbf1d5180027a3fd9a9b74b975262c3fb8acf309a66"
+    },
+    {
+      "archiveMember": "inspection/assembled-fast-samples.png",
+      "bytes": 438874,
+      "sha256": "69940d7ef2a286f7520aca427a2b90dc50b66e8c45edce979149cd0773fbdc76"
+    },
+    {
+      "archiveMember": "inspection/assembled-renewal-samples.png",
+      "bytes": 499670,
+      "sha256": "720feee63c18b7e53b365cfaed53d098018e58e6ffe44ed795737f1aad8cca78"
+    }
+  ],
+  "directClips": [
+    {
+      "file": "observations/system-dry-1x-90s-6bd88ae9bef60733-699e3613-16.webm",
+      "destination": "captures/system-dry-1x-90s-6bd88ae9bef60733-699e3613-16.webm",
+      "bytes": 1883684,
+      "sha256": "60db07fbe2290a1bd947c314ad2a1f92b70619b6b71351161e56347115436501"
+    },
+    {
+      "file": "observations/system-full-16x-75s-6bd88ae9bef60733-699e3613-7.webm",
+      "destination": "captures/system-full-16x-75s-6bd88ae9bef60733-699e3613-7.webm",
+      "bytes": 3858136,
+      "sha256": "4f4b5e93dba6c61bd2cb0c675ac6343f8ed34480cbaf7c20c417f5b6a15d948c"
+    },
+    {
+      "file": "observations/system-renewal-1x-110s-6bd88ae9bef60733-699e3613-4.webm",
+      "destination": "captures/system-renewal-1x-110s-6bd88ae9bef60733-699e3613-4.webm",
+      "bytes": 5146149,
+      "sha256": "31af35a26d0d77bac8c8984719156d3b99581013e81285cfe9ec75812383fc3f"
+    }
+  ],
+  "scope": "Immutable original canvas/capture/probe records; sampled sheets only; no continuouswatch/art/GPUperformanceadmission"
+}

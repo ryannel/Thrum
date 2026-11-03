@@ -1,0 +1,13 @@
+{
+  "scope": "Retention of exact assembled6bd/source91 only; observations unsealed pendingROOTcapturecompletion",
+  "sourceArchiveMembers": 180,
+  "sourceNonNativeBytes": 1579686,
+  "sourceArchiveBytes": 387424,
+  "nativeUniqueDecodedBytes": 17956864,
+  "r16DuplicatesRetained": 0,
+  "sourceOrFrozenReferenceModified": false,
+  "earlyProcessTreeBytes": 234881024,
+  "hardProcessTreeBytes": 268435456,
+  "newDiskCeilingBytes": 83886080,
+  "costGPUServerRunsToStart": 0
+}

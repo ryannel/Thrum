@@ -1,0 +1,97 @@
+{
+  "scope": "Functional restoration only; no cost/GPU/browser/server;127costFAIL unchanged",
+  "identity": {
+    "build": "7bf67682189662e2",
+    "servedFiles": 61,
+    "approvedSourceFiles": 15,
+    "provenanceServed": true
+  },
+  "observationsRestored": true,
+  "costReceiptsSHA256": {
+    "assets/policy/cost-original.json": "65fff59a92f4bd858b09fc55760c0c9dee7e87d3ecc27cd3a2fd1995c48100cd",
+    "assets/policy/cost-two-dry.json": "27ccaf7381d086ab497cef03935569d4f4c103c64aeaed418d58bb27f094a47b"
+  },
+  "phases": [
+    {
+      "phase": "contracts",
+      "command": [
+        "node",
+        "tests/world/contracts.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 144654336,
+      "samples": 18,
+      "elapsedSeconds": 1.0370117500424385,
+      "log": "run-logs/contracts.log",
+      "adverse": null
+    },
+    {
+      "phase": "native",
+      "command": [
+        "node",
+        "tests/world/native.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 137723904,
+      "samples": 6,
+      "elapsedSeconds": 0.3523782091215253,
+      "log": "run-logs/native.log",
+      "adverse": null
+    },
+    {
+      "phase": "source",
+      "command": [
+        "node",
+        "tests/source/run.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 198770688,
+      "samples": 35,
+      "elapsedSeconds": 1.995372709352523,
+      "log": "run-logs/source.log",
+      "adverse": null
+    },
+    {
+      "phase": "render",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "tests/render/adapter-publish.test.mjs",
+        "tests/render/assets.test.mjs",
+        "tests/render/covered-light.test.mjs",
+        "tests/render/failure-retention.test.mjs",
+        "tests/render/integration-contract.test.mjs",
+        "tests/render/source-query.test.mjs",
+        "tests/render/timestamps.test.mjs",
+        "tests/render/trace.test.mjs"
+      ],
+      "exitCode": 0,
+      "sampledProcessTreePeakBytes": 187891712,
+      "samples": 11,
+      "elapsedSeconds": 0.6316944169811904,
+      "log": "run-logs/render-serial.log",
+      "adverse": null
+    }
+  ],
+  "bridge": {
+    "pass": true,
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1",
+      "tests/bridge/loader.test.mjs",
+      "tests/bridge/lifecycle.test.mjs",
+      "tests/bridge/actual-reference.test.mjs",
+      "tests/bridge/control-sync.test.mjs"
+    ],
+    "exitCode": 0,
+    "sampledTreePeakBytes": 194494464,
+    "earlyBytes": 234881024,
+    "hardBytes": 268435456,
+    "stopped": null,
+    "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+  },
+  "newUniquePayloadDiskBytesPackagePlusRestore": 57874194,
+  "pass": true
+}

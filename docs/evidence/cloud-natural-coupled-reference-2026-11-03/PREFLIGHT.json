@@ -1,0 +1,14 @@
+{
+  "newDiskHardBytes": 83886080,
+  "sourceFiles": 189,
+  "sourceNonNativeBytes": 1754170,
+  "sourceArchiveBytes": 559052,
+  "observationArchiveBytes": 5778238,
+  "directClipBytes": 13761003,
+  "nativeDecodedUniqueBytes": 17956864,
+  "duplicateR16Retained": 0,
+  "functionalOnly": true,
+  "timingGPUOrServerToStart": false,
+  "priorReferenceSourceUnchanged": true,
+  "sampledSheets": 3
+}

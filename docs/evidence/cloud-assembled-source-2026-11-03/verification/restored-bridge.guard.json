@@ -1,0 +1,19 @@
+{
+  "pass": true,
+  "command": [
+    "node",
+    "--test",
+    "--test-concurrency=1",
+    "tests/bridge/loader.test.mjs",
+    "tests/bridge/lifecycle.test.mjs",
+    "tests/bridge/actual-reference.test.mjs",
+    "tests/bridge/control-sync.test.mjs",
+    "tests/bridge/matched100.test.mjs"
+  ],
+  "exitCode": 0,
+  "sampledTreePeakBytes": 196624384,
+  "earlyBytes": 234881024,
+  "hardBytes": 268435456,
+  "stopped": null,
+  "scope": "Serial functional correctness only; process-tree sampled RSS, not timing admission"
+}

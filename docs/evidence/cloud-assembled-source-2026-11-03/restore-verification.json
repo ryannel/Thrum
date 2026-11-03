@@ -1,0 +1,24 @@
+{
+  "pass": true,
+  "build": "6bd88ae9bef60733",
+  "sourceArchiveSHA256": "4ec3379e9c268e79efb0f897fcf6fa7ee82a2c97f192432965fffdf64ad7e99c",
+  "observationsArchiveSHA256": "e79ffb496cb353eff8d8eb75e72cdc654ac145a1d190c2f627cc20c4a14bbefc",
+  "sourceArchiveMembers": 180,
+  "observationsArchiveMembers": 31,
+  "servedIdentityFiles": 63,
+  "approvedSourceFiles": 16,
+  "restoredClips": 3,
+  "functionalCases": {
+    "world": 12,
+    "native": 6,
+    "source": 8,
+    "render": 16,
+    "bridge": 7
+  },
+  "maxSampledProcessTreeBytes": 196755456,
+  "costEvaluatorRuns": 0,
+  "matched100DecodedRGBASHA256": "bfc59ffccc9ddd8d354d193149e055263e2d4d4224515c2ed9538a5d35943601",
+  "newUniquePayloadDiskBytesPackagePlusRestoreAtTest": 52570136,
+  "newDiskHardBytes": 83886080,
+  "scope": "Exact source/observation restoration and scopedfunctional/PNGcomparison only; no newGPU/server/browser/timing/art orperformancequalification"
+}

@@ -1,0 +1,13 @@
+{
+  "old": "../cloud-natural-coupled-proof/captures/system-t100000-mode0-7bf67682189662e2-f1249129-1.png",
+  "new": "captures/system-t100000-mode0-6bd88ae9bef60733-699e3613-1.png",
+  "shape": [
+    720,
+    1280,
+    4
+  ],
+  "maxAbsoluteChannelDelta8bit": 0,
+  "unequalChannelSamples": 0,
+  "decodedPixelsExact": true,
+  "scope": "Actual matched100s pair pixels only; not GPU speed, lifecycle or source art acceptance"
+}

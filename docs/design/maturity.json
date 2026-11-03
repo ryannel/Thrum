@@ -1462,6 +1462,22 @@
           "correctness": "independent_functional_review_six_exact_f57_trajectories_two_dry3600_publications_502oracle_cases_and_fresh11phase_restore_pass",
           "experienced_quality": "CPU_only_no_new_source_art_lifecycle_GPU_or_provider_acceptance",
           "performance": "first_unchanged_original_and_two_dry4ms_CPU_host_screens_PASS_hardest3_979667ms_margin20_333us_not_statistical_device_GPU_frame_or_full_sky_admission"
+        },
+        "natural_coupled_reference": {
+          "record": "../evidence/cloud-natural-coupled-reference-2026-11-03/README.md",
+          "build": "7bf67682189662e2",
+          "implementation": "exact127_visual_reference_authorized_with_failed_CPU_receipts_one_clock_shared_field_two_covered_light_charts_receiver_independent_mirror",
+          "correctness": "actual_HTTP15_approved_paths_finite_GPU_CPU_point_checks_370birth_exposed415_previous_vs_committed_capture_and_functional_relocation_pass",
+          "experienced_quality": "normal110s_pair16x75s_pair_dry90s_close_A_dry90s_recorded_sampled_local_renewal_soft_broad_anatomy_shrinking_breakup_and_clones_rejected_no_continuous_watch_or_family_admission",
+          "performance": "available_M3Max_only_original127_CPU_cost_FAIL_preserved_no_GPU_frame_residency_or_device_admission"
+        },
+        "assembled_source91": {
+          "record": "../evidence/cloud-assembled-source-2026-11-03/README.md",
+          "build": "6bd88ae9bef60733",
+          "implementation": "exact_CPU_screened91_source_fresh_bounded_assembly_unchanged7bf_native_renderer_fixtures_and_shared_readers",
+          "correctness": "independent_integration_review_actual_HTTP16_paths_matched100_RGBA_pixels_exact_GPU_CPU_probes_main_hidden_mirror_remote_receiver0_4537995_vs_omitted1_0_pass_bounded_scope",
+          "experienced_quality": "normal110s_16x75s_dry90s_recordings_complete_sampled_same_local_growth_softness_clones_and_weak_breakup_remain_unaccepted",
+          "performance": "first_unchanged_Node_CPU_screens_pass_20_333us_margin_only_actual_M3_playback_not_GPUtime_FPS_residency_M2_fullsky_or_runtime_provider_admission"
         }
       }
     },

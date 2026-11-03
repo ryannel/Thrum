@@ -1,0 +1,23 @@
+{
+  "pass": true,
+  "build": "7bf67682189662e2",
+  "sourceArchiveSHA256": "ca6191ac2f77990d3720cc921237d67ad2d87fb47d188a76fb8e2b1e7c21ca18",
+  "observationsArchiveSHA256": "0a4bf694b6fc883f72e44d0e088d6349aa3a3bc71cecd88d99b97c8345cf6b41",
+  "sourceArchiveMembers": 189,
+  "observationsArchiveMembers": 31,
+  "sourceIdentityFiles": 61,
+  "approvedSourceFiles": 15,
+  "restoredClips": 4,
+  "functionalCases": {
+    "world": 12,
+    "native": 6,
+    "source": 8,
+    "render": 16,
+    "bridge": 6
+  },
+  "maxSampledProcessTreeBytes": 198770688,
+  "costEvaluatorRuns": 0,
+  "newUniquePayloadDiskBytesPackagePlusRestoreAtTest": 57874194,
+  "newDiskHardBytes": 83886080,
+  "scope": "Exact restoration plus scopedCPUfunctional and observation-byte checks; no newGPU/browser/server/timing/artpass"
+}
