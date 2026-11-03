@@ -123,6 +123,11 @@ of this operational refusal. A bounded image is unnecessary for this
 ownership proof; a separate same-volume fault test is still required for
 real copy/compile pressure.
 
+The [provisional T2 same-volume job-account design](T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md)
+specifies claim classes, observation epochs, construction roots, lifecycle
+guards and first-host restart inventory for that later integration. It does
+not replace these owner-local receipts or prove physical allocation.
+
 T2 owns the later *cooperating* same-volume schedule and account. F3 supplies
 the staged/admitted demand and actual source-store outcome; F4 supplies
 build-input, product and retained-candidate requirements and lifetimes. T2's

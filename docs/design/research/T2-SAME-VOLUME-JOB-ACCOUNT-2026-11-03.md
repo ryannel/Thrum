@@ -1,0 +1,172 @@
+# T2 cooperating same-volume job account — provisional design
+
+3 November 2026. This resolves the next F3/F4/T2 coordination boundary in the
+[cross-owner policy](HOLISTIC-LIMIT-POLICY-2026-11-03.md), [source receipt
+design](SOURCE-SPACE-RECEIPT-DESIGN-2026-11-03.md), and C05/C10/C12. The
+[two-materialization proof](../../evidence/integration/T2-SAME-VOLUME-MATERIALIZATION-2026-11-03.md)
+demonstrates the current asymmetric local limits. This is an implementer design,
+not a physical APFS allocation guarantee or an implemented coordinator. F3
+source identity and root/outcome remain independent of these operational values.
+
+## One host and one filesystem domain first
+
+The first profile has one T2 host process coordinating its cooperating F3 and F4
+jobs, with one exclusive host owner and a fixed, discoverable private T2
+job-root layout outside the entire source project tree but on the selected
+filesystem domain. Register the job ID, root path, source/build generation, resource
+class, intended child process group and state in a small durable record before
+any copy or compiler launch. Create the owned root first, then atomically write
+and sync its record and parent; a crash between those steps leaves a
+discoverable unpaired root. After verified tree cleanup, sync the parent
+before removing the record. `MaterializedSource::drop` currently ignores
+removal failure; the T2 owner must use an explicit checked close and retain a
+failed-cleanup record. At startup, enumerate all owned job roots and
+records before admitting work. An unpaired root, incomplete registration or
+unresolved compiler family is quarantined and retains its conservative claim;
+the host refuses overlapping new work until inspection/recovery resolves it.
+PID reuse is not evidence that an earlier child is gone. This makes restart
+inventory possible for the first host, without claiming transitive containment.
+T2 identifies the destination filesystem domain from opened roots, not
+path spelling. It refuses an unaccounted destination, cross-volume move, alias,
+or changed root identity before work. The account covers selected store, stage,
+materialization, private cache, compiler output, temporary files and retained
+candidate roots on that domain. A second host process is **not** coordinated by
+an in-memory lock; cross-process use requires a shared owner registry, atomic
+registration, recovery and reconciliation before it can claim this policy.
+Unrelated OS writers can always consume space between observation and write.
+Direct F3/F4 calls that bypass this first host are outside its cooperating-job
+promise, even if they write to the same volume.
+
+T2 owns scheduling and the account, not source or build authority. F3 retains
+exact admission, pin, WAL/checkpoint and recovery decisions. F4 retains verified
+input/product/build ownership, compiler lifecycle and ready publication. Each
+job supplies a checked plan for *remaining incremental retained growth* in its
+own phase, the paths it owns, and an idempotent release event. A rewrite's raw
+I/O bytes do not equal new retained growth. T2 records a claim by job,
+generation, filesystem domain, resource class (managed temporary, main/WAL,
+compiler/output or other), phase and estimate basis. Claims are operational estimates;
+owners still guard writes and syncs and preserve the prior complete state on
+failure. A closed/failed job cannot release another job's claim.
+
+| Owner | Current use and remaining work to expose | Release boundary |
+| --- | --- | --- |
+| F3 stage/admission | Stage copy, missing accepted blobs, main/WAL growth and checkpoint debt; account for existing allocated main/WAL once. | After durable outcome or exact failed/recovered state and owned scratch cleanup. A live accepted pin retains required blobs. |
+| F4 materialization | Distinct retained input trees and incremental copies, product files, candidate build roots and receipts. | Each lease/owner closes and cleanup is verified; a ready root retains its required closure. |
+| T2 compiler environment/job | Private cache and retained tools already present, remaining compiler output, TMPDIR and intermediates, child/supervisor writes, plus candidate output. | Compiler family exits, receipt and output are resolved, and owned scratch cleanup is verified. Unknown descendants remain unresolved. |
+
+The project managed-temporary target compares complete retained-root charges
+and **one charge per active managed-temporary job** against the selected target.
+Main/WAL and compiler output do not enter that bucket. F3 must expose a
+disjoint per-root charge or an equivalent registered-root exclusion before T2
+can replace its opaque `.engine` scan; simply adding a claim to that scan can
+double-count a partly built F3 stage. Until that integration, the scanner
+remains F3's local guard and T2 reports any conservative aggregate deferral.
+
+At a stable owner-reported handoff, an instrumented job charge is observed
+current root use plus its revised remaining growth estimate. During an
+in-flight/unreported write, retain at least the previously admitted full
+phase charge; do not decrement it from raw bytes written or a racing scan.
+For the un-interposed compiler, retain the full phase claim until the family
+has stopped and output has been inventoried; any observed overrun triggers
+supervisor cancellation/quarantine. An active root is **not** also summed as a
+completed root. A conservative charge may exceed actual simultaneous use and
+defer otherwise feasible work; the receipt must say so. Checked overflow
+refuses before work. The target is configurable scheduling policy, not a
+physical quota.
+
+For observed available space, already allocated bytes are reflected in the
+filesystem sample. Compare it with other jobs' reported remaining growth and
+the proposed incremental growth plus selected headroom. A full un-interposed
+compiler claim may include bytes already written, making this comparison
+conservatively high until completion; never call that a physical reservation
+or an exact remaining-byte count. F3's main/WAL policies remain separate;
+SQLite freelist is not free volume space. Scan registered roots outside the
+account mutex, pair the result with an owner-reported/versioned claim snapshot
+and a fresh availability sample, and retry a changed cooperating epoch. An
+unreported write or unrelated writer can still race both observations; retain
+the uncertain claim and owner-local live checks. Record each input quantity,
+estimate class, sample time, filesystem domain and conservative-overcount
+reason in a typed receipt.
+
+## Transaction and lifecycle
+
+1. Inventory registered roots outside the account mutex, then acquire T2's
+   short per-domain mutex. Pair the observed current-use result with
+   the current claim version, take a fresh free-space observation, and compare
+   the complete simultaneous plan. Retry if the version changed. Reserve a
+   claim or return a typed deferral/refusal with
+   requested/allowed/observed quantities. Release the lock before copying or
+   compiling. Do not hold it for a whole build.
+2. F3 and F4 perform owner-local preflight, before/after-write live checks and
+   fault handling. Their instrumented stage/store/materialization copy paths
+   reconcile completed chunks at short lock boundaries. An overrun requests
+   more claim before the next instrumented chunk or defers/stops at an
+   owner-safe boundary; it never silently borrows another owner's allowance.
+   Compiler output is not chunk-interposed: admit a phase estimate before
+   launch, sample actual growth during supervision and cancel on observed
+   overrun. Output can exceed the estimate before detection. An unknown demand
+   defers or refuses rather than pretending the estimate is a hard write cap.
+3. Keep F3's current writer window and `.engine` scans intact. The T2 host
+   requires every temporary F4 materialization destination, compiler output
+   and TMPDIR to be under a registered private T2 job root outside the
+   **entire source project tree**, on the same verified filesystem domain.
+   This prevents F3's declared-tree inventory and managed-temporary scanner
+   from seeing a partial F4 copy, and removes F4 retirement from F3's scan
+   lock order. Register the input subdirectory before copy; hold its F4
+   materialization owner through compiler reads and verified cleanup. Keep
+   the durable job registration outside any subtree
+   `MaterializedSource::drop` can delete. T2 counts those external roots'
+   current charge and remaining claims once alongside the F3 `.engine`
+   charge. A later ready-product/cache root placed inside `.engine` needs its
+   own lifecycle and account design; temporary-root disjointness grants no
+   exemption to it.
+4. Never hold T2's account mutex across an owner callback, file copy, compiler
+   wait, F3 source-window/store lock, F4 lease/owner lock or a full filesystem
+   scan. Owners prepare plans without the account mutex, then use a versioned
+   nonblocking claim attempt; if an owner state or observation epoch changed,
+   release and retry. F3 retains its writer window across the complete
+   capture, including scans. T2 never waits for that window while holding its
+   mutex. F4's external temporary-root retirement needs no F3 lock.
+5. One background compiler writer is the first scheduling policy, not a
+   semantic limit. Foreground source work may defer or cancel speculative
+   compilation when space becomes tight. Cancellation never drops a source pin
+   or a ready build. If a compiler family, write, sync, cleanup or receipt state
+   is uncertain, quarantine its claim and roots until inspection/recovery;
+   do not refund an estimate on process exit alone. An observed detached child
+   remains a release fault under the selected compiler-family trust boundary.
+6. Publish only after owner-local completeness and the required durability
+   barrier. Release claims at verified cleanup or transfer them to retained
+   ownership. Receipt failure after publication must report the committed
+   outcome, not recast it as a failed source/build operation.
+
+The coordinator can reduce avoidable simultaneous work, but cannot promise an
+APFS physical high-water, protect against external writes, or make a compiler
+family transitive OS containment. Source/store and F4 retain native ENOSPC,
+I/O, uncertain-COMMIT and crash recovery obligations.
+
+## Rejection-oriented proof queue
+
+1. Two individually affordable F4 copies whose *combined remaining* plan is
+   unaffordable: second defers before output creation; cancelling either frees
+   only its own claim. Reopen after restart and detect any retained roots before
+   accepting fresh work. Repeat with F3 B admission while compiler A sleeps.
+2. Race F4 external-root construction, close and retirement against F3's
+   preflight/final scans. Assert F3's declared inventory and `.engine` scan
+   never see the F4 partial tree, while T2 counts it exactly once. Show A pin
+   and old ready build survive B refusal. Include same-project-path refusal,
+   aliases/cross-volume, unknown-output-root refusal, and concurrent capture,
+   pin release and retirement without deadlock.
+3. Consume free space externally after preflight, then inject native ENOSPC
+   during materialization and compiler output, plus sync, cleanup and receipt
+   faults. Require typed operation result, no partial ready publication,
+   exact source outcome, retained required inputs, and no premature claim
+   refund. Fault a child that outlives its supervisor.
+4. Measure one combined many-small-file/dense-JSON/large-master, old-pin,
+   replacement and compile workload. Report estimated versus observed
+   main/WAL/temp/output peaks, free-space samples, stage/build elapsed tails,
+   and end-to-end identity. A policy default is revisited with those data;
+   isolated microprobes and logical byte accounts do not certify it.
+
+This design stays provisional until F3/F4/T2 owners reconcile root placement,
+receipt fields and the first host's job lifecycle, then implement and run the
+fault cases. No cross-process or device qualification is inferred.
