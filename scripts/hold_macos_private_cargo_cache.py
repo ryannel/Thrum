@@ -6,6 +6,7 @@ leaves its digest name unusable rather than repairing a published selection.
 """
 
 import hashlib
+import argparse
 import json
 import os
 from pathlib import Path
@@ -235,3 +236,45 @@ def open_sealed_cache(owner_parent, tree, legacy, manifest_sha):
             os.close(fd)
         root_lease.close()
         raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--prepare", action="store_true")
+    mode.add_argument("--hold", action="store_true")
+    parser.add_argument("--source", type=Path)
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--owner", type=Path, required=True)
+    parser.add_argument("--tree-json")
+    parser.add_argument("--legacy-json")
+    parser.add_argument("--manifest-sha")
+    args = parser.parse_args()
+    if args.prepare:
+        if (args.source is None or args.manifest is None
+                or any(value is not None for value in (
+                    args.tree_json, args.legacy_json, args.manifest_sha,
+                ))):
+            parser.error("preparation needs source and manifest only")
+        root, tree, legacy, manifest_sha = prepare_sealed_cache(
+            args.source, args.manifest, args.owner,
+        )
+        print(json.dumps({"root": str(root), "tree": tree, "legacy": legacy,
+                          "manifestSha256": manifest_sha}, sort_keys=True), flush=True)
+    else:
+        if (args.source is not None or args.manifest is not None
+                or any(value is None for value in (
+                    args.tree_json, args.legacy_json, args.manifest_sha,
+                ))):
+            parser.error("holding needs tree, legacy and manifest digest only")
+        with open_sealed_cache(
+            args.owner, json.loads(args.tree_json), json.loads(args.legacy_json),
+            args.manifest_sha,
+        ) as selection:
+            print("READY", flush=True)
+            sys.stdin.buffer.read(1)
+            selection.assert_live()
+
+
+if __name__ == "__main__":
+    main()
