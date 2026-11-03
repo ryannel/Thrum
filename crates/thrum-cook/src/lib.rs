@@ -1331,21 +1331,34 @@ mod tests {
             let missing = reopen_child(&candidate.with_file_name("candidate-a-missing"));
             assert!(!missing.status.success());
             assert!(String::from_utf8_lossy(&missing.stdout).contains("1 failed"));
+            // Never write to an inode that macOS has executed: its kernel
+            // code-signature cache can remain stale even after bytes recover.
+            let disposable_candidate = |name: &str| {
+                let copy = candidate.with_file_name(name);
+                fs::create_dir(&copy).unwrap();
+                for entry in fs::read_dir(candidate).unwrap() {
+                    let entry = entry.unwrap();
+                    assert!(entry.file_type().unwrap().is_file());
+                    fs::copy(entry.path(), copy.join(entry.file_name())).unwrap();
+                }
+                copy
+            };
+            let binary_candidate = disposable_candidate("candidate-a-tampered-binary");
             let mut binary = fs::OpenOptions::new()
                 .read(true)
                 .write(true)
-                .open(&retained)
+                .open(binary_candidate.join("headless"))
                 .unwrap();
             let mut first = [0];
             binary.read_exact(&mut first).unwrap();
             binary.seek(SeekFrom::Start(0)).unwrap();
             binary.write_all(&[first[0] ^ 1]).unwrap();
-            assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
-            binary.seek(SeekFrom::Start(0)).unwrap();
-            binary.write_all(&first).unwrap();
+            assert!(candidate_output::verify(&binary_candidate, digest, a, &product).is_err());
             drop(binary);
+            fs::remove_dir_all(binary_candidate).unwrap();
             assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
-            let wrapper_path = candidate.join("rustc-receipt-wrapper");
+            let wrapper_candidate = disposable_candidate("candidate-a-tampered-wrapper");
+            let wrapper_path = wrapper_candidate.join("rustc-receipt-wrapper");
             let mut wrapper = fs::OpenOptions::new()
                 .read(true)
                 .write(true)
@@ -1355,10 +1368,9 @@ mod tests {
             wrapper.read_exact(&mut first).unwrap();
             wrapper.seek(SeekFrom::Start(0)).unwrap();
             wrapper.write_all(&[first[0] ^ 1]).unwrap();
-            assert!(candidate_output::verify(candidate, digest, a, &product).is_err());
-            wrapper.seek(SeekFrom::Start(0)).unwrap();
-            wrapper.write_all(&first).unwrap();
+            assert!(candidate_output::verify(&wrapper_candidate, digest, a, &product).is_err());
             drop(wrapper);
+            fs::remove_dir_all(wrapper_candidate).unwrap();
             assert!(candidate_output::verify(candidate, digest, a, &product).is_ok());
             let receipt_name = fs::read_dir(candidate)
                 .unwrap()
@@ -1457,6 +1469,31 @@ mod tests {
             let retained = candidate_output::verify(candidate, digest, a, &product).unwrap();
             assert_eq!(file_sha256_hex(&retained), binary_a_hash);
             let rerun = Command::new(&retained).output().unwrap();
+            #[cfg(target_os = "macos")]
+            if !rerun.status.success()
+                && let Some(path) = std::env::var_os("THRUM_TEST_RETAINED_RERUN_DIAG_PATH")
+            {
+                let diagnostic = PathBuf::from(path);
+                match fs::hard_link(&retained, &diagnostic) {
+                    Ok(()) => eprintln!(
+                        "retained A failed inode preserved at {}",
+                        diagnostic.display()
+                    ),
+                    Err(error) => eprintln!("retained A diagnostic link failed: {error}"),
+                }
+                match Command::new("/usr/bin/codesign")
+                    .args(["--verify", "--verbose=4"])
+                    .arg(&retained)
+                    .output()
+                {
+                    Ok(signature) => eprintln!(
+                        "retained A code-signature diagnostic status={} stderr={}",
+                        signature.status,
+                        String::from_utf8_lossy(&signature.stderr),
+                    ),
+                    Err(error) => eprintln!("retained A codesign diagnostic failed: {error}"),
+                }
+            }
             assert!(
                 rerun.status.success(),
                 "retained A rerun exited {}: stdout={} stderr={}",
