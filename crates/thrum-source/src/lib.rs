@@ -19,48 +19,10 @@ mod path;
 mod profile;
 pub mod project_v2_json;
 #[cfg(test)]
-mod provisional_store;
-#[cfg(test)]
 mod provisional_store_vfs_test;
 mod record;
 pub mod registry;
 pub mod registry_stage;
-// The exact predicate is compiled privately ahead of the shared render decoder.
-#[allow(dead_code)]
-mod render_bound;
-// Exact source geometry is compiled privately ahead of the same decoder.
-#[allow(dead_code)]
-mod render_geometry_exact;
-// Strict render-v1 envelope borrows collections ahead of shared decoding.
-#[allow(dead_code)]
-mod render_json;
-// Object-scoped geometry preparation shares exact source predicates.
-#[allow(dead_code)]
-mod render_source_objects;
-// Canonical collection-wide structural error selection stays inactive.
-#[allow(dead_code)]
-mod render_source_collections;
-// Chunked canonical texture source path remains inactive until F3/F4 binding.
-#[allow(dead_code)]
-mod render_source_texture;
-// Exact local-light source normalization remains inactive until F3/F4 binding.
-#[allow(dead_code)]
-mod render_light_luminance_exact;
-// Authored point-light facts remain inactive until shared F3/F4 closure.
-#[allow(dead_code)]
-mod render_source_light;
-// One local structural pass remains inactive until global F3/F4 closure.
-#[allow(dead_code)]
-mod render_source_root;
-// Scene-v3 source grammar remains private until F3/F4 adoption.
-#[allow(dead_code)]
-mod scene_source_v3;
-// Render-v1 source meaning remains private until the full F3 closure lands.
-#[allow(dead_code)]
-mod render_source_definition;
-// Material source meaning stays independent of target support and admission.
-#[allow(dead_code)]
-mod render_source_material;
 pub mod schema_json;
 mod semantic;
 mod sqlite_store;

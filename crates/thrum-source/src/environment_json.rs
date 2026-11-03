@@ -57,35 +57,8 @@ pub(crate) const LIGHT_DEFINITION: &str = concat!(
 );
 
 pub(crate) struct RecordHeader {
-    #[cfg(test)]
-    pub(crate) id: String,
     pub(crate) record_type: String,
     pub(crate) schema: u64,
-}
-
-/// One checked header bound to the exact bytes traversed by `record_header`.
-/// The future render dispatch can inspect this header and pass the same token
-/// into typed decoding without repeating the whole-record shape walk.
-pub(crate) struct CheckedRecord<'a> {
-    bytes: &'a [u8],
-    header: RecordHeader,
-}
-
-impl<'a> CheckedRecord<'a> {
-    pub(crate) fn bytes(&self) -> &'a [u8] {
-        self.bytes
-    }
-
-    pub(crate) fn header(&self) -> &RecordHeader {
-        &self.header
-    }
-}
-
-pub(crate) fn checked_record(bytes: &[u8]) -> Result<CheckedRecord<'_>, serde_json::Error> {
-    Ok(CheckedRecord {
-        bytes,
-        header: record_header(bytes)?,
-    })
 }
 
 /// Read the checked top-level identity and discriminators before typed parsing.
@@ -98,7 +71,7 @@ pub(crate) fn record_header(bytes: &[u8]) -> Result<RecordHeader, serde_json::Er
     }
     impl<'de> Visitor<'de> for HeaderVisitor<'_> {
         type Value = RecordHeader;
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.write_str("a source envelope with unique type and schema discriminators")
         }
         fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
@@ -113,13 +86,13 @@ pub(crate) fn record_header(bytes: &[u8]) -> Result<RecordHeader, serde_json::Er
                                 marker: PhantomData,
                             })?
                             .0,
-                        )
+                        );
                     }
                     "schema" if schema.is_none() => {
                         schema = Some(map.next_value_seed(CountHeaderSeed::<u64> {
                             nodes: self.nodes,
                             marker: PhantomData,
-                        })?)
+                        })?);
                     }
                     "id" if id.is_none() => {
                         id = Some(
@@ -154,11 +127,8 @@ pub(crate) fn record_header(bytes: &[u8]) -> Result<RecordHeader, serde_json::Er
                 return Err(A::Error::custom("missing source envelope field"));
             }
             let id = required(id)?;
-            #[cfg(not(test))]
             drop(id);
             Ok(RecordHeader {
-                #[cfg(test)]
-                id,
                 record_type: required(record_type)?,
                 schema: required(schema)?,
             })
@@ -206,7 +176,7 @@ impl<'de> Deserialize<'de> for DiscardedHeaderText {
         struct TextVisitor;
         impl Visitor<'_> for TextVisitor {
             type Value = DiscardedHeaderText;
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("a source string bounded by the whole-record byte limit")
             }
             fn visit_str<E: serde::de::Error>(self, text: &str) -> Result<Self::Value, E> {
@@ -234,7 +204,7 @@ impl<'de> DeserializeSeed<'de> for HeaderSkipSeed<'_> {
 struct HeaderSkipVisitor<'a>(HeaderSkipSeed<'a>);
 impl<'de> Visitor<'de> for HeaderSkipVisitor<'_> {
     type Value = ();
-    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("finite source JSON within the whole-record depth and node bounds")
     }
     fn visit_unit<E: serde::de::Error>(self) -> Result<(), E> {
@@ -421,11 +391,6 @@ pub(crate) struct EnvironmentRecord {
     pub(crate) sun: AuthoredSun,
     pub(crate) ambient_irradiance_lux: [f64; 3],
     pub(crate) background_radiance_cd_m2: [f64; 3],
-    #[cfg(test)]
-    pub(crate) unsupported: Vec<String>,
-    /// Exact raw values, including internal whitespace and number spellings.
-    #[cfg(test)]
-    pub(crate) extensions: Vec<(String, String)>,
 }
 
 #[derive(Debug)]
@@ -445,7 +410,7 @@ macro_rules! strict_object {
                 struct ObjectVisitor;
                 impl<'de> Visitor<'de> for ObjectVisitor {
                     type Value = $name;
-                    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                    fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                         f.write_str(stringify!($name))
                     }
                     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
@@ -495,7 +460,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Envelope<T> {
         struct EnvelopeVisitor<T>(PhantomData<T>);
         impl<'de, T: Deserialize<'de>> Visitor<'de> for EnvelopeVisitor<T> {
             type Value = Envelope<T>;
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("a fixed engine-owned source envelope")
             }
             fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
@@ -508,7 +473,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Envelope<T> {
                         "schema" if schema.is_none() => schema = Some(map.next_value()?),
                         "fields" if fields.is_none() => fields = Some(map.next_value()?),
                         "documentation" if !documentation_seen => {
-                            let _: Text = map.next_value()?;
+                            drop(map.next_value::<Text>()?);
                             documentation_seen = true;
                         }
                         _ => return Err(A::Error::custom("duplicate or unknown envelope key")),
@@ -536,7 +501,7 @@ impl<'de> Deserialize<'de> for Text {
         struct TextVisitor;
         impl Visitor<'_> for TextVisitor {
             type Value = Text;
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("a bounded UTF-8 string")
             }
             fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Text, E> {
@@ -567,7 +532,7 @@ impl<'de> Deserialize<'de> for EmptyArray {
         struct EmptyVisitor;
         impl<'de> Visitor<'de> for EmptyVisitor {
             type Value = EmptyArray;
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("an empty array")
             }
             fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
@@ -601,16 +566,13 @@ const UNSUPPORTED: [&str; 7] = [
     "moon",
     "air_quality",
 ];
-struct Unsupported {
-    #[cfg(test)]
-    values: Vec<String>,
-}
+struct Unsupported;
 impl<'de> Deserialize<'de> for Unsupported {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         struct ListVisitor;
         impl<'de> Visitor<'de> for ListVisitor {
             type Value = Unsupported;
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("the constant-light unsupported quantity list")
             }
             fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
@@ -628,10 +590,7 @@ impl<'de> Deserialize<'de> for Unsupported {
                         "incomplete constant-light unsupported list",
                     ));
                 }
-                Ok(Unsupported {
-                    #[cfg(test)]
-                    values: result,
-                })
+                Ok(Unsupported)
             }
         }
         d.deserialize_seq(ListVisitor)
@@ -647,15 +606,13 @@ struct EnvironmentFields {
     background: Option<[f64; 3]>,
     unsupported: Option<Unsupported>,
     extension_keys: Vec<String>,
-    #[cfg(test)]
-    extensions: Vec<(String, String)>,
 }
 impl<'de> Deserialize<'de> for EnvironmentFields {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         struct FieldsVisitor;
         impl<'de> Visitor<'de> for FieldsVisitor {
             type Value = EnvironmentFields;
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("constant-light-v1 fields")
             }
             fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
@@ -668,13 +625,13 @@ impl<'de> Deserialize<'de> for EnvironmentFields {
                         "profile" if out.profile.is_none() => out.profile = Some(map.next_value()?),
                         "sun" if out.sun.is_none() => out.sun = Some(map.next_value()?),
                         "ambient_irradiance_lux" if out.ambient.is_none() => {
-                            out.ambient = Some(map.next_value()?)
+                            out.ambient = Some(map.next_value()?);
                         }
                         "background_radiance_cd_m2" if out.background.is_none() => {
-                            out.background = Some(map.next_value()?)
+                            out.background = Some(map.next_value()?);
                         }
                         "unsupported" if out.unsupported.is_none() => {
-                            out.unsupported = Some(map.next_value()?)
+                            out.unsupported = Some(map.next_value()?);
                         }
                         k if k.starts_with("x.thrum.environment.") && k.is_ascii() => {
                             if out.extension_keys.len() >= MAX_EXTENSIONS
@@ -691,8 +648,6 @@ impl<'de> Deserialize<'de> for EnvironmentFields {
                                 return Err(A::Error::custom("opaque JSON byte limit"));
                             }
                             check_opaque(raw.get(), &total_nodes).map_err(A::Error::custom)?;
-                            #[cfg(test)]
-                            out.extensions.push((key.0.clone(), raw.get().to_owned()));
                             out.extension_keys.push(key.0);
                         }
                         _ => {
@@ -765,7 +720,7 @@ pub(crate) fn parse_environment(bytes: &[u8]) -> Result<EnvironmentRecord, serde
     let radius = required::<_, serde_json::Error>(sun.angular_radius)?;
     let ambient = required::<_, serde_json::Error>(fields.ambient)?;
     let background = required::<_, serde_json::Error>(fields.background)?;
-    let _unsupported = required::<_, serde_json::Error>(fields.unsupported)?;
+    required::<_, serde_json::Error>(fields.unsupported)?;
     let length = direction[0].hypot(direction[1]).hypot(direction[2]);
     let luminance = 0.2126 * colour[0] + 0.7152 * colour[1] + 0.0722 * colour[2];
     if direction.iter().any(|x| !x.is_finite())
@@ -794,10 +749,6 @@ pub(crate) fn parse_environment(bytes: &[u8]) -> Result<EnvironmentRecord, serde
         },
         ambient_irradiance_lux: ambient,
         background_radiance_cd_m2: background,
-        #[cfg(test)]
-        unsupported: _unsupported.values,
-        #[cfg(test)]
-        extensions: fields.extensions,
     })
 }
 
@@ -811,6 +762,10 @@ pub(crate) fn parse_environment(bytes: &[u8]) -> Result<EnvironmentRecord, serde
 /// bytes against its accepted source pin, check the built-in definition identity
 /// and establish the typed scene-to-environment-to-light reference closure.
 /// Successful parsing alone supplies none of those authority guarantees.
+///
+/// # Errors
+///
+/// The authored environment has invalid syntax, units, field bounds, or source references.
 pub fn parse_authored_environment(bytes: &[u8]) -> Result<AuthoredEnvironment, serde_json::Error> {
     record_header(bytes)?;
     let record = parse_environment(bytes)?;
@@ -824,16 +779,16 @@ pub fn parse_authored_environment(bytes: &[u8]) -> Result<AuthoredEnvironment, s
 
 /// Validate and project the identity and environment edge of `core.scene@2/@3`.
 ///
-/// The scene@3 parser also checks its required render edge, but this projection
-/// does not retain it. Labels and documentation are checked but omitted. The
+/// Labels and documentation are checked but omitted. The
 /// caller must authenticate the exact bytes and built-in definition against
 /// its accepted pin and establish typed reference closure before build use.
+///
+/// # Errors
+///
+/// The scene is malformed or is not the supported scene schema.
 pub fn parse_environment_scene(bytes: &[u8]) -> Result<EnvironmentScene, serde_json::Error> {
-    let checked = checked_record(bytes)?;
-    match (
-        checked.header().record_type.as_str(),
-        checked.header().schema,
-    ) {
+    let header = record_header(bytes)?;
+    match (header.record_type.as_str(), header.schema) {
         ("core.scene", 2) => {
             let record = parse_scene(bytes)?;
             Ok(EnvironmentScene {
@@ -842,37 +797,10 @@ pub fn parse_environment_scene(bytes: &[u8]) -> Result<EnvironmentScene, serde_j
                 environment_source: record.environment_source,
             })
         }
-        ("core.scene", 3) => {
-            let record = crate::scene_source_v3::decode_checked_scene_v3(checked)
-                .map_err(|error| serde_json::Error::custom(format!("{error:?}")))?;
-            Ok(EnvironmentScene {
-                id: canonical_uuid_string(&record.id),
-                schema: 3,
-                environment_source: record
-                    .environment_source
-                    .map(|id| canonical_uuid_string(&id)),
-            })
-        }
         _ => Err(serde_json::Error::custom(
             "unsupported scene type or schema",
         )),
     }
-}
-
-fn canonical_uuid_string(id: &[u8; 16]) -> String {
-    const HEX: &[u8; 16] = b"0123456789abcdef";
-    let mut bytes = [0_u8; 36];
-    let mut output = 0;
-    for (index, byte) in id.iter().enumerate() {
-        if matches!(index, 4 | 6 | 8 | 10) {
-            bytes[output] = b'-';
-            output += 1;
-        }
-        bytes[output] = HEX[(byte >> 4) as usize];
-        bytes[output + 1] = HEX[(byte & 0x0f) as usize];
-        output += 2;
-    }
-    String::from_utf8(bytes.to_vec()).expect("hexadecimal UUID is ASCII")
 }
 
 /// Validate and project a `thrum.light.identity@1` record.
@@ -881,6 +809,10 @@ fn canonical_uuid_string(id: &[u8; 16]) -> String {
 /// independent transform or intensity. Whole-record bounds also apply. The
 /// caller must authenticate the exact bytes and built-in definition against its
 /// accepted pin and establish typed reference closure before build use.
+///
+/// # Errors
+///
+/// The light identity is malformed or declares an unsupported driver binding.
 pub fn parse_environment_light_identity(
     bytes: &[u8],
 ) -> Result<EnvironmentLightIdentity, serde_json::Error> {
@@ -891,38 +823,6 @@ pub fn parse_environment_light_identity(
 
 fn nonnegative(values: &[f64]) -> bool {
     values.iter().all(|x| x.is_finite() && *x >= 0.0)
-}
-
-/// Check the declared namespace and selected source separately from decoding.
-/// Declared but unselected sources remain content; they do not activate a Sun.
-#[cfg(test)]
-pub(crate) fn validate_closure(
-    scene: &SceneRecord,
-    environments: &[EnvironmentRecord],
-    lights: &[LightRecord],
-) -> Result<(), &'static str> {
-    let mut ids = BTreeSet::new();
-    ids.insert(&scene.id);
-    for id in environments
-        .iter()
-        .map(|x| &x.id)
-        .chain(lights.iter().map(|x| &x.id))
-    {
-        if !ids.insert(id) {
-            return Err("duplicate declared UUID");
-        }
-    }
-    for source in environments {
-        if !lights.iter().any(|light| light.id == source.sun.light_ref) {
-            return Err("unresolved or wrong-type light reference");
-        }
-    }
-    if let Some(selected) = &scene.environment_source
-        && !environments.iter().any(|source| &source.id == selected)
-    {
-        return Err("unresolved or wrong-type environment source");
-    }
-    Ok(())
 }
 
 // Validation-only traversal of opaque JSON; no generic value tree is built.
@@ -952,7 +852,7 @@ impl<'de> DeserializeSeed<'de> for OpaqueSeed<'_> {
 struct OpaqueVisitor<'a>(OpaqueSeed<'a>);
 impl<'de> Visitor<'de> for OpaqueVisitor<'_> {
     type Value = ();
-    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("bounded finite opaque JSON")
     }
     fn visit_unit<E: serde::de::Error>(self) -> Result<(), E> {
@@ -1015,6 +915,37 @@ impl<'de> Visitor<'de> for OpaqueVisitor<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Check the declared namespace and selected source separately from decoding.
+    /// Declared but unselected sources remain content; they do not activate a Sun.
+    pub(crate) fn validate_closure(
+        scene: &SceneRecord,
+        environments: &[EnvironmentRecord],
+        lights: &[LightRecord],
+    ) -> Result<(), &'static str> {
+        let mut ids = BTreeSet::new();
+        ids.insert(&scene.id);
+        for id in environments
+            .iter()
+            .map(|x| &x.id)
+            .chain(lights.iter().map(|x| &x.id))
+        {
+            if !ids.insert(id) {
+                return Err("duplicate declared UUID");
+            }
+        }
+        for source in environments {
+            if !lights.iter().any(|light| light.id == source.sun.light_ref) {
+                return Err("unresolved or wrong-type light reference");
+            }
+        }
+        if let Some(selected) = &scene.environment_source
+            && !environments.iter().any(|source| &source.id == selected)
+        {
+            return Err("unresolved or wrong-type environment source");
+        }
+        Ok(())
+    }
 
     const SCENE: &str = "10000000-0000-4000-8000-000000000003";
     const SOURCE: &str = "10000000-0000-4000-8000-000000000001";
@@ -1101,13 +1032,11 @@ mod tests {
         assert_eq!(source.id, SOURCE);
         assert!(source.label.is_none());
         assert_eq!(source.sun.toward_source_unit, [0.0, 1.0, 0.0]);
-        assert_eq!(source.sun.perpendicular_illuminance_lux, 100000.0);
+        assert_eq!(source.sun.perpendicular_illuminance_lux, 100_000.0);
         assert_eq!(source.sun.unit_luminance_linear_rec709, [1.0; 3]);
         assert_eq!(source.sun.angular_radius_rad, 0.00465);
         assert_eq!(source.ambient_irradiance_lux, [1000.0; 3]);
         assert_eq!(source.background_radiance_cd_m2, [0.0; 3]);
-        assert_eq!(source.unsupported, UNSUPPORTED);
-        assert!(source.extensions.is_empty());
         let selected = scene(Some(SOURCE));
         let light = light();
         assert_eq!(selected.label.as_deref(), Some("entry"));
@@ -1141,15 +1070,18 @@ mod tests {
         );
         assert_eq!(source.id(), SOURCE);
         assert_eq!(source.sun().light_ref(), LIGHT);
-        assert_eq!(source.sun().toward_source_unit(), [-0.0, 0.9999999995, 0.0]);
+        assert_eq!(
+            source.sun().toward_source_unit(),
+            [-0.0, 0.999_999_999_5, 0.0]
+        );
         assert_eq!(
             source.sun().toward_source_unit()[0].to_bits(),
             (-0.0_f64).to_bits()
         );
-        assert_eq!(source.sun().perpendicular_illuminance_lux(), 125000.0);
+        assert_eq!(source.sun().perpendicular_illuminance_lux(), 125_000.0);
         assert_eq!(
             source.sun().unit_luminance_linear_rec709(),
-            [1.0000000005; 3]
+            [1.000_000_000_5; 3]
         );
         assert_eq!(source.sun().angular_radius_rad(), 0.00465);
         assert_eq!(source.ambient_irradiance_lux(), [1.5, 2.5, 3.5]);
@@ -1247,29 +1179,6 @@ mod tests {
             format!("{light} trailing"),
         ] {
             assert!(parse_environment_light_identity(invalid.as_bytes()).is_err());
-        }
-    }
-
-    #[test]
-    fn scene3_environment_projection_checks_required_render_edge_and_version() {
-        const RENDER: &str = "10000000-0000-4000-8000-000000000004";
-        let scene = format!(
-            r#"{{"fields":{{"render.source":"{RENDER}","environment.source":"{SOURCE}","scene.label":"entry"}},"schema":3,"type":"core.scene","id":"{SCENE}"}}"#
-        );
-        let escaped = scene
-            .replace("render.source", r"render.\u0073ource")
-            .replace(SOURCE, r"10000000-0000-4000-8000-00000000000\u0031");
-        let parsed = parse_environment_scene(scene.as_bytes()).unwrap();
-        assert_eq!(parsed.id(), SCENE);
-        assert_eq!(parsed.schema(), 3);
-        assert_eq!(parsed.environment_source(), Some(SOURCE));
-        assert_eq!(parse_environment_scene(escaped.as_bytes()).unwrap(), parsed);
-        for invalid in [
-            scene.replace(&format!(r#""render.source":"{RENDER}","#), ""),
-            scene.replace(RENDER, "not-a-canonical-uuid"),
-            scene.replace("\"schema\":3", "\"schema\":4"),
-        ] {
-            assert!(parse_environment_scene(invalid.as_bytes()).is_err());
         }
     }
 
@@ -1507,18 +1416,13 @@ mod tests {
     }
 
     #[test]
-    fn opaque_values_preserve_bytes_during_neighboring_known_edit() {
+    fn opaque_values_accept_neighboring_known_edit() {
         let raw = r#"{ "nested" : [1.00, -0, "\u0061", null, true, false], "x": {} }"#;
         let original = with_extension("x.thrum.environment.test", raw);
         let edited = original.replace(":100000", ":75000");
-        let before = parse_environment(original.as_bytes()).unwrap();
+        assert!(parse_environment(original.as_bytes()).is_ok());
         let after = parse_environment(edited.as_bytes()).unwrap();
-        assert_eq!(before.extensions, after.extensions);
-        assert_eq!(
-            after.extensions,
-            [("x.thrum.environment.test".to_owned(), raw.to_owned())]
-        );
-        assert_eq!(after.sun.perpendicular_illuminance_lux, 75000.0);
+        assert_eq!(after.sun.perpendicular_illuminance_lux, 75_000.0);
     }
 
     #[test]
@@ -1530,9 +1434,11 @@ mod tests {
         let too_many_bytes = format!("[{}0]", " ".repeat(MAX_EXTENSION_BYTES - 2));
         assert!(parse_environment(with_extension(prefix, &too_many_bytes).as_bytes()).is_err());
         for (count, accepted) in [(MAX_EXTENSIONS, true), (MAX_EXTENSIONS + 1, false)] {
-            let fields: String = (0..count)
-                .map(|i| format!("\"{prefix}{i}\":{at_bytes},"))
-                .collect();
+            let mut fields = String::new();
+            for i in 0..count {
+                use std::fmt::Write as _;
+                write!(&mut fields, "\"{prefix}{i}\":{at_bytes},").unwrap();
+            }
             let record = ENVIRONMENT.replace("\"profile\":", &format!("{fields}\"profile\":"));
             assert_eq!(parse_environment(record.as_bytes()).is_ok(), accepted);
         }

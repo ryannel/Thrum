@@ -99,6 +99,10 @@ pub enum TypeVersionHistoryError {
 /// signature must remain, and retirement is one-way. New candidate keys are
 /// permitted. This pure check allocates nothing and runs in O(prior + candidate)
 /// time; it does not authenticate the prior root or calculate signatures.
+///
+/// # Errors
+///
+/// A candidate field meaning is missing, changed, or improperly retired.
 pub fn compare_meaning_histories(
     prior: &[MeaningEntry<'_>],
     candidate: &[MeaningEntry<'_>],
@@ -141,6 +145,10 @@ pub(crate) fn compare_field_history_views<P: FieldHistoryView, C: FieldHistoryVi
 /// Both slices must be strictly sorted and duplicate-free. New version keys are
 /// allowed. This pure, allocation-free O(prior + candidate) check does not
 /// derive definition hashes or authenticate the prior admitted root.
+///
+/// # Errors
+///
+/// A candidate type-version definition is missing, changed, or improperly retired.
 pub fn compare_type_version_histories(
     prior: &[TypeVersionEntry<'_>],
     candidate: &[TypeVersionEntry<'_>],
@@ -322,27 +330,6 @@ mod tests {
         assert_eq!(
             compare_type_version_histories(&[v1, v2], &[v1, v2, other]),
             Ok(())
-        );
-    }
-
-    #[test]
-    #[ignore = "local linear 100,000-field lineage cost probe"]
-    fn measure_meaning_history_100k() {
-        let mut names = Vec::with_capacity(100_000);
-        for index in 0..100_000_u32 {
-            names.push(format!("field.{index:06}"));
-        }
-        let prior: Vec<_> = names
-            .iter()
-            .map(|field_id| entry("game.large", field_id, 7, false))
-            .collect();
-        let mut candidate = prior.clone();
-        candidate.push(entry("game.large", "field.z", 8, false));
-        let start = std::time::Instant::now();
-        assert_eq!(compare_meaning_histories(&prior, &candidate), Ok(()));
-        eprintln!(
-            "lineage_entries=100000 compare_elapsed={:?}",
-            start.elapsed()
         );
     }
 }

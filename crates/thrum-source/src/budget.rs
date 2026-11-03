@@ -18,6 +18,10 @@ const GIB: u64 = 1024 * 1024 * 1024;
 /// A plan guides early refusal and observed free-space checks. It is not a
 /// physical quota: SQLite page growth and other processes can exceed an
 /// estimate. A durable store must handle real write/space faults atomically.
+#[expect(
+    clippy::struct_field_names,
+    reason = "every planning target is in bytes and the field names must carry that unit"
+)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SourceSpacePlan {
     /// Target for the SQLite main file after candidate publication.
@@ -46,16 +50,6 @@ pub(crate) struct Limits {
     pub(crate) wal: u64,
     pub(crate) temporary: u64,
     pub(crate) free_floor: u64,
-}
-
-impl Limits {
-    #[cfg(test)]
-    pub(crate) const V1: Self = Self {
-        main: SourceSpacePlan::DEFAULT.main_target_bytes,
-        wal: SourceSpacePlan::DEFAULT.wal_stop_bytes,
-        temporary: SourceSpacePlan::DEFAULT.temporary_target_bytes,
-        free_floor: SourceSpacePlan::DEFAULT.free_headroom_bytes,
-    };
 }
 
 impl From<SourceSpacePlan> for Limits {
@@ -592,6 +586,15 @@ pub(crate) fn create_private_directory(path: &Path) -> std::io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    impl Limits {
+        pub(crate) const V1: Self = Self {
+            main: SourceSpacePlan::DEFAULT.main_target_bytes,
+            wal: SourceSpacePlan::DEFAULT.wal_stop_bytes,
+            temporary: SourceSpacePlan::DEFAULT.temporary_target_bytes,
+            free_floor: SourceSpacePlan::DEFAULT.free_headroom_bytes,
+        };
+    }
+
     use super::*;
     use crate::{SourcePath, scan_declared_tree};
 

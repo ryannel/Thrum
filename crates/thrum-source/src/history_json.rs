@@ -175,6 +175,10 @@ pub enum CarriedHistoryError {
 /// input buffers remain live through the comparison. The caller must obtain
 /// `prior` from the current admitted root under its generation precondition;
 /// this function cannot authenticate either source.
+///
+/// # Errors
+///
+/// The candidate retires, changes, or omits a previously admitted field or type-version meaning.
 pub fn compare_carried_histories(
     prior: &RegistryHistory<'_>,
     candidate: &RegistryHistory<'_>,
@@ -190,6 +194,10 @@ pub fn compare_carried_histories(
 ///
 /// The returned string values borrow unescaped input where serde_json permits;
 /// escaped spelling may allocate. Keep `bytes` alive while using the result.
+///
+/// # Errors
+///
+/// The record is malformed or violates sorted permanent history and size bounds.
 pub fn parse_registry_history(bytes: &[u8]) -> Result<RegistryHistory<'_>, HistoryError> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(HistoryError::TooLarge {
@@ -230,7 +238,7 @@ struct HistoryVisitor<'a> {
 impl<'de> Visitor<'de> for HistoryVisitor<'_> {
     type Value = RegistryHistory<'de>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a core.registry-history schema 1 record")
     }
 
@@ -248,10 +256,10 @@ impl<'de> Visitor<'de> for HistoryVisitor<'_> {
                 }
                 "schema" if schema.is_none() => schema = Some(map.next_value::<u64>()?),
                 "fields" if fields.is_none() => {
-                    fields = Some(map.next_value_seed(HistoryFieldsSeed { limit: self.limit })?)
+                    fields = Some(map.next_value_seed(HistoryFieldsSeed { limit: self.limit })?);
                 }
                 "documentation" if !documentation_seen => {
-                    let _: String = map.next_value()?;
+                    drop(map.next_value::<String>()?);
                     documentation_seen = true;
                 }
                 _ => {
@@ -300,7 +308,7 @@ struct HistoryFieldsVisitor<'a> {
 impl<'de> Visitor<'de> for HistoryFieldsVisitor<'_> {
     type Value = (Vec<HistoryField<'de>>, Vec<HistoryVersion<'de>>);
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("fixed registry.fields and registry.versions arrays")
     }
 
@@ -349,7 +357,7 @@ struct FieldHistoryArrayVisitor<'a> {
 impl<'de> Visitor<'de> for FieldHistoryArrayVisitor<'_> {
     type Value = Vec<HistoryField<'de>>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("at most 100,000 sorted field-history entries")
     }
 
@@ -401,7 +409,7 @@ struct VersionHistoryArrayVisitor<'a> {
 impl<'de> Visitor<'de> for VersionHistoryArrayVisitor<'_> {
     type Value = Vec<HistoryVersion<'de>>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("at most 1,024 sorted type-version entries")
     }
 
@@ -475,7 +483,7 @@ struct FieldHistoryEntryVisitor;
 impl<'de> Visitor<'de> for FieldHistoryEntryVisitor {
     type Value = HistoryField<'de>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a permanent field meaning entry")
     }
 
@@ -539,7 +547,7 @@ struct VersionHistoryEntryVisitor;
 impl<'de> Visitor<'de> for VersionHistoryEntryVisitor {
     type Value = HistoryVersion<'de>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("an immutable type-version history entry")
     }
 
@@ -603,7 +611,7 @@ struct CowStringVisitor;
 impl<'de> Visitor<'de> for CowStringVisitor {
     type Value = Cow<'de, str>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a UTF-8 string")
     }
 
@@ -627,7 +635,7 @@ fn parse_hash(value: &str) -> Option<[u8; 32]> {
     }
     let mut decoded = [0_u8; 32];
     let (pairs, remainder) = bytes.as_chunks::<2>();
-    debug_assert!(remainder.is_empty());
+    debug_assert_eq!(remainder.len(), 0);
     for (index, pair) in pairs.iter().enumerate() {
         decoded[index] = (hex_nibble(pair[0])? << 4) | hex_nibble(pair[1])?;
     }
@@ -853,49 +861,5 @@ mod tests {
                 MeaningHistoryError::RevivedRetired(0)
             ))
         );
-    }
-
-    #[test]
-    #[ignore = "local maximum field-history parse and memory probe"]
-    fn measure_maximum_field_history() {
-        let mut bytes = format!("{{\"id\":\"{HISTORY_ID}\",\"type\":\"core.registry-history\",\"schema\":1,\"fields\":{{\"registry.fields\":[").into_bytes();
-        for index in 0..100_000 {
-            if index != 0 {
-                bytes.push(b',');
-            }
-            bytes.extend_from_slice(format!("{{\"typeId\":\"game.large\",\"fieldId\":\"field.f{index:06}\",\"signature\":\"{HASH}\",\"retired\":false}}").as_bytes());
-        }
-        bytes.extend_from_slice(format!("],\"registry.versions\":[{{\"typeId\":\"game.large\",\"targetVersion\":1,\"definitionHash\":\"{HASH}\"}}]}}}}").as_bytes());
-        assert!(
-            bytes.len() <= MAX_RECORD_BYTES,
-            "fixture exceeds record bound"
-        );
-        let start = std::time::Instant::now();
-        let history = parse_registry_history(&bytes).unwrap();
-        assert_eq!(history.fields().len(), 100_000);
-        eprintln!(
-            "history_bytes={} fields=100000 elapsed={:?}",
-            bytes.len(),
-            start.elapsed()
-        );
-        let candidate_bytes = bytes.clone();
-        let candidate = parse_registry_history(&candidate_bytes).unwrap();
-        let compare_start = std::time::Instant::now();
-        assert_eq!(compare_carried_histories(&history, &candidate), Ok(()));
-        eprintln!(
-            "two_history_fields=200000 compare_elapsed={:?}",
-            compare_start.elapsed()
-        );
-        std::hint::black_box(candidate);
-        std::hint::black_box(history);
-        drop(candidate_bytes);
-
-        let end = bytes
-            .windows(b"],\"registry.versions\"".len())
-            .position(|window| window == b"],\"registry.versions\"")
-            .unwrap();
-        bytes.splice(end..end, b",[[[0]]]".iter().copied());
-        let error = parse_registry_history(&bytes).err().unwrap();
-        assert!(format!("{error:?}").contains("count limit"));
     }
 }

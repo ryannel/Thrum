@@ -30,6 +30,10 @@ pub enum RegistryConsistencyError {
 /// type. Each descriptor's fields and the parsed history are already sorted.
 /// The two merge joins allocate nothing and take O(active fields + history)
 /// time. This does not compare with a prior admitted root.
+///
+/// # Errors
+///
+/// An active descriptor disagrees with permanent field or type-version history.
 pub fn validate_active_registry(
     descriptors: &[SchemaDescriptor],
     history: &RegistryHistory<'_>,

@@ -74,7 +74,7 @@ impl ProjectV2 {
     }
 
     /// Fixed first-profile path of the declared registry history record.
-    pub fn history_path(&self) -> &'static str {
+    pub fn history_path() -> &'static str {
         HISTORY_PATH
     }
 }
@@ -83,6 +83,10 @@ impl ProjectV2 {
 ///
 /// Array limits are checked before deserializing an extra element. This does
 /// not check path membership in a staged tree or resolve entry-scene IDs.
+///
+/// # Errors
+///
+/// The project record is malformed or violates its declaration and reference bounds.
 pub fn parse_project_v2(bytes: &[u8]) -> Result<ProjectV2, ProjectV2Error> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(ProjectV2Error::TooLarge {
@@ -128,7 +132,7 @@ struct ProjectVisitor<'a> {
 impl<'de> Visitor<'de> for ProjectVisitor<'_> {
     type Value = ProjectV2;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a core.project schema 2 record")
     }
 
@@ -151,7 +155,7 @@ impl<'de> Visitor<'de> for ProjectVisitor<'_> {
                     })?);
                 }
                 "documentation" if !documentation_seen => {
-                    let _: String = map.next_value()?;
+                    drop(map.next_value::<String>()?);
                     documentation_seen = true;
                 }
                 _ => return Err(A::Error::custom("duplicate or unsupported project key")),
@@ -204,7 +208,7 @@ struct FieldsVisitor<'a> {
 impl<'de> Visitor<'de> for FieldsVisitor<'_> {
     type Value = ProjectFields;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("fixed core.project schema 2 fields")
     }
 
@@ -309,7 +313,7 @@ struct PathArrayVisitor<'a> {
 impl<'de> Visitor<'de> for PathArrayVisitor<'_> {
     type Value = Vec<SourcePath>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("strictly sorted portable record or schema paths")
     }
 
@@ -369,7 +373,7 @@ struct EntryArrayVisitor<'a> {
 impl<'de> Visitor<'de> for EntryArrayVisitor<'_> {
     type Value = Vec<String>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("at most 4,096 sorted canonical entry-scene IDs")
     }
 
@@ -465,7 +469,7 @@ mod tests {
             "schemas/marker.schema.json"
         );
         assert_eq!(parsed.entry_scenes(), [SCENE_ID]);
-        assert_eq!(parsed.history_path(), HISTORY_PATH);
+        assert_eq!(ProjectV2::history_path(), HISTORY_PATH);
     }
 
     #[test]
@@ -560,34 +564,5 @@ mod tests {
                 observed: ObservedQuantity::AtLeast(MAX_RECORDS as u64 + 1),
             })
         );
-    }
-
-    #[test]
-    #[ignore = "local maximum first-profile project declaration cost probe"]
-    fn measure_maximum_project_declaration() {
-        let mut records = (0..MAX_RECORDS - 1)
-            .map(|index| format!("\"records/r{index:04}.record.json\""))
-            .collect::<Vec<_>>();
-        records.push("\"scenes/main.scene.json\"".to_owned());
-        let schemas = (0..MAX_SCHEMAS)
-            .map(|index| format!("\"schemas/s{index:03}.schema.json\""))
-            .collect::<Vec<_>>()
-            .join(",");
-        let bytes = project()
-            .replace(
-                "\"records/marker.record.json\",\"scenes/main.scene.json\"",
-                &records.join(","),
-            )
-            .replace("\"schemas/marker.schema.json\"", &schemas);
-        let start = std::time::Instant::now();
-        let parsed = parse_project_v2(bytes.as_bytes()).unwrap();
-        eprintln!(
-            "project_bytes={} records={} schemas={} elapsed={:?}",
-            bytes.len(),
-            parsed.record_paths().len(),
-            parsed.schema_paths().len(),
-            start.elapsed()
-        );
-        std::hint::black_box(parsed);
     }
 }

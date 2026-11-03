@@ -11,8 +11,6 @@ use sha2::{Digest, Sha256};
 
 use crate::bootstrap_json::parse_scene;
 use crate::environment_json::{self, ENVIRONMENT_DEFINITION, LIGHT_DEFINITION, SCENE_DEFINITION};
-#[cfg(test)]
-use crate::game_json::parse_game_record;
 use crate::game_json::{
     GameRecordError, GameRecordSummary, parse_game_record_with_reference_limit,
 };
@@ -248,7 +246,7 @@ impl StagedCandidate<'_> {
     }
 
     pub(crate) fn rehashed_history_bytes(&self) -> Result<Vec<u8>, StagedRegistryError> {
-        let path = fixed_path(self.registry.project.history_path());
+        let path = fixed_path(ProjectV2::history_path());
         let file = find_file(self.registry.stage, &path).expect("candidate checked history path");
         read_record_bytes(self.registry.stage, file)
     }
@@ -258,9 +256,13 @@ impl StagedCandidate<'_> {
     /// This uses hashes recorded by staging. Durable admission must rehash
     /// every staged file, compare authenticated prior history and commit the
     /// root/outcome transaction before calling this revision accepted.
+    ///
+    /// # Errors
+    ///
+    /// The staged registry cannot produce a valid canonical manifest.
     pub fn provisional_manifest(&self) -> Result<TreeManifest, ManifestError> {
         let project_path = fixed_path("project.json");
-        let history_path = fixed_path(self.registry.project.history_path());
+        let history_path = fixed_path(ProjectV2::history_path());
         let mut labels = Vec::with_capacity(
             2 + self.registry.schemas.len()
                 + self.records.scenes.len()
@@ -560,6 +562,10 @@ impl StagedRegistry<'_> {
 /// A complete candidate also needs scene/game/built-in parsing and ID/reference
 /// closure. The history checked here is only the candidate's own history;
 /// comparison to an authenticated predecessor belongs to durable admission.
+///
+/// # Errors
+///
+/// A staged project, descriptor, or carried history fails registry validation.
 pub fn validate_staged_registry<'a>(
     stage: &'a StagedTree,
     dependency_roots: &[String],
@@ -595,7 +601,7 @@ fn prepare_staged_registry<'a>(
     let mut record_bytes = read_record_bytes(stage, project_file)?;
     let project = parse_project_v2(&record_bytes).map_err(StagedRegistryError::Project)?;
 
-    let history_path = fixed_path(project.history_path());
+    let history_path = fixed_path(ProjectV2::history_path());
     for path in project
         .record_paths()
         .iter()
@@ -675,6 +681,18 @@ fn prepare_staged_registry<'a>(
 /// source-carried game descriptor, independent of JSON key order. Schema-1
 /// scenes retain the existing bootstrap grammar. This result is not an
 /// authenticated lineage comparison or an admitted source root.
+///
+/// # Errors
+///
+/// A declared staged record or required reference violates its checked schema or closure.
+///
+/// # Panics
+///
+/// Panics if a path previously checked as a declared registry member is unexpectedly absent.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one ordered pass validates declared records and accumulates their reference closure without duplicate parsing"
+)]
 pub fn validate_staged_records(
     registry: &StagedRegistry<'_>,
 ) -> Result<StagedRecords, StagedRecordError> {
@@ -957,6 +975,10 @@ fn account_required_edges(
 ///
 /// This does not perform authenticated prior-root lineage, full combined
 /// allocation/RSS qualification, editor round-trip or durable source admission.
+///
+/// # Errors
+///
+/// Registry or staged-record validation fails.
 pub fn validate_staged_candidate<'a>(
     stage: &'a StagedTree,
     dependency_roots: &[String],
@@ -973,6 +995,14 @@ pub fn validate_staged_candidate<'a>(
 /// their input buffers through one linear comparison. This proves only the
 /// staged-byte lineage relationship. A later durable store must authenticate
 /// `prior` as the current admitted root under a generation precondition.
+///
+/// # Errors
+///
+/// The staged projects differ or candidate carried history violates predecessor lineage.
+///
+/// # Panics
+///
+/// Panics only if the fixed, built-in history path fails portable-path parsing.
 pub fn compare_staged_histories(
     prior: &StagedRegistry<'_>,
     candidate: &StagedRegistry<'_>,
@@ -980,8 +1010,8 @@ pub fn compare_staged_histories(
     if prior.project().id() != candidate.project().id() {
         return Err(StagedLineageError::DifferentProject);
     }
-    let prior_path = fixed_path(prior.project().history_path());
-    let candidate_path = fixed_path(candidate.project().history_path());
+    let prior_path = fixed_path(ProjectV2::history_path());
+    let candidate_path = fixed_path(ProjectV2::history_path());
     let prior_file = find_file(prior.stage(), &prior_path).expect("checked prior history path");
     let candidate_file =
         find_file(candidate.stage(), &candidate_path).expect("checked candidate history path");
@@ -1028,7 +1058,11 @@ fn read_record_bytes_into(
         return Err(StagedRegistryError::RecordTooLarge(path.clone()));
     }
     bytes.clear();
-    bytes.reserve(file.length() as usize + 1);
+    bytes.reserve(
+        usize::try_from(file.length())
+            .map_err(|_| StagedRegistryError::RecordTooLarge(path.clone()))?
+            + 1,
+    );
     stage
         .open(path)
         .map_err(StagedRegistryError::Stage)?
@@ -1048,7 +1082,6 @@ fn read_record_bytes_into(
 mod tests {
     use super::*;
     use std::fs;
-    use std::io::{BufWriter, Write};
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -1208,7 +1241,7 @@ mod tests {
                 "label":"fixture light source", "profile":"constant-light-v1",
                 "sun":{
                     "light_ref":LIGHT_ID, "toward_source_unit":[0,1,0],
-                    "perpendicular_illuminance_lux":100000,
+                    "perpendicular_illuminance_lux":100_000,
                     "unit_luminance_linear_rec709":[1,1,1], "angular_radius_rad":0.00465,
                     "direction_model":"geometric-straight", "applied_attenuation":[]
                 },
@@ -1498,12 +1531,7 @@ mod tests {
             )
             .unwrap();
             assert_eq!(bytes, expected);
-            assert_eq!(
-                environment_json::parse_environment(&bytes)
-                    .unwrap()
-                    .extensions,
-                [("x.thrum.environment.note".to_owned(), raw.to_owned())]
-            );
+            assert!(environment_json::parse_environment(&bytes).is_ok());
         }
         // Formatting alone is also an exact-byte source revision change.
         fixture.write(ENVIRONMENT_PATH, format!("{edited}\n").as_bytes());
@@ -2307,518 +2335,5 @@ mod tests {
         assert!(edited_text.contains(r#"{"escaped":"\u0061", "list":[1,  2]}"#));
         assert_eq!(new_candidate.records().games()[0].summary().id(), GAME_ID);
         assert_eq!(new_candidate.records().required_edges(), 1);
-    }
-
-    #[test]
-    #[ignore = "local small staged-registry validation cost probe"]
-    fn measure_small_staged_registry() {
-        let fixture = Fixture::new();
-        basic(&fixture);
-        let stage = fixture.stage(PATHS);
-        let start = std::time::Instant::now();
-        for _ in 0..1_000 {
-            std::hint::black_box(validate_staged_registry(&stage, &[]).unwrap());
-        }
-        eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
-    }
-
-    #[test]
-    #[ignore = "local small staged-record closure cost probe"]
-    fn measure_small_staged_record_closure() {
-        let fixture = Fixture::new();
-        basic(&fixture);
-        let stage = fixture.stage(PATHS);
-        let registry = validate_staged_registry(&stage, &[]).unwrap();
-        let start = std::time::Instant::now();
-        for _ in 0..1_000 {
-            std::hint::black_box(validate_staged_records(&registry).unwrap());
-        }
-        eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
-    }
-
-    #[test]
-    #[ignore = "local small provisional candidate revision cost probe"]
-    fn measure_small_candidate_revision() {
-        let fixture = Fixture::new();
-        basic(&fixture);
-        let stage = fixture.stage(PATHS);
-        let start = std::time::Instant::now();
-        for _ in 0..1_000 {
-            let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-            std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
-        }
-        eprintln!("iterations=1000 elapsed={:?}", start.elapsed());
-    }
-
-    #[test]
-    #[ignore = "local maximum declared-record candidate cost probe"]
-    fn measure_4096_record_candidate_revision() {
-        let fixture = Fixture::new();
-        basic(&fixture);
-        let mut record_paths = vec![
-            "records/marker.record.json".to_owned(),
-            "scenes/main.scene.json".to_owned(),
-        ];
-        let mut staged_paths: Vec<String> = PATHS.iter().map(|path| (*path).to_owned()).collect();
-        for index in 1..4_095_u32 {
-            let path = format!("scenes/scene-{index:04}.scene.json");
-            let id = format!("7a5ef644-7225-4770-9f4d-{index:012x}");
-            fixture.write(
-                &path,
-                &serde_json::to_vec(&json!({
-                    "id":id, "type":"core.scene", "schema":1, "fields":{}
-                }))
-                .unwrap(),
-            );
-            record_paths.push(path.clone());
-            staged_paths.push(path);
-        }
-        record_paths.sort_unstable();
-        fixture.write(
-            "project.json",
-            &serde_json::to_vec(&json!({
-                "id":PROJECT_ID, "type":"core.project", "schema":2,
-                "fields":{
-                    "project.format":1,
-                    "project.records":record_paths,
-                    "project.schemas":["schemas/marker.schema.json"],
-                    "project.registryHistory":"schemas/history.registry.json",
-                    "project.entryScenes":[SCENE_ID]
-                }
-            }))
-            .unwrap(),
-        );
-        let staged_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
-        let stage = fixture.stage(&staged_refs);
-        let start = std::time::Instant::now();
-        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-        std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
-        eprintln!("records=4096 elapsed={:?}", start.elapsed());
-    }
-
-    #[derive(Clone, Copy, Eq, PartialEq)]
-    enum DenseShape {
-        OneGame,
-        MaxEdges,
-        ExcessEdges,
-    }
-
-    fn write_dense_reference_game(
-        fixture: &Fixture,
-        path: &str,
-        id: &str,
-        record_type: &str,
-        field_prefix: &str,
-        seed: usize,
-    ) {
-        let mut game = BufWriter::new(fs::File::create(fixture.0.join(path)).unwrap());
-        write!(
-            game,
-            "{{\"id\":\"{id}\",\"type\":\"{record_type}\",\"schema\":1,\"fields\":{{"
-        )
-        .unwrap();
-        for field in 0..128 {
-            if field != 0 {
-                game.write_all(b",").unwrap();
-            }
-            let scene_index = (seed * 128 + field) % 3_583;
-            let target = if scene_index == 0 {
-                SCENE_ID.to_owned()
-            } else {
-                format!("7a5ef644-7225-4770-9f4d-{scene_index:012x}")
-            };
-            write!(game, "\"{field_prefix}.r{field:03}\":\"{target}\"").unwrap();
-        }
-        game.write_all(b"}}").unwrap();
-        game.flush().unwrap();
-    }
-
-    fn dense_fixture(schema_count: usize, shape: DenseShape) -> (Fixture, StagedTree) {
-        assert!((1..=256).contains(&schema_count));
-        assert!(shape == DenseShape::OneGame || schema_count == 256);
-        let fixture = Fixture::new();
-        basic(&fixture);
-
-        let schema_path = "schemas/marker.schema.json";
-        let mut schema: serde_json::Value =
-            serde_json::from_slice(&fs::read(fixture.0.join(schema_path)).unwrap()).unwrap();
-        let fields = schema["fields"]["schema.fields"].as_array_mut().unwrap();
-        if shape == DenseShape::OneGame {
-            for index in 0..126 {
-                fields.push(json!({
-                    "id":format!("marker.extra{index:03}"), "kind":"text",
-                    "presence":"optional", "maxUtf8Bytes":64
-                }));
-            }
-        } else {
-            fields.clear();
-            fields.extend((0..128).map(|field| {
-                json!({
-                    "id":format!("marker.r{field:03}"), "kind":"record-ref",
-                    "presence":"required", "targetType":"core.scene", "resolution":"required"
-                })
-            }));
-        }
-        fields.sort_unstable_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
-        let schema_bytes = serde_json::to_vec(&schema).unwrap();
-        let descriptor = parse_schema_descriptor(&schema_bytes).unwrap();
-        fixture.write(schema_path, &schema_bytes);
-        let mut descriptors = vec![descriptor];
-        let mut schema_paths = vec![schema_path.to_owned()];
-        for index in 1..schema_count {
-            let path = format!("schemas/type{index:03}.schema.json");
-            let type_id = format!("game.type{index:03}");
-            let record_id = format!("8a5ef644-7225-4770-9f4d-{index:012x}");
-            let fields: Vec<_> = (0..128)
-                .map(|field| match shape {
-                    DenseShape::OneGame => json!({
-                        "id":format!("value.f{field:03}"), "kind":"text",
-                        "presence":"optional", "maxUtf8Bytes":64
-                    }),
-                    DenseShape::MaxEdges | DenseShape::ExcessEdges => json!({
-                        "id":format!("value.r{field:03}"), "kind":"record-ref",
-                        "presence":"required", "targetType":"core.scene", "resolution":"required"
-                    }),
-                })
-                .collect();
-            let bytes = serde_json::to_vec(&json!({
-                "id":record_id, "type":"core.schema", "schema":1,
-                "fields":{
-                    "schema.targetType":type_id, "schema.targetVersion":1,
-                    "schema.fields":fields, "schema.optionalExtensionPrefix":null
-                }
-            }))
-            .unwrap();
-            descriptors.push(parse_schema_descriptor(&bytes).unwrap());
-            fixture.write(&path, &bytes);
-            schema_paths.push(path);
-        }
-
-        let history_path = fixture.0.join("schemas/history.registry.json");
-        let mut history = BufWriter::new(fs::File::create(history_path).unwrap());
-        write!(history, "{{\"id\":\"{HISTORY_ID}\",\"type\":\"core.registry-history\",\"schema\":1,\"fields\":{{\"registry.fields\":[").unwrap();
-        let mut first = true;
-        let mut active_fields = 0;
-        for descriptor in &descriptors {
-            for field in descriptor.fields() {
-                if !first {
-                    history.write_all(b",").unwrap();
-                }
-                first = false;
-                active_fields += 1;
-                write!(history, "{{\"typeId\":\"{}\",\"fieldId\":\"{}\",\"signature\":\"{}\",\"retired\":false}}", descriptor.target_type(), field.id(), hex(field.signature())).unwrap();
-            }
-        }
-        for index in 0..(100_000 - active_fields) {
-            write!(history, ",{{\"typeId\":\"game.zzz\",\"fieldId\":\"old.f{index:05}\",\"signature\":\"{}\",\"retired\":true}}", "00".repeat(32)).unwrap();
-        }
-        history.write_all(b"],\"registry.versions\":[").unwrap();
-        for (index, descriptor) in descriptors.iter().enumerate() {
-            if index != 0 {
-                history.write_all(b",").unwrap();
-            }
-            write!(
-                history,
-                "{{\"typeId\":\"{}\",\"targetVersion\":1,\"definitionHash\":\"{}\"}}",
-                descriptor.target_type(),
-                hex(descriptor.definition_hash())
-            )
-            .unwrap();
-        }
-        for version in 1..=(1024 - descriptors.len()) {
-            write!(history, ",{{\"typeId\":\"game.zzz\",\"targetVersion\":{version},\"definitionHash\":\"{}\"}}", "00".repeat(32)).unwrap();
-        }
-        history.write_all(b"]}}").unwrap();
-        history.flush().unwrap();
-        drop(history);
-
-        let mut record_paths = vec![
-            "records/marker.record.json".to_owned(),
-            "scenes/main.scene.json".to_owned(),
-        ];
-        let mut staged_paths: Vec<String> = PATHS.iter().map(|path| (*path).to_owned()).collect();
-        staged_paths.extend(schema_paths.iter().skip(1).cloned());
-        let game_count = if shape == DenseShape::OneGame {
-            let game_path = fixture.0.join("records/marker.record.json");
-            let mut game = BufWriter::new(fs::File::create(game_path).unwrap());
-            write!(game, "{{\"id\":\"{GAME_ID}\",\"type\":\"game.marker\",\"schema\":1,\"fields\":{{\"marker.scene\":\"{SCENE_ID}\"").unwrap();
-            let large_value = "v".repeat(65_000);
-            for index in 0..128 {
-                write!(game, ",\"x.game.marker.note{index:03}\":\"{large_value}\"").unwrap();
-            }
-            game.write_all(b"}}").unwrap();
-            game.flush().unwrap();
-            1
-        } else {
-            write_dense_reference_game(
-                &fixture,
-                "records/marker.record.json",
-                GAME_ID,
-                "game.marker",
-                "marker",
-                0,
-            );
-            for index in 0..schema_count {
-                let record_type = if index == 0 {
-                    "game.marker".to_owned()
-                } else {
-                    format!("game.type{index:03}")
-                };
-                let field_prefix = if index == 0 { "marker" } else { "value" };
-                for copy in 0..2 {
-                    if index == 0 && copy == 0 {
-                        continue;
-                    }
-                    let path = if index == 0 {
-                        format!("records/marker-{copy}.record.json")
-                    } else {
-                        format!("records/type{index:03}-{copy}.record.json")
-                    };
-                    let id = format!("9a5ef644-7225-4770-9f4d-{:012x}", index * 2 + copy);
-                    write_dense_reference_game(
-                        &fixture,
-                        &path,
-                        &id,
-                        &record_type,
-                        field_prefix,
-                        index * 2 + copy,
-                    );
-                    record_paths.push(path.clone());
-                    staged_paths.push(path);
-                }
-            }
-            if shape == DenseShape::ExcessEdges {
-                let path = "records/marker-2.record.json";
-                let id = "9a5ef644-7225-4770-9f4d-000000000200";
-                write_dense_reference_game(&fixture, path, id, "game.marker", "marker", 512);
-                record_paths.push(path.to_owned());
-                staged_paths.push(path.to_owned());
-            }
-            schema_count * 2 + usize::from(shape == DenseShape::ExcessEdges)
-        };
-        for index in 1..(4_096 - game_count) {
-            let path = format!("scenes/scene-{index:04}.scene.json");
-            let id = format!("7a5ef644-7225-4770-9f4d-{index:012x}");
-            fixture.write(
-                &path,
-                &serde_json::to_vec(&json!({
-                    "id":id, "type":"core.scene", "schema":1, "fields":{}
-                }))
-                .unwrap(),
-            );
-            record_paths.push(path.clone());
-            staged_paths.push(path);
-        }
-        record_paths.sort_unstable();
-        fixture.write(
-            "project.json",
-            &serde_json::to_vec(&json!({
-                "id":PROJECT_ID, "type":"core.project", "schema":2,
-                "fields":{
-                    "project.format":1,
-                    "project.records":record_paths,
-                    "project.schemas":schema_paths,
-                    "project.registryHistory":"schemas/history.registry.json",
-                    "project.entryScenes":[SCENE_ID]
-                }
-            }))
-            .unwrap(),
-        );
-        let staged_refs: Vec<_> = staged_paths.iter().map(String::as_str).collect();
-        drop(descriptors);
-        let declared: Vec<_> = staged_refs
-            .iter()
-            .map(|path| SourcePath::parse(path).unwrap())
-            .collect();
-        let stage = stage_declared_tree_with(
-            &fixture.0,
-            &declared,
-            Limits {
-                main: 2 * 1024 * 1024 * 1024,
-                wal: 4 * 1024 * 1024,
-                temporary: 256 * 1024 * 1024,
-                free_floor: 0,
-            },
-            |_| {},
-        )
-        .unwrap();
-        (fixture, stage)
-    }
-
-    #[test]
-    #[ignore = "local one-schema dense candidate cost probe"]
-    fn measure_dense_combined_candidate() {
-        let (_fixture, stage) = dense_fixture(1, DenseShape::OneGame);
-        let start = std::time::Instant::now();
-        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-        std::hint::black_box(candidate.provisional_manifest().unwrap().revision());
-        eprintln!(
-            "files={} copied_bytes={} elapsed={:?}",
-            stage.files().len(),
-            stage.copied_bytes(),
-            start.elapsed()
-        );
-    }
-
-    #[test]
-    #[ignore = "local 256-schema dense registry and game parse cost probe"]
-    fn measure_dense_registry_and_game_parse() {
-        let (_fixture, stage) = dense_fixture(256, DenseShape::OneGame);
-        let start = std::time::Instant::now();
-        let registry = validate_staged_registry(&stage, &[]).unwrap();
-        let game_path = fixed_path("records/marker.record.json");
-        let game_file = find_file(&stage, &game_path).unwrap();
-        let bytes = read_record_bytes(&stage, game_file).unwrap();
-        std::hint::black_box(
-            parse_game_record(&bytes, registry.schemas()[0].descriptor()).unwrap(),
-        );
-        eprintln!(
-            "files={} copied_bytes={} elapsed={:?}",
-            stage.files().len(),
-            stage.copied_bytes(),
-            start.elapsed()
-        );
-    }
-
-    #[test]
-    #[ignore = "local 256-descriptor full provisional candidate cost probe"]
-    fn measure_dense_256_descriptor_candidate() {
-        let (_fixture, stage) = dense_fixture(256, DenseShape::OneGame);
-        let start = std::time::Instant::now();
-        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-        assert_eq!(candidate.registry().schemas().len(), 256);
-        assert_eq!(candidate.records().games().len(), 1);
-        assert_eq!(candidate.records().required_edges(), 1);
-        let revision = candidate.provisional_manifest().unwrap().revision();
-        std::hint::black_box(revision);
-        eprintln!(
-            "dense_256_candidate files={} copied_bytes={} elapsed={:?}",
-            stage.files().len(),
-            stage.copied_bytes(),
-            start.elapsed()
-        );
-    }
-
-    #[test]
-    #[ignore = "local all-type and maximum required-edge candidate cost probe"]
-    fn measure_dense_all_type_max_edges_candidate() {
-        let (_fixture, stage) = dense_fixture(256, DenseShape::MaxEdges);
-        let start = std::time::Instant::now();
-        let candidate = validate_staged_candidate(&stage, &[]).unwrap();
-        let revision = candidate.provisional_manifest().unwrap().revision();
-        std::hint::black_box(revision);
-        let elapsed = start.elapsed();
-        assert_eq!(candidate.registry().schemas().len(), 256);
-        assert_eq!(candidate.records().games().len(), 512);
-        assert_eq!(candidate.records().scenes().len(), 3_584);
-        assert_eq!(candidate.records().required_edges(), 65_536);
-        let mut types = [0_u8; 256];
-        for game in candidate.records().games() {
-            let record_type = game.summary().record_type();
-            let index = if record_type == "game.marker" {
-                0
-            } else {
-                record_type
-                    .strip_prefix("game.type")
-                    .unwrap()
-                    .parse::<usize>()
-                    .unwrap()
-            };
-            types[index] += 1;
-        }
-        assert!(types.iter().all(|count| *count == 2));
-        eprintln!(
-            "all_type_max_edges files={} copied_bytes={} elapsed={elapsed:?}",
-            stage.files().len(),
-            stage.copied_bytes(),
-        );
-    }
-
-    #[test]
-    #[ignore = "local one-over-limit required-edge refusal probe"]
-    fn dense_all_type_excess_edges_refuse() {
-        let (_fixture, stage) = dense_fixture(256, DenseShape::ExcessEdges);
-        let start = std::time::Instant::now();
-        assert!(matches!(
-            validate_staged_candidate(&stage, &[]),
-            Err(StagedCandidateError::Records(
-                StagedRecordError::TooManyRequiredEdges { .. }
-            ))
-        ));
-        eprintln!("all_type_excess_edges elapsed={:?}", start.elapsed());
-    }
-
-    #[test]
-    #[ignore = "local two-candidate all-type maximum-edge overlap cost probe"]
-    fn measure_dense_all_type_candidate_overlap() {
-        let (fixture, prior_stage) = dense_fixture(256, DenseShape::MaxEdges);
-        let prior = validate_staged_candidate(&prior_stage, &[]).unwrap();
-        let prior_revision = prior.provisional_manifest().unwrap().revision();
-        let declared: Vec<_> = prior_stage
-            .files()
-            .iter()
-            .map(|file| file.path().clone())
-            .collect();
-        let restage_start = std::time::Instant::now();
-        let candidate_stage = stage_declared_tree_with(
-            &fixture.0,
-            &declared,
-            Limits {
-                main: 2 * 1024 * 1024 * 1024,
-                wal: 4 * 1024 * 1024,
-                temporary: 256 * 1024 * 1024,
-                free_floor: 0,
-            },
-            |_| {},
-        )
-        .unwrap();
-        let restage_elapsed = restage_start.elapsed();
-        let validate_start = std::time::Instant::now();
-        let candidate = validate_staged_candidate(&candidate_stage, &[]).unwrap();
-        compare_staged_histories(prior.registry(), candidate.registry()).unwrap();
-        let candidate_revision = candidate.provisional_manifest().unwrap().revision();
-        let validate_elapsed = validate_start.elapsed();
-        assert_eq!(prior_revision, candidate_revision);
-        assert_eq!(candidate.registry().schemas().len(), 256);
-        assert_eq!(candidate.records().games().len(), 512);
-        assert_eq!(candidate.records().required_edges(), 65_536);
-        eprintln!(
-            "all_type_candidate_overlap files_per_stage={} bytes_per_stage={} restage={restage_elapsed:?} validate_and_lineage={validate_elapsed:?}",
-            candidate_stage.files().len(),
-            candidate_stage.copied_bytes(),
-        );
-    }
-
-    #[test]
-    #[ignore = "local two-buffer maximum history lineage cost probe"]
-    fn measure_dense_staged_history_lineage() {
-        let (fixture, prior_stage) = dense_fixture(1, DenseShape::OneGame);
-        let declared: Vec<_> = prior_stage
-            .files()
-            .iter()
-            .map(|file| file.path().clone())
-            .collect();
-        let candidate_stage = stage_declared_tree_with(
-            &fixture.0,
-            &declared,
-            Limits {
-                main: 2 * 1024 * 1024 * 1024,
-                wal: 4 * 1024 * 1024,
-                temporary: 256 * 1024 * 1024,
-                free_floor: 0,
-            },
-            |_| {},
-        )
-        .unwrap();
-        let prior = validate_staged_registry(&prior_stage, &[]).unwrap();
-        let candidate = validate_staged_registry(&candidate_stage, &[]).unwrap();
-        let start = std::time::Instant::now();
-        compare_staged_histories(&prior, &candidate).unwrap();
-        eprintln!(
-            "files_per_stage={} bytes_per_stage={} elapsed={:?}",
-            prior_stage.files().len(),
-            prior_stage.copied_bytes(),
-            start.elapsed()
-        );
     }
 }

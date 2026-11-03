@@ -53,6 +53,10 @@ pub enum RecordError {
 /// `parse_record_json` must be called first to reject duplicate JSON keys and
 /// unbounded input. The F3 registry then checks fields, dependencies and IDs in
 /// nested records before a captured source revision can be admitted.
+///
+/// # Errors
+///
+/// The record envelope has an invalid ID, type, schema, or field shape.
 pub fn validate_record_envelope(value: &Value) -> Result<RecordEnvelope<'_>, RecordError> {
     let object = value.as_object().ok_or(RecordError::Shape)?;
     let id = object
