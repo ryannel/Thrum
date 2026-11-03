@@ -211,3 +211,14 @@ half-aware CPU oracle matched every one of 921,600 output pixels. This
 validates one format/usage/pass combination, but the fixture has no held
 frames, resize, two-credit admission, F4 leases, real surface or physical
 memory measurement. Its uniform FXAA case is not an edge-quality proof.
+
+The later [held four-role diagnostic](../../evidence/render/R0-FOUR-ROLE-HELD-LIFETIME-2026-11-03.md)
+combined those roles with two genuinely incomplete 720p submissions, early
+third-credit refusal, 1080p old/new graph overlap, A-only credit reclaim,
+distinct native tails and exact A/B/C pixel checks. Old application view and
+output owners retired after GPU completion and explicit CPU leases. Its
+104,329,312 B selected charge includes separately retained packet readbacks
+and conservative cumulative initialization staging; it is a logical
+fixed-scenario account, not a driver-residency measurement. F4 leases,
+authored scenes, real surface, failure rollback, device-loss handling and
+ordinary-frame cost remain open.
