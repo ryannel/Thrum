@@ -379,6 +379,13 @@ impl OrdinaryPeer {
         self.sent.quarantine_uncertain_write();
     }
 
+    /// Close this peer if shared game projection fails before its individual
+    /// `capture_projected` call begins. The outer publication coordinator
+    /// applies this to every affected peer after a caught extraction unwind.
+    pub fn quarantine_projection_fault(&mut self) {
+        self.phase = PeerPhase::RequiresClose;
+    }
+
     /// Admit an exact fully written cumulative prefix. The caller must bind
     /// `key` to the authenticated session and recheck current authority
     /// incarnation inside its callback; a callback refusal retains the exact

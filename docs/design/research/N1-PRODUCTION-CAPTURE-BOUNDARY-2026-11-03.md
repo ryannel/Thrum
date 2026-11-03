@@ -72,6 +72,15 @@ and callback unwind close the peer even if the game hook suppresses an error.
 The present API deliberately requires all admitted partitions at each capture;
 it does not yet select a sparse producer or prove W1 snapshot/result provenance.
 
+A [test-only W1 consumer](../../evidence/integration/N1-W1-OWNED-PROJECTION-2026-11-03.md)
+now feeds that owner from real committed callbacks for four peers. Shared
+128-cell extraction and the per-peer capture loop have one outer unwind guard:
+if it is caught, every affected ordinary peer closes before the panic resumes.
+One reusable scratch serves the peers sequentially. Matched release probes
+show a lower three-tick window cost for this owned fixture than for the older
+split construction fixture, with identical frame bytes; this observation does
+not isolate the wrapper, and neither path carries production schema closure.
+
 ## Cost and alternatives
 
 The selected fixture copies 48 group payloads and retains 16 framed messages
