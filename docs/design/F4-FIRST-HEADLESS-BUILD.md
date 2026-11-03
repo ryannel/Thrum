@@ -82,7 +82,9 @@ changed report or file bytes, missing/extra files, mismatched source/product
 association, a cross-wired environment/cache record and a receipt set whose
 raw digest does not match the verifier summary. The A/B fixture deletes both
 the materialized A input and original Cargo output, reloads and executes A,
-then proves invalid B leaves that candidate intact. This format is local
+then reopens the accepted source in a fresh test process, checks the candidate
+against the recooked expected product and executes A again. Invalid B leaves
+that candidate intact. This format is local
 diagnostic evidence, not `BuildRevision` or a publication API. It does not
 authenticate original inputs, make installed tools immutable, trace implicit
 compiler reads or prove crash-safe atomic publication.
