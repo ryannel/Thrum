@@ -15,7 +15,7 @@ fn buffer(graph: &mut FrameGraph, scope: ResourceScope) -> ResourceId {
             },
             scope,
         )
-        .unwrap()
+        .expect("valid test fixture")
 }
 fn pass(graph: &mut FrameGraph, accesses: Vec<Access>) {
     graph.pass(Pass {
@@ -59,7 +59,9 @@ fn read_write_ordering_and_disjoint_ranges() {
         &mut graph,
         vec![access(&resource, 0..8, AccessKind::StorageWrite)],
     );
-    let compiled = graph.compile(1, &BTreeSet::new()).unwrap();
+    let compiled = graph
+        .compile(1, &BTreeSet::new())
+        .expect("valid test fixture");
     assert_eq!(
         compiled.dependencies,
         [(0, 2), (0, 4), (2, 3), (2, 4), (3, 4)]
@@ -157,7 +159,7 @@ fn disjoint_same_pass_buffer_usages_follow_whole_buffer_compatibility() {
                 },
                 ResourceScope::Imported { initialized: true },
             )
-            .unwrap();
+            .expect("valid test fixture");
         pass(
             &mut graph,
             vec![
@@ -189,7 +191,7 @@ fn separate_pass_buffer_hazards_and_same_pass_texture_usage_keep_ranges() {
             },
             ResourceScope::Imported { initialized: true },
         )
-        .unwrap();
+        .expect("valid test fixture");
     pass(
         &mut graph,
         vec![access(&resource, 0..16, AccessKind::StorageWrite)],
@@ -198,9 +200,11 @@ fn separate_pass_buffer_hazards_and_same_pass_texture_usage_keep_ranges() {
         &mut graph,
         vec![access(&resource, 16..32, AccessKind::VertexRead)],
     );
-    let plan = graph.compile(1, &BTreeSet::new()).unwrap();
-    assert!(plan.dependencies.is_empty());
-    assert!(plan.hazards.is_empty());
+    let plan = graph
+        .compile(1, &BTreeSet::new())
+        .expect("valid test fixture");
+    assert_eq!(plan.dependencies, Vec::new());
+    assert_eq!(plan.hazards, Vec::new());
 
     let mut graph = FrameGraph::default();
     let texture = graph
@@ -217,7 +221,7 @@ fn separate_pass_buffer_hazards_and_same_pass_texture_usage_keep_ranges() {
             },
             ResourceScope::Imported { initialized: true },
         )
-        .unwrap();
+        .expect("valid test fixture");
     pass(
         &mut graph,
         vec![
@@ -250,7 +254,7 @@ fn reuse_requires_exact_descriptor_nonoverlap_and_transient_ownership() {
             },
             ResourceScope::Transient,
         )
-        .unwrap();
+        .expect("valid test fixture");
     let _unused = buffer(&mut graph, ResourceScope::Transient);
     pass(
         &mut graph,
@@ -268,12 +272,14 @@ fn reuse_requires_exact_descriptor_nonoverlap_and_transient_ownership() {
             access(&different, 0..64, AccessKind::CopyWrite),
         ],
     );
-    let plan = graph.compile(1, &BTreeSet::new()).unwrap();
+    let plan = graph
+        .compile(1, &BTreeSet::new())
+        .expect("valid test fixture");
     let slot = |id: &ResourceId| {
         plan.lifetimes
             .iter()
             .find(|l| &l.resource == id)
-            .unwrap()
+            .expect("valid test fixture")
             .transient_slot
     };
     assert_eq!(slot(&a), slot(&b));
@@ -301,7 +307,7 @@ fn texture_subresources_require_their_own_producer() {
             },
             ResourceScope::Transient,
         )
-        .unwrap();
+        .expect("valid test fixture");
     pass(
         &mut graph,
         vec![access(&texture, 0..1, AccessKind::AttachmentClear)],
@@ -379,7 +385,7 @@ fn wrong_graph_bounds_usage_and_unprepared_generations_refuse() {
 
 #[test]
 fn abi_encodes_semantic_offsets_and_rejects_wrong_references() {
-    let textures = TextureClasses::defaults(&wgpu::Limits::default()).unwrap();
+    let textures = TextureClasses::defaults(&wgpu::Limits::default()).expect("valid test fixture");
     let material = MaterialRecord {
         base_rgba: [0.25, 0.5, 0.75, 1.0],
         emissive_cutoff: [2.0, 3.0, 4.0, 0.5],
@@ -387,7 +393,7 @@ fn abi_encodes_semantic_offsets_and_rejects_wrong_references() {
         flags: [11, 22, 33, 44],
         texture_layers: [0; 4],
     };
-    let bytes = material.pack(&textures).unwrap();
+    let bytes = material.pack(&textures).expect("valid test fixture");
     assert_eq!(bytes.len(), 80);
     for (offset, expected) in [(0, 0.25_f32), (16, 2.0), (28, 0.5), (32, 0.8), (44, 2.0)] {
         assert_eq!(&bytes[offset..offset + 4], &expected.to_le_bytes());
@@ -403,7 +409,7 @@ fn abi_encodes_semantic_offsets_and_rejects_wrong_references() {
     instance.current[3][0] = 3.25;
     instance.previous[2][2] = 0.75;
     instance.ids[3] = 29;
-    let bytes = instance.pack(2).unwrap();
+    let bytes = instance.pack(2).expect("valid test fixture");
     assert_eq!(bytes.len(), 192);
     assert_eq!(&bytes[48..52], &3.25_f32.to_le_bytes());
     assert_eq!(&bytes[104..108], &0.75_f32.to_le_bytes());
@@ -418,7 +424,7 @@ fn abi_encodes_semantic_offsets_and_rejects_wrong_references() {
 #[test]
 fn texture_class_and_storage_capacity_are_not_silently_truncated() {
     let limits = wgpu::Limits::default();
-    let defaults = TextureClasses::defaults(&limits).unwrap();
+    let defaults = TextureClasses::defaults(&limits).expect("valid test fixture");
     assert_eq!(
         defaults.arrays()[0].class.format(),
         wgpu::TextureFormat::Rgba8UnormSrgb
@@ -440,7 +446,10 @@ fn texture_class_and_storage_capacity_are_not_silently_truncated() {
         Err(AbiError::TextureClass)
     ));
     assert_eq!(table_bytes(0, 100, &limits), Err(AbiError::TableCapacity));
-    assert_eq!(table_bytes(2, 10_000, &limits).unwrap(), (160, 1_920_000));
+    assert_eq!(
+        table_bytes(2, 10_000, &limits).expect("valid test fixture"),
+        (160, 1_920_000)
+    );
     let limited = wgpu::Limits {
         max_storage_buffer_binding_size: 1024,
         ..limits

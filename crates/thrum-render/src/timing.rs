@@ -60,6 +60,10 @@ impl GpuTimings {
     }
     /// Allocate bounded query/resolve/readback storage on the executor's device.
     /// Feature absent from the *enabled device* is a successful disabled path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the query count or timestamp period is invalid.
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -80,7 +84,7 @@ impl GpuTimings {
         if !period.is_finite() || period <= 0.0 {
             return Err(TimingError::InvalidCapacity);
         }
-        let size = u64::from(count) * wgpu::QUERY_SIZE as u64;
+        let size = u64::from(count) * u64::from(wgpu::QUERY_SIZE);
         let query = device.create_query_set(&wgpu::QuerySetDescriptor {
             label: Some("thrum pass timestamps"),
             ty: wgpu::QueryType::Timestamp,
@@ -124,6 +128,10 @@ impl GpuTimings {
     }
     /// Reserve the next pair and attach its writes to exactly one encoded pass.
     /// Caller must end that pass before resolving this batch.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for a stale generation, busy batch or full capacity.
     pub fn pass_writes(
         &mut self,
         generation: u64,
@@ -136,7 +144,7 @@ impl GpuTimings {
         if enabled.pending.is_some() || enabled.render_pending.is_some() {
             return Err(TimingError::Busy);
         }
-        let index = enabled.names.len() as u32;
+        let index = u32::try_from(enabled.names.len()).map_err(|_| TimingError::Capacity)?;
         if index >= enabled.capacity {
             return Err(TimingError::Capacity);
         }
@@ -150,6 +158,10 @@ impl GpuTimings {
     /// Finish recording timestamps on the render command buffer. The executor
     /// submits normally; completion notification is only a nonblocking message.
     /// This certifies counter readiness, never temporal-history acceptance.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for a stale generation or unresolved prior batch.
     pub fn finish_render(
         &mut self,
         generation: u64,
@@ -177,6 +189,10 @@ impl GpuTimings {
     /// while completion is pending (or timing is disabled). This avoids the
     /// documented Metal stale-counter fault from same-submission resolution.
     /// Mapping is deferred until the host submits this resolve command buffer.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for a stale generation, busy batch or failed completion.
     pub fn resolve_if_ready(
         &mut self,
         generation: u64,
@@ -205,8 +221,11 @@ impl GpuTimings {
             Ok(()) => {}
         }
         enabled.render_pending = None;
-        let count = enabled.names.len() as u32 * 2;
-        let bytes = u64::from(count) * wgpu::QUERY_SIZE as u64;
+        let count = u32::try_from(enabled.names.len())
+            .ok()
+            .and_then(|n| n.checked_mul(2))
+            .ok_or(TimingError::InvalidCapacity)?;
+        let bytes = u64::from(count) * u64::from(wgpu::QUERY_SIZE);
         encoder.resolve_query_set(&enabled.query, 0..count, &enabled.resolve, 0);
         encoder.copy_buffer_to_buffer(&enabled.resolve, 0, &enabled.readback, 0, bytes);
         let (send, receive) = mpsc::channel();
@@ -224,6 +243,15 @@ impl GpuTimings {
     /// Nonblocking collection. `None` means unsupported, no batch, or not ready;
     /// use `is_enabled` to distinguish unsupported. The host polls its device.
     /// The current generation is checked before old callbacks can publish data.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for a stale generation, readback fault or invalid timestamp.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the bounded query buffer no longer contains the recorded
+    /// 64-bit timestamp pairs, which would violate the internal buffer invariant.
     pub fn try_collect(&mut self, generation: u64) -> Result<Option<Vec<PassTiming>>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
@@ -242,7 +270,10 @@ impl GpuTimings {
             Ok(Ok(())) => {}
         }
         enabled.pending = None;
-        let bytes = enabled.names.len() as u64 * 2 * wgpu::QUERY_SIZE as u64;
+        let bytes = u64::try_from(enabled.names.len())
+            .ok()
+            .and_then(|n| n.checked_mul(2 * u64::from(wgpu::QUERY_SIZE)))
+            .ok_or(TimingError::InvalidCapacity)?;
         let values = enabled
             .readback
             .slice(0..bytes)
