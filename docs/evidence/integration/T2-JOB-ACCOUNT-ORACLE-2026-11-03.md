@@ -2,8 +2,8 @@
 
 3 November 2026. A deterministic Python 3.11 reference model challenged the
 [provisional same-volume account](../../design/research/T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md).
-The code baseline was `50024fa`; the result file records the exact final
-input-document hashes. The [archive](T2-JOB-ACCOUNT-ORACLE-2026-11-03.tar.gz)
+The code baseline was `50024fa`; the selected input-document snapshot is
+`fa8bc43`, and the result file records its exact hashes. The [archive](T2-JOB-ACCOUNT-ORACLE-2026-11-03.tar.gz)
 contains the editable model, exact input hashes, JSON results, full report and
 scratch ownership record. Archive SHA-256:
 `bff4d27a8a3f2f3b67ce0eefcbce3e729c77ac6c17da938cc6c5f40071e362ae`.
@@ -15,7 +15,8 @@ The archived model and report name the exact input documents; their hashes are
 in `results.json`.
 
 Run `python3.11 model.py` after extracting the archive at the repository root
-with its recorded input files present. The local rerun returned the same result:
+with the `fa8bc43` input documents present for a byte-identical result. Later
+design edits change the recorded input hashes. The local selected rerun returned:
 
 | Bounded check | Result |
 | --- | ---: |
