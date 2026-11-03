@@ -111,6 +111,9 @@ component errors `|δx_i|≤a_i`, `|δy_i|≤b_i`, add a separately proved
 No such source certificate exists yet. This constant filter adds two
 comparisons/branches but can send many bright grazing fragments to the
 expensive path; fallback occupancy and full five-light cost are unmeasured.
+The [independent finite-operation oracle](../../evidence/render/R0-SIGNED-DOT-FILTER-ORACLE-2026-11-03.md)
+checks selected adjacent-rounding, FTZ and fusion schedules against exact
+represented dots; it does not establish a WGSL/backend implementation.
 
 The existing max-component normalization of `v=wi+wo` can avoid a tiny
 denominator without the arbitrary `2^-12` threshold when `v` has a
