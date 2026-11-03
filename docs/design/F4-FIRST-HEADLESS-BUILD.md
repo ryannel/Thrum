@@ -69,6 +69,23 @@ unreviewed cold hash does not retain them through compilation. F4 may publish
 a ready manifest only after T2 proves that selected bytes and runtime reads
 remain closed for the whole build.
 
+The opt-in A/B native fixture now retains an **unready candidate output** in
+its own directory after the successful A build. A compact canonical JSON
+report names the accepted source generation and `SourceRevision`, the distinct
+`SceneProductRevision`, fixed headless target, receipt count and exact byte
+length/SHA-256 for the cooked scene, executable, raw rustc receipts, Cargo
+transcript, receipt-verifier result, supervisor request/report, admitted build
+declaration, private-cache candidate manifest, sandbox policy and observed
+environment selection. Its SHA-256 is held outside the report. Reload refuses
+changed report or file bytes, missing/extra files, mismatched source/product
+association, a cross-wired environment/cache record and a receipt set whose
+raw digest does not match the verifier summary. The A/B fixture deletes both
+the materialized A input and original Cargo output, reloads and executes A,
+then proves invalid B leaves that candidate intact. This format is local
+diagnostic evidence, not `BuildRevision` or a publication API. It does not
+authenticate original inputs, make installed tools immutable, trace implicit
+compiler reads or prove crash-safe atomic publication.
+
 The first compiler profile should prepare one private Cargo dependency root
 from release-verified registry index records and lockfile-checksummed archives,
 then reuse that immutable root only when the admitted Cargo manifest set,
