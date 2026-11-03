@@ -701,7 +701,15 @@
         "functional_validation": "nine focused tests cover required/optional typed facts, escaped equivalence, duplicate and unknown ordering, map/null refusal, decoded text and UUID scratch bounds, exact header byte/node/depth boundaries, checked-token reuse, byte-identical authored fixture and descriptor hash; independent code review found no blocker",
         "experienced_quality": "not_applicable_to_inactive_source_decoder",
         "platform_performance": "no measured near-limit parser CPU or allocation/RSS, full candidate closure, accepted-pin F4 cook or device cost",
-        "scope": "Scene@3 descriptor remains unregistered and F3 dispatch refuses it; no typed-edge/global closure, source admission, F4 selected scene compatibility or ready renderer."
+        "scope": "Scene@3 descriptor remains unregistered and F3 dispatch refuses it. A separate F4 local environment projection now parses scene@3, but no accepted scene@3 pin, typed-edge/global closure, source admission or ready renderer exists."
+      },
+      "i2a_scene3_f4_environment_projection": {
+        "evidence": "../evidence/render/R0-F4-SCENE3-ENVIRONMENT-PROJECTION-2026-11-03.md",
+        "implementation": "public_checked_scene2_or_scene3_environment_projection_and_actual_selected_scene_schema_provenance",
+        "functional_validation": "scene@3 required-render-edge and escaped-equivalence fixture; existing scene@2 and constant-light tests, source/cook suites, full repository gate on rerun and independent read-only review pass; no scene@3 accepted-pin test exists",
+        "experienced_quality": "not_applicable_to_inactive_selected_source_projection",
+        "platform_performance": "no paired parser CPU, allocation/RSS, accepted-pin cook or device measurement",
+        "scope": "Local selected scene parsing only. Scene@3 remains unregistered in F3; authenticated scene@3 pin, global render closure, F4 render product and ready renderer remain open."
       },
       "i2a_render_definition_candidate": {
         "evidence": "../evidence/render/R0-F3-RENDER-DEFINITION-2026-11-03.md",

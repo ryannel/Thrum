@@ -230,8 +230,8 @@ a terminal validation rejection for `(epoch,key)`.
    is compiled but has no decoder caller yet. Keep admission dispatch disabled.
 2. Integrate scene schema 3 and the render root into F3 staged parsing.
    Keep `core.scene@1/@2` semantics and existing constant-light descriptors
-   intact. Add an F4 scene@3 environment projection before activation: the
-   current constant-light selected-pin cooker accepts only scene@2. Replace
+   intact. The F4 scene@3 local environment projection now exists; prove it
+   through an admitted selected pin at activation. Replace
    split collision/edge checks, validate unselected roots,
    and prove deterministic path/field diagnostics under reorderings and
    three-way cross-chunk collisions.

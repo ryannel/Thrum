@@ -374,10 +374,11 @@ impl AuthoredSun {
     }
 }
 
-/// Checked `core.scene@2` identity and optional environment source edge.
+/// Checked `core.scene@2/@3` identity and optional environment source edge.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EnvironmentScene {
     id: String,
+    schema: u64,
     environment_source: Option<String>,
 }
 
@@ -385,6 +386,11 @@ impl EnvironmentScene {
     /// Stable authored scene UUID.
     pub fn id(&self) -> &str {
         &self.id
+    }
+
+    /// Exact checked scene schema; source provenance must carry this version.
+    pub fn schema(&self) -> u64 {
+        self.schema
     }
 
     /// Required authored environment UUID when the scene selects a source.
@@ -816,19 +822,57 @@ pub fn parse_authored_environment(bytes: &[u8]) -> Result<AuthoredEnvironment, s
     })
 }
 
-/// Validate and project the identity and environment edge of `core.scene@2`.
+/// Validate and project the identity and environment edge of `core.scene@2/@3`.
 ///
-/// Uses F3's existing whole-record bounds and strict typed parser. Labels and
-/// documentation are checked but omitted. The caller must authenticate the exact
-/// bytes and built-in definition against its accepted pin and establish typed
-/// reference closure before treating this source projection as a build input.
+/// The scene@3 parser also checks its required render edge, but this projection
+/// does not retain it. Labels and documentation are checked but omitted. The
+/// caller must authenticate the exact bytes and built-in definition against
+/// its accepted pin and establish typed reference closure before build use.
 pub fn parse_environment_scene(bytes: &[u8]) -> Result<EnvironmentScene, serde_json::Error> {
-    record_header(bytes)?;
-    let record = parse_scene(bytes)?;
-    Ok(EnvironmentScene {
-        id: record.id,
-        environment_source: record.environment_source,
-    })
+    let checked = checked_record(bytes)?;
+    match (
+        checked.header().record_type.as_str(),
+        checked.header().schema,
+    ) {
+        ("core.scene", 2) => {
+            let record = parse_scene(bytes)?;
+            Ok(EnvironmentScene {
+                id: record.id,
+                schema: 2,
+                environment_source: record.environment_source,
+            })
+        }
+        ("core.scene", 3) => {
+            let record = crate::scene_source_v3::decode_checked_scene_v3(checked)
+                .map_err(|error| serde_json::Error::custom(format!("{error:?}")))?;
+            Ok(EnvironmentScene {
+                id: canonical_uuid_string(&record.id),
+                schema: 3,
+                environment_source: record
+                    .environment_source
+                    .map(|id| canonical_uuid_string(&id)),
+            })
+        }
+        _ => Err(serde_json::Error::custom(
+            "unsupported scene type or schema",
+        )),
+    }
+}
+
+fn canonical_uuid_string(id: &[u8; 16]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut bytes = [0_u8; 36];
+    let mut output = 0;
+    for (index, byte) in id.iter().enumerate() {
+        if matches!(index, 4 | 6 | 8 | 10) {
+            bytes[output] = b'-';
+            output += 1;
+        }
+        bytes[output] = HEX[(byte >> 4) as usize];
+        bytes[output + 1] = HEX[(byte & 0x0f) as usize];
+        output += 2;
+    }
+    String::from_utf8(bytes.to_vec()).expect("hexadecimal UUID is ASCII")
 }
 
 /// Validate and project a `thrum.light.identity@1` record.
@@ -1164,6 +1208,7 @@ mod tests {
         let escaped = scene.replace("environment.source", r"environment.\u0073ource");
         let projected = parse_environment_scene(escaped.as_bytes()).unwrap();
         assert_eq!(projected.id(), SCENE);
+        assert_eq!(projected.schema(), 2);
         assert_eq!(projected.environment_source(), Some(SOURCE));
         assert_eq!(
             projected,
@@ -1202,6 +1247,29 @@ mod tests {
             format!("{light} trailing"),
         ] {
             assert!(parse_environment_light_identity(invalid.as_bytes()).is_err());
+        }
+    }
+
+    #[test]
+    fn scene3_environment_projection_checks_required_render_edge_and_version() {
+        const RENDER: &str = "10000000-0000-4000-8000-000000000004";
+        let scene = format!(
+            r#"{{"fields":{{"render.source":"{RENDER}","environment.source":"{SOURCE}","scene.label":"entry"}},"schema":3,"type":"core.scene","id":"{SCENE}"}}"#
+        );
+        let escaped = scene
+            .replace("render.source", r"render.\u0073ource")
+            .replace(SOURCE, r"10000000-0000-4000-8000-00000000000\u0031");
+        let parsed = parse_environment_scene(scene.as_bytes()).unwrap();
+        assert_eq!(parsed.id(), SCENE);
+        assert_eq!(parsed.schema(), 3);
+        assert_eq!(parsed.environment_source(), Some(SOURCE));
+        assert_eq!(parse_environment_scene(escaped.as_bytes()).unwrap(), parsed);
+        for invalid in [
+            scene.replace(&format!(r#""render.source":"{RENDER}","#), ""),
+            scene.replace(RENDER, "not-a-canonical-uuid"),
+            scene.replace("\"schema\":3", "\"schema\":4"),
+        ] {
+            assert!(parse_environment_scene(invalid.as_bytes()).is_err());
         }
     }
 

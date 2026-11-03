@@ -14,7 +14,7 @@ use crate::{ConstantLightError, ConstantLightInputV1, ConstantLightProductV1};
 pub enum ConstantLightRecordKind {
     /// `core.project@2` at `project.json`.
     Project,
-    /// The sole declared entry's `core.scene@2`.
+    /// The sole declared entry's `core.scene@2/@3`.
     Scene,
     /// Its `thrum.environment.authored@1`.
     Environment,
@@ -45,6 +45,7 @@ impl ConstantLightRecordKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ConstantLightRecordInput {
     kind: ConstantLightRecordKind,
+    schema: u64,
     id: String,
     path: SourcePath,
     length: u64,
@@ -69,7 +70,7 @@ impl ConstantLightRecordInput {
 
     /// Schema checked by the fixed typed decoder.
     pub fn schema(&self) -> u64 {
-        self.kind.schema()
+        self.schema
     }
 
     /// Authenticated portable source path; selected records are project-declared.
@@ -168,10 +169,11 @@ pub fn cook_pinned_constant_light(
     let [scene_id] = project.entry_scenes() else {
         return Err(Error::EntryCount);
     };
-    let scene_input = selected_input(pin, &project, scene_id, Scene)?;
+    let mut scene_input = selected_input(pin, &project, scene_id, Scene)?;
     let scene = parse_environment_scene(&read_record(pin, &scene_input)?)
         .map_err(|_| Error::Decode(Scene))?;
     check_id(scene.id(), &scene_input)?;
+    scene_input.schema = scene.schema();
     let environment_id = scene
         .environment_source()
         .ok_or(Error::EnvironmentNotSelected)?;
@@ -207,6 +209,7 @@ fn provenance(entry: &ManifestEntry, kind: ConstantLightRecordKind) -> ConstantL
     let (length, sha256) = entry.content_identity();
     ConstantLightRecordInput {
         kind,
+        schema: kind.schema(),
         id: entry
             .record_identity()
             .expect("selected record identity")
