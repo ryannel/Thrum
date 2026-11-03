@@ -67,31 +67,32 @@ Those float32 regimes require their own checks rather than borrowing the float64
 
 ## Complete coupling order and bounded slices
 
-1. Immutable air T and current ordinary all-source cloud/fog/geometry Sun visibility. Keep public point/segment tau
-   separate from the declared production filtered cloud visibility. The existing point-T/lateral failure remains open.
-2. Non-cloud direct irradiance at p is E_top*V_planet*V_geometry*T_air_RGB*T_fog_RGB, applied once. Cloud primary and
-   liquid bank multiply F1 and Fquarter respectively; air, fog and receiver direct light use only F1.
-3. A0 jointly attenuates air/fog/cloud, but integrates only direct Sun-lit air/fog source. Exclude cloud source,
-   L_external and Sun disk. Ground is black; a named external diffuse space boundary is explicit. Angular mean A0
-   supplies fixed cloud external ambient; cloud/fog higher terms cannot recursively feed A0.
-4. Final main/mirror/environment jointly integrate RGB air/fog/cloud extinction and source once. Their affine operator
-   is RGB(S,T); scalar cloud opacity is not a substitute for spectral air extinction. No finished clear-air image is
-   overlaid and attenuated a second time. Split fine cloud/fog/shadow-support intervals from coarse clear-air spans;
-   a2m march to100km is not a viable design. Count intervals, endpoint work, caps and failure.
-5. Reflections trace from the real interface, then apply the near leg once. Final clouded environment supplies surface
-   diffuse light but never A0. Environment-capture ground terminals use a fixed/direct-only rule, excluding the very
-   environment product being produced. Sun disk is one external radiance terminal, not duplicated direct irradiance.
+3 November2026: the next complete graph uses the [selected detailed joint-media design](../../evidence/cloud-joint-media-design-2026-11-03/PREFLIGHT.md).
+This supersedes the earlier512-anchor/24-direction A0 proposal for that graph. The held Sun-air-only calibration above
+and its evidence remain unchanged. The complete graph explicitly selects the Hillaire reference's aerosol absorption
+and ozone profile, rather than silently reusing the older minimal extinction calibration; products carry separate hashes.
 
-First executable slice only replaces the constant Sun multiplier consistently in cloud primary/bank, receiver and
-independent mirror while holding the authored external diffuse boundary, density, camera and exposure fixed. Label it
-Sun-air-only, not a complete sky. This isolates mapping/colour/planet errors before adding source integration.
+1. One immutable media generation binds the presented source/weather/Sun/fog time, profile, optical mask, view demands
+   and device epoch. Owned source products and fenced GPU resources keep current and retained consumers consistent.
+2. Direct air and fog sources use ordinary cloud Sun visibility even outside local cloud support. Apply air/fog/geometry
+   Sun factors once; cloud MS modifies source terms, never view extinction. Offscreen casters remain in the complete query.
+3. Four-LUT air provides transmittance, clear multiple scattering, sky view and per-view aerial perspective. A pristine
+   upper-hemisphere mean supplies cloud ambient and the declared fog fill; clouded environment never feeds its own producer.
+4. Sum air, cloud and fog RGB coefficients/source before one Beer transfer. AP is eligible only for one complete clear,
+   unshadowed camera-origin-to-terminal ray. Mixed rays use disjoint joint-media/shadow spans and bounded reanchored direct
+   clear-air gaps. No AP prefix subtraction/division, clear-air overlay or unqualified transmittance-ratio segment API.
+5. BSM/point-tail/direct visibility covers all admitted source bounds. Main, reflected and environment rays have independent
+   origins, intervals and terminals. Apply the surface near leg and Sun disk once; environment excludes the direct disk.
+6. Current environment capture produces SH9 and rough reflection products without reading its own output. Main-hidden
+   execution retains requested source/light/environment/reflection consumers. Feature-off savings follow actual demands.
+7. Four-template mixed pipelines bind only their inputs, fitting16 sampled textures; complete-clear AP/Sky paths omit native
+   cloud bindings. The detailed resource/work ledger includes all products, retained generations, uploads and explicit overflow.
 
-Next implement actual joint RGB air/fog coefficients and fine/coarse interval ownership, then A0, final environment
-and surfaces in that order. Start the canonical finite pools at512anchors/24directions, with work/bytes/caps visible;
-reject/refine their representation if quality needs excessive work. Surface/probe cycles, foreground attenuation twice,
-main-hidden shadow/reflection loss, planet-clear night rays, incorrect HDR/black and source/cache staleness are rejection
-conditions. Physical coefficients may be authored; consistent causes and delivered behaviour may not be substituted
-with independent image fades.
+The [maintained CPU fog reference](../../../scripts/cloud_atmosphere_proof/README.md) is implemented and independently
+reviewed, with12 focused tests passing. Its analytic ellipsoid integral and stated binary64/host-transcendental assumptions
+are a CPU correctness checkpoint only. WGSL/f32, four-LUT production, joint rays, environment and whole-graph qualification
+remain unbuilt. AP prefix certificates are optional future optimization, not a delivery prerequisite. The single
+[migration queue](CLOUD-MIGRATION.md#current-assembly-checkpoint) owns integration and visual/cost proof.
 
 ## Checks and budgets
 

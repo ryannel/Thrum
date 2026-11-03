@@ -1,0 +1,57 @@
+{
+  "scope": "selected detailed design and reviewed pure CPU fog helper only",
+  "files": {
+    "FOG-HANDOFF.md": {
+      "sha256": "bd74b2554fd6784ef34b56825e11e75018929da5132695196b54626b8d6365a5",
+      "bytes": 6892
+    },
+    "FOG-PINS.json": {
+      "sha256": "7f7f95b344b76027c7c2ac82060d7299d76c7856dbb60989a5de9781d8e2cb41",
+      "bytes": 1109
+    },
+    "PREFLIGHT.md": {
+      "sha256": "645b95005b49681604ad018eba245571d33a1a75bb71015281c53d2085c0eef4",
+      "bytes": 56962
+    },
+    "README.md": {
+      "sha256": "e15b56864c515a03f08e405191b7fde66280a43b5debe552be0fc13952cc0f00",
+      "bytes": 2100
+    },
+    "REVIEW.md": {
+      "sha256": "007cc88a9ddc859d1d3e00b6b3daa59de0c6218d39b3bbe63d1d345e2bfe2cb7",
+      "bytes": 1772
+    },
+    "SUPERSEDED-AP-CERTIFICATE.md": {
+      "sha256": "94cabcfd108dc7674aa20c928617a707c91d5f4372c24a4312e4d32439b7dda9",
+      "bytes": 9719
+    },
+    "author-tests.txt": {
+      "sha256": "e5a2d62a40e2c1b5a590ef70cccdf12dbc57b906be874e640bc93f1ff1e1bd98",
+      "bytes": 1190
+    },
+    "prior-sparse-input-attempt.zip": {
+      "sha256": "9a686ae490cf661d755690e5241eacbef6f1490177d36809d2bdf91989cb1e10",
+      "bytes": 11180
+    },
+    "root-tests.txt": {
+      "sha256": "2ab8c8290a18565be58a1852eb135cde22d0ffd839eec460b6ae3eb19a5f1fdb",
+      "bytes": 1189
+    },
+    "scripts/cloud_atmosphere_proof/README.md": {
+      "sha256": "34dfca22033483d308ff27e9487985783ae87f500fc7edc941c4625a4cf7d783",
+      "bytes": 1189
+    },
+    "scripts/cloud_atmosphere_proof/package.json": {
+      "sha256": "53af8629670c16859578183b22ed8ccac0b1b2c0f3af1b297049a42716145ab3",
+      "bytes": 93
+    },
+    "scripts/cloud_atmosphere_proof/src/air/fog.js": {
+      "sha256": "9879a2a082e8cd3fdf61d341fdbb684f46af8159b189d9f38878ef4eb90f9479",
+      "bytes": 10132
+    },
+    "scripts/cloud_atmosphere_proof/tests/air/fog.test.mjs": {
+      "sha256": "06420afb0554b748c8ddf07de0d9d3de6c268148887209df5a1cef8bb9711369",
+      "bytes": 9426
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "scope": "pure CPU analytic fog; sparse-vector correctness fix only; no GPU/integration/timing admission",
+  "node": "v24.16.0",
+  "testCommand": "node --test tests/air/fog.test.mjs",
+  "tests": 12,
+  "passed": 12,
+  "priorAttempt": "history/fog-sparse-adverse-5699f9d",
+  "priorPinsSHA256": "48dcae8809c6b15cb5da0842f219db1f33cb2de06ed77f2e64b1821284bf2727",
+  "reviewDisposition": "P2 fixed; independent narrow closure pending",
+  "files": {
+    "src/air/fog.js": "9879a2a082e8cd3fdf61d341fdbb684f46af8159b189d9f38878ef4eb90f9479",
+    "tests/air/fog.test.mjs": "06420afb0554b748c8ddf07de0d9d3de6c268148887209df5a1cef8bb9711369",
+    "tests/air/last-run.txt": "e5a2d62a40e2c1b5a590ef70cccdf12dbc57b906be874e640bc93f1ff1e1bd98",
+    "package.json": "53af8629670c16859578183b22ed8ccac0b1b2c0f3af1b297049a42716145ab3",
+    "FOG-HANDOFF.md": "bd74b2554fd6784ef34b56825e11e75018929da5132695196b54626b8d6365a5",
+    "PREFLIGHT.md": "645b95005b49681604ad018eba245571d33a1a75bb71015281c53d2085c0eef4",
+    "SUPERSEDED-AP-CERTIFICATE.md": "97c79fe6b383e2c4eaf7e06bbeb4984d01e65c5547917dfee2f5c95af9b9777f"
+  }
+}

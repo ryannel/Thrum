@@ -1,0 +1,20 @@
+✔ immutable validated profiles own all arrays and the selected envelope (1.619334ms)
+✔ axis full, half and offset chords match separate closed forms (0.933667ms)
+✔ clipped cell averages divide by the requested cell, not fog chord (0.23375ms)
+✔ outside, zero length and tangency return explicit identity with honest error (0.593208ms)
+✔ rotation and translation covary with an anisotropic ellipsoid (0.261334ms)
+✔ tiny requested segments and far encoded origins stay within reported error (0.126292ms)
+✔ original-field quadrature independently checks clipped and oblique rays (16.418083ms)
+✔ point coefficients and zero density retain geometry without forged source (0.203667ms)
+✔ invalid profile, direction, range and coordinate never manufacture clear fog (0.230375ms)
+✔ all profile vectors and rotation levels reject holes, including inherited indices (0.463833ms)
+✔ sparse point, origin and direction queries return invalid without throwing (0.102459ms)
+✔ numeric ownership ignores caller iterators/methods and snapshots getters once (0.210041ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67.687375
