@@ -187,6 +187,10 @@ f32/FTZ/fusion diagnostics. It confirms algebraic equivalence on its tested
 domain and exposes bright sign loss and directional narrowing. It does not
 provide the missing source certificate, an exhaustive WGSL error bound or
 experienced visual qualification.
+The [robust-evaluation options](R0-ROBUST-GGX-EVALUATION-OPTIONS-2026-11-03.md)
+derive a one-ratio Smith candidate and a represented-input filter/fallback
+experiment that may avoid blanket angular floors. They do not recover
+source information lost before f32 or select a shader.
 
 ## Remaining proof before any R0 shader claim
 

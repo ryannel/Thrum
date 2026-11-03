@@ -1,0 +1,143 @@
+# R0 grazing evaluation without a blanket angular floor — research candidate
+
+3 November 2026. This follows the [sharp real-number bound and scaled GGX
+candidate](R0-ARITHMETIC-ENVELOPE-2026-11-03.md) and the [independent numeric
+oracle](../../evidence/render/R0-GGX-NUMERIC-ORACLE-2026-11-03.md). Two
+independent read-only reviews checked the algebra and its implementation
+limits. This note chooses the next **experiment**, not WGSL, a source
+acceptance rule, or a visual/device qualification.
+
+## Decide what the shader can promise
+
+The present candidate asks every contributing fragment/light pair to have
+`max(ci,co)≥2^-16` and the largest component of `wi+wo` at least `2^-12`.
+Those floors have no source fixture or moving-pose certificate. A runtime
+evaluator could cover more grazing content, but the promise must distinguish
+the authored real directions from the actual represented shader operands.
+Two authored directions with opposite hemisphere signs can narrow to the
+same f32 bits. A deterministic shader given those bits cannot recover which
+one was authored. The existing sharp grazing family proves a tiny positive
+cosine can still be bright, so treating ambiguity as zero or replacing it
+with an epsilon is a material change.
+
+The first experiment should target **finite, represented f32 inputs** with
+documented upstream transform/interpolation error. Source-real conformance
+still needs an authored-to-represented error certificate, a different
+encoding, or an explicit unsupported/diagnostic outcome. This is a proposed
+scope for proof, not a change to C08 material semantics. WGSL permits
+flush-to-zero for some floating operations and even intermediate values in
+bit reinterpretation; it also permits reassociation/fusion and does not
+promise the rounding behavior required by a conventional IEEE-only error
+filter. See the current [WGSL floating-point rules](https://www.w3.org/TR/WGSL/#floating-point-evaluation),
+[reassociation](https://www.w3.org/TR/WGSL/#reassociation-and-fusion) and
+[accuracy requirements](https://www.w3.org/TR/WGSL/#floating-point-accuracy).
+
+## Fast represented-input candidate
+
+Keep the cosine combined with height-correlated Smith. This candidate inherits
+the selected material domain, including positive minimum roughness and
+`F0∈[0,1]`; finite represented vectors alone do not establish admission.
+For certified `ci,co>0`, let `alpha=roughness²`, `a=alpha²` and
+`g(c)=sqrt(a+(1-a)c²)`. The selected real closure's factor is
+`K=ci/[2*(ci*g(co)+co*g(ci))]`. Divide by only the larger cosine:
+
+```text
+if ci >= co:
+    q = co / ci
+    K = 0.5 / max(alpha, g(co) + q*g(ci))
+else:
+    q = ci / co
+    K = (0.5*q) / max(alpha, q*g(co) + g(ci))
+Lspec = E * D * F * K
+```
+
+The two branches are algebraically identical for positive real cosines.
+Each ratio is at most one; each unguarded denominator is at least `alpha`,
+so the `max` does not change the real closure. This saves one ratio division
+relative to the earlier two-ratio candidate. It does **not** permit division
+when computed cosines are zero or ambiguous. An ordinary branch must first
+certify its signs and the positive divisor. A fast interval filter can
+certify dots clearly away from zero; near-zero dots go to a robust path or
+cause a complete current-frame diagnostic. Its interval includes input
+quantization, products, additions, permitted reassociation/fusion and FTZ.
+An exact sign alone is insufficient if a positive magnitude or ratio has
+flushed away. A second-branch ratio that rounds to zero needs an absolute
+radiance/display error bound before it can be dropped.
+
+The existing max-component normalization of `v=wi+wo` can avoid a tiny
+denominator without the arbitrary `2^-12` threshold when `v` has a
+certifiably nonzero represented component. For an exactly unit `n` and
+positive exact cosines,
+`max(ci,co) ≤ ci+co = n·v ≤ ||n||₁ max(|v.x|,|v.y|,|v.z|) ≤ √3 hm`.
+Thus a certified angular margin implies an ideal half-vector magnitude
+margin. For represented values, use an actual bound on `||n||₁` and include
+dot/addition error; the real inequality does not certify the computed `hm`.
+Near opposition, directional error grows roughly with `1/|v|`, even if the
+scaled normalization remains finite. The candidate shader formulation and
+its moving-highlight quality must be checked against an independent oracle.
+
+Filament documents the same [GGX distribution and height-correlated Smith
+visibility family](https://google.github.io/filament/main/filament.html#materialsystem/specularbrdf).
+Its implementation shortcuts, including absolute-value hemisphere handling
+or fp16 saturation, do not select Thrum's outside-regime semantics. The
+optional `|cross(n,h)|² + alpha²(n·h)²` distribution denominator avoids a
+`1-(n·h)²` cancellation for unit inputs, but adds vector work; compare its
+error and full five-light cost before adoption.
+
+## Rare exact fallback candidate
+
+For represented **normal-or-zero** f32 input components in `[-1,1]`, an
+integer dyadic path could decode sign, exponent and significand and compute
+the sign of a three-product dot with multiword `u32` arithmetic. Even normal
+f32 components can have a `2^-149` integer lattice after exponent alignment;
+product cancellation can expose a `2^-298` difference. Three products
+bounded by one therefore need roughly 301 signed fixed-point bits, so ten
+`u32` limbs plus proved product/carry logic are a conservative first budget,
+not an optimized design. For example, with `u=2^-149` and `M=2^23`,
+`((M+1)u)^2 - (Mu)((M+2)u)=u²`; every operand is a normal f32 value.
+Return a normalized mantissa/exponent magnitude as well as a sign; this
+allows a positive but subnormal-sized dot or ratio to be carried without
+first materializing a flushed f32. A similar scaled integer sum could
+support a near-opposed half vector. This adapts the filtered-predicate
+principle in [Shewchuk's primary paper and code](https://www.cs.cmu.edu/~quake/robust.html),
+not its floating implementation or its assumptions verbatim.
+
+This fallback is an unbuilt, potentially expensive candidate. WGSL permits
+FTZ in bit-reinterpretation intermediates, so a float-to-integer bitcast is
+not a universal recovery path for subnormal **input** components. Supporting
+those inputs would need an upstream integer encoding or a separately proved
+representation path; the accumulator above already covers their exponent
+lattice if their bits are reliably available.
+It also cannot recover source-real signs or relative direction detail lost
+before the represented operands arrived. Count fallback frequency, divergent
+waves, live registers and latency in ordinary and deliberately tangent
+five-light content; a rare-branch assumption is not a performance result.
+
+## Narrow source specialization and proof order
+
+A static planar face with constant normal has
+`sign(n·(camera-P)) = sign(n·camera-d)` and similarly for a point light on
+the plane `n·P=d`; direction normalization preserves the sign. A CPU
+certificate per face/light/view update could avoid most fragment tests in
+such a fixture. A normal cone extends this only with bounded normal-map,
+tangent, interpolation and transform error. It is a specialized proof path,
+not a general content restriction.
+
+1. Extend the independent CPU oracle with both one-ratio Smith branches,
+   exact dyadic represented-dot predicates and uncertainty intervals. Include
+   the sharp grazing family, opposite-sign values that narrow identically,
+   exact-zero/cancellation cases, half boundaries and every claimed FTZ mode.
+2. Decide and record the source-to-representation error contract before
+   treating represented-input success as source correctness. A filter needs a
+   sound error interval under WGSL's allowed operations, not just a measured
+   small error on ordinary pixels.
+3. Prove each shader intermediate finite and each branch divisor nonzero
+   under the selected profile, including permitted reassociation. Validate
+   pinned Naga/wgpu/backends; measure fast-path cost, fallback occupancy,
+   register pressure, and a deliberately all-ambiguous workload.
+4. Compare moving grazing highlights, half packing, tone/exposure output and
+   complete current-frame diagnostic behavior. Keep mathematical equivalence,
+   source correctness, experienced visual quality and device cost separate.
+
+No angular early exit, source-wide certificate removal, complete fallback,
+physical shader safety or device performance is claimed by this note.
