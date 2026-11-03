@@ -5,8 +5,12 @@ limits and failure rules. This family document retains the wider responsibility;
 
 **Current design closure:** the [initial protocol](../NETWORK-SPEC.md) resolves the
 [SR01–SR03/SR07 review](../SIMPLIFICATION-REVIEW.md) with committed per-action results, atomic full groups,
-one gameplay semantic identity and an analytical R4 workload. It is ready for the first I2n construction slice;
-transport, runtime, latency and device proof remain unrun. The authority model and early I2n milestone stand.
+one gameplay semantic identity and an analytical R4 workload. The
+[reviewed provisional cadence study](../research/N1-OUTBOUND-CADENCE-2026-11-03.md)
+reopens the 60-to-20 Hz outbound burst and same-tick multi-group replica
+consumer before a production queue/codec can qualify. Transport, runtime,
+latency and device proof remain unrun. The authority model and early I2n
+milestone stand.
 
 Selected architectural direction, 1 November 2026. The user requires future multiplayer as a first-class citizen to
 avoid rebuilding the engine around it later. N1 is an optional runtime responsibility with contracts designed now;
