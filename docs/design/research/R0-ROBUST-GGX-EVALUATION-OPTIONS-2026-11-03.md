@@ -185,6 +185,12 @@ returns magnitude without a tiny-float conversion. Its input interface
 bypasses float-to-bit recovery, and its isolated cost includes large
 diagnostic writes; it does not select a fragment fallback or prove general
 WGSL/backend performance.
+The [single-accumulator optimization diagnostic](../../evidence/render/R0-EXACT-DOT-OPT-METAL-2026-11-03.md)
+keeps that exact output and cuts the isolated 189,803-record full-output pass
+from about 1.04–1.06 ms to 0.20–0.23 ms on the tested Metal device. Its direct
+10.37-million-dot compact-output control still took 20.5–33.9 ms and had
+substantial scaling noise. It selects a better *research kernel*, not a
+common-fragment fallback or frame-cost claim.
 It also cannot recover source-real signs or relative direction detail lost
 before the represented operands arrived. Count fallback frequency, divergent
 waves, live registers and latency in ordinary and deliberately tangent
