@@ -1690,6 +1690,47 @@ mod tests {
     }
 
     #[cfg(target_os = "macos")]
+    fn read_held_guard_line(reader: &mut impl BufRead) -> Result<Option<String>, String> {
+        const MAX_LINE: u64 = 4096;
+        let mut raw = Vec::new();
+        let count = reader
+            .take(MAX_LINE + 1)
+            .read_until(b'\n', &mut raw)
+            .map_err(|error| error.to_string())?;
+        if count == 0 {
+            return Ok(None);
+        }
+        if count as u64 > MAX_LINE || raw.last() != Some(&b'\n') {
+            return Err("held guard response exceeds its line limit".to_owned());
+        }
+        raw.pop();
+        String::from_utf8(raw)
+            .map(Some)
+            .map_err(|_| "held guard response is not UTF-8".to_owned())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn forward_held_guard_output(
+        mut output: impl BufRead,
+        sender: mpsc::SyncSender<Result<String, String>>,
+    ) {
+        loop {
+            match read_held_guard_line(&mut output) {
+                Ok(Some(line)) => {
+                    if sender.try_send(Ok(line)).is_err() {
+                        break;
+                    }
+                }
+                Ok(None) => break,
+                Err(error) => {
+                    let _ = sender.try_send(Err(error));
+                    break;
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
     #[test]
     fn held_cache_response_requires_matching_key_and_request() {
         let key = "a".repeat(64);
@@ -1706,6 +1747,46 @@ mod tests {
         ] {
             assert!(held_cache_response(&rejected, 7, &key).is_err());
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn held_guard_line_reader_bounds_each_response() {
+        let mut valid = BufReader::new(std::io::Cursor::new(b"READY\nnext\n"));
+        assert_eq!(
+            read_held_guard_line(&mut valid).unwrap().as_deref(),
+            Some("READY")
+        );
+        assert_eq!(
+            read_held_guard_line(&mut valid).unwrap().as_deref(),
+            Some("next")
+        );
+        assert_eq!(read_held_guard_line(&mut valid).unwrap(), None);
+        let mut oversized = BufReader::new(std::io::Cursor::new(vec![b'x'; 4097]));
+        assert!(read_held_guard_line(&mut oversized).is_err());
+        let mut unterminated = BufReader::new(std::io::Cursor::new(b"READY"));
+        assert!(read_held_guard_line(&mut unterminated).is_err());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn held_guard_output_stops_on_full_bounded_queue() {
+        let (sender, receiver) = mpsc::sync_channel(2);
+        let (done_sender, done_receiver) = mpsc::channel();
+        let reader = std::thread::spawn(move || {
+            forward_held_guard_output(
+                BufReader::new(std::io::Cursor::new(b"one\ntwo\nthree\nfour\n")),
+                sender,
+            );
+            done_sender.send(()).unwrap();
+        });
+        done_receiver
+            .recv_timeout(Duration::from_secs(1))
+            .expect("held guard reader blocked on an overfull response queue");
+        reader.join().unwrap();
+        assert_eq!(receiver.try_recv().unwrap().unwrap(), "one");
+        assert_eq!(receiver.try_recv().unwrap().unwrap(), "two");
+        assert!(receiver.try_recv().is_err());
     }
 
     #[cfg(target_os = "macos")]
@@ -1799,16 +1880,9 @@ mod tests {
                 .spawn()
                 .unwrap();
             let stdout = child.stdout.take().unwrap();
-            let (sender, receiver) = mpsc::channel();
+            let (sender, receiver) = mpsc::sync_channel(2);
             let reader = std::thread::spawn(move || {
-                for line in BufReader::new(stdout).lines() {
-                    if sender
-                        .send(line.map_err(|error| error.to_string()))
-                        .is_err()
-                    {
-                        break;
-                    }
-                }
+                forward_held_guard_output(BufReader::new(stdout), sender);
             });
             let response = receiver.recv_timeout(Duration::from_secs(30));
             if response.is_err() {
@@ -1892,6 +1966,10 @@ mod tests {
             loop {
                 if let Some(status) = child.try_wait().unwrap() {
                     self.reader.take().unwrap().join().unwrap();
+                    assert!(
+                        self.responses.try_recv().is_err(),
+                        "sealed cache lease guard emitted unsolicited output"
+                    );
                     assert!(
                         status.success(),
                         "sealed cache lease guard failed: {status}"
