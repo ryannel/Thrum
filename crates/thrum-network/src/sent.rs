@@ -185,6 +185,10 @@ impl OrdinaryLedger {
     pub fn outstanding_entries(&self) -> usize {
         self.entry_len
     }
+    /// Remaining exact identity slots available to this peer's unsent queue.
+    pub(crate) fn journal_credits(&self) -> (usize, usize) {
+        (RESULT_IDS - self.result_len, EVENT_IDS - self.event_len)
+    }
     /// Last assigned application sequence.
     pub fn last_sequence(&self) -> u64 {
         self.last_sequence

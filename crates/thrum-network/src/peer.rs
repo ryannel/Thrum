@@ -263,7 +263,13 @@ impl OrdinaryPeer {
         // Set before the game hook: if it unwinds through the queue's atomic
         // preflight, a caller catching the unwind cannot resume this peer.
         self.phase = PeerPhase::RequiresClose;
-        let result = self.unsent.capture_batch(payloads, validator);
+        let (result_credit, event_credit) = self.sent.journal_credits();
+        let result = self.unsent.capture_batch_with_credits(
+            payloads,
+            validator,
+            result_credit,
+            event_credit,
+        );
         if result.is_ok() {
             self.phase = PeerPhase::Ordinary;
         }
@@ -320,8 +326,14 @@ impl OrdinaryPeer {
                 &[]
             }
         });
+        let (result_credit, event_credit) = self.sent.journal_credits();
         self.unsent
-            .capture_batch(&payloads[..scratch.len], validator)
+            .capture_batch_with_credits(
+                &payloads[..scratch.len],
+                validator,
+                result_credit,
+                event_credit,
+            )
             .map_err(ProjectError::Queue)?;
         self.phase = PeerPhase::Ordinary;
         Ok(())
