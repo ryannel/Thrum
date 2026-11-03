@@ -16,7 +16,9 @@ ordered Unix argument bytes, working-directory bytes, the sorted child
 environment after the two wrapper control variables are removed, and the
 selected rustc path. It limits each field to 128 KiB, the receipt to 1 MiB,
 arguments to 1,024, environment pairs to 512 and the set to 64. An incomplete,
-failed, malformed or aliased receipt refuses verification. Rustc response-file
+malformed or aliased receipt refuses verification. Successful-build mode also
+refuses failed receipts; failed-build mode requires one ordinary nonzero compile
+exit and a failed Cargo finish. Rustc response-file
 arguments refuse because their file bytes are not captured. The wrapper gives
 the child only its recorded environment and inherits stdio; it uses no unsafe
 code or additional dependency.
@@ -97,7 +99,7 @@ A's fresh-output compile took 1,300 ms in that run.
 The exact emission/crate-type check passed a later sandboxed A/B run with a
 1,389 ms A compile.
 
-Twelve Python fixtures cover valid one- and two-unit receipts plus refusal of
+Thirteen Python fixtures cover valid one- and two-unit receipts plus refusal of
 incomplete or malformed receipts, mismatched source/manifest/extern identity,
 unsupported hooks, escaped paths, changed child environment, unrecognized
 probes, extra codegen/linker options and mismatched emit/crate-type records.
@@ -106,6 +108,19 @@ preservation, limits, probe classification,
 exclusive receipt creation, process outcomes and exact child environment.
 `./dev check` passes; its normal test suite omits the expensive A/B fixture.
 
+The failed-B mode now audits every observed receipt under the same selected
+compiler/root/environment/codegen checks. It requires successful probes,
+exactly one failed compile with a nonzero ordinary exit, all other compiles
+matched to Cargo artifact events, no artifact for the failed crate, and exactly
+one `build-finished` event reporting failure. A structured compiler error, when
+present, must name the failed crate. Cargo 1.99.1 emitted no structured error
+message for this local B case; the bounded supervisor stderr contained the
+`game.rs` error and the Rust fixture checks it separately. The local B run had
+three successful compiles, failed `i1_mobile_game`, and three probes. Signal,
+missing completion, mismatched artifact and success transcript shapes refuse
+in the focused verifier fixture. The failure report remains `buildReady:false`;
+it is diagnostic evidence, not a B candidate.
+
 ## Remaining release boundary
 
 The wrapper and Cargo transcript describe invocations and reported outputs,
@@ -113,8 +128,8 @@ not a complete allowlist for every rustc option and not every file rustc or
 the linker opened. The sandbox still allows named
 system roots and broader metadata reads; loaded libraries, Xcode support
 bytes, path ancestors and Cargo's `DYLD_FALLBACK_LIBRARY_PATH` resolution need
-closure. The B build uses the wrapper, but its failed receipts have not been
-audited. The wrapper executable itself is not part of a reviewed release
+closure. The failed B build's receipts are now audited; interrupted or timed-out
+builds still lack complete receipt/child-closure proof. The wrapper executable itself is not part of a reviewed release
 selection. The candidate has no reviewed release manifest, retained output
 manifest, durable ready publication or game-run handoff. These gates remain in
 the unchecked native compiler-adapter item of the [build plan](../../BUILD-PLAN.md).

@@ -129,7 +129,10 @@ Prove in order:
    game. This local candidate proof has passed; keep it unready while
    host-runtime reads remain broad.
 3. Bound Cargo stdout/stderr, time and descendant lifetime; audit successful,
-   failed and interrupted receipts. An overproducing or hung child must not
+   failed and interrupted receipts. The local [failed-B audit](../evidence/i2a/F4-RUSTC-RECEIPTS.md)
+   now reconciles one ordinary failed compile with successful units and Cargo's
+   failed finish, while the supervisor checks bounded stderr separately.
+   Interrupted and timed-out receipt closure remains open. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.
    Measure compiler-job peak RSS separately; this profile has no hard process
    memory ceiling. The [withdrawn Rust collector experiment](../evidence/i2a/F4-BOUNDED-NATIVE-BUILD.md)

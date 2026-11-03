@@ -1261,6 +1261,47 @@ mod tests {
         assert!(!built_b.status.success());
         let b_diagnostic = String::from_utf8_lossy(&built_b.stderr);
         assert!(b_diagnostic.contains("game.rs") && b_diagnostic.contains("error"));
+        if rustc_wrapper.is_some() {
+            let transcript = b_output.join("cargo-transcript.jsonl");
+            fs::write(&transcript, &built_b.stdout).unwrap();
+            let rustc = Path::new(env!("CARGO"))
+                .with_file_name(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+            let report =
+                Command::new(std::env::var_os("THRUM_PYTHON").unwrap_or_else(|| "python3".into()))
+                    .arg(checkout.join("scripts/verify_rustc_receipts.py"))
+                    .arg("--receipt-dir")
+                    .arg(b_output.join("rustc-receipts"))
+                    .arg("--rustc")
+                    .arg(rustc)
+                    .arg("--source")
+                    .arg(fs::canonicalize(b_materialized.path()).unwrap())
+                    .arg("--cache")
+                    .arg(private_cargo_home.as_deref().unwrap())
+                    .arg("--output")
+                    .arg(fs::canonicalize(&b_output).unwrap())
+                    .arg("--transcript")
+                    .arg(transcript)
+                    .arg("--expect-failure")
+                    .output()
+                    .unwrap();
+            assert!(
+                report.status.success(),
+                "{}",
+                String::from_utf8_lossy(&report.stderr)
+            );
+            let receipt: serde_json::Value = serde_json::from_slice(&report.stdout).unwrap();
+            assert_eq!(receipt["failedCompile"]["crate"], "i1_mobile_game");
+            assert_eq!(receipt["compiles"], 3);
+            assert_eq!(receipt["probes"], 3);
+            assert_eq!(receipt["buildReady"], false);
+            eprintln!(
+                "admitted-headless-b rustc_receipts successful_compiles={} failed={} probes={} set_sha256={}",
+                receipt["compiles"],
+                receipt["failedCompile"]["crate"],
+                receipt["probes"],
+                receipt["receiptSetSha256"]
+            );
+        }
         assert!(!b_output.join("debug").join(binary_name).exists());
         assert_eq!(tree_hashes(b_materialized.path()), b_files);
         if let Some((candidate, digest)) = &candidate_a {

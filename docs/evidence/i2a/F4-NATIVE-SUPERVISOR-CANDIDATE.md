@@ -43,7 +43,7 @@ overhead or tail-performance comparison.
 
 An escaped session can still outlive the group; a complete release adapter
 needs a retained job identity or equivalent containment. Python and its
-script are not yet bound to reviewed release inputs. Host SIGKILL, full
-failed/interrupted rustc receipt audit, compiler/system reads and retained
+script are not yet bound to reviewed release inputs. Host SIGKILL, interrupted
+rustc receipt audit, compiler/system reads and retained
 target publication remain unqualified. Compiler-job RSS has no hard process
 memory ceiling.

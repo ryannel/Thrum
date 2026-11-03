@@ -13,7 +13,8 @@ def field(value):
     return len(value).to_bytes(4, "little") + value
 
 
-def receipt(rustc, cwd, arguments, environment=(), kind=1, completed=True):
+def receipt(rustc, cwd, arguments, environment=(), kind=1, completed=True,
+            outcome=0, status=0):
     result = bytearray(b"THRMRCP1")
     result += (1).to_bytes(4, "little") + bytes([kind])
     result += field(os.fsencode(rustc)) + field(os.fsencode(cwd))
@@ -25,7 +26,7 @@ def receipt(rustc, cwd, arguments, environment=(), kind=1, completed=True):
         result += field(name) + field(value)
     result += b"PEND"
     if completed:
-        result += b"DONE\0" + (0).to_bytes(4, "little", signed=True)
+        result += b"DONE" + bytes([outcome]) + status.to_bytes(4, "little", signed=True)
     return bytes(result)
 
 
@@ -110,6 +111,66 @@ class VerifyRustcReceipts(unittest.TestCase):
             self.assertEqual((report["probes"], report["compiles"]), (1, 1))
             self.assertEqual(report["units"][0]["artifacts"], ["debug/headless"])
             self.assertFalse(report["buildReady"])
+
+    def test_failed_compile_requires_exact_failed_receipt_and_cargo_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory).resolve())
+            receipts, rustc, source, cache, output, transcript, path, arguments, environment = args
+            path.write_bytes(receipt(rustc, source, arguments, environment, status=1))
+            transcript.write_text("\n".join(json.dumps(value) for value in (
+                {"reason": "compiler-message", "manifest_path": str(source / "Cargo.toml"),
+                 "target": {"name": "headless", "src_path": str(source / "src/main.rs"),
+                            "kind": ["bin"], "crate_types": ["bin"]},
+                 "message": {"level": "error"}},
+                {"reason": "build-finished", "success": False},
+            )) + "\n")
+            report = inspect(*args[:6], expect_failure=True)
+            self.assertEqual(report["failedCompile"]["crate"], "headless")
+            self.assertEqual(report["failedCompile"]["errorDiagnostics"], 1)
+            self.assertEqual((report["probes"], report["compiles"]), (1, 0))
+            self.assertFalse(report["buildReady"])
+            messages = [json.loads(line) for line in transcript.read_text().splitlines()]
+            messages[0]["target"]["kind"] = ["custom-build"]
+            transcript.write_text("\n".join(json.dumps(value) for value in messages) + "\n")
+            with self.assertRaisesRegex(ValueError, "failed Cargo message differs"):
+                inspect(*args[:6], expect_failure=True)
+            messages[0]["target"]["kind"] = ["bin"]
+            transcript.write_text("\n".join(json.dumps(value) for value in messages) + "\n")
+            outside = Path(directory).resolve() / "outside"
+            outside.mkdir()
+            escaped_environment = [(name, os.fsencode(outside) if name == b"CARGO_MANIFEST_DIR" else value)
+                                   for name, value in environment]
+            path.write_bytes(receipt(rustc, source, arguments, escaped_environment, status=1))
+            with self.assertRaisesRegex(ValueError, "manifest differs"):
+                inspect(*args[:6], expect_failure=True)
+            path.write_bytes(receipt(rustc, source, arguments, environment, status=1))
+            with self.assertRaisesRegex(ValueError, "unexpected failed"):
+                inspect(*args[:6])
+            path.write_bytes(receipt(rustc, source, arguments, environment,
+                                     outcome=1, status=9))
+            with self.assertRaisesRegex(ValueError, "unexpected failed"):
+                inspect(*args[:6], expect_failure=True)
+            path.write_bytes(receipt(rustc, source, arguments, environment, status=1))
+            transcript.write_text(json.dumps({"reason": "build-finished", "success": False}) + "\n")
+            self.assertEqual(inspect(*args[:6], expect_failure=True)
+                             ["failedCompile"]["errorDiagnostics"], 0)
+            transcript.write_text("\n".join(json.dumps(value) for value in (
+                {"reason": "compiler-artifact", "fresh": False,
+                 "manifest_path": str(source / "Cargo.toml"),
+                 "target": {"name": "headless", "src_path": str(source / "src/main.rs"),
+                            "kind": ["bin"], "crate_types": ["bin"]},
+                 "filenames": [str(output / "debug/headless")]},
+                {"reason": "build-finished", "success": False},
+            )) + "\n")
+            with self.assertRaisesRegex(ValueError, "artifact units"):
+                inspect(*args[:6], expect_failure=True)
+            transcript.write_text(json.dumps({"reason": "build-finished", "success": True}) + "\n")
+            with self.assertRaisesRegex(ValueError, "selected outcome"):
+                inspect(*args[:6], expect_failure=True)
+            path.write_bytes(receipt(rustc, source, arguments, environment, completed=False))
+            transcript.write_text(json.dumps({"reason": "build-finished", "success": False}) + "\n")
+            with self.assertRaisesRegex(ValueError, "completed execution"):
+                inspect(*args[:6], expect_failure=True)
 
     def test_incomplete_wrong_source_and_extra_unit_refuse(self):
         with tempfile.TemporaryDirectory() as directory:

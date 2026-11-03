@@ -216,6 +216,25 @@ def compile_identity(receipt, roots):
     return crate, sources[0], sorted(externs), [value.decode("ascii") for value in crate_types]
 
 
+def compile_manifest(receipt, roots, source_identity):
+    environment = receipt["environment"]
+    manifest_path = environment.get(b"CARGO_MANIFEST_PATH")
+    manifest_dir = environment.get(b"CARGO_MANIFEST_DIR")
+    if not manifest_path or not manifest_dir:
+        raise ValueError("rustc child lacks Cargo manifest environment")
+    selected = {key: roots[key] for key in ("source", "cache")}
+    manifest = selected_file(Path(os.fsdecode(manifest_path)), selected,
+                             "rustc child Cargo manifest")
+    directory = Path(os.fsdecode(manifest_dir))
+    if (not directory.is_absolute() or directory.is_symlink() or not directory.is_dir()
+            or directory.resolve(strict=True) != (roots[manifest[0]] / manifest[1]).parent):
+        raise ValueError("rustc child manifest differs from selected package directory")
+    source_path = roots[source_identity[0]] / source_identity[1]
+    if source_identity[0] != manifest[0] or not source_path.is_relative_to(directory.resolve(strict=True)):
+        raise ValueError("rustc child source is outside its package")
+    return manifest
+
+
 def selected_xcode_linker(environment):
     sdk_bytes = environment.get(b"SDKROOT")
     linker_bytes = environment.get(b"CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER")
@@ -304,7 +323,8 @@ def validate_cargo_probe(receipt, source):
         raise ValueError("first profile refuses unrecognized Cargo rustc probe arguments")
 
 
-def inspect(receipt_dir, rustc, source, cache, output, transcript):
+def inspect(receipt_dir, rustc, source, cache, output, transcript,
+            expect_failure=False):
     roots = {"source": source.resolve(strict=True), "cache": cache.resolve(strict=True),
              "output": output.resolve(strict=True)}
     if not all(path.is_absolute() and path.is_dir() and not path.is_symlink()
@@ -318,6 +338,8 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
     if not 1 <= len(entries) <= MAX_RECEIPTS:
         raise ValueError("rustc receipt set is empty or oversized")
     compiles = {}
+    failed_crate = None
+    failed_receipt = None
     probes = 0
     receipt_hashes = []
     for path in entries:
@@ -351,8 +373,11 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
                                  + name.decode("ascii"))
         if receipt["kind"] == 1 or b"DYLD_FALLBACK_LIBRARY_PATH" in environment:
             validate_macos_dynamic_path(environment, rustc, roots["cache"], output)
-        if receipt["outcome"] != 0 or receipt["status"] != 0:
-            raise ValueError("successful build includes failed or incomplete rustc invocation")
+        failed = receipt["outcome"] != 0 or receipt["status"] != 0
+        if failed and (not expect_failure or receipt["kind"] != 1
+                       or receipt["outcome"] != 0 or receipt["status"] <= 0
+                       or failed_crate is not None):
+            raise ValueError("build includes unexpected failed or incomplete rustc invocation")
         receipt_hashes.append(receipt["sha256"])
         if receipt["kind"] == 0:
             validate_cargo_probe(receipt, roots["source"])
@@ -361,18 +386,20 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
         crate, source_identity, externs, crate_types = compile_identity(receipt, roots)
         if receipt["environment"].get(b"CARGO_CRATE_NAME") != crate.encode("ascii"):
             raise ValueError("rustc child Cargo crate name differs from compile receipt")
+        manifest_identity = compile_manifest(receipt, roots, source_identity)
         if crate in compiles:
             raise ValueError("first profile has duplicate crate-name invocations")
+        if failed:
+            failed_crate = crate
+            failed_receipt = receipt["sha256"]
         compiles[crate] = {"source": source_identity, "externs": externs,
                            "crateTypes": crate_types,
-                           "manifestEnvironment": {
-                               name: receipt["environment"].get(name)
-                               for name in (b"CARGO_MANIFEST_DIR", b"CARGO_MANIFEST_PATH")
-                           },
+                           "manifest": manifest_identity,
                            "receiptSha256": receipt["sha256"]}
     raw_transcript = ordinary_bytes(transcript, MAX_TRANSCRIPT)
     artifacts = {}
     finished = False
+    error_diagnostics = 0
     for line in raw_transcript.splitlines():
         if not line:
             continue
@@ -396,26 +423,7 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
                 {key: roots[key] for key in ("source", "cache")},
                 "Cargo manifest",
             )
-            source_path = roots[cargo_source[0]] / cargo_source[1]
-            package_directory = (roots[cargo_manifest[0]] / cargo_manifest[1]).parent
-            if not source_path.is_relative_to(package_directory):
-                raise ValueError("Cargo target source is outside its package manifest directory")
-            child_manifest = compiles[target]["manifestEnvironment"]
-            manifest_path = child_manifest[b"CARGO_MANIFEST_PATH"]
-            manifest_dir = child_manifest[b"CARGO_MANIFEST_DIR"]
-            if not manifest_path or not manifest_dir:
-                raise ValueError("rustc child lacks Cargo manifest environment")
-            child_path = selected_file(
-                Path(os.fsdecode(manifest_path)),
-                {key: roots[key] for key in ("source", "cache")},
-                "rustc child Cargo manifest",
-            )
-            child_dir = Path(os.fsdecode(manifest_dir))
-            if not child_dir.is_absolute() or child_dir.is_symlink() or not child_dir.is_dir():
-                raise ValueError("rustc child manifest directory is not selected")
-            if (child_path != cargo_manifest or cargo_source[0] != cargo_manifest[0]
-                    or child_dir.resolve(strict=True)
-                    != Path(message["manifest_path"]).resolve(strict=True).parent):
+            if compiles[target]["manifest"] != cargo_manifest or cargo_source[0] != cargo_manifest[0]:
                 raise ValueError("rustc child manifest differs from Cargo unit")
             if not isinstance(message["target"]["kind"], list) or any(
                 kind in ("custom-build", "proc-macro") for kind in message["target"]["kind"]
@@ -433,17 +441,35 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
                 identities.append(identity[1])
             artifacts[target] = sorted(identities)
         elif reason == "build-finished":
-            if finished or message.get("success") is not True:
-                raise ValueError("Cargo build did not finish successfully once")
+            if finished or message.get("success") is not (not expect_failure):
+                raise ValueError("Cargo build did not finish with the selected outcome once")
             finished = True
         elif reason == "build-script-executed":
             raise ValueError("first profile refuses build scripts")
         elif reason == "compiler-message":
-            raise ValueError("unexpected Cargo compiler message")
+            if (not expect_failure or message.get("target", {}).get("name", "").replace("-", "_") != failed_crate
+                    or message.get("message", {}).get("level") != "error"):
+                raise ValueError("unexpected Cargo compiler message")
+            failed = compiles[failed_crate]
+            selected = {key: roots[key] for key in ("source", "cache")}
+            kinds = message["target"].get("kind")
+            if (not isinstance(kinds, list) or any(kind in ("custom-build", "proc-macro")
+                                                   for kind in kinds)
+                    or selected_file(Path(message["manifest_path"]), selected, "failed Cargo manifest")
+                    != failed["manifest"]
+                    or selected_file(Path(message["target"]["src_path"]), selected,
+                                     "failed Cargo target source") != failed["source"]
+                    or message["target"]["crate_types"] != failed["crateTypes"]):
+                raise ValueError("failed Cargo message differs from selected rustc unit")
+            error_diagnostics += 1
         else:
             raise ValueError(f"unexpected Cargo build message: {reason}")
-    if not finished or set(compiles) != set(artifacts):
-        raise ValueError("rustc compile receipts differ from Cargo artifact units")
+    if (not finished or set(compiles) - ({failed_crate} if failed_crate else set()) != set(artifacts)
+            or (expect_failure and failed_crate is None)):
+        raise ValueError("rustc compile receipts differ from Cargo artifact units: "
+                         f"finished={finished} compiles={sorted(compiles)} "
+                         f"artifacts={sorted(artifacts)} failed={failed_crate} "
+                         f"errorDiagnostics={error_diagnostics}")
     artifact_owners = {}
     for crate, paths in artifacts.items():
         for path in paths:
@@ -454,23 +480,30 @@ def inspect(receipt_dir, rustc, source, cache, output, transcript):
         for name, path in compile["externs"]:
             if artifact_owners.get(path) != name or name == crate:
                 raise ValueError("rustc extern differs from a Cargo dependency artifact")
-        del compile["manifestEnvironment"]
-    return {
+        del compile["manifest"]
+    report = {
         "format": 1, "probes": probes, "compiles": len(compiles),
         "units": [{"crate": name, **compiles[name], "artifacts": artifacts[name]}
-                  for name in sorted(compiles)],
+                  for name in sorted(artifacts)],
         "receiptSetSha256": hashlib.sha256("\n".join(sorted(receipt_hashes)).encode()).hexdigest(),
         "buildReady": False,
     }
+    if expect_failure:
+        report["compiles"] -= 1
+        report["failedCompile"] = {"crate": failed_crate,
+                                   "receiptSha256": failed_receipt,
+                                   "errorDiagnostics": error_diagnostics}
+    return report
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("receipt-dir", "rustc", "source", "cache", "output", "transcript"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--expect-failure", action="store_true")
     args = parser.parse_args()
     report = inspect(args.receipt_dir, args.rustc, args.source, args.cache,
-                     args.output, args.transcript)
+                     args.output, args.transcript, args.expect_failure)
     print(json.dumps(report, sort_keys=True, separators=(",", ":")))
 
 
