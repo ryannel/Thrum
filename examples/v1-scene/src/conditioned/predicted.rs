@@ -104,6 +104,38 @@ impl PredictedPeer {
         usize::try_from(tick % HISTORY as u64).expect("bounded history index")
     }
 
+    pub(super) fn hold_to(&mut self, target: u64) -> Result<(), String> {
+        if !self.active {
+            return Ok(());
+        }
+        if self.tick.checked_add(1) != Some(target) {
+            return Err("prediction hold target is not contiguous".to_owned());
+        }
+        let next = self
+            .rule
+            .advance(self.state, ControllerInput::Hold)
+            .map_err(|error| format!("prediction hold step: {error:?}"))?;
+        self.records[Self::slot(target)] = Record {
+            tick: target,
+            input: None,
+            state: next,
+        };
+        self.state = next;
+        self.tick = target;
+        Ok(())
+    }
+
+    pub(super) fn reset(&mut self, tick: u64, state: ControllerState) {
+        self.records.fill(Record {
+            tick: u64::MAX,
+            input: None,
+            state,
+        });
+        self.state = state;
+        self.tick = tick;
+        self.active = true;
+    }
+
     /// Canonicalize and apply newly authored input at its future target tick.
     /// The current fixture extends its local horizon by one tick per call.
     pub(super) fn author(

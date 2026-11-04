@@ -11,6 +11,21 @@ fn main() {
 #[divan::bench]
 fn four_peer_600_tick_run(bencher: divan::Bencher<'_, '_>) {
     bencher.bench_local(|| {
-        divan::black_box(v1_scene::conditioned::run().expect("conditioned V1 run"));
+        divan::black_box(
+            v1_scene::conditioned::run(v1_scene::conditioned::ConditionedScenario::Standard)
+                .expect("conditioned V1 run"),
+        );
+    });
+}
+
+#[divan::bench]
+fn drained_reconnect_600_tick_run(bencher: divan::Bencher<'_, '_>) {
+    bencher.bench_local(|| {
+        divan::black_box(
+            v1_scene::conditioned::run(
+                v1_scene::conditioned::ConditionedScenario::DrainedReconnect,
+            )
+            .expect("drained reconnect V1 run"),
+        );
     });
 }

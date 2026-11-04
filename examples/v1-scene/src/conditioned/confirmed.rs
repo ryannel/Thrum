@@ -29,6 +29,19 @@ struct Pending {
     group: Group,
 }
 
+fn valid_controller(state: ControllerState) -> bool {
+    state
+        .position
+        .0
+        .iter()
+        .chain(state.velocity.0.iter())
+        .all(|value| value.is_finite())
+        && state
+            .held_axes
+            .iter()
+            .all(|axis| axis.is_finite() && axis.abs() <= 1.0)
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct ConfirmedPeer {
     tick: u64,
@@ -43,19 +56,7 @@ impl ConfirmedPeer {
         {
             return Err("confirmed controller group tick or binding mismatch".to_owned());
         }
-        if group
-            .state
-            .position
-            .0
-            .iter()
-            .chain(group.state.velocity.0.iter())
-            .any(|value| !value.is_finite())
-            || group
-                .state
-                .held_axes
-                .iter()
-                .any(|axis| !axis.is_finite() || axis.abs() > 1.0)
-        {
+        if !valid_controller(group.state) {
             return Err("confirmed controller group has invalid numeric values".to_owned());
         }
         if let Some(origin) = group.committed {
@@ -100,6 +101,8 @@ pub(super) struct ConfirmedLoop {
     random_state: u64,
     sent: u64,
     delivered: u64,
+    retired: u64,
+    rebaselines: u64,
     max_age: u64,
 }
 
@@ -118,6 +121,8 @@ impl ConfirmedLoop {
             random_state: RETURN_SEED,
             sent: 0,
             delivered: 0,
+            retired: 0,
+            rebaselines: 0,
             max_age: 0,
         }
     }
@@ -134,6 +139,60 @@ impl ConfirmedLoop {
             .get_mut(peer_index)
             .ok_or("prediction peer index outside session")?
             .author(target, origin, axes, actions)
+    }
+
+    pub(super) fn hold_author(&mut self, peer_index: usize, target: u64) -> Result<(), String> {
+        self.predicted
+            .get_mut(peer_index)
+            .ok_or("prediction peer index outside session")?
+            .hold_to(target)
+    }
+
+    pub(super) fn can_rebaseline(&self, peer_index: usize) -> Result<(), String> {
+        if peer_index >= PEER_COUNT {
+            return Err("baseline peer index outside session".to_owned());
+        }
+        if self
+            .pending
+            .iter()
+            .any(|pending| pending.peer_index == peer_index && pending.group.committed.is_some())
+        {
+            return Err("old committed result must be delivered before baseline".to_owned());
+        }
+        Ok(())
+    }
+
+    /// Adopt one new-epoch complete baseline only after all old committed
+    /// results have left the delayed lane. Old state-only groups may retire.
+    pub(super) fn rebaseline(
+        &mut self,
+        peer_index: usize,
+        tick: u64,
+        state: ControllerState,
+    ) -> Result<(), String> {
+        let client = self
+            .clients
+            .get(peer_index)
+            .ok_or("baseline peer index outside session")?;
+        if state.binding.peer != client.state.binding.peer
+            || state.binding.connection_epoch <= client.state.binding.connection_epoch
+            || tick <= client.tick
+            || !valid_controller(state)
+        {
+            return Err("reconnect baseline identity, tick or state refusal".to_owned());
+        }
+        self.can_rebaseline(peer_index)?;
+        let old_len = self.pending.len();
+        self.pending
+            .retain(|pending| pending.peer_index != peer_index);
+        self.retired += u64::try_from(old_len - self.pending.len()).expect("bounded return lane");
+        self.last_arrival[peer_index] = tick;
+        self.clients[peer_index].tick = tick;
+        self.clients[peer_index].state = state;
+        self.clients[peer_index].last_sequence = None;
+        self.predicted[peer_index].reset(tick, state);
+        self.rebaselines += 1;
+        Ok(())
     }
 
     fn random(&mut self) -> u64 {
@@ -208,8 +267,15 @@ impl ConfirmedLoop {
         self.predicted.each_ref().map(PredictedPeer::report)
     }
 
-    pub(super) fn counts(&self) -> (u64, u64, usize, u64) {
-        (self.sent, self.delivered, self.pending.len(), self.max_age)
+    pub(super) fn counts(&self) -> (u64, u64, usize, u64, u64, u64) {
+        (
+            self.sent,
+            self.delivered,
+            self.pending.len(),
+            self.retired,
+            self.rebaselines,
+            self.max_age,
+        )
     }
 
     pub(super) fn in_flight_committed(&self) -> u64 {
@@ -227,7 +293,7 @@ impl ConfirmedLoop {
 mod tests {
     use super::{ConfirmedLoop, Group, PEER_COUNT};
     use crate::scene;
-    use thrum_core::{Origin, PeerId, sim::ControllerState};
+    use thrum_core::{ActorId, Origin, PeerId, sim::ControllerState};
 
     fn states() -> [ControllerState; PEER_COUNT] {
         let sim = scene::simulation().expect("V1 world");
@@ -303,5 +369,50 @@ mod tests {
         );
         assert_eq!(client.tick(), 1);
         assert_eq!(client.committed_count(), 1);
+    }
+
+    #[test]
+    fn baseline_refuses_pending_committed_result_then_retires_state_only_groups() {
+        let states = states();
+        let rule = scene::simulation().expect("V1 world").controller_rule();
+        let mut loopback = ConfirmedLoop::new(&states, rule);
+        let old_origin = Origin {
+            peer: states[0].binding.peer,
+            connection_epoch: 1,
+            sequence: 1,
+        };
+        let mut replacement = states[0];
+        replacement.binding.connection_epoch = 2;
+        replacement.binding.actor = ActorId(10_001);
+        loopback
+            .send(0, 1, states[0], Some(old_origin))
+            .expect("old committed group");
+        assert!(loopback.rebaseline(0, 3, replacement).is_err());
+        assert_eq!(loopback.clients()[0].tick(), 0);
+        assert_eq!(loopback.counts().4, 0);
+
+        loopback.deliver(10).expect("drain committed origin");
+        assert_eq!(loopback.clients()[0].committed_count(), 1);
+        loopback
+            .send(0, 2, states[0], None)
+            .expect("old state group");
+        loopback
+            .rebaseline(0, 3, replacement)
+            .expect("drained replacement baseline");
+        assert_eq!(loopback.clients()[0].tick(), 3);
+        assert_eq!(loopback.clients()[0].committed_count(), 1);
+        assert_eq!(loopback.counts().3, 1);
+        assert_eq!(loopback.counts().4, 1);
+
+        let new_origin = Origin {
+            peer: replacement.binding.peer,
+            connection_epoch: 2,
+            sequence: 1,
+        };
+        loopback
+            .send(0, 4, replacement, Some(new_origin))
+            .expect("new epoch result");
+        loopback.deliver(20).expect("new result delivery");
+        assert_eq!(loopback.clients()[0].committed_count(), 2);
     }
 }

@@ -5,7 +5,7 @@ use std::{
     cell::Cell,
 };
 
-use v1_scene::conditioned::ConditionedGame;
+use v1_scene::conditioned::{ConditionedGame, ConditionedScenario};
 
 thread_local! {
     static TRACK: Cell<bool> = const { Cell::new(false) };
@@ -57,17 +57,37 @@ unsafe impl GlobalAlloc for CountingAllocator {
 
 #[test]
 fn warmed_conditioned_world_ticks_make_no_rust_heap_allocations() {
-    let mut game = ConditionedGame::new().expect("prepared four-peer game");
+    for scenario in [
+        ConditionedScenario::Standard,
+        ConditionedScenario::DrainedReconnect,
+    ] {
+        assert_zero_warmed_allocations(scenario);
+    }
+}
+
+fn assert_zero_warmed_allocations(scenario: ConditionedScenario) {
+    let mut game = ConditionedGame::new(scenario).expect("prepared four-peer game");
     for _ in 0..10 {
         game.step().expect("warm tick");
     }
     ALLOCS.with(|value| value.set(0));
     TRACK.with(|active| active.set(true));
-    for _ in 0..500 {
+    for tick in 11..=510 {
         game.step().expect("measured tick");
+        let count = ALLOCS.with(Cell::get);
+        let allowed = u64::from(scenario == ConditionedScenario::DrainedReconnect && tick >= 300);
+        if count > allowed {
+            TRACK.with(|active| active.set(false));
+            panic!(
+                "scenario {scenario:?} allocated {count} times by tick {tick}, allowed {allowed}"
+            );
+        }
     }
     TRACK.with(|active| active.set(false));
-    assert_eq!(ALLOCS.with(Cell::get), 0);
+    assert!(
+        ALLOCS.with(Cell::get) <= u64::from(scenario == ConditionedScenario::DrainedReconnect),
+        "only the first structural reconnect may allocate once"
+    );
     for _ in 0..90 {
         game.step().expect("remaining tick");
     }
