@@ -357,7 +357,24 @@
       "evidence": [
         "../evidence/v1-workload/A5-CONTROLLER-REPLAY-2026-11-04.md"
       ],
-      "scope": "The current no-collision/no-resolve V1 controller fixture predicts locally from wire-canonical authored frames with exact origin identity, reconciles complete confirmed states and falls back under one shared replay budget. Origin matching is diagnostic and does not retain reliable results or acknowledge them. Integrated reconnect baseline, reliable result/ACK, state delta, real transport, visible correction histories, cross-platform multiplayer and sustained device budgets remain open."
+      "scope": "The current no-collision/no-resolve V1 controller fixture predicts locally from wire-canonical authored frames with exact origin identity, reconciles complete confirmed states and falls back under one shared replay budget. Origin matching is diagnostic and does not retain reliable results or acknowledge them. A drained reconnect baseline is recorded separately below; uncertain-result reconnect, reliable result/ACK, state delta, real transport, visible correction histories, cross-platform multiplayer and sustained device budgets remain open."
+    },
+    "A5_drained_reconnect": {
+      "implementation": "partial_running_four_peer_drain_replace_epoch_switch_and_complete_client_baseline",
+      "functional_validation": "600_tick_10k_world_2369_committed_inputs_2353_resolved_origins_16_in_flight_no_mismatch_or_fallback; one_forced_old_epoch_packet_discarded; pending_committed_result_refusal_and_cumulative_count_tests_pass; ordinary_500_warmed_ticks_zero_allocation_and_one_structural_hecs_allocation_at_reconnect",
+      "experienced_quality": "no_visible_reconnect_or_correction_history_acceptance",
+      "platform_performance": {
+        "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
+        "windows": "not_run",
+        "browser": "not_run_conditioned_reconnect",
+        "ios": "not_run_conditioned_reconnect",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Rust 1.99.1 release, one 600-tick four-peer run: tick p50/p95 53/63 us, 2379 delayed confirmed groups delivered, four old state-only groups retired, one rebaseline, one forced stale packet discarded, four prediction horizons at tick 605 and 103264 bytes retained prediction history. Paired Divan 100-sample complete-run medians were 29.26 ms reconnect and 29.40 ms ordinary, with 139/138 benchmark-thread allocations including setup and teardown; no speed difference is established. Counting allocator saw one hecs freed-ID allocation at the structural transition and none on other warmed ticks.",
+      "evidence": [
+        "../evidence/v1-workload/A5-DRAINED-RECONNECT-2026-11-04.md"
+      ],
+      "scope": "The live no-socket fixture quiets one peer before a drained tick-300 replacement, publishes a distinct stable and wire actor identity, then changes W1/N1/client epoch and resets complete speculation from authority. Only state-only old return groups are retired. This does not cover uncertain or lost committed results, reliable result/ACK, state-delta baseline encoding, real transport, visible correction histories, collision prediction, cross-platform multiplayer or sustained device budgets."
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",

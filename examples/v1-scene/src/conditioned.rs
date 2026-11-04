@@ -7,8 +7,8 @@ mod predicted;
 use std::{fmt, num::NonZeroUsize, time::Instant};
 
 use thrum_core::{
-    Origin, PeerId, StableId,
-    sim::{SimAction, Simulation},
+    ActorId, Origin, PeerId, StableId,
+    sim::{Command, ComponentEntity, InputFrame, Ownership, SimAction, Simulation, Velocity},
 };
 use thrum_network::{
     envelope::{self, Header, Kind},
@@ -16,7 +16,7 @@ use thrum_network::{
     input_batch::{self, ActionView, ActionWire, EncodeRecord, InputCodecError},
 };
 
-use crate::scene::{self, ENTITY_COUNT, PEER_COUNT};
+use crate::scene::{self, PEER_COUNT};
 use confirmed::ConfirmedLoop;
 
 const TICKS: u64 = 600;
@@ -28,6 +28,19 @@ const PACKET_BYTES: usize = 256;
 const SEED: u64 = 0xA5A5_2026_1104;
 const PEERS: [PeerId; PEER_COUNT] = [PeerId(1), PeerId(2), PeerId(3), PeerId(4)];
 const MATCH_ID: [u8; 16] = [0xA5; 16];
+const RECONNECT_TICK: u64 = 300;
+const QUIET_START: u64 = 290;
+const REPLACEMENT_ID: StableId = StableId(10_000);
+const REPLACEMENT_ACTOR: ActorId = ActorId(10_001);
+
+/// Selects an ordinary conditioned run or a drained, single-peer reconnect.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ConditionedScenario {
+    /// Four uninterrupted controllers.
+    Standard,
+    /// Peer one stops sending, drains committed results, then adopts a new actor.
+    DrainedReconnect,
+}
 
 struct SceneActionWire;
 
@@ -85,7 +98,7 @@ impl ActionWire<SimAction> for SceneActionWire {
 
 #[derive(Clone, Copy)]
 struct Sample {
-    peer: PeerId,
+    binding: Ownership,
     target: u64,
     origin: Origin,
     axes: [f32; 3],
@@ -145,19 +158,36 @@ impl ConditionedLink {
         x
     }
 
-    fn send(&mut self, peer: PeerId, now: u64, newest: Sample) -> Result<(), String> {
+    fn send(
+        &mut self,
+        now: u64,
+        newest: Sample,
+        first_created: u64,
+        force_delivery: bool,
+    ) -> Result<(), String> {
         let started = Instant::now();
-        let count = HISTORY.min(usize::try_from(now).map_err(|_| "tick count overflow")?);
+        let peer = newest.binding.peer;
+        let available = now
+            .checked_sub(first_created)
+            .and_then(|span| span.checked_add(1))
+            .ok_or("packet history start exceeds current tick")?;
+        let count = HISTORY.min(usize::try_from(available).map_err(|_| "tick count overflow")?);
         let frames = std::array::from_fn::<_, HISTORY, _>(|age| {
             let created = now
                 .saturating_sub(u64::try_from(age).expect("four history slots"))
-                .max(1);
+                .max(first_created);
             let sample = if age == 0 {
                 newest
             } else {
-                control_sample(peer, created)
+                control_sample(newest.binding, created)
             };
-            scene::control_frame(sample.peer, sample.axes, sample.target, sample.target)
+            InputFrame {
+                origin: sample.origin,
+                actor: sample.binding.actor,
+                tick: sample.target,
+                axes: sample.axes,
+                actions: Vec::new(),
+            }
         });
         let records = std::array::from_fn::<_, HISTORY, _>(|index| EncodeRecord {
             frame: &frames[index],
@@ -171,7 +201,7 @@ impl ConditionedLink {
             Header {
                 kind: Kind::InputBatch,
                 match_id: MATCH_ID,
-                connection_epoch: scene::binding(peer).connection_epoch,
+                connection_epoch: newest.binding.connection_epoch,
                 message_sequence: now,
                 server_tick: now,
                 acknowledged_sequence: 0,
@@ -184,10 +214,11 @@ impl ConditionedLink {
         self.sent_bytes += u64::try_from(len).map_err(|_| "packet length overflow")?;
         self.encode_ns += started.elapsed().as_nanos();
         let random = self.random();
-        if random % 100 < 2
-            || self.burst_loss.is_some_and(|burst| {
-                burst.peer == peer && (burst.first_tick..=burst.last_tick).contains(&now)
-            })
+        if !force_delivery
+            && (random % 100 < 2
+                || self.burst_loss.is_some_and(|burst| {
+                    burst.peer == peer && (burst.first_tick..=burst.last_tick).contains(&now)
+                }))
         {
             self.dropped += 1;
             return Ok(());
@@ -228,7 +259,8 @@ impl ConditionedLink {
     }
 }
 
-fn control_sample(peer: PeerId, created: u64) -> Sample {
+fn control_sample(binding: Ownership, created: u64) -> Sample {
+    let peer = binding.peer;
     let direction = if (created / 45 + peer.0).is_multiple_of(2) {
         1.0
     } else {
@@ -240,11 +272,11 @@ fn control_sample(peer: PeerId, created: u64) -> Sample {
         [direction, 0.0, 0.0]
     };
     Sample {
-        peer,
+        binding,
         target: created + LEAD_TICKS,
         origin: Origin {
             peer,
-            connection_epoch: scene::binding(peer).connection_epoch,
+            connection_epoch: binding.connection_epoch,
             sequence: created + LEAD_TICKS,
         },
         axes,
@@ -254,12 +286,8 @@ fn control_sample(peer: PeerId, created: u64) -> Sample {
 fn controlled_positions(sim: &Simulation) -> Result<[[f64; 3]; PEER_COUNT], String> {
     let mut positions = [[0.0; 3]; PEER_COUNT];
     for (index, position) in positions.iter_mut().enumerate() {
-        let id = StableId(
-            u128::try_from(ENTITY_COUNT - index - 1).map_err(|_| "fixture identity overflow")?,
-        );
-        let handle = sim.handle(id).ok_or("controlled actor missing")?;
         *position = sim
-            .get(handle)
+            .controller_state(PEERS[index])
             .map_err(|error| format!("controlled actor: {error:?}"))?
             .position
             .0;
@@ -270,6 +298,7 @@ fn controlled_positions(sim: &Simulation) -> Result<[[f64; 3]; PEER_COUNT], Stri
 /// A measured, local four-peer input run. This is not a network transport result.
 #[derive(Debug)]
 pub struct ConditionedReport {
+    scenario: ConditionedScenario,
     committed_ticks: u64,
     sent_packets: u64,
     sent_bytes: u64,
@@ -283,8 +312,11 @@ pub struct ConditionedReport {
     late_frames: u64,
     due_misses: u64,
     accepted_frames: u64,
+    stale_packets: u64,
     confirmed_groups: u64,
     confirmed_in_flight: usize,
+    retired_return_groups: u64,
+    rebaselines: u64,
     confirmed_max_age: u64,
     confirmed_ticks: [u64; PEER_COUNT],
     predicted_ticks: [u64; PEER_COUNT],
@@ -309,7 +341,8 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late={}/{} accepted={} due_misses={} confirmed delivered/in_flight/max_age={}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            self.scenario,
             self.committed_ticks,
             PEER_COUNT,
             self.sent_packets,
@@ -322,10 +355,13 @@ impl fmt::Display for ConditionedReport {
             self.max_delay,
             self.duplicate_frames,
             self.late_frames,
+            self.stale_packets,
             self.accepted_frames,
             self.due_misses,
             self.confirmed_groups,
             self.confirmed_in_flight,
+            self.retired_return_groups,
+            self.rebaselines,
             self.confirmed_max_age,
             self.confirmed_ticks,
             self.predicted_ticks,
@@ -351,8 +387,10 @@ impl fmt::Display for ConditionedReport {
 struct PacketReceiver<'a> {
     sim: &'a Simulation,
     window: &'a mut FutureInputWindow<SimAction>,
+    bindings: &'a [Ownership; PEER_COUNT],
     duplicate_frames: &'a mut u64,
     late_frames: &'a mut u64,
+    stale_packets: &'a mut u64,
     decode_ns: &'a mut u128,
 }
 
@@ -361,13 +399,20 @@ impl PacketReceiver<'_> {
         let decode_started = Instant::now();
         let message =
             envelope::decode(bytes).map_err(|error| format!("conditioned envelope: {error:?}"))?;
-        let binding = scene::binding(peer);
+        let binding = *self
+            .bindings
+            .iter()
+            .find(|binding| binding.peer == peer)
+            .ok_or("conditioned packet peer has no current binding")?;
         if message.header.kind != Kind::InputBatch
             || message.header.match_id != MATCH_ID
-            || message.header.connection_epoch != binding.connection_epoch
             || message.header.acknowledged_sequence != 0
         {
             return Err("conditioned input session identity mismatch".to_owned());
+        }
+        if message.header.connection_epoch != binding.connection_epoch {
+            *self.stale_packets += 1;
+            return Ok(());
         }
         let batch = input_batch::decode(message.payload)
             .map_err(|error| format!("conditioned input bytes: {error:?}"))?;
@@ -401,6 +446,8 @@ impl PacketReceiver<'_> {
 /// every link, input-window and timing slot before the first fixed tick.
 pub struct ConditionedGame {
     sim: Simulation,
+    scenario: ConditionedScenario,
+    bindings: [Ownership; PEER_COUNT],
     window: FutureInputWindow<SimAction>,
     link: ConditionedLink,
     confirmed: ConfirmedLoop,
@@ -412,6 +459,7 @@ pub struct ConditionedGame {
     late_frames: u64,
     due_misses: u64,
     accepted_frames: u64,
+    stale_packets: u64,
     decode_ns: u128,
 }
 
@@ -420,7 +468,7 @@ impl ConditionedGame {
     ///
     /// # Errors
     /// Returns a world construction or timing-window setup fault.
-    pub fn new() -> Result<Self, String> {
+    pub fn new(scenario: ConditionedScenario) -> Result<Self, String> {
         let sim = scene::simulation()?;
         let bindings = PEERS.map(scene::binding);
         let window = FutureInputWindow::new(
@@ -442,6 +490,8 @@ impl ConditionedGame {
         let rule = sim.controller_rule();
         Ok(Self {
             sim,
+            scenario,
+            bindings,
             window,
             link: ConditionedLink::new(),
             confirmed: ConfirmedLoop::new(&states, rule),
@@ -455,6 +505,7 @@ impl ConditionedGame {
             late_frames: 0,
             due_misses: 0,
             accepted_frames: 0,
+            stale_packets: 0,
             decode_ns: 0,
         })
     }
@@ -469,17 +520,41 @@ impl ConditionedGame {
         }
         let tick = self.sim.tick() + 1;
         let started = Instant::now();
-        for (index, peer) in PEERS.into_iter().enumerate() {
-            let sample = control_sample(peer, tick);
+        let reconnect =
+            self.scenario == ConditionedScenario::DrainedReconnect && tick == RECONNECT_TICK;
+        if reconnect {
+            self.confirmed.can_rebaseline(0)?;
+        }
+        for (index, binding) in self.bindings.into_iter().enumerate() {
+            if self.scenario == ConditionedScenario::DrainedReconnect
+                && index == 0
+                && (QUIET_START..=RECONNECT_TICK).contains(&tick)
+            {
+                if tick < RECONNECT_TICK {
+                    self.confirmed.hold_author(index, tick + LEAD_TICKS)?;
+                }
+                continue;
+            }
+            let sample = control_sample(binding, tick);
             self.confirmed
                 .author(index, sample.target, sample.origin, sample.axes, &[])?;
-            self.link.send(peer, tick, sample)?;
+            let first_created = if self.scenario == ConditionedScenario::DrainedReconnect
+                && index == 0
+                && binding.connection_epoch > 1
+            {
+                RECONNECT_TICK + 1
+            } else {
+                1
+            };
+            self.link.send(tick, sample, first_created, false)?;
         }
         let mut receiver = PacketReceiver {
             sim: &self.sim,
             window: &mut self.window,
+            bindings: &self.bindings,
             duplicate_frames: &mut self.duplicate_frames,
             late_frames: &mut self.late_frames,
+            stale_packets: &mut self.stale_packets,
             decode_ns: &mut self.decode_ns,
         };
         self.link
@@ -505,10 +580,31 @@ impl ConditionedGame {
                 *position += f64::from(axis) * 0.1;
             }
         }
-        let outcome = self
-            .sim
-            .step(&[])
-            .map_err(|error| format!("W1 tick: {error:?}"))?;
+        let outcome = if reconnect {
+            let old = self
+                .sim
+                .handle(scene::CONTROLLED_ID)
+                .ok_or("reconnect old actor missing")?;
+            let mut position = self
+                .sim
+                .get(old)
+                .map_err(|error| format!("old controller: {error:?}"))?
+                .position;
+            position.0[0] += 1.0;
+            let replacement = ComponentEntity {
+                id: REPLACEMENT_ID,
+                position,
+                velocity: Velocity([0.0; 3]),
+                health: 100,
+                ownership: Some(self.replacement_binding()),
+                visual: Some(1),
+            };
+            self.sim
+                .step(&[Command::Despawn(old), Command::Spawn(replacement)])
+        } else {
+            self.sim.step(&[])
+        }
+        .map_err(|error| format!("W1 tick: {error:?}"))?;
         if !outcome
             .committed_inputs
             .iter()
@@ -525,6 +621,9 @@ impl ConditionedGame {
         if outcome.tick != tick {
             return Err("world tick diverged from conditioned run".to_owned());
         }
+        if reconnect {
+            self.commit_reconnect(tick)?;
+        }
         for (index, peer) in PEERS.into_iter().enumerate() {
             let state = self
                 .sim
@@ -539,13 +638,50 @@ impl ConditionedGame {
             {
                 return Err("confirmed controller differs from independent trace".to_owned());
             }
-            self.confirmed
-                .send(index, tick, state, due_origins[index])?;
+            if !(reconnect && index == 0) {
+                self.confirmed
+                    .send(index, tick, state, due_origins[index])?;
+            }
         }
         self.expected_history.push(self.expected);
         self.confirmed.deliver(tick)?;
         self.times
             .push(u64::try_from(started.elapsed().as_nanos()).map_err(|_| "tick timer overflow")?);
+        Ok(())
+    }
+
+    fn replacement_binding(&self) -> Ownership {
+        Ownership {
+            peer: PEERS[0],
+            connection_epoch: self.bindings[0].connection_epoch + 1,
+            actor: REPLACEMENT_ACTOR,
+        }
+    }
+
+    fn commit_reconnect(&mut self, tick: u64) -> Result<(), String> {
+        let old_binding = self.bindings[0];
+        let new_binding = self.replacement_binding();
+        let handle = self
+            .sim
+            .handle(REPLACEMENT_ID)
+            .ok_or("replacement actor missing after W1 commit")?;
+        self.sim
+            .register_peer(new_binding, handle)
+            .map_err(|error| format!("register replacement control: {error:?}"))?;
+        self.window
+            .reconnect(new_binding)
+            .map_err(|error| format!("N1 reconnect: {error:?}"))?;
+        let state = self
+            .sim
+            .controller_state(PEERS[0])
+            .map_err(|error| format!("replacement baseline: {error:?}"))?;
+        self.confirmed.rebaseline(0, tick, state)?;
+        self.bindings[0] = new_binding;
+        self.expected[0] = state.position.0;
+        self.held[0] = [0.0; 3];
+        // A delayed packet from the old epoch must be counted and discarded.
+        self.link
+            .send(tick, control_sample(old_binding, tick), 1, true)?;
         Ok(())
     }
 
@@ -578,15 +714,39 @@ impl ConditionedGame {
                 );
             }
         }
-        let (confirmed_sent, confirmed_groups, confirmed_in_flight, confirmed_max_age) =
-            self.confirmed.counts();
-        if confirmed_sent != TICKS * u64::try_from(PEER_COUNT).map_err(|_| "peer count overflow")?
+        let (
+            confirmed_sent,
+            confirmed_groups,
+            confirmed_in_flight,
+            retired_return_groups,
+            rebaselines,
+            confirmed_max_age,
+        ) = self.confirmed.counts();
+        let expected_groups = TICKS
+            * u64::try_from(PEER_COUNT).map_err(|_| "peer count overflow")?
+            - u64::from(self.scenario == ConditionedScenario::DrainedReconnect);
+        if confirmed_sent != expected_groups
             || confirmed_sent
                 != confirmed_groups
                     + u64::try_from(confirmed_in_flight)
                         .map_err(|_| "return group count overflow")?
+                    + retired_return_groups
         {
             return Err("confirmed return lane group accounting diverged".to_owned());
+        }
+        if self.scenario == ConditionedScenario::DrainedReconnect {
+            if rebaselines != 1
+                || retired_return_groups == 0
+                || self.stale_packets == 0
+                || self.bindings[0].connection_epoch != 2
+                || self.bindings[0].actor != REPLACEMENT_ACTOR
+            {
+                return Err(
+                    "drained reconnect did not exercise baseline and stale epoch".to_owned(),
+                );
+            }
+        } else if rebaselines != 0 || retired_return_groups != 0 || self.stale_packets != 0 {
+            return Err("ordinary run unexpectedly rebaselined a controller".to_owned());
         }
         let mut confirmed_ticks = [0; PEER_COUNT];
         let mut delivered_origins = 0;
@@ -640,7 +800,7 @@ impl ConditionedGame {
                     .get(usize::try_from(confirmed_ticks[index] - 1).map_err(|_| "tick index")?)
                     .ok_or("confirmed trace tick missing")?[index];
                 for target in confirmed_ticks[index] + 1..=prediction.tick {
-                    let sample = control_sample(PEERS[index], target - LEAD_TICKS);
+                    let sample = control_sample(self.bindings[index], target - LEAD_TICKS);
                     for (position, axis) in expected_future.iter_mut().zip(sample.axes) {
                         *position += f64::from(axis) * 0.1;
                     }
@@ -679,6 +839,7 @@ impl ConditionedGame {
         }
         self.times.sort_unstable();
         Ok(ConditionedReport {
+            scenario: self.scenario,
             committed_ticks: self.sim.tick(),
             sent_packets: self.link.sent,
             sent_bytes: self.link.sent_bytes,
@@ -692,8 +853,11 @@ impl ConditionedGame {
             late_frames: self.late_frames,
             due_misses: self.due_misses,
             accepted_frames: self.accepted_frames,
+            stale_packets: self.stale_packets,
             confirmed_groups,
             confirmed_in_flight,
+            retired_return_groups,
+            rebaselines,
             confirmed_max_age,
             confirmed_ticks,
             predicted_ticks,
@@ -729,8 +893,8 @@ impl ConditionedGame {
 ///
 /// # Errors
 /// Returns a staging, capacity, authority or independent-position-check fault.
-pub fn run() -> Result<ConditionedReport, String> {
-    let mut game = ConditionedGame::new()?;
+pub fn run(scenario: ConditionedScenario) -> Result<ConditionedReport, String> {
+    let mut game = ConditionedGame::new(scenario)?;
     for _ in 0..TICKS {
         game.step()?;
     }
@@ -752,12 +916,13 @@ mod tests {
     };
 
     use super::{
-        BurstLoss, ConditionedGame, MATCH_ID, PacketReceiver, SceneActionWire, run, scene,
+        BurstLoss, ConditionedGame, ConditionedScenario, MATCH_ID, PacketReceiver, SceneActionWire,
+        run, scene,
     };
 
     #[test]
     fn four_conditioned_peers_advance_the_shared_10k_world() {
-        let result = run().expect("conditioned fixture");
+        let result = run(ConditionedScenario::Standard).expect("conditioned fixture");
         assert_eq!(result.committed_ticks, 600);
         assert!(result.dropped_packets > 0);
         assert!(result.delivered_packets > 0);
@@ -774,6 +939,19 @@ mod tests {
         );
         assert_eq!(result.prediction_origin_mismatches, 0);
         assert_eq!(result.prediction_missed_authored, 0);
+    }
+
+    #[test]
+    fn drained_reconnect_replaces_one_actor_without_losing_a_committed_origin() {
+        let result = run(ConditionedScenario::DrainedReconnect).expect("drained reconnect fixture");
+        assert_eq!(result.committed_ticks, 600);
+        assert_eq!(result.rebaselines, 1);
+        assert_eq!(result.stale_packets, 1);
+        assert!(result.retired_return_groups > 0);
+        assert_eq!(result.prediction_origin_mismatches, 0);
+        assert_eq!(result.prediction_missed_authored, 0);
+        assert_eq!(result.prediction_fallbacks, 0);
+        assert!(result.accepted_frames > 2_300);
     }
 
     #[test]
@@ -804,7 +982,8 @@ mod tests {
 
     #[test]
     fn burst_loss_holds_one_actor_then_recovers_without_skipping_world_ticks() {
-        let mut game = ConditionedGame::new().expect("10k conditioned game");
+        let mut game =
+            ConditionedGame::new(ConditionedScenario::Standard).expect("10k conditioned game");
         game.link.burst_loss = Some(BurstLoss {
             peer: PeerId(1),
             first_tick: 89,
@@ -894,7 +1073,7 @@ mod tests {
 
     #[test]
     fn malformed_second_record_and_wrong_epoch_leave_first_future_slot_empty() {
-        let mut game = ConditionedGame::new().expect("10k world");
+        let mut game = ConditionedGame::new(ConditionedScenario::Standard).expect("10k world");
         let peer = PeerId(1);
         let first = scene::control_frame(peer, [1.0, 0.0, 0.0], 5, 5);
         let mut second = scene::control_frame(peer, [0.0, 1.0, 0.0], 6, 6);
@@ -926,11 +1105,16 @@ mod tests {
         let mut receiver = PacketReceiver {
             sim: &game.sim,
             window: &mut game.window,
+            bindings: &game.bindings,
             duplicate_frames: &mut game.duplicate_frames,
             late_frames: &mut game.late_frames,
+            stale_packets: &mut game.stale_packets,
             decode_ns: &mut game.decode_ns,
         };
-        assert!(receiver.receive(peer, &bytes[..len]).is_err());
+        receiver
+            .receive(peer, &bytes[..len])
+            .expect("stale epoch ignored");
+        assert_eq!(*receiver.stale_packets, 1);
 
         payload[63..67].copy_from_slice(&99u32.to_le_bytes());
         let len = envelope::encode(
