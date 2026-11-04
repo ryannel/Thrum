@@ -8,6 +8,7 @@
 //! or a cooked-content readiness claim.
 
 pub mod abi;
+pub mod extract;
 pub mod graph;
 pub mod history;
 pub mod synthetic;

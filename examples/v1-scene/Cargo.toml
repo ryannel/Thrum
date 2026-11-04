@@ -1,0 +1,25 @@
+[package]
+name = "v1-scene"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "10k-entity simulation-to-render diagnostic for V1 construction"
+
+[lints]
+workspace = true
+
+[dependencies]
+pollster = "=1.0.1"
+thrum-core = { path = "../../crates/thrum-core" }
+thrum-render = { path = "../../crates/thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
+
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["metal"] }
+
+[target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "android"))'.dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }

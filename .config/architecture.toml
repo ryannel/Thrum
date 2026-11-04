@@ -37,6 +37,10 @@ allowed_workspace_dependencies = []
 manifest = "examples/i1-mobile-game/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-source", "thrum-cook"]
 
+[packages.v1-scene]
+manifest = "examples/v1-scene/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core", "thrum-render"]
+
 # Every direct third-party crate must be listed here with an exact Cargo
 # requirement, its declared license, purpose and target/build cost note.
 # The check validates declarations; license/provenance review remains human work.
@@ -65,6 +69,12 @@ requirement = "=0.11.2"
 license = "MIT OR Apache-2.0"
 purpose = "Private W1 typed component storage selected by the three-candidate V1 workload spike"
 target_cost = "Three normal transitive crates in the selected profile; A1 measures checked-handle adaptation, serial and parallel queries, four-peer extraction, rollback and native/Wasm cost before qualification"
+
+[external_dependencies.foldhash]
+requirement = "=0.2.0"
+license = "Zlib"
+purpose = "Fast randomized stable-ID lookup for prior render samples during A2 extraction"
+target_cost = "Already transitive through hecs; one direct dependency in thrum-render, two preallocated frame maps, measured at 10k visual instances"
 
 [external_dependencies.winit]
 requirement = "=0.30.13"
