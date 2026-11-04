@@ -4,6 +4,7 @@
 use thrum_render::abi::MaterialRecord;
 use thrum_render::synthetic::{
     OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
+    SyntheticView,
 };
 use thrum_render::timing::GpuTimings;
 
@@ -549,6 +550,110 @@ fn clustered_local_light_changes_only_its_receiver_region() {
         assert_eq!(
             disabled_pixels, dark,
             "zero-candela light must not illuminate"
+        );
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+fn perspective_cluster_and_target_aux_light_visible_pixels() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut scene = SyntheticScene::grid(1).expect("fixture");
+        scene.view = SyntheticView::perspective(
+            [0.0, 0.0, 2.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            65.0 / 33.0,
+            0.1,
+            20.0,
+        )
+        .expect("finite perspective");
+        scene.instances[0].current = [
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.6, 0.0, 0.0],
+            [0.0, 0.0, 0.1, 0.0],
+            [0.0, 0.0, 0.5, 1.0],
+        ];
+        scene.instances[0].previous = scene.instances[0].current;
+        scene.instances[0].normal = [
+            [1.0 / 0.6, 0.0, 0.0, 0.0],
+            [0.0, 1.0 / 0.6, 0.0, 0.0],
+            [0.0, 0.0, 10.0, 0.0],
+        ];
+        let unlit = SyntheticLight {
+            direction_to_light: [0.0, 0.0, 1.0],
+            irradiance: [0.0; 3],
+        };
+        let dark = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("dark prepare");
+        let dark_target = OffscreenTarget::new(&device, &dark, 65, 33).expect("dark target");
+        let baseline = render_pixels(&device, &queue, &dark, &dark_target);
+        scene.local_lights.push(SyntheticPointLight {
+            position: [0.35, 0.0, 0.8],
+            radius: 0.35,
+            candela: [4.0, 0.2, 0.1],
+        });
+        let lit = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("perspective prepare");
+        assert_eq!(lit.dropped_light_references(), 0);
+        let lit_target = OffscreenTarget::new(&device, &lit, 65, 33).expect("lit target");
+        let pixels = render_pixels(&device, &queue, &lit, &lit_target);
+        let center = (16 * 65 + 32) * 4;
+        let receiver = (16 * 65 + 40) * 4;
+        assert_eq!(&baseline[center..center + 3], &[0, 0, 0]);
+        assert_eq!(&pixels[center..center + 3], &baseline[center..center + 3]);
+        assert!(
+            pixels[receiver] > 100,
+            "off-axis local light reaches only its projected receiver"
+        );
+        assert_eq!(&baseline[..4], &pixels[..4], "background remains unchanged");
+        let resized = OffscreenTarget::new(&device, &lit, 130, 66).expect("resized target");
+        let resized_pixels = render_pixels(&device, &queue, &lit, &resized);
+        assert!(
+            resized_pixels[(33 * 130 + 80) * 4] > 100,
+            "resized target has correct view aux"
+        );
+        let original_view = scene.view;
+        scene.view = SyntheticView::perspective(
+            [0.1, 0.0, 2.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            65.0 / 33.0,
+            0.1,
+            20.0,
+        )
+        .expect("moved view");
+        let moved = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("moved prepare");
+        let mut stale_encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        assert!(matches!(
+            moved.encode(&mut stale_encoder, 41, &lit_target, None),
+            Err(thrum_render::synthetic::RenderError::StaleTarget)
+        ));
+        scene.view = original_view;
+        scene.local_lights[0].position = [5.0, 0.0, 0.8];
+        let offscreen = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("offscreen prepare");
+        let offscreen_target = OffscreenTarget::new(&device, &offscreen, 65, 33).expect("target");
+        assert_eq!(
+            render_pixels(&device, &queue, &offscreen, &offscreen_target),
+            baseline
         );
     });
 }

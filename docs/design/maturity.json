@@ -100,9 +100,9 @@
       "scope": "The running M1 diagnostic preserves above-one directional/emissive radiance in pre-exposed Rgba16Float and applies checked fixed exposure, specified tone/gamut transform and one sRGB encode into Rgba8Unorm. Two graph roles, resize reuse, bright/chromatic cards, padded readback and timing preflight pass on Metal. Nonfinite/half-float clamp counters, visible diagnostics, clustered lights, CSM, cooked products, other devices and sustained pacing remain open."
     },
     "M2_clustered_local_lights": {
-      "implementation": "partial_fixed_orthographic_compact_cluster_lists_in_running_scene",
-      "functional_validation": "unit_empty_disabled_offscreen_overflow_invalid_source_real_metal_local_light_pixel_test_and_wasm_ios_sim_compile_checks",
-      "experienced_quality": "four_regional_light_capture_inspected_synthetic_diagnostic_only",
+      "implementation": "partial_perspective_reverse_z_compact_cluster_lists_in_running_scene",
+      "functional_validation": "unit_view_round_trip_rejection_cluster_empty_disabled_offscreen_overflow_invalid_source_plus_real_metal_orthographic_and_perspective_pixel_resize_tests",
+      "experienced_quality": "perspective_10k_grid_capture_inspected_synthetic_diagnostic_only",
       "platform_performance": {
         "mac": "not_qualified_one_offscreen_600_frame_process_only",
         "windows": "not_run",
@@ -110,11 +110,12 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max Metal, 10k entities / 1.5k moving, 640x360, four fixed local lights, final optimized source, 600 paced offscreen frames: 600 committed ticks, no catch-up or host calls over 16.67 ms, zero dropped presentation/cluster references; GPU forward p50/p95 0.139/0.167 ms, display 0.062/0.079 ms, host wall p50/p95/max 2.464/5.014/12.479 ms. Three same-build ABBA runs of 10k static cubes at 640x360 found per-block zero-versus-four-light forward GPU delta medians rounded to 0 us, with p05/p95 within -4/+6 us; dynamic cluster cost and device-frame qualification remain open.",
+      "diagnostic_measurement": "Apple M3 Max Metal, 10k entities / 1.5k moving, 640x360, four static local lights, perspective camera, 600 paced offscreen frames in each of two optimized process runs: 600 committed ticks per run, no catch-up or host call above 16.67 ms, zero dropped presentation/cluster references. Run 1 GPU forward p50/p95 0.150/0.178 ms, display 0.067/0.084 ms, host wall p50/p95/max 2.403/4.496/10.781 ms; run 2 forward 0.148/0.171 ms, display 0.066/0.079 ms, host wall 2.293/3.405/10.655 ms. Earlier fixed-view paired ABBA cost remains historical, not a perspective incremental-cost claim.",
       "evidence": [
-        "../evidence/render/M2-CLUSTERED-2026-11-04.md"
+        "../evidence/render/M2-CLUSTERED-2026-11-04.md",
+        "../evidence/render/M2-PERSPECTIVE-2026-11-04.md"
       ],
-      "scope": "Four static local lights use a compact 32x18x16 cluster table and the existing metallic-roughness forward closure in the running 10k scene. Overflow keeps a deterministic highest-estimated-contribution subset with counters. Orthographic camera only; perspective/resize, live light extraction, CSM, cook/source, Chrome/iPhone runtime and sustained device budgets remain open."
+      "scope": "Four static local lights use a compact 32x18x16 cluster table and the existing metallic-roughness forward closure in the running 10k scene. A finite reverse-Z perspective view, target-sized aux and projected conservative bins now drive it; the old orthographic view remains a pixel oracle. Overflow keeps a deterministic highest-estimated-contribution subset with counters. Live view/light extraction, CSM, cooked content, Chrome/iPhone runtime, visual acceptance and sustained device budgets remain open."
     },
     "A2_render_extraction": {
       "implementation": "partial_serial_soa_publication_and_sparse_prepared_gpu_instance_update",
@@ -379,7 +380,7 @@
       "initial_specifications": {
         "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact explicit-setup/type registration and requirement validation, finite target/tier shader closure, keyed model bindings, supported presentation transitions and cost model; no general provider search by default."
@@ -971,7 +972,7 @@
       },
       "initial_specifications": {
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Cook formats, target products, crash-recovery and quota adapter details.",
@@ -1693,7 +1694,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Pass/resource graph allocation, shader build and backend feature mapping."
@@ -1736,7 +1737,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Draw/instance layouts, projected bounds/LOD error and CPU/GPU culling details."
@@ -1789,7 +1790,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Material closure/layering, clustered bins, shadow/probe update and transparency transport."
@@ -1832,7 +1833,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Spatial AA/display transform baseline; temporal input/validity and provider-specific filters."
@@ -1925,7 +1926,7 @@
       },
       "initial_specifications": {
         "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Provider schemas and shared field/force/transport couplings before dependent implementation."
@@ -2002,7 +2003,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Scattering closure/LUT parameterization, source lighting and bounded ray segments."
@@ -2045,7 +2046,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245"
+        "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling."
@@ -3346,7 +3347,7 @@
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-      "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245",
+      "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
     },
@@ -3739,7 +3740,7 @@
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
       "README.md": "a0b7fccb416abb4dfbaccf100db390b58fdc9c2a61013f3f4129591f24e3af5a",
-      "RENDER-SPEC.md": "f0a2e30720253efb516f562f3d996449d911f6d1964f9771d774aa69cf8a2245",
+      "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
       "SKILL-FORWARD-REVIEW.md": "63b02385a26c07a826cbbd050fc11480f512b18d692b6f395fd82d39219a76ce",

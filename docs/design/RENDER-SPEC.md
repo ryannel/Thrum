@@ -410,12 +410,16 @@ must pass independent point/ray round trips before the wider view promise.
 **First pass and resource closure.** V1's typed graph declares scope,
 format/usage, initialized subresource reads and writes, clear/load behavior,
 producer/pipeline generation, external side effect and last use. Its R0 order
-is Sun shadow, opaque/masked depth, opaque/masked forward lighting into
+is Sun cascade shadows, opaque/masked depth, opaque/masked forward lighting into
 scene-linear RGBA16Float, tone/encode, spatial AA, optional UI and final output.
-Visibility includes casters outside the camera frustum. The 2048² D32 Sun
-map uses a fixed authored light-space receiver volume and four equal-weight
-comparison taps; constant/slope bias is an authored, dimensioned recipe value
-converted through the actual map projection. Masked shadow, depth and forward
+Visibility includes casters outside the camera frustum. The selected first V1
+Sun-shadow tier uses two 1024² D32 cascades over finite perspective depth,
+with a short overlap blend at the split. Each light-space receiver footprint
+is stabilized to map texels and includes relevant off-camera casters. Four
+comparison taps sample each selected map; constant/slope bias is an authored,
+dimensioned recipe value converted through the actual map projection. The
+map count and resolution are a quality tier to measure on named devices, not
+a claim of visual or frame-budget qualification. Masked shadow, depth and forward
 evaluate the same UV/alpha cutoff and geometry. A missing required role rejects
 view readiness; it never becomes an opaque mask or omitted required shadow.
 Render-derived light/instance demand over capacity uses a declared deterministic
