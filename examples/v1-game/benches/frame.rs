@@ -4,6 +4,7 @@
 
 use std::time::Duration;
 
+use thrum_core::sim::ExecutionMode;
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
 use v1_game::{FrameHost, SurfaceOutput, simulation_with_count};
 
@@ -22,6 +23,20 @@ fn game_tick_and_publication(bencher: divan::Bencher<'_, '_>, entity_count: usiz
     }
     bencher.bench_local(move || {
         let result = sim.step(&[]).expect("one game tick commits");
+        divan::black_box(result.tick);
+        divan::black_box(result.simulated_entities);
+    });
+}
+
+#[divan::bench(args = [10_000, 100_000])]
+fn game_tick_and_publication_rayon(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    sim.set_execution_mode(ExecutionMode::Rayon);
+    for _ in 0..60 {
+        sim.step(&[]).expect("warmup publication succeeds");
+    }
+    bencher.bench_local(move || {
+        let result = sim.step(&[]).expect("one parallel candidate commits");
         divan::black_box(result.tick);
         divan::black_box(result.simulated_entities);
     });

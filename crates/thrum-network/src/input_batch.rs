@@ -4,7 +4,7 @@
 
 use thrum_core::{
     Origin,
-    sim::{InputFrame, Ownership},
+    sim::{ControlBinding, InputFrame},
 };
 
 /// Most input records accepted in one batch.
@@ -112,7 +112,7 @@ impl RecordView<'_> {
     /// Returns a mapping or game-schema refusal without changing N1/W1 state.
     pub fn decode_frame<A>(
         &self,
-        binding: Ownership,
+        binding: ControlBinding,
         actor_wire_id: u64,
         wire: &impl ActionWire<A>,
     ) -> Result<InputFrame<A>, InputCodecError> {

@@ -4,18 +4,21 @@
 use thrum_core::{
     Handle, Origin,
     sim::{
-        InputFrame, Ownership, Read2, ReadPermit, Schedule, StructuralPermit, TickGame,
-        WorldCommit, WorldRead, Write1, WritePermit,
+        ExecutionMode, Executor, InputFrame, Read2, ReadPermit, Schedule, StructuralPermit,
+        TickGame, WorldCommit, WorldRead, Write1, WritePermit,
     },
 };
 
 use super::{
+    INPUT, PUBLISH, RESOLVE, SIMULATE,
     page::Page,
     types::{
-        ChangeTicks, Command, Health, Position, SimAction, SimConfig, SimError, Velocity, Visual,
+        ChangeTicks, Command, Health, Ownership, Position, SimAction, SimConfig, SimError,
+        Velocity, Visual,
     },
 };
 
+#[derive(Clone)]
 pub(super) struct PeerControl {
     pub(super) binding: Ownership,
     pub(super) handle: Handle,
@@ -27,6 +30,7 @@ pub(super) struct PeerControl {
 
 pub(super) struct Candidate {
     pub(super) motion: Option<Read2<Position, Velocity>>,
+    motion_jobs: Vec<MotionJob>,
     positions: Vec<Position>,
     velocities: Vec<Velocity>,
     health: Vec<u16>,
@@ -42,10 +46,17 @@ pub(super) struct Candidate {
     touched: Vec<usize>,
 }
 
+struct MotionJob {
+    handle: Handle,
+    position: Position,
+    velocity: Velocity,
+}
+
 impl Candidate {
     pub(super) fn new(capacity: usize, motion: Read2<Position, Velocity>) -> Self {
         Self {
             motion: Some(motion),
+            motion_jobs: Vec::with_capacity(capacity.min(2_048)),
             positions: vec![Position::default(); capacity],
             velocities: vec![Velocity::default(); capacity],
             health: vec![0; capacity],
@@ -71,6 +82,7 @@ impl Candidate {
             self.handles[row] = None;
         }
         self.touched.clear();
+        self.motion_jobs.clear();
     }
 
     fn touch(&mut self, handle: Handle, tick: u64) -> usize {
@@ -137,81 +149,114 @@ impl TickGame<Page> for Rules {
     fn prepare(
         &self,
         world: &WorldRead<'_>,
-        _schedule: &Schedule,
+        schedule: &Schedule,
+        executor: Executor,
         tick: u64,
         candidate: &mut Candidate,
     ) -> Result<(), SimError> {
         candidate.reset();
-        for peer in &self.peers {
-            if !peer.active {
-                continue;
-            }
-            let health = world
-                .with(&self.health_read, peer.handle, |value| value.0)
-                .map_err(|_| SimError::InvalidHandle)?;
-            let axes = peer.pending.as_ref().map_or(peer.axes, |frame| frame.axes);
-            let actions = peer
-                .pending
-                .as_ref()
-                .map_or(&[][..], |frame| frame.actions.as_slice());
-            let (velocity, health, damaged) =
-                resolve_control(axes, actions, health, self.config.movement_speed);
-            candidate.set_velocity(peer.handle, velocity, tick);
-            if damaged {
-                candidate.set_health(peer.handle, health, tick);
-            }
-        }
-        let dt = 1.0 / f64::from(self.config.tick_hz.get());
-        let mut motion = candidate.motion.take().expect("prepared motion query");
-        motion.visit(world, |handle, _, position, base_velocity| {
-            let row = candidate.touch(handle, tick);
-            candidate.base_velocity[row] = *base_velocity;
-            candidate.velocity_present[row] = true;
-            let velocity = candidate.velocity(row, *base_velocity, tick);
-            if velocity != Velocity::default() {
-                candidate.set_position(handle, integrate_position(*position, velocity, dt), tick);
-            }
-        });
-        candidate.motion = Some(motion);
-        for command in &self.commands {
-            match command {
-                Command::SetPosition(handle, value) => {
-                    candidate.set_position(*handle, *value, tick);
+        schedule.run(|system| {
+            if system.id == INPUT {
+                for peer in &self.peers {
+                    if !peer.active {
+                        continue;
+                    }
+                    let health = world
+                        .with(&self.health_read, peer.handle, |value| value.0)
+                        .map_err(|_| SimError::InvalidHandle)?;
+                    let axes = peer.pending.as_ref().map_or(peer.axes, |frame| frame.axes);
+                    let actions = peer
+                        .pending
+                        .as_ref()
+                        .map_or(&[][..], |frame| frame.actions.as_slice());
+                    let (velocity, health, damaged) =
+                        resolve_control(axes, actions, health, self.config.movement_speed);
+                    candidate.set_velocity(peer.handle, velocity, tick);
+                    if damaged {
+                        candidate.set_health(peer.handle, health, tick);
+                    }
                 }
-                Command::SetVelocity(handle, value) => {
-                    candidate.set_velocity(*handle, *value, tick);
-                }
-                Command::SetHealth(handle, value) => candidate.set_health(*handle, *value, tick),
-                Command::Spawn(_) | Command::Despawn(_) => {}
-            }
-        }
-        for &row in &candidate.touched {
-            let handle = candidate.handles[row].expect("touched row has handle");
-            if !candidate.velocity_present[row] {
-                if let Ok(value) = world.with(&self.velocity_read, handle, |value| *value) {
-                    candidate.base_velocity[row] = value;
+            } else if system.id == SIMULATE {
+                let dt = 1.0 / f64::from(self.config.tick_hz.get());
+                let mut motion = candidate.motion.take().expect("prepared motion query");
+                motion.visit(world, |handle, _, position, base_velocity| {
+                    let row = candidate.touch(handle, tick);
+                    candidate.base_velocity[row] = *base_velocity;
                     candidate.velocity_present[row] = true;
-                } else {
-                    candidate.base_velocity[row] = Velocity::default();
+                    let velocity = candidate.velocity(row, *base_velocity, tick);
+                    if velocity != Velocity::default() {
+                        if executor.mode() == ExecutionMode::Serial {
+                            candidate.set_position(
+                                handle,
+                                integrate_position(*position, velocity, dt),
+                                tick,
+                            );
+                        } else {
+                            candidate.motion_jobs.push(MotionJob {
+                                handle,
+                                position: *position,
+                                velocity,
+                            });
+                        }
+                    }
+                });
+                candidate.motion = Some(motion);
+                executor.for_each_mut(&mut candidate.motion_jobs, |job| {
+                    job.position = integrate_position(job.position, job.velocity, dt);
+                });
+                for index in 0..candidate.motion_jobs.len() {
+                    let job = &candidate.motion_jobs[index];
+                    candidate.set_position(job.handle, job.position, tick);
                 }
+            } else if system.id == RESOLVE {
+                for command in &self.commands {
+                    match command {
+                        Command::SetPosition(handle, value) => {
+                            candidate.set_position(*handle, *value, tick);
+                        }
+                        Command::SetVelocity(handle, value) => {
+                            candidate.set_velocity(*handle, *value, tick);
+                        }
+                        Command::SetHealth(handle, value) => {
+                            candidate.set_health(*handle, *value, tick);
+                        }
+                        Command::Spawn(_) | Command::Despawn(_) => {}
+                    }
+                }
+                for &row in &candidate.touched {
+                    let handle = candidate.handles[row].expect("touched row has handle");
+                    if !candidate.velocity_present[row] {
+                        if let Ok(value) = world.with(&self.velocity_read, handle, |value| *value) {
+                            candidate.base_velocity[row] = value;
+                            candidate.velocity_present[row] = true;
+                        } else {
+                            candidate.base_velocity[row] = Velocity::default();
+                        }
+                    }
+                    if candidate.health_marks[row] == tick {
+                        candidate.base_health[row] = world
+                            .with(&self.health_read, handle, |value| value.0)
+                            .map_err(|_| SimError::InvalidHandle)?;
+                    }
+                    if candidate.velocity_marks[row] == tick
+                        && candidate.velocities[row] == Velocity::default()
+                    {
+                        candidate.owned[row] =
+                            world.with(&self.ownership_read, handle, |_| ()).is_ok();
+                    }
+                    if (candidate.position_marks[row] == tick
+                        && !finite(candidate.positions[row].0))
+                        || (candidate.velocity_marks[row] == tick
+                            && !finite(candidate.velocities[row].0))
+                    {
+                        return Err(SimError::NonFinite);
+                    }
+                }
+            } else if system.id != PUBLISH {
+                return Err(SimError::InvalidConfig);
             }
-            if candidate.health_marks[row] == tick {
-                candidate.base_health[row] = world
-                    .with(&self.health_read, handle, |value| value.0)
-                    .map_err(|_| SimError::InvalidHandle)?;
-            }
-            if candidate.velocity_marks[row] == tick
-                && candidate.velocities[row] == Velocity::default()
-            {
-                candidate.owned[row] = world.with(&self.ownership_read, handle, |_| ()).is_ok();
-            }
-            if (candidate.position_marks[row] == tick && !finite(candidate.positions[row].0))
-                || (candidate.velocity_marks[row] == tick && !finite(candidate.velocities[row].0))
-            {
-                return Err(SimError::NonFinite);
-            }
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     fn apply(&mut self, world: &mut WorldCommit<'_>, tick: u64, candidate: &Candidate) {

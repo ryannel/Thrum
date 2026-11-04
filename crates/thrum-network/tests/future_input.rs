@@ -4,12 +4,12 @@ use std::num::NonZeroUsize;
 
 use thrum_core::{
     ActorId, Origin, PeerId,
-    sim::{FrameError, InputFrame, Ownership},
+    sim::{ControlBinding, FrameError, InputFrame},
 };
 use thrum_network::future_input::{FutureInputError, FutureInputWindow, StageResult};
 
-fn binding(peer: u64, epoch: u64) -> Ownership {
-    Ownership {
+fn binding(peer: u64, epoch: u64) -> ControlBinding {
+    ControlBinding {
         peer: PeerId(peer),
         connection_epoch: epoch,
         actor: ActorId(peer),

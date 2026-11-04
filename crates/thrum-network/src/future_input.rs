@@ -4,7 +4,7 @@ use std::num::NonZeroUsize;
 
 use thrum_core::{
     PeerId,
-    sim::{FrameError, InputFrame, Ownership},
+    sim::{ControlBinding, FrameError, InputFrame},
 };
 
 /// Refusal before a future frame enters the timing window.
@@ -48,7 +48,7 @@ pub enum StageResult {
 }
 
 struct PeerSlots<A> {
-    binding: Ownership,
+    binding: ControlBinding,
     frames: Box<[Option<InputFrame<A>>]>,
     last_handoff_tick: u64,
 }
@@ -80,7 +80,7 @@ impl<A: PartialEq> FutureInputWindow<A> {
     /// # Errors
     /// Returns `DuplicatePeer` for repeated peer identities.
     pub fn new(
-        bindings: &[Ownership],
+        bindings: &[ControlBinding],
         future_ticks: NonZeroUsize,
         committed_tick: u64,
     ) -> Result<Self, FutureInputError> {
@@ -222,7 +222,7 @@ impl<A: PartialEq> FutureInputWindow<A> {
     ///
     /// # Errors
     /// Returns `UnknownPeer` or `StaleConnection` without changing the window.
-    pub fn reconnect(&mut self, binding: Ownership) -> Result<(), FutureInputError> {
+    pub fn reconnect(&mut self, binding: ControlBinding) -> Result<(), FutureInputError> {
         let peer = self
             .peers
             .iter_mut()

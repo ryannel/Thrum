@@ -9,8 +9,8 @@ use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
-        FrameError, GameRuntime, InputFrame, Ownership, RegisteredWorldError, RuntimeError, Stage,
-        SystemId, SystemSpec, TickError,
+        ExecutionMode, FrameError, GameRuntime, InputFrame, RegisteredWorldError, RuntimeCapture,
+        RuntimeError, Stage, SystemId, SystemSpec, TickError,
     },
 };
 
@@ -19,8 +19,8 @@ pub use page::{DirtySlots, PublishedPage};
 use rules::{Candidate, PeerControl, Rules, finite};
 use types::{ChangeTicks, Health, Visual};
 pub use types::{
-    Command, ComponentEntity, ComponentView, Position, SimAction, SimConfig, SimError, TickOutcome,
-    Velocity,
+    Command, ComponentEntity, ComponentView, Ownership, Position, SimAction, SimConfig, SimError,
+    TickOutcome, Velocity,
 };
 
 const INPUT: SystemId = SystemId(0);
@@ -163,9 +163,12 @@ fn map_runtime(error: RuntimeError) -> SimError {
         RuntimeError::World(RegisteredWorldError::Capacity) => SimError::Capacity,
         RuntimeError::World(RegisteredWorldError::DuplicateId) => SimError::DuplicateId,
         RuntimeError::World(RegisteredWorldError::InvalidHandle) => SimError::InvalidHandle,
-        RuntimeError::World(_) | RuntimeError::Schedule(_) | RuntimeError::UndeclaredAccess => {
-            SimError::InvalidConfig
-        }
+        RuntimeError::World(RegisteredWorldError::SnapshotMismatch)
+        | RuntimeError::WrongCapture => SimError::InvalidSnapshot,
+        RuntimeError::World(_)
+        | RuntimeError::Schedule(_)
+        | RuntimeError::UndeclaredAccess
+        | RuntimeError::RuntimeExhausted => SimError::InvalidConfig,
         RuntimeError::AlreadyStarted => SimError::AlreadyStarted,
     }
 }
@@ -177,7 +180,44 @@ pub struct Simulation {
     candidate: Candidate,
 }
 
+/// Game-owned resource state paired with the engine's opaque registered capture.
+pub struct SimulationCapture {
+    runtime: RuntimeCapture,
+    peers: Vec<PeerControl>,
+    changes: Vec<ChangeTicks>,
+}
+
 impl Simulation {
+    /// Capture one committed endpoint and all game resources needed for replay.
+    pub fn capture(&self) -> SimulationCapture {
+        SimulationCapture {
+            runtime: self.runtime.capture(),
+            peers: self.rules.peers.clone(),
+            changes: self.rules.changes.clone(),
+        }
+    }
+
+    /// Restore a compatible endpoint; the next tick runs the same game rules.
+    /// Existing immutable page leases remain valid as historical endpoints.
+    ///
+    /// # Errors
+    ///
+    /// The capture belongs to another world epoch, capacity or schema.
+    pub fn restore(&mut self, capture: &SimulationCapture) -> Result<(), SimError> {
+        let epoch = self.runtime.epoch();
+        let capacity = self.rules.config.entity_capacity;
+        self.runtime
+            .restore(&capture.runtime, || Page::new(epoch, capacity))
+            .map_err(map_runtime)?;
+        self.rules.peers.clone_from(&capture.peers);
+        self.rules.changes.clone_from(&capture.changes);
+        self.rules.commands.clear();
+        self.rules.committed_inputs.clear();
+        self.rules.changed_positions = 0;
+        self.runtime.publish_initial(&mut self.rules);
+        Ok(())
+    }
+
     /// Build the V1 game rules and registered component schema.
     ///
     /// # Errors
@@ -206,6 +246,10 @@ impl Simulation {
     pub fn tick(&self) -> u64 {
         self.runtime.tick()
     }
+    /// Select the engine's serial or native Rayon candidate executor.
+    pub fn set_execution_mode(&mut self, mode: ExecutionMode) {
+        self.runtime.set_execution_mode(mode);
+    }
     /// Checked world generation.
     pub fn epoch(&self) -> WorldEpoch {
         self.runtime.epoch()
@@ -225,6 +269,11 @@ impl Simulation {
     /// Whether the next tick can acquire an unleased page.
     pub fn can_publish_next(&self) -> bool {
         self.runtime.can_publish_next()
+    }
+    /// Reserved game page and engine lease storage, including nested columns.
+    pub fn publication_reserved_bytes(&self) -> usize {
+        self.runtime
+            .publication_reserved_bytes(Page::reserved_bytes)
     }
 
     /// Seed one game bundle before initial publication or input registration.
@@ -415,6 +464,9 @@ impl Simulation {
         }
         if peer.pending.is_some() {
             return Err(FrameError::PendingFrame);
+        }
+        if !self.runtime.can_publish_next() {
+            return Err(FrameError::PublicationBusy);
         }
         if self
             .runtime

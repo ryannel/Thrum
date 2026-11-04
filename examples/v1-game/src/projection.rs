@@ -74,7 +74,7 @@ impl GameProjection {
     }
 
     pub(crate) fn capture(&mut self, page: &PublishedPage) {
-        self.baseline = page.id().tick == 0;
+        self.baseline = page.is_baseline();
         self.positions.clear();
         self.velocities.clear();
         self.health.clear();
