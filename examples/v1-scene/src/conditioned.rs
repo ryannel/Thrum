@@ -345,7 +345,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual full images/payload bytes={}/{} visual retained_bytes={} visual unchanged_partitions={} visual max_age={} visual project/encode/decode={}/{}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual full images/payload bytes={}/{} full sent/dropped/delivered/retries={}/{}/{}/{} full ACK sent/dropped/delivered={}/{}/{} full application bytes={} full invalid/ACK invalid={}/{} visual retained_bytes={} visual unchanged_partitions={} visual max_age={} visual project/encode/decode={}/{}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.scenario,
             self.committed_ticks,
             PEER_COUNT,
@@ -391,6 +391,16 @@ impl fmt::Display for ConditionedReport {
             self.visual.sent_bytes,
             self.visual.full_images,
             self.visual.full_payload_bytes,
+            self.visual.full_sent,
+            self.visual.full_dropped,
+            self.visual.full_delivered,
+            self.visual.full_retries,
+            self.visual.full_acks_sent,
+            self.visual.full_acks_dropped,
+            self.visual.full_acks_delivered,
+            self.visual.full_sent_bytes,
+            self.visual.full_invalid,
+            self.visual.full_acks_invalid,
             self.visual.retained_bytes,
             self.visual.unchanged_partitions,
             self.visual.max_age,
@@ -930,7 +940,8 @@ impl ConditionedGame {
 /// through the conditioner; the confirmed and speculative clients are local
 /// diagnostic consumers. Visual full images seed and rebaseline via checked
 /// payload bytes; deltas use selective ACK rebasing through conditioned
-/// no-socket packets. Reliable repair and OS transport remain open.
+/// no-socket packets. Full images now retry through that link and publish
+/// together after checked admission. OS transport remains open.
 ///
 /// # Errors
 /// Returns a staging, capacity, authority or independent-position-check fault.

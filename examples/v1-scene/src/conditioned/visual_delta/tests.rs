@@ -22,6 +22,237 @@ fn advance_axes(sim: &mut Simulation, tick: u64, axes: [f32; 3]) {
     sim.step(&[]).expect("world tick");
 }
 
+fn ready(sim: &mut Simulation, visual: &mut VisualDeltaLoop) {
+    for tick in 1..=18 {
+        advance_axes(sim, tick, [0.0; 3]);
+        visual
+            .step(sim, tick)
+            .expect("reliable full-image admission");
+    }
+    assert!(visual.peers.iter().all(|peer| peer.full.acked));
+    assert_eq!(visual.report.full_images, 16);
+}
+
+#[test]
+fn lost_initial_full_partition_retries_without_partial_client_admission() {
+    let mut sim = scene::simulation().expect("V1 world");
+    let bindings = std::array::from_fn(|index| {
+        scene::binding(thrum_core::PeerId(
+            u64::try_from(index + 1).expect("four peers"),
+        ))
+    });
+    let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("four full transfers");
+    advance(&mut sim, 1);
+    visual.step(&sim, 1).expect("send initial full images");
+    let lost = visual
+        .pending_full
+        .iter_mut()
+        .find(|slot| {
+            slot.as_ref()
+                .is_some_and(|packet| packet.peer_index == 0 && packet.partition == 2)
+        })
+        .expect("third partition in flight");
+    *lost = None;
+    visual.report.full_dropped += 1;
+    for tick in 2..=6 {
+        advance(&mut sim, tick);
+        visual.step(&sim, tick).expect("other images may stage");
+    }
+    assert!(!visual.peers[0].full.client_admitted);
+    assert!(
+        visual.peers[0]
+            .partitions
+            .iter()
+            .all(|state| state.client_initial_id == 0 && state.received_tick == 0)
+    );
+    assert!(
+        !visual
+            .pending
+            .iter()
+            .flatten()
+            .any(|packet| packet.peer_index == 0)
+    );
+    for tick in 7..=42 {
+        advance(&mut sim, tick);
+        visual.step(&sim, tick).expect("retry and later delta");
+    }
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.report.full_images, 16);
+    assert!(visual.report.full_retries > 0);
+    assert!(visual.peers[0].partitions[0].received_tick >= 33);
+    assert_ne!(
+        visual.peers[0].partitions[0].received,
+        visual.peers[0].partitions[0].base
+    );
+}
+
+#[test]
+fn malformed_full_partition_refuses_before_four_partition_publish() {
+    let mut sim = scene::simulation().expect("V1 world");
+    let bindings = std::array::from_fn(|index| {
+        scene::binding(thrum_core::PeerId(
+            u64::try_from(index + 1).expect("four peers"),
+        ))
+    });
+    let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("four full transfers");
+    advance(&mut sim, 1);
+    visual.step(&sim, 1).expect("send full images");
+    let packet = visual
+        .pending_full
+        .iter_mut()
+        .flatten()
+        .find(|packet| packet.peer_index == 0 && packet.partition == 0)
+        .expect("first full partition");
+    packet.bytes[envelope::HEADER_BYTES + 57] = 0;
+    packet.arrival = 2;
+    advance(&mut sim, 2);
+    visual
+        .step(&sim, 2)
+        .expect("malformed visual packet is shed");
+    assert!(!visual.peers[0].full.client_admitted);
+    assert!(
+        visual.peers[0]
+            .partitions
+            .iter()
+            .all(|state| state.client_initial_id == 0 && state.received_tick == 0)
+    );
+    assert_eq!(visual.report.full_acks_sent, 0);
+    assert_eq!(visual.report.full_invalid, 1);
+    for tick in 3..=30 {
+        advance(&mut sim, tick);
+        visual.step(&sim, tick).expect("repaired full image");
+    }
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.report.full_images, 16);
+}
+
+#[test]
+fn malformed_duplicate_cannot_poison_an_already_staged_full_partition() {
+    let mut sim = scene::simulation().expect("V1 world");
+    let bindings = std::array::from_fn(|index| {
+        scene::binding(thrum_core::PeerId(
+            u64::try_from(index + 1).expect("four peers"),
+        ))
+    });
+    let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("four full transfers");
+    advance_axes(&mut sim, 1, [0.0; 3]);
+    visual.step(&sim, 1).expect("send initial images");
+    let first = visual
+        .pending_full
+        .iter_mut()
+        .flatten()
+        .find(|packet| packet.peer_index == 0 && packet.partition == 0)
+        .expect("first partition packet");
+    first.arrival = 2;
+    advance_axes(&mut sim, 2, [0.0; 3]);
+    visual.step(&sim, 2).expect("stage first partition");
+    assert_eq!(visual.peers[0].full.staged_mask & 1, 1);
+    let mut duplicate = visual.peers[0].full.packets[0];
+    duplicate.bytes[envelope::HEADER_BYTES + 57] = 0;
+    duplicate.arrival = 3;
+    *visual
+        .pending_full
+        .iter_mut()
+        .find(|slot| slot.is_none())
+        .expect("free link slot") = Some(duplicate);
+    visual.report.full_sent += 1;
+    visual.report.full_sent_bytes += u64::try_from(duplicate.len).expect("bounded packet");
+    advance_axes(&mut sim, 3, [0.0; 3]);
+    visual.step(&sim, 3).expect("discard duplicate");
+    assert_eq!(visual.report.full_invalid, 1);
+    assert_eq!(visual.peers[0].full.staged_mask & 1, 1);
+    assert_eq!(
+        visual.peers[0].partitions[0].scratch,
+        visual.peers[0].partitions[0].base
+    );
+}
+
+#[test]
+fn old_full_packets_cannot_stage_a_new_interest_generation() {
+    let mut sim = scene::simulation().expect("V1 world");
+    let bindings = std::array::from_fn(|index| {
+        scene::binding(thrum_core::PeerId(
+            u64::try_from(index + 1).expect("four peers"),
+        ))
+    });
+    let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("four full transfers");
+    advance(&mut sim, 1);
+    visual.step(&sim, 1).expect("old generation full transfer");
+    visual
+        .rebaseline(&sim, bindings[0])
+        .expect("new same-epoch interest generation");
+    for tick in 2..=30 {
+        advance(&mut sim, tick);
+        visual.step(&sim, tick).expect("ignore old full packets");
+    }
+    assert!(visual.report.stale >= 1);
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.peers[0].partitions[0].interest_generation, 2);
+    assert_eq!(visual.peers[0].partitions[0].client_initial_tick, 1);
+    assert_eq!(visual.report.full_images, 16);
+}
+
+#[test]
+fn lost_baseline_ack_replays_exact_full_images_without_double_admission() {
+    let mut sim = scene::simulation().expect("V1 world");
+    let bindings = std::array::from_fn(|index| {
+        scene::binding(thrum_core::PeerId(
+            u64::try_from(index + 1).expect("four peers"),
+        ))
+    });
+    let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("four full transfers");
+    for tick in 1..=5 {
+        advance_axes(&mut sim, tick, [0.0; 3]);
+        visual.step(&sim, tick).expect("stage initial baseline");
+    }
+    assert!(visual.peers[0].full.client_admitted);
+    let ack = visual
+        .pending_full_acks
+        .iter_mut()
+        .find(|slot| slot.as_ref().is_some_and(|ack| ack.peer_index == 0))
+        .expect("first baseline ACK in flight");
+    *ack = None;
+    visual.report.full_acks_dropped += 1;
+    for tick in 6..=30 {
+        advance_axes(&mut sim, tick, [0.0; 3]);
+        visual.step(&sim, tick).expect("full-image ACK retry");
+    }
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.report.full_images, 16);
+    assert!(visual.report.full_retries > 0);
+    assert!(visual.report.full_acks_sent > 4);
+}
+
+#[test]
+fn malformed_baseline_ack_is_counted_and_retried() {
+    let mut sim = scene::simulation().expect("V1 world");
+    let bindings = std::array::from_fn(|index| {
+        scene::binding(thrum_core::PeerId(
+            u64::try_from(index + 1).expect("four peers"),
+        ))
+    });
+    let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("four full transfers");
+    for tick in 1..=5 {
+        advance_axes(&mut sim, tick, [0.0; 3]);
+        visual.step(&sim, tick).expect("stage initial baseline");
+    }
+    let ack = visual
+        .pending_full_acks
+        .iter_mut()
+        .flatten()
+        .find(|ack| ack.peer_index == 0)
+        .expect("first baseline ACK in flight");
+    ack.bytes[0] = 0;
+    ack.arrival = 6;
+    for tick in 6..=30 {
+        advance_axes(&mut sim, tick, [0.0; 3]);
+        visual.step(&sim, tick).expect("malformed ACK is shed");
+    }
+    assert_eq!(visual.report.full_acks_invalid, 1);
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.report.full_images, 16);
+}
+
 #[test]
 fn quantization_refuses_nonfinite_and_out_of_range_values() {
     assert!(quantize(f64::NAN, 1_000.0, 21).is_err());
@@ -58,14 +289,16 @@ fn four_partitions_cover_128_interests_and_skip_unchanged_groups() {
             [1, 2, 3, 4]
         );
     }
-    for tick in 1..=9 {
+    ready(&mut sim, &mut visual);
+    let unchanged_before = visual.report.unchanged_partitions;
+    for tick in 19..=27 {
         advance(&mut sim, tick);
         visual
             .step(&sim, tick)
             .expect("only active partition sends");
     }
     assert_eq!(visual.report.sent, 12);
-    assert_eq!(visual.report.unchanged_partitions, 36);
+    assert_eq!(visual.report.unchanged_partitions - unchanged_before, 36);
 }
 
 #[test]
@@ -77,7 +310,8 @@ fn same_epoch_interest_rebaseline_retires_old_generation_packets() {
         ))
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("visual interests");
-    for tick in 1..=3 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=21 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("old generation sample");
     }
@@ -89,19 +323,33 @@ fn same_epoch_interest_rebaseline_retires_old_generation_packets() {
         .flatten()
         .find(|packet| packet.peer_index == 0)
         .expect("old generation packet");
-    packet.arrival = 5;
+    packet.arrival = 23;
     visual
         .rebaseline(&sim, bindings[0])
         .expect("same-epoch membership baseline");
     assert_eq!(visual.peers[0].partitions[0].interest_generation, 2);
     assert!(visual.peers[0].partitions[0].base_id > old_image_id);
     assert_eq!(visual.peers[0].client_datagram_sequence, old_sequence);
-    for tick in 4..=5 {
+    for tick in 22..=23 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("retire old generation");
     }
     assert_eq!(visual.report.stale, 1);
-    assert_eq!(visual.peers[0].partitions[0].received_tick, 3);
+    assert!(!visual.peers[0].full.client_admitted);
+    for tick in 24..=42 {
+        advance(&mut sim, tick);
+        visual
+            .step(&sim, tick)
+            .expect("new generation full admission");
+    }
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.report.full_images, 20);
+    assert!(
+        visual.peers[0]
+            .partitions
+            .iter()
+            .all(|part| part.interest_generation == 2 && part.client_initial_tick == 21)
+    );
 }
 
 #[test]
@@ -113,7 +361,8 @@ fn late_partition_projection_failure_leaves_all_visual_state_unchanged() {
         ))
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("visual interests");
-    for tick in 1..=3 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=21 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("retained candidate");
     }
@@ -177,7 +426,8 @@ fn four_active_partitions_share_unique_images_under_reordered_delivery() {
             .expect("static actor in each partition")
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("shared image rings");
-    for tick in 1..=120 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=138 {
         let edits = handles.map(|handle| {
             let mut position = sim.get(handle).expect("static actor view").position;
             position.0[0] += 0.001;
@@ -187,28 +437,28 @@ fn four_active_partitions_share_unique_images_under_reordered_delivery() {
         visual
             .step(&sim, tick)
             .expect("conditioned four-partition delivery");
-        if tick == 3 {
+        if tick == 21 {
             visual
                 .pending
                 .iter_mut()
                 .flatten()
                 .find(|packet| packet.peer_index == 0 && packet.partition == 0)
                 .expect("first partition packet")
-                .arrival = 7;
+                .arrival = 25;
             visual
                 .pending
                 .iter_mut()
                 .flatten()
                 .find(|packet| packet.peer_index == 0 && packet.partition == 1)
                 .expect("second partition packet")
-                .arrival = 5;
+                .arrival = 23;
         }
     }
     assert_eq!(visual.report.sent, 640);
     assert!(visual.report.rebases > 500);
     assert_eq!(visual.report.unknown_acks, 0);
     for peer in &visual.peers {
-        assert!(peer.partitions.iter().all(|part| part.received_tick >= 114));
+        assert!(peer.partitions.iter().all(|part| part.received_tick >= 132));
         let mut ids: Vec<_> = peer.partitions.iter().map(|part| part.base_id).collect();
         ids.sort_unstable();
         ids.dedup();
@@ -225,7 +475,8 @@ fn lost_ack_then_return_to_base_sends_zero_record_correction() {
         ))
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("visual interests");
-    for tick in 1..=3 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=21 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("first changed sample");
     }
@@ -235,16 +486,16 @@ fn lost_ack_then_return_to_base_sends_zero_record_correction() {
         .flatten()
         .find(|packet| packet.peer_index == 0)
         .expect("first changed packet")
-        .arrival = 4;
-    advance_axes(&mut sim, 4, [-1.0, 0.0, 0.0]);
-    visual.step(&sim, 4).expect("first sample admitted");
+        .arrival = 22;
+    advance_axes(&mut sim, 22, [-1.0, 0.0, 0.0]);
+    visual.step(&sim, 22).expect("first sample admitted");
     for slot in &mut visual.pending_acks {
         if slot.as_ref().is_some_and(|ack| ack.peer_index == 0) {
             *slot = None;
         }
     }
-    for tick in 5..=9 {
-        let axes = if tick <= 6 {
+    for tick in 23..=27 {
+        let axes = if tick <= 24 {
             [-1.0, 0.0, 0.0]
         } else {
             [0.0; 3]
@@ -269,12 +520,12 @@ fn lost_ack_then_return_to_base_sends_zero_record_correction() {
         &correction.bytes[envelope::HEADER_BYTES + 2..envelope::HEADER_BYTES + 4],
         &[0, 0]
     );
-    correction.arrival = 10;
-    advance_axes(&mut sim, 10, [0.0; 3]);
+    correction.arrival = 28;
+    advance_axes(&mut sim, 28, [0.0; 3]);
     visual
-        .step(&sim, 10)
+        .step(&sim, 28)
         .expect("corrected base sample admitted");
-    assert_eq!(visual.peers[0].partitions[0].received_tick, 9);
+    assert_eq!(visual.peers[0].partitions[0].received_tick, 27);
     assert_eq!(
         visual.peers[0].partitions[0].received,
         visual.peers[0].partitions[0].base
@@ -286,8 +537,8 @@ fn lost_ack_then_return_to_base_sends_zero_record_correction() {
         .flatten()
         .find(|ack| ack.peer_index == 0)
         .expect("correction ACK")
-        .arrival = 11;
-    for tick in 11..=18 {
+        .arrival = 29;
+    for tick in 29..=36 {
         advance_axes(&mut sim, tick, [0.0; 3]);
         visual
             .step(&sim, tick)
@@ -306,19 +557,20 @@ fn reordered_visual_sample_cannot_regress_the_client_image() {
         ))
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("visual interests");
-    for tick in 1..=6 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=24 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("conditioned visual sample");
-        if tick == 3 {
+        if tick == 21 {
             let early = visual
                 .pending
                 .iter_mut()
                 .flatten()
                 .find(|packet| packet.peer_index == 0)
                 .expect("first peer sample");
-            early.arrival = 9;
+            early.arrival = 27;
         }
-        if tick == 6 {
+        if tick == 24 {
             let later = visual
                 .pending
                 .iter_mut()
@@ -326,16 +578,16 @@ fn reordered_visual_sample_cannot_regress_the_client_image() {
                 .filter(|packet| packet.peer_index == 0)
                 .nth(1)
                 .expect("second peer sample");
-            later.arrival = 8;
+            later.arrival = 26;
         }
     }
-    for tick in 7..=9 {
+    for tick in 25..=27 {
         advance(&mut sim, tick);
         visual
             .step(&sim, tick)
             .expect("conditioned visual delivery");
     }
-    assert_eq!(visual.peers[0].partitions[0].received_tick, 6);
+    assert_eq!(visual.peers[0].partitions[0].received_tick, 24);
     assert!(visual.report.reordered > 0);
 }
 
@@ -348,7 +600,8 @@ fn old_epoch_visual_packet_is_discarded_after_rebaseline() {
         ))
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("visual interests");
-    for tick in 1..=3 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=21 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("conditioned visual sample");
     }
@@ -358,18 +611,24 @@ fn old_epoch_visual_packet_is_discarded_after_rebaseline() {
         .flatten()
         .find(|packet| packet.peer_index == 0)
         .expect("old epoch packet");
-    pending.arrival = 5;
+    pending.arrival = 23;
     let mut new_binding = bindings[0];
     new_binding.connection_epoch += 1;
     visual
         .rebaseline(&sim, new_binding)
         .expect("new connection visual base");
-    for tick in 4..=5 {
+    for tick in 22..=23 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("deliver old packet");
     }
     assert_eq!(visual.report.stale, 1);
-    assert_eq!(visual.peers[0].partitions[0].received_tick, 3);
+    assert!(!visual.peers[0].full.client_admitted);
+    for tick in 24..=42 {
+        advance(&mut sim, tick);
+        visual.step(&sim, tick).expect("new epoch full admission");
+    }
+    assert!(visual.peers[0].full.acked);
+    assert_eq!(visual.report.full_images, 20);
 }
 
 #[test]
@@ -381,7 +640,8 @@ fn duplicate_visual_packet_does_not_publish_twice() {
         ))
     });
     let mut visual = VisualDeltaLoop::new(&sim, &bindings).expect("visual interests");
-    for tick in 1..=3 {
+    ready(&mut sim, &mut visual);
+    for tick in 19..=21 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("visual sample");
     }
@@ -391,11 +651,11 @@ fn duplicate_visual_packet_does_not_publish_twice() {
         .flatten()
         .find(|packet| packet.peer_index == 0)
         .expect("first visual packet");
-    original.arrival = 4;
+    original.arrival = 22;
     let duplicate = Packet {
         peer_index: original.peer_index,
         partition: original.partition,
-        arrival: 5,
+        arrival: 23,
         bytes: original.bytes,
         len: original.len,
         expected: original.expected,
@@ -405,11 +665,11 @@ fn duplicate_visual_packet_does_not_publish_twice() {
         .iter_mut()
         .find(|slot| slot.is_none())
         .expect("free link slot") = Some(duplicate);
-    for tick in 4..=5 {
+    for tick in 22..=23 {
         advance(&mut sim, tick);
         visual.step(&sim, tick).expect("duplicate delivery");
     }
-    assert_eq!(visual.peers[0].partitions[0].received_tick, 3);
+    assert_eq!(visual.peers[0].partitions[0].received_tick, 21);
     assert_eq!(visual.report.reordered, 1);
 }
 
