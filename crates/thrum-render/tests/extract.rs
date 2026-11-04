@@ -90,6 +90,31 @@ fn prior_sample_requires_adjacent_tick_stable_id_and_visual_revision() {
 }
 
 #[test]
+fn visual_generation_change_resets_prior_pose_even_at_the_same_world_tick() {
+    let mut extractor = RenderExtractor::new(1);
+    extractor.extract(source(1, 10), [0.0; 3], |sink| {
+        sink.push(7, [1.0, 0.0, 0.0], 3);
+    });
+    let adjacent = extractor.extract(source(1, 11), [0.0; 3], |sink| {
+        sink.push(7, [2.0, 0.0, 0.0], 3);
+    });
+    assert_eq!(adjacent.history_reused, 1);
+
+    extractor.invalidate_history();
+    assert_eq!(extractor.frame().source(), None);
+    let replacement = extractor.extract(source(1, 11), [0.0; 3], |sink| {
+        sink.push(7, [2.0, 0.0, 0.0], 3);
+    });
+    assert_eq!(replacement.history_reused, 0);
+    assert_eq!(extractor.frame().history_valid(), &[false]);
+    assert_eq!(extractor.frame().previous(), extractor.frame().current());
+    let next = extractor.extract(source(1, 12), [0.0; 3], |sink| {
+        sink.push(7, [3.0, 0.0, 0.0], 3);
+    });
+    assert_eq!(next.history_reused, 1);
+}
+
+#[test]
 fn presentation_overflow_invalid_coordinates_and_duplicates_degrade_with_counts() {
     let mut extractor = RenderExtractor::new(2);
     let report = extractor.extract(source(1, 1), [0.0; 3], |sink| {

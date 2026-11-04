@@ -147,6 +147,13 @@ impl RenderExtractor {
         &self.front
     }
 
+    /// Invalidate prior-pose matching after a visual generation changes.
+    /// The next extraction rebuilds current columns without adjacent history,
+    /// even if the world tick and per-row visual selectors are unchanged.
+    pub fn invalidate_history(&mut self) {
+        self.front.source = None;
+    }
+
     /// Copy visual samples from one committed tick and publish them together.
     /// Presentation overflow or invalid coordinates drop samples and count them.
     /// The caller supplies the authoritative world visit and cannot mutate the

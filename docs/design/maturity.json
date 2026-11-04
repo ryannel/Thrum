@@ -205,7 +205,7 @@
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
-      "functional_validation": "pinned_a_b_unrelated_edit_corrupt_artifact_tolerance_boundary_same_tick_metal_pixels_world_tick_and_zero_sun_timestamp_test",
+      "functional_validation": "pinned_a_b_unrelated_edit_corrupt_artifact_tolerance_boundary_same_tick_metal_pixels_world_tick_zero_sun_timestamp_and_extractor_generation_reset_tests",
       "experienced_quality": "synthetic_colour_delta_only_no_visual_acceptance",
       "platform_performance": {
         "mac": "not_qualified_offscreen_test_only",
@@ -218,7 +218,7 @@
       "evidence": [
         "../evidence/render/V1-COOKED-ENVIRONMENT-2026-11-04.md"
       ],
-      "scope": "F3 pin closes the selected scene@2/environment@1/light@1 records; F4 product key uses four direct exact-input hashes and authenticates artifact bytes on load. The V1 native host prepares photometric Sun/ambient/background and three new targets off the tick path, selects only after old GPU packets retire, and reports visual revision. There is no live watcher, worker-scheduled preparation, radius/penumbra response, deterministic held-packet proof, failure UI, Chrome/iPhone runtime or device budget qualification."
+      "scope": "F3 pin closes the selected scene@2/environment@1/light@1 records; F4 product key uses four direct exact-input hashes and authenticates artifact bytes on load. The V1 native host prepares photometric Sun/ambient/background and three new targets off the tick path, selects only after old GPU packets retire, reports visual revision and invalidates prior-pose extraction history on every successful target replacement. There is no live watcher, worker-scheduled preparation, radius/penumbra response, full temporal-image history handling, deterministic held-packet proof, failure UI, Chrome/iPhone runtime or device budget qualification."
     }
   },
   "user_selected": [
