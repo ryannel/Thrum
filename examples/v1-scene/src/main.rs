@@ -1,7 +1,10 @@
 //! Paced offscreen V1 scene diagnostic. The clock admits every committed
 //! simulation update; rendering consumes the latest complete endpoint.
 
-use std::time::{Duration, Instant};
+use std::{
+    sync::mpsc,
+    time::{Duration, Instant},
+};
 
 use thrum_render::timing::GpuTimings;
 use v1_scene::FrameHost;
@@ -31,6 +34,22 @@ async fn run() -> Result<String, String> {
         .await
         .map_err(|error| format!("GPU device: {error:?}"))?;
     let mut host = FrameHost::new(&device, &queue, None).await?;
+    #[cfg(not(target_arch = "wasm32"))]
+    let worker_mode = std::env::var_os("THRUM_V1_WORKER").is_some();
+    #[cfg(target_arch = "wasm32")]
+    let worker_mode = false;
+    #[cfg(not(target_arch = "wasm32"))]
+    let worker_wake = if worker_mode {
+        let (send, receive) = mpsc::sync_channel(1);
+        host.enable_native_worker(move || {
+            let _ = send.try_send(());
+        })?;
+        Some(receive)
+    } else {
+        None
+    };
+    #[cfg(target_arch = "wasm32")]
+    let worker_wake: Option<mpsc::Receiver<()>> = None;
     let origin = Instant::now();
     let mut last_call = Duration::ZERO;
     let mut samples = Vec::with_capacity(FRAMES);
@@ -48,7 +67,12 @@ async fn run() -> Result<String, String> {
             .next_due_in()
             .ok_or_else(|| "fixed clock stopped before the target frame count".to_owned())?;
         let since_last_call = origin.elapsed().saturating_sub(last_call);
-        std::thread::sleep(due.saturating_sub(since_last_call));
+        let delay = due.saturating_sub(since_last_call);
+        if let Some(wake) = &worker_wake {
+            let _ = wake.recv_timeout(delay);
+        } else {
+            std::thread::sleep(delay);
+        }
         let now = origin.elapsed();
         let callback_start = Instant::now();
         let report = host.drive(now, None)?;
@@ -125,20 +149,33 @@ async fn run() -> Result<String, String> {
     let dropped_light_references = samples[0].dropped_light_references;
     let timing_faults = samples.iter().filter(|sample| sample.timing_fault).count();
     let dropped_views = host.dropped_views();
+    let dropped_stale_views = host.dropped_stale_views();
     let dropped_reports = host.dropped_reports();
+    let worker_queue = percentile(&samples, |sample| f64::from(sample.worker_queue_ns) / 1e3);
+    let worker_ready = percentile(&samples, |sample| f64::from(sample.worker_ready_ns) / 1e3);
+    let visual_age_max = samples
+        .iter()
+        .map(|sample| sample.visual_age_ticks)
+        .max()
+        .unwrap_or(0);
     let max_wall = callback_walls
         .iter()
         .copied()
         .max()
         .expect("at least 600 callbacks");
     Ok(format!(
-        "adapter={adapter_name}; frames={FRAMES}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; dropped_views={dropped_views}; dropped_reports={dropped_reports}; timing_faults={timing_faults}; foreground_pixels={foreground}; dropped_presentation={dropped}; dropped_light_references={dropped_light_references}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; callback CPU p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
+        "adapter={adapter_name}; worker={worker_mode}; frames={FRAMES}; callbacks={}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; dropped_views={dropped_views}; dropped_stale_views={dropped_stale_views}; dropped_reports={dropped_reports}; visual_age_max={visual_age_max}; timing_faults={timing_faults}; foreground_pixels={foreground}; dropped_presentation={dropped}; dropped_light_references={dropped_light_references}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; worker queue p50/p95={:.3}/{:.3} us; ready wait p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; callback CPU p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
+        callback_walls.len(),
         elapsed.as_secs_f64(),
         host.tick(),
         tick.0,
         tick.1,
         extract.0,
         extract.1,
+        worker_queue.0,
+        worker_queue.1,
+        worker_ready.0,
+        worker_ready.1,
         upload.0,
         upload.1,
         encode.0,
