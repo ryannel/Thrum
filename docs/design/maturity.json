@@ -257,6 +257,23 @@
       ],
       "scope": "One V1 fixture entity is registered to a local peer and actor. macOS and Chrome keyboard states sample changed normalized axes at the next due fixed tick and use Simulation::admit_frame before the shared world step; invalid axes retain prior held controls. No new action schema or second authority. Four-peer transport, prediction/reconciliation, touch controls, physical device input, focused visible macOS run and input-to-display latency remain open."
     },
+    "A5_four_local_actors": {
+      "implementation": "partial_four_registered_peer_actor_bindings_in_one_v1_10k_simulation",
+      "functional_validation": "focused_four_frame_tick_invalid_axis_pending_duplicate_stale_sequence_held_and_released_input_pass; native_metal_host_regressions_and_chrome_156_600_complete_frame_run_pass",
+      "experienced_quality": "synthetic_scene_only_no_network_correction_or_multiplayer_visual_acceptance",
+      "platform_performance": {
+        "mac": "offscreen_metal_divan_diagnostic_not_visible_window_budget",
+        "windows": "not_run",
+        "browser": "chrome_156_apple_m3_max_600_frame_diagnostic_not_sustained_budget",
+        "ios": "not_run_after_four_peer_fixture_change",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Chrome 156 WebGPU on Apple M3 Max: 601 world ticks, 601 presented, 600 completed GPU samples in 10.021 s; zero unavailable/overload/refused/shed/report drops, tick CPU p50/p95 300/400 us and encode 200/300 us. Offscreen M3 Max Metal Divan without GPU timestamps: 100 samples, median 1.054 ms and 80 benchmark-thread Rust allocations/14.39 KB per assembled frame; no matched one-peer cost comparison.",
+      "evidence": [
+        "../evidence/v1-workload/A5-FOUR-LOCAL-ACTORS-2026-11-04.md"
+      ],
+      "scope": "The V1 scene owns four distinct control bindings for four of its 10k entities. One W1 tick admits separate validated InputFrames, and idle peers have no second authority. Peer 1 remains local keyboard control. Conditioned transport, schema codec, remote admission timing, prediction/reconciliation, replication and sustained target/device budgets remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",
