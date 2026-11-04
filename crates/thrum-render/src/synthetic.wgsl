@@ -83,6 +83,7 @@ struct VertexOutput {
     var output: VertexOutput;
     let world = instance.current * vec4(local,1.0);
     output.position = view.view_proj * world;
+    if instance.ids.w == 0u { output.position = vec4(2.0, 2.0, 2.0, 1.0); }
     output.world_position = world.xyz;
     output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
     output.uv = p*0.5+vec2(0.5);

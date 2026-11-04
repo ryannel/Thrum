@@ -98,6 +98,19 @@ fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
             ),
             (3, 1, 1, 4 * 192)
         );
-        assert_ne!(after, pixels(&device, &queue, &prepared, &target));
+        let moved = pixels(&device, &queue, &prepared, &target);
+        assert_ne!(after, moved);
+
+        scene.instances[1].ids[3] = 0;
+        prepared
+            .upload_instances(&queue, &scene.instances, &[1])
+            .expect("retired instance upload");
+        let hidden = pixels(&device, &queue, &prepared, &target);
+        assert_ne!(moved, hidden, "retired GPU instance no longer draws");
+        scene.instances[1].ids[3] = 1;
+        prepared
+            .upload_instances(&queue, &scene.instances, &[1])
+            .expect("reused instance upload");
+        assert_eq!(moved, pixels(&device, &queue, &prepared, &target));
     });
 }

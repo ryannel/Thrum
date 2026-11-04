@@ -1,10 +1,6 @@
 //! Reused CPU render columns derived from a committed simulation tick. These
 //! presentation copies never become a second world authority.
 
-use std::collections::{HashMap, hash_map::Entry};
-
-use foldhash::fast::RandomState;
-
 /// Identity of the committed world endpoint used for one extraction.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SourceTick {
@@ -23,7 +19,7 @@ pub struct ExtractReport {
     pub dropped_capacity: usize,
     /// Samples dropped because their position cannot be represented relative to the view origin.
     pub dropped_invalid: usize,
-    /// Repeated stable identities dropped after the first sample.
+    /// Repeated physical slots dropped after the first sample.
     pub dropped_duplicate: usize,
     /// Instances matched to the immediately preceding tick and visual revision.
     pub history_reused: usize,
@@ -37,25 +33,27 @@ pub struct RenderColumns {
     origin: [f64; 3],
     previous_origin: [f64; 3],
     ids: Vec<u128>,
+    slots: Vec<u32>,
     current: Vec<[f32; 3]>,
     previous: Vec<[f32; 3]>,
     visuals: Vec<u64>,
     history_valid: Vec<bool>,
-    index: HashMap<u128, usize, RandomState>,
+    index: Vec<Option<(u64, usize)>>,
 }
 
 impl RenderColumns {
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(slot_capacity: usize, visual_capacity: usize) -> Self {
         Self {
             source: None,
             origin: [0.0; 3],
             previous_origin: [0.0; 3],
-            ids: Vec::with_capacity(capacity),
-            current: Vec::with_capacity(capacity),
-            previous: Vec::with_capacity(capacity),
-            visuals: Vec::with_capacity(capacity),
-            history_valid: Vec::with_capacity(capacity),
-            index: HashMap::with_capacity_and_hasher(capacity, RandomState::default()),
+            ids: Vec::with_capacity(visual_capacity),
+            slots: Vec::with_capacity(visual_capacity),
+            current: Vec::with_capacity(visual_capacity),
+            previous: Vec::with_capacity(visual_capacity),
+            visuals: Vec::with_capacity(visual_capacity),
+            history_valid: Vec::with_capacity(visual_capacity),
+            index: vec![None; slot_capacity],
         }
     }
 
@@ -64,11 +62,12 @@ impl RenderColumns {
         self.origin = origin;
         self.previous_origin = previous_origin;
         self.ids.clear();
+        self.slots.clear();
         self.current.clear();
         self.previous.clear();
         self.visuals.clear();
         self.history_valid.clear();
-        self.index.clear();
+        self.index.fill(None);
     }
 
     /// Committed source of these columns, or `None` before the first extraction.
@@ -102,6 +101,16 @@ impl RenderColumns {
         &self.ids
     }
 
+    /// Physical world slots aligned with the visual rows.
+    pub fn slots(&self) -> &[u32] {
+        &self.slots
+    }
+
+    /// Whether this extraction retained a visible row at a physical slot.
+    pub fn contains_slot(&self, slot: usize) -> bool {
+        self.index.get(slot).is_some_and(Option::is_some)
+    }
+
     /// Current origin-relative world positions.
     pub fn current(&self) -> &[[f32; 3]] {
         &self.current
@@ -133,12 +142,12 @@ pub struct RenderExtractor {
 }
 
 impl RenderExtractor {
-    /// Reserve the maximum visual instance count in both reusable frames.
-    pub fn new(capacity: usize) -> Self {
+    /// Reserve physical slot lookup and retained visual rows separately.
+    pub fn new(slot_capacity: usize, visual_capacity: usize) -> Self {
         Self {
-            capacity,
-            front: RenderColumns::with_capacity(capacity),
-            back: RenderColumns::with_capacity(capacity),
+            capacity: visual_capacity,
+            front: RenderColumns::with_capacity(slot_capacity, visual_capacity),
+            back: RenderColumns::with_capacity(slot_capacity, visual_capacity),
         }
     }
 
@@ -204,9 +213,24 @@ impl RenderSink<'_> {
         clippy::cast_possible_truncation,
         reason = "finite view-origin-relative f64 positions intentionally round once into the f32 GPU domain"
     )]
-    pub fn push(&mut self, id: u128, position: [f64; 3], visual: u64) -> bool {
+    pub fn push(
+        &mut self,
+        slot: u32,
+        generation: u64,
+        id: u128,
+        position: [f64; 3],
+        visual: u64,
+    ) -> bool {
         if self.staging.len() == self.capacity {
             self.report.dropped_capacity += 1;
+            return false;
+        }
+        let Ok(slot_index) = usize::try_from(slot) else {
+            self.report.dropped_invalid += 1;
+            return false;
+        };
+        if slot_index >= self.staging.index.len() {
+            self.report.dropped_invalid += 1;
             return false;
         }
         // Each axis uses its matching origin. Reject coordinates outside the
@@ -224,19 +248,23 @@ impl RenderSink<'_> {
             return false;
         }
         let index = self.staging.len();
-        let Entry::Vacant(entry) = self.staging.index.entry(id) else {
+        if self.staging.index[slot_index].is_some() {
             self.report.dropped_duplicate += 1;
             return false;
-        };
+        }
         let current = relative.map(|value| value as f32);
         let prior = self
             .adjacent
-            .then(|| self.previous.index.get(&id).copied())
+            .then(|| self.previous.index[slot_index])
             .flatten()
-            .filter(|&old| self.previous.visuals[old] == visual);
+            .filter(|&(old_generation, old)| {
+                old_generation == generation && self.previous.visuals[old] == visual
+            })
+            .map(|(_, old)| old);
         let previous = prior.map_or(current, |old| self.previous.current[old]);
-        entry.insert(index);
+        self.staging.index[slot_index] = Some((generation, index));
         self.staging.ids.push(id);
+        self.staging.slots.push(slot);
         self.staging.current.push(current);
         self.staging.previous.push(previous);
         self.staging.visuals.push(visual);

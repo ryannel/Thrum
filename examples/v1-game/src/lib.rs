@@ -5,8 +5,10 @@
 #[cfg(target_arch = "wasm32")]
 mod browser;
 mod host;
+mod projection;
 mod scene;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{BrowserGame, create_browser_game};
 pub use host::{DriveReport, FrameHost, FrameSample, SurfaceOutput};
+pub use projection::{GameProjection, ProjectionGap};

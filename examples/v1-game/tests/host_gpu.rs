@@ -44,6 +44,8 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
         let mut host = FrameHost::new(&device, &queue, None)
             .await
             .expect("prepared 10k scene");
+        host.enable_projection()
+            .expect("bounded same-game projection");
         let idle = host.drive(Duration::ZERO, None).expect("idle callback");
         assert_eq!(idle.completed_ticks, 0);
         assert!(!idle.submitted);
@@ -73,6 +75,22 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             (3, 2, 0, true)
         );
         assert_eq!(host.tick(), 3);
+        let mut projected_ticks = Vec::new();
+        while host
+            .poll_projection(|projection| {
+                projected_ticks.push((
+                    projection.id().expect("queued source").tick,
+                    projection.is_baseline(),
+                ));
+            })
+            .expect("four in-order projections fit the outbox")
+            .expect("projection output enabled")
+        {}
+        assert_eq!(
+            projected_ticks,
+            [(0, true), (1, false), (2, false), (3, false)]
+        );
+        assert_eq!(catch_up.projection_lost_ticks, 0);
         let deadline = Instant::now() + Duration::from_secs(10);
         for expected_tick in [1, 3] {
             let sample = loop {

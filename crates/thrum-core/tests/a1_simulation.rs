@@ -8,7 +8,7 @@
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     cell::Cell,
-    num::{NonZeroU32, NonZeroUsize},
+    num::NonZeroU32,
     time::Duration,
 };
 
@@ -16,7 +16,7 @@ use thrum_core::{
     ActorId, ClockConfig, Handle, Origin, PeerId, StableId, TickClock, WorldEpoch,
     sim::{
         Command, ComponentEntity, FrameError, InputFrame, Ownership, Position, SimAction,
-        SimConfig, SimError, Simulation, SimulationSnapshot, Stage, Velocity, VisualSnapshotPool,
+        SimConfig, SimError, Simulation, Stage, StructuralChange, Velocity,
     },
 };
 
@@ -95,24 +95,25 @@ fn controlled() -> (Simulation, Handle, Ownership) {
 }
 
 fn frame(binding: Ownership, tick: u64, sequence: u64) -> InputFrame<SimAction> {
-    InputFrame {
-        origin: Origin {
+    InputFrame::new(
+        Origin {
             peer: binding.peer,
             connection_epoch: binding.connection_epoch,
             sequence,
         },
-        actor: binding.actor,
+        binding.actor,
         tick,
-        axes: [1.0, 0.0, 0.0],
-        actions: vec![],
-    }
+        [1.0, 0.0, 0.0],
+    )
 }
 
 #[test]
 fn held_axes_and_idle_ticks_advance_without_repeating_discrete_actions() {
     let (mut sim, handle, binding) = controlled();
     let mut input = frame(binding, 1, 0);
-    input.actions = vec![SimAction::Impulse([6.0, 0.0, 0.0]), SimAction::Damage(7)];
+    input
+        .actions
+        .extend([SimAction::Impulse([6.0, 0.0, 0.0]), SimAction::Damage(7)]);
     sim.admit_frame(input)
         .expect("test setup or assertion requires a value");
     assert_eq!(
@@ -177,10 +178,12 @@ fn rejected_frames_do_not_consume_sequence_and_all_origins_share_validation() {
         Err(FrameError::WrongTick)
     );
     let mut bad = frame(binding, 1, 10);
-    bad.actions = vec![SimAction::Impulse([f64::INFINITY, 0.0, 0.0])];
+    bad.actions
+        .push(SimAction::Impulse([f64::INFINITY, 0.0, 0.0]));
     assert_eq!(sim.admit_frame(bad), Err(FrameError::InvalidAction));
     let mut bad = frame(binding, 1, 10);
-    bad.actions = vec![SimAction::Damage(1); 9];
+    bad.actions.clear();
+    bad.actions.extend([SimAction::Damage(1); 9]);
     assert_eq!(sim.admit_frame(bad), Err(FrameError::TooManyActions));
     sim.admit_frame(frame(binding, 1, 10))
         .expect("test setup or assertion requires a value");
@@ -211,11 +214,10 @@ fn rejected_frames_do_not_consume_sequence_and_all_origins_share_validation() {
 fn invalid_batch_and_numeric_failure_preserve_the_complete_committed_endpoint() {
     let (mut sim, handle, binding) = controlled();
     let mut input = frame(binding, 1, 1);
-    input.actions = vec![SimAction::Damage(12)];
+    input.actions.push(SimAction::Damage(12));
     sim.admit_frame(input)
         .expect("test setup or assertion requires a value");
-    let mut before = SimulationSnapshot::with_capacity(WorldEpoch(1), 8);
-    sim.copy_snapshot_into(&mut before);
+    let before = sim.published_page().expect("initial committed page");
     let foreign = Handle {
         epoch: WorldEpoch(99),
         ..handle
@@ -224,9 +226,10 @@ fn invalid_batch_and_numeric_failure_preserve_the_complete_committed_endpoint() 
         sim.step(&[Command::SetHealth(handle, 20), Command::Despawn(foreign)]),
         Err(SimError::InvalidHandle)
     );
-    let mut after = SimulationSnapshot::with_capacity(WorldEpoch(1), 8);
-    sim.copy_snapshot_into(&mut after);
-    assert_eq!(before, after);
+    let after = sim.published_page().expect("same committed page");
+    assert_eq!(before.id(), after.id());
+    assert_eq!(before.position(handle), after.position(handle));
+    assert_eq!(before.health(handle), after.health(handle));
     assert_eq!(
         sim.step(&[Command::SetHealth(handle, 20), Command::Despawn(handle)]),
         Err(SimError::ConflictingCommands)
@@ -281,8 +284,7 @@ fn committed_destruction_reuse_and_consumer_copy_preserve_identity() {
     let old = sim
         .seed(entity(1, 60.0))
         .expect("test setup or assertion requires a value");
-    let mut retained = SimulationSnapshot::with_capacity(WorldEpoch(1), 1);
-    sim.copy_snapshot_into(&mut retained);
+    let retained = sim.published_page().expect("initial page");
     let old_copy = retained.clone();
     let outcome = sim
         .step(&[Command::Spawn(entity(2, 120.0)), Command::Despawn(old)])
@@ -309,7 +311,14 @@ fn committed_destruction_reuse_and_consumer_copy_preserve_identity() {
             .structural,
         1
     );
-    assert_eq!(retained, old_copy);
+    assert_eq!(retained.id(), old_copy.id());
+    assert_eq!(retained.position(old), old_copy.position(old));
+    let current = sim.published_page().expect("replacement page");
+    assert_eq!(
+        current.structural_events(),
+        &[StructuralChange::Despawn(old), StructuralChange::Spawn(new)]
+    );
+    assert_eq!(current.dirty().structural(), &[old.slot]);
     sim.step(&[])
         .expect("test setup or assertion requires a value");
     assert_eq!(
@@ -319,7 +328,19 @@ fn committed_destruction_reuse_and_consumer_copy_preserve_identity() {
             .0[0],
         2.0
     );
-    assert_eq!(retained.entities()[0].id, StableId(1));
+    assert_eq!(retained.stable_id(old.slot), Some(StableId(1)));
+    assert_eq!(
+        retained.position(new),
+        None,
+        "reused handle cannot read old page"
+    );
+    let current = sim.published_page().expect("latest page");
+    assert_eq!(current.stable_id(new.slot), Some(StableId(2)));
+    assert_eq!(
+        current.position(old),
+        None,
+        "retired handle cannot read new page"
+    );
     assert_eq!(
         sim.step(&[Command::Despawn(old)]),
         Err(SimError::InvalidHandle)
@@ -328,6 +349,21 @@ fn committed_destruction_reuse_and_consumer_copy_preserve_identity() {
     assert_eq!(
         sim.step(&[Command::Spawn(entity(2, 0.0))]),
         Err(SimError::DuplicateId)
+    );
+}
+
+#[test]
+fn first_tick_without_explicit_baseline_keeps_despawn_then_spawn() {
+    let mut sim = Simulation::new(WorldEpoch(1), config(1)).expect("world");
+    let old = sim.seed(entity(10, 0.0)).expect("old body");
+    sim.step(&[Command::Despawn(old), Command::Spawn(entity(11, 0.0))])
+        .expect("replacement");
+    let new = sim.handle(StableId(11)).expect("new body");
+    let page = sim.published_page().expect("tick-one page");
+    assert_eq!(page.id().tick, 1);
+    assert_eq!(
+        page.structural_events(),
+        &[StructuralChange::Despawn(old), StructuralChange::Spawn(new)]
     );
 }
 
@@ -490,74 +526,50 @@ fn query_and_snapshot_cover_sparse_archetypes() {
         assert_eq!(view.visual.is_some(), view.id.0 & 2 != 0);
     });
     assert_eq!(visited, 4);
-    let mut snapshot = SimulationSnapshot::with_capacity(WorldEpoch(1), 4);
-    sim.copy_snapshot_into(&mut snapshot);
-    assert_eq!(snapshot.entities().len(), 4);
-    for body in snapshot.entities() {
-        assert_eq!(body.ownership.is_some(), body.id.0 & 1 != 0);
-        assert_eq!(body.visual.is_some(), body.id.0 & 2 != 0);
-    }
+    let snapshot = sim.published_page().expect("sealed sparse page");
+    assert_eq!(snapshot.len(), 4);
+    snapshot.visit(|handle, id, _, visual| {
+        assert_eq!(snapshot.ownership(handle).is_some(), id.0 & 1 != 0);
+        assert_eq!(visual.is_some(), id.0 & 2 != 0);
+    });
 }
 
 #[test]
-fn visual_page_leases_survive_world_ticks_and_exhaustion_sheds_only_views() {
+fn published_page_leases_survive_world_ticks_and_exhaustion_refuses_tick() {
     let mut sim = Simulation::new(WorldEpoch(7), config(2)).expect("valid fixture");
     sim.seed(entity(1, 1.0)).expect("first visual entity");
     sim.seed(entity(2, 0.0)).expect("second visual entity");
-    let mut pool = VisualSnapshotPool::new(NonZeroUsize::new(2).expect("two slots"), 2);
-
-    let old = pool.publish(&sim).expect("first free page");
-    assert_eq!((old.epoch(), old.tick()), (WorldEpoch(7), 0));
-    assert_eq!(old.ids().len(), 2);
-    let old_position = old
-        .ids()
-        .iter()
-        .position(|id| *id == StableId(1))
-        .map(|index| old.positions()[index])
-        .expect("moving visual is present");
+    let handle = sim.handle(StableId(1)).expect("seeded handle");
+    let old = sim.published_page().expect("tick zero page");
+    assert_eq!(old.id().epoch, WorldEpoch(7));
+    assert_eq!(old.id().tick, 0);
+    assert_eq!(old.len(), 2);
+    let old_position = old.position(handle).expect("moving entity");
     sim.step(&[]).expect("committed tick");
-    let current = pool.publish(&sim).expect("second free page");
-    assert_eq!(current.tick(), 1);
-    let current_position = current
-        .ids()
-        .iter()
-        .position(|id| *id == StableId(1))
-        .map(|index| current.positions()[index])
-        .expect("moving visual is present");
+    let current = sim.published_page().expect("tick one page");
+    assert_eq!(current.id().tick, 1);
+    let current_position = current.position(handle).expect("moving entity");
     assert!(current_position.0[0] > old_position.0[0]);
-    assert_eq!(
-        old.positions()[old
-            .ids()
-            .iter()
-            .position(|id| *id == StableId(1))
-            .expect("old identity")],
-        old_position
-    );
-
-    sim.step(&[])
-        .expect("world advances with both pages leased");
-    assert!(pool.publish(&sim).is_none());
-    assert_eq!(pool.dropped_views(), 1);
-    assert_eq!(sim.tick(), 2);
+    assert_eq!(old.position(handle), Some(old_position));
+    sim.step(&[]).expect("third page");
+    let third = sim.published_page().expect("tick two page");
+    sim.step(&[]).expect("fourth page");
+    let fourth = sim.published_page().expect("tick three page");
+    assert_eq!(sim.step(&[]), Err(SimError::PublicationBusy));
+    assert_eq!(sim.tick(), 3, "busy ring never advances the authority");
+    assert_eq!(fourth.id().tick, 3);
     drop(old);
-    let newest = pool.publish(&sim).expect("released page reused");
-    assert_eq!(newest.tick(), 2);
-    assert_eq!(current.tick(), 1, "other lease is immutable");
-
-    let mut narrow = VisualSnapshotPool::new(NonZeroUsize::new(1).expect("one slot"), 1);
-    let degraded = narrow.publish(&sim).expect("bounded visual page");
-    assert_eq!(degraded.ids().len(), 1);
-    assert_eq!(degraded.dropped_capacity(), 1);
+    sim.step(&[]).expect("released page permits exact retry");
+    assert_eq!(sim.tick(), 4);
+    assert_eq!(current.id().tick, 1);
+    assert_eq!(third.id().tick, 2);
 }
 
 #[test]
-fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup() {
+fn ten_thousand_entity_ticks_and_publication_allocate_nothing_after_warmup() {
     let mut sim = workload();
-    let mut visual_pages =
-        VisualSnapshotPool::new(NonZeroUsize::new(3).expect("three slots"), 10_000);
-    let mut snapshots = std::array::from_fn::<_, 4, _>(|_| {
-        SimulationSnapshot::with_capacity(WorldEpoch(1), 10_000)
-    });
+    let initial = sim.published_page().expect("sealed initial page");
+    drop(initial);
     for _ in 0..60 {
         sim.step(&[])
             .expect("test setup or assertion requires a value");
@@ -570,10 +582,7 @@ fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup
         Command::Spawn(entity(50_000, 0.0)),
     ])
     .expect("warmup replacement succeeds");
-    for snapshot in &mut snapshots {
-        sim.copy_snapshot_into(snapshot);
-    }
-    drop(visual_pages.publish(&sim).expect("warm visual page"));
+    drop(sim.published_page().expect("warm published page"));
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
     let mut churn_pairs = 0;
@@ -606,19 +615,43 @@ fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup
                 .expect("test setup or assertion requires a value")
         };
         std::hint::black_box(outcome);
-        for snapshot in &mut snapshots {
-            sim.copy_snapshot_into(snapshot);
-        }
-        let visual_page = visual_pages.publish(&sim).expect("reused visual page");
-        std::hint::black_box(visual_page.ids());
-        drop(visual_page);
+        let page = sim.published_page().expect("committed page");
+        std::hint::black_box(page.dirty().position());
+        std::hint::black_box(page.structural_events());
     }
     COUNTING.with(|active| active.set(false));
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
     assert_eq!(churn_pairs, 1_000);
     assert_eq!(sim.len(), 10_000);
     assert_eq!(sim.tick(), 661);
-    assert!(snapshots.iter().all(|snapshot| snapshot.tick() == 661));
+    assert_eq!(sim.published_page().expect("last page").id().tick, 661);
+}
+
+#[test]
+fn admitted_action_frames_and_committed_pages_allocate_nothing_after_warmup() {
+    let (mut sim, handle, binding) = controlled();
+    drop(sim.published_page().expect("seeded page"));
+    for sequence in 1..=4 {
+        let mut input = frame(binding, sequence, sequence);
+        input.actions.push(SimAction::Impulse([0.0; 3]));
+        input.actions.push(SimAction::Damage(0));
+        sim.admit_frame(input).expect("warm admitted actions");
+        sim.step(&[]).expect("warm committed page");
+    }
+    ALLOCATIONS.with(|count| count.set(0));
+    COUNTING.with(|active| active.set(true));
+    for sequence in 5..=104 {
+        let mut input = frame(binding, sequence, sequence);
+        input.actions.push(SimAction::Impulse([0.0; 3]));
+        input.actions.push(SimAction::Damage(0));
+        sim.admit_frame(input).expect("admitted actions");
+        sim.step(&[]).expect("committed page");
+        let page = sim.published_page().expect("latest immutable page");
+        std::hint::black_box(page.position(handle));
+    }
+    COUNTING.with(|active| active.set(false));
+    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    assert_eq!(sim.tick(), 104);
 }
 
 #[test]

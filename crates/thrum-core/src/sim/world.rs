@@ -153,39 +153,8 @@ pub enum SimError {
     AlreadyStarted,
     /// World tick cannot advance without wrapping.
     TickExhausted,
-}
-
-/// Owned immutable-endpoint copy. Its private vector never aliases simulation
-/// columns. Reuse with `copy_snapshot_into` to amortize consumer allocation.
-#[derive(Clone, Debug, PartialEq)]
-pub struct SimulationSnapshot {
-    epoch: WorldEpoch,
-    tick: u64,
-    entities: Vec<ComponentEntity>,
-}
-
-impl SimulationSnapshot {
-    /// Construct an independent consumer buffer with a declared capacity.
-    pub fn with_capacity(epoch: WorldEpoch, capacity: usize) -> Self {
-        Self {
-            epoch,
-            tick: 0,
-            entities: Vec::with_capacity(capacity),
-        }
-    }
-    /// Source world identity.
-    pub fn epoch(&self) -> WorldEpoch {
-        self.epoch
-    }
-    /// Complete committed tick represented by this copy.
-    pub fn tick(&self) -> u64 {
-        self.tick
-    }
-    /// Owned component records in unspecified order. Match records by stable ID;
-    /// iteration order is not a replay, wire or save contract.
-    pub fn entities(&self) -> &[ComponentEntity] {
-        &self.entities
-    }
+    /// All preallocated publication pages are held by consumers. Retry this tick.
+    PublicationBusy,
 }
 
 /// Complete tick outcome; no consumer can observe a partial stage endpoint.
@@ -272,6 +241,7 @@ pub struct Simulation {
     committed_inputs: Vec<Origin>,
     work: Work,
     schedule: Schedule,
+    pages: super::published::PublicationRing,
 }
 
 impl Simulation {
@@ -305,6 +275,7 @@ impl Simulation {
                 touched: Vec::with_capacity(config.entity_capacity),
             },
             schedule: fixture_schedule(),
+            pages: super::published::PublicationRing::new(epoch, config.entity_capacity),
         })
     }
 
@@ -344,7 +315,7 @@ impl Simulation {
     ///
     /// Seeding has already ended, the ID repeats, an entity component is nonfinite, or capacity is full.
     pub fn seed(&mut self, entity: ComponentEntity) -> Result<Handle, SimError> {
-        if self.tick != 0 || !self.peers.is_empty() {
+        if self.tick != 0 || !self.peers.is_empty() || self.pages.latest().is_some() {
             return Err(SimError::AlreadyStarted);
         }
         validate_entity(&entity)?;
@@ -399,6 +370,37 @@ impl Simulation {
     /// Visit typed component columns without allocating temporary records.
     pub fn visit_components(&self, visit: impl FnMut(ComponentView<'_>)) {
         self.store.visit_components(visit);
+    }
+
+    /// Seal seeded tick zero once, then return the latest immutable page.
+    /// Later calls only clone the existing lease.
+    ///
+    /// # Errors
+    /// Returns publication backpressure if all pages are retained.
+    pub fn published_page(&mut self) -> Result<super::PublishedPage, SimError> {
+        if self.pages.latest().is_none() {
+            if !self.pages.can_capture() {
+                return Err(SimError::PublicationBusy);
+            }
+            self.pages.capture(&self.store, self.epoch, self.tick, &[]);
+        }
+        self.pages.latest().ok_or(SimError::PublicationBusy)
+    }
+
+    /// Immediately preceding committed page, when retained by the short ring.
+    pub fn previous_page(&self) -> Option<super::PublishedPage> {
+        self.pages.previous()
+    }
+
+    /// Reserved page payload and owner bytes, excluding allocator bookkeeping.
+    /// This is a diagnostic count, not a memory ceiling or resident-set claim.
+    pub fn publication_reserved_bytes(&self) -> usize {
+        self.pages.reserved_bytes()
+    }
+
+    /// Whether a full immutable page can be reserved before admitting input.
+    pub fn can_publish_next(&self) -> bool {
+        self.pages.can_capture()
     }
 
     /// Register one control binding. Local and remote callers use this same path.
@@ -532,6 +534,14 @@ impl Simulation {
     pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome<'_>, SimError> {
         let next = self.tick.checked_add(1).ok_or(SimError::TickExhausted)?;
         self.validate_commands(commands)?;
+        if self.pages.latest().is_none() {
+            // Seal seeded membership before the first mutation. Without this
+            // baseline, a tick-one despawn could disappear from the journal.
+            self.pages.capture(&self.store, self.epoch, self.tick, &[]);
+        }
+        if !self.pages.can_capture() {
+            return Err(SimError::PublicationBusy);
+        }
         let simulated_entities = self.len();
         // A rejected candidate retries the same tick. Clear its stamps before
         // staging again so no stale row is omitted or later published.
@@ -550,6 +560,8 @@ impl Simulation {
             schedule,
             tick,
             config,
+            pages,
+            epoch,
             ..
         } = self;
         let mut changed_positions = 0;
@@ -641,21 +653,13 @@ impl Simulation {
             }
             Ok(())
         })?;
+        pages.capture(store, *epoch, next, commands);
         Ok(TickOutcome {
             tick: next,
             simulated_entities,
             changed_positions,
             committed_inputs,
         })
-    }
-
-    /// Copy only a committed endpoint into a consumer-owned snapshot. This is
-    /// O(live entities); insufficient consumer capacity may allocate. Retained
-    /// copies remain valid through all subsequent ticks and slot reuse.
-    pub fn copy_snapshot_into(&self, output: &mut SimulationSnapshot) {
-        self.store.copy_snapshot_into(&mut output.entities);
-        output.epoch = self.epoch;
-        output.tick = self.tick;
     }
 
     fn validate_commands(&self, commands: &[Command]) -> Result<(), SimError> {

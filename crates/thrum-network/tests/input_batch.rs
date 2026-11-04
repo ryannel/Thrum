@@ -34,17 +34,18 @@ impl ActionWire<u16> for TinyAction {
 }
 
 fn frame(sequence: u64, tick: u64, axes: [f32; 3], actions: Vec<u16>) -> InputFrame<u16> {
-    InputFrame {
-        origin: Origin {
+    let mut frame = InputFrame::new(
+        Origin {
             peer: PeerId(3),
             connection_epoch: 9,
             sequence,
         },
-        actor: ActorId(5),
+        ActorId(5),
         tick,
         axes,
-        actions,
-    }
+    );
+    frame.actions.extend(actions);
+    frame
 }
 
 fn owner() -> Ownership {

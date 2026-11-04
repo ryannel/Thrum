@@ -6,13 +6,10 @@
 #[path = "../tests/support/v1_workload.rs"]
 mod support;
 
-use std::num::{NonZeroU32, NonZeroUsize};
+use std::num::NonZeroU32;
 use thrum_core::{
     StableId, WorldEpoch,
-    sim::{
-        ComponentEntity, Position, SimConfig, Simulation, SimulationSnapshot, Velocity,
-        VisualSnapshotPool,
-    },
+    sim::{ComponentEntity, Position, SimConfig, Simulation, Velocity},
 };
 
 #[global_allocator]
@@ -69,7 +66,7 @@ fn component_fixture() -> Simulation {
 }
 
 #[divan::bench]
-fn a1_component_tick(bencher: divan::Bencher<'_, '_>) {
+fn g1_tick_and_publication(bencher: divan::Bencher<'_, '_>) {
     let mut sim = component_fixture();
     for _ in 0..60 {
         sim.step(&[]).expect("warmup tick succeeds");
@@ -94,30 +91,12 @@ fn a1_component_query(bencher: divan::Bencher<'_, '_>) {
 }
 
 #[divan::bench]
-fn a1_four_full_snapshots(bencher: divan::Bencher<'_, '_>) {
-    let sim = component_fixture();
-    let mut snapshots = std::array::from_fn::<_, 4, _>(|_| {
-        SimulationSnapshot::with_capacity(WorldEpoch(1), support::ENTITY_COUNT)
-    });
-    for snapshot in &mut snapshots {
-        sim.copy_snapshot_into(snapshot);
-    }
+fn g1_page_read(bencher: divan::Bencher<'_, '_>) {
+    let mut sim = component_fixture();
+    let page = sim.published_page().expect("seeded page");
     bencher.bench_local(move || {
-        for snapshot in &mut snapshots {
-            sim.copy_snapshot_into(snapshot);
-        }
-        divan::black_box(&snapshots);
-    });
-}
-
-#[divan::bench]
-fn a2_visual_snapshot_page(bencher: divan::Bencher<'_, '_>) {
-    let sim = component_fixture();
-    let mut pages = VisualSnapshotPool::new(NonZeroUsize::new(3).expect("three slots"), 10_000);
-    drop(pages.publish(&sim).expect("warm visual page"));
-    bencher.bench_local(move || {
-        let page = pages.publish(&sim).expect("available page");
-        divan::black_box(page.ids());
-        drop(page);
+        page.visit(|handle, id, position, visual| {
+            divan::black_box((handle, id, position, visual));
+        });
     });
 }

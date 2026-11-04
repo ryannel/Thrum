@@ -9,7 +9,7 @@ use std::{
 };
 
 use rayon::{ThreadPool, ThreadPoolBuilder};
-use thrum_core::sim::VisualSnapshotLease;
+use thrum_core::sim::PublishedPage;
 use thrum_render::extract::{ExtractReport, RenderExtractor};
 
 use crate::scene;
@@ -70,7 +70,7 @@ impl NativeWorker {
     pub(super) fn dispatch(
         &mut self,
         extractor: RenderExtractor,
-        snapshot: VisualSnapshotLease,
+        snapshot: PublishedPage,
         request: ExtractRequest,
     ) {
         debug_assert!(!self.in_flight);
@@ -80,8 +80,8 @@ impl NativeWorker {
         let dispatched_at = Instant::now();
         self.pool.spawn(move || {
             let queue_wait = dispatched_at.elapsed();
-            let epoch = snapshot.epoch().0;
-            let tick = snapshot.tick();
+            let epoch = snapshot.id().epoch.0;
+            let tick = snapshot.id().tick;
             let mut extractor = extractor;
             let start = Instant::now();
             let report = scene::extract(&mut extractor, &snapshot);
@@ -132,9 +132,8 @@ impl NativeWorker {
 
 #[cfg(test)]
 mod tests {
-    use std::{num::NonZeroUsize, sync::mpsc, time::Duration};
+    use std::{sync::mpsc, time::Duration};
 
-    use thrum_core::sim::VisualSnapshotPool;
     use thrum_render::extract::RenderExtractor;
 
     use super::{ExtractRequest, NativeWorker};
@@ -144,10 +143,8 @@ mod tests {
     fn native_worker_extracts_the_committed_page_and_returns_its_owner() {
         let mut simulation = scene::simulation().expect("fixture");
         simulation.step(&[]).expect("committed tick");
-        let mut pages =
-            VisualSnapshotPool::new(NonZeroUsize::new(3).expect("nonzero"), ENTITY_COUNT);
-        let snapshot = pages.publish(&simulation).expect("page available");
-        let mut serial = RenderExtractor::new(ENTITY_COUNT);
+        let snapshot = simulation.published_page().expect("page available");
+        let mut serial = RenderExtractor::new(ENTITY_COUNT, ENTITY_COUNT);
         let serial_report = scene::extract(&mut serial, &snapshot);
         let (wake, woke) = mpsc::sync_channel(1);
         let mut worker = NativeWorker::new(move || {
@@ -155,7 +152,7 @@ mod tests {
         })
         .expect("worker starts");
         worker.dispatch(
-            RenderExtractor::new(ENTITY_COUNT),
+            RenderExtractor::new(ENTITY_COUNT, ENTITY_COUNT),
             snapshot,
             ExtractRequest {
                 generation: 7,
@@ -181,7 +178,7 @@ mod tests {
             .expect("worker wake");
         assert!(!worker.is_busy());
         assert!(
-            pages.publish(&simulation).is_some(),
+            simulation.can_publish_next(),
             "lease released before completion"
         );
     }

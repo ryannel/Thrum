@@ -119,21 +119,20 @@ impl RecordView<'_> {
         if actor_wire_id != self.actor_wire_id {
             return Err(InputCodecError::WrongActor);
         }
-        let mut actions = Vec::with_capacity(self.action_count);
-        for action in self.actions() {
-            actions.push(wire.decode(action)?);
-        }
-        Ok(InputFrame {
-            origin: Origin {
+        let mut frame = InputFrame::new(
+            Origin {
                 peer: binding.peer,
                 connection_epoch: binding.connection_epoch,
                 sequence: self.sequence,
             },
-            actor: binding.actor,
-            tick: self.target_tick,
-            axes: self.axes,
-            actions,
-        })
+            binding.actor,
+            self.target_tick,
+            self.axes,
+        );
+        for action in self.actions() {
+            frame.actions.push(wire.decode(action)?);
+        }
+        Ok(frame)
     }
 }
 
