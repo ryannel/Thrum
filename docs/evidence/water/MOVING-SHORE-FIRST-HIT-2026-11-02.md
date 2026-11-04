@@ -3,7 +3,7 @@
 This is a source-receipt proof for the [moving-shore exposure design](../../design/research/MOVING-SHORE-EXPOSURE-DESIGN-2026-11-02.md),
 not a finite-water, film/coating, C09 runtime, image or device qualification.
 The selected proof package ID is `thrum.e1.e2.moving-shore.first-hit-proof.v1`.
-The [reproducible six-file package](MOVING-SHORE-FIRST-HIT-PROOF-2026-11-02.tar.gz)
+The [reproducible six-file package](../ARCHIVE-ACCESS.md#archive-inventory)
 is 70,716 bytes, SHA-256
 `8b680a692e5456087ed0725e8cc7ada6da3d56aa3a7c4c9e54082ee84b5be4be`.
 Every archived file was compared byte-for-byte with the selected source, fixture,

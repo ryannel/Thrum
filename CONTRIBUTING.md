@@ -6,15 +6,15 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 | Command | What it does |
 | --- | --- |
 | `./dev help` | List implemented contributor commands |
-| `./dev check` | Repository checks and their tests, rustfmt, Clippy and workspace tests |
+| `./dev check` | Repository checks and their tests, rustfmt, Clippy, workspace tests and V1 game Wasm compile |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
-| `./dev check-web` | Compile the portable core for `wasm32-unknown-unknown` |
+| `./dev check-web` | Compile the V1 game for `wasm32-unknown-unknown` |
 | `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
 | `./dev fmt` | Apply rustfmt |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
-This is a portable library compile check, not a browser runtime/rendering test. The GitHub Actions
+This compiles the game library, not a browser runtime/rendering test. The GitHub Actions
 workflow is manual-only by owner decision; it describes Linux, macOS and Windows checks, plus Wasm
 compilation. Run `./dev check` locally before committing. A configured job is not evidence it has run.
 On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets

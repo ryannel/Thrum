@@ -81,7 +81,7 @@ existing reference cap appear sufficient.
 
 ## Reproduction and provenance
 
-The selected [source, lock, mutation generator, reproduction notes, raw runs and mutant records](R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.tar.gz)
+The selected [source, lock, mutation generator, reproduction notes, raw runs and mutant records](../ARCHIVE-ACCESS.md#archive-inventory)
 are retained in a small archive; generated large JSON fixtures are
 regenerable and excluded. The source SHA-256 is recorded in the archive's
 `SHA256SUMS`. Toolchain: Rust 1.99.1 (`58cf8f9c3`), `serde_json 1.0.154`,

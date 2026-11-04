@@ -9,7 +9,7 @@ truncated and nearest-even normalized significands. It never materializes a
 tiny exact dot as a GPU float. This is an isolated represented-input
 diagnostic, not an admitted R0 shader fallback.
 
-The [editable source, inputs, selected results and provenance archive](R0-EXACT-REPRESENTED-DOT-METAL-2026-11-03.tar.gz)
+The [editable source, inputs, selected results and provenance archive](../ARCHIVE-ACCESS.md#archive-inventory)
 has SHA-256
 `4ef0722af94b438e179ca06c17f5b096f79decb51f4240ea332cd846bbc65c84`.
 Its 26-file manifest was independently verified. The archive records the

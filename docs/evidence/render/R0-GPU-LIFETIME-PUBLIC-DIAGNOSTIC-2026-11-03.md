@@ -8,7 +8,7 @@ It does not execute the four-role R0 graph or hold genuinely incomplete GPU
 work during the resize. It is not a presentation, residency or performance
 qualification.
 
-The [source/lock archive](R0-GPU-LIFETIME-PUBLIC-DIAGNOSTIC-2026-11-03.tar.gz)
+The [source/lock archive](../ARCHIVE-ACCESS.md#archive-inventory)
 has SHA-256 `481674e2e213b335acdcf0298b94c8810ac2d1304548d7ae91857fd6ed267700`.
 Inside it, `src/main.rs` has SHA-256
 `bb496f4a3367c1d37b73b4b894c50f96fad7043ae856fab3ef18cc4e59fffa22`;

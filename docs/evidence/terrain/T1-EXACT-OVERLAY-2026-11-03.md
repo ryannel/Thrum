@@ -4,7 +4,7 @@ This bounded offline proof exercises two proposed checks in the
 [terrain implementor recipe](../../design/research/TERRAIN-IMPLEMENTOR-DOGFOOD-2026-11-02.md):
 error against the **final triangulation**, and wet area/volume against a
 source bank. It does not cook or activate a terrain product. The selected
-[four-member archive](T1-EXACT-OVERLAY-PROOF-2026-11-03.tar.gz) is 3,240 bytes,
+[four-member archive](../ARCHIVE-ACCESS.md#archive-inventory) is 3,240 bytes,
 SHA-256 `b29f31928450c050eb395b8cb40301be5271372978ccaa32107d4db66f05aba8`.
 Its manifest and members were byte-verified after packaging; `proof.py` uses
 Python standard-library `Fraction` only. Run `python3 proof.py` from the

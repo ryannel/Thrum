@@ -2,7 +2,7 @@
 
 3 November 2026. The [production N1 gate](../../BUILD-PLAN.md) requires a
 per-peer owner to preserve accepted mandatory output under burst and slow-ACK
-pressure. The [structural pressure test](../../../crates/thrum-network/tests/joint_burst.rs)
+pressure. The [structural pressure test](../HISTORICAL-SOURCE.md)
 uses the actual `OrdinaryPeer`, its unsent queue and sent-frame ledger. Its
 validator intentionally accepts only structural R4 framing; it is not a game
 schema or a qualified traffic recipe.

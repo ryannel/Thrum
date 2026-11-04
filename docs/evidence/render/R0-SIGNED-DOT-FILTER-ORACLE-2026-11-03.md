@@ -3,7 +3,7 @@
 3 November 2026. This selects an independent Python 3.11 rejection oracle for
 the [conditional signed-dot bound](../../design/research/R0-ROBUST-GGX-EVALUATION-OPTIONS-2026-11-03.md#a-conservative-signed-dot-filter-to-challenge).
 The execution revision was `b6b23d7`; `results.json` records its exact input
-hashes and operand bits. The [archive](R0-SIGNED-DOT-FILTER-ORACLE-2026-11-03.tar.gz)
+hashes and operand bits. The [archive](../ARCHIVE-ACCESS.md#archive-inventory)
 contains the editable source, deterministic results, report, owner record and
 hash manifest. Archive SHA-256:
 `df29897ad357de22ae1ca3b48105be50dc6d058044523546f16d184255681453`.

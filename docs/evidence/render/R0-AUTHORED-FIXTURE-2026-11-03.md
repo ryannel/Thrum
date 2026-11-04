@@ -1,7 +1,7 @@
 # Complete candidate R0 authored source fixture
 
 3 November 2026. **Reproducible candidate source and CPU checks only.** The
-[archive](R0-AUTHORED-FIXTURE-2026-11-03.tar.gz) fills in exact authored bytes
+[archive](../ARCHIVE-ACCESS.md#archive-inventory) fills in exact authored bytes
 for the [candidate F3 grammar](../../design/research/R0-F3-RENDER-SOURCE-GRAMMAR-2026-11-03.md),
 [first-source handoff](../../design/research/R0-FIRST-ADMITTED-RENDER-SOURCE-2026-11-03.md)
 and [Sun-shadow recipe](../../design/research/R0-FIRST-SUN-SHADOW-RECIPE-2026-11-03.md).

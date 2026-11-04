@@ -78,7 +78,7 @@ query the sandboxed clockrate sysctl, so the retained RSS comes from one direct
 Rust child's macOS `getrusage`, excluding its Python parent. No OS-cold IO, sustained
 edit latency, allocator counts or device qualification ran.
 
-The [retained package](E1-CONSTANT-LIGHT-F4-LEASE-BRIDGE-PROOF-2026-11-03.tar.gz)
+The [retained package](../ARCHIVE-ACCESS.md#archive-inventory)
 (205,297 bytes; SHA-256
 `713c8df6a4c18c9c8f83ac0c6bb47142bf68ace5a75a8c71527d5e52e46874d8`) includes exact source hashes, original
 codec, both oracles, fixtures, selected outputs, loaded-binary identity, all checked

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/thrum-core", "crates/thrum-mobile-shell", "crates/thrum-network", "crates/thrum-render", "crates/thrum-source", "crates/thrum-cook", "crates/thrum-jobs", "examples/i1-mobile-game", "examples/v1-scene", "examples/v1-scene-ios", "tools/xtask"]
+members = ["crates/thrum-core", "crates/thrum-mobile-shell", "crates/thrum-network", "crates/thrum-render", "crates/thrum-source", "crates/thrum-cook", "examples/v1-game", "examples/v1-game-ios", "tools/xtask"]
 default-members = ["crates/thrum-core"]
 resolver = "3"
 

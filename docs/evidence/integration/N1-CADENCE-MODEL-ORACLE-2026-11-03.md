@@ -1,6 +1,6 @@
 # N1 three-tick cadence model oracle — 3 November 2026
 
-The [private Rust test](../../../crates/thrum-core/tests/n1_cadence_oracle.rs)
+The [private Rust test](../HISTORICAL-SOURCE.md)
 exercises the [provisional outbound cadence rule](../../design/research/N1-OUTBOUND-CADENCE-2026-11-03.md)
 against actual W1 publications and the existing `Replica` validation logic.
 It is a selected inline model, not N1 runtime code, a wire codec or a

@@ -4,10 +4,9 @@ A Rust 3D game engine being built for beautiful, flexible games on modern deskto
 WebGPU browsers and native mobile platforms. Features and visual quality are selected
 per game; local and multiplayer play share the same authoritative rules.
 
-**Status:** a bounded headless authority/replica fixture runs. A provisional 10,000-entity
-simulation now feeds a synthetic lit scene on Metal offscreen, Chrome WebGPU and an iPhone 13
-simulator. There is no
-finished game, real transport or shipping runtime yet. The [V1 build plan](docs/BUILD-PLAN.md)
+**Status:** a provisional 10,000-entity simulation feeds a synthetic lit scene in the
+`examples/v1-game` test consumer on macOS and Chrome WebGPU; a thin iPhone simulator shell
+also exists. There is no finished game, real transport or shipping runtime yet. The [V1 build plan](docs/BUILD-PLAN.md)
 is the active work queue.
 
 Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or newer:

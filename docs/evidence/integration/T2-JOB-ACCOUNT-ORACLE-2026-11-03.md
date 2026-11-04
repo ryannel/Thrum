@@ -3,7 +3,7 @@
 3 November 2026. A deterministic Python 3.11 reference model challenged the
 [provisional same-volume account](../../design/research/T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md).
 The code baseline was `50024fa`; the selected input-document snapshot is
-`fa8bc43`, and the result file records its exact hashes. The [archive](T2-JOB-ACCOUNT-ORACLE-2026-11-03.tar.gz)
+`fa8bc43`, and the result file records its exact hashes. The [archive](../ARCHIVE-ACCESS.md#archive-inventory)
 contains the editable model, exact input hashes, JSON results, full report and
 scratch ownership record. Archive SHA-256:
 `bff4d27a8a3f2f3b67ce0eefcbce3e729c77ac6c17da938cc6c5f40071e362ae`.

@@ -3,18 +3,18 @@
   "target": "custom-bevy-independent-3d-engine",
   "as_of": "2026-11-04",
   "contract_revision": "C4",
-  "scope_note": "Historical capability entries record implemented and measured scope, not current work priority. The V1 execution plan below supersedes old next-package prose. No complete simulation runtime, renderer, real transport or named-device performance is qualified.",
+  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0 retired the disconnected I1/R4/A5 fixture paths; G1 is the active gate toward one V1 game. No general simulation runtime, executing render graph, real transport, cooked game loop or named-device performance is qualified.",
   "execution_plan": {
-    "milestone": "V1: one 10k-entity game with 1k\u20132k moving, lit and hot-reloaded on macOS, Chrome WebGPU and iPhone; then four conditioned peers with prediction",
+    "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering on macOS, Chrome WebGPU and physical iPhone; then four rendered peers over conditioned real transport",
     "active": [
-      "A3 combined frame job plan, worker extraction and owned packet lifetime",
-      "M2 lit renderer surface and device qualification"
+      "G1 one dense identity and publication spine, consumed by the V1 game"
     ],
     "next_parallel": [
-      "A5 schema delta transport and four-peer prediction/reconciliation",
-      "M3 temporal rendering and GPU-driven culling"
+      "G2 generic simulation after measured hecs PreparedQuery versus owned SoA decision",
+      "G3 executing render graph after reviewed two-page design"
     ],
     "parked": [
+      "A5 in-memory ACK/rebase/retry/reconnect/lane work until G6 real transport",
       "F3 space/limit/receipt diagnostics",
       "T2 retained-root proofs",
       "N1 credit/ledger extensions",
@@ -22,11 +22,28 @@
       "R0 exact-arithmetic predicates",
       "R3 optics/exact alpha",
       "moving-shore research",
-      "cloud cohort lab"
+      "cloud cohort lab",
+      "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "Parked means retained, not deleted. Historical partial implementation and open gates do not imply an active construction package."
+    "interpretation": "G0 is complete; parked means retained as reference, not in progress. Historical partial implementation does not imply active construction or current-tree availability."
   },
   "v1_slices": {
+    "G0_boundary": {
+      "implementation": "complete_active_tree_cleanup_and_external_consumer_layout",
+      "functional_validation": "full_dev_check_game_wasm_build_ios_sim_compile_and_explicit_macos_metal_integration_test_passed",
+      "experienced_quality": "not_applicable_cleanup_no_visual_acceptance",
+      "platform_performance": {
+        "mac": "not_measured",
+        "windows": "not_run",
+        "browser": "not_measured_wasm_compile_only",
+        "ios": "not_measured_simulator_compile_only",
+        "android": "not_run"
+      },
+      "scope": "Legacy I1/R4 and disconnected conditioned binaries retired from active tree; shared IDs, one-time stable-ID-to-GPU-slot lookup, v1-game layout, dependency guard and compact plan. Seven game schema/rule declarations remain in core until G2; FrameHost remains in game until G3.",
+      "evidence": [
+        "../evidence/integration/G0-BOUNDARY-2026-11-04.md"
+      ]
+    },
     "A1_simulation": {
       "implementation": "partial",
       "functional_validation": "partial",
@@ -289,7 +306,8 @@
       "evidence": [
         "../evidence/v1-workload/A5-CONDITIONED-INPUT-2026-11-04.md"
       ],
-      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. Once a peer's due handoff is observed, further input for that tick is late. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. A deliberate local burst and a separate world reconnect test pass. This initial deterministic in-memory diagnostic preceded the encoded input path recorded in A5_input_wire. Exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open."
+      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. Once a peer's due handoff is observed, further input for that tick is late. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. A deliberate local burst and a separate world reconnect test pass. This initial deterministic in-memory diagnostic preceded the encoded input path recorded in A5_input_wire. Exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open.",
+      "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "A5_input_wire": {
       "implementation": "partial_generic_bounded_input_batch_codec_and_encoded_four_peer_conditioner_with_game_declared_action_layout",
@@ -306,7 +324,8 @@
       "evidence": [
         "../evidence/v1-workload/A5-INPUT-WIRE-2026-11-04.md"
       ],
-      "scope": "Actual bounded envelope/input bytes pass through the in-memory conditioner. The engine codec owns structural framing and quantized controls; the V1 game owns action schemas. No live authentication, OS transport, full-frame reliable fallback, downstream state delta, outcome/ACK closure, client prediction or browser/phone multiplayer has run."
+      "scope": "Actual bounded envelope/input bytes pass through the in-memory conditioner. The engine codec owns structural framing and quantized controls; the V1 game owns action schemas. No live authentication, OS transport, full-frame reliable fallback, downstream state delta, outcome/ACK closure, client prediction or browser/phone multiplayer has run.",
+      "current_tree_status": "code retained without active game consumer; further protocol work parked until G6"
     },
     "A5_committed_inputs": {
       "implementation": "partial_borrowed_w1_committed_origin_slice_and_four_peer_n1_due_identity_comparison",
@@ -340,7 +359,8 @@
       "evidence": [
         "../evidence/v1-workload/A5-CONFIRMED-CLIENT-2026-11-04.md"
       ],
-      "scope": "The authority alone commits controller values. The four clients admit complete copied values and exact committed origins through an ordered, delayed lossless in-memory lane. Reconnect baseline transition, rejected-result retention, reliable ACK, state-delta codec, real transport, prediction/reconciliation and browser/phone multiplayer remain open."
+      "scope": "The authority alone commits controller values. The four clients admit complete copied values and exact committed origins through an ordered, delayed lossless in-memory lane. Reconnect baseline transition, rejected-result retention, reliable ACK, state-delta codec, real transport, prediction/reconciliation and browser/phone multiplayer remain open.",
+      "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "A5_controller_replay": {
       "implementation": "partial_four_peer_shared_fixture_rule_wire_canonical_controller_prediction_with_64_tick_inline_histories_and_shared_frame_budget",
@@ -357,7 +377,8 @@
       "evidence": [
         "../evidence/v1-workload/A5-CONTROLLER-REPLAY-2026-11-04.md"
       ],
-      "scope": "The current no-collision/no-resolve V1 controller fixture predicts locally from wire-canonical authored frames with exact origin identity, reconciles complete confirmed states and falls back under one shared replay budget. Origin matching is diagnostic and does not retain reliable results or acknowledge them. A drained reconnect baseline is recorded separately below; uncertain-result reconnect, reliable result/ACK, state delta, real transport, visible correction histories, cross-platform multiplayer and sustained device budgets remain open."
+      "scope": "The current no-collision/no-resolve V1 controller fixture predicts locally from wire-canonical authored frames with exact origin identity, reconciles complete confirmed states and falls back under one shared replay budget. Origin matching is diagnostic and does not retain reliable results or acknowledge them. A drained reconnect baseline is recorded separately below; uncertain-result reconnect, reliable result/ACK, state delta, real transport, visible correction histories, cross-platform multiplayer and sustained device budgets remain open.",
+      "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "A5_drained_reconnect": {
       "implementation": "partial_running_four_peer_drain_replace_epoch_switch_and_complete_client_baseline",
@@ -374,7 +395,8 @@
       "evidence": [
         "../evidence/v1-workload/A5-DRAINED-RECONNECT-2026-11-04.md"
       ],
-      "scope": "The live no-socket fixture quiets one peer before a drained tick-300 replacement, publishes a distinct stable and wire actor identity, then changes W1/N1/client epoch and resets complete speculation from authority. Only state-only old return groups are retired. This does not cover uncertain or lost committed results, reliable result/ACK, state-delta baseline encoding, real transport, visible correction histories, collision prediction, cross-platform multiplayer or sustained device budgets."
+      "scope": "The live no-socket fixture quiets one peer before a drained tick-300 replacement, publishes a distinct stable and wire actor identity, then changes W1/N1/client epoch and resets complete speculation from authority. Only state-only old return groups are retired. This does not cover uncertain or lost committed results, reliable result/ACK, state-delta baseline encoding, real transport, visible correction histories, collision prediction, cross-platform multiplayer or sustained device budgets.",
+      "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "A5_state_delta_session": {
       "implementation": "partial_mode_zero_selective_ack_rebasing_and_conditioned_retrying_mode_one_four_partition_full_image_admission_per_peer_with_shared_connection_image_history",
@@ -397,7 +419,8 @@
         "../evidence/v1-workload/A5-FULL-IMAGE-ADMISSION-2026-11-04.md",
         "../evidence/v1-workload/A5-CONDITIONED-FULL-REPAIR-2026-11-04.md"
       ],
-      "scope": "The running partial path has game-owned 21-bit position/20-bit velocity quantization, byte-exact field masks, selective image ACK and retained-base rebasing for four 32-actor partitions per peer, with one shared image history and per-connection sequence/image ID owners. Initial and reconnect visual images now stage through a delayed lossy no-socket link, publish all four together and retry on missing full image or admission ACK; mode-0 deltas wait for the ACK. The parser fuzz target compiles but no campaign has run. Encoded lifecycle, exact controller/result grouping, real session replay/authentication and OS transport, visible correction and platform budgets remain open; parked N1 credit/ledger work is not reopened."
+      "scope": "The running partial path has game-owned 21-bit position/20-bit velocity quantization, byte-exact field masks, selective image ACK and retained-base rebasing for four 32-actor partitions per peer, with one shared image history and per-connection sequence/image ID owners. Initial and reconnect visual images now stage through a delayed lossy no-socket link, publish all four together and retry on missing full image or admission ACK; mode-0 deltas wait for the ACK. The parser fuzz target compiles but no campaign has run. Encoded lifecycle, exact controller/result grouping, real session replay/authentication and OS transport, visible correction and platform budgets remain open; parked N1 credit/ledger work is not reopened.",
+      "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
@@ -2210,7 +2233,8 @@
         "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
-      "prior_remaining_detailed_design": "Provider schemas and shared field/force/transport couplings before dependent implementation."
+      "prior_remaining_detailed_design": "Provider schemas and shared field/force/transport couplings before dependent implementation.",
+      "current_priority": "parked until its active gate"
     },
     {
       "id": "E1.weather",
@@ -2330,7 +2354,8 @@
         "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
-      "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling."
+      "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling.",
+      "current_priority": "parked until its active gate"
     },
     {
       "id": "E1.surfaces",
@@ -2470,7 +2495,8 @@
           "modules/WATER-OPTICS.md": "3d418b33fb27914d12c5c39bc4ca777947845c508fde9295f0ce80362368682e",
           "modules/WATER.md": "9de06546e4adbe45f1e157f42493d29cf41f4246f2f3413f4da35c9b17bb1dc9"
         }
-      }
+      },
+      "current_priority": "parked until its active gate"
     },
     {
       "id": "A1",
@@ -2678,7 +2704,8 @@
         "experienced_quality": "not_applicable_to_headless_job_owner",
         "platform_performance": "observed free-space samples before/after external filler were 241319936 and 13762560 bytes in the local image; no CPU, RSS, transient physical high-water or device qualification follows",
         "scope": "Project, accepted source store, external job parent, F4 input and competing filler shared one bounded APFS image. The test exercises a synchronous registered F4 write fault and successful checked refund; concurrent F3 stage/store work, uncertain cleanup or sync, compiler output/cache lifetime, physical reserve and ready publication remain open."
-      }
+      },
+      "current_priority": "parked until its active gate"
     },
     {
       "id": "N1",
@@ -2865,7 +2892,8 @@
         "platform_performance": "no timing, allocator-call, RSS, production owner or whole-callback measurement",
         "scope": "Physical storage oracle only. External sequence numbers are model inputs, not one production allocator; no integration with the outstanding ordinary/rejected ledger, BaselineAck mandatory-identity coverage, supersession, transport or replica. The immutable 256 KiB image and sync closure remain separate simultaneous owners.",
         "evidence": "../evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md"
-      }
+      },
+      "current_priority": "parked until its active gate"
     }
   ],
   "design_review_scope": "C4 source/network/delivery simplification reconciled across affected producers/consumers with three Sol High owners and cross-challenge. All E01-E20 requirements traced. Only initial admitted mechanisms are detailed/closed; richer family designs and all runtime evidence retain their obligations.",
@@ -4277,6 +4305,7 @@
       "performance_measurement": "not_run",
       "scope": "The app integrates the finite lifecycle/touch gate, bounded pending intents, one-peer receipt cursor, real headless host, in-memory replica, configurable-clock deadline scheduling and one-color Metal/Vulkan surface response. iOS device/simulator Rust libraries compile and an unsigned simulator app links. An Xcode 27.2 iPhone 13 simulator launched the process after a UIKit scene manifest was added, but only a black scene appeared; input/lifecycle/surface behavior is not qualified. The Android ARM64 Rust library and signed debug APK assemble with stable AGP 9.4.1 and Gradle 9.6.0, but have not run on an emulator or device. No JNI, GPU, memory/CPU/power or sustained display claim exists.",
       "evidence": "../evidence/i1-headless/MOBILE-APP-SHELL.md"
-    }
+    },
+    "current_tree_status": "legacy host/world/replica retired from main at G0; historical evidence retained"
   }
 }

@@ -3,7 +3,7 @@
 3 November 2026. This is bounded **CPU evidence** for the candidate
 [first Sun-shadow recipe](../../design/research/R0-FIRST-SUN-SHADOW-RECIPE-2026-11-03.md).
 It is not an admitted F3 source, an F4 binding, a selected F2 recipe, or a
-target-device proof. The [reproducible archive](R0-FIRST-SHADOW-NUMERIC-PROBE-2026-11-03.tar.gz)
+target-device proof. The [reproducible archive](../ARCHIVE-ACCESS.md#archive-inventory)
 contains the exact fixture bytes, generator, probe, verifier, and result JSON.
 The 7,194-byte archive has SHA-256
 `bba49af6f3e58678114a78e0337bf5b77ab404e759c80ab813ca8a37dd2ac60a`.

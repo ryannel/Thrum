@@ -74,7 +74,7 @@ host measurement on arm64 Darwin 25.6.0 / T6031, Rust 1.99.1, LLVM 23.1.3,
 `--edition=2021 -C opt-level=3 -C target-cpu=native`. The Python oracle used
 Python 3.15.2.
 
-The selected [source, oracle fixtures and raw results](R0-F3-EXACT-TRIANGLE-PROBE-2026-11-03.tar.gz)
+The selected [source, oracle fixtures and raw results](../ARCHIVE-ACCESS.md#archive-inventory)
 have archive SHA-256 `56976128f6051ee76945d3e7170f8fc37e0c70da06183683d27b511925ce9cff`. The archive includes the
 generator and verifier; regenerating the omitted JSON must reproduce the
 payload hash above. The fixture TSV SHA-256 is

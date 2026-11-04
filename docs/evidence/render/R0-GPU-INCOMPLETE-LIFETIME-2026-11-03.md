@@ -6,7 +6,7 @@ CPU release, native GPU tail markers and every copied RGBA pixel passed in
 three fresh processes on Apple M3 Max. This is a narrow lifetime observation,
 not the four-role R0 graph or a device-memory/performance qualification.
 
-The [source and lockfile archive](R0-GPU-INCOMPLETE-LIFETIME-2026-11-03.tar.gz)
+The [source and lockfile archive](../ARCHIVE-ACCESS.md#archive-inventory)
 has SHA-256 `5eb011fca0d237250c4d8a8ab7209b0e9a2941acc67c11aa6938234a737a7744`.
 Inside it, `src/main.rs` has SHA-256
 `baa851759a43f6ef19fb3bd6c0a6f89db950a9b3e1f1963515763a6d63ffbfd7`

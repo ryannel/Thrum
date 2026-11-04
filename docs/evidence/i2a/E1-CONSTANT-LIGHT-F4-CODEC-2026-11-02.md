@@ -7,7 +7,7 @@ qualify a renderer. The three small source trees are exact-source identity
 fixtures, not independently admitted roots. The selected proof package ID is
 `thrum.e1.constant-light.f4-codec-proof.v1`.
 
-The [retained source, fixtures, goldens and verification record](E1-CONSTANT-LIGHT-F4-PROOF-2026-11-02.tar.gz)
+The [retained source, fixtures, goldens and verification record](../ARCHIVE-ACCESS.md#archive-inventory)
 are a 23,876-byte archive, SHA-256
 `376a60110afebd55aa91a251707a180cef3ea5832e6ed136c57215b8ffc820b6`.
 All 32 archive files were compared byte-for-byte with the selected scratch

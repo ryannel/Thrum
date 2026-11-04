@@ -1,6 +1,6 @@
 # Provisional source physical-space probe — 3 November 2026
 
-The [selected proof archive](SOURCE-PHYSICAL-ENVELOPE-PROOF-2026-11-03.tar.gz)
+The [selected proof archive](../ARCHIVE-ACCESS.md#archive-inventory)
 contains the owned public-API harness, exact SQLite/VFS tool identities,
 pre/post-fix raw traces, fault logs, a source patch and the detailed `REPORT.md`.
 It is **57,651 bytes**, SHA-256

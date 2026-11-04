@@ -7,7 +7,7 @@ Apple M3 Max Metal. An independent CPU calculation matched every one of
 synthetic pass/format dependency proof, not an authored R0 game or a lifetime,
 physical-memory or performance qualification.
 
-The [source, lockfile, WGSL, notices and run archive](R0-FOUR-ROLE-SYNTHETIC-2026-11-03.tar.gz)
+The [source, lockfile, WGSL, notices and run archive](../ARCHIVE-ACCESS.md#archive-inventory)
 has SHA-256 `dc542f56dbdb261f4f5ff14b766d4e1c6d58ae742b59ce9becb2e7c4fe0ede38`.
 Inside it, `src/main.rs` has SHA-256
 `751cba6cc39b718e03dc03a0f91d3c3113a44ded5a48629feaf3a5b37436575e`,

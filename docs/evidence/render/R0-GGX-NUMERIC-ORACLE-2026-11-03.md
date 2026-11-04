@@ -11,7 +11,7 @@ positive-hemisphere original-versus-scaled evaluations met the declared
 real-number derivation, not sampling, establishes the bound under its stated
 domain. No actual shader, authored R0 source, device or visual claim follows.
 
-The [source, selected results, run summary and full report](R0-GGX-NUMERIC-ORACLE-2026-11-03.tar.gz)
+The [source, selected results, run summary and full report](../ARCHIVE-ACCESS.md#archive-inventory)
 archive has SHA-256
 `8c519edfa222ae264a537d584ede5726e2bcc24ca1ff0a0dc9384be413290c7c`.
 Archived `oracle.py` is

@@ -1,43 +1,7 @@
-//! Portable, headless authority foundations for Thrum.
-//!
-//! The first executable slice owns a fixed-tick world, checked identities,
-//! game-owned typed rules, immutable publication and an in-memory replica.
-//! It has no renderer, transport or persistent source adapter.
+//! Shared simulation identities, a fixed-step clock and the active V1 simulation.
 
-mod authority;
 mod clock;
-mod host;
-mod publication_pool;
-mod replica;
-mod replica_index;
+pub mod ids;
 pub mod sim;
-mod world;
-
-pub use authority::{
-    ActionRejection, ActionResult, Admission, AdmissionError, Authority, ChargedBaselineError,
-    ChargedGameStateGroup, ChargedGameTick, ChargedTickPublication, ClosedGameLimits,
-    CommittedEvent, ExecutionCreditSetupError, GameRules, GameStateGroup, GameTick, Input,
-    InputSchedule, Origin, PeerId, PreparedCommit, ResultDisposition, RuleContext,
-    RulePayloadError, RuleScratchError, RuleScratchHandle, RuleScratchPayloadError,
-    RuleScratchSetupError, SnapshotWriteBounds, StepError, TickPublication,
-};
 pub use clock::{ClockConfig, ClockError, ClockReport, ClockState, TickClock};
-pub use host::{
-    GameHostCallback, HeadlessHost, HostAdmissionError, HostBudget, HostCallback, HostError,
-    HostPublication, HostPublications, HostPublicationsIntoIter, InitialChargedOutcomes,
-    InitialOutcomes,
-};
-pub use publication_pool::{
-    ClosedPublicationValue, ClosedValueError, ClosedValueLimits, PublicationBytes,
-    PublicationCapacity, PublicationCharge, PublicationPool, PublicationRecord,
-    PublicationRecordError, PublicationReservation,
-};
-pub use replica::{
-    AdmittedGroup, ChargedAdmittedGroup, ChargedReplicaSetupError, ChargedStateGroup, Replica,
-    ReplicaError, StateGroup,
-};
-pub use world::{
-    ActorId, AuthorityId, EntityChange, EntityRecord, Handle, MatchId, PreparedEdits, SessionId,
-    Snapshot, StableId, World, WorldEdit, WorldEpoch, WorldError, WorldPublication,
-    WorldPublicationError, WorldWork,
-};
+pub use ids::{ActorId, Handle, Origin, PeerId, StableId, WorldEpoch};

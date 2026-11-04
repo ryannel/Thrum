@@ -5,7 +5,7 @@ Retain this as a prerequisite and reference for a later native adapter; it does 
 justify production unsafe callbacks, admitted-source authority or physical reservation.
 The [requested-I/O design](../../design/research/SOURCE-REQUESTED-IO-FENCE-2026-11-03.md)
 remains the authority. Its exact input text, executable source, deterministic inputs,
-raw logs and tool identities are retained in the [selected proof archive](SOURCE-REQUEST-CREDIT-LEDGER-PROOF-2026-11-03.tar.gz).
+raw logs and tool identities are retained in the [selected proof archive](../ARCHIVE-ACCESS.md#archive-inventory).
 The archive is **35,103 bytes**, SHA-256
 `e9c58a34b5ad9127a8e4920fbfd0bce5ae66b9590007be01464eddf7d464de1a`,
 with 26 members (25 payload members plus its manifest). Independent isolated

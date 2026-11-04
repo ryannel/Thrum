@@ -12,7 +12,7 @@ and heights use 0.0001 m integer units; the certificate is relative to these adm
 discrete values, not a surveyed or imagined smooth terrain. Source bytes are proof
 inputs, not an F3-admitted source revision.
 
-The selected [ten-member archive](T1-FINAL-TRIANGLE-CERTIFICATE-PROOF-2026-11-03.tar.gz)
+The selected [ten-member archive](../ARCHIVE-ACCESS.md#archive-inventory)
 is 312,104 bytes, SHA-256 `e113364c531c8891a94e703fff5aead294d243d985946e6f3342d9c80f954cc0`.
 Its member manifest SHA-256 is `1c362448e5303a94ac9369dfdb787461a8b591ca447cc739691ebe358f931405`.
 It contains separate candidate producer, independent checker, mutation runner,

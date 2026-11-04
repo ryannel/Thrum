@@ -23,13 +23,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install pinned contributor toolchain
-        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
       - name: Fetch locked dependencies for offline checks
         run: rustup run 1.99.1 cargo fetch --locked
-      - name: Check repository and native scaffold
+      - name: Check repository, game Wasm build and native tests
         run: ./dev check
-      - name: Compile portable core for Wasm (not a browser runtime test)
-        if: runner.os == 'Linux'
-        run: |
-          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
-          ./dev check-web

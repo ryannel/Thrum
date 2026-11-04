@@ -2,7 +2,7 @@
 
 3 November 2026. This selects a scratch-only Python 3.11 numerical experiment
 for the [robust GGX research candidate](../../design/research/R0-ROBUST-GGX-EVALUATION-OPTIONS-2026-11-03.md).
-The [archive](R0-ONE-RATIO-ORACLE-2026-11-03.tar.gz) contains its editable
+The [archive](../ARCHIVE-ACCESS.md#archive-inventory) contains its editable
 source, deterministic JSON results, full report, ownership record and hash
 manifest. The execution revision was `81b1269`; `results.json` records exact
 input-document hashes. Archive SHA-256:

@@ -7,7 +7,7 @@ ten-word arrays, adds/subtracts each shifted product starting at its first
 occupied limb, and extracts the normalized significand with a bounded limb
 scan instead of a bit-by-bit scan. Input domain and the complete 17-word
 diagnostic output retain their previous meanings. The
-[reviewable source/results archive](R0-EXACT-DOT-OPT-METAL-2026-11-03.tar.gz)
+[reviewable source/results archive](../ARCHIVE-ACCESS.md#archive-inventory)
 has SHA-256
 `1e663b68cbb0f812e7a6de4a8458edc1cfb807efc2179ff44cccc8179f83c28a`.
 

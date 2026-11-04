@@ -42,7 +42,7 @@ compared; the gzip SHA-256 checks identify the retained files.
 | Fixture input | [R0-FIXTURE-ENCODED-RGBA16F-2026-11-02.gz](R0-FIXTURE-ENCODED-RGBA16F-2026-11-02.gz) `f971e50d0038c6fd84d6249f879d3002bb12308b124eb1eef64b517d14846ece` | `fixture.rgba16f` `e6aeb91cae563bfbaae9167d1d185f0d9fc51dab02594f2c2f8170f05c001dbd` |
 | Fixture output | [R0-FIXTURE-FXAA-RGB-PPM-2026-11-02.gz](R0-FIXTURE-FXAA-RGB-PPM-2026-11-02.gz) `2fb6ea14fa64ebb6724486a8db16aee12b1933f814449580404a0026293fe475` | `fixture.ppm` `387ca7cf8dc03933a600b990e17712faffe90c31d43606ad565b02cc619da8c2` |
 
-The small [source archive](R0-GPU-DIAGNOSTIC-SOURCE-2026-11-02.tar.gz),
+The small [source archive](../ARCHIVE-ACCESS.md#archive-inventory),
 SHA-256 `824120d7abd7e413cbd7e96402b26d4b12a5a16f5f8fd59e3760673702649909`,
 retains the exact diagnostic Rust/WGSL files, scalar comparison, Cargo lock and reference notices
 without build products. Extract it into `tmp/r0-gpu-proof/` to reproduce the

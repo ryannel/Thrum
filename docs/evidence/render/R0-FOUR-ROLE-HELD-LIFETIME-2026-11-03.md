@@ -11,7 +11,7 @@ view/output ownership retired only after GPU completion and two explicit CPU
 leases ended. This is one Apple M3 Max / Metal synthetic scenario, not authored
 R0, a reusable allocator, physical memory or ordinary-frame qualification.
 
-The [source, locked dependencies, shader, notices, result and final log](R0-FOUR-ROLE-HELD-LIFETIME-2026-11-03.tar.gz)
+The [source, locked dependencies, shader, notices, result and final log](../ARCHIVE-ACCESS.md#archive-inventory)
 archive has SHA-256 `9b1b4fb9297eb97909aedcf38cd23008e069b49a6280ea4b6d5b97e247928f21`.
 The archived `src/main.rs` is SHA-256
 `1501be68d88b4660d26ad868809669ad614631195588169524f2adbd7123d0c6`;

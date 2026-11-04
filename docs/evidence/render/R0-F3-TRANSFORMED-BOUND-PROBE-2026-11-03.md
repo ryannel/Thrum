@@ -141,7 +141,7 @@ latency target or new source count cap follows from these measurements.
 
 ## Retained reproduction and remaining scope
 
-The [selected source, fixtures, width argument and raw samples](R0-F3-TRANSFORMED-BOUND-PROBE-2026-11-03.tar.gz)
+The [selected source, fixtures, width argument and raw samples](../ARCHIVE-ACCESS.md#archive-inventory)
 include a deterministic generator, verifier, serial measurement harness and
 SHA-256 manifest. The generated JSON and executable are omitted and rebuilt
 from source. An extracted archive was regenerated and compiled independently;

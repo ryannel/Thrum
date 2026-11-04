@@ -146,7 +146,7 @@ actual key, allocation and eviction cost before enabling it. The sparse and
 residual variants remain small retained comparisons; residual support may
 be useful after additional workload-directed qualification.
 
-The [selected archive](R0-F3-TRANSFORMED-BOUND-OPT-2026-11-03.tar.gz) contains
+The [selected archive](../ARCHIVE-ACCESS.md#archive-inventory) contains
 the exact baseline, standalone source generators and four Rust variants,
 independent oracle, selected fixtures, raw samples, width argument and
 SHA-256 manifest. Executables and reconstructible JSON are omitted. An

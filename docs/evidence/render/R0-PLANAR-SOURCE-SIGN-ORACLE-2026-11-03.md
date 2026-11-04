@@ -5,7 +5,7 @@ view hemisphere signs for one static, one-sided planar triangle with a flat
 geometric normal, identity transform, no normal map, and pinned camera and Sun.
 Each source number means the exact value of its decoded binary64 bits. This is
 a first-fixture specialization, not general C08 material admission or a shader
-certificate. The [editable proof archive](R0-PLANAR-SOURCE-SIGN-ORACLE-2026-11-03.tar.gz)
+certificate. The [editable proof archive](../ARCHIVE-ACCESS.md#archive-inventory)
 has SHA-256
 `cf6770db384aaa37c9b30bc56969e42a1e514fae46807740508f1a59dd50642f`.
 Its oracle and result hashes are

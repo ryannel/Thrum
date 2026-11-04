@@ -1,6 +1,6 @@
 # Selected slow-peer projection ownership probe — 3 November 2026
 
-The [private integration fixture](../../../crates/thrum-core/tests/i1_slow_peer_projection.rs)
+The [private integration fixture](../HISTORICAL-SOURCE.md)
 consumes real `HeadlessHost::local_with_peer_limit` authority publications.
 For one selected inline `Counter(u64)` game, it copies the complete changed
 state/lifecycle group and only the target peer's results, immediate events and

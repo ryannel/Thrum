@@ -1,8 +1,8 @@
 # Thrum — contributor instructions
 
 Thrum is a reusable Rust 3D engine. Start at [README](README.md) and the relevant item in
-[the build plan](docs/BUILD-PLAN.md). A bounded headless host exists, but no general engine
-runtime exists yet; examples of future SDK commands in design documents are proposals, not commands to execute.
+[the build plan](docs/BUILD-PLAN.md). A provisional simulation and synthetic renderer run in the
+V1 test game, but no general engine runtime exists yet; examples of future SDK commands in design documents are proposals, not commands to execute.
 
 - For code changes, read [CONTRIBUTING](CONTRIBUTING.md) and use `.agents/skills/engine-contributor`. Use `./dev check`; documentation-only
   work uses `./dev check-docs`. `./dev help` lists the implemented commands.

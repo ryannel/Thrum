@@ -4,7 +4,7 @@
 GPU timing method. This is not a complete R0 frame, HLSL-reference equivalence,
 moving-content visual acceptance or device-performance qualification.
 
-The [source archive](R0-FXAA-MOTION-SOURCE-2026-11-02.tar.gz), SHA-256
+The [source archive](../ARCHIVE-ACCESS.md#archive-inventory), SHA-256
 `72d8603f67f20d9ed78f516c55f753daefb77e6d92b8dba919aad4c9bea29bb1`,
 contains an independent encoded-image generator, the same pinned FXAA WGSL
 port (`fxaa.wgsl` SHA-256

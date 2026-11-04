@@ -126,7 +126,7 @@ harness Cargo.lock  d6b6cb729639be4a7e30146446a3d1b48e09546ce59d80e7465c54dec93f
 release executable  c3074aa6d48272955967f0b1eec496639ed7c1fb76b2194459748fcc84ec6ebe
 ```
 
-The retained [proof archive](F3-CONSTANT-LIGHT-COST-PROOF-2026-11-03.tar.gz)
+The retained [proof archive](../ARCHIVE-ACCESS.md#archive-inventory)
 (SHA-256 `b5c38c257caaed97de0c6d3101ab64e6e7aae2a8bb9818c08321eceec0521cef`)
 contains the owned local recipe: `src/main.rs` generates deterministic files,
 `run.py` collects every sample and full source hashes in `results.json`, and

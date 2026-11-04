@@ -57,7 +57,7 @@ The fixture does not measure 100000-manifest-entry limits, 16 MiB selected recor
 
 ## Reproduce and retained evidence
 
-Extract the [retained harness and raw evidence](E1-PINNED-COOK-PERF-2026-11-03.tar.gz) into `tmp/e1-pinned-cook-perf/`. Run from the repository root (the fixture store path must be absolute):
+Extract the [retained harness and raw evidence](../ARCHIVE-ACCESS.md#archive-inventory) into `tmp/e1-pinned-cook-perf/`. Run from the repository root (the fixture store path must be absolute):
 
 ```sh
 RUSTC_WRAPPER= CARGO_TARGET_DIR=tmp/e1-pinned-cook-perf/target rustup run 1.99.1 cargo build --offline --release --manifest-path tmp/e1-pinned-cook-perf/Cargo.toml
