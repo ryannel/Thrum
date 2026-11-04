@@ -3,10 +3,10 @@ use std::num::NonZeroU32;
 use crate::{ActorId, Handle, Origin, PeerId, StableId, WorldEpoch};
 
 use super::{
-    Access, AccessKey, AccessMode, ComponentKind, FrameError, InputFrame, Schedule, SimAction,
+    Access, AccessKey, AccessMode, ComponentKey, FrameError, InputFrame, Schedule, SimAction,
     Stage, SystemId, SystemSpec,
     controller::{ControllerRule, integrate_position, resolve_control},
-    storage::Store,
+    storage::{Health, Store},
 };
 
 /// Right-handed Y-up world position in f64 metres. A1 has no hierarchy/TRS solver.
@@ -773,9 +773,8 @@ fn apply_input(
 
 fn fixture_schedule() -> Schedule {
     use AccessMode::{Read, Write};
-    use ComponentKind::{Health, Ownership, Position, Velocity};
-    let component = |kind, mode| Access {
-        key: AccessKey::Component(kind),
+    let component = |key, mode| Access {
+        key: AccessKey::Component(key),
         mode,
     };
     let external = |key, mode| Access {
@@ -787,9 +786,9 @@ fn fixture_schedule() -> Schedule {
             id: SystemId(0),
             stage: Stage::Input,
             accesses: vec![
-                component(Ownership, Read),
-                component(Velocity, Write),
-                component(Health, Write),
+                component(ComponentKey::of::<Ownership>(), Read),
+                component(ComponentKey::of::<Velocity>(), Write),
+                component(ComponentKey::of::<Health>(), Write),
                 external(0, Read),
             ],
             after: vec![],
@@ -797,16 +796,19 @@ fn fixture_schedule() -> Schedule {
         SystemSpec {
             id: SystemId(1),
             stage: Stage::Simulate,
-            accesses: vec![component(Velocity, Read), component(Position, Write)],
+            accesses: vec![
+                component(ComponentKey::of::<Velocity>(), Read),
+                component(ComponentKey::of::<Position>(), Write),
+            ],
             after: vec![],
         },
         SystemSpec {
             id: SystemId(2),
             stage: Stage::Resolve,
             accesses: vec![
-                component(Position, Write),
-                component(Velocity, Write),
-                component(Health, Write),
+                component(ComponentKey::of::<Position>(), Write),
+                component(ComponentKey::of::<Velocity>(), Write),
+                component(ComponentKey::of::<Health>(), Write),
                 external(1, Read),
             ],
             after: vec![],
@@ -815,9 +817,9 @@ fn fixture_schedule() -> Schedule {
             id: SystemId(3),
             stage: Stage::Publish,
             accesses: vec![
-                component(Position, Read),
-                component(Velocity, Read),
-                component(Health, Read),
+                component(ComponentKey::of::<Position>(), Read),
+                component(ComponentKey::of::<Velocity>(), Read),
+                component(ComponentKey::of::<Health>(), Read),
                 external(2, Write),
             ],
             after: vec![],

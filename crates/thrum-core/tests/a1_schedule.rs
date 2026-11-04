@@ -1,7 +1,7 @@
 //! Validation of the provisional A1 serial schedule and its declared access graph.
 
 use thrum_core::sim::{
-    Access, AccessKey, AccessMode, ComponentKind, Schedule, ScheduleError, Stage, SystemId,
+    Access, AccessKey, AccessMode, ComponentKey, Schedule, ScheduleError, Stage, SystemId,
     SystemSpec,
 };
 
@@ -15,8 +15,9 @@ fn spec(id: u32, stage: Stage, accesses: Vec<Access>, after: &[u32]) -> SystemSp
 }
 
 fn access(mode: AccessMode) -> Access {
+    struct TestPosition;
     Access {
-        key: AccessKey::Component(ComponentKind::Position),
+        key: AccessKey::Component(ComponentKey::of::<TestPosition>()),
         mode,
     }
 }

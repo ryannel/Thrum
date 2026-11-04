@@ -15,26 +15,23 @@ pub enum Stage {
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct SystemId(pub u32);
 
-/// Components in the provisional A1 fixture. This is not a reflection schema.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ComponentKind {
-    /// World-space position in metres.
-    Position,
-    /// Velocity in metres/second.
-    Velocity,
-    /// Fixture health.
-    Health,
-    /// Peer/actor control identity.
-    Ownership,
-    /// Opaque visual selection, consumed only after commit.
-    Visual,
+/// Process-local identity of a registered component type. Stable game schema
+/// identities for saves and wire data are separate from this scheduler key.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ComponentKey(TypeId);
+
+impl ComponentKey {
+    /// Identify one game-owned component type for conflict detection.
+    pub fn of<T: 'static>() -> Self {
+        Self(TypeId::of::<T>())
+    }
 }
 
 /// Shared access identity. External IDs must name one owner-defined resource.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AccessKey {
     /// One W1 component column.
-    Component(ComponentKind),
+    Component(ComponentKey),
     /// A named external resource, distinct from any component.
     External(u64),
 }
@@ -202,3 +199,4 @@ fn conflicts(a: &SystemSpec, b: &SystemSpec) -> bool {
             .any(|b| a.key == b.key && (a.mode == AccessMode::Write || b.mode == AccessMode::Write))
     })
 }
+use std::any::TypeId;

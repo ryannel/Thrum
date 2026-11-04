@@ -15,7 +15,7 @@ struct Slot {
 #[derive(Clone, Copy)]
 struct SlotKey(u32);
 #[derive(Clone, Copy)]
-struct Health(u16);
+pub(super) struct Health(pub(super) u16);
 #[derive(Clone, Copy)]
 struct Visual(u64);
 
@@ -108,6 +108,7 @@ pub(super) struct Store {
     stable_ids: Vec<StableId>,
     row_slots: Vec<u32>,
     world: hecs::World,
+    motion: hecs::PreparedQuery<(&'static SlotKey, &'static Position, &'static Velocity)>,
     pub(super) changes: Vec<ChangeTicks>,
 }
 
@@ -129,6 +130,7 @@ impl Store {
             stable_ids: Vec::with_capacity(capacity),
             row_slots: Vec::with_capacity(capacity),
             world: hecs::World::new(),
+            motion: hecs::PreparedQuery::new(),
             changes: Vec::with_capacity(capacity),
         }
     }
@@ -191,7 +193,7 @@ impl Store {
         let mut query = self.world.query::<(
             &SlotKey,
             &Position,
-            &Velocity,
+            Option<&Velocity>,
             &Health,
             Option<&Ownership>,
             Option<&Visual>,
@@ -203,7 +205,7 @@ impl Store {
                 handle: self.slot_handle(slot),
                 id: self.id_at(row),
                 position: *position,
-                velocity: *velocity,
+                velocity: velocity.copied().unwrap_or_default(),
                 health: health.0,
                 ownership: ownership.copied(),
                 visual: visual.map(|value| value.0),
@@ -221,7 +223,7 @@ impl Store {
         let mut query = self.world.query::<(
             &SlotKey,
             &Position,
-            &Velocity,
+            Option<&Velocity>,
             &Health,
             Option<&Ownership>,
             Option<&Visual>,
@@ -240,7 +242,7 @@ impl Store {
                     handle: self.slot_handle(slot),
                     id: self.id_at(row),
                     position: *position,
-                    velocity: *velocity,
+                    velocity: velocity.copied().unwrap_or_default(),
                     health: health.0,
                     ownership: ownership.copied(),
                     visual: visual.map(|value| value.0),
@@ -274,10 +276,9 @@ impl Store {
     }
 
     pub(super) fn velocity(&self, row: usize) -> Velocity {
-        *self
-            .world
+        self.world
             .get::<&Velocity>(self.entity_at(row))
-            .expect("live velocity")
+            .map_or(Velocity::default(), |velocity| *velocity)
     }
 
     pub(super) fn health(&self, row: usize) -> u16 {
@@ -302,10 +303,20 @@ impl Store {
     }
 
     pub(super) fn set_velocity(&mut self, row: usize, value: Velocity) {
-        *self
-            .world
-            .get::<&mut Velocity>(self.entity_at(row))
-            .expect("live velocity") = value;
+        let entity = self.entity_at(row);
+        if value == Velocity::default() && self.world.get::<&Ownership>(entity).is_err() {
+            if self.world.get::<&Velocity>(entity).is_ok() {
+                self.world
+                    .remove_one::<Velocity>(entity)
+                    .expect("live mover accepts static transition");
+            }
+        } else if let Ok(mut velocity) = self.world.get::<&mut Velocity>(entity) {
+            *velocity = value;
+        } else {
+            self.world
+                .insert_one(entity, value)
+                .expect("live entity accepts velocity transition");
+        }
     }
 
     pub(super) fn set_health(&mut self, row: usize, value: u16) {
@@ -333,9 +344,8 @@ impl Store {
         changed
     }
 
-    pub(super) fn for_each_motion(&self, mut visit: impl FnMut(usize, Position, Velocity)) {
-        let mut query = self.world.query::<(&SlotKey, &Position, &Velocity)>();
-        for (key, position, velocity) in &mut query {
+    pub(super) fn for_each_motion(&mut self, mut visit: impl FnMut(usize, Position, Velocity)) {
+        for (key, position, velocity) in self.motion.query_mut(&mut self.world) {
             let row = self.slots[key.0 as usize].row.expect("live slot has a row");
             visit(row, *position, *velocity);
         }
@@ -348,23 +358,34 @@ impl Store {
         self.ids.insert(entity.id, slot);
         self.row_slots.push(slot);
         self.stable_ids.push(entity.id);
-        let base = (
-            SlotKey(slot),
-            entity.position,
-            entity.velocity,
-            Health(entity.health),
-        );
-        let private = match (entity.ownership, entity.visual) {
-            (Some(owner), Some(visual)) => {
+        let key = SlotKey(slot);
+        let position = entity.position;
+        let velocity = entity.velocity;
+        let health = Health(entity.health);
+        // Idle controlled actors retain Velocity so a newly admitted frame can
+        // move them in its first tick. Other zero-velocity entities stay in
+        // static archetypes until a nonzero velocity is committed.
+        let moving = velocity != Velocity::default() || entity.ownership.is_some();
+        let private = match (moving, entity.ownership, entity.visual) {
+            (true, Some(owner), Some(visual)) => {
                 self.world
-                    .spawn((base.0, base.1, base.2, base.3, owner, Visual(visual)))
+                    .spawn((key, position, velocity, health, owner, Visual(visual)))
             }
-            (Some(owner), None) => self.world.spawn((base.0, base.1, base.2, base.3, owner)),
-            (None, Some(visual)) => {
+            (true, Some(owner), None) => self.world.spawn((key, position, velocity, health, owner)),
+            (true, None, Some(visual)) => {
                 self.world
-                    .spawn((base.0, base.1, base.2, base.3, Visual(visual)))
+                    .spawn((key, position, velocity, health, Visual(visual)))
             }
-            (None, None) => self.world.spawn(base),
+            (true, None, None) => self.world.spawn((key, position, velocity, health)),
+            (false, Some(owner), Some(visual)) => {
+                self.world
+                    .spawn((key, position, health, owner, Visual(visual)))
+            }
+            (false, Some(owner), None) => self.world.spawn((key, position, health, owner)),
+            (false, None, Some(visual)) => {
+                self.world.spawn((key, position, health, Visual(visual)))
+            }
+            (false, None, None) => self.world.spawn((key, position, health)),
         };
         self.slots[slot as usize].entity = Some(private);
         self.changes.push(ChangeTicks {
