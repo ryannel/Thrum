@@ -1,7 +1,7 @@
 //! Game-owned visual-pose schema over the running four-peer conditioned world.
 //! The integrated lane now selectively ACKs admitted images and rebases one
-//! visual partition. Full-image repair, lifecycle and exact controller
-//! closure remain separate A5 slices.
+//! visual partition. Checked full images now seed and rebaseline that partition;
+//! conditioned repair, lifecycle and exact controller closure remain open.
 
 use std::{mem::size_of, time::Instant};
 
@@ -9,7 +9,9 @@ use thrum_core::{PeerId, StableId, sim::Simulation};
 use thrum_network::{
     envelope::{self, Header, Kind},
     state_ack::{self, StateAck},
-    state_delta::{Actor, DeltaError, Image, Scope, decode_delta, encode_delta},
+    state_delta::{
+        Actor, DeltaError, Image, Scope, decode_delta, decode_full, encode_delta, encode_full,
+    },
     state_schema,
 };
 
@@ -20,6 +22,7 @@ use super::{MATCH_ID, Ownership};
 const ACTORS: usize = 32;
 const PARTITIONS: usize = 4;
 const PACKET_BYTES: usize = 512;
+const FULL_BYTES: usize = 1024;
 const PENDING: usize = 32;
 const IMAGES: usize = 16;
 const ACK_BYTES: usize = envelope::HEADER_BYTES + state_ack::BYTES;
@@ -112,6 +115,46 @@ fn project(sim: &Simulation, partition: usize) -> Result<[Actor<VisualPose>; ACT
         actors.sort_unstable_by_key(|actor| actor.wire_id);
     }
     Ok(actors)
+}
+
+fn checked_full_image(
+    actors: &[Actor<VisualPose>; ACTORS],
+    partition: usize,
+    generation: u32,
+    id: u64,
+    tick: u64,
+) -> Result<([Actor<VisualPose>; ACTORS], usize), String> {
+    let scope = Scope {
+        partition_id: u32::try_from(partition + 1).map_err(|_| "partition overflow")?,
+        interest_generation: generation,
+    };
+    let mut bytes = [0u8; FULL_BYTES];
+    let encoded = encode_full(
+        &VisualPoseWire,
+        Image {
+            scope,
+            id,
+            tick,
+            actors,
+        },
+        &mut bytes,
+    )
+    .map_err(|error| format!("full visual image encode: {error:?}"))?;
+    let mut admitted = [Actor {
+        wire_id: 0,
+        value: VisualPose::default(),
+    }; ACTORS];
+    let decoded = decode_full(
+        &VisualPoseWire,
+        scope,
+        &bytes[..encoded.bytes],
+        &mut admitted,
+    )
+    .map_err(|error| format!("full visual image decode: {error:?}"))?;
+    if decoded != encoded || admitted != *actors {
+        return Err("full visual image differs from W1 projection".to_owned());
+    }
+    Ok((admitted, encoded.bytes))
 }
 
 #[derive(Clone, Copy)]
@@ -209,6 +252,8 @@ pub(super) struct VisualReport {
     pub(super) stale: u64,
     pub(super) reordered: u64,
     pub(super) sent_bytes: u64,
+    pub(super) full_images: u64,
+    pub(super) full_payload_bytes: u64,
     pub(super) encode_ns: u128,
     pub(super) project_ns: u128,
     pub(super) decode_ns: u128,
@@ -239,25 +284,36 @@ impl VisualDeltaLoop {
     ) -> Result<Self, String> {
         let mut peers = Vec::with_capacity(PEER_COUNT);
         let mut images = Vec::with_capacity(PEER_COUNT);
+        let empty = Actor {
+            wire_id: 0,
+            value: VisualPose::default(),
+        };
+        let mut projections = [[empty; ACTORS]; PARTITIONS];
+        for (partition, actors) in projections.iter_mut().enumerate() {
+            *actors = project(sim, partition)?;
+        }
+        let mut full_payload_bytes = 0u64;
         for binding in bindings {
             let mut partitions = Vec::with_capacity(PARTITIONS);
-            for partition in 0..PARTITIONS {
-                let base = project(sim, partition)?;
+            for (partition, &base) in projections.iter().enumerate() {
                 let base_id = u64::try_from(partition + 1).map_err(|_| "baseline ID overflow")?;
+                let (admitted, bytes) =
+                    checked_full_image(&base, partition, 1, base_id, sim.tick())?;
+                full_payload_bytes += u64::try_from(bytes).map_err(|_| "full byte overflow")?;
                 partitions.push(PartitionVisual {
                     interest_generation: 1,
                     base,
-                    client_initial: base,
+                    client_initial: admitted,
                     client_initial_id: base_id,
                     client_initial_tick: sim.tick(),
                     client_active: ImageRecord {
                         partition,
                         id: base_id,
                         tick: sim.tick(),
-                        actors: base,
+                        actors: admitted,
                     },
-                    received: base,
-                    scratch: base,
+                    received: admitted,
+                    scratch: admitted,
                     base_id,
                     base_tick: sim.tick(),
                     received_tick: sim.tick(),
@@ -293,6 +349,9 @@ impl VisualDeltaLoop {
             random_state: SEED,
             report: VisualReport {
                 retained_bytes,
+                full_images: u64::try_from(PEER_COUNT * PARTITIONS)
+                    .map_err(|_| "full image count overflow")?,
+                full_payload_bytes,
                 ..VisualReport::default()
             },
         })
@@ -333,7 +392,9 @@ impl VisualDeltaLoop {
             value: VisualPose::default(),
         };
         let mut bases = [[empty; ACTORS]; PARTITIONS];
+        let mut client_bases = [[empty; ACTORS]; PARTITIONS];
         let mut generations = [0; PARTITIONS];
+        let mut full_payload_bytes = 0u64;
         for partition in 0..PARTITIONS {
             bases[partition] = project(sim, partition)?;
             generations[partition] = if same_epoch {
@@ -344,29 +405,52 @@ impl VisualDeltaLoop {
             } else {
                 1
             };
+            let id = first_id + u64::try_from(partition).expect("four staged partitions");
+            let (admitted, bytes) = checked_full_image(
+                &bases[partition],
+                partition,
+                generations[partition],
+                id,
+                sim.tick(),
+            )?;
+            client_bases[partition] = admitted;
+            full_payload_bytes += u64::try_from(bytes).map_err(|_| "full byte overflow")?;
         }
+        let total_full_images = self
+            .report
+            .full_images
+            .checked_add(u64::try_from(PARTITIONS).map_err(|_| "partition count overflow")?)
+            .ok_or("full image count exhausted")?;
+        let total_full_bytes = self
+            .report
+            .full_payload_bytes
+            .checked_add(full_payload_bytes)
+            .ok_or("full byte count exhausted")?;
         let peer = &mut self.peers[index];
         for (partition, state) in peer.partitions.iter_mut().enumerate() {
             let base = bases[partition];
+            let admitted = client_bases[partition];
             let base_id = first_id + u64::try_from(partition).expect("four staged partitions");
             state.interest_generation = generations[partition];
             state.base = base;
-            state.client_initial = base;
+            state.client_initial = admitted;
             state.client_initial_id = base_id;
             state.client_initial_tick = sim.tick();
             state.client_active = ImageRecord {
                 partition,
                 id: base_id,
                 tick: sim.tick(),
-                actors: base,
+                actors: admitted,
             };
-            state.received = base;
-            state.scratch = base;
+            state.received = admitted;
+            state.scratch = admitted;
             state.base_id = base_id;
             state.base_tick = sim.tick();
             state.received_tick = sim.tick();
             state.uncertain_remote = false;
         }
+        self.report.full_images = total_full_images;
+        self.report.full_payload_bytes = total_full_bytes;
         self.images[index].reset();
         peer.epoch = binding.connection_epoch;
         if !same_epoch {

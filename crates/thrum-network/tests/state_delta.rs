@@ -1,14 +1,78 @@
 //! Independent small-schema bytes and malformed delta admission checks.
 
 use thrum_network::{
-    state_delta::{Actor, DeltaError, Image, Scope, decode_delta, encode_delta},
+    state_delta::{
+        Actor, DeltaError, Image, Scope, decode_delta, decode_full, encode_delta, encode_full,
+    },
     state_schema,
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 struct Tiny {
     x: u8,
     y: u8,
+}
+
+#[test]
+fn full_image_rebuilds_membership_from_checked_bytes() {
+    let replacement = [
+        CURRENT[0],
+        Actor {
+            wire_id: 4,
+            value: Tiny { x: 7, y: 31 },
+        },
+    ];
+    let image = Image {
+        scope: Scope {
+            partition_id: 7,
+            interest_generation: 2,
+        },
+        id: 11,
+        tick: 6,
+        actors: &replacement,
+    };
+    let mut bytes = [0xff; 128];
+    let report = encode_full(&TinyWire, image, &mut bytes).expect("full partition image");
+    assert_eq!(report.bytes, 62);
+    assert_eq!(&bytes[56..62], &[1, 3, 21, 3, 3, 255]);
+    let mut scratch = [Actor {
+        wire_id: 0,
+        value: Tiny::default(),
+    }; 2];
+    assert_eq!(
+        decode_full(&TinyWire, image.scope, &bytes[..report.bytes], &mut scratch),
+        Ok(report)
+    );
+    assert_eq!(scratch, replacement);
+
+    let confirmed = BASE;
+    for end in 0..report.bytes {
+        assert!(decode_full(&TinyWire, image.scope, &bytes[..end], &mut scratch).is_err());
+        assert_eq!(confirmed, BASE);
+    }
+    let mut corrupt = bytes;
+    corrupt[59] = 0;
+    assert_eq!(
+        decode_full(
+            &TinyWire,
+            image.scope,
+            &corrupt[..report.bytes],
+            &mut scratch
+        ),
+        Err(DeltaError::ActorOrder)
+    );
+    corrupt = bytes;
+    corrupt[57] = 1;
+    assert_eq!(
+        decode_full(
+            &TinyWire,
+            image.scope,
+            &corrupt[..report.bytes],
+            &mut scratch
+        ),
+        Err(DeltaError::Padding)
+    );
+    assert_eq!(confirmed, BASE);
 }
 
 state_schema! {

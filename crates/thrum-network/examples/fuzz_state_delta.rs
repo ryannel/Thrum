@@ -1,15 +1,15 @@
-//! Stdin fuzz target for the untrusted state-group envelope and mode-0 delta.
+//! Stdin fuzz target for untrusted state groups, full images and image ACKs.
 
 use std::{hint::black_box, io::Read};
 
 use thrum_network::{
     envelope::{self, Kind},
     state_ack,
-    state_delta::{Actor, Image, Scope, decode_delta},
+    state_delta::{Actor, Image, Scope, decode_delta, decode_full},
     state_schema,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 struct Pose {
     x: u32,
     y: u32,
@@ -48,6 +48,7 @@ fn main() -> std::io::Result<()> {
     };
     let mut scratch = base;
     let _ = black_box(decode_delta(&PoseWire, image, &bytes, &mut scratch));
+    let _ = black_box(decode_full(&PoseWire, image.scope, &bytes, &mut scratch));
     let _ = black_box(state_ack::decode(&bytes));
     if let Ok(message) = envelope::decode(&bytes)
         && message.header.kind == Kind::StateGroup
@@ -55,6 +56,12 @@ fn main() -> std::io::Result<()> {
         let _ = black_box(decode_delta(
             &PoseWire,
             image,
+            message.payload,
+            &mut scratch,
+        ));
+        let _ = black_box(decode_full(
+            &PoseWire,
+            image.scope,
             message.payload,
             &mut scratch,
         ));

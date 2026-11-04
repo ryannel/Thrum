@@ -1,6 +1,6 @@
 //! Allocation-free V1 state-delta bytes over a game-declared field schema.
-//! This first codec handles existing-actor datagrams. Session, lifecycle,
-//! result closure and image retention remain separate owners.
+//! Existing-actor datagrams and full partition images share a game schema.
+//! Session, lifecycle, result closure and image retention remain separate owners.
 
 mod bit;
 
@@ -16,6 +16,7 @@ pub const HEADER_BYTES: usize = 56;
 pub const MAX_MESSAGE_BYTES: usize = 8 * 1024;
 const ENVELOPE_BYTES: usize = 64;
 const DELTA_MODE: u8 = 0;
+const FULL_MODE: u8 = 1;
 
 /// Refusal before a candidate becomes confirmed state.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -228,6 +229,151 @@ fn packet_limit(bytes: usize) -> Result<(), DeltaError> {
     } else {
         Ok(())
     }
+}
+
+fn full_mask(fields: usize) -> u64 {
+    if fields == 64 {
+        u64::MAX
+    } else {
+        (1u64 << fields) - 1
+    }
+}
+
+/// Encode a complete sorted partition projection without reference to an
+/// earlier image. The game owns the actor values; the session owns identity,
+/// reliable delivery and admission of the resulting bytes.
+///
+/// # Errors
+/// Refuses invalid schema, identity, range or destination capacity.
+pub fn encode_full<T: Copy, S: FieldCodec<T>>(
+    schema: &S,
+    image: Image<'_, T>,
+    destination: &mut [u8],
+) -> Result<DeltaReport, DeltaError> {
+    schema_valid::<T, S>()?;
+    if !actors_valid(image.actors) || image.scope.interest_generation == 0 || image.id == 0 {
+        return Err(DeltaError::Base);
+    }
+    if destination.len() < HEADER_BYTES {
+        return Err(DeltaError::DestinationTooSmall);
+    }
+    let mut writer = Writer::new(destination, HEADER_BYTES * 8);
+    let mask = full_mask(S::FIELD_BITS.len());
+    let mut previous_id = 0u64;
+    for actor in image.actors {
+        schema.validate(&actor.value)?;
+        writer.put_var(actor.wire_id - previous_id)?;
+        previous_id = actor.wire_id;
+        for byte in 0..S::FIELD_BITS.len().div_ceil(8) {
+            writer.put_bits((mask >> (byte * 8)) & 0xff, 8)?;
+        }
+        for (ordinal, &width) in S::FIELD_BITS.iter().enumerate() {
+            writer.put_bits(schema.field(&actor.value, ordinal)?, width)?;
+        }
+        writer.align()?;
+    }
+    let bytes = writer.position();
+    packet_limit(bytes)?;
+    destination[0] = FULL_MODE;
+    put_u16(
+        destination,
+        2,
+        u16::try_from(image.actors.len()).map_err(|_| DeltaError::Mode)?,
+    );
+    put_u32(destination, 12, image.scope.partition_id);
+    put_u32(destination, 16, image.scope.interest_generation);
+    put_u32(destination, 20, S::SCHEMA_ID);
+    put_u64(destination, 32, image.id);
+    put_u64(destination, 40, image.tick);
+    Ok(DeltaReport {
+        image_id: image.id,
+        tick: image.tick,
+        changed_actors: image.actors.len(),
+        bytes,
+    })
+}
+
+/// Decode a full partition image into caller-owned scratch. The caller swaps
+/// the image into its replica only after this and session validation succeed.
+/// `scratch` may contain partial data on refusal and is never confirmed here.
+///
+/// # Errors
+/// Refuses malformed, misbound, out-of-range or incomplete input.
+pub fn decode_full<T: Copy + Default, S: FieldCodec<T>>(
+    schema: &S,
+    scope: Scope,
+    bytes: &[u8],
+    scratch: &mut [Actor<T>],
+) -> Result<DeltaReport, DeltaError> {
+    schema_valid::<T, S>()?;
+    if bytes.len() < HEADER_BYTES {
+        return Err(DeltaError::Truncated);
+    }
+    packet_limit(bytes.len())?;
+    if bytes[0] != FULL_MODE
+        || get_u16(bytes, 4) != 0
+        || get_u16(bytes, 6) != 0
+        || get_u16(bytes, 8) != 0
+    {
+        return Err(DeltaError::Mode);
+    }
+    if bytes[1] != 0
+        || get_u16(bytes, 10) != 0
+        || get_u64(bytes, 24) != 0
+        || get_u64(bytes, 48) != 0
+    {
+        return Err(DeltaError::Padding);
+    }
+    let count = usize::from(get_u16(bytes, 2));
+    if count > MAX_ACTORS || count != scratch.len() {
+        return Err(DeltaError::Mode);
+    }
+    let image_id = get_u64(bytes, 32);
+    let tick = get_u64(bytes, 40);
+    if scope.interest_generation == 0
+        || get_u32(bytes, 12) != scope.partition_id
+        || get_u32(bytes, 16) != scope.interest_generation
+        || get_u32(bytes, 20) != S::SCHEMA_ID
+        || image_id == 0
+    {
+        return Err(DeltaError::Base);
+    }
+    let mut reader = Reader::new(bytes, HEADER_BYTES * 8);
+    let mask = full_mask(S::FIELD_BITS.len());
+    let mut previous_id = 0u64;
+    for actor in scratch {
+        let difference = reader.get_var()?;
+        if difference == 0 {
+            return Err(DeltaError::ActorOrder);
+        }
+        let wire_id = previous_id
+            .checked_add(difference)
+            .ok_or(DeltaError::ActorOrder)?;
+        previous_id = wire_id;
+        let mut recorded_mask = 0u64;
+        for byte in 0..S::FIELD_BITS.len().div_ceil(8) {
+            recorded_mask |= reader.get_bits(8)? << (byte * 8);
+        }
+        if recorded_mask != mask {
+            return Err(DeltaError::Padding);
+        }
+        let mut value = T::default();
+        for (ordinal, &width) in S::FIELD_BITS.iter().enumerate() {
+            schema.set_field(&mut value, ordinal, reader.get_bits(width)?)?;
+        }
+        schema.validate(&value)?;
+        reader.align()?;
+        *actor = Actor { wire_id, value };
+    }
+    if reader.position() != bytes.len() {
+        return Err(DeltaError::TrailingBytes);
+    }
+    Ok(DeltaReport {
+        image_id,
+        tick,
+        changed_actors: count,
+        bytes: bytes.len(),
+    })
 }
 
 /// Encode all changed fields of existing sorted actors against one admitted
