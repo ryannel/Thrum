@@ -4,7 +4,8 @@
 This refines `E1.water` within [Environment](ENVIRONMENT.md), under [C4](../CONTRACTS.md).
 The [initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river) remain selected for their
 admitted scope. This document carries the broader water brief into Thrum and names the work needed before it can
-be implemented. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
+be implemented. The [sea and cloud port decision](../decisions/SEA-AND-CLOUD-PORT.md) adds the spectral sea profile
+(CPU f64 long-wave authority, GPU short-wave/wake/foam presentation residual) ported from the Broadsides Rust sea. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
 to resolve analytically, not promises that a future experiment will supply a missing mechanism. No runtime is commissioned here.
 The [2 November gap closure](../research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
 adds a moving-shore rain operating model and provisional smooth finite shore
@@ -160,7 +161,8 @@ physical profile and compatibility decision, not a graphics optimization. No spe
 
 [The central build plan](../../BUILD-PLAN.md) retains I1 → source/save → the small rendered game and near-term
 network path. Water planning may proceed alongside it; R0 does not acquire a water dependency. Do not create an
-empty water crate, port the old lab, add Rapier/wgpu dependencies early or promote experimental operators into C4.
+empty water crate, port the old TypeScript lab, add Rapier/wgpu dependencies early or promote experimental operators into C4.
+The Broadsides Rust sea ports after G7 under the port decision's module-by-module policy.
 
 ## Evidence, reconciliation and maturity
 
@@ -170,7 +172,8 @@ Each consequential decision in B/C must refresh relevant successors across dynam
 use substantive conference material, and record why an alternative changes the choice. Newness alone is insufficient.
 
 [Alignment evidence](../../evidence/water/ALIGNMENT-2026-11-01.md) records the independent capability challenge and
-historical lessons. Prior Broadsides code/research is context, not a runtime/build dependency or transferred proof.
+historical lessons. Prior Broadsides code/research is context, not a runtime/build dependency or transferred proof; lifted Rust/WESL
+modules re-derive their goldens in Thrum under the port decision.
 Thrum's current `E1.water` selection and initial specification status remain intact. Wider detailed design,
 implementation, correctness, visual acceptance and platform performance remain separately unqualified. The reviewed
 bounded B/C proposal and its open family gaps are recorded in the newer cross-review linked above.
