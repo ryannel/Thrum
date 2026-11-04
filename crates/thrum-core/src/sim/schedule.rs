@@ -145,6 +145,31 @@ pub struct Schedule {
 }
 
 impl Schedule {
+    pub(super) fn permits(&self, system: SystemId, key: ComponentKey, mode: AccessMode) -> bool {
+        self.systems.iter().any(|spec| {
+            spec.id == system
+                && spec.accesses.iter().any(|access| {
+                    access.key == AccessKey::Component(key)
+                        && (access.mode == AccessMode::Write || mode == AccessMode::Read)
+                })
+        })
+    }
+
+    pub(super) fn permits_external(
+        &self,
+        system: SystemId,
+        resource: u64,
+        mode: AccessMode,
+    ) -> bool {
+        self.systems.iter().any(|spec| {
+            spec.id == system
+                && spec.accesses.iter().any(|access| {
+                    access.key == AccessKey::External(resource)
+                        && (access.mode == AccessMode::Write || mode == AccessMode::Read)
+                })
+        })
+    }
+
     /// Compile stage, explicit-dependency and conflicting-access edges once.
     ///
     /// # Errors

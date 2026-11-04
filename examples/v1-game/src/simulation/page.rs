@@ -1,0 +1,285 @@
+//! Game-owned V1 page columns in the engine's generic immutable lease ring.
+
+use std::sync::Arc;
+
+use thrum_core::{
+    Handle, StableId, WorldEpoch,
+    sim::{Read2, ReadPermit, SnapshotId, StructuralChange, WorldRead},
+};
+
+use super::types::{ChangeTicks, Command, Health, Position, Velocity, Visual};
+use thrum_core::sim::Ownership;
+
+/// Changed physical slots in one complete V1 game tick.
+#[derive(Default)]
+pub struct DirtySlots {
+    position: Vec<u32>,
+    velocity: Vec<u32>,
+    health: Vec<u32>,
+    structural: Vec<u32>,
+}
+
+impl DirtySlots {
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            position: Vec::with_capacity(capacity),
+            velocity: Vec::with_capacity(capacity),
+            health: Vec::with_capacity(capacity),
+            structural: Vec::with_capacity(capacity),
+        }
+    }
+
+    fn clear(&mut self) {
+        self.position.clear();
+        self.velocity.clear();
+        self.health.clear();
+        self.structural.clear();
+    }
+
+    /// Slots with a position write this tick.
+    pub fn position(&self) -> &[u32] {
+        &self.position
+    }
+    /// Slots with a velocity write this tick.
+    pub fn velocity(&self) -> &[u32] {
+        &self.velocity
+    }
+    /// Slots with a health write this tick.
+    pub fn health(&self) -> &[u32] {
+        &self.health
+    }
+    /// Slots with a spawn or despawn this tick.
+    pub fn structural(&self) -> &[u32] {
+        &self.structural
+    }
+}
+
+pub(crate) struct Page {
+    id: SnapshotId,
+    ids: Vec<Option<StableId>>,
+    generations: Vec<u64>,
+    present_marks: Vec<u64>,
+    positions: Vec<Position>,
+    velocities: Vec<Velocity>,
+    health: Vec<u16>,
+    ownership: Vec<Option<Ownership>>,
+    visuals: Vec<Option<u64>>,
+    dirty: DirtySlots,
+    events: Vec<StructuralChange>,
+    live: usize,
+    initialized: bool,
+}
+
+impl Page {
+    pub(crate) fn new(epoch: WorldEpoch, capacity: usize) -> Self {
+        Self {
+            id: SnapshotId { epoch, tick: 0 },
+            ids: vec![None; capacity],
+            generations: vec![0; capacity],
+            present_marks: vec![u64::MAX; capacity],
+            positions: vec![Position::default(); capacity],
+            velocities: vec![Velocity::default(); capacity],
+            health: vec![0; capacity],
+            ownership: vec![None; capacity],
+            visuals: vec![None; capacity],
+            dirty: DirtySlots::with_capacity(capacity),
+            events: Vec::with_capacity(capacity.saturating_mul(2)),
+            live: 0,
+            initialized: false,
+        }
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one page capture consumes the declared V1 query and sparse read permits"
+    )]
+    pub(crate) fn capture(
+        &mut self,
+        world: &WorldRead<'_>,
+        query: &mut Read2<Position, Health>,
+        velocity_read: &ReadPermit<Velocity>,
+        ownership_read: &ReadPermit<Ownership>,
+        visual_read: &ReadPermit<Visual>,
+        changes: &[ChangeTicks],
+        commands: &[Command],
+        tick: u64,
+        first: bool,
+    ) {
+        let since = self.initialized.then_some(self.id.tick);
+        self.id.tick = tick;
+        self.dirty.clear();
+        self.events.clear();
+        self.live = 0;
+        query.visit(world, |handle, id, position, health| {
+            let slot = handle.slot as usize;
+            self.present_marks[slot] = tick;
+            self.live += 1;
+            let stamp = changes[slot];
+            let structural = since.is_none_or(|old| stamp.structural > old);
+            if structural {
+                self.ids[slot] = Some(id);
+                self.generations[slot] = handle.generation;
+                self.ownership[slot] = world.with(ownership_read, handle, |value| *value).ok();
+                self.visuals[slot] = world.with(visual_read, handle, |value| value.0).ok();
+            }
+            if structural || since.is_none_or(|old| stamp.position > old) {
+                self.positions[slot] = *position;
+            }
+            if structural || since.is_none_or(|old| stamp.velocity > old) {
+                self.velocities[slot] = world
+                    .with(velocity_read, handle, |value| *value)
+                    .unwrap_or_default();
+            }
+            if structural || since.is_none_or(|old| stamp.health > old) {
+                self.health[slot] = health.0;
+            }
+            if first || stamp.position == tick {
+                self.dirty.position.push(handle.slot);
+            }
+            if first || stamp.velocity == tick {
+                self.dirty.velocity.push(handle.slot);
+            }
+            if first || stamp.health == tick {
+                self.dirty.health.push(handle.slot);
+            }
+            if first || stamp.structural == tick {
+                self.dirty.structural.push(handle.slot);
+            }
+        });
+        for (slot, id) in self.ids.iter_mut().enumerate() {
+            if id.is_some() && self.present_marks[slot] != tick {
+                *id = None;
+            }
+        }
+        if first {
+            for (slot, id) in self.ids.iter().enumerate() {
+                if id.is_some() {
+                    self.events.push(StructuralChange::Spawn(Handle {
+                        epoch: self.id.epoch,
+                        slot: u32::try_from(slot).expect("validated slot capacity"),
+                        generation: self.generations[slot],
+                    }));
+                }
+            }
+        } else {
+            for command in commands {
+                if let Command::Despawn(handle) = command {
+                    self.events.push(StructuralChange::Despawn(*handle));
+                    if self.ids[handle.slot as usize].is_none() {
+                        self.dirty.structural.push(handle.slot);
+                    }
+                }
+            }
+            for command in commands {
+                if let Command::Spawn(entity) = command {
+                    self.events.push(StructuralChange::Spawn(
+                        world.handle(entity.id).expect("committed spawn"),
+                    ));
+                }
+            }
+        }
+        self.dirty.structural.sort_unstable();
+        self.dirty.structural.dedup();
+        self.initialized = true;
+    }
+}
+
+/// Shared immutable lease of one complete V1 game endpoint.
+#[derive(Clone)]
+pub struct PublishedPage(pub(crate) Arc<Page>);
+
+impl PublishedPage {
+    /// Committed world generation and fixed tick.
+    pub fn id(&self) -> SnapshotId {
+        self.0.id
+    }
+    /// Live entity count.
+    pub fn len(&self) -> usize {
+        self.0.live
+    }
+    /// Whether this endpoint has no live entities.
+    pub fn is_empty(&self) -> bool {
+        self.0.live == 0
+    }
+    /// Physical slot capacity of this authority.
+    pub fn slot_capacity(&self) -> usize {
+        self.0.ids.len()
+    }
+    /// Stable identity at one live physical slot.
+    pub fn stable_id(&self, slot: u32) -> Option<StableId> {
+        self.0.ids.get(slot as usize).copied().flatten()
+    }
+    /// Checked handle at one live physical slot.
+    pub fn handle(&self, slot: u32) -> Option<Handle> {
+        self.stable_id(slot).map(|_| Handle {
+            epoch: self.0.id.epoch,
+            slot,
+            generation: self.0.generations[slot as usize],
+        })
+    }
+    /// Position at one matching live handle.
+    pub fn position(&self, handle: Handle) -> Option<Position> {
+        self.matches(handle)
+            .then(|| self.0.positions[handle.slot as usize])
+    }
+    /// Velocity at one matching live handle; zero when its component is absent.
+    pub fn velocity(&self, handle: Handle) -> Option<Velocity> {
+        self.matches(handle)
+            .then(|| self.0.velocities[handle.slot as usize])
+    }
+    /// Health at one matching live handle.
+    pub fn health(&self, handle: Handle) -> Option<u16> {
+        self.matches(handle)
+            .then(|| self.0.health[handle.slot as usize])
+    }
+    /// Ownership at one matching live handle.
+    pub fn ownership(&self, handle: Handle) -> Option<Ownership> {
+        self.matches(handle)
+            .then(|| self.0.ownership[handle.slot as usize])
+            .flatten()
+    }
+    /// Visual selector at one matching live handle.
+    pub fn visual(&self, handle: Handle) -> Option<u64> {
+        self.matches(handle)
+            .then(|| self.0.visuals[handle.slot as usize])
+            .flatten()
+    }
+    /// This tick's component changes.
+    pub fn dirty(&self) -> &DirtySlots {
+        &self.0.dirty
+    }
+    /// This tick's ordered structural journal.
+    pub fn structural_events(&self) -> &[StructuralChange] {
+        &self.0.events
+    }
+    /// Visit live visual rows without allocation or stable-ID lookup.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internally validated physical slot exceeds u32.
+    pub fn visit(&self, mut visit: impl FnMut(Handle, StableId, Position, Option<u64>)) {
+        for (slot, id) in self.0.ids.iter().enumerate() {
+            if let Some(id) = id {
+                visit(
+                    Handle {
+                        epoch: self.0.id.epoch,
+                        slot: u32::try_from(slot).expect("validated slot capacity"),
+                        generation: self.0.generations[slot],
+                    },
+                    *id,
+                    self.0.positions[slot],
+                    self.0.visuals[slot],
+                );
+            }
+        }
+    }
+    fn matches(&self, handle: Handle) -> bool {
+        handle.epoch == self.0.id.epoch
+            && self
+                .0
+                .ids
+                .get(handle.slot as usize)
+                .is_some_and(Option::is_some)
+            && self.0.generations[handle.slot as usize] == handle.generation
+    }
+}

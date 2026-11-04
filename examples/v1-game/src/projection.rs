@@ -3,9 +3,10 @@
 
 use std::{collections::VecDeque, mem::size_of};
 
+use crate::simulation::{ComponentEntity, Position, PublishedPage, Velocity};
 use thrum_core::{
     Handle,
-    sim::{ComponentEntity, Position, PublishedPage, SnapshotId, StructuralChange, Velocity},
+    sim::{SnapshotId, StructuralChange},
 };
 
 /// A copy of only the game values changed in one committed world tick.
@@ -237,11 +238,9 @@ impl ProjectionOutbox {
 #[cfg(test)]
 mod tests {
     use super::{GameProjection, ProjectionOutbox};
+    use crate::simulation::{Command, ComponentEntity, Position, SimConfig, Simulation, Velocity};
     use std::num::NonZeroU32;
-    use thrum_core::{
-        StableId, WorldEpoch,
-        sim::{Command, ComponentEntity, Position, SimConfig, Simulation, Velocity},
-    };
+    use thrum_core::{StableId, WorldEpoch};
 
     #[test]
     fn projection_copies_changes_from_exact_page_and_releases_lease() {
