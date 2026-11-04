@@ -57,16 +57,16 @@ pub struct ChangeTicks {
     pub structural: u64,
 }
 
-/// Copied component sample at one committed tick. Its handle must be checked
-/// again after structural edits; it is not a retained world authority.
-pub struct ComponentView {
+/// Tick-bounded typed view. Values are copied from private storage, while the
+/// immutable world borrow prevents retaining this view across a mutation.
+pub struct ComponentView<'a> {
     /// Checked public runtime identity.
     pub handle: Handle,
     /// Stable identity.
     pub id: StableId,
-    /// Borrowed position component.
+    /// Position component at this tick.
     pub position: Position,
-    /// Borrowed velocity component.
+    /// Velocity component at this tick.
     pub velocity: Velocity,
     /// Health component.
     pub health: u16,
@@ -76,6 +76,7 @@ pub struct ComponentView {
     pub visual: Option<u64>,
     /// Component change stamps.
     pub changes: ChangeTicks,
+    pub(super) world_borrow: std::marker::PhantomData<&'a ()>,
 }
 
 /// Resolve-stage edits. A batch validates fully against the pre-tick identity
@@ -162,7 +163,8 @@ impl SimulationSnapshot {
     pub fn tick(&self) -> u64 {
         self.tick
     }
-    /// Owned component records. Their order is private dense order, not replay order.
+    /// Owned component records in unspecified order. Match records by stable ID;
+    /// iteration order is not a replay, wire or save contract.
     pub fn entities(&self) -> &[ComponentEntity] {
         &self.entities
     }
@@ -333,13 +335,13 @@ impl Simulation {
     /// # Errors
     ///
     /// The handle is stale or belongs to another world.
-    pub fn get(&self, handle: Handle) -> Result<ComponentView, SimError> {
+    pub fn get(&self, handle: Handle) -> Result<ComponentView<'_>, SimError> {
         self.store.row(handle).map(|row| self.store.view(row))
     }
 
-    /// Query typed component columns without producing temporary records.
-    pub fn query(&self) -> impl ExactSizeIterator<Item = ComponentView> {
-        (0..self.len()).map(|row| self.store.view(row))
+    /// Visit typed component columns without allocating temporary records.
+    pub fn visit_components(&self, visit: impl FnMut(ComponentView<'_>)) {
+        self.store.visit_components(visit);
     }
 
     /// Register one control binding. Local and remote callers use this same path.
@@ -519,14 +521,9 @@ impl Simulation {
                     }
                 }
                 Stage::Publish => {
+                    changed_positions =
+                        store.publish_positions(&work.positions, &work.position_marks, next);
                     for &row in &work.touched {
-                        if work.position_marks[row] == next
-                            && store.position(row) != work.positions[row]
-                        {
-                            store.set_position(row, work.positions[row]);
-                            store.changes[row].position = next;
-                            changed_positions += 1;
-                        }
                         if work.velocity_marks[row] == next
                             && store.velocity(row) != work.velocities[row]
                         {
