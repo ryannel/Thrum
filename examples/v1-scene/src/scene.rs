@@ -17,20 +17,31 @@ use thrum_render::{
 pub(crate) const ENTITY_COUNT: usize = 10_000;
 pub(crate) const MOVING_COUNT: usize = 1_500;
 pub(crate) const CONTROLLED_ID: StableId = StableId((ENTITY_COUNT - 1) as u128);
-const LOCAL_CONTROL: Ownership = Ownership {
-    peer: PeerId(1),
-    connection_epoch: 1,
-    actor: ActorId(1),
-};
+pub(crate) const LOCAL_PEER: PeerId = PeerId(1);
+const PEER_COUNT: usize = 4;
 
-pub(crate) fn control_frame(axes: [f32; 3], tick: u64, sequence: u64) -> InputFrame<SimAction> {
+fn binding(peer: PeerId) -> Ownership {
+    Ownership {
+        peer,
+        connection_epoch: 1,
+        actor: ActorId(peer.0),
+    }
+}
+
+pub(crate) fn control_frame(
+    peer: PeerId,
+    axes: [f32; 3],
+    tick: u64,
+    sequence: u64,
+) -> InputFrame<SimAction> {
+    let owner = binding(peer);
     InputFrame {
         origin: Origin {
-            peer: LOCAL_CONTROL.peer,
-            connection_epoch: LOCAL_CONTROL.connection_epoch,
+            peer: owner.peer,
+            connection_epoch: owner.connection_epoch,
             sequence,
         },
-        actor: LOCAL_CONTROL.actor,
+        actor: owner.actor,
         tick,
         axes,
         actions: Vec::new(),
@@ -43,7 +54,7 @@ pub(crate) fn simulation() -> Result<Simulation, String> {
         SimConfig {
             tick_hz: NonZeroU32::new(60).expect("nonzero fixture tick rate"),
             entity_capacity: ENTITY_COUNT,
-            peer_capacity: 4,
+            peer_capacity: PEER_COUNT,
             actions_per_frame: 8,
             movement_speed: 6.0,
         },
@@ -52,21 +63,29 @@ pub(crate) fn simulation() -> Result<Simulation, String> {
     for index in 0..ENTITY_COUNT {
         let x = -0.9 + (index % 100) as f64 * 0.018 + 0.009;
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
+        let peer_number = ENTITY_COUNT - index;
+        let ownership = (peer_number <= PEER_COUNT).then(|| {
+            binding(PeerId(
+                u64::try_from(peer_number).expect("four-peer fixture identity"),
+            ))
+        });
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
             position: Position([x, y, 0.5]),
             velocity: Velocity([if index < MOVING_COUNT { 0.05 } else { 0.0 }, 0.0, 0.0]),
             health: 100,
-            ownership: (index == ENTITY_COUNT - 1).then_some(LOCAL_CONTROL),
+            ownership,
             visual: Some((index % 2) as u64),
         })
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }
-    let controlled = sim
-        .handle(CONTROLLED_ID)
-        .ok_or("seeded control identity missing")?;
-    sim.register_peer(LOCAL_CONTROL, controlled)
-        .map_err(|error| format!("register local control: {error:?}"))?;
+    for peer_number in 1..=PEER_COUNT {
+        let peer = PeerId(u64::try_from(peer_number).expect("four-peer fixture identity"));
+        let id = StableId(u128::try_from(ENTITY_COUNT - peer_number).expect("fixture identity"));
+        let controlled = sim.handle(id).ok_or("seeded control identity missing")?;
+        sim.register_peer(binding(peer), controlled)
+            .map_err(|error| format!("register control peer {peer_number}: {error:?}"))?;
+    }
     Ok(sim)
 }
 
@@ -140,4 +159,85 @@ pub(crate) fn apply_frame_to_scene(
     }
     changed_slots.sort_unstable();
     report
+}
+
+#[cfg(test)]
+mod tests {
+    use thrum_core::{PeerId, StableId, sim::FrameError};
+
+    use super::{ENTITY_COUNT, PEER_COUNT, control_frame, simulation};
+
+    #[test]
+    fn four_peers_share_one_tick_authority_and_keep_independent_held_controls() {
+        let mut sim = simulation().expect("10k fixture");
+        let axes = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [-1.0, 0.0, 0.0],
+            [0.0, -1.0, 0.0],
+        ];
+        let initial = std::array::from_fn::<_, PEER_COUNT, _>(|index| {
+            let number = index + 1;
+            let id = StableId(u128::try_from(ENTITY_COUNT - number).expect("fixture ID"));
+            let handle = sim.handle(id).expect("registered actor");
+            sim.get(handle).expect("owned entity").position.0
+        });
+        assert_eq!(
+            sim.admit_frame(control_frame(PeerId(4), [2.0, 0.0, 0.0], 1, 1)),
+            Err(FrameError::InvalidAxis)
+        );
+        for (index, axis) in axes.into_iter().enumerate() {
+            sim.admit_frame(control_frame(
+                PeerId(u64::try_from(index + 1).expect("four peers")),
+                axis,
+                1,
+                1,
+            ))
+            .expect("independent accepted frame");
+        }
+        assert_eq!(
+            sim.admit_frame(control_frame(PeerId(1), [0.0; 3], 1, 2)),
+            Err(FrameError::PendingFrame)
+        );
+        assert_eq!(sim.step(&[]).expect("one committed tick").tick, 1);
+        for (index, axis) in axes.into_iter().enumerate() {
+            let id = StableId(u128::try_from(ENTITY_COUNT - index - 1).expect("fixture ID"));
+            let handle = sim.handle(id).expect("same actor");
+            let current = sim.get(handle).expect("committed entity").position.0;
+            for dimension in 0..3 {
+                assert!(
+                    (current[dimension]
+                        - initial[index][dimension]
+                        - f64::from(axis[dimension]) * 0.1)
+                        .abs()
+                        < 1e-9
+                );
+            }
+        }
+        assert_eq!(
+            sim.admit_frame(control_frame(PeerId(1), [0.0; 3], 2, 1)),
+            Err(FrameError::StaleSequence)
+        );
+        sim.admit_frame(control_frame(PeerId(1), [0.0; 3], 2, 2))
+            .expect("release first actor");
+        sim.step(&[]).expect("held second tick");
+        let first = sim
+            .get(
+                sim.handle(StableId((ENTITY_COUNT - 1) as u128))
+                    .expect("first actor"),
+            )
+            .expect("first state")
+            .position
+            .0;
+        assert!((first[0] - initial[0][0] - 0.1).abs() < 1e-9);
+        let second = sim
+            .get(
+                sim.handle(StableId((ENTITY_COUNT - 2) as u128))
+                    .expect("second actor"),
+            )
+            .expect("second state")
+            .position
+            .0;
+        assert!((second[1] - initial[1][1] - 0.2).abs() < 1e-9);
+    }
 }

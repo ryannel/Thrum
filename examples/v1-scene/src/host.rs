@@ -589,7 +589,7 @@ impl FrameHost {
     /// # Errors
     /// Returns a normalized-axis validation error without changing the held input.
     pub fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
-        scene::control_frame(axes, 0, 0)
+        scene::control_frame(scene::LOCAL_PEER, axes, 0, 0)
             .validate_axes()
             .map_err(|error| format!("local controls: {error:?}"))?;
         self.desired_axes = axes;
@@ -706,7 +706,12 @@ impl FrameHost {
                         .any(|(desired, admitted)| desired.to_bits() != admitted.to_bits())
                     {
                         let tick = sim.tick().checked_add(1).ok_or("input tick exhausted")?;
-                        let frame = scene::control_frame(desired_axes, tick, *input_sequence);
+                        let frame = scene::control_frame(
+                            scene::LOCAL_PEER,
+                            desired_axes,
+                            tick,
+                            *input_sequence,
+                        );
                         sim.admit_frame(frame)
                             .map_err(|error| format!("local input admission: {error:?}"))?;
                         *admitted_axes = desired_axes;
