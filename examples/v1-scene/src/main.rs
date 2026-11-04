@@ -30,7 +30,7 @@ async fn run() -> Result<String, String> {
         })
         .await
         .map_err(|error| format!("GPU device: {error:?}"))?;
-    let mut host = FrameHost::new(&device, &queue).await?;
+    let mut host = FrameHost::new(&device, &queue, None).await?;
     let origin = Instant::now();
     let mut last_call = Duration::ZERO;
     let mut samples = Vec::with_capacity(FRAMES);
@@ -51,7 +51,7 @@ async fn run() -> Result<String, String> {
         std::thread::sleep(due.saturating_sub(since_last_call));
         let now = origin.elapsed();
         let callback_start = Instant::now();
-        let report = host.drive(now)?;
+        let report = host.drive(now, None)?;
         while let Some(sample) = host.poll_completed()? {
             if samples.len() < FRAMES {
                 samples.push(sample);

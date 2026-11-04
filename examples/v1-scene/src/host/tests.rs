@@ -12,6 +12,8 @@ fn sample(tick: u64) -> FrameSample {
         encode_cpu: Duration::ZERO,
         wall: Duration::ZERO,
         gpu_pass_ns: None,
+        gpu_present_ns: None,
+        surface_presented: false,
         timing_fault: false,
         uploaded_rows: 0,
         uploaded_bytes: 0,
@@ -55,7 +57,7 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue)
+        let mut host = super::FrameHost::new(&device, &queue, None)
             .await
             .expect("prepared scene");
         let before = host.capture_pixels().expect("initial capture");

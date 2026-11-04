@@ -28,14 +28,14 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool) {
         ..Default::default()
     }))
     .expect("device request succeeds");
-    let mut host = pollster::block_on(FrameHost::new(&device, &queue))
+    let mut host = pollster::block_on(FrameHost::new(&device, &queue, None))
         .expect("the prepared V1 workload must fit the adapter");
     let device_ref = &device;
     let mut now = Duration::ZERO;
     bencher.bench_local(move || {
         now += Duration::from_nanos(16_666_667);
         let frame = host
-            .drive(now)
+            .drive(now, None)
             .expect("the measured fixed-clock host must keep progressing");
         assert!(frame.submitted, "one update gets a free view slot");
         let complete = loop {

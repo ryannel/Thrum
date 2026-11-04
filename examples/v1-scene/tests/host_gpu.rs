@@ -22,15 +22,15 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             })
             .await
             .expect("device request succeeds");
-        let mut host = FrameHost::new(&device, &queue)
+        let mut host = FrameHost::new(&device, &queue, None)
             .await
             .expect("prepared 10k scene");
-        let idle = host.drive(Duration::ZERO).expect("idle callback");
+        let idle = host.drive(Duration::ZERO, None).expect("idle callback");
         assert_eq!(idle.completed_ticks, 0);
         assert!(!idle.submitted);
         assert_eq!(host.tick(), 0);
         let first = host
-            .drive(Duration::from_nanos(16_666_667))
+            .drive(Duration::from_nanos(16_666_667), None)
             .expect("first due callback");
         assert_eq!(
             (
@@ -42,7 +42,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             (1, 1, 0, true)
         );
         let catch_up = host
-            .drive(Duration::from_nanos(50_000_001))
+            .drive(Duration::from_nanos(50_000_001), None)
             .expect("bounded catch-up");
         assert_eq!(
             (
@@ -81,7 +81,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             640 * 360 * 4
         );
         let error = host
-            .drive(Duration::from_millis(200))
+            .drive(Duration::from_millis(200), None)
             .expect_err("nine due updates exceed eight queued slots");
         assert!(error.contains("fixed-clock overload: 9 ticks refused"));
         assert_eq!(host.tick(), 3, "overload cannot skip or repeat a tick");
@@ -91,12 +91,12 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device without timestamp queries");
-        let mut plain = FrameHost::new(&plain_device, &plain_queue)
+        let mut plain = FrameHost::new(&plain_device, &plain_queue, None)
             .await
             .expect("same prepared scene without timestamps");
         assert!(
             plain
-                .drive(Duration::from_nanos(16_666_667))
+                .drive(Duration::from_nanos(16_666_667), None)
                 .expect("plain first tick")
                 .submitted
         );

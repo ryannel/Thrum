@@ -85,8 +85,8 @@ target_cost = "Minimal std/f32 profile with no optional integration dependencies
 [external_dependencies.winit]
 requirement = "=0.30.13"
 license = "Apache-2.0"
-purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell"
-target_cost = "Target-specific mobile dependency with substantial platform glue and transitive closure; first iOS static-library compile measured separately, Android native build requires NDK and GameActivity packaging"
+purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell, plus the V1 macOS surface diagnostic"
+target_cost = "Target-specific platform glue and transitive closure; macOS surface callback and startup measured with the V1 scene, first iOS static-library compile measured separately, Android native build requires NDK and GameActivity packaging"
 
 [external_dependencies.wgpu]
 requirement = "=30.0.1"

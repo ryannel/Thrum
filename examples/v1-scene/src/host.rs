@@ -12,6 +12,7 @@ use std::{
 use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
 use thrum_render::{
     extract::RenderExtractor,
+    present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
         OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
         SyntheticView,
@@ -51,6 +52,10 @@ pub struct FrameSample {
     pub wall: Duration,
     /// Actual GPU timestamps for near/far Sun shadows, forward and display.
     pub gpu_pass_ns: Option<[f64; 4]>,
+    /// GPU time for the optional surface blit, when it was submitted and timed.
+    pub gpu_present_ns: Option<f64>,
+    /// This frame also wrote an acquired platform surface.
+    pub surface_presented: bool,
     /// The GPU frame completed but its optional timing batch was unusable.
     pub timing_fault: bool,
     /// Records whose changed ABI bytes were enqueued for upload.
@@ -78,10 +83,21 @@ pub struct DriveReport {
     pub queued_ticks: u32,
     /// A GPU view was submitted for `tick`.
     pub submitted: bool,
+    /// An acquired platform surface received this frame in the same submission.
+    pub surface_presented: bool,
     /// No frame slot was free, so this optional view was skipped.
     pub dropped_view: bool,
     /// CPU wall time for the entire callback, including nonblocking GPU polling.
     pub wall: Duration,
+}
+
+/// An acquired texture view supplied by the platform's single surface owner.
+/// The platform calls `present` only when `DriveReport::surface_presented` is true.
+pub struct SurfaceOutput<'a> {
+    /// View of the exact acquired surface texture.
+    pub view: &'a wgpu::TextureView,
+    /// Its configured physical pixel extent.
+    pub extent: [u32; 2],
 }
 
 enum SlotState {
@@ -92,6 +108,7 @@ enum SlotState {
 
 struct FrameSlot {
     target: OffscreenTarget,
+    presentation: Option<PresentationBinding>,
     timings: GpuTimings,
     render_done: Arc<AtomicBool>,
     state: SlotState,
@@ -100,28 +117,36 @@ struct FrameSlot {
 /// One fixed-clock simulation and prepared GPU scene. The device and queue
 /// belong to the caller's executor; this host creates no independent GPU owner.
 /// Three prepared targets bound in-flight work and defer GPU timing readback.
-/// This is still an offscreen diagnostic, not a platform surface.
-pub struct FrameHost<'a> {
-    device: &'a wgpu::Device,
-    queue: &'a wgpu::Queue,
+/// A platform adapter may also supply an acquired surface view for the
+/// prepared presentation pass; the host never owns the surface lifecycle.
+pub struct FrameHost {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
     clock: TickClock,
     sim: Simulation,
     extractor: RenderExtractor,
     scene: SyntheticScene,
     changed_slots: Vec<u32>,
     prepared: PreparedSynthetic,
+    presenter: Option<SurfacePresenter>,
     slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
     dropped_views: u64,
     dropped_reports: u64,
     dropped_capture_rows: u64,
+    dropped_surface: u64,
 }
 
-impl<'a> FrameHost<'a> {
-    /// Prepare one 10k-entity scene and all four GPU passes before the first draw.
+impl FrameHost {
+    /// Prepare one 10k-entity scene, all four scene passes and an optional
+    /// surface presentation pass before the first draw.
     /// # Errors
     /// Returns setup, device or scene preparation errors without a partial host.
-    pub async fn new(device: &'a wgpu::Device, queue: &'a wgpu::Queue) -> Result<Self, String> {
+    pub async fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        surface: Option<SurfaceProfile>,
+    ) -> Result<Self, String> {
         let sim = scene::simulation()?;
         let mut extractor = RenderExtractor::new(ENTITY_COUNT);
         scene::extract(&mut extractor, &sim);
@@ -165,13 +190,32 @@ impl<'a> FrameHost<'a> {
         )
         .await
         .map_err(|error| format!("prepare: {error:?}"))?;
+        let presenter = match surface {
+            Some(profile) => Some(
+                SurfacePresenter::prepare(device, GENERATION, [WIDTH, HEIGHT], profile)
+                    .await
+                    .map_err(|error| format!("surface prepare: {error:?}"))?,
+            ),
+            None => None,
+        };
         let mut slots = Vec::with_capacity(IN_FLIGHT);
         for _ in 0..IN_FLIGHT {
+            let target = OffscreenTarget::new(device, &prepared, WIDTH, HEIGHT)
+                .map_err(|error| format!("target: {error:?}"))?;
             slots.push(FrameSlot {
-                target: OffscreenTarget::new(device, &prepared, WIDTH, HEIGHT)
-                    .map_err(|error| format!("target: {error:?}"))?,
-                timings: GpuTimings::new(device, queue, GENERATION, 4)
-                    .map_err(|error| format!("GPU timings: {error:?}"))?,
+                presentation: presenter
+                    .as_ref()
+                    .map(|presenter| presenter.bind_target(device, &target))
+                    .transpose()
+                    .map_err(|error| format!("surface binding: {error:?}"))?,
+                target,
+                timings: GpuTimings::new(
+                    device,
+                    queue,
+                    GENERATION,
+                    if surface.is_some() { 5 } else { 4 },
+                )
+                .map_err(|error| format!("GPU timings: {error:?}"))?,
                 render_done: Arc::new(AtomicBool::new(false)),
                 state: SlotState::Free,
             });
@@ -179,19 +223,21 @@ impl<'a> FrameHost<'a> {
         let clock = TickClock::new(ClockConfig::default(), Duration::ZERO)
             .map_err(|error| format!("clock: {error:?}"))?;
         Ok(Self {
-            device,
-            queue,
+            device: device.clone(),
+            queue: queue.clone(),
             clock,
             sim,
             extractor,
             scene,
             changed_slots,
             prepared,
+            presenter,
             slots,
             completed: VecDeque::with_capacity(IN_FLIGHT),
             dropped_views: 0,
             dropped_reports: 0,
             dropped_capture_rows: 0,
+            dropped_surface: 0,
         })
     }
 
@@ -219,6 +265,23 @@ impl<'a> FrameHost<'a> {
     /// Presentation rows omitted while refreshing an explicit capture.
     pub fn dropped_capture_rows(&self) -> u64 {
         self.dropped_capture_rows
+    }
+
+    /// Optional surface views omitted because acquisition or encode was unavailable.
+    pub fn dropped_surface(&self) -> u64 {
+        self.dropped_surface
+    }
+
+    /// Recompile the surface extent declaration after the platform configures
+    /// a nonzero replacement; in-flight old textures remain GPU-owned.
+    /// # Errors
+    /// Refuses an invalid extent or a host without a surface presenter.
+    pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), String> {
+        self.presenter
+            .as_mut()
+            .ok_or_else(|| "host has no surface presenter".to_owned())?
+            .resize(&self.device, extent)
+            .map_err(|error| format!("surface resize: {error:?}"))
     }
 
     /// Number of submitted render packets awaiting GPU completion or readback.
@@ -261,7 +324,14 @@ impl<'a> FrameHost<'a> {
     /// If no update is due, no GPU frame is encoded. Overload is explicit.
     /// # Errors
     /// Returns a clock, simulation or GPU fault; never silently skips an update.
-    pub fn drive(&mut self, now: Duration) -> Result<DriveReport, String> {
+    pub fn drive(
+        &mut self,
+        now: Duration,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<DriveReport, String> {
+        if surface.is_some() && self.presenter.is_none() {
+            return Err("host has no surface presenter".to_owned());
+        }
         let wall_start = Instant::now();
         self.poll_gpu()?;
         let mut tick_cpu = Duration::ZERO;
@@ -288,10 +358,24 @@ impl<'a> FrameHost<'a> {
             completed_ticks: clock.completed,
             queued_ticks: clock.queued,
             submitted: false,
+            surface_presented: false,
             dropped_view: false,
             wall: Duration::ZERO,
         };
         if clock.completed == 0 {
+            report.wall = wall_start.elapsed();
+            return Ok(report);
+        }
+        if self.presenter.is_some()
+            && surface.is_none_or(|surface| {
+                self.presenter
+                    .as_ref()
+                    .is_none_or(|presenter| presenter.extent() != surface.extent)
+            })
+        {
+            self.dropped_views += 1;
+            self.dropped_surface += 1;
+            report.dropped_view = true;
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -320,7 +404,7 @@ impl<'a> FrameHost<'a> {
         );
         let uploaded = self
             .prepared
-            .upload_instances(self.queue, &self.scene.instances, &self.changed_slots)
+            .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
             .map_err(|error| format!("instance update: {error:?}"))?;
         let upload_cpu = upload_start.elapsed();
 
@@ -337,6 +421,27 @@ impl<'a> FrameHost<'a> {
                 Some(&mut slot.timings),
             )
             .map_err(|error| format!("render encode: {error:?}"))?;
+        let surface_presented = if let (Some(presenter), Some(binding), Some(surface)) =
+            (self.presenter.as_ref(), slot.presentation.as_ref(), surface)
+        {
+            if presenter
+                .encode(
+                    &mut encoder,
+                    binding,
+                    surface.view,
+                    surface.extent,
+                    Some(&mut slot.timings),
+                )
+                .is_ok()
+            {
+                true
+            } else {
+                self.dropped_surface += 1;
+                false
+            }
+        } else {
+            false
+        };
         slot.timings
             .finish_render(GENERATION, &encoder)
             .map_err(|error| format!("finish timestamps: {error:?}"))?;
@@ -356,6 +461,8 @@ impl<'a> FrameHost<'a> {
             encode_cpu,
             wall: wall_start.elapsed(),
             gpu_pass_ns: None,
+            gpu_present_ns: None,
+            surface_presented,
             timing_fault: false,
             uploaded_rows: uploaded.changed_rows,
             uploaded_bytes: uploaded.bytes,
@@ -369,6 +476,7 @@ impl<'a> FrameHost<'a> {
             dropped_light_references: self.prepared.dropped_light_references(),
         });
         report.submitted = true;
+        report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
         Ok(report)
     }
@@ -392,7 +500,7 @@ impl<'a> FrameHost<'a> {
             );
             let uploaded = self
                 .prepared
-                .upload_instances(self.queue, &self.scene.instances, &self.changed_slots)
+                .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
                 .map_err(|error| format!("capture instance update: {error:?}"))?;
             let dropped = u64::try_from(
                 extracted.dropped_capacity
@@ -405,9 +513,9 @@ impl<'a> FrameHost<'a> {
             .unwrap_or(u64::MAX);
             self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
         }
-        let target = OffscreenTarget::new(self.device, &self.prepared, WIDTH, HEIGHT)
+        let target = OffscreenTarget::new(&self.device, &self.prepared, WIDTH, HEIGHT)
             .map_err(|error| format!("capture target: {error:?}"))?;
-        let mut pixels = target.readback(self.device);
+        let mut pixels = target.readback(&self.device);
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -439,6 +547,7 @@ impl<'a> FrameHost<'a> {
         self.device
             .poll(wgpu::PollType::Poll)
             .map_err(|error| format!("GPU poll: {error:?}"))?;
+        let max_passes = if self.presenter.is_some() { 5 } else { 4 };
         for slot in &mut self.slots {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);
             match state {
@@ -463,21 +572,27 @@ impl<'a> FrameHost<'a> {
                         Ok(false) => slot.state = SlotState::Rendering(sample),
                         Err(_) => {
                             sample.timing_fault = true;
-                            slot.timings = new_timings(self.device, self.queue)?;
+                            slot.timings = new_timings(&self.device, &self.queue, max_passes)?;
                             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
                     }
                 }
                 SlotState::Resolving(mut sample) => match slot.timings.try_collect(GENERATION) {
                     Ok(Some(passes)) => {
-                        sample.gpu_pass_ns = pass_durations(&passes);
-                        sample.timing_fault = sample.gpu_pass_ns.is_none();
+                        if let Some((scene, present)) =
+                            pass_durations(&passes, sample.surface_presented)
+                        {
+                            sample.gpu_pass_ns = Some(scene);
+                            sample.gpu_present_ns = present;
+                        } else {
+                            sample.timing_fault = true;
+                        }
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                     }
                     Ok(None) => slot.state = SlotState::Resolving(sample),
                     Err(_) => {
                         sample.timing_fault = true;
-                        slot.timings = new_timings(self.device, self.queue)?;
+                        slot.timings = new_timings(&self.device, &self.queue, max_passes)?;
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                     }
                 },
@@ -487,24 +602,37 @@ impl<'a> FrameHost<'a> {
     }
 }
 
-fn new_timings(device: &wgpu::Device, queue: &wgpu::Queue) -> Result<GpuTimings, String> {
-    GpuTimings::new(device, queue, GENERATION, 4)
+fn new_timings(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    max_passes: u32,
+) -> Result<GpuTimings, String> {
+    GpuTimings::new(device, queue, GENERATION, max_passes)
         .map_err(|error| format!("GPU timing recovery: {error:?}"))
 }
 
-fn pass_durations(passes: &[thrum_render::timing::PassTiming]) -> Option<[f64; 4]> {
+fn pass_durations(
+    passes: &[thrum_render::timing::PassTiming],
+    presented: bool,
+) -> Option<([f64; 4], Option<f64>)> {
     let names = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
         "synthetic forward opaque",
         "synthetic tone encode",
     ];
-    (passes.len() == names.len()
+    (passes.len() == names.len() + usize::from(presented)
         && passes
             .iter()
             .zip(names)
-            .all(|(pass, name)| pass.name.as_ref() == name))
-    .then(|| std::array::from_fn(|index| passes[index].nanoseconds))
+            .all(|(pass, name)| pass.name.as_ref() == name)
+        && (!presented || passes[4].name.as_ref() == thrum_render::present::PASS_NAME))
+        .then(|| {
+            (
+                std::array::from_fn(|index| passes[index].nanoseconds),
+                presented.then(|| passes[4].nanoseconds),
+            )
+        })
 }
 
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {
