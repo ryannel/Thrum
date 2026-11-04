@@ -155,43 +155,39 @@ impl Store {
         self.world.entity_at_slot(row)
     }
 
+    fn handle_at(&self, row: usize) -> Handle {
+        self.world
+            .handle_at(u32::try_from(row).expect("physical row fits slot"))
+    }
+
     pub(super) fn position(&self, row: usize) -> Position {
-        *self
-            .world
-            .world
-            .get::<&Position>(self.entity_at(row))
+        self.world
+            .with::<Position, _>(self.handle_at(row), |position| *position)
             .expect("live position")
     }
 
     pub(super) fn velocity(&self, row: usize) -> Velocity {
         self.world
-            .world
-            .get::<&Velocity>(self.entity_at(row))
-            .map_or(Velocity::default(), |velocity| *velocity)
+            .with::<Velocity, _>(self.handle_at(row), |velocity| *velocity)
+            .unwrap_or_default()
     }
 
     pub(super) fn health(&self, row: usize) -> u16 {
         self.world
-            .world
-            .get::<&Health>(self.entity_at(row))
+            .with::<Health, _>(self.handle_at(row), |health| health.0)
             .expect("live health")
-            .0
     }
 
     pub(super) fn ownership(&self, row: usize) -> Option<Ownership> {
         self.world
-            .world
-            .get::<&Ownership>(self.entity_at(row))
+            .with::<Ownership, _>(self.handle_at(row), |value| *value)
             .ok()
-            .map(|value| *value)
     }
 
     pub(super) fn visual(&self, row: usize) -> Option<u64> {
         self.world
-            .world
-            .get::<&Visual>(self.entity_at(row))
+            .with::<Visual, _>(self.handle_at(row), |value| value.0)
             .ok()
-            .map(|value| value.0)
     }
 
     pub(super) fn set_velocity(&mut self, row: usize, value: Velocity) {

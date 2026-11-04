@@ -82,7 +82,7 @@ impl IdIndex {
 /// Expected setup, identity or component failure. A rejected spawn changes no
 /// world state; callers validate a whole command batch before applying it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RegisteredWorldError {
+pub(super) enum RegisteredWorldError {
     /// Capacity is outside the slot address range or no free slot remains.
     Capacity,
     /// Stable identity already belongs to a live entity.
@@ -98,7 +98,7 @@ pub enum RegisteredWorldError {
 }
 
 /// Reusable typed bundle writer. It never exposes hecs IDs or a mutable world.
-pub struct EntityWriter<'a> {
+pub(super) struct EntityWriter<'a> {
     builder: &'a mut hecs::EntityBuilder,
     registry: &'a ComponentRegistry,
 }
@@ -109,7 +109,7 @@ impl EntityWriter<'_> {
     /// # Errors
     ///
     /// The type is unregistered or already present in this entity bundle.
-    pub fn add<T: Send + Sync + 'static>(
+    pub(super) fn add<T: Send + Sync + 'static>(
         &mut self,
         value: T,
     ) -> Result<&mut Self, RegisteredWorldError> {
@@ -126,7 +126,7 @@ impl EntityWriter<'_> {
 
 /// Generic component authority for one world epoch. Identity slots and hecs
 /// entities are private; the public handle is checked on every sparse access.
-pub struct RegisteredWorld {
+pub(super) struct RegisteredWorld {
     epoch: WorldEpoch,
     slots: Vec<Slot>,
     free: Vec<u32>,
@@ -143,7 +143,7 @@ impl RegisteredWorld {
     /// # Errors
     ///
     /// Capacity cannot be represented by the physical slot index.
-    pub fn new(
+    pub(super) fn new(
         epoch: WorldEpoch,
         capacity: usize,
         registry: ComponentRegistry,
@@ -176,24 +176,9 @@ impl RegisteredWorld {
         })
     }
 
-    /// World epoch for checked handles and committed read models.
-    pub fn epoch(&self) -> WorldEpoch {
-        self.epoch
-    }
-
     /// Number of live entities.
-    pub fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.live
-    }
-
-    /// Whether this world currently has no entities.
-    pub fn is_empty(&self) -> bool {
-        self.live == 0
-    }
-
-    /// Physical capacity selected when this world was built.
-    pub fn capacity(&self) -> usize {
-        self.slots.len()
     }
 
     pub(super) fn free_count(&self) -> usize {
@@ -221,7 +206,7 @@ impl RegisteredWorld {
     }
 
     /// Resolve a persistent identity to its current checked physical handle.
-    pub fn handle(&self, id: StableId) -> Option<Handle> {
+    pub(super) fn handle(&self, id: StableId) -> Option<Handle> {
         self.ids.get(id).map(|slot| self.handle_at(slot))
     }
 
@@ -253,7 +238,7 @@ impl RegisteredWorld {
     ///
     /// The ID repeats, capacity is full, or the bundle contains an unregistered
     /// or repeated component. No failure changes committed state.
-    pub fn spawn(
+    pub(super) fn spawn(
         &mut self,
         id: StableId,
         fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
@@ -285,7 +270,7 @@ impl RegisteredWorld {
     /// # Errors
     ///
     /// The handle is stale or from another world.
-    pub fn despawn(&mut self, handle: Handle) -> Result<(), RegisteredWorldError> {
+    pub(super) fn despawn(&mut self, handle: Handle) -> Result<(), RegisteredWorldError> {
         let entity = self.entity(handle)?;
         let id = self.slots[handle.slot as usize]
             .stable
@@ -311,7 +296,7 @@ impl RegisteredWorld {
     /// # Errors
     ///
     /// The type is unregistered, the handle is stale, or the entity lacks it.
-    pub fn with<T: Send + Sync + 'static, R>(
+    pub(super) fn with<T: Send + Sync + 'static, R>(
         &self,
         handle: Handle,
         read: impl FnOnce(&T) -> R,
@@ -332,7 +317,7 @@ impl RegisteredWorld {
     /// # Errors
     ///
     /// Either type is absent from setup registration.
-    pub fn read2<T: Send + Sync + 'static, U: Send + Sync + 'static>(
+    pub(super) fn read2<T: Send + Sync + 'static, U: Send + Sync + 'static>(
         &self,
     ) -> Result<PreparedRead2<T, U>, RegisteredWorldError> {
         if self.registry.schema(ComponentKey::of::<T>()).is_none()
@@ -350,7 +335,7 @@ impl RegisteredWorld {
     /// # Errors
     ///
     /// The type is absent from setup registration.
-    pub fn write1<T: Send + Sync + 'static>(
+    pub(super) fn write1<T: Send + Sync + 'static>(
         &self,
     ) -> Result<PreparedWrite1<T>, RegisteredWorldError> {
         if self.registry.schema(ComponentKey::of::<T>()).is_none() {
@@ -364,7 +349,7 @@ impl RegisteredWorld {
 
 /// Prepared read of two game-owned component types in backend storage order.
 /// The callback receives checked physical and stable identity, never a hecs ID.
-pub struct PreparedRead2<T: Send + Sync + 'static, U: Send + Sync + 'static> {
+pub(super) struct PreparedRead2<T: Send + Sync + 'static, U: Send + Sync + 'static> {
     query: hecs::PreparedQuery<(&'static SlotKey, &'static T, &'static U)>,
 }
 
@@ -374,7 +359,7 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
     /// # Panics
     ///
     /// Panics only if the private slot-to-entity invariant has been broken.
-    pub fn visit(
+    pub(super) fn visit(
         &mut self,
         world: &RegisteredWorld,
         mut visit: impl FnMut(Handle, StableId, &T, &U),
@@ -394,7 +379,7 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
 
 /// Prepared mutable visit of one registered game component. A caller validates
 /// its full candidate transaction before invoking this commit-time cursor.
-pub struct PreparedWrite1<T: Send + Sync + 'static> {
+pub(super) struct PreparedWrite1<T: Send + Sync + 'static> {
     query: hecs::PreparedQuery<(&'static SlotKey, &'static mut T)>,
 }
 
@@ -404,7 +389,7 @@ impl<T: Send + Sync + 'static> PreparedWrite1<T> {
     /// # Panics
     ///
     /// Panics only if the private slot-to-entity invariant has been broken.
-    pub fn visit(
+    pub(super) fn visit(
         &mut self,
         world: &mut RegisteredWorld,
         mut visit: impl FnMut(Handle, StableId, &mut T),
@@ -460,7 +445,7 @@ mod tests {
             }),
             Err(RegisteredWorldError::UnregisteredComponent)
         );
-        assert!(world.is_empty());
+        assert_eq!(world.len(), 0);
         let first = world
             .spawn(StableId(1), |entity| {
                 entity.add(Position(2.0))?;
@@ -523,7 +508,7 @@ mod tests {
             }),
             Err(RegisteredWorldError::DuplicateComponent)
         );
-        assert!(world.is_empty());
+        assert_eq!(world.len(), 0);
         let handle = world
             .spawn(StableId(1), |entity| {
                 entity.add(Position(3.0))?;
