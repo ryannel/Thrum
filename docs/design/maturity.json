@@ -110,7 +110,7 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max Metal, 10k hecs entities / 1.5k moving, 640x360 offscreen: serial tick 46.8–47.2 us, sim visit plus extract 193.7–203.9 us, CPU encode 65.0–66.2 us in two process runs; GPU one-frame samples 0.541–1.959 ms, too variable for a budget claim. Divan isolated extraction median 99.52 us, 100 samples. Zero scoped allocations after representative two-frame warmup.",
+      "diagnostic_measurement": "Apple M3 Max Metal HDR/display, 10k hecs entities / 1.5k moving, 640x360 offscreen: one serial tick 46.0–54.3 us and sim visit plus extract 203.8–312.5 us across two process runs; 32 warmed samples per run gave CPU encode medians 2.08–3.83 us, forward GPU medians 0.230–0.244 ms with p95 3.74–3.82 ms, tone GPU medians 0.112–0.135 ms with p95 2.32–2.39 ms. Divan isolated extraction median 99.70 us; zero scoped allocations after two-frame warmup. No frame-budget claim.",
       "evidence": [
         "../evidence/render/A2-SIM-RENDER-2026-11-04.md"
       ],

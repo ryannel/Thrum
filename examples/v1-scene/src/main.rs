@@ -2,6 +2,7 @@
 //! feeds the real offscreen renderer. No window or shipping runtime is implied.
 
 use std::{
+    fmt::Write as _,
     num::NonZeroU32,
     time::{Duration, Instant},
 };
@@ -92,6 +93,95 @@ fn scene_from_frame(frame: &RenderColumns) -> Result<(SyntheticScene, usize), St
     Ok((scene, moved))
 }
 
+fn percentile_summary(samples: &mut [f64]) -> (f64, f64) {
+    samples.sort_by(f64::total_cmp);
+    (
+        samples[samples.len() / 2],
+        samples[samples.len() * 95 / 100],
+    )
+}
+
+fn profile_repeated(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &PreparedSynthetic,
+    target: &OffscreenTarget,
+    timings: &mut GpuTimings,
+) -> Result<String, String> {
+    let mut encode_us = Vec::with_capacity(32);
+    let mut pass_names = Vec::<String>::new();
+    let mut pass_ns = Vec::<Vec<f64>>::new();
+    for iteration in 0..34 {
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let start = Instant::now();
+        prepared
+            .encode(&mut encoder, 1, target, Some(timings))
+            .map_err(|error| format!("profile encode: {error:?}"))?;
+        timings
+            .finish_render(1, &encoder)
+            .map_err(|error| format!("profile finish: {error:?}"))?;
+        let elapsed = start.elapsed().as_secs_f64() * 1e6;
+        let submission = queue.submit([encoder.finish()]);
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(Duration::from_secs(10)),
+            })
+            .map_err(|error| format!("profile render poll: {error:?}"))?;
+        if timings.is_enabled() {
+            let mut resolve =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            if !timings
+                .resolve_if_ready(1, &mut resolve)
+                .map_err(|error| format!("profile resolve: {error:?}"))?
+            {
+                return Err("profile timestamps were not ready".to_owned());
+            }
+            let submission = queue.submit([resolve.finish()]);
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: Some(submission),
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .map_err(|error| format!("profile timestamp poll: {error:?}"))?;
+            let passes = timings
+                .try_collect(1)
+                .map_err(|error| format!("profile collect: {error:?}"))?
+                .ok_or_else(|| "profile timestamp readback incomplete".to_owned())?;
+            if iteration == 0 {
+                for pass in &passes {
+                    pass_names.push(pass.name.to_string());
+                    pass_ns.push(Vec::with_capacity(32));
+                }
+            }
+            if passes.len() != pass_names.len()
+                || passes
+                    .iter()
+                    .zip(&pass_names)
+                    .any(|(pass, name)| pass.name.as_ref() != name)
+            {
+                return Err("GPU pass order changed inside one prepared scene".to_owned());
+            }
+            if iteration >= 2 {
+                for (history, pass) in pass_ns.iter_mut().zip(passes) {
+                    history.push(pass.nanoseconds);
+                }
+            }
+        }
+        if iteration >= 2 {
+            encode_us.push(elapsed);
+        }
+    }
+    let (cpu_p50, cpu_p95) = percentile_summary(&mut encode_us);
+    let mut result = format!("encode p50/p95={cpu_p50:.3}/{cpu_p95:.3} us");
+    for (name, mut samples) in pass_names.into_iter().zip(pass_ns) {
+        let (p50, p95) = percentile_summary(&mut samples);
+        write!(result, "; {name} p50/p95={p50:.0}/{p95:.0} ns")
+            .expect("formatting into String cannot fail");
+    }
+    Ok(result)
+}
+
 async fn run() -> Result<String, String> {
     let mut sim = simulation()?;
     let mut extractor = RenderExtractor::new(ENTITY_COUNT);
@@ -131,8 +221,8 @@ async fn run() -> Result<String, String> {
     let prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
         .await
         .map_err(|error| format!("prepare: {error:?}"))?;
-    let target =
-        OffscreenTarget::new(&device, 1, 640, 360).map_err(|error| format!("target: {error:?}"))?;
+    let target = OffscreenTarget::new(&device, &prepared, 640, 360)
+        .map_err(|error| format!("target: {error:?}"))?;
     let mut pixels = target.readback(&device);
     let mut timings = GpuTimings::new(&device, &queue, 1, 4)
         .map_err(|error| format!("GPU timings: {error:?}"))?;
@@ -177,7 +267,7 @@ async fn run() -> Result<String, String> {
         }
         std::fs::write(path, ppm).map_err(|error| format!("capture: {error}"))?;
     }
-    let gpu = if timings.is_enabled() {
+    let cold_gpu = if timings.is_enabled() {
         let mut resolve = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         if !timings
             .resolve_if_ready(1, &mut resolve)
@@ -203,8 +293,9 @@ async fn run() -> Result<String, String> {
     } else {
         "unavailable".to_owned()
     };
+    let repeated = profile_repeated(&device, &queue, &prepared, &target, &mut timings)?;
     Ok(format!(
-        "adapter={adapter_name}; entities={ENTITY_COUNT}; moving={moved}; tick={:.3} us; extract={:.3} us; encode={:.3} us; GPU passes={gpu}; foreground_pixels={foreground}",
+        "adapter={adapter_name}; entities={ENTITY_COUNT}; moving={moved}; tick={:.3} us; extract={:.3} us; cold encode={:.3} us; cold GPU passes={cold_gpu}; {repeated}; foreground_pixels={foreground}",
         tick_time.as_secs_f64() * 1e6,
         extract_time.as_secs_f64() * 1e6,
         encode_time.as_secs_f64() * 1e6,
