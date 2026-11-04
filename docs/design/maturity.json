@@ -201,6 +201,23 @@
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
       "scope": "One serial fixed-clock host keeps three generation-bound offscreen target/timing packets in flight, advances world ticks without GPU waits, defers pass readback, and counts optional view/report drops. It retains queue ordering and prior-tick history invalidation after a skipped view. Worker-owned snapshots/packets, surface, loss/recreation, cooked content, live view/light and Chrome/iPhone execution remain open."
+    },
+    "V1_cooked_constant_light": {
+      "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
+      "functional_validation": "pinned_a_b_unrelated_edit_corrupt_artifact_tolerance_boundary_same_tick_metal_pixels_world_tick_and_zero_sun_timestamp_test",
+      "experienced_quality": "synthetic_colour_delta_only_no_visual_acceptance",
+      "platform_performance": {
+        "mac": "not_qualified_offscreen_test_only",
+        "windows": "not_run",
+        "browser": "compile_only_native_cook_excluded",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max/Metal 10k/1.5k-moving single opt-in A/B/C run proves pixels and ordered ticks. Separate 100-sample diagnostic-light assembled-frame Divan medians: four passes with timestamps 1.229 ms/141 benchmark-thread Rust allocations/26.37 KB, plus synthetic surface pass 1.271 ms/155/27.47 KB, without timestamps 1.030 ms/80/14.39 KB. Source cook, replacement peak, preparation latency and cooked photometric steady frame costs are not yet measured.",
+      "evidence": [
+        "../evidence/render/V1-COOKED-ENVIRONMENT-2026-11-04.md"
+      ],
+      "scope": "F3 pin closes the selected scene@2/environment@1/light@1 records; F4 product key uses four direct exact-input hashes and authenticates artifact bytes on load. The V1 native host prepares photometric Sun/ambient/background and three new targets off the tick path, selects only after old GPU packets retire, and reports visual revision. There is no live watcher, worker-scheduled preparation, radius/penumbra response, deterministic held-packet proof, failure UI, Chrome/iPhone runtime or device budget qualification."
     }
   },
   "user_selected": [
