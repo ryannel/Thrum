@@ -171,6 +171,27 @@ impl GpuTimings {
     pub fn is_enabled(&self) -> bool {
         self.enabled.is_some()
     }
+    /// Check that a whole prepared pass group fits before encoding any pass.
+    /// Disabled timestamp batches need no query capacity.
+    pub(crate) fn check_passes(&self, generation: u64, additional: u32) -> Result<(), TimingError> {
+        self.check_generation(generation)?;
+        let Some(enabled) = &self.enabled else {
+            return Ok(());
+        };
+        if enabled.pending.is_some() || enabled.render_pending.is_some() {
+            return Err(TimingError::Busy);
+        }
+        let additional = usize::try_from(additional).map_err(|_| TimingError::Capacity)?;
+        let needed = enabled
+            .names
+            .len()
+            .checked_add(additional)
+            .ok_or(TimingError::Capacity)?;
+        if needed > usize::try_from(enabled.capacity).map_err(|_| TimingError::Capacity)? {
+            return Err(TimingError::Capacity);
+        }
+        Ok(())
+    }
     /// Reserve the next pair and attach its writes to exactly one encoded pass.
     /// Caller must end that pass before resolving this batch.
     ///

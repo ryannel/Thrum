@@ -5,6 +5,8 @@
 [C06–C08](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) and the
 [render specification](../RENDER-SPEC.md). This is a renderer foundation with
 one real lit diagnostic, not M2 clustered-forward/CSM qualification.
+The later [M2 scene-colour slice](M2-HDR-DISPLAY.md) supersedes this decision's
+single-pass linear-UNORM output while retaining the M1 directional/depth scope.
 
 ## Prepared interaction and authority
 

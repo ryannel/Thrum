@@ -42,16 +42,45 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             [0.0, 1.0 / 0.6, 0.0, 0.0],
             [0.0, 0.0, 10.0, 0.0],
         ];
+        let prepare_start = std::time::Instant::now();
         let prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await
             .unwrap();
+        eprintln!(
+            "cold prepare forward+display pipelines: {} ns",
+            prepare_start.elapsed().as_nanos()
+        );
         // Non-square/non-aligned row extent catches padded-row copy mistakes.
-        let target = OffscreenTarget::new(&device, 41, 65, 33).unwrap();
+        let target = OffscreenTarget::new(&device, &prepared, 65, 33).unwrap();
         let graph = prepared.graph(&target, true).unwrap();
-        assert_eq!(graph.dependencies, [(0, 1)]);
+        assert_eq!(graph.dependencies, [(0, 1), (1, 2)]);
+        assert_eq!(
+            prepared.graph(&target, false).unwrap().dependencies,
+            [(0, 1)]
+        );
         let mut pixels = target.readback(&device);
-        let mut timings = GpuTimings::new(&device, &queue, 41, 1).unwrap();
+        let mut timings = GpuTimings::new(&device, &queue, 41, 2).unwrap();
         let enabled = timings.is_enabled();
+        if enabled {
+            let mut one_pass = GpuTimings::new(&device, &queue, 41, 1).unwrap();
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            assert!(matches!(
+                prepared.encode(&mut encoder, 41, &target, Some(&mut one_pass)),
+                Err(thrum_render::synthetic::RenderError::Timing(
+                    thrum_render::timing::TimingError::Capacity
+                ))
+            ));
+            // No timestamp labels were reserved by the rejected whole-view check.
+            assert!(one_pass.pass_writes(41, "still unused").unwrap().is_some());
+            prepared
+                .encode(&mut encoder, 41, &target, Some(&mut timings))
+                .unwrap();
+            // This is deliberately unsubmitted preparation validation. Start a
+            // fresh timing batch for the submitted measurements below.
+            timings = GpuTimings::new(&device, &queue, 41, 2).unwrap();
+        }
+
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         for _ in 0..2 {
             let mut encoder =
@@ -92,7 +121,10 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                     "center {actual} expected {expected}"
                 );
             }
-            for (actual, expected) in rgba[..4].iter().zip([5_u8, 8, 10, 255]) {
+            for (actual, expected) in rgba[..4]
+                .iter()
+                .zip(reference_display([0.02, 0.03, 0.04], 1.0))
+            {
                 assert!(
                     actual.abs_diff(expected) <= 1,
                     "background {actual} expected {expected}"
@@ -113,7 +145,9 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             let measured = timings.try_collect(41).unwrap();
             if enabled {
                 let measured = measured.unwrap();
-                assert_eq!(measured.len(), 1);
+                assert_eq!(measured.len(), 2);
+                assert_eq!(measured[0].name.as_ref(), "synthetic forward opaque");
+                assert_eq!(measured[1].name.as_ref(), "synthetic tone encode");
                 assert!(measured[0].nanoseconds.is_finite() && measured[0].nanoseconds >= 0.0);
                 eprintln!("GPU pass diagnostic: {} ns", measured[0].nanoseconds);
             } else {
@@ -249,16 +283,113 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             .await
             .unwrap();
             let rgba = render_pixels(&device, &queue, &prepared, &target);
-            assert_pixel(&rgba, 65, 32, 16, [51, 26, 0, 255]);
+            assert_pixel(&rgba, 65, 32, 16, reference_display([0.2, 0.1, 0.0], 1.0));
+        }
+        // Above-one radiance must retain brightness contrast through fp16;
+        // pre-clamping the forward output would make both cards identical.
+        for exposure in [0.25, 1.0] {
+            let mut emitted = Vec::new();
+            for radiance in [2.0, 8.0] {
+                let mut card = scene.clone();
+                card.materials[0].emissive_cutoff = [radiance; 4];
+                card.materials[0].emissive_cutoff[3] = 0.0;
+                let prepared = PreparedSynthetic::prepare_with_light_and_exposure(
+                    &device,
+                    &queue,
+                    41,
+                    &card,
+                    SyntheticLight {
+                        irradiance: [0.0; 3],
+                        ..Default::default()
+                    },
+                    exposure,
+                )
+                .await
+                .unwrap();
+                let card_target = OffscreenTarget::new(&device, &prepared, 65, 33).unwrap();
+                let rgba = render_pixels(&device, &queue, &prepared, &card_target);
+                assert_pixel(
+                    &rgba,
+                    65,
+                    32,
+                    16,
+                    reference_display([f64::from(radiance); 3], f64::from(exposure)),
+                );
+                assert_pixel(
+                    &rgba,
+                    65,
+                    0,
+                    0,
+                    reference_display([0.02, 0.03, 0.04], f64::from(exposure)),
+                );
+                emitted.push(rgba[(16 * 65 + 32) * 4]);
+                if exposure.to_bits() != 1.0_f32.to_bits() {
+                    let mut encoder =
+                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                    assert!(prepared.encode(&mut encoder, 41, &target, None).is_err());
+                    assert!(prepared.graph(&target, false).is_err());
+                }
+            }
+            assert!(
+                emitted[1] > emitted[0] + 10,
+                "HDR contrast survives: {emitted:?}"
+            );
+        }
+        // Saturated HDR must preserve channel ratios through the shared gamut
+        // compression rather than clipping each exposed channel separately.
+        // Each prepared pipeline also renders two extents without preparation.
+        // Finite maximum emission tests bounded white at the SDR asymptote;
+        // the oracle need not reproduce the intermediate fp16 clamp to know it.
+        for emission in [[8.0, 0.5, 0.125], [0.25, 0.5, 16.0], [f32::MAX; 3]] {
+            let mut card = scene.clone();
+            card.materials[0].emissive_cutoff = [emission[0], emission[1], emission[2], 0.0];
+            let prepared = PreparedSynthetic::prepare_with_light(
+                &device,
+                &queue,
+                41,
+                &card,
+                SyntheticLight {
+                    irradiance: [0.0; 3],
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+            let expected = reference_display(emission.map(f64::from), 1.0);
+            assert_eq!(expected[..3].iter().copied().max(), Some(255));
+            for [width, height] in [[65, 33], [97, 49]] {
+                let resized = OffscreenTarget::new(&device, &prepared, width, height).unwrap();
+                assert_eq!(
+                    prepared.graph(&resized, true).unwrap().dependencies,
+                    [(0, 1), (1, 2)]
+                );
+                let rgba = render_pixels(&device, &queue, &prepared, &resized);
+                assert_eq!(rgba.len(), width as usize * height as usize * 4);
+                assert_pixel(
+                    &rgba,
+                    width as usize,
+                    (width / 2) as usize,
+                    (height / 2) as usize,
+                    expected,
+                );
+                assert_pixel(
+                    &rgba,
+                    width as usize,
+                    0,
+                    0,
+                    reference_display([0.02, 0.03, 0.04], 1.0),
+                );
+            }
         }
         // 10k real lit cubes at 1080p, prepared/graph-compiled before timing.
         let large =
             PreparedSynthetic::prepare(&device, &queue, 41, &SyntheticScene::grid(10_000).unwrap())
                 .await
                 .unwrap();
-        let large_target = OffscreenTarget::new(&device, 41, 1920, 1080).unwrap();
+        let large_target = OffscreenTarget::new(&device, &large, 1920, 1080).unwrap();
         let _graph = large.graph(&large_target, false).unwrap();
         let mut gpu_ns = Vec::new();
+        let mut display_gpu_ns = Vec::new();
         let mut enabled_cpu_ns = Vec::new();
         let mut disabled_cpu_ns = Vec::new();
         for frame in 0..37 {
@@ -280,6 +411,8 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 assert_eq!(values[0].name.as_ref(), "synthetic forward opaque");
                 if frame >= 5 {
                     gpu_ns.push(values[0].nanoseconds);
+                    assert_eq!(values[1].name.as_ref(), "synthetic tone encode");
+                    display_gpu_ns.push(values[1].nanoseconds);
                 }
             }
             let mut encoder =
@@ -294,6 +427,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             }
         }
         report("10k cubes 1920x1080 GPU forward opaque ns", &gpu_ns);
+        report("1920x1080 GPU tone encode ns", &display_gpu_ns);
         report(
             if enabled {
                 "CPU encode+finish_render timestamp-enabled ns"
@@ -308,13 +442,13 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             rgba.as_chunks::<4>()
                 .0
                 .iter()
-                .filter(|p| p[0] > 20 || p[1] > 20 || p[2] > 20)
+                .filter(|p| p[0] > 60 || p[1] > 60 || p[2] > 60)
                 .count()
                 > 100_000,
             "10k lit geometry must cover meaningful pixels"
         );
         if let Ok(path) = std::env::var("THRUM_RENDER_CAPTURE") {
-            let mut ppm = b"P6\n1920 1080\n255\n".to_vec();
+            let mut ppm = b"P6\n# sRGB encoded after authored exposure and tone/gamut mapping\n1920 1080\n255\n".to_vec();
             for pixel in rgba.as_chunks::<4>().0 {
                 ppm.extend_from_slice(&pixel[..3]);
             }
@@ -335,7 +469,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         assert!(!disabled.resolve_if_ready(42, &mut encoder).unwrap());
         assert!(disabled.try_collect(42).unwrap().is_none());
         eprintln!(
-            "adapter={} backend={:?} driver={} timestamps={enabled}; directional BRDF/emission/depth pixel checks and 10,000-cube 1080p run passed",
+            "adapter={} backend={:?} driver={} timestamps={enabled}; directional BRDF/emission/depth, HDR contrast, authored exposure and tone/sRGB pixel checks plus 10,000-cube 1080p run passed",
             info.name, info.backend, info.driver
         );
     });
@@ -401,11 +535,6 @@ fn report(name: &str, samples: &[f64]) {
 }
 /// Independent f64 evaluation of the literal specification, without the shader's
 /// Smith cancellation. Default texture texels are all multiplicative identities.
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss,
-    reason = "the independent oracle explicitly clamps and rounds its linear unorm output to [0,255]"
-)]
 fn reference_pixel(material: &MaterialRecord, normal: [f64; 3], light: SyntheticLight) -> [u8; 4] {
     let dot = |a: [f64; 3], b: [f64; 3]| a.into_iter().zip(b).map(|(x, y)| x * y).sum::<f64>();
     let normalize = |a: [f64; 3]| {
@@ -417,8 +546,8 @@ fn reference_pixel(material: &MaterialRecord, normal: [f64; 3], light: Synthetic
     let v = [0.0, 0.0, -1.0];
     let ci = dot(n, l).max(0.0);
     let co = dot(n, v).max(0.0);
-    let mut out = [0_u8; 4];
-    for (channel, output) in out[..3].iter_mut().enumerate() {
+    let mut out = [0.0; 3];
+    for (channel, output) in out.iter_mut().enumerate() {
         let mut radiance = f64::from(material.emissive_cutoff[channel]);
         if ci > 0.0 && co > 0.0 {
             let h = normalize(std::array::from_fn(|i| l[i] + v[i]));
@@ -438,8 +567,30 @@ fn reference_pixel(material: &MaterialRecord, normal: [f64; 3], light: Synthetic
                 * f64::from(light.irradiance[channel])
                 * ci;
         }
-        *output = (radiance.clamp(0.0, 1.0) * 255.0).round() as u8;
+        *output = radiance;
     }
-    out[3] = 255;
-    out
+    reference_display(out, 1.0)
+}
+
+/// Independent literal f64 scene-to-SDR policy, with no shader rearrangement.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the oracle clamps display output and rounds it to [0,255]"
+)]
+fn reference_display(radiance: [f64; 3], exposure: f64) -> [u8; 4] {
+    let exposed = radiance.map(|v| v * exposure);
+    let luminance = exposed[0] * 0.2126 + exposed[1] * 0.7152 + exposed[2] * 0.0722;
+    let tone = exposed.map(|v| v / (1.0 + luminance));
+    let peak = tone.into_iter().fold(1.0, f64::max);
+    let rgb = tone.map(|v| {
+        let linear = (v / peak).clamp(0.0, 1.0);
+        let encoded = if linear <= 0.003_130_8 {
+            12.92 * linear
+        } else {
+            1.055 * linear.powf(1.0 / 2.4) - 0.055
+        };
+        (encoded * 255.0).round() as u8
+    });
+    [rgb[0], rgb[1], rgb[2], 255]
 }

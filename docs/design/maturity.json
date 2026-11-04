@@ -81,6 +81,23 @@
         "../evidence/render/M2-PROFILER-LABELS-2026-11-03.md"
       ],
       "scope": "GPU pass label reuse and callback lifecycle only. Whole-frame profiler, clustered forward, CSM, exposure, sustained allocation and device frame budgets remain open."
+    },
+    "M2_hdr_display": {
+      "implementation": "partial_two_pass_synthetic_scene_and_fixed_sdr_display",
+      "functional_validation": "independent_f64_oracle_graph_closure_scoped_tests_and_real_metal_gpu_test",
+      "experienced_quality": "native_crop_inspected_procedural_diagnostic_only",
+      "platform_performance": {
+        "mac": "not_qualified_isolated_diagnostic_only",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Metal debug 10k cubes at 1080p, 32 sequential samples: forward GPU median 0.121625 ms/p95 0.123500 ms; tone/sRGB GPU median 0.082334 ms/p95 0.083583 ms; cold dual-pipeline preparation 7.452 ms. No whole-frame or sustained budget claim.",
+      "evidence": [
+        "../evidence/render/M2-HDR-DISPLAY-2026-11-04.md"
+      ],
+      "scope": "The running M1 diagnostic preserves above-one directional/emissive radiance in pre-exposed Rgba16Float and applies checked fixed exposure, specified tone/gamut transform and one sRGB encode into Rgba8Unorm. Two graph roles, resize reuse, bright/chromatic cards, padded readback and timing preflight pass on Metal. Nonfinite/half-float clamp counters, visible diagnostics, clustered lights, CSM, cooked products, other devices and sustained pacing remain open."
     }
   },
   "user_selected": [
