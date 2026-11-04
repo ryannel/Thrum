@@ -40,8 +40,8 @@ pub struct FrameSample {
     pub encode_cpu: Duration,
     /// Total host-call wall time, including render and timestamp waits.
     pub wall: Duration,
-    /// Actual GPU timestamps for forward and display passes, in nanoseconds.
-    pub gpu_pass_ns: Option<[f64; 2]>,
+    /// Actual GPU timestamps for near/far Sun shadows, forward and display.
+    pub gpu_pass_ns: Option<[f64; 4]>,
     /// Records whose changed ABI bytes were enqueued for upload.
     pub uploaded_rows: usize,
     /// Queue payload bytes for this update.
@@ -73,7 +73,7 @@ pub struct FrameHost<'a> {
 }
 
 impl<'a> FrameHost<'a> {
-    /// Prepare one 10k-entity scene and both GPU passes before the first draw.
+    /// Prepare one 10k-entity scene and all four GPU passes before the first draw.
     /// # Errors
     /// Returns setup, device or scene preparation errors without a partial host.
     pub async fn new(device: &'a wgpu::Device, queue: &'a wgpu::Queue) -> Result<Self, String> {
@@ -93,6 +93,7 @@ impl<'a> FrameHost<'a> {
             20.0,
         )
         .map_err(|error| format!("camera: {error:?}"))?;
+        scene.sun_shadows = true;
         scene.local_lights = [
             ([-0.55, -0.55, 1.0], [5.0, 0.8, 0.4]),
             ([0.55, -0.55, 1.0], [0.4, 4.0, 0.8]),
@@ -121,7 +122,7 @@ impl<'a> FrameHost<'a> {
         .map_err(|error| format!("prepare: {error:?}"))?;
         let target = OffscreenTarget::new(device, &prepared, WIDTH, HEIGHT)
             .map_err(|error| format!("target: {error:?}"))?;
-        let timings = GpuTimings::new(device, queue, GENERATION, 2)
+        let timings = GpuTimings::new(device, queue, GENERATION, 4)
             .map_err(|error| format!("GPU timings: {error:?}"))?;
         let clock = TickClock::new(ClockConfig::default(), Duration::ZERO)
             .map_err(|error| format!("clock: {error:?}"))?;
@@ -233,7 +234,8 @@ impl<'a> FrameHost<'a> {
                 + extracted.dropped_duplicate
                 + extracted.dropped_invalid
                 + dropped_invalid
-                + uploaded.dropped_invalid,
+                + uploaded.dropped_invalid
+                + uploaded.dropped_shadow_envelope,
             dropped_light_references: self.prepared.dropped_light_references(),
         }))
     }
@@ -271,7 +273,7 @@ impl<'a> FrameHost<'a> {
         Ok(())
     }
 
-    fn collect_gpu_passes(&mut self) -> Result<Option<[f64; 2]>, String> {
+    fn collect_gpu_passes(&mut self) -> Result<Option<[f64; 4]>, String> {
         if !self.timings.is_enabled() {
             return Ok(None);
         }
@@ -292,12 +294,19 @@ impl<'a> FrameHost<'a> {
             .try_collect(GENERATION)
             .map_err(|error| format!("collect timestamps: {error:?}"))?
             .ok_or_else(|| "timestamp readback incomplete".to_owned())?;
-        if passes.len() != 2
-            || passes[0].name.as_ref() != "synthetic forward opaque"
-            || passes[1].name.as_ref() != "synthetic tone encode"
+        if passes.len() != 4
+            || passes[0].name.as_ref() != "synthetic Sun shadow near"
+            || passes[1].name.as_ref() != "synthetic Sun shadow far"
+            || passes[2].name.as_ref() != "synthetic forward opaque"
+            || passes[3].name.as_ref() != "synthetic tone encode"
         {
             return Err("prepared GPU pass order changed".to_owned());
         }
-        Ok(Some([passes[0].nanoseconds, passes[1].nanoseconds]))
+        Ok(Some([
+            passes[0].nanoseconds,
+            passes[1].nanoseconds,
+            passes[2].nanoseconds,
+            passes[3].nanoseconds,
+        ]))
     }
 }

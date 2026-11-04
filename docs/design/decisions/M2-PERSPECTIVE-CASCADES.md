@@ -1,6 +1,6 @@
 # M2 perspective camera and cascaded Sun shadows
 
-4 November 2026. **Selected V1 direction; perspective diagnostic locally qualified, cascades unimplemented.** This continues the running 10k scene under [C06–C08](../CONTRACTS.md) and [RENDER-SPEC](../RENDER-SPEC.md). Prior exposure to Thrum's orthographic diagnostic informs the reconciliation below; this is not a blind design study.
+4 November 2026. **Selected V1 direction; perspective and two-cascade diagnostics run, full renderer/device qualification open.** This continues the running 10k scene under [C06–C08](../CONTRACTS.md) and [RENDER-SPEC](../RENDER-SPEC.md). Prior exposure to Thrum's orthographic diagnostic informs the reconciliation below; this is not a blind design study.
 
 ## Required interaction and owners
 
@@ -21,5 +21,5 @@ The two-map choice revises RENDER-SPEC's earlier single 2048² map worksheet: tw
 ## Proof queue and rejection conditions
 
 1. Perspective view packet, projection-aware clusters and per-fragment view direction: the [local Metal diagnostic](../../evidence/render/M2-PERSPECTIVE-2026-11-04.md) now covers point round trips, local-light pixels, target resize and the running 10k host. Full view identity/history, ray round trips and live extraction still belong to V2; preserve the old orthographic oracle until those consumers replace it.
-2. Two cascade maps on near/far receivers with one off-camera caster: reject if a caster disappears, split transition shows a visible seam, bias causes acne/peter-panning beyond tolerance, or a sub-texel camera move shimmers. Graph declarations and GPU timestamps must include both maps/passes.
+2. Two cascade maps on near/far receivers with off-camera casters: the [synthetic Metal proof](../../evidence/render/M2-CASCADES-2026-11-04.md) now covers occlusion, split overlap, sub-texel XY stability, graph/timestamp closure and an acne repair. It draws the shared instance table twice without the planned compact caster lists. Moving poses outside the prepared light-depth envelope retain their prior GPU row with a counter; live refitting and split-edge/peter-panning quality remain open.
 3. Run the 10k/1.5k moving host, compare the same input-to-visible path and 600-frame distributions, then qualify Chrome WebGPU and iPhone runtime separately. Device loss and resize must recreate generation-bound resources without advancing temporal history from a failed view.

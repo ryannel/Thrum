@@ -2,7 +2,8 @@
 //! instance tables, four texture-class bindings, graph declaration and optional
 //! timestamps. One directional metallic-roughness closure and opaque depth are
 //! real, followed by a fixed authored SDR display transform. Fixed-view
-//! clustered local lights are prepared here; shadows/cooked products remain open.
+//! clustered local lights and two synthetic Sun cascades are prepared here;
+//! cooked products and the general render scene remain open.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::graph::{
@@ -10,21 +11,24 @@ use crate::graph::{
     ResourceDescriptor, ResourceScope,
 };
 use crate::timing::{GpuTimings, TimingError};
+use glam::Vec3;
 use std::collections::BTreeSet;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use wgpu::util::DeviceExt;
 
 mod cluster;
+mod shadow;
 mod upload;
 mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
+use shadow::{ShadowPrepared, ShadowTarget};
 use upload::{InstanceUpload, pack_synthetic_instance};
 use view::AUX_BYTES;
 pub use view::SyntheticView;
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 5;
+pub const SYNTHETIC_REVISION: u64 = 6;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 const VIEW_BYTES: usize = 160;
@@ -47,6 +51,8 @@ pub struct SyntheticScene {
     pub local_lights: Vec<SyntheticPointLight>,
     /// Unjittered camera used for this prepared view.
     pub view: SyntheticView,
+    /// Prepare two finite perspective Sun cascades; off avoids their maps and passes.
+    pub sun_shadows: bool,
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
@@ -101,6 +107,7 @@ impl SyntheticScene {
             instances,
             local_lights: Vec::new(),
             view: SyntheticView::default(),
+            sun_shadows: false,
         })
     }
 }
@@ -171,6 +178,15 @@ impl SyntheticLight {
     }
 }
 
+fn packed_light_direction(data: &[u8; LIGHT_BYTES]) -> Vec3 {
+    let words = data[..12].as_chunks::<4>().0;
+    Vec3::new(
+        f32::from_le_bytes(words[0]),
+        f32::from_le_bytes(words[1]),
+        f32::from_le_bytes(words[2]),
+    )
+}
+
 /// Expected failures before a view can be encoded or published ready.
 #[derive(Debug)]
 pub enum RenderError {
@@ -225,6 +241,8 @@ pub struct InstanceUploadReport {
     pub changed_rows: usize,
     /// Malformed presentation rows kept at their previously valid GPU value.
     pub dropped_invalid: usize,
+    /// Valid rows outside the prepared shadow depth envelope; prior GPU rows remain.
+    pub dropped_shadow_envelope: usize,
     /// Queue write calls made for this update.
     pub writes: usize,
     /// Payload bytes enqueued, including unchanged rows in a full fallback.
@@ -254,6 +272,7 @@ pub struct PreparedSynthetic {
     cluster_head_bytes: u64,
     cluster_index_bytes: u64,
     dropped_light_references: usize,
+    shadow: Option<ShadowPrepared>,
 }
 impl PreparedSynthetic {
     /// Prepare on the V1 executor's existing device and upload queue. No private
@@ -300,6 +319,7 @@ impl PreparedSynthetic {
     ) -> Result<Self, RenderError> {
         let display_gain = checked_display_gain(exposure)?;
         let mut light_data = light.pack()?;
+        let shadow_enabled = scene.sun_shadows && light.irradiance.iter().any(|value| *value > 0.0);
         let clusters = ClusterTable::build(&scene.local_lights, &scene.view)?;
         let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
@@ -354,16 +374,38 @@ impl PreparedSynthetic {
             contents: &view_data,
             usage: wgpu::BufferUsages::UNIFORM,
         });
+        let mut view_entries = vec![
+            uniform_layout(
+                0,
+                VIEW_BYTES as u64,
+                wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+            ),
+            uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
+        ];
+        if shadow_enabled {
+            view_entries.extend([
+                uniform_layout(2, shadow::SAMPLE_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Depth,
+                        view_dimension: wgpu::TextureViewDimension::D2Array,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                    count: None,
+                },
+            ]);
+        }
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic view and target aux"),
-            entries: &[
-                uniform_layout(
-                    0,
-                    VIEW_BYTES as u64,
-                    wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                ),
-                uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
-            ],
+            entries: &view_entries,
         });
         let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic directional and clustered sources"),
@@ -457,6 +499,18 @@ impl PreparedSynthetic {
                 abi::INSTANCE_BYTES as u64,
             )],
         });
+        let shadow = if shadow_enabled {
+            let direction = packed_light_direction(&light_data);
+            Some(ShadowPrepared::new(
+                device,
+                &scene.view,
+                &scene.instances,
+                direction,
+                &instance_layout,
+            )?)
+        } else {
+            None
+        };
         let views: Vec<wgpu::TextureView> = classes
             .arrays()
             .iter()
@@ -539,14 +593,15 @@ impl PreparedSynthetic {
                 resource: instance_upload.buffer().as_entire_binding(),
             }],
         });
+        let bind_group_layouts = [
+            Some(&view_layout),
+            Some(&light_layout),
+            Some(&material_layout),
+            Some(&instance_layout),
+        ];
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("synthetic ABI2"),
-            bind_group_layouts: &[
-                Some(&view_layout),
-                Some(&light_layout),
-                Some(&material_layout),
-                Some(&instance_layout),
-            ],
+            bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -573,7 +628,11 @@ impl PreparedSynthetic {
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some("fragment"),
+                entry_point: Some(if shadow.is_some() {
+                    "shadowed_fragment"
+                } else {
+                    "fragment"
+                }),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: SCENE_FORMAT,
@@ -613,6 +672,7 @@ impl PreparedSynthetic {
             cluster_head_bytes,
             cluster_index_bytes,
             dropped_light_references,
+            shadow,
         })
     }
     /// Local-light references dropped when a cluster exceeds its declared
@@ -633,8 +693,11 @@ impl PreparedSynthetic {
         instances: &[InstanceRecord],
         changed_slots: &[u32],
     ) -> Result<InstanceUploadReport, RenderError> {
+        let shadow = self.shadow.as_ref();
         self.instance_upload
-            .replace(queue, instances, changed_slots)
+            .replace(queue, instances, changed_slots, |instance| {
+                shadow.is_none_or(|shadow| shadow.contains_caster(instance))
+            })
     }
     /// Prepared generation-local finite draw tuple.
     pub fn pipeline_key(&self) -> PipelineKey {
@@ -646,11 +709,19 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
+    fn shadow_key(&self, index: u32) -> PipelineKey {
+        PipelineKey {
+            role: index + 2,
+            ..self.key
+        }
+    }
     fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if target.generation != self.key.device_generation
             || target.display_gain.to_bits() != self.display_gain.to_bits()
             || target.exposure_bits != self.exposure_bits
             || target.view_sample != self.view_sample
+            || target.shadow.as_ref().map(|shadow| &shadow.sample_data)
+                != self.shadow.as_ref().map(|shadow| &shadow.sample_data)
         {
             return Err(RenderError::StaleTarget);
         }
@@ -689,12 +760,14 @@ impl PreparedSynthetic {
                 store: true,
             },
             Access {
-                resource: instance,
+                resource: instance.clone(),
                 range: 0..self.instance_bytes,
                 kind: AccessKind::StorageRead,
                 store: true,
             },
         ];
+        let mut prepared_keys = BTreeSet::from([self.key, self.display_key()]);
+        self.append_shadow_passes(&mut graph, &instance, &mut accesses, &mut prepared_keys)?;
         for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64, LIGHT_BYTES as u64] {
             let uniform = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -850,10 +923,94 @@ impl PreparedSynthetic {
                 external_side_effect: true,
             });
         }
-        Ok(graph.compile(
-            self.key.device_generation,
-            &BTreeSet::from([self.key, self.display_key()]),
-        )?)
+        Ok(graph.compile(self.key.device_generation, &prepared_keys)?)
+    }
+    fn append_shadow_passes(
+        &self,
+        graph: &mut FrameGraph,
+        instance: &crate::graph::ResourceId,
+        accesses: &mut Vec<Access>,
+        prepared_keys: &mut BTreeSet<PipelineKey>,
+    ) -> Result<(), RenderError> {
+        if self.shadow.is_none() {
+            return Ok(());
+        }
+
+        let maps = graph.resource(
+            ResourceDescriptor::Texture {
+                width: shadow::SIZE,
+                height: shadow::SIZE,
+                layers: 2,
+                mips: 1,
+                samples: 1,
+                format: shadow::FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+            },
+            ResourceScope::Imported { initialized: false },
+        )?;
+        for index in 0..2_u32 {
+            let matrix = graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes: 64,
+                    usage: wgpu::BufferUsages::UNIFORM,
+                },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            let key = self.shadow_key(index);
+            prepared_keys.insert(key);
+            graph.pass(Pass {
+                name: if index == 0 {
+                    "synthetic Sun shadow near"
+                } else {
+                    "synthetic Sun shadow far"
+                }
+                .into(),
+                scope: PassScope::View(1),
+                pipeline: Some(key),
+                accesses: vec![
+                    Access {
+                        resource: instance.clone(),
+                        range: 0..self.instance_bytes,
+                        kind: AccessKind::StorageRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: matrix,
+                        range: 0..64,
+                        kind: AccessKind::UniformRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: maps.clone(),
+                        range: u64::from(index)..u64::from(index + 1),
+                        kind: AccessKind::AttachmentClear,
+                        store: true,
+                    },
+                ],
+                external_side_effect: false,
+            });
+        }
+        let sample = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: shadow::SAMPLE_BYTES as u64,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access {
+            resource: sample,
+            range: 0..shadow::SAMPLE_BYTES as u64,
+            kind: AccessKind::UniformRead,
+            store: true,
+        });
+        accesses.push(Access {
+            resource: maps,
+            range: 0..2,
+            kind: AccessKind::SampledRead,
+            store: true,
+        });
+        Ok(())
     }
     fn append_cluster_reads(
         &self,
@@ -897,7 +1054,17 @@ impl PreparedSynthetic {
             return Err(RenderError::StaleTarget);
         }
         if let Some(timings) = timings.as_deref_mut() {
-            timings.check_passes(generation, 2)?;
+            timings.check_passes(generation, if self.shadow.is_some() { 4 } else { 2 })?;
+        }
+        if let (Some(shadow), Some(shadow_target)) = (&self.shadow, &target.shadow) {
+            shadow.encode(
+                encoder,
+                shadow_target,
+                &self.instances,
+                self.instance_count,
+                generation,
+                timings.as_deref_mut(),
+            )?;
         }
         let timestamps = match timings.as_deref_mut() {
             Some(timings) => timings.pass_writes(generation, "synthetic forward opaque")?,
@@ -1129,6 +1296,7 @@ pub struct OffscreenTarget {
     display_gain: f32,
     exposure_bits: u32,
     view_sample: SyntheticView,
+    shadow: Option<ShadowTarget>,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -1152,6 +1320,7 @@ impl OffscreenTarget {
             || height == 0
             || width > limits.max_texture_dimension_2d
             || height > limits.max_texture_dimension_2d
+            || (prepared.shadow.is_some() && shadow::SIZE > limits.max_texture_dimension_2d)
         {
             return Err(RenderError::TargetExtent);
         }
@@ -1222,19 +1391,40 @@ impl OffscreenTarget {
             contents: &prepared.view_sample.pack_aux(width, height),
             usage: wgpu::BufferUsages::UNIFORM,
         });
+        let shadow = prepared
+            .shadow
+            .as_ref()
+            .map(|shadow| ShadowTarget::new(device, shadow));
+        let mut view_entries = vec![
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: prepared.view_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: aux.as_entire_binding(),
+            },
+        ];
+        if let (Some(prepared_shadow), Some(target_shadow)) = (&prepared.shadow, &shadow) {
+            view_entries.extend([
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: prepared_shadow.sample_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&target_shadow.array_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::Sampler(&prepared_shadow.sampler),
+                },
+            ]);
+        }
         let view_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic view and target aux"),
             layout: &prepared.view_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: prepared.view_buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: aux.as_entire_binding(),
-                },
-            ],
+            entries: &view_entries,
         });
         Ok(Self {
             texture,
@@ -1245,6 +1435,7 @@ impl OffscreenTarget {
             display_gain: prepared.display_gain,
             exposure_bits: prepared.exposure_bits,
             view_sample: prepared.view_sample,
+            shadow,
             depth,
             width,
             height,

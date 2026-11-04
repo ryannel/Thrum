@@ -32,6 +32,14 @@ struct ClusterHead {
 @group(1) @binding(1) var<storage, read> local_lights: array<LocalSource>;
 @group(1) @binding(2) var<storage, read> cluster_heads: array<ClusterHead>;
 @group(1) @binding(3) var<storage, read> cluster_indices: array<u32>;
+struct ShadowCascades {
+    light_view_proj: array<mat4x4<f32>, 2>,
+    split_overlap: vec4<f32>,
+    bias: vec4<f32>,
+}
+@group(0) @binding(2) var<uniform> shadows: ShadowCascades;
+@group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
+@group(0) @binding(4) var shadow_sampler: sampler_comparison;
 struct MaterialRecord {
     base: vec4<f32>,
     emissive_cutoff: vec4<f32>,
@@ -140,7 +148,40 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
     }
     return sum;
 }
-@fragment fn fragment(input:VertexOutput)->@location(0) vec4<f32> {
+fn cascade_visibility(index: u32, world_position: vec3<f32>, n: vec3<f32>) -> f32 {
+    let clip = shadows.light_view_proj[index] * vec4(world_position,1.0);
+    let p = clip.xyz/clip.w;
+    let uv = vec2(p.x*0.5+0.5,0.5-p.y*0.5);
+    if any(uv < vec2(0.0)) || any(uv > vec2(1.0)) || p.z < 0.0 || p.z > 1.0 {
+        return 1.0;
+    }
+    let normal_bias = 1.0-clamp(dot(n,light.direction_to_light.xyz),0.0,1.0);
+    let base = select(shadows.bias.y,shadows.bias.x,index == 0u);
+    let slope = select(shadows.bias.w,shadows.bias.z,index == 0u);
+    let reference = p.z + base + slope*normal_bias;
+    let texel = 1.0/vec2<f32>(textureDimensions(shadow_maps));
+    var visible = 0.0;
+    for (var i = 0u; i < 4u; i++) {
+        let offset = vec2(f32(i & 1u)-0.5,f32(i >> 1u)-0.5)*texel;
+        visible += textureSampleCompareLevel(shadow_maps,shadow_sampler,uv+offset,i32(index),reference);
+    }
+    return visible*0.25;
+}
+
+fn sun_visibility(input: VertexOutput, n: vec3<f32>) -> f32 {
+    let near = view_aux.near_far.x;
+    let far = view_aux.near_far.y;
+    let depth = near*far/(near+input.position.z*(far-near));
+    let split = shadows.split_overlap.x;
+    let overlap = shadows.split_overlap.y;
+    if depth < split-overlap { return cascade_visibility(0u,input.world_position,n); }
+    if depth > split+overlap { return cascade_visibility(1u,input.world_position,n); }
+    let first = cascade_visibility(0u,input.world_position,n);
+    let second = cascade_visibility(1u,input.world_position,n);
+    return mix(first,second,clamp((depth-split+overlap)/(2.0*overlap),0.0,1.0));
+}
+
+fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     let material=materials[input.material];
     let base=textureSample(base_textures,material_sampler,input.uv,i32(material.texture_layers.x));
     let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
@@ -161,7 +202,7 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
         fresnel_power = pow(clamp(1.0-dot(v,h),0.0,1.0),5.0);
     }
     let colour = direct_brdf(surface_base,metalness,roughness,n,
-            light.direction_to_light.xyz,v,light.irradiance.rgb,h,fresnel_power)
+            light.direction_to_light.xyz,v,light.irradiance.rgb*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
@@ -169,4 +210,10 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
     let finite = select(vec3(0.0), colour, colour >= vec3(0.0));
     let bounded = min(finite, vec3(3.402823e38));
     return vec4(clamp(bounded*view.pre_exposure_inv_exposure_jitter.x,vec3(0.0),vec3(65504.0)),1.0);
+}
+@fragment fn fragment(input:VertexOutput)->@location(0) vec4<f32> {
+    return shade(input,1.0);
+}
+@fragment fn shadowed_fragment(input:VertexOutput)->@location(0) vec4<f32> {
+    return shade(input,sun_visibility(input,normalize(input.normal)));
 }
