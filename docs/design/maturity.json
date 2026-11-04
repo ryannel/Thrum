@@ -98,6 +98,23 @@
         "../evidence/render/M2-HDR-DISPLAY-2026-11-04.md"
       ],
       "scope": "The running M1 diagnostic preserves above-one directional/emissive radiance in pre-exposed Rgba16Float and applies checked fixed exposure, specified tone/gamut transform and one sRGB encode into Rgba8Unorm. Two graph roles, resize reuse, bright/chromatic cards, padded readback and timing preflight pass on Metal. Nonfinite/half-float clamp counters, visible diagnostics, clustered lights, CSM, cooked products, other devices and sustained pacing remain open."
+    },
+    "A2_render_extraction": {
+      "implementation": "partial_serial_soa_publication_and_offscreen_consumer",
+      "functional_validation": "three_focused_tests_and_one_real_metal_scene_pass",
+      "experienced_quality": "diagnostic_grid_capture_inspected_not_v1_visual_acceptance",
+      "platform_performance": {
+        "mac": "not_qualified_isolated_diagnostic_only",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Metal, 10k hecs entities / 1.5k moving, 640x360 offscreen: serial tick 46.8–47.2 us, sim visit plus extract 193.7–203.9 us, CPU encode 65.0–66.2 us in two process runs; GPU one-frame samples 0.541–1.959 ms, too variable for a budget claim. Divan isolated extraction median 99.52 us, 100 samples. Zero scoped allocations after representative two-frame warmup.",
+      "evidence": [
+        "../evidence/render/A2-SIM-RENDER-2026-11-04.md"
+      ],
+      "scope": "Synchronous presentation copy from committed A1 tick into reused SoA columns, stable-ID prior matching and explicit drop telemetry; one real Mac offscreen consumer. Async SnapshotLease/RenderPacket, GPU instance update, sustained pacing and Chrome/iPhone execution remain open."
     }
   },
   "user_selected": [

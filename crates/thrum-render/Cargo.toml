@@ -10,6 +10,7 @@ description = "Thrum's typed GPU graph and prepared synthetic renderer foundatio
 workspace = true
 
 [dependencies]
+foldhash = "=0.2.0"
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
@@ -22,4 +23,9 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
 [dev-dependencies]
+divan = "=0.1.21"
 pollster = "=1.0.1"
+
+[[bench]]
+name = "extract"
+harness = false

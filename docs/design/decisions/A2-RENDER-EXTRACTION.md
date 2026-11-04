@@ -1,0 +1,15 @@
+# A2 decision: render extraction from committed simulation
+
+4 November 2026. **Selected for the first serial V1 bridge; async publication remains open.** W1 owns gameplay pose and stable identity. V2 owns copied presentation columns and GPU resources. A render visit reads a complete committed W1 tick and never writes back. The first consumer is the `v1-scene` 10k-entity offscreen diagnostic; this does not claim a general game runtime or full C02 `SnapshotLease` publication.
+
+## Representation and lifecycle
+
+Use two preallocated structure-of-arrays CPU frames. Each row holds stable identity, current and previous origin-relative f32 position, visual revision and history-valid bit. A randomized fast hash map indexes the prior frame by stable identity. The extractor clears and reuses the staging frame, visits the immutable source once, then swaps only after the visit returns. A previous sample is valid only for adjacent ticks in the same world epoch with the same stable identity and visual revision. The frame exposes both current and previous view origins; a consumer must use the matching origin and ignore invalid prior entries. A skipped tick, restart or visual change resets history for the affected row. Iteration order carries no identity meaning.
+
+Presentation over-capacity, duplicate identity or unrepresentable view-relative position drops that sample and increments a reported counter. It cannot fail or stall the authoritative tick. The first bridge uses a synchronous borrow of `Simulation`; V1's worker/async path will acquire a C02 immutable snapshot lease and produce an owned `RenderPacket` with GPU staging/resource leases before this A2 parent can be checked.
+
+## Cost and proof
+
+At 10k visible entities, each extraction visits 10k rows, hashes at most 10k stable IDs twice (current insertion and prior lookup), and copies aligned columns into reused storage. Two 10k frames avoid per-frame Vec growth; the maps retain capacity across churn. The alternative of four full `ComponentEntity` copies measured 222.8 µs median in A1 and carries health/ownership/velocity that rendering does not use. A2's measured isolated extraction and assembled scene are in [the first slice](../../evidence/render/A2-SIM-RENDER-2026-11-04.md). Reuse of foldhash 0.2.0 is registered in architecture policy; no custom hash table is added.
+
+Next: wire the owned packet and GPU instance-buffer update into a paced frame host, retain adjacent immutable world snapshots for worker extraction, then measure simultaneous simulation, extraction, upload, CPU encode and GPU passes on named targets. Network extraction uses change ticks and the separate A5 schema codec; render columns are not wire state.
