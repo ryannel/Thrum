@@ -8,6 +8,7 @@
 mod controller;
 mod input;
 mod published;
+mod registered_world;
 mod schedule;
 mod storage;
 mod world;
@@ -15,6 +16,7 @@ mod world;
 pub use controller::{ControllerInput, ControllerRule, ControllerStepError};
 pub use input::{FrameError, InputFrame, SimAction};
 pub use published::{DirtySlots, PublishedPage, SnapshotId, StructuralChange};
+pub use registered_world::{EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError};
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
     RegistrationError, Schedule, ScheduleError, Stage, SystemId, SystemSpec,

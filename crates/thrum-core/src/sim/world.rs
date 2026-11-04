@@ -6,7 +6,7 @@ use super::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId, FrameError,
     InputFrame, Schedule, SimAction, Stage, SystemId, SystemSpec,
     controller::{ControllerRule, integrate_position, resolve_control},
-    storage::{Health, Store},
+    storage::{Health, Store, Visual},
 };
 
 /// Right-handed Y-up world position in f64 metres. A1 has no hierarchy/TRS solver.
@@ -257,11 +257,13 @@ impl Simulation {
         {
             return Err(SimError::InvalidConfig);
         }
+        let registry = fixture_registry();
+        let schedule = fixture_schedule(&registry);
         Ok(Self {
             epoch,
             config,
             tick: 0,
-            store: Store::new(epoch, config.entity_capacity),
+            store: Store::new(epoch, config.entity_capacity, registry),
             peers: Vec::with_capacity(config.peer_capacity),
             committed_inputs: Vec::with_capacity(config.peer_capacity),
             work: Work {
@@ -274,7 +276,7 @@ impl Simulation {
                 touched_marks: vec![0; config.entity_capacity],
                 touched: Vec::with_capacity(config.entity_capacity),
             },
-            schedule: fixture_schedule(),
+            schedule,
             pages: super::published::PublicationRing::new(epoch, config.entity_capacity),
         })
     }
@@ -771,8 +773,7 @@ fn apply_input(
     }
 }
 
-fn fixture_schedule() -> Schedule {
-    use AccessMode::{Read, Write};
+fn fixture_registry() -> ComponentRegistry {
     let mut registry = ComponentRegistry::default();
     registry
         .register::<Ownership>(ComponentSchemaId(1))
@@ -786,6 +787,14 @@ fn fixture_schedule() -> Schedule {
     registry
         .register::<Position>(ComponentSchemaId(4))
         .expect("distinct fixture component type and schema");
+    registry
+        .register::<Visual>(ComponentSchemaId(5))
+        .expect("distinct fixture component type and schema");
+    registry
+}
+
+fn fixture_schedule(registry: &ComponentRegistry) -> Schedule {
+    use AccessMode::{Read, Write};
     let component = |key, mode| Access {
         key: AccessKey::Component(key),
         mode,
@@ -795,7 +804,7 @@ fn fixture_schedule() -> Schedule {
         mode,
     };
     Schedule::new(
-        &registry,
+        registry,
         vec![
             SystemSpec {
                 id: SystemId(0),

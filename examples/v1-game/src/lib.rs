@@ -12,3 +12,5 @@ mod scene;
 pub use browser::{BrowserGame, create_browser_game};
 pub use host::{DriveReport, FrameHost, FrameSample, SurfaceOutput};
 pub use projection::{GameProjection, ProjectionGap};
+#[doc(hidden)]
+pub use scene::simulation_with_count;
