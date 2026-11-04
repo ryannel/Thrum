@@ -42,6 +42,26 @@ fn game_tick_and_publication_rayon(bencher: divan::Bencher<'_, '_>, entity_count
     });
 }
 
+#[divan::bench(args = [10_000, 100_000])]
+fn game_capture_committed(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    sim.step(&[]).expect("committed baseline");
+    bencher.bench_local(move || {
+        divan::black_box(sim.capture());
+    });
+}
+
+#[divan::bench(args = [10_000, 100_000])]
+fn game_restore_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    sim.step(&[]).expect("committed baseline");
+    let saved = sim.capture();
+    bencher.bench_local(move || {
+        sim.restore(&saved).expect("same runtime capture");
+        divan::black_box(sim.tick());
+    });
+}
+
 fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surface: bool) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter =

@@ -3,11 +3,11 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-04",
   "contract_revision": "C4",
-  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0 and G1 are complete in the active V1 game; G2 generic simulation and G3 executing renderer are next; G2 selected hecs from a 10k/100k split-archetype comparison, with integrated qualification open. No general engine runtime, real transport, cooked game loop or V1 device performance is qualified.",
+  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0 and G1 are complete; G2 runs game-owned schema/rules over generic hecs storage, with transaction, callback-binding and rolling-capture review blockers. G3 follows G2. No general engine runtime, real transport, cooked game loop or V1 device performance is qualified.",
   "execution_plan": {
     "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering and budgets on macOS and physical iPhone; Chrome WebGPU reduced-tier smoke only; then four rendered peers over conditioned native QUIC",
     "active": [
-      "G2 generic simulation with selected hecs PreparedQuery, pending registered game components and integrated qualification"
+      "G2 generic simulation: close reviewed atomic-edit, callback-binding and rolling-capture gates"
     ],
     "next_parallel": [
       "G3 executing render graph after reviewed two-page design"
@@ -61,22 +61,23 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "private_registered_hecs_and_reusable_leased_page_ring_in_running_v1_fixed_game_schema_and_rules_remain_in_core",
-      "functional_validation": "two_candidate_600_tick_equal_result_comparison_at_10k_and_100k_core_static_motion_transition_zero_allocation_and_weak_lease_tests_v1_four_peer_test_explicit_real_metal_host_test_independent_review_findings_fixed",
-      "experienced_quality": "not_applicable_no_generic_game_path_yet",
+      "implementation": "partial_running_game_owned_schema_rules_pages_registered_hecs_serial_rayon_replay_and_column_capture",
+      "functional_validation": "running_game_10k_four_peer_serial_rayon_endpoint_equality_after_refusal_churn_and_restore_zero_serial_tick_allocations_explicit_metal_host_passed_review_blockers_open",
+      "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
-        "mac": "isolated_release_kernel_and_warmed_10k_100k_fixture_tick_page_diagnostics_not_g2_game_or_v1_budget_qualified",
+        "mac": "Apple_M3_Max_game_tick_and_full_capture_restore_diagnostics_not_V1_device_budget_qualified",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max release split-archetype kernel: hecs 2.416-2.499 us at 10k and 26.74-27.62 us at 100k; fixed SoA 1.645 and 19.08-19.24 us. Warmed provisional V1 fixture tick plus leased page: 54.29 us at 10k and 537.4 us at 100k median, 100 samples x 100 iterations after 60 warmup ticks. Separate runs do not establish a speedup or full G2 game budget.",
-      "scope": "One private registered hecs authority and reusable G1 page ring serve the running V1 fixture; selected typed queries and checked handles are active. Game-owned components and rules, enforced system access, serial/Rayon equality, restore/replay and complete game-owned tick qualification remain open.",
+      "diagnostic_measurement": "Apple M3 Max complete game tick plus page medians: serial 76.87/774.8 us and Rayon 198.2/1062 us at 10k/100k after 60 warmup ticks. Full capture 93.81/951.1 us, 1.41/14.08 MB; restore 1.531/19.27 ms. No rolling-capture or V1 device qualification.",
+      "scope": "The running V1 game owns all six schema/rule types, inputs and pages. Generic hecs storage, checked identity, token binding, four-page leases and explicit serial/Rayon executor run through one game. A review found generic partial-commit risk, callback registration not yet bound to schedule execution and full captures unsuitable for rolling prediction; G2 remains open.",
       "evidence": [
         "../evidence/v1-workload/G2-STORAGE-COMPARISON-2026-11-04.md",
         "../evidence/v1-workload/G2-SPLIT-QUERY-2026-11-04.md",
-        "../evidence/v1-workload/G2-REGISTERED-WORLD-2026-11-04.md"
+        "../evidence/v1-workload/G2-REGISTERED-WORLD-2026-11-04.md",
+        "../evidence/v1-workload/G2-GAME-RUNTIME-2026-11-04.md"
       ]
     },
     "A1_simulation": {

@@ -5,9 +5,9 @@ use thrum_core::sim::{
     RegistrationError, Schedule, ScheduleError, Stage, SystemId, SystemSpec,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 struct TestPosition;
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 struct TestVelocity;
 
 fn schedule(systems: Vec<SystemSpec>) -> Result<Schedule, ScheduleError> {

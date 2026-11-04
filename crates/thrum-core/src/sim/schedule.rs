@@ -53,9 +53,23 @@ impl ComponentRegistry {
     /// # Errors
     ///
     /// The type or schema identity was already registered.
-    pub fn register<T: Clone + Send + Sync + 'static>(
+    pub fn register<T: Copy + Send + Sync + 'static>(
         &mut self,
         schema: ComponentSchemaId,
+    ) -> Result<ComponentKey, RegistrationError> {
+        self.register_with_snapshot(schema, |value: &T| *value)
+    }
+
+    /// Register a non-Copy value with an explicit independent snapshot copy.
+    /// The operation must not retain shared mutable state from its input.
+    ///
+    /// # Errors
+    ///
+    /// The type or schema identity was already registered.
+    pub fn register_with_snapshot<T: Send + Sync + 'static>(
+        &mut self,
+        schema: ComponentSchemaId,
+        snapshot: fn(&T) -> T,
     ) -> Result<ComponentKey, RegistrationError> {
         let key = ComponentKey::of::<T>();
         if self.entries.iter().any(|entry| entry.key == key) {
@@ -67,8 +81,7 @@ impl ComponentRegistry {
         self.entries.push(ComponentEntry {
             key,
             schema,
-            capture: capture_component::<T>,
-            build: build_component::<T>,
+            capture: Box::new(move |world| capture_component(world, snapshot)),
         });
         Ok(key)
     }
@@ -288,36 +301,47 @@ fn conflicts(a: &SystemSpec, b: &SystemSpec) -> bool {
             .any(|b| a.key == b.key && (a.mode == AccessMode::Write || b.mode == AccessMode::Write))
     })
 }
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 
-type ErasedComponent = Box<dyn Any + Send + Sync>;
+use super::registered_world::SlotKey;
 
-#[derive(Clone, Copy)]
+pub(super) trait SnapshotColumn: Send + Sync {
+    fn build_at(&self, slot: u32, cursor: &mut usize, builder: &mut hecs::EntityBuilder);
+}
+
+type CaptureColumn = Box<dyn Fn(&hecs::World) -> Box<dyn SnapshotColumn> + Send + Sync>;
+
+struct TypedColumn<T> {
+    rows: Vec<(u32, T)>,
+    snapshot: fn(&T) -> T,
+}
+
+impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
+    fn build_at(&self, slot: u32, cursor: &mut usize, builder: &mut hecs::EntityBuilder) {
+        if let Some((found, value)) = self.rows.get(*cursor)
+            && *found == slot
+        {
+            builder.add((self.snapshot)(value));
+            *cursor += 1;
+        }
+    }
+}
+
 pub(super) struct ComponentEntry {
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
-    pub(super) capture: fn(&hecs::World, hecs::Entity) -> Option<ErasedComponent>,
-    pub(super) build: fn(&mut hecs::EntityBuilder, &dyn Any),
+    pub(super) capture: CaptureColumn,
 }
 
-fn capture_component<T: Clone + Send + Sync + 'static>(
+fn capture_component<T: Send + Sync + 'static>(
     world: &hecs::World,
-    entity: hecs::Entity,
-) -> Option<ErasedComponent> {
-    world.get::<&T>(entity).ok().map(|value| {
-        let saved: ErasedComponent = Box::new((*value).clone());
-        saved
-    })
-}
-
-fn build_component<T: Clone + Send + Sync + 'static>(
-    builder: &mut hecs::EntityBuilder,
-    value: &dyn Any,
-) {
-    builder.add(
-        value
-            .downcast_ref::<T>()
-            .expect("snapshot schema matches the registered component")
-            .clone(),
-    );
+    snapshot: fn(&T) -> T,
+) -> Box<dyn SnapshotColumn> {
+    let mut rows: Vec<_> = world
+        .query::<(&SlotKey, &T)>()
+        .iter()
+        .map(|(slot, value)| (slot.0, snapshot(value)))
+        .collect();
+    rows.sort_unstable_by_key(|(slot, _)| *slot);
+    Box::new(TypedColumn { rows, snapshot })
 }
