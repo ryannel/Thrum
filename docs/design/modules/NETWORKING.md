@@ -4,7 +4,8 @@
 selects QUIC/WebTransport and acknowledged state deltas; [the A5 timing decision](../decisions/A5-INPUT-TIMING-RECONCILIATION.md)
 selects the first conditioned input fixture. [NETWORK-SPEC.md](../NETWORK-SPEC.md) is retained as
 the historical I2n authority/result analysis; its WebSocket and full-record recipe is superseded.
-The final V1 byte/session specification and runtime qualification remain open.
+The [V1 input packet](../decisions/A5-INPUT-WIRE.md) is selected; state-delta/session
+specification and runtime qualification remain open.
 
 **Historical design closure:** the [initial protocol](../NETWORK-SPEC.md) resolves the
 [SR01–SR03/SR07 review](../SIMPLIFICATION-REVIEW.md) with committed per-action results, atomic full groups,

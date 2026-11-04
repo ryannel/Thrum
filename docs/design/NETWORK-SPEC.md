@@ -5,8 +5,8 @@ replica-admission analysis.** The 3 November [V1 N1 decision](decisions/A0-N1-TR
 supersedes this document's WebSocket-first transport, fixed full-record StateGroups, fixed eight-input
 batch and fixed future-window choices. The 4 November [timing decision](decisions/A5-INPUT-TIMING-RECONCILIATION.md)
 sets the first V1 conditioned fixture. Do not implement the superseded byte and transport recipe as
-the V1 target. C13 remains the shared authority contract; the selected V1 codec and session details
-are still incomplete and require a concise decision before implementation. The first local game
+the V1 target. C13 remains the shared authority contract; the [V1 input packet](decisions/A5-INPUT-WIRE.md)
+is selected, while state-delta and session details still require decisions. The first local game
 needs no transport. The historical limits below describe one profile, not an engine ceiling.
 The [provisional outbound cadence study](research/N1-OUTBOUND-CADENCE-2026-11-03.md)
 records an open construction decision: 60 Hz authority groups cannot be
