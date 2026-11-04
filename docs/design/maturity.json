@@ -168,6 +168,22 @@
       ],
       "scope": "One serial host callback uses the shared fixed-step clock, committed A1 world, A2 render columns, changed-row GPU upload and prepared two-pass Metal renderer. It blocks on each GPU and timestamp submission, has no window/surface, owned async packets, device-loss recovery, cooked content, clustered lights/CSM or browser/phone runtime."
     },
+    "V1_macos_surface": {
+      "implementation": "partial_prepared_fifth_pass_and_bounded_async_drawable_acquisition_diagnostic",
+      "functional_validation": "real_metal_full_pixel_orientation_srgb_and_missed_view_resize_tests_pass; locked_window_commits_122_ticks_with_121_occluded_results_and_2_waiting_callbacks_without_drawable_acquisition_on_tick_path",
+      "experienced_quality": "not_qualified_locked_display_no_visible_surface_run",
+      "platform_performance": {
+        "mac": "not_qualified_locked_display_no_presented_frame_measurement",
+        "windows": "not_run",
+        "browser": "compile_only_not_run",
+        "ios": "simulator_target_compile_only_not_run",
+        "android": "not_run"
+      },
+      "evidence": [
+        "../evidence/render/V1-MACOS-SURFACE-2026-11-04.md"
+      ],
+      "scope": "Prepared surface pass and one-request/one-result macOS acquisition worker preserve fixed-step world progress during drawable occlusion. Metal synthetic-surface readback proves every oriented SDR pixel and two surface formats; an unlocked 600-frame window run, resize while presenting, visual inspection, callback/GPU costs, cancellable surface lifecycle, device loss, cooked content and Chrome/iPhone runtime remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",

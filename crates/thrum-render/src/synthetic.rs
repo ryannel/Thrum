@@ -856,7 +856,9 @@ impl PreparedSynthetic {
                 mips: 1,
                 samples: 1,
                 format: OUTPUT_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::COPY_SRC
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
             },
             ResourceScope::Imported { initialized: false },
         )?;
@@ -1343,7 +1345,9 @@ impl OffscreenTarget {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: OUTPUT_FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | wgpu::TextureUsages::COPY_SRC
+                | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -1446,6 +1450,12 @@ impl OffscreenTarget {
     /// Target extent in pixels.
     pub fn extent(&self) -> [u32; 2] {
         [self.width, self.height]
+    }
+    pub(crate) fn output_view(&self) -> &wgpu::TextureView {
+        &self.view
+    }
+    pub(crate) fn device_generation(&self) -> u64 {
+        self.generation
     }
     fn readback_bytes(&self) -> u64 {
         u64::from(self.row_bytes) * u64::from(self.height)

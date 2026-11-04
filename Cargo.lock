@@ -1881,6 +1881,7 @@ dependencies = [
  "thrum-core",
  "thrum-render",
  "wgpu",
+ "winit",
 ]
 
 [[package]]

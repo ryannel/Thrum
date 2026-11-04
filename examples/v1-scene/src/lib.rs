@@ -5,4 +5,4 @@
 mod host;
 mod scene;
 
-pub use host::{DriveReport, FrameHost, FrameSample};
+pub use host::{DriveReport, FrameHost, FrameSample, SurfaceOutput};
