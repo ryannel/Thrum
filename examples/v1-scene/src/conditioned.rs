@@ -421,6 +421,7 @@ impl ConditionedGame {
         };
         self.link
             .deliver(tick, |peer, bytes| receiver.receive(peer, bytes))?;
+        let mut due_origins = [None; PEER_COUNT];
         for (index, held_axes) in self.held.iter_mut().enumerate() {
             let peer = PEERS[index];
             if let Some(frame) = self
@@ -428,11 +429,12 @@ impl ConditionedGame {
                 .take_due(peer)
                 .map_err(|error| format!("due frame: {error:?}"))?
             {
+                let origin = frame.origin;
                 *held_axes = frame.axes;
                 self.sim
                     .admit_frame(frame)
                     .map_err(|error| format!("W1 input admission: {error:?}"))?;
-                self.accepted_frames += 1;
+                due_origins[index] = Some(origin);
             } else if tick > LEAD_TICKS {
                 self.due_misses += 1;
             }
@@ -444,6 +446,16 @@ impl ConditionedGame {
             .sim
             .step(&[])
             .map_err(|error| format!("W1 tick: {error:?}"))?;
+        if !outcome
+            .committed_inputs
+            .iter()
+            .copied()
+            .eq(due_origins.into_iter().flatten())
+        {
+            return Err("W1 committed input origins diverged from N1 due handoff".to_owned());
+        }
+        self.accepted_frames += u64::try_from(outcome.committed_inputs.len())
+            .map_err(|_| "committed input count overflow")?;
         self.window
             .commit_tick(outcome.tick)
             .map_err(|error| format!("N1 cursor: {error:?}"))?;
