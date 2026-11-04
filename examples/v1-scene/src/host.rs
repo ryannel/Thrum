@@ -1,5 +1,7 @@
 //! Bounded offscreen frame host for the first assembled V1 workload.
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
 use std::{
     collections::VecDeque,
     num::NonZeroUsize,
@@ -7,8 +9,10 @@ use std::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_cook::EnvironmentProduct;
@@ -107,6 +111,9 @@ pub struct FrameSample {
 pub struct DriveReport {
     /// Last complete authoritative tick after this callback.
     pub tick: u64,
+    /// Refused elapsed ticks when the bounded clock overloaded. `Some(0)`
+    /// means it remains overloaded and requires explicit pause/drain/resume.
+    pub overload: Option<u64>,
     /// World updates committed in this callback.
     pub completed_ticks: u32,
     /// Due updates left queued by the fixed clock.
@@ -531,6 +538,21 @@ impl FrameHost {
         self.clock.next_due_in()
     }
 
+    /// Pause wall-time admission while retaining already queued world updates.
+    pub fn pause(&mut self) {
+        self.clock.pause();
+    }
+
+    /// Resume from a new monotonic time origin after queued work has drained.
+    ///
+    /// # Errors
+    /// Returns a clock error for an active clock, pending updates or backwards time.
+    pub fn resume(&mut self, now: Duration) -> Result<(), String> {
+        self.clock
+            .resume(now)
+            .map_err(|error| format!("clock resume: {error:?}"))
+    }
+
     /// Last committed world tick.
     pub fn tick(&self) -> u64 {
         self.sim.tick()
@@ -635,14 +657,9 @@ impl FrameHost {
         if let Some(error) = clock.step_error {
             return Err(format!("simulation tick failed: {error:?}"));
         }
-        if clock.state == ClockState::Overloaded {
-            return Err(format!(
-                "fixed-clock overload: {} ticks refused, {} still queued",
-                clock.refused_on_overload, clock.queued
-            ));
-        }
         let mut report = DriveReport {
             tick: self.sim.tick(),
+            overload: (clock.state == ClockState::Overloaded).then_some(clock.refused_on_overload),
             completed_ticks: clock.completed,
             queued_ticks: clock.queued,
             submitted: false,
@@ -650,6 +667,14 @@ impl FrameHost {
             dropped_view: false,
             wall: Duration::ZERO,
         };
+        if report.overload.is_some() {
+            if report.completed_ticks > 0 {
+                self.dropped_views = self.dropped_views.saturating_add(1);
+                report.dropped_view = true;
+            }
+            report.wall = wall_start.elapsed();
+            return Ok(report);
+        }
         #[cfg(not(target_arch = "wasm32"))]
         if self.worker.is_some() {
             self.drive_native_view(&mut report, tick_cpu, wall_start, surface)?;
@@ -743,6 +768,10 @@ impl FrameHost {
             .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
             .map_err(|error| format!("instance update: {error:?}"))?;
         let upload_cpu = upload_start.elapsed();
+        #[cfg(not(target_arch = "wasm32"))]
+        let visual_revision = self.current_visual_revision();
+        #[cfg(target_arch = "wasm32")]
+        let visual_revision = None;
         self.encode_prepared(
             slot_index,
             report,
@@ -777,7 +806,7 @@ impl FrameHost {
                     + uploaded.dropped_shadow_envelope,
                 dropped_light_references: self.prepared.dropped_light_references(),
                 clamped_light_channels: self.prepared.presentation_light_clamps(),
-                visual_revision: self.current_visual_revision(),
+                visual_revision,
             },
             wall_start,
         )?;
@@ -1106,17 +1135,11 @@ impl FrameHost {
         self.submit_reused_view(slot_index, report, surface, source, tick_cpu, wall_start)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn current_visual_revision(&self) -> Option<[u8; 32]> {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            self.visual_product
-                .as_ref()
-                .map(|product| *product.revision().as_bytes())
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            None
-        }
+        self.visual_product
+            .as_ref()
+            .map(|product| *product.revision().as_bytes())
     }
 
     /// Render and read back the current committed scene once for visual evidence.

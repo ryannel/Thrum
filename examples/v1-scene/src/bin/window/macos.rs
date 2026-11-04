@@ -311,6 +311,12 @@ impl App {
         });
         let host = self.host.as_mut().ok_or("host missing")?;
         let report = host.drive(now, output.as_ref())?;
+        if let Some(refused_ticks) = report.overload {
+            return Err(format!(
+                "fixed-clock overload: {} ticks refused, {} still queued",
+                refused_ticks, report.queued_ticks
+            ));
+        }
         if report.surface_presented {
             self.queue
                 .as_ref()

@@ -99,10 +99,11 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             host.capture_pixels().expect("visible capture").len(),
             640 * 360 * 4
         );
-        let error = host
+        let overload = host
             .drive(Duration::from_millis(200), None)
-            .expect_err("nine due updates exceed eight queued slots");
-        assert!(error.contains("fixed-clock overload: 9 ticks refused"));
+            .expect("nine due updates are reported as overload");
+        assert_eq!(overload.overload, Some(9));
+        assert_eq!(overload.queued_ticks, 0);
         assert_eq!(host.tick(), 3, "overload cannot skip or repeat a tick");
         assert!(host.next_due_in().is_none());
 
