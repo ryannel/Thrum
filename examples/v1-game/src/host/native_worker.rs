@@ -8,8 +8,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::simulation::PublishedPage;
 use rayon::{ThreadPool, ThreadPoolBuilder};
-use thrum_core::sim::PublishedPage;
 use thrum_render::extract::{ExtractReport, RenderExtractor};
 
 use crate::scene;

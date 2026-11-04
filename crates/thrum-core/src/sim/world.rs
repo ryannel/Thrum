@@ -263,7 +263,7 @@ impl Simulation {
             epoch,
             config,
             tick: 0,
-            store: Store::new(epoch, config.entity_capacity, registry),
+            store: Store::new(epoch, config.entity_capacity, registry, &schedule),
             peers: Vec::with_capacity(config.peer_capacity),
             committed_inputs: Vec::with_capacity(config.peer_capacity),
             work: Work {
@@ -841,9 +841,9 @@ fn fixture_schedule(registry: &ComponentRegistry) -> Schedule {
                 id: SystemId(3),
                 stage: Stage::Publish,
                 accesses: vec![
-                    component(ComponentKey::of::<Position>(), Read),
-                    component(ComponentKey::of::<Velocity>(), Read),
-                    component(ComponentKey::of::<Health>(), Read),
+                    component(ComponentKey::of::<Position>(), Write),
+                    component(ComponentKey::of::<Velocity>(), Write),
+                    component(ComponentKey::of::<Health>(), Write),
                     external(2, Write),
                 ],
                 after: vec![],

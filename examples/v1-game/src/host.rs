@@ -15,7 +15,7 @@ use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_cook::EnvironmentProduct;
-use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
+use thrum_core::{ClockConfig, ClockState, TickClock};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::extract::SourceTick;
 #[cfg(not(target_arch = "wasm32"))]
@@ -33,6 +33,7 @@ use thrum_render::{
 use crate::{
     projection::{GameProjection, ProjectionGap, ProjectionOutbox},
     scene::{self, ApplyReport, ENTITY_COUNT},
+    simulation::Simulation,
 };
 
 #[cfg(not(target_arch = "wasm32"))]

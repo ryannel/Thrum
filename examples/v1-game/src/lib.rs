@@ -7,6 +7,7 @@ mod browser;
 mod host;
 mod projection;
 mod scene;
+pub mod simulation;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{BrowserGame, create_browser_game};

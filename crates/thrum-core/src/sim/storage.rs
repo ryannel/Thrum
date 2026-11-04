@@ -4,8 +4,8 @@
 use crate::{Handle, StableId, WorldEpoch};
 
 use super::{
-    ChangeTicks, ComponentEntity, ComponentRegistry, ComponentView, Ownership, Position, SimError,
-    Velocity,
+    AccessMode, ChangeTicks, ComponentEntity, ComponentKey, ComponentRegistry, ComponentView,
+    Ownership, Position, Schedule, SimError, SystemId, Velocity,
     registered_world::{PreparedRead2, PreparedWrite1, RegisteredWorld, SlotKey},
 };
 
@@ -22,7 +22,32 @@ pub(super) struct Store {
 }
 
 impl Store {
-    pub(super) fn new(epoch: WorldEpoch, capacity: usize, registry: ComponentRegistry) -> Self {
+    pub(super) fn new(
+        epoch: WorldEpoch,
+        capacity: usize,
+        registry: ComponentRegistry,
+        schedule: &Schedule,
+    ) -> Self {
+        assert!(
+            schedule.permits(
+                SystemId(1),
+                ComponentKey::of::<Position>(),
+                AccessMode::Read
+            ) && schedule.permits(
+                SystemId(1),
+                ComponentKey::of::<Velocity>(),
+                AccessMode::Read
+            ) && schedule.permits(
+                SystemId(3),
+                ComponentKey::of::<Position>(),
+                AccessMode::Write
+            ) && schedule.permits(
+                SystemId(3),
+                ComponentKey::of::<Velocity>(),
+                AccessMode::Write
+            ) && schedule.permits(SystemId(3), ComponentKey::of::<Health>(), AccessMode::Write),
+            "prepared queries require declared system access"
+        );
         let world = RegisteredWorld::new(epoch, capacity, registry)
             .expect("validated fixture capacity fits registered world");
         let motion = world

@@ -2,12 +2,12 @@
 
 use std::num::NonZeroU32;
 
+use crate::simulation::{
+    ComponentEntity, Position, PublishedPage, SimAction, SimConfig, Simulation, Velocity,
+};
 use thrum_core::{
     ActorId, Origin, PeerId, StableId, WorldEpoch,
-    sim::{
-        ComponentEntity, InputFrame, Ownership, Position, PublishedPage, SimAction, SimConfig,
-        Simulation, Velocity,
-    },
+    sim::{InputFrame, Ownership},
 };
 use thrum_render::{
     extract::{ExtractReport, RenderColumns, RenderExtractor, SourceTick},

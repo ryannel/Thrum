@@ -82,7 +82,7 @@ impl IdIndex {
 /// Expected setup, identity or component failure. A rejected spawn changes no
 /// world state; callers validate a whole command batch before applying it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum RegisteredWorldError {
+pub enum RegisteredWorldError {
     /// Capacity is outside the slot address range or no free slot remains.
     Capacity,
     /// Stable identity already belongs to a live entity.
@@ -98,7 +98,7 @@ pub(super) enum RegisteredWorldError {
 }
 
 /// Reusable typed bundle writer. It never exposes hecs IDs or a mutable world.
-pub(super) struct EntityWriter<'a> {
+pub struct EntityWriter<'a> {
     builder: &'a mut hecs::EntityBuilder,
     registry: &'a ComponentRegistry,
 }
@@ -109,7 +109,7 @@ impl EntityWriter<'_> {
     /// # Errors
     ///
     /// The type is unregistered or already present in this entity bundle.
-    pub(super) fn add<T: Send + Sync + 'static>(
+    pub fn add<T: Send + Sync + 'static>(
         &mut self,
         value: T,
     ) -> Result<&mut Self, RegisteredWorldError> {
@@ -138,6 +138,10 @@ pub(super) struct RegisteredWorld {
 }
 
 impl RegisteredWorld {
+    pub(super) fn epoch(&self) -> WorldEpoch {
+        self.epoch
+    }
+
     /// Reserve physical slots and adopt the game's setup-time component registry.
     ///
     /// # Errors
@@ -232,6 +236,13 @@ impl RegisteredWorld {
         slot.entity.ok_or(RegisteredWorldError::InvalidHandle)
     }
 
+    pub(super) fn stable_id(&self, handle: Handle) -> Result<StableId, RegisteredWorldError> {
+        self.entity(handle)?;
+        self.slots[handle.slot as usize]
+            .stable
+            .ok_or(RegisteredWorldError::InvalidHandle)
+    }
+
     /// Spawn one registered game bundle under a new stable identity.
     ///
     /// # Errors
@@ -310,6 +321,52 @@ impl RegisteredWorld {
             .get::<&T>(entity)
             .map_err(|_| RegisteredWorldError::MissingComponent)?;
         Ok(read(&value))
+    }
+
+    pub(super) fn replace<T: Send + Sync + 'static>(
+        &mut self,
+        handle: Handle,
+        value: T,
+    ) -> Result<T, RegisteredWorldError> {
+        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
+            return Err(RegisteredWorldError::UnregisteredComponent);
+        }
+        let entity = self.entity(handle)?;
+        let mut current = self
+            .world
+            .get::<&mut T>(entity)
+            .map_err(|_| RegisteredWorldError::MissingComponent)?;
+        Ok(std::mem::replace(&mut current, value))
+    }
+
+    pub(super) fn insert<T: Send + Sync + 'static>(
+        &mut self,
+        handle: Handle,
+        value: T,
+    ) -> Result<(), RegisteredWorldError> {
+        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
+            return Err(RegisteredWorldError::UnregisteredComponent);
+        }
+        let entity = self.entity(handle)?;
+        if self.world.get::<&T>(entity).is_ok() {
+            return Err(RegisteredWorldError::DuplicateComponent);
+        }
+        self.world
+            .insert_one(entity, value)
+            .map_err(|_| RegisteredWorldError::InvalidHandle)
+    }
+
+    pub(super) fn remove<T: Send + Sync + 'static>(
+        &mut self,
+        handle: Handle,
+    ) -> Result<T, RegisteredWorldError> {
+        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
+            return Err(RegisteredWorldError::UnregisteredComponent);
+        }
+        let entity = self.entity(handle)?;
+        self.world
+            .remove_one::<T>(entity)
+            .map_err(|_| RegisteredWorldError::MissingComponent)
     }
 
     /// Prepare one two-component storage-order query for repeated ticks.
