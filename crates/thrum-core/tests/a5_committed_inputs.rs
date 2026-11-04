@@ -69,6 +69,17 @@ fn failed_tick_keeps_pending_origin_until_exact_commit_then_does_not_repeat_it()
     let committed = sim.step(&[]).expect("retry same tick");
     assert_eq!(committed.tick, 1);
     assert_eq!(committed.committed_inputs, &[origin]);
+    let controller = sim
+        .controller_state(binding.peer)
+        .expect("committed control");
+    assert_eq!(controller.binding, binding);
+    assert_eq!(controller.held_axes, [1.0, 0.0, 0.0]);
+    assert!((controller.position.0[0] - 0.1).abs() < 1e-9);
+    assert!(
+        controller.position.0[1..]
+            .iter()
+            .all(|value| value.abs() < 1e-9)
+    );
     let idle = sim.step(&[]).expect("following idle tick");
     assert_eq!(idle.tick, 2);
     assert_eq!(idle.committed_inputs, []);
@@ -86,4 +97,5 @@ fn same_tick_despawn_still_resolves_the_consumed_input_origin() {
     assert_eq!(committed.tick, 1);
     assert_eq!(committed.committed_inputs, &[origin]);
     assert!(sim.handle(StableId(1)).is_none());
+    assert!(sim.controller_state(binding.peer).is_err());
 }
