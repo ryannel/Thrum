@@ -1,9 +1,12 @@
 # Network sessions and replication — N1
 
-**Initial implementation specification:** [NETWORK-SPEC.md](../NETWORK-SPEC.md) now selects the concrete baseline mechanisms,
-limits and failure rules. This family document retains the wider responsibility; specification does not imply runtime qualification.
+**V1 direction:** [the A0 transport/codec decision](../decisions/A0-N1-TRANSPORT-CODEC.md)
+selects QUIC/WebTransport and acknowledged state deltas; [the A5 timing decision](../decisions/A5-INPUT-TIMING-RECONCILIATION.md)
+selects the first conditioned input fixture. [NETWORK-SPEC.md](../NETWORK-SPEC.md) is retained as
+the historical I2n authority/result analysis; its WebSocket and full-record recipe is superseded.
+The final V1 byte/session specification and runtime qualification remain open.
 
-**Current design closure:** the [initial protocol](../NETWORK-SPEC.md) resolves the
+**Historical design closure:** the [initial protocol](../NETWORK-SPEC.md) resolves the
 [SR01–SR03/SR07 review](../SIMPLIFICATION-REVIEW.md) with committed per-action results, atomic full groups,
 one gameplay semantic identity and an analytical R4 workload. The
 [reviewed provisional cadence study](../research/N1-OUTBOUND-CADENCE-2026-11-03.md)
@@ -133,7 +136,8 @@ groups. Dependent fields in a group are from one committed revision; partial upd
 attachment or gameplay transaction. Independent entities may update at different rates only when their consumers accept
 that sample age. Authoritative game rules never run on an arbitrary partially received replica state.
 
-The initial recipe sends bounded **full StateGroups**; it keeps no delta history. Each group atomically carries
+The V1 recipe uses acknowledged-baseline deltas; the historical I2n recipe used bounded full
+StateGroups without delta history. Each admitted group atomically carries
 spawn/re-entry with required first pose, ownership and dependent state, or detach/despawn with relationship changes.
 An oversized dependency closure fails profile admission. Re-entering interest establishes a full state and a new
 visibility generation; stale old-generation groups reject. Leaving interest is not authoritative deletion. Server
@@ -182,10 +186,9 @@ the game chooses which transient cues tolerate that risk. Save, achievement and 
 
 N1 depends on message capabilities, not platform sockets in gameplay code: reliable ordered control, bounded command
 submission with semantic acknowledgement, and replaceable timestamped state. Adapters expose actual capabilities,
-message limits and backpressure. A reliable WebSocket-compatible profile is the initial browser-compatible transport
-reference; it does not promise fast-action latency under head-of-line blocking. A qualified datagram adapter can serve
-latency-sensitive native/browser profiles later without changing authority or replication schemas. No raw UDP browser
-assumption or mandatory WebTransport/WebRTC availability is embedded in the world API.
+message limits and backpressure. V1 selects native QUIC and browser WebTransport where qualified,
+with an ordered WebSocket fallback. Browser availability and interoperability are device gates;
+the world API assumes neither raw browser UDP nor a universally available WebTransport service.
 
 Use maintained transport/cryptographic libraries and platform integration; do not write custom cryptography. Treat
 incoming data as untrusted regardless of transport. Authentication/service integration stays behind explicit adapters;

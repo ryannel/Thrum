@@ -532,9 +532,12 @@ implementation, correctness, perceptual acceptance and platform/performance qual
 appearance approval does not certify performance; a fast frame does not certify the complete feature. Existing branch
 evidence is unassessed until its applicability to the new assembly is established.
 
-[RENDER-SPEC](RENDER-SPEC.md), [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) and
-[NETWORK-SPEC](NETWORK-SPEC.md) select the corresponding initial algorithms, limits and codec contracts. Targets
-remain unmeasured; a future extension needs an equally complete design before changing these admitted semantics.
+[RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select
+their initial algorithms and limits. The [V1 N1 transport/codec decision](decisions/A0-N1-TRANSPORT-CODEC.md)
+supersedes the older [NETWORK-SPEC](NETWORK-SPEC.md) transport and full-record recipe; C13 below
+retains the shared network authority and result semantics. The V1 wire codec and session details
+still need a complete decision before implementation. Targets remain unmeasured; a future extension
+needs an equally complete design before changing admitted semantics.
 
 ## C13 Network authority and replication — N1 with F1/W1/P6
 
@@ -563,7 +566,7 @@ its lifecycle changes and required dependent state atomically: no spawn/re-entry
 removal effects commit together. Missing required content keeps the group unadmitted, never defaulted. Interest exit
 has its own generation and is distinct from destruction and authoritative region streaming. Optional water projections
 pair a sample with its matching body pose/time inside the same admission unit. Full-group versus delta encoding is
-adapter policy; the initial recipe and its simultaneous byte/cadence bounds live only in NETWORK-SPEC.
+adapter policy; V1 selects acknowledged deltas in the A0 N1 decision, with exact byte/cadence bounds still to qualify.
 
 Slow peers cannot pin world snapshots or stall the authority. Bound per-peer and aggregate queue/history/work resources;
 retain reliable results until application acknowledgement or explicitly resynchronize/disconnect before overflow.
