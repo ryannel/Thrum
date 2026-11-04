@@ -110,7 +110,7 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max Metal, 10k entities / 1.5k moving, 640x360, four fixed local lights, final optimized source, 600 paced offscreen frames: 600 committed ticks, no catch-up or host calls over 16.67 ms, zero dropped presentation/cluster references; GPU forward p50/p95 0.139/0.167 ms, display 0.062/0.079 ms, host wall p50/p95/max 2.464/5.014/12.479 ms. No same-build incremental lighting comparison or device-frame qualification.",
+      "diagnostic_measurement": "Apple M3 Max Metal, 10k entities / 1.5k moving, 640x360, four fixed local lights, final optimized source, 600 paced offscreen frames: 600 committed ticks, no catch-up or host calls over 16.67 ms, zero dropped presentation/cluster references; GPU forward p50/p95 0.139/0.167 ms, display 0.062/0.079 ms, host wall p50/p95/max 2.464/5.014/12.479 ms. Three same-build ABBA runs of 10k static cubes at 640x360 found per-block zero-versus-four-light forward GPU delta medians rounded to 0 us, with p05/p95 within -4/+6 us; dynamic cluster cost and device-frame qualification remain open.",
       "evidence": [
         "../evidence/render/M2-CLUSTERED-2026-11-04.md"
       ],

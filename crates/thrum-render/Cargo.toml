@@ -29,3 +29,7 @@ pollster = "=1.0.1"
 [[bench]]
 name = "extract"
 harness = false
+
+[[bench]]
+name = "clustered"
+harness = false
