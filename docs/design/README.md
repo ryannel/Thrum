@@ -1,10 +1,10 @@
 # Thrum engine design
 
-The design programme for a flexible 3D engine on Mac, PC, browser and mobile app stores. Bevy is a research/code
-reference, not the host. Existing implementations are candidates for later reconciliation, not the target.
+The design programme for a flexible, modern 3D engine on Mac, PC, browser and mobile app stores that makes full use
+of each device's hardware; see the [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md). Existing implementations are candidates for later reconciliation, not the target.
 
 - **Start here: [building a game](ENGINE-EXPERIENCE.md)** — project, world, target and run.
-- [Brief and conversation coverage](ARCHITECTURE-BRIEF.md): E01–E20 requirements, scope and retained ambitions.
+- [Brief and conversation coverage](ARCHITECTURE-BRIEF.md): E01–E21 requirements, scope and retained ambitions.
 - [Integrated design](SYSTEM-DESIGN.md), [composition](COMPOSITION.md) and [selected decisions](ARCHITECTURE-DECISIONS.md): core and 30 owners.
 - [C4 contracts](CONTRACTS.md): shared invariants; modules link consequences rather than duplicate protocols.
 - [Baseline](BASELINE-SPEC.md): initial scope, devices and workload admission; [construction order](CONSTRUCTION-PLAN.md).
@@ -18,7 +18,7 @@ reference, not the host. Existing implementations are candidates for later recon
 - [Performance investment map](AI-PERFORMANCE.md#capability-investment-map), [design/process policy](AI-PERFORMANCE.md#performance-investment-from-the-first-design) and [campaign walkthroughs](PERFORMANCE-WALKTHROUGHS.md): deep optimization throughout construction, with trusted whole-engine evaluation.
 - [Storage lifecycle](STORAGE-LIFECYCLE.md) and [journeys](LIFECYCLE-WALKTHROUGHS.md): assets, promotion, recovery and cleanup.
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).
-- [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; Bevy is not the selected host.
+- [Earlier host assessment](HOST-AND-PLATFORMS.md) is historical; a custom host is selected.
 
 Module designs live in `modules/`; source/decision investigations in `research/`. The integrated design and maturity
 ledger link each required responsibility to its owner, evidence, gaps and next qualification. Raw trials/captures stay

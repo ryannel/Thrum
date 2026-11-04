@@ -21,11 +21,11 @@ developer model; [composition](COMPOSITION.md) gives the integration rules. The 
 
 Own the engine's world/runtime composition, content contracts, feature policy, renderer integration and authoring
 operations. Reuse suitable platform, graphics, codec, physics, animation, text and audio libraries after a dependency
-and target audit. Bevy is a primary design/source reference, not a runtime dependency. A copied idea is not a copied
+and target audit. Other engines are design/source references, not runtime dependencies. A copied idea is not a copied
 implementation; any copied code needs exact source revision, license/notice provenance and a maintenance owner.
 
 Select Rust for shared runtime and tools, a custom host, winit where its platform integration fits, and wgpu as the
-portable GPU substrate. Native mobile shells remain explicit adapters. These libraries do not select our architecture
+GPU substrate, reaching each device's hardware through recipe-selected native features. Native mobile shells remain explicit adapters. These libraries do not select our architecture
 or guarantee device parity. Platform SDKs own signing/package integration; runtime code does not assume filesystem,
 threads, surface or audio access is always available. [Platform reasoning](modules/PLATFORM-RUNTIME.md).
 

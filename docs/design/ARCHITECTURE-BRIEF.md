@@ -11,6 +11,12 @@ Build a flexible engine suitable for a variety of games. Features can be selecte
 reach a quality worth demonstrating on the user's personal website and potentially contributing to open-source game
 engines. It should use modern, cutting-edge work where useful and leave room for original advances supported by evidence.
 
+**Goal:** a modern, exceptionally fast engine that makes full use of the hardware each device provides: GPU family
+features, tile and unified memory, reconstruction and ray-tracing hardware, CPU core classes and vector units, display,
+thermal, IO and network offload. A portable path is the floor and fallback, never the design target. The
+[hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md) defines the capability registry, frame recipes, frame
+contract and quality governor that deliver this.
+
 | ID | Confirmed requirement | Architectural consequence to investigate |
 | --- | --- | --- |
 | E01 | Serve a variety of games rather than only the current game | Derive capabilities from contrasting usage profiles; separate reusable services from game policy and authored content |
@@ -21,9 +27,9 @@ engines. It should use modern, cutting-edge work where useful and leave room for
 | E06 | Start with the whole engine, independently of existing water implementation | Select responsibilities and contracts before reconciling old code; water is one consumer and contributor among others |
 | E07 | Focus on 3D across top-down, isometric, third-person and first-person cameras and different game styles | One world can support different view/control profiles; perspective and orthographic requirements need explicit support |
 | E08 | Pure 2D games and massive multiplayer are outside current scope | Retain UI/text for 3D games; future ordinary multiplayer is first-class under E13, without MMO scope |
-| E09 | Target modern desktops including Macs, scalable quality, and a browser profile for demos | Native and browser delivery share world/content semantics but qualify different GPU providers, budgets and cooked assets |
-| E10 | Build our own engine; abandon Bevy as the host, learn from its open-source design | Own composition/runtime integration; retain source provenance for any adapted code. Reuse other suitable libraries deliberately rather than rebuilding every commodity |
-| E11 | Include mobile app stores in the initial platform ambition | Design native mobile lifecycle, touch, thermal/memory limits and packaging from the start; iOS and Android are the working interpretation |
+| E09 | Target modern desktops (Mac, NVIDIA, AMD, Intel), scalable quality, and a supported browser profile | Native recipes lead; browser delivery shares world/content semantics on the portable recipe with its own budgets and cooked assets, and never limits native |
+| E10 | Build our own engine, learning from open-source engine design | Own composition/runtime integration; retain source provenance for any adapted code. Reuse other suitable libraries deliberately rather than rebuilding every commodity |
+| E11 | Include mobile app stores in the initial platform ambition | Design native mobile lifecycle, touch, thermal/memory limits and packaging from the start; iOS and Android get tile-GPU recipes, not a scaled-down desktop path |
 | E12 | Build for AI development, with deliberate architecture and explicit maturity tracking | Machine-readable contracts/status, inspectable and replayable operations, bounded agent commissions, reproducible evidence and human visual acceptance |
 | E13 | Future multiplayer must be a first-class citizen to avoid rebuilding later | Design actor intents, world authority, scoped IDs, replication, content compatibility and correction now; optional runtime networking and local-first construction |
 | E14 | Derive complete designs from research, mathematics and underlying systems before building | Investigate academic/production sources; derive operators and coupling, use later measurements to test stated predictions rather than discover architecture through feature layering |
@@ -33,11 +39,12 @@ engines. It should use modern, cutting-edge work where useful and leave room for
 | E18 | Prevent scattered assets and runaway disk usage | Separate disposable work from selected source/runtime assets; explicit promotion, exact provenance, bounded build storage, recoverable masters and owner-scoped cleanup |
 | E19 | Keep the engine elegant and understand its real maturity | Small public model, one owner per mechanism, deterministic convention checks, separate selected/design/implementation/quality/platform evidence and no speculative universal frameworks |
 | E20 | Allow different water, atmosphere and other feature implementations where their use warrants it | Capability/provider separation, explicit validity and compatibility, shared causes/state ownership, mathematically defined heterogeneous boundaries; no automatic physical seam blending |
+| E21 | Make full use of the hardware each device provides | One capability registry selects per-GPU-family frame recipes, accelerated CPU/IO paths and optional providers through one frame contract; each dedicated path keeps a portable fallback and is promoted only by a measured win on its hardware |
 
 E03 is a user-provided example of composability, not a selected cloud algorithm or mandatory first demonstration.
 Desktop, browser and mobile-store profiles are selected. [BASELINE-SPEC](BASELINE-SPEC.md) now chooses reference
-devices, environments, workloads and numerical targets; certified minimum support remains unqualified. Bevy is excluded
-as host. Rust/wgpu and direct library versions are selected; full dependency locks and target proof accompany implementation. Possible
+devices, environments, workloads and numerical targets; certified minimum support remains unqualified. A custom host
+is selected. Rust/wgpu and direct library versions are selected; full dependency locks and target proof accompany implementation. Possible
 contributions do not select a license, repository or publication action.
 
 ## Conversation coverage and retained scope
@@ -50,7 +57,7 @@ engine to one game, one camera, one art style, a water demo or a browser-only pr
 | --- | --- |
 | E01/E06/E07: reusable 3D, whole engine first, contrasting cameras and games | This brief's responsibility map; [system design](SYSTEM-DESIGN.md); [scenario walkthroughs](SCENARIO-WALKTHROUGHS.md) |
 | E02/E03/E20: modular features, bring a provider, no visible sky with retained light/shadows, multiple physical models | [Composition](COMPOSITION.md), C04/C08/C09, [environment](modules/ENVIRONMENT.md); static selection and qualified replacements, no arbitrary universal renderer/live-swap promise |
-| E04/E05/E10/E14: modern research, visual ambition, selective open-source ideas/reuse, no Bevy host | [Engine research](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decisions](ARCHITECTURE-DECISIONS.md), [programme](DESIGN-PROGRAMME.md); primary papers/production sources and math before construction, explicit novelty/provenance limits |
+| E04/E05/E10/E14/E21: modern research, visual ambition, full hardware use, selective open-source ideas/reuse, custom host | [Engine research](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decisions](ARCHITECTURE-DECISIONS.md), [programme](DESIGN-PROGRAMME.md); primary papers/production sources and math before construction, explicit novelty/provenance limits |
 | E08/E13: ordinary multiplayer first-class, no initial MMO or pure-2D engine | C13 and [NETWORK-SPEC](NETWORK-SPEC.md); same local/server rules, real early I2n, semantic-compatible heterogeneous clients, explicit result/reconnect/replica behavior |
 | E09/E11: Mac/PC, scalable browser demos, native mobile stores | [Baseline](BASELINE-SPEC.md), [runtime](modules/PLATFORM-RUNTIME.md), [construction](CONSTRUCTION-PLAN.md); native authoring first is independent of player-platform support, device/store evidence still required |
 | E12/E15/E19: AI engine and game contribution, clear skills, deterministic checks, active coordination | [AI development](AI-DEVELOPMENT.md), [skill rationale](SKILL-WORKFLOW.md), [programme](DESIGN-PROGRAMME.md), [maturity](MATURITY.md); focused Astra-aligned guidance, scoped checks, public commands and reviewed combined revisions |
@@ -101,8 +108,8 @@ extension/qualification obligations; no architecture decision or numerical targe
 
 ## Research basis
 
-The [modern-engine study](ENGINE-STRUCTURE-RESEARCH.md) compares public Unreal, Unity, Bevy, O3DE, Godot, Decima,
-Wicked and PlayCanvas material. It records exact sources, inspected sections and maturity limits. The following
+The [modern-engine study](ENGINE-STRUCTURE-RESEARCH.md) compares public material from established commercial and
+open-source engines. It records exact sources, inspected sections and maturity limits. The following
 structure is our synthesis, not a claim that any reference engine uses this precise decomposition.
 
 The subsequent [twelve-engine capability survey](CAPABILITY-SURVEY.md) compares official highlight pages with the
@@ -110,17 +117,20 @@ detailed owners. Its H01–H12 dispositions make creation/delivery workflows exp
 and dynamic-content admission, and record optional haptics. They refine the recommendation without adding kernel
 modules or implying implementation. Broad labels below must be read with those concrete outcomes and target limits.
 
-The [host and platform assessment](HOST-AND-PLATFORMS.md) records the earlier alternatives and actual integration.
-The user's subsequent decision selects a custom host. The [design programme](DESIGN-PROGRAMME.md) coordinates
+The [host and platform assessment](HOST-AND-PLATFORMS.md) is historical. The user's subsequent decision selects a custom host. The [design programme](DESIGN-PROGRAMME.md) coordinates
 recursive research, integration and qualification without inheriting the current implementation as the target.
 
-## Desktop and browser consequences
+## Platform and hardware consequences
 
-- Establish a high-quality portable raster/compute baseline for native desktop, including Macs. Qualify advanced
-  ray-tracing, geometry and reconstruction providers by actual device/API support; they are optional enhancements.
-- Select Apple silicon and the M2 reference candidate initially; Intel Mac coverage remains an additional qualification profile.
-- Treat browser demos as a separately qualified WebGPU product profile with their own startup, memory, download and
-  scene budgets. WebGL2 fallback is an additional scope decision, not an automatic promise.
+- Design each capability for the hardware that runs it, through four frame recipes selected by the capability registry:
+  Apple tile, Android tile, desktop high (NVIDIA, AMD, Intel) and portable. The portable recipe runs everywhere as
+  the reference and fallback; a dedicated recipe or path is promoted by a measured win on its own hardware.
+- Ray-tracing, mesh-shading, variable-rate, reconstruction, frame-interpolation and ML providers plug in through one
+  frame contract. They are selected per device, not deferred because some target lacks them.
+- Select Apple silicon (iPhone and M-series Mac) for V1 qualification; Android, NVIDIA, AMD and Intel recipes follow
+  with named devices.
+- Treat the browser as the portable recipe on WebGPU with its own startup, memory, download and scene budgets. It is
+  supported and never limits a native recipe. WebGL2 fallback is an additional scope decision, not an automatic promise.
 - Native mobile profiles must account for suspend/resume, interrupted audio/input, thermal pressure, memory limits,
   touch/UI, store packaging and mobile GPU bandwidth. They share content sources and contracts, not identical budgets.
 - Keep authoritative game state and required interactions consistent across quality settings. Simplify appearance and
@@ -129,8 +139,10 @@ recursive research, integration and qualification without inheriting the current
   runtime features depend on local filesystem access or native threading being available in the browser.
 - Own one whole-scene budget, including animation, AI, physics, streaming and temporal resources. Quality changes need
   explicit resource retirement and history invalidation. Merely lowering render resolution is not a scaling design.
-- Distinguish host-engine restrictions from graphics-library restrictions and hardware/browser restrictions. Dropping
-  Bevy while retaining wgpu does not remove wgpu's API limits; native API work is a separate cost and decision.
+- Use CPU core classes, vector units, unified memory, platform IO and network offload as deliberately as the GPU;
+  a closed-loop quality governor holds frame, thermal and latency budgets.
+- Distinguish graphics-library restrictions from hardware and browser restrictions. wgpu's native-only features and an
+  isolated raw-backend escape hatch reach platform hardware; a direct native backend is a separate, measured decision.
 
 ## Proposed module map
 
@@ -259,6 +271,6 @@ candidates; existing demonstrations do not select the architecture. The author h
 and repository rules, so this is a fresh requirements exercise, not a claim of blind technical independence.
 
 Current stage: 3D and desktop/Mac/browser/mobile scope recorded; custom host selected; coordinated research/design
-produced an integrated high-level recommendation and independently challenged contracts. Bevy remains a reference
-and source candidate, not the selected runtime. The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
+produced an integrated high-level recommendation and independently challenged contracts. Full hardware use is a
+selected goal (E21). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
 minimum devices/budgets, implementation, visual acceptance and platform qualification explicitly unfinished.

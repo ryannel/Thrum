@@ -9,7 +9,7 @@ Thrum destination. Source files included uncommitted work: the recorded Git HEAD
 their bytes. Destination files are adapted working documents, not claimed byte-identical archives.
 Relative links were relocated; omitted game-specific references resolve to [context records](CONTEXT.md).
 Current engine requirements and decisions are retained in the brief and decision record. Historical
-traveller/host studies do not supply runnable sample assets or select a Bevy host.
+traveller/host studies do not supply runnable sample assets or select a host.
 
 The maturity ledger preserves historical reviewed hashes and report metadata as claims about original
 source bytes, including old `tmp/handoffs` paths. The manifest locates the relocated reports. Current

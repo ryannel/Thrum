@@ -150,6 +150,15 @@ If appearance conveys gameplay-significant information, F2 constrains per-client
 envelope or rejects the tier. Cosmetic fog may differ; concealment/privacy never relies on client fog pixels. N1
 interest/authorization and P6 visibility facts remain authoritative and independent of local rendering.
 
+Hardware selection has one owner. F2 builds one immutable capability registry per adapter generation (GPU family,
+features and limits, tile/unified memory, CPU features and core classes, display, thermal, IO and ML hardware) and
+resolves a frame recipe from it: Apple tile, Android tile, desktop high or portable. Quality tiers scale within a
+recipe. Passes, systems and providers read the registry; none probes the device privately. Portable is always
+prepared as the reference and fallback, and a dedicated recipe or path is admitted only with a measured win on its own
+hardware ([hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md)). A closed-loop quality governor adjusts render
+scale, effect quality and time-sliced cadence from GPU/CPU time, missed presents, thermal and power state, with
+hysteresis; it never changes simulation rate, authority or replicated state.
+
 ## C05 Assets, streaming and retirement — F4 with W2, V1 and P7
 
 One manifest maps logical assets and revisions to dependency-hashed runtime products. Import/cook reads the admitted immutable source revision and is separate from
@@ -219,6 +228,11 @@ be declared, cooked and prepared. Profile changes prepare/reserve old-new overla
 Use async preparation only where actually supported. Device loss invalidates pipelines, not the F4 source manifest.
 A synchronized network replica and its local GPU-ready view are separate states; one slow client cannot pause authority.
 
+The executor derives attachment storage from pass lifetimes: an attachment produced and consumed within merged passes
+is memoryless or transient where the recipe supports it, never stored to memory by default. Driver pipeline caches
+persist per adapter, driver and recipe; a stale or rejected cache is discarded and rebuilt, never trusted. Raw backend
+calls live in one isolated module per backend behind the executor, each with a declared portable fallback.
+
 ## C07 Render scene, views and temporal data — V2 with P4/V3/V4
 
 W1 owns world state. V2 owns derived draw instances, visibility and render spatial indexes. Views own projection,
@@ -246,6 +260,11 @@ fabricated rigid vector.
 Each history key includes view, provider, resolution and relevant content/device/profile epochs. Reset or reproject
 only under documented validity conditions. A camera cut cannot retain old temporal samples as if it were smooth motion.
 V4 owns image reconstruction/exposure/display; renderer features supply semantic inputs, not private rival upscalers.
+Each view publishes one frame contract: jittered and unjittered projection, current and previous view-projection,
+motion vectors in the convention above, reversed-Z depth, exposure, reactive/transparency mask, cut/reset flags and
+optional guide buffers (albedo, normals, roughness, hit distance). V4 reconstruction, frame interpolation and
+denoising providers, whether Thrum's own, platform hardware (MetalFX) or vendor (DLSS, FSR, XeSS), consume only this
+contract and are selected through F2's registry.
 V3/E1/V5 own their effect-specific histories; V1 owns persistent GPU lifetime. Shared invalidation reaches all affected
 owners. Detailed derivation is in the [temporal composition study](research/TEMPORAL-COMPOSITION.md).
 History retention does not bypass C02's snapshot budget. Extracted prior poses or leased products have explicit caps;
@@ -530,7 +549,10 @@ the first integration order and unresolved qualifications.
 Evidence identifies code/design revision, configuration, content hashes, device/backend, duration and method. Design,
 implementation, correctness, perceptual acceptance and platform/performance qualification are separate states. Human
 appearance approval does not certify performance; a fast frame does not certify the complete feature. Existing branch
-evidence is unassessed until its applicability to the new assembly is established.
+evidence is unassessed until its applicability to the new assembly is established. Performance evidence names the
+recipe and the capability-registry digest. A dedicated recipe or path records its frame time, bandwidth or latency
+against the portable recipe on the same device, its image difference from portable within the declared tolerance, and
+thermal state after a sustained run; without that comparison it is implemented, not qualified.
 
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select
 their initial algorithms and limits. The [V1 N1 transport/codec decision](decisions/A0-N1-TRANSPORT-CODEC.md)

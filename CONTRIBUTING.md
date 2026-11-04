@@ -45,7 +45,7 @@ Every `Cargo.toml` under `crates/`, `tools/` or `examples/` must join the worksp
 third-party dependencies require an exact `=version` registry requirement and a policy entry with declared
 license, purpose and target/build cost; the guard cannot verify the upstream license or transitive closure.
 Record dependency purpose, exact version/license and target costs before adding external libraries. Do
-not vendor Bevy code without source revision, applicable license/notices and a maintenance rationale.
+not vendor third-party engine code without source revision, applicable license/notices and a maintenance rationale.
 
 `./dev check` is the hard gate: pinned rustfmt, workspace Clippy, Rust tests and repository checks.
 Clippy runs `all` and `pedantic` plus selected restriction lints (`Cargo.toml`, thresholds in `clippy.toml`)
