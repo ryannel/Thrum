@@ -2,6 +2,7 @@
 //! work and rules; the engine owns registered storage and complete publication.
 
 use std::{
+    collections::HashMap,
     marker::PhantomData,
     sync::{
         Arc,
@@ -20,9 +21,9 @@ use super::{
     AccessMode, ComponentKey, ComponentRegistry, Schedule, ScheduleError, SnapshotRing, SystemId,
     SystemSpec,
     registered_world::{
-        EntityWriter, PreparedRead2, PreparedWrite1, RegisteredWorld, RegisteredWorldError,
-        WorldCapture,
+        EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, WorldCapture,
     },
+    transaction::{Edit, EditError, EditScratch},
 };
 
 /// Cold-path registered state capture for replay. Component values remain
@@ -108,6 +109,8 @@ pub enum TickError<E> {
     PublicationBusy,
     /// Game-owned validation refused the candidate before any commit.
     Game(E),
+    /// Engine preflight rejected a typed candidate edit batch.
+    Edit(EditError),
 }
 
 /// Game-owned rules for one registered authority. Preparation receives only
@@ -119,40 +122,58 @@ pub trait TickGame<P> {
     /// Reusable game-owned candidate and query scratch, never committed state.
     type Candidate;
 
-    /// Read committed components and prepare/validate one candidate tick.
-    ///
-    /// # Errors
-    ///
-    /// Refuses invalid input or candidate state without mutating the world.
-    fn prepare(
-        &self,
-        world: &WorldRead<'_>,
-        schedule: &Schedule,
-        executor: Executor,
-        tick: u64,
-        candidate: &mut Self::Candidate,
-    ) -> Result<(), Self::Error>;
+    /// Reset reusable candidate work before the first registered callback.
+    fn reset_candidate(&self, candidate: &mut Self::Candidate);
+
+    /// Typed edits prepared in reusable game-owned candidate storage. The
+    /// engine validates the entire list before applying any of its members.
+    fn edits<'a>(&self, _candidate: &'a Self::Candidate) -> &'a [Edit<Self::Candidate>] {
+        &[]
+    }
 
     /// Apply the fully validated candidate. All target handles and registered
     /// component presence must have been checked during `prepare`.
-    fn apply(&mut self, world: &mut WorldCommit<'_>, tick: u64, candidate: &Self::Candidate);
+    fn apply(&mut self, world: &WorldRead<'_>, tick: u64, candidate: &Self::Candidate);
 
     /// Copy one complete committed endpoint into an unleased reusable page.
     fn capture(&mut self, world: &WorldRead<'_>, page: &mut P, first: bool, tick: u64);
 }
 
+/// One game callback bound to its access declaration before schedule compile.
+pub struct RegisteredSystem<P, G: TickGame<P>> {
+    spec: SystemSpec,
+    callback: SystemCallback<P, G>,
+}
+
+type SystemCallback<P, G> = fn(
+    &G,
+    &WorldRead<'_>,
+    Executor,
+    u64,
+    &mut <G as TickGame<P>>::Candidate,
+) -> Result<(), <G as TickGame<P>>::Error>;
+
+impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
+    /// Bind one declared system to the game callback the engine will invoke.
+    pub fn new(spec: SystemSpec, callback: SystemCallback<P, G>) -> Self {
+        Self { spec, callback }
+    }
+}
+
 /// One engine-owned registered world, compiled schedule and leased page ring.
 /// The concrete game supplies no engine-side component or action type.
-pub struct GameRuntime<P> {
+pub struct GameRuntime<P, G: TickGame<P>> {
     world: RegisteredWorld,
     schedule: Schedule,
+    callbacks: Vec<SystemCallback<P, G>>,
     pages: SnapshotRing<P>,
     tick: u64,
     executor: Executor,
     nonce: u64,
+    edit_scratch: EditScratch,
 }
 
-impl<P> GameRuntime<P> {
+impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// Capture registered components, identities, slot generations and free
     /// order after a complete committed tick. This is a cold replay path.
     pub fn capture(&self) -> RuntimeCapture {
@@ -189,14 +210,36 @@ impl<P> GameRuntime<P> {
     /// # Errors
     ///
     /// Capacity, registration or schedule validation failed.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a compiled system is absent from the registrations used
+    /// to build that same schedule.
     pub fn new(
         epoch: WorldEpoch,
         capacity: usize,
         registry: ComponentRegistry,
-        systems: Vec<SystemSpec>,
+        systems: Vec<RegisteredSystem<P, G>>,
         make_page: impl FnMut() -> P,
     ) -> Result<Self, RuntimeError> {
-        let schedule = Schedule::new(&registry, systems).map_err(RuntimeError::Schedule)?;
+        let schedule = Schedule::new(
+            &registry,
+            systems.iter().map(|system| system.spec.clone()).collect(),
+        )
+        .map_err(RuntimeError::Schedule)?;
+        let callbacks_by_id: HashMap<_, _> = systems
+            .into_iter()
+            .map(|system| (system.spec.id, system.callback))
+            .collect();
+        let callbacks = schedule
+            .order()
+            .map(|spec| {
+                *callbacks_by_id
+                    .get(&spec.id)
+                    .expect("compiled system came from bound registration")
+            })
+            .collect();
+        let component_count = registry.entries.len();
         let world = RegisteredWorld::new(epoch, capacity, registry)?;
         let nonce = NEXT_RUNTIME
             .try_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
@@ -206,12 +249,14 @@ impl<P> GameRuntime<P> {
         Ok(Self {
             world,
             schedule,
+            callbacks,
             pages: SnapshotRing::new(make_page),
             tick: 0,
             executor: Executor {
                 mode: ExecutionMode::Serial,
             },
             nonce,
+            edit_scratch: EditScratch::new(capacity, component_count),
         })
     }
 
@@ -270,6 +315,7 @@ impl<P> GameRuntime<P> {
         WorldRead {
             world: &self.world,
             nonce: self.nonce,
+            system: None,
         }
     }
 
@@ -316,6 +362,7 @@ impl<P> GameRuntime<P> {
         Ok(Read2 {
             query: self.world.read2::<T, U>()?,
             nonce: self.nonce,
+            system,
         })
     }
 
@@ -337,27 +384,7 @@ impl<P> GameRuntime<P> {
         Ok(ReadPermit {
             marker: PhantomData,
             nonce: self.nonce,
-        })
-    }
-
-    /// Prepare a storage-order write cursor once for a declared system.
-    ///
-    /// # Errors
-    ///
-    /// The system lacks write access or the type is unregistered.
-    pub fn write1<T: Send + Sync + 'static>(
-        &self,
-        system: SystemId,
-    ) -> Result<Write1<T>, RuntimeError> {
-        if !self
-            .schedule
-            .permits(system, ComponentKey::of::<T>(), AccessMode::Write)
-        {
-            return Err(RuntimeError::UndeclaredAccess);
-        }
-        Ok(Write1 {
-            query: self.world.write1::<T>()?,
-            nonce: self.nonce,
+            system,
         })
     }
 
@@ -379,6 +406,7 @@ impl<P> GameRuntime<P> {
         Ok(WritePermit {
             marker: PhantomData,
             nonce: self.nonce,
+            system,
         })
     }
 
@@ -401,6 +429,7 @@ impl<P> GameRuntime<P> {
         Ok(StructuralPermit {
             resource,
             nonce: self.nonce,
+            system,
         })
     }
 
@@ -430,11 +459,12 @@ impl<P> GameRuntime<P> {
     ///
     /// Panics only if an unpublished ring has lost all four private pages or
     /// the game capture callback panics.
-    pub fn publish_initial<G: TickGame<P>>(&mut self, game: &mut G) {
+    pub fn publish_initial(&mut self, game: &mut G) {
         if self.pages.latest().is_none() {
             let world = WorldRead {
                 world: &self.world,
                 nonce: self.nonce,
+                system: None,
             };
             self.pages
                 .capture(|page, first| game.capture(&world, page, first, self.tick))
@@ -454,7 +484,7 @@ impl<P> GameRuntime<P> {
     ///
     /// Panics only if the reserved page becomes unavailable inside the
     /// exclusive tick, or a game apply/capture callback panics.
-    pub fn step<G: TickGame<P>>(
+    pub fn step(
         &mut self,
         game: &mut G,
         candidate: &mut G::Candidate,
@@ -466,12 +496,44 @@ impl<P> GameRuntime<P> {
         if !self.pages.can_capture() {
             return Err(TickError::PublicationBusy);
         }
-        game.prepare(&self.read(), &self.schedule, self.executor, next, candidate)
+        game.reset_candidate(candidate);
+        let mut callback_index = 0;
+        self.schedule.run(|system| {
+            let before = game.edits(candidate).len();
+            let callback = self.callbacks[callback_index];
+            callback_index += 1;
+            callback(
+                game,
+                &WorldRead {
+                    world: &self.world,
+                    nonce: self.nonce,
+                    system: Some(system.id),
+                },
+                self.executor,
+                next,
+                candidate,
+            )
             .map_err(TickError::Game)?;
+            let edits = game.edits(candidate);
+            if edits.len() < before
+                || edits[before..]
+                    .iter()
+                    .any(|edit| edit.system() != system.id)
+            {
+                return Err(TickError::Edit(EditError::WrongSystem));
+            }
+            Ok(())
+        })?;
+        let edits = game.edits(candidate);
+        self.edit_scratch
+            .validate(&self.world, self.nonce, edits, candidate)
+            .map_err(TickError::Edit)?;
+        self.edit_scratch.apply(&mut self.world, edits, candidate);
         game.apply(
-            &mut WorldCommit {
-                world: &mut self.world,
+            &WorldRead {
+                world: &self.world,
                 nonce: self.nonce,
+                system: None,
             },
             next,
             candidate,
@@ -480,6 +542,7 @@ impl<P> GameRuntime<P> {
         let world = WorldRead {
             world: &self.world,
             nonce: self.nonce,
+            system: None,
         };
         self.pages
             .capture(|page, first| game.capture(&world, page, first, next))
@@ -492,6 +555,7 @@ impl<P> GameRuntime<P> {
 pub struct WorldRead<'a> {
     world: &'a RegisteredWorld,
     nonce: u64,
+    system: Option<SystemId>,
 }
 
 impl WorldRead<'_> {
@@ -523,6 +587,9 @@ impl WorldRead<'_> {
         if permit.nonce != self.nonce {
             return Err(RegisteredWorldError::WrongRuntime);
         }
+        if self.system.is_some_and(|system| system != permit.system) {
+            return Err(RegisteredWorldError::WrongSystem);
+        }
         self.world.with(handle, read)
     }
 }
@@ -531,12 +598,14 @@ impl WorldRead<'_> {
 pub struct ReadPermit<T: Send + Sync + 'static> {
     marker: PhantomData<T>,
     nonce: u64,
+    system: SystemId,
 }
 
 /// Reusable storage-order read of two registered components.
 pub struct Read2<T: Send + Sync + 'static, U: Send + Sync + 'static> {
     query: PreparedRead2<T, U>,
     nonce: u64,
+    system: SystemId,
 }
 
 impl<T: Send + Sync + 'static, U: Send + Sync + 'static> Read2<T, U> {
@@ -547,6 +616,7 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> Read2<T, U> {
     /// The query was prepared for another runtime instance.
     pub fn visit(&mut self, world: &WorldRead<'_>, visit: impl FnMut(Handle, StableId, &T, &U)) {
         assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
+        assert!(world.system.is_none_or(|system| system == self.system));
         self.query.visit(world.world, visit);
     }
 
@@ -562,139 +632,28 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> Read2<T, U> {
         visit: impl FnMut(Handle, StableId, &T, &U),
     ) {
         assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
+        assert!(world.system.is_none_or(|system| system == self.system));
         world.world.visit_canonical(visit);
-    }
-}
-
-/// Reusable storage-order write of one registered component.
-pub struct Write1<T: Send + Sync + 'static> {
-    query: PreparedWrite1<T>,
-    nonce: u64,
-}
-
-impl<T: Send + Sync + 'static> Write1<T> {
-    /// Apply previously validated edits to matching entities.
-    ///
-    /// # Panics
-    ///
-    /// The query was prepared for another runtime instance.
-    pub fn visit(
-        &mut self,
-        world: &mut WorldCommit<'_>,
-        visit: impl FnMut(Handle, StableId, &mut T),
-    ) {
-        assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
-        self.query.visit(world.world, visit);
     }
 }
 
 /// Compile-checked permission to edit one registered component.
 pub struct WritePermit<T: Send + Sync + 'static> {
     marker: PhantomData<T>,
-    nonce: u64,
+    pub(super) nonce: u64,
+    pub(super) system: SystemId,
 }
 
 /// Compile-checked permission to spawn or despawn under one external resource.
 pub struct StructuralPermit {
     resource: u64,
-    nonce: u64,
+    pub(super) nonce: u64,
+    pub(super) system: SystemId,
 }
 
 impl StructuralPermit {
     /// Owner-defined structural resource identity used at schedule closure.
     pub fn resource(&self) -> u64 {
         self.resource
-    }
-}
-
-/// Commit-only typed world access; never given to game preparation callbacks.
-pub struct WorldCommit<'a> {
-    world: &'a mut RegisteredWorld,
-    nonce: u64,
-}
-
-impl WorldCommit<'_> {
-    /// Replace one present component through a checked handle.
-    ///
-    /// # Errors
-    ///
-    /// Stale identity, missing component or unregistered type. Game code must
-    /// prevalidate before calling this infallible commit phase.
-    pub fn replace<T: Send + Sync + 'static>(
-        &mut self,
-        permit: &WritePermit<T>,
-        handle: Handle,
-        value: T,
-    ) -> Result<T, RegisteredWorldError> {
-        if permit.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        self.world.replace(handle, value)
-    }
-
-    /// Add a registered component to one checked entity.
-    ///
-    /// # Errors
-    ///
-    /// Stale identity, duplicate component or unregistered type.
-    pub fn insert<T: Send + Sync + 'static>(
-        &mut self,
-        permit: &WritePermit<T>,
-        handle: Handle,
-        value: T,
-    ) -> Result<(), RegisteredWorldError> {
-        if permit.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        self.world.insert(handle, value)
-    }
-
-    /// Remove one registered component from a checked entity.
-    ///
-    /// # Errors
-    ///
-    /// Stale identity, missing component or unregistered type.
-    pub fn remove<T: Send + Sync + 'static>(
-        &mut self,
-        permit: &WritePermit<T>,
-        handle: Handle,
-    ) -> Result<T, RegisteredWorldError> {
-        if permit.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        self.world.remove(handle)
-    }
-
-    /// Spawn a fully validated registered bundle.
-    ///
-    /// # Errors
-    ///
-    /// Duplicate identity, capacity or invalid bundle.
-    pub fn spawn(
-        &mut self,
-        permit: &StructuralPermit,
-        id: StableId,
-        fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
-    ) -> Result<Handle, RegisteredWorldError> {
-        if permit.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        self.world.spawn(id, fill)
-    }
-
-    /// Despawn a checked entity and retire its handle generation.
-    ///
-    /// # Errors
-    ///
-    /// The handle is stale or belongs to another world.
-    pub fn despawn(
-        &mut self,
-        permit: &StructuralPermit,
-        handle: Handle,
-    ) -> Result<(), RegisteredWorldError> {
-        if permit.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        self.world.despawn(handle)
     }
 }

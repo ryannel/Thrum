@@ -113,6 +113,8 @@ pub enum RegisteredWorldError {
     SnapshotMismatch,
     /// A typed access token belongs to another compiled runtime.
     WrongRuntime,
+    /// A prepared read belongs to another compiled system callback.
+    WrongSystem,
 }
 
 /// Reusable typed bundle writer. It never exposes hecs IDs or a mutable world.
@@ -291,6 +293,48 @@ impl RegisteredWorld {
 
     pub(super) fn free_count(&self) -> usize {
         self.free.len()
+    }
+
+    pub(super) fn component_index(&self, key: ComponentKey) -> Option<usize> {
+        self.registry
+            .entries
+            .iter()
+            .position(|entry| entry.key == key)
+    }
+
+    pub(super) fn prepare_bundle(
+        &self,
+        builder: &mut hecs::EntityBuilder,
+        fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
+    ) -> Result<(), RegisteredWorldError> {
+        builder.clear();
+        let result = fill(&mut EntityWriter {
+            builder,
+            registry: &self.registry,
+        });
+        if result.is_err() {
+            builder.clear();
+        }
+        result
+    }
+
+    pub(super) fn spawn_prepared(
+        &mut self,
+        id: StableId,
+        builder: &mut hecs::EntityBuilder,
+    ) -> Result<Handle, RegisteredWorldError> {
+        if self.ids.get(id).is_some() {
+            return Err(RegisteredWorldError::DuplicateId);
+        }
+        let slot = *self.free.last().ok_or(RegisteredWorldError::Capacity)?;
+        builder.add(SlotKey(slot));
+        let entity = self.world.spawn(builder.build());
+        self.free.pop();
+        self.slots[slot as usize].entity = Some(entity);
+        self.slots[slot as usize].stable = Some(id);
+        self.ids.insert(id, slot);
+        self.live += 1;
+        Ok(self.handle_at(slot))
     }
 
     pub(super) fn reusable_after_despawn(&self, handle: Handle) -> bool {
@@ -497,22 +541,6 @@ impl RegisteredWorld {
             );
         }
     }
-
-    /// Prepare one mutable component column for repeated validated commits.
-    ///
-    /// # Errors
-    ///
-    /// The type is absent from setup registration.
-    pub(super) fn write1<T: Send + Sync + 'static>(
-        &self,
-    ) -> Result<PreparedWrite1<T>, RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
-            return Err(RegisteredWorldError::UnregisteredComponent);
-        }
-        Ok(PreparedWrite1 {
-            query: hecs::PreparedQuery::new(),
-        })
-    }
 }
 
 /// Prepared read of two game-owned component types in backend storage order.
@@ -540,40 +568,6 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
                 slot.stable.expect("queried entity remains live"),
                 a,
                 b,
-            );
-        }
-    }
-}
-
-/// Prepared mutable visit of one registered game component. A caller validates
-/// its full candidate transaction before invoking this commit-time cursor.
-pub(super) struct PreparedWrite1<T: Send + Sync + 'static> {
-    query: hecs::PreparedQuery<(&'static SlotKey, &'static mut T)>,
-}
-
-impl<T: Send + Sync + 'static> PreparedWrite1<T> {
-    /// Visit matching entities in backend storage order with checked identity.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if the private slot-to-entity invariant has been broken.
-    pub(super) fn visit(
-        &mut self,
-        world: &mut RegisteredWorld,
-        mut visit: impl FnMut(Handle, StableId, &mut T),
-    ) {
-        let slots = &world.slots;
-        let epoch = world.epoch;
-        for (key, component) in self.query.query_mut(&mut world.world) {
-            let slot = &slots[key.0 as usize];
-            visit(
-                Handle {
-                    epoch,
-                    slot: key.0,
-                    generation: slot.generation,
-                },
-                slot.stable.expect("queried entity remains live"),
-                component,
             );
         }
     }
@@ -636,11 +630,7 @@ mod tests {
             visited.push((handle, id, position.0, velocity.0));
         });
         assert_eq!(visited, [(first, StableId(1), 2.0, 3.0)]);
-        let mut write = world.write1::<Height>().expect("position registered");
-        write.visit(&mut world, |handle, id, position| {
-            assert_eq!((handle, id), (first, StableId(1)));
-            position.0 += 4.0;
-        });
+        world.replace(first, Height(6.0)).expect("registered value");
         assert_eq!(world.with::<Height, _>(first, |value| value.0), Ok(6.0));
         world.despawn(first).expect("first entity live");
         assert_eq!(

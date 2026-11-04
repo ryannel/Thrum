@@ -4,9 +4,10 @@
 use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
-        Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
-        GameRuntime, Read2, ReadPermit, RuntimeError, Stage, StructuralPermit, SystemId,
-        SystemSpec, TickError, TickGame, WorldCommit, WorldRead, Write1,
+        Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId, Edit,
+        EntityWriter, Executor, GameRuntime, Read2, ReadPermit, RegisteredSystem,
+        RegisteredWorldError, RuntimeError, Stage, StructuralPermit, SystemId, SystemSpec,
+        TickError, TickGame, WorldRead, WritePermit,
     },
 };
 
@@ -25,6 +26,25 @@ struct Page {
 struct Candidate {
     motion: Read2<Height, Drift>,
     positions: Vec<Option<Height>>,
+    handles: Vec<Option<Handle>>,
+    edits: Vec<Edit<Candidate>>,
+    spawns: Vec<StableId>,
+}
+
+fn position_at(candidate: &Candidate, row: usize) -> &dyn std::any::Any {
+    candidate.positions[row]
+        .as_ref()
+        .expect("prepared position")
+}
+
+fn fill_spawn(
+    _candidate: &Candidate,
+    _index: usize,
+    entity: &mut EntityWriter<'_>,
+) -> Result<(), RegisteredWorldError> {
+    entity.add(Height(7.0))?;
+    entity.add(Drift(1.0))?;
+    Ok(())
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -34,29 +54,34 @@ enum GameError {
 }
 
 struct Rules {
-    write: Write1<Height>,
+    write: WritePermit<Height>,
     capture: Read2<Height, Drift>,
     height_read: ReadPermit<Height>,
     structure: StructuralPermit,
     reject: bool,
+    bad_edit: Option<Handle>,
     churn: Option<(Handle, StableId)>,
 }
 
-impl TickGame<Page> for Rules {
-    type Error = GameError;
-    type Candidate = Candidate;
-
-    fn prepare(
+impl Rules {
+    fn simulate(
         &self,
         world: &WorldRead<'_>,
-        _schedule: &thrum_core::sim::Schedule,
-        _executor: thrum_core::sim::Executor,
+        _executor: Executor,
         _tick: u64,
         candidate: &mut Candidate,
     ) -> Result<(), GameError> {
-        candidate.positions.fill(None);
         candidate.motion.visit(world, |handle, _, height, drift| {
             candidate.positions[handle.slot as usize] = Some(Height(height.0 + drift.0));
+            candidate.handles[handle.slot as usize] = Some(handle);
+            if self.churn.is_none_or(|(old, _)| old != handle) {
+                candidate.edits.push(Edit::replace(
+                    &self.write,
+                    handle,
+                    handle.slot as usize,
+                    position_at,
+                ));
+            }
         });
         if let Some((old, replacement)) = self.churn {
             world
@@ -65,31 +90,42 @@ impl TickGame<Page> for Rules {
             if world.handle(replacement).is_some() {
                 return Err(GameError::InvalidChurn);
             }
+            candidate.edits.push(Edit::despawn(&self.structure, old));
+            candidate.spawns.push(replacement);
+            candidate
+                .edits
+                .push(Edit::spawn(&self.structure, replacement, 0, fill_spawn));
         }
         if self.reject {
             return Err(GameError::Rejected);
         }
+        if let Some(handle) = self.bad_edit {
+            candidate.edits.push(Edit::despawn(&self.structure, handle));
+            candidate
+                .edits
+                .push(Edit::spawn(&self.structure, StableId(2), 0, fill_spawn));
+        }
         Ok(())
     }
+}
 
-    fn apply(&mut self, world: &mut WorldCommit<'_>, _tick: u64, candidate: &Candidate) {
-        self.write.visit(world, |handle, _, height| {
-            if let Some(next) = candidate.positions[handle.slot as usize] {
-                *height = next;
-            }
-        });
-        if let Some((old, replacement)) = self.churn.take() {
-            world
-                .despawn(&self.structure, old)
-                .expect("validated old handle");
-            world
-                .spawn(&self.structure, replacement, |entity| {
-                    entity.add(Height(7.0))?;
-                    entity.add(Drift(1.0))?;
-                    Ok(())
-                })
-                .expect("validated replacement bundle and capacity");
-        }
+impl TickGame<Page> for Rules {
+    type Error = GameError;
+    type Candidate = Candidate;
+
+    fn reset_candidate(&self, candidate: &mut Candidate) {
+        candidate.positions.fill(None);
+        candidate.handles.fill(None);
+        candidate.edits.clear();
+        candidate.spawns.clear();
+    }
+
+    fn edits<'a>(&self, candidate: &'a Candidate) -> &'a [Edit<Candidate>] {
+        &candidate.edits
+    }
+
+    fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {
+        self.churn = None;
     }
 
     fn capture(&mut self, world: &WorldRead<'_>, page: &mut Page, _first: bool, tick: u64) {
@@ -142,17 +178,23 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         2,
         registry,
         vec![
-            system(
-                1,
-                Stage::Simulate,
-                &[(height, AccessMode::Write), (drift, AccessMode::Read)],
-                false,
+            RegisteredSystem::new(
+                system(
+                    1,
+                    Stage::Simulate,
+                    &[(height, AccessMode::Write), (drift, AccessMode::Read)],
+                    true,
+                ),
+                Rules::simulate,
             ),
-            system(
-                2,
-                Stage::Publish,
-                &[(height, AccessMode::Write), (drift, AccessMode::Read)],
-                true,
+            RegisteredSystem::new(
+                system(
+                    2,
+                    Stage::Publish,
+                    &[(height, AccessMode::Write), (drift, AccessMode::Read)],
+                    false,
+                ),
+                |_, _, _, _, _| Ok(()),
             ),
         ],
         Page::default,
@@ -163,7 +205,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Err(RuntimeError::UndeclaredAccess)
     ));
     assert!(matches!(
-        runtime.write1::<Drift>(SystemId(2)),
+        runtime.write_permit::<Drift>(SystemId(2)),
         Err(RuntimeError::UndeclaredAccess)
     ));
     let mut candidate = Candidate {
@@ -171,10 +213,13 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
             .read2::<Height, Drift>(SystemId(1))
             .expect("declared motion read"),
         positions: vec![None; 2],
+        handles: vec![None; 2],
+        edits: Vec::new(),
+        spawns: Vec::new(),
     };
     let mut game = Rules {
         write: runtime
-            .write1::<Height>(SystemId(2))
+            .write_permit::<Height>(SystemId(1))
             .expect("declared height write"),
         capture: runtime
             .read2::<Height, Drift>(SystemId(2))
@@ -183,9 +228,10 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
             .read_permit::<Height>(SystemId(1))
             .expect("declared sparse read"),
         structure: runtime
-            .structural_permit(SystemId(2), 7)
+            .structural_permit(SystemId(1), 7)
             .expect("declared structure"),
         reject: false,
+        bad_edit: None,
         churn: None,
     };
     let first = runtime
@@ -223,6 +269,17 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Ok(Height(3.0))
     );
     assert_eq!(runtime.latest().expect("first tick").rows[0].2, Height(3.0));
+    game.bad_edit = Some(first);
+    assert_eq!(
+        runtime.step(&mut game, &mut candidate),
+        Err(TickError::Edit(thrum_core::sim::EditError::Conflict))
+    );
+    assert_eq!(runtime.tick(), 1);
+    assert_eq!(
+        runtime.read().with(&game.height_read, first, |h| *h),
+        Ok(Height(3.0))
+    );
+    game.bad_edit = None;
     game.churn = Some((first, StableId(3)));
     assert_eq!(runtime.step(&mut game, &mut candidate), Ok(2));
     assert!(
