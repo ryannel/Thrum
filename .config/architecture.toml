@@ -46,6 +46,12 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-cook", "thrum-render", "t
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
 
+[external_dependencies.rayon]
+requirement = "=1.12.0"
+license = "MIT OR Apache-2.0"
+purpose = "Long-lived native V1 frame extraction worker pool over retained committed visual pages"
+target_cost = "Native V1 scene only; one bounded extraction task and one worker initially, with dispatch, wake, allocation and overlap costs measured against the serial path; browser Wasm stays serial"
+
 [external_dependencies.divan]
 requirement = "=0.1.21"
 license = "MIT OR Apache-2.0"

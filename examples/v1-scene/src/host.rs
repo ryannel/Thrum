@@ -19,7 +19,7 @@ use thrum_core::{
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
-    extract::RenderExtractor,
+    extract::{ExtractReport, RenderExtractor},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
         OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
@@ -29,6 +29,11 @@ use thrum_render::{
 };
 
 use crate::scene::{self, ApplyReport, ENTITY_COUNT};
+
+#[cfg(not(target_arch = "wasm32"))]
+mod native_worker;
+#[cfg(not(target_arch = "wasm32"))]
+use native_worker::{CompletedExtract, ExtractRequest, NativeWorker};
 
 const GENERATION: u64 = 1;
 const WIDTH: u32 = 640;
@@ -51,6 +56,12 @@ pub struct FrameSample {
     pub tick_cpu: Duration,
     /// CPU time for committed-world visit and render-column extraction.
     pub extract_cpu: Duration,
+    /// Native worker queue delay; zero for serial extraction.
+    pub worker_queue_ns: u32,
+    /// Time a completed native CPU view waited before submission.
+    pub worker_ready_ns: u32,
+    /// Committed ticks newer than this view at submission.
+    pub visual_age_ticks: u32,
     /// CPU time for scene mapping, ABI packing and queue writes.
     pub upload_cpu: Duration,
     /// CPU time for render command encoding and timestamp registration.
@@ -94,7 +105,8 @@ pub struct DriveReport {
     pub completed_ticks: u32,
     /// Due updates left queued by the fixed clock.
     pub queued_ticks: u32,
-    /// A GPU view was submitted for `tick`.
+    /// A GPU view was submitted; `tick` remains the latest authoritative tick.
+    /// The submitted source tick is reported by the eventual `FrameSample`.
     pub submitted: bool,
     /// An acquired platform surface received this frame in the same submission.
     pub surface_presented: bool,
@@ -125,6 +137,18 @@ struct FrameSlot {
     timings: GpuTimings,
     render_done: Arc<AtomicBool>,
     state: SlotState,
+}
+
+#[derive(Clone, Copy)]
+struct SubmitFrame {
+    extracted: ExtractReport,
+    extract_cpu: Duration,
+    worker_queue_cpu: Duration,
+    worker_ready_cpu: Duration,
+    tick_cpu: Duration,
+    completed_ticks: u32,
+    queued_ticks: u32,
+    frame_tick: u64,
 }
 
 /// A detached copy of the scene and executor handles for preparing one cooked
@@ -211,7 +235,13 @@ pub struct FrameHost {
     clock: TickClock,
     sim: Simulation,
     snapshots: VisualSnapshotPool,
-    extractor: RenderExtractor,
+    extractor: Option<RenderExtractor>,
+    #[cfg(not(target_arch = "wasm32"))]
+    worker: Option<NativeWorker>,
+    #[cfg(not(target_arch = "wasm32"))]
+    worker_ready: Option<CompletedExtract>,
+    #[cfg(not(target_arch = "wasm32"))]
+    visual_generation: u64,
     scene: SyntheticScene,
     changed_slots: Vec<u32>,
     prepared: PreparedSynthetic,
@@ -219,6 +249,7 @@ pub struct FrameHost {
     slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
     dropped_views: u64,
+    dropped_stale_views: u64,
     dropped_reports: u64,
     dropped_capture_rows: u64,
     dropped_surface: u64,
@@ -329,7 +360,13 @@ impl FrameHost {
             clock,
             sim,
             snapshots,
-            extractor,
+            extractor: Some(extractor),
+            #[cfg(not(target_arch = "wasm32"))]
+            worker: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            worker_ready: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            visual_generation: 0,
             scene,
             changed_slots,
             prepared,
@@ -337,6 +374,7 @@ impl FrameHost {
             slots,
             completed: VecDeque::with_capacity(IN_FLIGHT),
             dropped_views: 0,
+            dropped_stale_views: 0,
             dropped_reports: 0,
             dropped_capture_rows: 0,
             dropped_surface: 0,
@@ -358,6 +396,31 @@ impl FrameHost {
             surface: self.presenter.is_some(),
             owner: Arc::clone(&self.visual_owner),
         }
+    }
+
+    /// Move native CPU extraction to one long-lived worker. World ticks remain
+    /// on the caller and never wait for this optional presentation task.
+    /// `wake` must notify the platform loop after a result becomes available.
+    ///
+    /// # Errors
+    ///
+    /// Returns a native worker startup fault, leaving serial extraction active.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn enable_native_worker(
+        &mut self,
+        wake: impl Fn() + Send + Sync + 'static,
+    ) -> Result<(), String> {
+        if self.worker.is_some() {
+            return Err("frame worker already enabled".to_owned());
+        }
+        self.worker = Some(NativeWorker::new(wake)?);
+        Ok(())
+    }
+
+    /// A completed CPU view is waiting for a surface and free GPU slot.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn has_ready_view(&self) -> bool {
+        self.worker_ready.is_some()
     }
 
     /// Select a fully prepared cooked view at a GPU-safe extraction barrier.
@@ -409,7 +472,10 @@ impl FrameHost {
         self.prepared = candidate.prepared.take().expect("checked candidate");
         self.slots = candidate.slots.take().expect("checked candidate");
         self.visual_product = candidate.product.take();
-        self.extractor.invalidate_history();
+        self.visual_generation = self.visual_generation.wrapping_add(1);
+        if let Some(extractor) = self.extractor.as_mut() {
+            extractor.invalidate_history();
+        }
         Ok(true)
     }
 
@@ -426,6 +492,11 @@ impl FrameHost {
     /// Number of optional views skipped because all GPU packet slots were held.
     pub fn dropped_views(&self) -> u64 {
         self.dropped_views
+    }
+
+    /// Completed native views rejected after their visual age or generation expired.
+    pub fn dropped_stale_views(&self) -> u64 {
+        self.dropped_stale_views
     }
 
     /// Completed profiler samples discarded when the caller did not drain the
@@ -491,9 +562,10 @@ impl FrameHost {
     }
 
     /// Admit monotonic host time through the shared fixed-step clock. Every due
-    /// update commits once before the latest committed view is extracted. A full
-    /// presentation ring skips this view with a counter, never the world update.
-    /// If no update is due, no GPU frame is encoded. Overload is explicit.
+    /// update commits once before a visual page can be published. A full
+    /// presentation ring skips an optional view with a counter, never the world
+    /// update. Native worker completion can submit on a zero-update callback;
+    /// serial extraction submits only after a due update. Overload is explicit.
     /// # Errors
     /// Returns a clock, simulation or GPU fault; never silently skips an update.
     pub fn drive(
@@ -534,6 +606,12 @@ impl FrameHost {
             dropped_view: false,
             wall: Duration::ZERO,
         };
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.worker.is_some() {
+            self.drive_native_view(&mut report, tick_cpu, wall_start, surface)?;
+            report.wall = wall_start.elapsed();
+            return Ok(report);
+        }
         if clock.completed == 0 {
             report.wall = wall_start.elapsed();
             return Ok(report);
@@ -569,16 +647,51 @@ impl FrameHost {
             report.wall = wall_start.elapsed();
             return Ok(report);
         };
-        let extracted = scene::extract(&mut self.extractor, &snapshot);
+        let extracted = scene::extract(
+            self.extractor
+                .as_mut()
+                .ok_or("serial extractor unavailable")?,
+            &snapshot,
+        );
         drop(snapshot);
         let extract_cpu = extract_start.elapsed();
+        self.submit_extracted(
+            slot_index,
+            &mut report,
+            surface,
+            SubmitFrame {
+                extracted,
+                extract_cpu,
+                worker_queue_cpu: Duration::ZERO,
+                worker_ready_cpu: Duration::ZERO,
+                tick_cpu,
+                completed_ticks: clock.completed,
+                queued_ticks: clock.queued,
+                frame_tick: self.sim.tick(),
+            },
+            wall_start,
+        )?;
+        Ok(report)
+    }
+
+    fn submit_extracted(
+        &mut self,
+        slot_index: usize,
+        report: &mut DriveReport,
+        surface: Option<&SurfaceOutput<'_>>,
+        frame: SubmitFrame,
+        wall_start: Instant,
+    ) -> Result<(), String> {
         let upload_start = Instant::now();
         let ApplyReport {
             moving,
             dropped_invalid,
         } = scene::apply_frame_to_scene(
             &mut self.scene,
-            self.extractor.frame(),
+            self.extractor
+                .as_ref()
+                .expect("completed extractor belongs to host")
+                .frame(),
             &mut self.changed_slots,
         );
         let uploaded = self
@@ -632,11 +745,15 @@ impl FrameHost {
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
         slot.state = SlotState::Rendering(FrameSample {
-            tick: self.sim.tick(),
-            completed_ticks: clock.completed,
-            queued_ticks: clock.queued,
-            tick_cpu,
-            extract_cpu,
+            tick: frame.frame_tick,
+            completed_ticks: frame.completed_ticks,
+            queued_ticks: frame.queued_ticks,
+            tick_cpu: frame.tick_cpu,
+            extract_cpu: frame.extract_cpu,
+            worker_queue_ns: duration_ns_u32(frame.worker_queue_cpu),
+            worker_ready_ns: duration_ns_u32(frame.worker_ready_cpu),
+            visual_age_ticks: u32::try_from(self.sim.tick().saturating_sub(frame.frame_tick))
+                .unwrap_or(u32::MAX),
             upload_cpu,
             encode_cpu,
             wall: wall_start.elapsed(),
@@ -647,9 +764,9 @@ impl FrameHost {
             uploaded_rows: uploaded.changed_rows,
             uploaded_bytes: uploaded.bytes,
             moving,
-            dropped_presentation: extracted.dropped_capacity
-                + extracted.dropped_duplicate
-                + extracted.dropped_invalid
+            dropped_presentation: frame.extracted.dropped_capacity
+                + frame.extracted.dropped_duplicate
+                + frame.extracted.dropped_invalid
                 + dropped_invalid
                 + uploaded.dropped_invalid
                 + uploaded.dropped_shadow_envelope,
@@ -660,7 +777,130 @@ impl FrameHost {
         report.submitted = true;
         report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
-        Ok(report)
+        Ok(())
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn drive_native_view(
+        &mut self,
+        report: &mut DriveReport,
+        tick_cpu: Duration,
+        wall_start: Instant,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<(), String> {
+        if let Some(completed) = self
+            .worker
+            .as_mut()
+            .expect("native worker enabled")
+            .try_complete()?
+        {
+            debug_assert!(self.worker_ready.is_none());
+            self.worker_ready = Some(completed);
+        }
+        if self.worker_ready.is_none() {
+            if report.completed_ticks > 0 {
+                if self
+                    .worker
+                    .as_ref()
+                    .expect("native worker enabled")
+                    .is_busy()
+                {
+                    self.dropped_views = self.dropped_views.saturating_add(1);
+                    report.dropped_view = true;
+                    return Ok(());
+                }
+                let publication_start = Instant::now();
+                let Some(snapshot) = self.snapshots.publish(&self.sim) else {
+                    self.dropped_views = self.dropped_views.saturating_add(1);
+                    report.dropped_view = true;
+                    return Ok(());
+                };
+                let publication_cpu = publication_start.elapsed();
+                let extractor = self
+                    .extractor
+                    .take()
+                    .expect("idle worker returns extractor");
+                self.worker
+                    .as_mut()
+                    .expect("native worker enabled")
+                    .dispatch(
+                        extractor,
+                        snapshot,
+                        ExtractRequest {
+                            generation: self.visual_generation,
+                            publication_cpu,
+                            tick_cpu,
+                            completed_ticks: report.completed_ticks,
+                            queued_ticks: report.queued_ticks,
+                        },
+                    );
+            }
+            return Ok(());
+        }
+        if self.presenter.is_some()
+            && surface.is_none_or(|surface| {
+                self.presenter
+                    .as_ref()
+                    .is_none_or(|presenter| presenter.extent() != surface.extent)
+            })
+        {
+            if report.completed_ticks > 0 {
+                self.dropped_views = self.dropped_views.saturating_add(1);
+                report.dropped_view = true;
+            }
+            return Ok(());
+        }
+        let Some(slot_index) = self
+            .slots
+            .iter()
+            .position(|slot| matches!(slot.state, SlotState::Free))
+        else {
+            if report.completed_ticks > 0 {
+                self.dropped_views = self.dropped_views.saturating_add(1);
+                report.dropped_view = true;
+            }
+            return Ok(());
+        };
+        let completed = self.worker_ready.take().expect("checked ready view");
+        let stale = completed.epoch != self.sim.epoch().0
+            || completed.generation != self.visual_generation
+            || self.sim.tick().saturating_sub(completed.tick) > 2;
+        self.extractor = Some(completed.extractor);
+        let frame = if stale {
+            self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
+            let extractor = self.extractor.as_mut().expect("returned extractor");
+            extractor.invalidate_history();
+            let start = Instant::now();
+            let Some(snapshot) = self.snapshots.publish(&self.sim) else {
+                self.dropped_views = self.dropped_views.saturating_add(1);
+                report.dropped_view = true;
+                return Ok(());
+            };
+            let extracted = scene::extract(extractor, &snapshot);
+            drop(snapshot);
+            SubmitFrame {
+                extracted,
+                extract_cpu: start.elapsed(),
+                worker_queue_cpu: completed.queue_wait,
+                worker_ready_cpu: completed.completed_at.elapsed(),
+                tick_cpu,
+                completed_ticks: report.completed_ticks,
+                queued_ticks: report.queued_ticks,
+                frame_tick: self.sim.tick(),
+            }
+        } else {
+            SubmitFrame {
+                extracted: completed.report,
+                extract_cpu: completed.publication_cpu + completed.cpu,
+                worker_queue_cpu: completed.queue_wait,
+                worker_ready_cpu: completed.completed_at.elapsed(),
+                tick_cpu: completed.tick_cpu,
+                completed_ticks: completed.completed_ticks,
+                queued_ticks: completed.queued_ticks,
+                frame_tick: completed.tick,
+            }
+        };
+        self.submit_extracted(slot_index, report, surface, frame, wall_start)
     }
 
     fn current_visual_revision(&self) -> Option<[u8; 32]> {
@@ -681,8 +921,12 @@ impl FrameHost {
     /// # Errors
     /// Returns a GPU encode, completion or readback error.
     pub fn capture_pixels(&mut self) -> Result<Vec<u8>, String> {
+        #[cfg(not(target_arch = "wasm32"))]
+        self.reclaim_extractor_for_capture()?;
         if self
             .extractor
+            .as_ref()
+            .ok_or("capture extractor unavailable")?
             .frame()
             .source()
             .is_none_or(|source| source.tick != self.sim.tick())
@@ -691,11 +935,19 @@ impl FrameHost {
                 .snapshots
                 .publish(&self.sim)
                 .ok_or("visual snapshot pages held during capture")?;
-            let extracted = scene::extract(&mut self.extractor, &snapshot);
+            let extracted = scene::extract(
+                self.extractor
+                    .as_mut()
+                    .ok_or("capture extractor unavailable")?,
+                &snapshot,
+            );
             drop(snapshot);
             let applied = scene::apply_frame_to_scene(
                 &mut self.scene,
-                self.extractor.frame(),
+                self.extractor
+                    .as_ref()
+                    .ok_or("capture extractor unavailable")?
+                    .frame(),
                 &mut self.changed_slots,
             );
             let uploaded = self
@@ -731,6 +983,29 @@ impl FrameHost {
             .try_collect(GENERATION)
             .map_err(|error| format!("capture collect: {error:?}"))?
             .ok_or_else(|| "capture readback incomplete".to_owned())
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn reclaim_extractor_for_capture(&mut self) -> Result<(), String> {
+        if self.extractor.is_some() {
+            return Ok(());
+        }
+        let completed = if let Some(ready) = self.worker_ready.take() {
+            ready
+        } else {
+            self.worker
+                .as_mut()
+                .expect("worker owns absent extractor")
+                .wait_complete(Duration::from_secs(2))?
+        };
+        let mut extractor = completed.extractor;
+        // The returned columns have not been mapped or uploaded to the scene.
+        // Force the ordinary capture refresh even when their source tick equals
+        // the current world tick.
+        extractor.invalidate_history();
+        self.extractor = Some(extractor);
+        self.dropped_views = self.dropped_views.saturating_add(1);
+        Ok(())
     }
 
     fn wait(&self, submitted: wgpu::SubmissionIndex, operation: &str) -> Result<(), String> {
@@ -842,6 +1117,10 @@ fn pass_durations(
             }
             (scene, presented.then(|| passes[names.len()].nanoseconds))
         })
+}
+
+fn duration_ns_u32(value: Duration) -> u32 {
+    u32::try_from(value.as_nanos()).unwrap_or(u32::MAX)
 }
 
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {

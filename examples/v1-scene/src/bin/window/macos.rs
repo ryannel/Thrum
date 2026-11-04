@@ -14,11 +14,17 @@ use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
-    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
     window::{Window, WindowId},
 };
 
 const FRAMES: usize = 600;
+
+#[derive(Clone, Copy, Debug)]
+enum UserEvent {
+    Extracted,
+    SurfaceAcquired,
+}
 
 struct SurfaceState {
     surface: wgpu::Surface<'static>,
@@ -45,11 +51,15 @@ struct SurfaceWorker {
 }
 
 impl SurfaceWorker {
-    fn start(mut state: SurfaceState, device: wgpu::Device) -> Result<Self, String> {
+    fn start(
+        mut state: SurfaceState,
+        device: wgpu::Device,
+        wake: EventLoopProxy<UserEvent>,
+    ) -> Result<Self, String> {
         // A zero-capacity request handshake prevents reconfigure until the
         // event loop has presented or dropped the previously acquired frame.
         let (request, requests) = mpsc::sync_channel::<AcquireRequest>(0);
-        let (results, result) = mpsc::sync_channel(0);
+        let (results, result) = mpsc::sync_channel(1);
         thread::Builder::new()
             .name("v1-surface-acquire".into())
             .spawn(move || {
@@ -67,6 +77,7 @@ impl SurfaceWorker {
                                 drop(results.send(Acquired::Fault(
                                     "uncoordinated surface reconfigure".into(),
                                 )));
+                                let _ = wake.send_event(UserEvent::SurfaceAcquired);
                                 break;
                             }
                             state.config.width = extent[0];
@@ -93,6 +104,9 @@ impl SurfaceWorker {
                     if results.send(answer).is_err() {
                         break;
                     }
+                    if wake.send_event(UserEvent::SurfaceAcquired).is_err() {
+                        break;
+                    }
                 }
             })
             .map_err(|error| format!("surface worker: {error}"))?;
@@ -101,6 +115,7 @@ impl SurfaceWorker {
 }
 
 struct App {
+    wake: EventLoopProxy<UserEvent>,
     window: Option<Arc<Window>>,
     surface: Option<SurfaceWorker>,
     surface_format: Option<wgpu::TextureFormat>,
@@ -117,6 +132,7 @@ struct App {
     unavailable: usize,
     occluded: usize,
     waiting_acquire: usize,
+    acquiring: bool,
     stale_acquire: usize,
     surface_faults: usize,
     callback_walls: Vec<Duration>,
@@ -127,8 +143,9 @@ struct App {
 }
 
 impl App {
-    fn new() -> Self {
+    fn new(wake: EventLoopProxy<UserEvent>) -> Self {
         Self {
+            wake,
             window: None,
             surface: None,
             surface_format: None,
@@ -145,6 +162,7 @@ impl App {
             unavailable: 0,
             occluded: 0,
             waiting_acquire: 0,
+            acquiring: false,
             stale_acquire: 0,
             surface_faults: 0,
             callback_walls: Vec::with_capacity(FRAMES + 32),
@@ -155,7 +173,11 @@ impl App {
         }
     }
 
-    fn prepare(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
+    fn prepare(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        wake: &EventLoopProxy<UserEvent>,
+    ) -> Result<(), String> {
         let window = Arc::new(
             event_loop
                 .create_window(
@@ -198,7 +220,7 @@ impl App {
         .find(|format| formats.contains(format))
         .ok_or("no supported 8-bit SDR surface format")?;
         surface.configure(&device, &config);
-        let host = pollster::block_on(FrameHost::new(
+        let mut host = pollster::block_on(FrameHost::new(
             &device,
             &queue,
             Some(SurfaceProfile {
@@ -206,6 +228,10 @@ impl App {
                 extent: [config.width, config.height],
             }),
         ))?;
+        let extract_wake = wake.clone();
+        host.enable_native_worker(move || {
+            let _ = extract_wake.send_event(UserEvent::Extracted);
+        })?;
         self.origin = Instant::now();
         self.window = Some(window);
         self.surface_format = Some(config.format);
@@ -214,6 +240,7 @@ impl App {
         self.surface = Some(SurfaceWorker::start(
             SurfaceState { surface, config },
             device.clone(),
+            wake.clone(),
         )?);
         self.device = Some(device);
         self.queue = Some(queue);
@@ -228,43 +255,52 @@ impl App {
         self.callbacks += 1;
         let size = self.window.as_ref().ok_or("window missing")?.inner_size();
         let state = self.surface.as_ref().ok_or("surface missing")?;
-        let frame = match state.result.try_recv() {
-            Ok(Acquired::Frame(frame, extent)) if extent == [size.width, size.height] => {
-                if self.surface_extent != extent {
-                    self.host
-                        .as_mut()
-                        .ok_or("host missing")?
-                        .resize_surface(extent)?;
-                    self.surface_extent = extent;
+        let frame = if self.acquiring {
+            match state.result.try_recv() {
+                Ok(Acquired::Frame(frame, extent)) if extent == [size.width, size.height] => {
+                    self.acquiring = false;
+                    if self.surface_extent != extent {
+                        self.host
+                            .as_mut()
+                            .ok_or("host missing")?
+                            .resize_surface(extent)?;
+                        self.surface_extent = extent;
+                    }
+                    self.needs_reconfigure = false;
+                    Some(frame)
                 }
-                self.needs_reconfigure = false;
-                Some(frame)
+                Ok(Acquired::Frame(_, _)) => {
+                    self.acquiring = false;
+                    self.stale_acquire += 1;
+                    self.needs_reconfigure = true;
+                    None
+                }
+                Ok(Acquired::Unavailable) => {
+                    self.acquiring = false;
+                    self.unavailable += 1;
+                    None
+                }
+                Ok(Acquired::Occluded) => {
+                    self.acquiring = false;
+                    self.unavailable += 1;
+                    self.occluded += 1;
+                    None
+                }
+                Ok(Acquired::NeedsReconfigure) => {
+                    self.acquiring = false;
+                    self.surface_faults += 1;
+                    self.needs_reconfigure = true;
+                    None
+                }
+                Ok(Acquired::Fault(error)) => return Err(error),
+                Err(TryRecvError::Empty) => {
+                    self.waiting_acquire += 1;
+                    None
+                }
+                Err(TryRecvError::Disconnected) => return Err("surface worker stopped".into()),
             }
-            Ok(Acquired::Frame(_, _)) => {
-                self.stale_acquire += 1;
-                self.needs_reconfigure = true;
-                None
-            }
-            Ok(Acquired::Unavailable) => {
-                self.unavailable += 1;
-                None
-            }
-            Ok(Acquired::Occluded) => {
-                self.unavailable += 1;
-                self.occluded += 1;
-                None
-            }
-            Ok(Acquired::NeedsReconfigure) => {
-                self.surface_faults += 1;
-                self.needs_reconfigure = true;
-                None
-            }
-            Ok(Acquired::Fault(error)) => return Err(error),
-            Err(TryRecvError::Empty) => {
-                self.waiting_acquire += 1;
-                None
-            }
-            Err(TryRecvError::Disconnected) => return Err("surface worker stopped".into()),
+        } else {
+            None
         };
         let view = frame
             .as_ref()
@@ -294,7 +330,7 @@ impl App {
         self.callback_walls.push(callback_start.elapsed());
         if self.occluded > 120 || self.callbacks > FRAMES * 4 {
             return Err(format!(
-                "600 presented frames unavailable: presented={}, tick={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_surface={}",
+                "600 presented frames unavailable: presented={}, tick={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}",
                 self.presented,
                 host.tick(),
                 self.unavailable,
@@ -303,6 +339,7 @@ impl App {
                 self.stale_acquire,
                 self.surface_faults,
                 host.dropped_views(),
+                host.dropped_stale_views(),
                 host.dropped_surface()
             ));
         }
@@ -361,7 +398,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -376,6 +413,7 @@ impl App {
             self.surface_faults,
             host.dropped_surface(),
             host.dropped_views(),
+            host.dropped_stale_views(),
             host.dropped_reports(),
             wall.0,
             wall.1,
@@ -403,11 +441,14 @@ fn profiler_title(sample: &FrameSample) -> String {
         },
     );
     format!(
-        "Thrum V1 | tick {} ({} updates) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        "Thrum V1 | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, queue {:.3}, ready {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
         sample.tick,
         sample.completed_ticks,
+        sample.visual_age_ticks,
         sample.tick_cpu.as_secs_f64() * 1e3,
         sample.extract_cpu.as_secs_f64() * 1e3,
+        f64::from(sample.worker_queue_ns) / 1e6,
+        f64::from(sample.worker_ready_ns) / 1e6,
         sample.upload_cpu.as_secs_f64() * 1e3,
         sample.encode_cpu.as_secs_f64() * 1e3,
     )
@@ -419,14 +460,21 @@ fn percentile<T>(items: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
     (sorted[sorted.len() / 2], sorted[sorted.len() * 95 / 100])
 }
 
-impl ApplicationHandler for App {
+impl ApplicationHandler<UserEvent> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
             return;
         }
-        if let Err(error) = self.prepare(event_loop) {
+        let wake = self.wake.clone();
+        if let Err(error) = self.prepare(event_loop, &wake) {
             self.error = Some(error);
             event_loop.exit();
+        }
+    }
+
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, _event: UserEvent) {
+        if let Some(window) = &self.window {
+            window.request_redraw();
         }
     }
 
@@ -461,12 +509,16 @@ impl ApplicationHandler for App {
             let size = window.inner_size();
             let extent = [size.width, size.height];
             let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
-            if host.pending_frames() < if reconfigure { 1 } else { 3 } {
+            if host.has_ready_view()
+                && !self.acquiring
+                && host.pending_frames() < if reconfigure { 1 } else { 3 }
+            {
                 match surface.request.try_send(AcquireRequest {
                     extent,
                     reconfigure,
                 }) {
                     Ok(()) => {
+                        self.acquiring = true;
                         if !extent.contains(&0) {
                             self.worker_extent = extent;
                         }
@@ -500,8 +552,10 @@ impl ApplicationHandler for App {
     reason = "the diagnostic reports setup or GPU faults"
 )]
 pub(super) fn run() {
-    let event_loop = EventLoop::new().expect("macOS event loop");
-    let mut app = App::new();
+    let event_loop = EventLoop::<UserEvent>::with_user_event()
+        .build()
+        .expect("macOS event loop");
+    let mut app = App::new(event_loop.create_proxy());
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }

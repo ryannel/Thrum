@@ -1,10 +1,13 @@
 //! Opt-in real-device coverage for the fixed-clock simulation-to-GPU host.
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::time::{Duration, Instant};
+use std::{
+    sync::mpsc,
+    time::{Duration, Instant},
+};
 
-use thrum_render::timing::GpuTimings;
-use v1_scene::FrameHost;
+use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use v1_scene::{FrameHost, SurfaceOutput};
 
 #[test]
 #[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
@@ -117,5 +120,169 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
         assert_eq!(plain_sample.gpu_pass_ns, None);
         assert!(!plain_sample.timing_fault);
         assert_eq!(plain.pending_frames(), 0);
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter for the worker-to-frame handoff"]
+fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_world_ticks() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = FrameHost::new(&device, &queue, None)
+            .await
+            .expect("prepared scene");
+        let (wake, awakened) = mpsc::sync_channel::<()>(0);
+        host.enable_native_worker(move || {
+            let _ = wake.send(());
+        })
+        .expect("native extraction worker");
+        let first_time = Duration::from_nanos(16_666_667);
+        let first = host.drive(first_time, None).expect("tick and dispatch");
+        assert_eq!(first.tick, 1);
+        assert!(!first.submitted);
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let first_submit = loop {
+            let report = host.drive(first_time, None).expect("ready wake callback");
+            if report.submitted {
+                break report;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "worker failed to return its page"
+            );
+            std::thread::sleep(Duration::from_millis(1));
+        };
+        assert_eq!(first_submit.completed_ticks, 0);
+        assert_eq!(first_submit.tick, 1);
+        assert_eq!(host.tick(), 1);
+
+        let second = host
+            .drive(Duration::from_nanos(33_333_334), None)
+            .expect("tick while first wake is stalled");
+        let third = host
+            .drive(Duration::from_nanos(50_000_001), None)
+            .expect("next tick while extraction remains queued");
+        assert_eq!((second.tick, third.tick), (2, 3));
+        assert!(!second.submitted && !third.submitted);
+        assert!(third.dropped_view);
+        assert_eq!(host.dropped_views(), 1);
+        awakened
+            .recv_timeout(Duration::from_secs(2))
+            .expect("release first wake");
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let delayed_submit = loop {
+            let report = host
+                .drive(Duration::from_nanos(50_000_001), None)
+                .expect("consume delayed view");
+            if report.submitted {
+                break report;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "queued extraction did not finish"
+            );
+            std::thread::sleep(Duration::from_millis(1));
+        };
+        assert_eq!(delayed_submit.completed_ticks, 0);
+        assert_eq!(host.tick(), 3);
+        awakened
+            .recv_timeout(Duration::from_secs(2))
+            .expect("release second wake");
+        assert_eq!(host.dropped_stale_views(), 0);
+        let native_pixels = host.capture_pixels().expect("native world capture");
+        let mut serial = FrameHost::new(&device, &queue, None)
+            .await
+            .expect("same serial fixture");
+        serial
+            .drive(Duration::from_nanos(50_000_001), None)
+            .expect("serial world reaches tick three");
+        assert_eq!(serial.tick(), host.tick());
+        assert_eq!(
+            native_pixels,
+            serial.capture_pixels().expect("serial world capture"),
+            "worker extraction cannot change the authoritative or visual result"
+        );
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter for stale-view refresh"]
+fn native_view_beyond_two_ticks_refreshes_from_the_latest_committed_world() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let extent = [640, 360];
+        let format = wgpu::TextureFormat::Bgra8Unorm;
+        let target = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("stale-view presentation target"),
+            size: wgpu::Extent3d {
+                width: extent[0],
+                height: extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = target.create_view(&wgpu::TextureViewDescriptor::default());
+        let mut host = FrameHost::new(&device, &queue, Some(SurfaceProfile { format, extent }))
+            .await
+            .expect("prepared scene and presenter");
+        host.enable_native_worker(|| {}).expect("worker");
+        let first_time = Duration::from_nanos(16_666_667);
+        host.drive(first_time, None).expect("dispatch first view");
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !host.has_ready_view() {
+            host.drive(first_time, None).expect("poll first view");
+            assert!(Instant::now() < deadline, "worker did not return");
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        for tick in 2..=4 {
+            let report = host
+                .drive(Duration::from_nanos(tick * 16_666_667), None)
+                .expect("world progresses without a surface");
+            assert_eq!(report.tick, tick);
+            assert!(report.dropped_view);
+        }
+        let report = host
+            .drive(
+                Duration::from_nanos(4 * 16_666_667),
+                Some(&SurfaceOutput {
+                    view: &view,
+                    extent,
+                }),
+            )
+            .expect("stale view refreshes before presentation");
+        assert_eq!(report.completed_ticks, 0);
+        assert!(report.submitted && report.surface_presented);
+        assert_eq!(host.dropped_stale_views(), 1);
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let sample = loop {
+            if let Some(sample) = host.poll_completed().expect("GPU progress") {
+                break sample;
+            }
+            assert!(Instant::now() < deadline, "GPU completion timed out");
+            device.poll(wgpu::PollType::Poll).expect("GPU poll");
+        };
+        assert_eq!(sample.tick, 4);
+        assert_eq!(sample.visual_age_ticks, 0);
     });
 }

@@ -29,6 +29,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = "=1.12.0"
 thrum-cook = { path = "../../crates/thrum-cook" }
 
 [dev-dependencies]
