@@ -30,14 +30,26 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool) {
     .expect("device request succeeds");
     let mut host = pollster::block_on(FrameHost::new(&device, &queue))
         .expect("the prepared V1 workload must fit the adapter");
+    let device_ref = &device;
     let mut now = Duration::ZERO;
     bencher.bench_local(move || {
         now += Duration::from_nanos(16_666_667);
         let frame = host
             .drive(now)
-            .expect("the measured fixed-clock host must keep progressing")
-            .expect("one update is due at the virtual frame deadline");
-        divan::black_box(frame);
+            .expect("the measured fixed-clock host must keep progressing");
+        assert!(frame.submitted, "one update gets a free view slot");
+        let complete = loop {
+            if let Some(sample) = host.poll_completed().expect("GPU progress") {
+                break sample;
+            }
+            device_ref
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("GPU completion");
+        };
+        divan::black_box(complete);
     });
 }
 

@@ -4,13 +4,13 @@
 use std::time::{Duration, Instant};
 
 use thrum_render::timing::GpuTimings;
-use v1_scene::{FrameHost, FrameSample};
+use v1_scene::FrameHost;
 
 const FRAMES: usize = 600;
 const WIDTH: usize = 640;
 const HEIGHT: usize = 360;
 
-fn percentile(samples: &[FrameSample], value: impl Fn(&FrameSample) -> f64) -> (f64, f64) {
+fn percentile<T>(samples: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
     let mut values: Vec<_> = samples.iter().map(value).collect();
     values.sort_by(f64::total_cmp);
     (values[values.len() / 2], values[values.len() * 95 / 100])
@@ -34,18 +34,35 @@ async fn run() -> Result<String, String> {
     let origin = Instant::now();
     let mut last_call = Duration::ZERO;
     let mut samples = Vec::with_capacity(FRAMES);
+    let mut callback_walls = Vec::with_capacity(FRAMES);
+    let mut completed_ticks = 0_u64;
+    let mut catch_up_frames = 0_usize;
+    let mut over_deadline = 0_usize;
     while samples.len() < FRAMES {
+        if callback_walls.len() == FRAMES * 4 {
+            return Err(
+                "bounded GPU host failed to complete 600 frames in 2,400 callbacks".to_owned(),
+            );
+        }
         let due = host
             .next_due_in()
             .ok_or_else(|| "fixed clock stopped before the target frame count".to_owned())?;
         let since_last_call = origin.elapsed().saturating_sub(last_call);
         std::thread::sleep(due.saturating_sub(since_last_call));
         let now = origin.elapsed();
-        let sample = host.drive(now)?;
-        last_call = now;
-        if let Some(sample) = sample {
-            samples.push(sample);
+        let callback_start = Instant::now();
+        let report = host.drive(now)?;
+        while let Some(sample) = host.poll_completed()? {
+            if samples.len() < FRAMES {
+                samples.push(sample);
+            }
         }
+        let callback_wall = callback_start.elapsed();
+        callback_walls.push(callback_wall);
+        last_call = now;
+        completed_ticks += u64::from(report.completed_ticks);
+        catch_up_frames += usize::from(report.completed_ticks > 1);
+        over_deadline += usize::from(callback_wall > Duration::from_nanos(16_666_667));
     }
     let elapsed = origin.elapsed();
     let pixels = host.capture_pixels()?;
@@ -71,7 +88,7 @@ async fn run() -> Result<String, String> {
     let extract = percentile(&samples, |sample| sample.extract_cpu.as_secs_f64() * 1e6);
     let upload = percentile(&samples, |sample| sample.upload_cpu.as_secs_f64() * 1e6);
     let encode = percentile(&samples, |sample| sample.encode_cpu.as_secs_f64() * 1e6);
-    let wall = percentile(&samples, |sample| sample.wall.as_secs_f64() * 1e3);
+    let wall = percentile(&callback_walls, |wall| wall.as_secs_f64() * 1e3);
     let gpu = if samples.iter().all(|sample| sample.gpu_pass_ns.is_some()) {
         let shadow_near = percentile(&samples, |sample| {
             sample.gpu_pass_ns.expect("checked GPU timestamps")[0] / 1e6
@@ -99,31 +116,23 @@ async fn run() -> Result<String, String> {
     } else {
         "GPU timestamps unavailable".to_owned()
     };
-    let completed: u64 = samples
-        .iter()
-        .map(|sample| u64::from(sample.completed_ticks))
-        .sum();
+    let completed = completed_ticks;
     let dropped: usize = samples
         .iter()
         .map(|sample| sample.dropped_presentation)
         .sum();
     let uploaded: usize = samples.iter().map(|sample| sample.uploaded_bytes).sum();
     let dropped_light_references = samples[0].dropped_light_references;
-    let catch_up_frames = samples
+    let timing_faults = samples.iter().filter(|sample| sample.timing_fault).count();
+    let dropped_views = host.dropped_views();
+    let dropped_reports = host.dropped_reports();
+    let max_wall = callback_walls
         .iter()
-        .filter(|sample| sample.completed_ticks > 1)
-        .count();
-    let over_deadline = samples
-        .iter()
-        .filter(|sample| sample.wall > Duration::from_nanos(16_666_667))
-        .count();
-    let max_wall = samples
-        .iter()
-        .map(|sample| sample.wall)
+        .copied()
         .max()
-        .expect("600 frames");
+        .expect("at least 600 callbacks");
     Ok(format!(
-        "adapter={adapter_name}; frames={FRAMES}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; foreground_pixels={foreground}; dropped_presentation={dropped}; dropped_light_references={dropped_light_references}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; host wall p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
+        "adapter={adapter_name}; frames={FRAMES}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; dropped_views={dropped_views}; dropped_reports={dropped_reports}; timing_faults={timing_faults}; foreground_pixels={foreground}; dropped_presentation={dropped}; dropped_light_references={dropped_light_references}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; callback CPU p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
         elapsed.as_secs_f64(),
         host.tick(),
         tick.0,
