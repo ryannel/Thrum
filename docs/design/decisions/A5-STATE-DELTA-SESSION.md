@@ -1,6 +1,6 @@
 # A5 decision: acknowledged state deltas and session admission
 
-4 November 2026. **Selected design; unimplemented.** This closes [A0 N1](A0-N1-TRANSPORT-CODEC.md)'s V1 wire/session choices under [C13](../CONTRACTS.md). R4's full actor record is migration evidence. Game-declared schemas span native, browser and phone; local play pays no N1 projection, history or socket cost.
+4 November 2026. **Selected design; mode-0 fixed-base slice running.** The [first 32-actor-per-peer diagnostic](../../evidence/v1-workload/A5-VISUAL-DELTA-2026-11-04.md) exercises only existing-actor visual datagrams; selective ACK, full images, exact controller closure and real transport remain open. This closes [A0 N1](A0-N1-TRANSPORT-CODEC.md)'s V1 wire/session choices under [C13](../CONTRACTS.md). R4's full actor record is migration evidence. Game-declared schemas span native, browser and phone; local play pays no N1 projection, history or socket cost.
 
 ## Operating model and exact identities
 

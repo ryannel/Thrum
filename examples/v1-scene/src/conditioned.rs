@@ -3,6 +3,7 @@
 
 mod confirmed;
 mod predicted;
+mod visual_delta;
 
 use std::{fmt, num::NonZeroUsize, time::Instant};
 
@@ -18,6 +19,7 @@ use thrum_network::{
 
 use crate::scene::{self, PEER_COUNT};
 use confirmed::ConfirmedLoop;
+use visual_delta::{VisualDeltaLoop, VisualReport};
 
 const TICKS: u64 = 600;
 const LEAD_TICKS: u64 = 5;
@@ -330,6 +332,7 @@ pub struct ConditionedReport {
     max_replay_steps: usize,
     max_correction_m: f64,
     prediction_retained_bytes: usize,
+    visual: VisualReport,
     tick_p50_ns: u64,
     tick_p95_ns: u64,
     encode_ns: u128,
@@ -341,7 +344,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual bytes={} visual max_age={} visual encode/decode={}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.scenario,
             self.committed_ticks,
             PEER_COUNT,
@@ -375,6 +378,15 @@ impl fmt::Display for ConditionedReport {
             self.prediction_origin_mismatches,
             self.max_correction_m,
             self.prediction_retained_bytes,
+            self.visual.sent,
+            self.visual.dropped,
+            self.visual.delivered,
+            self.visual.stale,
+            self.visual.reordered,
+            self.visual.sent_bytes,
+            self.visual.max_age,
+            self.visual.encode_ns / 1_000,
+            self.visual.decode_ns / 1_000,
             self.tick_p50_ns / 1_000,
             self.tick_p95_ns / 1_000,
             self.encode_ns / 1_000,
@@ -451,6 +463,7 @@ pub struct ConditionedGame {
     window: FutureInputWindow<SimAction>,
     link: ConditionedLink,
     confirmed: ConfirmedLoop,
+    visual: VisualDeltaLoop,
     held: [[f32; 3]; PEER_COUNT],
     expected: [[f64; 3]; PEER_COUNT],
     expected_history: Vec<[[f64; 3]; PEER_COUNT]>,
@@ -488,6 +501,7 @@ impl ConditionedGame {
                 .map_err(|error| format!("initial controller: {error:?}"))?;
         }
         let rule = sim.controller_rule();
+        let visual = VisualDeltaLoop::new(&sim, &bindings)?;
         Ok(Self {
             sim,
             scenario,
@@ -495,6 +509,7 @@ impl ConditionedGame {
             window,
             link: ConditionedLink::new(),
             confirmed: ConfirmedLoop::new(&states, rule),
+            visual,
             held: [[0.0; 3]; PEER_COUNT],
             expected,
             expected_history: Vec::with_capacity(
@@ -623,7 +638,9 @@ impl ConditionedGame {
         }
         if reconnect {
             self.commit_reconnect(tick)?;
+            self.visual.rebaseline(&self.sim, self.bindings[0])?;
         }
+        self.visual.step(&self.sim, tick)?;
         for (index, peer) in PEERS.into_iter().enumerate() {
             let state = self
                 .sim
@@ -838,6 +855,7 @@ impl ConditionedGame {
             return Err("predicted input origins diverged from confirmed results".to_owned());
         }
         self.times.sort_unstable();
+        let visual = self.visual.finish()?;
         Ok(ConditionedReport {
             scenario: self.scenario,
             committed_ticks: self.sim.tick(),
@@ -871,6 +889,7 @@ impl ConditionedGame {
             max_replay_steps,
             max_correction_m,
             prediction_retained_bytes,
+            visual,
             tick_p50_ns: *self
                 .times
                 .get(self.times.len() / 2)
@@ -889,7 +908,8 @@ impl ConditionedGame {
 /// Run the same 10k V1 simulation with four peer input streams through a
 /// fixed-seed 2–4-tick, 2%-loss in-memory link. Encoded input packets pass
 /// through the conditioner; the confirmed and speculative clients are local
-/// diagnostic consumers, with no OS transport or state-delta wire yet.
+/// diagnostic consumers. Visual deltas use a fixed baseline and conditioned
+/// no-socket packets; selective ACK rebasing and OS transport remain open.
 ///
 /// # Errors
 /// Returns a staging, capacity, authority or independent-position-check fault.
@@ -928,6 +948,10 @@ mod tests {
         assert!(result.delivered_packets > 0);
         assert!(result.accepted_frames > 0);
         assert!(result.duplicate_frames > 0);
+        assert!(result.visual.sent > 0);
+        assert!(result.visual.dropped > 0);
+        assert!(result.visual.delivered > 0);
+        assert!((2..=4).contains(&result.visual.max_age));
         assert!(result.confirmed_groups > 0);
         assert!(result.confirmed_in_flight > 0);
         assert!((2..=4).contains(&result.confirmed_max_age));
