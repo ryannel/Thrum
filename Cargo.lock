@@ -1938,6 +1938,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "v1-scene-ios"
+version = "0.1.0"
+dependencies = [
+ "pollster",
+ "thrum-render",
+ "v1-scene",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"

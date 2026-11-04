@@ -211,7 +211,7 @@ impl BrowserGame {
     pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), JsValue> {
         let now = self.time_from_browser(timestamp_ms)?;
         if visible && !self.visible {
-            self.drain_and_resume(now)?;
+            self.host.drain_and_resume(now).map_err(js_error)?;
         } else if !visible && self.visible {
             self.host.pause();
         }
@@ -310,20 +310,7 @@ impl BrowserGame {
         self.overload_events += 1;
         self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);
         self.host.pause();
-        self.drain_and_resume(now)
-    }
-
-    fn drain_and_resume(&mut self, now: Duration) -> Result<(), JsValue> {
-        loop {
-            let report = self.host.drive(now, None).map_err(js_error)?;
-            if report.queued_ticks == 0 {
-                break;
-            }
-            if report.completed_ticks == 0 {
-                return Err(js_error("paused world updates could not drain"));
-            }
-        }
-        self.host.resume(now).map_err(js_error)
+        self.host.drain_and_resume(now).map_err(js_error)
     }
 
     fn time_from_browser(&mut self, timestamp_ms: f64) -> Result<Duration, JsValue> {

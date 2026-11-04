@@ -5,7 +5,8 @@ WebGPU browsers and native mobile platforms. Features and visual quality are sel
 per game; local and multiplayer play share the same authoritative rules.
 
 **Status:** a bounded headless authority/replica fixture runs. A provisional 10,000-entity
-simulation now feeds a synthetic lit scene on Metal offscreen and Chrome WebGPU. There is no
+simulation now feeds a synthetic lit scene on Metal offscreen, Chrome WebGPU and an iPhone 13
+simulator. There is no
 finished game, real transport or shipping runtime yet. The [V1 build plan](docs/BUILD-PLAN.md)
 is the active work queue.
 
