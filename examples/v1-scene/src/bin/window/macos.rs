@@ -13,12 +13,21 @@ use v1_scene::{FrameHost, FrameSample, SurfaceOutput};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{ElementState, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
+    keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowId},
 };
 
 const FRAMES: usize = 600;
+const KEY_A: u8 = 1;
+const KEY_D: u8 = 2;
+const KEY_W: u8 = 4;
+const KEY_S: u8 = 8;
+const KEY_LEFT: u8 = 16;
+const KEY_RIGHT: u8 = 32;
+const KEY_UP: u8 = 64;
+const KEY_DOWN: u8 = 128;
 
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
@@ -125,6 +134,7 @@ struct App {
     device: Option<wgpu::Device>,
     queue: Option<wgpu::Queue>,
     host: Option<FrameHost>,
+    held_keys: u8,
     origin: Instant,
     last_call: Duration,
     presented: usize,
@@ -155,6 +165,7 @@ impl App {
             device: None,
             queue: None,
             host: None,
+            held_keys: 0,
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
@@ -171,6 +182,44 @@ impl App {
             adapter_name: String::new(),
             error: None,
         }
+    }
+
+    fn update_controls(&mut self) -> Result<(), String> {
+        let horizontal = axis(
+            self.held_keys & (KEY_A | KEY_LEFT) != 0,
+            self.held_keys & (KEY_D | KEY_RIGHT) != 0,
+        );
+        let vertical = axis(
+            self.held_keys & (KEY_S | KEY_DOWN) != 0,
+            self.held_keys & (KEY_W | KEY_UP) != 0,
+        );
+        if let Some(host) = &mut self.host {
+            host.set_controls([horizontal, vertical, 0.0])?;
+        }
+        Ok(())
+    }
+
+    fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
+        let mask = match code {
+            KeyCode::KeyA => KEY_A,
+            KeyCode::KeyD => KEY_D,
+            KeyCode::KeyW => KEY_W,
+            KeyCode::KeyS => KEY_S,
+            KeyCode::ArrowLeft => KEY_LEFT,
+            KeyCode::ArrowRight => KEY_RIGHT,
+            KeyCode::ArrowUp => KEY_UP,
+            KeyCode::ArrowDown => KEY_DOWN,
+            _ => return Ok(()),
+        };
+        if (self.held_keys & mask != 0) == pressed {
+            return Ok(());
+        }
+        if pressed {
+            self.held_keys |= mask;
+        } else {
+            self.held_keys &= !mask;
+        }
+        self.update_controls()
     }
 
     fn prepare(
@@ -469,6 +518,14 @@ fn percentile<T>(items: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
     (sorted[sorted.len() / 2], sorted[sorted.len() * 95 / 100])
 }
 
+fn axis(negative: bool, positive: bool) -> f32 {
+    match (negative, positive) {
+        (true, false) => -1.0,
+        (false, true) => 1.0,
+        _ => 0.0,
+    }
+}
+
 impl ApplicationHandler<UserEvent> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
@@ -502,6 +559,17 @@ impl ApplicationHandler<UserEvent> for App {
                     event_loop.exit();
                 }
                 result
+            }
+            WindowEvent::KeyboardInput { event, .. } => {
+                if let PhysicalKey::Code(code) = event.physical_key {
+                    self.set_key(code, event.state == ElementState::Pressed)
+                } else {
+                    Ok(())
+                }
+            }
+            WindowEvent::Focused(false) => {
+                self.held_keys = 0;
+                self.update_controls()
             }
             _ => Ok(()),
         };

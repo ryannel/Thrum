@@ -247,6 +247,9 @@ pub struct FrameHost {
     queue: wgpu::Queue,
     clock: TickClock,
     sim: Simulation,
+    desired_axes: [f32; 3],
+    admitted_axes: [f32; 3],
+    input_sequence: u64,
     snapshots: VisualSnapshotPool,
     extractor: Option<RenderExtractor>,
     #[cfg(not(target_arch = "wasm32"))]
@@ -384,6 +387,9 @@ impl FrameHost {
             queue: queue.clone(),
             clock,
             sim,
+            desired_axes: [0.0; 3],
+            admitted_axes: [0.0; 3],
+            input_sequence: 1,
             snapshots,
             extractor: Some(extractor),
             #[cfg(not(target_arch = "wasm32"))]
@@ -576,6 +582,28 @@ impl FrameHost {
         self.sim.tick()
     }
 
+    /// Sample continuous local controls for the next authoritative tick.
+    /// Multiple UI changes before that tick use the latest normalized value.
+    /// Local and remote inputs use the same `Simulation::admit_frame` gate.
+    ///
+    /// # Errors
+    /// Returns a normalized-axis validation error without changing the held input.
+    pub fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
+        scene::control_frame(axes, 0, 0)
+            .validate_axes()
+            .map_err(|error| format!("local controls: {error:?}"))?;
+        self.desired_axes = axes;
+        Ok(())
+    }
+
+    /// Committed world position of the fixture's controlled actor.
+    pub fn controlled_position(&self) -> Option<[f64; 3]> {
+        self.sim
+            .handle(scene::CONTROLLED_ID)
+            .and_then(|handle| self.sim.get(handle).ok())
+            .map(|entity| entity.position.0)
+    }
+
     /// Number of optional views skipped because all GPU packet slots were held.
     pub fn dropped_views(&self) -> u64 {
         self.dropped_views
@@ -663,11 +691,33 @@ impl FrameHost {
         let wall_start = Instant::now();
         self.poll_gpu()?;
         let mut tick_cpu = Duration::ZERO;
+        let desired_axes = self.desired_axes;
+        let admitted_axes = &mut self.admitted_axes;
+        let input_sequence = &mut self.input_sequence;
+        let sim = &mut self.sim;
         let clock = self
             .clock
             .advance(now, 4, || {
                 let start = Instant::now();
-                let result = self.sim.step(&[]).map(|_| ());
+                let result = (|| {
+                    if desired_axes
+                        .iter()
+                        .zip(admitted_axes.iter())
+                        .any(|(desired, admitted)| desired.to_bits() != admitted.to_bits())
+                    {
+                        let tick = sim.tick().checked_add(1).ok_or("input tick exhausted")?;
+                        let frame = scene::control_frame(desired_axes, tick, *input_sequence);
+                        sim.admit_frame(frame)
+                            .map_err(|error| format!("local input admission: {error:?}"))?;
+                        *admitted_axes = desired_axes;
+                        *input_sequence = input_sequence
+                            .checked_add(1)
+                            .ok_or("input sequence exhausted")?;
+                    }
+                    sim.step(&[])
+                        .map(|_| ())
+                        .map_err(|error| format!("simulation step: {error:?}"))
+                })();
                 tick_cpu += start.elapsed();
                 result
             })

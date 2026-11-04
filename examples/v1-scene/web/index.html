@@ -14,6 +14,7 @@
   <body>
     <main>
       <canvas id="scene" width="1280" height="720" aria-label="Thrum V1 scene"></canvas>
+      <p>Move the local player with WASD or arrow keys. <span id="player"></span></p>
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
@@ -21,6 +22,7 @@
 
       const canvas = document.querySelector("#scene");
       const status = document.querySelector("#status");
+      const player = document.querySelector("#player");
       try {
         await init();
         const game = await create_browser_game(canvas);
@@ -32,6 +34,35 @@
         let simulatedHidden = false;
         let rafId = 0;
         let stopped = false;
+        const pressed = new Set();
+        const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
+        const updateControls = () => {
+          const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
+            - Number(pressed.has("KeyA") || pressed.has("ArrowLeft"));
+          const y = Number(pressed.has("KeyW") || pressed.has("ArrowUp"))
+            - Number(pressed.has("KeyS") || pressed.has("ArrowDown"));
+          game.set_controls(x, y);
+        };
+        const clearControls = () => {
+          pressed.clear();
+          updateControls();
+        };
+        window.addEventListener("keydown", (event) => {
+          if (!movementKeys.has(event.code) || stopped) return;
+          event.preventDefault();
+          if (pressed.has(event.code)) return;
+          pressed.add(event.code);
+          updateControls();
+        });
+        window.addEventListener("keyup", (event) => {
+          if (!movementKeys.has(event.code) || stopped) return;
+          event.preventDefault();
+          if (!pressed.has(event.code)) return;
+          pressed.delete(event.code);
+          updateControls();
+        });
+        window.addEventListener("blur", clearControls);
+        let lastPlayerUpdate = 0;
         const schedule = () => {
           if (!rafId && !stopped && !document.hidden && !simulatedHidden) {
             rafId = requestAnimationFrame(draw);
@@ -46,6 +77,10 @@
           if (document.hidden || simulatedHidden || stopped) return;
           try {
             game.frame(time);
+            if (time - lastPlayerUpdate >= 500) {
+              player.textContent = game.controlled_position();
+              lastPlayerUpdate = time;
+            }
             if (game.complete()) {
               status.textContent = game.report();
               stopped = true;
@@ -60,7 +95,10 @@
         document.addEventListener("visibilitychange", () => {
           if (stopped) return;
           try {
-            if (document.hidden) cancelPending();
+            if (document.hidden) {
+              cancelPending();
+              clearControls();
+            }
             game.set_visible(!document.hidden && !simulatedHidden, performance.now());
             schedule();
           } catch (error) {
@@ -76,6 +114,7 @@
             try {
               simulatedHidden = true;
               cancelPending();
+              clearControls();
               game.set_visible(false, performance.now());
               status.textContent = "Paused for the two-second lifecycle probe…";
               setTimeout(() => {
