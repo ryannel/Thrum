@@ -23,3 +23,10 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
+
+[dev-dependencies]
+divan = "=0.1.21"
+
+[[bench]]
+name = "frame"
+harness = false

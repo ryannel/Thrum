@@ -116,6 +116,23 @@
         "../evidence/render/A2-LIVE-UPLOAD-2026-11-04.md"
       ],
       "scope": "Synchronous presentation copy from committed A1 tick into reused SoA columns, stable-ID prior matching and explicit drop telemetry; a prepared GPU instance table updates sorted changed slots and degrades malformed rows. Real Mac offscreen consumer and pixel change pass. Async SnapshotLease/RenderPacket, submission/fence lifetime, sustained pacing and Chrome/iPhone execution remain open."
+    },
+    "V1_serial_frame_host": {
+      "implementation": "partial_fixed_clock_serial_offscreen_simulation_to_gpu_host",
+      "functional_validation": "real_metal_idle_catch_up_overload_test_and_two_600_frame_process_runs",
+      "experienced_quality": "synthetic_final_frame_inspected_not_v1_visual_acceptance",
+      "platform_performance": {
+        "mac": "not_qualified_variable_paced_diagnostic_only",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Metal, 10k entities / 1.5k moving, 640x360, two 600-frame runs: first committed 600 ticks with host-call wall p50/p95 1.79/6.89 ms; second committed 601 ticks with one catch-up, 20 calls over 16.67 ms and wall p50/p95/max 3.64/15.39/25.46 ms. Second-run CPU tick p50/p95 117/194 us, extract 1000/1384 us, upload 419/713 us, encode 18/27 us; GPU forward 0.098/0.583 ms, display 0.050/0.602 ms. Divan 100 samples: 1.046 ms median/115 benchmark-thread Rust allocations with GPU timestamps, 0.866 ms/60 without. Concurrent rustc load observed after the slower run; no causal or frame-budget claim.",
+      "evidence": [
+        "../evidence/render/V1-FRAME-HOST-2026-11-04.md"
+      ],
+      "scope": "One serial host callback uses the shared fixed-step clock, committed A1 world, A2 render columns, changed-row GPU upload and prepared two-pass Metal renderer. It blocks on each GPU and timestamp submission, has no window/surface, owned async packets, device-loss recovery, cooked content, clustered lights/CSM or browser/phone runtime."
     }
   },
   "user_selected": [
