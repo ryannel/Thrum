@@ -1,6 +1,6 @@
 # G1 decision: one committed world page
 
-4 November 2026. **Implemented in the V1 game; qualification in progress.** C01/C02 separate stable IDs from checked physical slots and keep committed consumer state immutable. G0 left a visual-only page pool, an independent full-record snapshot copy, and a render ID map. G1 replaces these with one simulation-owned page ring. G2 still decides the hecs `PreparedQuery` versus owned archetype SoA backend at 10k and 100k; G1 does not settle that choice.
+4 November 2026. **Implemented in the V1 game; qualification in progress.** C01/C02 separate stable IDs from checked physical slots and keep committed consumer state immutable. G0 left a visual-only page pool, an independent full-record snapshot copy, and a render ID map. G1 replaces these with one simulation-owned page ring. The subsequent [G2 storage decision](G2-STORAGE-SELECTION.md) selects hecs for generic integration from 10k/100k storage-order comparison; G1 alone did not settle that choice.
 
 ## Ownership and publication
 
