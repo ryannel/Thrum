@@ -9,7 +9,7 @@
 - A missed surface view committed tick 1 without submission or extraction, incremented the surface-drop counter once, then a 1000×1000 graph resize reused the prepared pipeline and presented tick 2. The initial scene is 10k entities with 1.5k moving.
 - `cargo check -p thrum-render -p v1-scene --target wasm32-unknown-unknown` and `--target aarch64-apple-ios-sim` passed with the pinned Rust toolchain. These are compile checks, not browser/phone runs.
 
-The integrated Divan benchmark on source base `93c3b14` plus this benchmark-only change (`cargo bench -p v1-scene --bench frame -- --sample-count 100`) compared the same 10k/1.5k-mover Metal frame with and without the prepared surface pass, each with 100 samples and GPU completion included. The target was a synthetic Bgra8Unorm texture, not a macOS drawable; setup/pipeline creation was outside the timed sample. Divan's allocator profiler counts Rust allocations on its benchmark thread, not GPU driver or other-thread allocations.
+The integrated Divan benchmark at local commit `b9c4d76` (`cargo bench -p v1-scene --bench frame -- --sample-count 100`) compared the same 10k/1.5k-mover Metal frame with and without the prepared surface pass, each with 100 samples and GPU completion included. The target was a synthetic Bgra8Unorm texture, not a macOS drawable; setup/pipeline creation was outside the timed sample. Divan's allocator profiler counts Rust allocations on its benchmark thread, not GPU driver or other-thread allocations.
 
 | Frame profile | Median wall | Median benchmark-thread allocator calls | Median benchmark-thread allocated payload |
 | --- | ---: | ---: | ---: |
