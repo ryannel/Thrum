@@ -43,17 +43,16 @@ fn fixture() -> (Simulation, thrum_core::Handle, Ownership) {
 }
 
 fn frame(binding: Ownership, tick: u64, sequence: u64) -> InputFrame<SimAction> {
-    InputFrame {
-        origin: Origin {
+    InputFrame::new(
+        Origin {
             peer: binding.peer,
             connection_epoch: binding.connection_epoch,
             sequence,
         },
-        actor: binding.actor,
+        binding.actor,
         tick,
-        axes: [1.0, 0.0, 0.0],
-        actions: Vec::new(),
-    }
+        [1.0, 0.0, 0.0],
+    )
 }
 
 #[test]

@@ -1,13 +1,12 @@
 //! The concrete 10k-entity V1 workload. Engine crates remain game agnostic.
 
-use std::collections::HashMap;
 use std::num::NonZeroU32;
 
 use thrum_core::{
     ActorId, Origin, PeerId, StableId, WorldEpoch,
     sim::{
-        ComponentEntity, InputFrame, Ownership, Position, SimAction, SimConfig, Simulation,
-        Velocity, VisualSnapshotLease,
+        ComponentEntity, InputFrame, Ownership, Position, PublishedPage, SimAction, SimConfig,
+        Simulation, Velocity,
     },
 };
 use thrum_render::{
@@ -36,17 +35,16 @@ pub(crate) fn control_frame(
     sequence: u64,
 ) -> InputFrame<SimAction> {
     let owner = binding(peer);
-    InputFrame {
-        origin: Origin {
+    InputFrame::new(
+        Origin {
             peer: owner.peer,
             connection_epoch: owner.connection_epoch,
             sequence,
         },
-        actor: owner.actor,
+        owner.actor,
         tick,
         axes,
-        actions: Vec::new(),
-    }
+    )
 }
 
 pub(crate) fn simulation() -> Result<Simulation, String> {
@@ -90,29 +88,21 @@ pub(crate) fn simulation() -> Result<Simulation, String> {
     Ok(sim)
 }
 
-pub(crate) fn extract(
-    extractor: &mut RenderExtractor,
-    snapshot: &VisualSnapshotLease,
-) -> ExtractReport {
-    let mut report = extractor.extract(
+pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage) -> ExtractReport {
+    extractor.extract(
         SourceTick {
-            epoch: snapshot.epoch().0,
-            tick: snapshot.tick(),
+            epoch: snapshot.id().epoch.0,
+            tick: snapshot.id().tick,
         },
         [0.0; 3],
         |sink| {
-            for ((id, position), visual) in snapshot
-                .ids()
-                .iter()
-                .zip(snapshot.positions())
-                .zip(snapshot.visuals())
-            {
-                sink.push(id.0, position.0, *visual);
-            }
+            snapshot.visit(|handle, id, position, visual| {
+                if let Some(visual) = visual {
+                    sink.push(handle.slot, handle.generation, id.0, position.0, visual);
+                }
+            });
         },
-    );
-    report.dropped_capacity += snapshot.dropped_capacity();
-    report
+    )
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -121,35 +111,24 @@ pub(crate) struct ApplyReport {
     pub(crate) dropped_invalid: usize,
 }
 
-/// Temporary stable-ID lookup for the prepared synthetic instance table.
-/// Built once at scene preparation; the G1 publication spine will supply dense slots.
-pub(crate) struct SceneSlotIndex(HashMap<u128, usize>);
-
-impl SceneSlotIndex {
-    pub(crate) fn new(ids: &[StableId]) -> Self {
-        let mut slots = HashMap::with_capacity(ids.len());
-        for (slot, id) in ids.iter().enumerate() {
-            slots.insert(id.0, slot);
-        }
-        Self(slots)
-    }
-
-    fn get(&self, id: u128) -> Option<usize> {
-        self.0.get(&id).copied()
-    }
-}
-
 pub(crate) fn apply_frame_to_scene(
     scene: &mut SyntheticScene,
-    slots: &SceneSlotIndex,
     frame: &RenderColumns,
     changed_slots: &mut Vec<u32>,
 ) -> ApplyReport {
     changed_slots.clear();
     let mut report = ApplyReport::default();
     let material_count = scene.materials.len();
+    // The worker may discard extracted frames. Retire against the last scene
+    // actually applied to the GPU, never the extractor's previous frame.
+    for (slot, instance) in scene.instances.iter_mut().enumerate() {
+        if instance.ids[3] != 0 && !frame.contains_slot(slot) {
+            instance.ids[3] = 0;
+            changed_slots.push(u32::try_from(slot).expect("bounded synthetic scene slots"));
+        }
+    }
     for row in 0..frame.len() {
-        let Some(index) = slots.get(frame.ids()[row]) else {
+        let Ok(index) = usize::try_from(frame.slots()[row]) else {
             report.dropped_invalid += 1;
             continue;
         };
@@ -169,10 +148,12 @@ pub(crate) fn apply_frame_to_scene(
         if instance.current[3][..3] != current
             || instance.previous[3][..3] != previous
             || instance.ids[1] != material
+            || instance.ids[3] == 0
         {
             instance.current[3][..3].copy_from_slice(&current);
             instance.previous[3][..3].copy_from_slice(&previous);
             instance.ids[1] = material;
+            instance.ids[3] = 1;
             changed_slots.push(u32::try_from(index).expect("10k fixture slot fits u32"));
         }
         report.moving += usize::from((current[0] - previous[0]).abs() > 1e-6);
@@ -189,26 +170,37 @@ mod tests {
         synthetic::SyntheticScene,
     };
 
-    use super::{
-        ENTITY_COUNT, PEER_COUNT, SceneSlotIndex, apply_frame_to_scene, control_frame, simulation,
-    };
+    use super::{ENTITY_COUNT, PEER_COUNT, apply_frame_to_scene, control_frame, simulation};
 
     #[test]
-    fn stable_identity_is_looked_up_instead_of_used_as_a_gpu_slot() {
+    fn physical_slot_is_used_instead_of_stable_identity_as_gpu_slot() {
         let ids = [StableId(u128::from(u32::MAX) + 8), StableId(7)];
-        let slots = SceneSlotIndex::new(&ids);
         let mut scene = SyntheticScene::grid(2).expect("two synthetic instances");
-        let mut extractor = RenderExtractor::new(2);
+        let mut extractor = RenderExtractor::new(2, 2);
         extractor.extract(SourceTick { epoch: 1, tick: 1 }, [0.0; 3], |sink| {
-            assert!(sink.push(7, [0.25, 0.0, 0.0], 0));
-            assert!(sink.push(ids[0].0, [0.75, 0.0, 0.0], 1));
+            assert!(sink.push(1, 1, 7, [0.25, 0.0, 0.0], 0));
+            assert!(sink.push(0, 1, ids[0].0, [0.75, 0.0, 0.0], 1));
         });
         let mut changed = Vec::new();
-        let report = apply_frame_to_scene(&mut scene, &slots, extractor.frame(), &mut changed);
+        let report = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(report.dropped_invalid, 0);
         assert_eq!(changed, [0, 1]);
         assert_eq!(scene.instances[0].current[3][0], 0.75);
         assert_eq!(scene.instances[1].current[3][0], 0.25);
+        extractor.extract(SourceTick { epoch: 1, tick: 2 }, [0.0; 3], |sink| {
+            assert!(sink.push(0, 1, ids[0].0, [0.8, 0.0, 0.0], 1));
+        });
+        // Worker result for tick two is discarded before reaching the scene.
+        extractor.extract(SourceTick { epoch: 1, tick: 3 }, [0.0; 3], |sink| {
+            assert!(sink.push(0, 1, ids[0].0, [0.9, 0.0, 0.0], 1));
+        });
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        assert_eq!(scene.instances[1].ids[3], 0, "retired slot is hidden");
+        extractor.extract(SourceTick { epoch: 1, tick: 4 }, [0.0; 3], |sink| {
+            assert!(sink.push(1, 2, 11, [0.3, 0.0, 0.0], 0));
+        });
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        assert_eq!(scene.instances[1].ids[3], 1, "reused slot is visible");
     }
 
     #[test]

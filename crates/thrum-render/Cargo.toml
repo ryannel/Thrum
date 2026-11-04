@@ -10,7 +10,6 @@ description = "Thrum's typed GPU graph and prepared synthetic renderer foundatio
 workspace = true
 
 [dependencies]
-foldhash = "=0.2.0"
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 

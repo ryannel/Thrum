@@ -3,14 +3,13 @@
   "target": "custom-bevy-independent-3d-engine",
   "as_of": "2026-11-04",
   "contract_revision": "C4",
-  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0 retired the disconnected I1/R4/A5 fixture paths; G1 is the active gate toward one V1 game. No general simulation runtime, executing render graph, real transport, cooked game loop or named-device performance is qualified.",
+  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0 and G1 are complete in the active V1 game; G2 generic storage and G3 executing renderer are next. No general engine runtime, real transport, cooked game loop or V1 device performance is qualified.",
   "execution_plan": {
-    "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering on macOS, Chrome WebGPU and physical iPhone; then four rendered peers over conditioned real transport",
+    "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering and budgets on macOS and physical iPhone; Chrome WebGPU reduced-tier smoke only; then four rendered peers over conditioned native QUIC",
     "active": [
-      "G1 one dense identity and publication spine, consumed by the V1 game"
+      "G2 generic simulation after measured hecs PreparedQuery versus owned SoA decision at 10k and 100k"
     ],
     "next_parallel": [
-      "G2 generic simulation after measured hecs PreparedQuery versus owned SoA decision",
       "G3 executing render graph after reviewed two-page design"
     ],
     "parked": [
@@ -25,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G0 is complete; parked means retained as reference, not in progress. Historical partial implementation does not imply active construction or current-tree availability."
+    "interpretation": "G0 and G1 are complete; parked means retained as reference, not in progress. Historical partial implementation does not imply active construction or current-tree availability."
   },
   "v1_slices": {
     "G0_boundary": {
@@ -42,6 +41,23 @@
       "scope": "Legacy I1/R4 and disconnected conditioned binaries retired from active tree; shared IDs, one-time stable-ID-to-GPU-slot lookup, v1-game layout, dependency guard and compact plan. Seven game schema/rule declarations remain in core until G2; FrameHost remains in game until G3.",
       "evidence": [
         "../evidence/integration/G0-BOUNDARY-2026-11-04.md"
+      ]
+    },
+    "G1_publication": {
+      "implementation": "complete_one_simulation_owned_page_ring_and_optional_ordered_game_projection_outbox",
+      "functional_validation": "full_dev_check_scoped_zero_allocation_tests_slot_reuse_and_backpressure_tests_real_metal_host_and_retired_pixel_tests_independent_cross_module_review_no_findings",
+      "experienced_quality": "synthetic_scene_diagnostic_only_no_v1_visual_acceptance",
+      "platform_performance": {
+        "mac": "two_600_frame_metal_window_diagnostics_not_v1_budget_qualified",
+        "windows": "not_run",
+        "browser": "not_measured_wasm_compile_only",
+        "ios": "not_measured_simulator_compile_only",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max release 10k/1.5k: incremental tick plus page Divan median 76.16 us; isolated slot extraction 71.58 us; four-page reserved payload/owner bytes 10001488; optional warmed outbox 4073984 bytes. Two 600-frame window runs tick CPU p50/p95 104.625/193.167 and 103.666/129.833 us; scene GPU p50/p95 0.375/1.977 and 0.374/2.420 ms. Wide tails and dropped optional views remain unqualified.",
+      "scope": "One immutable complete slot page per tick, dirty sets, ordered structural events, generation-checked render extraction, last-applied-scene retirement and opt-in bounded projection outbox with explicit baseline recovery. Fixed game schema remains in core until G2. No real transport, generic restore/replay, long history or physical-iPhone run.",
+      "evidence": [
+        "../evidence/integration/G1-PUBLICATION-2026-11-04.md"
       ]
     },
     "A1_simulation": {
@@ -4307,5 +4323,11 @@
       "evidence": "../evidence/i1-headless/MOBILE-APP-SHELL.md"
     },
     "current_tree_status": "legacy host/world/replica retired from main at G0; historical evidence retained"
+  },
+  "platform_tiers": {
+    "native_high": "macOS leads GPU-driven, multi-draw-indirect, binding arrays and available async compute; optional ray tracing is a capability, not a V1 gate",
+    "native_mobile": "physical iPhone is a V1 budget target with tile-memory-aware load/store and pass organization",
+    "web": "Chrome WebGPU reduced-tier smoke without a V1 frame budget; WebTransport follows V1 behind the same link trait",
+    "backend": "wgpu with native-only features and an isolated raw Metal escape hatch; direct Metal requires measured evidence"
   }
 }

@@ -17,17 +17,16 @@ fn binding(peer: u64, epoch: u64) -> Ownership {
 }
 
 fn frame(peer: u64, epoch: u64, tick: u64, sequence: u64, axis: f32) -> InputFrame<()> {
-    InputFrame {
-        origin: Origin {
+    InputFrame::new(
+        Origin {
             peer: PeerId(peer),
             connection_epoch: epoch,
             sequence,
         },
-        actor: ActorId(peer),
+        ActorId(peer),
         tick,
-        axes: [axis, 0.0, 0.0],
-        actions: Vec::new(),
-    }
+        [axis, 0.0, 0.0],
+    )
 }
 
 fn stage(

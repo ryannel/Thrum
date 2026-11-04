@@ -22,5 +22,7 @@ struct InstanceRecord {
     let t = tangents[face];
     let p = positions[vertex_index % 6u];
     let local = n + t*p.x + cross(n,t)*p.y;
-    return shadow_view.light_view_proj * instances[instance_index].current * vec4(local, 1.0);
+    let instance = instances[instance_index];
+    if instance.ids.w == 0u { return vec4(2.0, 2.0, 2.0, 1.0); }
+    return shadow_view.light_view_proj * instance.current * vec4(local, 1.0);
 }

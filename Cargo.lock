@@ -1744,6 +1744,7 @@ version = "0.1.0"
 dependencies = [
  "divan",
  "hecs",
+ "smallvec",
 ]
 
 [[package]]
@@ -1765,7 +1766,6 @@ name = "thrum-render"
 version = "0.1.0"
 dependencies = [
  "divan",
- "foldhash",
  "glam",
  "pollster",
  "wgpu",

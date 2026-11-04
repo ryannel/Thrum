@@ -1,4 +1,5 @@
 use crate::{ActorId, Origin};
+use smallvec::SmallVec;
 
 /// One connection's continuous controls and discrete actions for one fixed tick.
 /// `AXES` is game-selected; axes are finite normalized values in [-1, 1].
@@ -14,10 +15,21 @@ pub struct InputFrame<A, const AXES: usize = 3> {
     /// Held controls. Missing subsequent frames retain axes, never actions.
     pub axes: [f32; AXES],
     /// One-shot game actions; order within the frame is significant.
-    pub actions: Vec<A>,
+    pub actions: SmallVec<[A; 8]>,
 }
 
 impl<A, const AXES: usize> InputFrame<A, AXES> {
+    /// Construct a frame with an empty inline action buffer.
+    pub fn new(origin: Origin, actor: ActorId, tick: u64, axes: [f32; AXES]) -> Self {
+        Self {
+            origin,
+            actor,
+            tick,
+            axes,
+            actions: SmallVec::new(),
+        }
+    }
+
     /// Check normalized axes without copying or allocating.
     ///
     /// # Errors

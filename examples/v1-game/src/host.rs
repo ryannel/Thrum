@@ -4,7 +4,6 @@
 use std::time::Instant;
 use std::{
     collections::VecDeque,
-    num::NonZeroUsize,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -16,10 +15,7 @@ use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_cook::EnvironmentProduct;
-use thrum_core::{
-    ClockConfig, ClockState, TickClock,
-    sim::{Simulation, VisualSnapshotPool},
-};
+use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::extract::SourceTick;
 #[cfg(not(target_arch = "wasm32"))]
@@ -34,7 +30,10 @@ use thrum_render::{
     timing::GpuTimings,
 };
 
-use crate::scene::{self, ApplyReport, ENTITY_COUNT};
+use crate::{
+    projection::{GameProjection, ProjectionGap, ProjectionOutbox},
+    scene::{self, ApplyReport, ENTITY_COUNT},
+};
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native_worker;
@@ -118,6 +117,10 @@ pub struct DriveReport {
     pub completed_ticks: u32,
     /// Due updates left queued by the fixed clock.
     pub queued_ticks: u32,
+    /// Changed game values copied from the last committed page for future replication.
+    pub projected_changes: usize,
+    /// Tick projections overwritten before a consumer drained them; baseline reset required.
+    pub projection_lost_ticks: u64,
     /// A GPU view was submitted; `tick` remains the latest authoritative tick.
     /// The submitted source tick is reported by the eventual `FrameSample`.
     pub submitted: bool,
@@ -247,10 +250,10 @@ pub struct FrameHost {
     queue: wgpu::Queue,
     clock: TickClock,
     sim: Simulation,
+    projections: Option<ProjectionOutbox>,
     desired_axes: [f32; 3],
     admitted_axes: [f32; 3],
     input_sequence: u64,
-    snapshots: VisualSnapshotPool,
     extractor: Option<RenderExtractor>,
     #[cfg(not(target_arch = "wasm32"))]
     worker: Option<NativeWorker>,
@@ -263,7 +266,6 @@ pub struct FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     last_render_slot: Option<usize>,
     scene: SyntheticScene,
-    scene_slots: scene::SceneSlotIndex,
     changed_slots: Vec<u32>,
     prepared: PreparedSynthetic,
     presenter: Option<SurfacePresenter>,
@@ -295,17 +297,12 @@ impl FrameHost {
         queue: &wgpu::Queue,
         surface: Option<SurfaceProfile>,
     ) -> Result<Self, String> {
-        let sim = scene::simulation()?;
-        let mut snapshots = VisualSnapshotPool::new(
-            NonZeroUsize::new(IN_FLIGHT).expect("nonzero prepared frame ring"),
-            ENTITY_COUNT,
-        );
-        let mut extractor = RenderExtractor::new(ENTITY_COUNT);
-        let initial = snapshots
-            .publish(&sim)
-            .ok_or("initial visual page unavailable")?;
+        let mut sim = scene::simulation()?;
+        let mut extractor = RenderExtractor::new(ENTITY_COUNT, ENTITY_COUNT);
+        let initial = sim
+            .published_page()
+            .map_err(|error| format!("initial world page: {error:?}"))?;
         scene::extract(&mut extractor, &initial);
-        let scene_slots = scene::SceneSlotIndex::new(initial.ids());
         drop(initial);
         let count = u32::try_from(ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
@@ -334,12 +331,7 @@ impl FrameHost {
         })
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
-        scene::apply_frame_to_scene(
-            &mut scene,
-            &scene_slots,
-            extractor.frame(),
-            &mut changed_slots,
-        );
+        scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
         let prepared = PreparedSynthetic::prepare_with_light(
             device,
             queue,
@@ -394,10 +386,10 @@ impl FrameHost {
             queue: queue.clone(),
             clock,
             sim,
+            projections: None,
             desired_axes: [0.0; 3],
             admitted_axes: [0.0; 3],
             input_sequence: 1,
-            snapshots,
             extractor: Some(extractor),
             #[cfg(not(target_arch = "wasm32"))]
             worker: None,
@@ -410,7 +402,6 @@ impl FrameHost {
             #[cfg(not(target_arch = "wasm32"))]
             last_render_slot: None,
             scene,
-            scene_slots,
             changed_slots,
             prepared,
             presenter,
@@ -681,6 +672,65 @@ impl FrameHost {
         ))
     }
 
+    /// Start a bounded projection output from the current complete world page.
+    /// G6 will attach its transport consumer here; the local game remains lean
+    /// when no session is active.
+    ///
+    /// # Errors
+    /// Returns a world publication fault without enabling the output.
+    pub fn enable_projection(&mut self) -> Result<(), String> {
+        if self.projections.is_none() {
+            let page = self
+                .sim
+                .published_page()
+                .map_err(|error| format!("world page: {error:?}"))?;
+            let mut outbox = ProjectionOutbox::new(ENTITY_COUNT);
+            outbox.reset_full(&page);
+            self.projections = Some(outbox);
+        }
+        Ok(())
+    }
+
+    /// Consume the oldest detached projection in source-tick order. A gap
+    /// blocks delivery until `reset_projection_baseline` publishes a full state.
+    /// Returns `None` when projection output has not been enabled.
+    ///
+    /// # Errors
+    /// Returns the explicit number of overwritten ticks requiring a baseline.
+    pub fn poll_projection(
+        &mut self,
+        consume: impl FnOnce(&GameProjection),
+    ) -> Result<Option<bool>, ProjectionGap> {
+        self.projections
+            .as_mut()
+            .map(|outbox| outbox.poll(consume))
+            .transpose()
+    }
+
+    /// Reserved detached projection payload bytes, excluding allocator bookkeeping.
+    pub fn projection_reserved_bytes(&self) -> usize {
+        self.projections
+            .as_ref()
+            .map_or(0, ProjectionOutbox::reserved_bytes)
+    }
+
+    /// Replace undeliverable deltas with a full current-state projection.
+    ///
+    /// # Errors
+    /// Returns a world publication fault without changing the pending outbox.
+    pub fn reset_projection_baseline(&mut self) -> Result<(), String> {
+        let outbox = self
+            .projections
+            .as_mut()
+            .ok_or("projection output is disabled")?;
+        let page = self
+            .sim
+            .published_page()
+            .map_err(|error| format!("world page: {error:?}"))?;
+        outbox.reset_full(&page);
+        Ok(())
+    }
+
     /// Admit monotonic host time through the shared fixed-step clock. Every due
     /// update commits once before a visual page can be published. A full
     /// presentation ring skips an optional view with a counter, never the world
@@ -703,11 +753,16 @@ impl FrameHost {
         let admitted_axes = &mut self.admitted_axes;
         let input_sequence = &mut self.input_sequence;
         let sim = &mut self.sim;
+        let projections = &mut self.projections;
+        let mut projected_changes = 0;
         let clock = self
             .clock
             .advance(now, 4, || {
                 let start = Instant::now();
                 let result = (|| {
+                    if !sim.can_publish_next() {
+                        return Err("world publication busy; retry due tick".to_owned());
+                    }
                     if desired_axes
                         .iter()
                         .zip(admitted_axes.iter())
@@ -728,8 +783,14 @@ impl FrameHost {
                             .ok_or("input sequence exhausted")?;
                     }
                     sim.step(&[])
-                        .map(|_| ())
-                        .map_err(|error| format!("simulation step: {error:?}"))
+                        .map_err(|error| format!("simulation step: {error:?}"))?;
+                    let page = sim
+                        .published_page()
+                        .map_err(|error| format!("world page: {error:?}"))?;
+                    if let Some(outbox) = projections.as_mut() {
+                        projected_changes += outbox.capture(&page);
+                    }
+                    Ok::<(), String>(())
                 })();
                 tick_cpu += start.elapsed();
                 result
@@ -743,6 +804,11 @@ impl FrameHost {
             overload: (clock.state == ClockState::Overloaded).then_some(clock.refused_on_overload),
             completed_ticks: clock.completed,
             queued_ticks: clock.queued,
+            projected_changes,
+            projection_lost_ticks: self
+                .projections
+                .as_ref()
+                .map_or(0, ProjectionOutbox::lost_ticks),
             submitted: false,
             surface_presented: false,
             dropped_view: false,
@@ -791,12 +857,10 @@ impl FrameHost {
         };
 
         let extract_start = Instant::now();
-        let Some(snapshot) = self.snapshots.publish(&self.sim) else {
-            self.dropped_views += 1;
-            report.dropped_view = true;
-            report.wall = wall_start.elapsed();
-            return Ok(report);
-        };
+        let snapshot = self
+            .sim
+            .published_page()
+            .map_err(|error| format!("world page: {error:?}"))?;
         let extracted = scene::extract(
             self.extractor
                 .as_mut()
@@ -838,7 +902,6 @@ impl FrameHost {
             dropped_invalid,
         } = scene::apply_frame_to_scene(
             &mut self.scene,
-            &self.scene_slots,
             self.extractor
                 .as_ref()
                 .expect("completed extractor belongs to host")
@@ -1086,11 +1149,10 @@ impl FrameHost {
                     return Ok(());
                 }
                 let publication_start = Instant::now();
-                let Some(snapshot) = self.snapshots.publish(&self.sim) else {
-                    self.dropped_views = self.dropped_views.saturating_add(1);
-                    report.dropped_view = true;
-                    return Ok(());
-                };
+                let snapshot = self
+                    .sim
+                    .published_page()
+                    .map_err(|error| format!("world page: {error:?}"))?;
                 let publication_cpu = publication_start.elapsed();
                 let extractor = self
                     .extractor
@@ -1156,11 +1218,10 @@ impl FrameHost {
             let extractor = self.extractor.as_mut().expect("returned extractor");
             extractor.invalidate_history();
             let start = Instant::now();
-            let Some(snapshot) = self.snapshots.publish(&self.sim) else {
-                self.dropped_views = self.dropped_views.saturating_add(1);
-                report.dropped_view = true;
-                return Ok(());
-            };
+            let snapshot = self
+                .sim
+                .published_page()
+                .map_err(|error| format!("world page: {error:?}"))?;
             let extracted = scene::extract(extractor, &snapshot);
             drop(snapshot);
             SubmitFrame {
@@ -1240,9 +1301,9 @@ impl FrameHost {
             .is_none_or(|source| source.tick != self.sim.tick())
         {
             let snapshot = self
-                .snapshots
-                .publish(&self.sim)
-                .ok_or("visual snapshot pages held during capture")?;
+                .sim
+                .published_page()
+                .map_err(|error| format!("world page: {error:?}"))?;
             let extracted = scene::extract(
                 self.extractor
                     .as_mut()
@@ -1252,7 +1313,6 @@ impl FrameHost {
             drop(snapshot);
             let applied = scene::apply_frame_to_scene(
                 &mut self.scene,
-                &self.scene_slots,
                 self.extractor
                     .as_ref()
                     .ok_or("capture extractor unavailable")?

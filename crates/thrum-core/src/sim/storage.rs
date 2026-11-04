@@ -213,6 +213,48 @@ impl Store {
         }
     }
 
+    pub(super) fn visit_changed_since(
+        &self,
+        since: Option<u64>,
+        mut visit: impl FnMut(ComponentView<'_>),
+    ) {
+        let mut query = self.world.query::<(
+            &SlotKey,
+            &Position,
+            &Velocity,
+            &Health,
+            Option<&Ownership>,
+            Option<&Visual>,
+        )>();
+        for (key, position, velocity, health, ownership, visual) in &mut query {
+            let slot = key.0;
+            let row = self.slots[slot as usize].row.expect("live slot has a row");
+            let changes = self.changes[row];
+            if since.is_none_or(|old| {
+                changes.position > old
+                    || changes.velocity > old
+                    || changes.health > old
+                    || changes.structural > old
+            }) {
+                visit(ComponentView {
+                    handle: self.slot_handle(slot),
+                    id: self.id_at(row),
+                    position: *position,
+                    velocity: *velocity,
+                    health: health.0,
+                    ownership: ownership.copied(),
+                    visual: visual.map(|value| value.0),
+                    changes,
+                    world_borrow: std::marker::PhantomData,
+                });
+            }
+        }
+    }
+
+    pub(super) fn slot_live(&self, slot: usize) -> bool {
+        self.slots[slot].row.is_some()
+    }
+
     // ID is stored beside its private slot, separately from hot numeric columns.
     pub(super) fn id_at(&self, row: usize) -> StableId {
         self.stable_ids[row]
@@ -297,20 +339,6 @@ impl Store {
             let row = self.slots[key.0 as usize].row.expect("live slot has a row");
             visit(row, *position, *velocity);
         }
-    }
-
-    pub(super) fn copy_snapshot_into(&self, output: &mut Vec<ComponentEntity>) {
-        output.clear();
-        self.visit_components(|view| {
-            output.push(ComponentEntity {
-                id: view.id,
-                position: view.position,
-                velocity: view.velocity,
-                health: view.health,
-                ownership: view.ownership,
-                visual: view.visual,
-            });
-        });
     }
 
     pub(super) fn spawn(&mut self, entity: ComponentEntity, tick: u64) -> Handle {

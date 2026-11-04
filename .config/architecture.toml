@@ -89,11 +89,11 @@ license = "MIT OR Apache-2.0"
 purpose = "Private W1 typed component storage selected by the three-candidate V1 workload spike"
 target_cost = "Three normal transitive crates in the selected profile; A1 measures checked-handle adaptation, serial and parallel queries, four-peer extraction, rollback and native/Wasm cost before qualification"
 
-[external_dependencies.foldhash]
-requirement = "=0.2.0"
-license = "Zlib"
-purpose = "Fast randomized stable-ID lookup for prior render samples during A2 extraction"
-target_cost = "Already transitive through hecs; one direct dependency in thrum-render, two preallocated frame maps, measured at 10k visual instances"
+[external_dependencies.smallvec]
+requirement = "=1.16.4"
+license = "MIT OR Apache-2.0"
+purpose = "Inline storage for up to eight game actions per input frame without steady-tick heap allocation"
+target_cost = "Already transitive in the locked workspace; one direct thrum-core dependency, 8-action inline payload; larger frames remain rejected by the V1 game configuration"
 
 [external_dependencies.glam]
 requirement = "=0.33.12"

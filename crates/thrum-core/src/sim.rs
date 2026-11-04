@@ -7,19 +7,19 @@
 
 mod controller;
 mod input;
-mod publication;
+mod published;
 mod schedule;
 mod storage;
 mod world;
 
 pub use controller::{ControllerInput, ControllerRule, ControllerStepError};
 pub use input::{FrameError, InputFrame, SimAction};
-pub use publication::{VisualSnapshotLease, VisualSnapshotPool};
+pub use published::{DirtySlots, PublishedPage, SnapshotId, StructuralChange};
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKind, Schedule, ScheduleError, Stage, SystemId,
     SystemSpec,
 };
 pub use world::{
     ChangeTicks, Command, ComponentEntity, ComponentView, ControllerState, Ownership, Position,
-    SimConfig, SimError, Simulation, SimulationSnapshot, TickOutcome, Velocity,
+    SimConfig, SimError, Simulation, TickOutcome, Velocity,
 };
