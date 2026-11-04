@@ -7,13 +7,12 @@
   "execution_plan": {
     "milestone": "V1: one 10k-entity game with 1k–2k moving, lit and hot-reloaded on macOS, Chrome WebGPU and iPhone; then four conditioned peers with prediction",
     "active": [
-      "A1 simulation core",
-      "M1 thrum-render core",
-      "M2 profiler and lit-renderer continuation"
+      "A2 consumer publication and frame packet lifetime",
+      "M2 lit renderer surface and device qualification"
     ],
     "next_parallel": [
-      "A2 consumer publication",
-      "M2 lit renderer"
+      "A3 worker execution from retained committed snapshots",
+      "M2 live camera/light and cascade continuation"
     ],
     "parked": [
       "F3 space/limit/receipt diagnostics",
@@ -168,6 +167,23 @@
         "../evidence/render/V1-FRAME-HOST-2026-11-04.md"
       ],
       "scope": "One serial host callback uses the shared fixed-step clock, committed A1 world, A2 render columns, changed-row GPU upload and prepared two-pass Metal renderer. It blocks on each GPU and timestamp submission, has no window/surface, owned async packets, device-loss recovery, cooked content, clustered lights/CSM or browser/phone runtime."
+    },
+    "V1_bounded_frame_host": {
+      "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
+      "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",
+      "experienced_quality": "synthetic_grid_visible_not_v1_visual_acceptance",
+      "platform_performance": {
+        "mac": "not_qualified_offscreen_callback_diagnostic_only",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max/Metal, 10k entities/1.5k moving, 640x360, two optimized processes of 600 completed frames: 602/602 committed ticks, zero full callback over 16.67 ms, zero dropped views/reports/timing faults, callback CPU p50/p95/max 0.708/1.151/4.385 and 0.661/2.409/11.846 ms including nonblocking completion polling. GPU near/far Sun p50 0.061/0.058 ms in both; forward/display 0.163/0.081 and 0.162/0.079 ms. Wait-inclusive 12-sample Divan medians 1.248/1.138 ms with/without timestamp queries, 141/80 benchmark-thread Rust allocations, with 12.38/11.6 ms slowest samples under variable load. No controlled speedup or platform frame-budget claim.",
+      "evidence": [
+        "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
+      ],
+      "scope": "One serial fixed-clock host keeps three generation-bound offscreen target/timing packets in flight, advances world ticks without GPU waits, defers pass readback, and counts optional view/report drops. It retains queue ordering and prior-tick history invalidation after a skipped view. Worker-owned snapshots/packets, surface, loss/recreation, cooked content, live view/light and Chrome/iPhone execution remain open."
     }
   },
   "user_selected": [
