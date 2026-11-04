@@ -68,6 +68,9 @@ fn component_fixture() -> Simulation {
 #[divan::bench]
 fn a1_component_tick(bencher: divan::Bencher<'_, '_>) {
     let mut sim = component_fixture();
+    for _ in 0..60 {
+        sim.step(&[]).expect("warmup tick succeeds");
+    }
     bencher.bench_local(move || {
         divan::black_box(
             sim.step(&[])
@@ -78,11 +81,24 @@ fn a1_component_tick(bencher: divan::Bencher<'_, '_>) {
 }
 
 #[divan::bench]
+fn a1_component_query(bencher: divan::Bencher<'_, '_>) {
+    let sim = component_fixture();
+    bencher.bench_local(move || {
+        sim.visit_components(|view| {
+            divan::black_box(view);
+        });
+    });
+}
+
+#[divan::bench]
 fn a1_four_full_snapshots(bencher: divan::Bencher<'_, '_>) {
     let sim = component_fixture();
     let mut snapshots = std::array::from_fn::<_, 4, _>(|_| {
         SimulationSnapshot::with_capacity(WorldEpoch(1), support::ENTITY_COUNT)
     });
+    for snapshot in &mut snapshots {
+        sim.copy_snapshot_into(snapshot);
+    }
     bencher.bench_local(move || {
         for snapshot in &mut snapshots {
             sim.copy_snapshot_into(snapshot);

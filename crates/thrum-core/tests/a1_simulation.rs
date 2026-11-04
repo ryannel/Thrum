@@ -399,16 +399,13 @@ fn only_actual_component_changes_advance_change_ticks() {
             .changed_positions,
         100
     );
-    assert_eq!(
-        sim.query()
-            .filter(|view| view.changes.position == 1)
-            .count(),
-        100
-    );
-    assert!(
-        sim.query()
-            .all(|view| view.changes.health == 0 && view.changes.velocity == 0)
-    );
+    let mut changed = 0;
+    sim.visit_components(|view| {
+        changed += usize::from(view.changes.position == 1);
+        assert_eq!(view.changes.health, 0);
+        assert_eq!(view.changes.velocity, 0);
+    });
+    assert_eq!(changed, 100);
     let static_handle = sim
         .handle(StableId(500))
         .expect("test setup or assertion requires a value");
@@ -472,7 +469,38 @@ fn workload() -> Simulation {
 }
 
 #[test]
-fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_setup() {
+fn query_and_snapshot_cover_sparse_archetypes() {
+    let mut sim =
+        Simulation::new(WorldEpoch(1), config(4)).expect("four-entity fixture has valid capacity");
+    let owner = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    for id in 0..4u128 {
+        let mut body = entity(id, 0.0);
+        body.ownership = (id & 1 != 0).then_some(owner);
+        body.visual = (id & 2 != 0).then_some(u64::try_from(id).expect("small fixture ID"));
+        sim.seed(body).expect("unique fixture entity");
+    }
+    let mut visited = 0;
+    sim.visit_components(|view| {
+        visited += 1;
+        assert_eq!(view.ownership.is_some(), view.id.0 & 1 != 0);
+        assert_eq!(view.visual.is_some(), view.id.0 & 2 != 0);
+    });
+    assert_eq!(visited, 4);
+    let mut snapshot = SimulationSnapshot::with_capacity(WorldEpoch(1), 4);
+    sim.copy_snapshot_into(&mut snapshot);
+    assert_eq!(snapshot.entities().len(), 4);
+    for body in snapshot.entities() {
+        assert_eq!(body.ownership.is_some(), body.id.0 & 1 != 0);
+        assert_eq!(body.visual.is_some(), body.id.0 & 2 != 0);
+    }
+}
+
+#[test]
+fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup() {
     let mut sim = workload();
     let mut snapshots = std::array::from_fn::<_, 4, _>(|_| {
         SimulationSnapshot::with_capacity(WorldEpoch(1), 10_000)
@@ -480,6 +508,17 @@ fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_setup(
     for _ in 0..60 {
         sim.step(&[])
             .expect("test setup or assertion requires a value");
+    }
+    // First use of the structural and extraction query paths may initialize
+    // hecs storage. Warm those exact paths before measuring steady ticks.
+    let warmup_handle = sim.handle(StableId(9_999)).expect("warmup entity exists");
+    sim.step(&[
+        Command::Despawn(warmup_handle),
+        Command::Spawn(entity(50_000, 0.0)),
+    ])
+    .expect("warmup replacement succeeds");
+    for snapshot in &mut snapshots {
+        sim.copy_snapshot_into(snapshot);
     }
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
@@ -521,8 +560,8 @@ fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_setup(
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
     assert_eq!(churn_pairs, 1_000);
     assert_eq!(sim.len(), 10_000);
-    assert_eq!(sim.tick(), 660);
-    assert!(snapshots.iter().all(|snapshot| snapshot.tick() == 660));
+    assert_eq!(sim.tick(), 661);
+    assert!(snapshots.iter().all(|snapshot| snapshot.tick() == 661));
 }
 
 #[test]
@@ -536,6 +575,15 @@ fn thirty_two_thousand_unique_id_replacements_need_no_rehash_or_allocation() {
         sim.step(&[])
             .expect("test setup or assertion requires a value");
     }
+    for i in 0..100u128 {
+        let handle = sim
+            .handle(StableId(9_900 + i))
+            .expect("warmup entity exists");
+        commands[(i * 2) as usize] = Command::Despawn(handle);
+        commands[(i * 2 + 1) as usize] = Command::Spawn(entity(50_000 + i, 0.0));
+    }
+    sim.step(&commands)
+        .expect("warmup batch replacement succeeds");
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
     for cycle in 0..320u128 {
@@ -557,7 +605,7 @@ fn thirty_two_thousand_unique_id_replacements_need_no_rehash_or_allocation() {
     COUNTING.with(|active| active.set(false));
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
     assert_eq!(sim.len(), 10_000);
-    assert_eq!(sim.tick(), 380);
+    assert_eq!(sim.tick(), 381);
     assert_eq!(sim.get(stale).err(), Some(SimError::InvalidHandle));
     for i in 0..100u128 {
         assert!(sim.handle(StableId(100_000 + 319 * 100 + i)).is_some());

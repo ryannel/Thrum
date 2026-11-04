@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "target": "custom-bevy-independent-3d-engine",
-  "as_of": "2026-11-03",
+  "as_of": "2026-11-04",
   "contract_revision": "C4",
   "scope_note": "Historical capability entries record implemented and measured scope, not current work priority. The V1 execution plan below supersedes old next-package prose. No complete simulation runtime, renderer, real transport or named-device performance is qualified.",
   "execution_plan": {
@@ -9,7 +9,6 @@
     "active": [
       "A1 simulation core",
       "M1 thrum-render core",
-      "A1 hecs backend integration",
       "M2 profiler and lit-renderer continuation"
     ],
     "next_parallel": [
@@ -40,12 +39,13 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Local arm64 Mac, provisional SoA: 10k entities / 1.5k moving, serial tick p50 20.6 µs, p99 26.6 µs; four full copies p50 149.7 µs. This is not the selected hecs production path or a V1 device budget.",
+      "diagnostic_measurement": "Apple M3 Max local release diagnostic, selected hecs 0.11.2 private backend: 10k entities / 1.5k moving, serial tick median 51.83 µs, typed visit median 51.93 µs, four full snapshots median 222.8 µs. Zero scoped allocations after representative churn and snapshot warmup. Earlier provisional SoA tick median 20.83 µs. These are not whole-engine or V1 device budgets.",
       "evidence": [
         "../evidence/v1-workload/A1-SIM-2026-11-03.md",
-        "../evidence/v1-workload/A1-STORAGE-SPIKE-2026-11-03.md"
+        "../evidence/v1-workload/A1-STORAGE-SPIKE-2026-11-03.md",
+        "../evidence/v1-workload/A1-HECS-INTEGRATION-2026-11-04.md"
       ],
-      "scope": "Provisional serial component store and schedule; local CPU observations and selected hecs backend from three-candidate isolated spike. Production migration, rollback, worker execution and integrated four-peer game remain open."
+      "scope": "Private hecs component backend integrated into serial input/simulate/resolve/publish stages with engine-owned stable identities, checked handles, sparse archetypes and borrowed public views. Native correctness, zero steady-allocation and Wasm compile pass. Production restore/replay, worker execution, delta consumers and integrated four-peer game remain open."
     },
     "M1_renderer": {
       "implementation": "partial",
