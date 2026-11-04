@@ -1,7 +1,7 @@
 //! Opt-in real-device synthetic renderer integration test.
 #![cfg(not(target_arch = "wasm32"))]
 
-use thrum_render::abi::MaterialRecord;
+use thrum_render::abi::{InstanceRecord, MaterialRecord};
 use thrum_render::synthetic::{
     OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
     SyntheticView,
@@ -655,6 +655,232 @@ fn perspective_cluster_and_target_aux_light_visible_pixels() {
             render_pixels(&device, &queue, &offscreen, &offscreen_target),
             baseline
         );
+    });
+}
+
+fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
+    instance.current = [
+        [scale[0], 0.0, 0.0, 0.0],
+        [0.0, scale[1], 0.0, 0.0],
+        [0.0, 0.0, scale[2], 0.0],
+        [center[0], center[1], center[2], 1.0],
+    ];
+    instance.previous = instance.current;
+    instance.normal = [
+        [1.0 / scale[0], 0.0, 0.0, 0.0],
+        [0.0, 1.0 / scale[1], 0.0, 0.0],
+        [0.0, 0.0, 1.0 / scale[2], 0.0],
+    ];
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let light = SyntheticLight {
+            direction_to_light: [1.0, 0.0, 1.0],
+            irradiance: [4.0; 3],
+        };
+        for (receiver, caster, receiver_scale, sample_x) in [
+            ([0.0, 0.0, 0.0], [1.5, 0.0, 1.0], [1.0, 1.0, 0.01], 84),
+            ([4.0, 0.0, -8.0], [9.0, 0.0, -3.0], [1.0, 1.0, 0.01], 107),
+        ] {
+            let mut scene = SyntheticScene::grid(2).expect("two boxes");
+            scene.view = SyntheticView::perspective(
+                [0.0, 0.0, 3.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                1.0,
+                1.0,
+                0.1,
+                20.0,
+            )
+            .expect("perspective camera");
+            place_box(&mut scene.instances[0], receiver, receiver_scale);
+            place_box(&mut scene.instances[1], caster, [0.2; 3]);
+            let unshadowed =
+                PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, light)
+                    .await
+                    .expect("direct Sun prepare");
+            let unshadowed_target =
+                OffscreenTarget::new(&device, &unshadowed, 129, 129).expect("direct target");
+            let direct = render_pixels(&device, &queue, &unshadowed, &unshadowed_target);
+            scene.sun_shadows = true;
+            let mut shadowed =
+                PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, light)
+                    .await
+                    .expect("cascades prepare");
+            let target = OffscreenTarget::new(&device, &shadowed, 129, 129).expect("shadow target");
+            let graph = shadowed
+                .graph(&target, true)
+                .expect("four passes plus readback");
+            assert!(graph.dependencies.contains(&(0, 2)));
+            assert!(graph.dependencies.contains(&(1, 2)));
+            assert!(graph.dependencies.contains(&(2, 3)));
+            let shaded = render_pixels(&device, &queue, &shadowed, &target);
+            if let Some(dir) = std::env::var_os("THRUM_SHADOW_CAPTURE_DIR") {
+                let name = if sample_x == 84 { "near" } else { "far" };
+                for (suffix, pixels) in [("direct", &direct), ("shadow", &shaded)] {
+                    let mut ppm = Vec::with_capacity(129 * 129 * 3 + 32);
+                    ppm.extend_from_slice(b"P6\n129 129\n255\n");
+                    for rgba in pixels.as_chunks::<4>().0 {
+                        ppm.extend_from_slice(&rgba[..3]);
+                    }
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-{suffix}.ppm")),
+                        ppm,
+                    )
+                    .expect("optional shadow proof capture");
+                }
+            }
+            let pixel = (64 * 129 + sample_x) * 4;
+            assert!(
+                direct[pixel] > 80,
+                "receiver is Sun-lit before shadowing: {direct_pixel:?}",
+                direct_pixel = &direct[pixel..pixel + 4]
+            );
+            assert!(
+                u16::from(shaded[pixel]) + 25 < u16::from(direct[pixel]),
+                "off-camera caster shadows receiver: direct={direct_pixel:?}, shadow={shadow_pixel:?}",
+                direct_pixel = &direct[pixel..pixel + 4],
+                shadow_pixel = &shaded[pixel..pixel + 4]
+            );
+            if sample_x == 84 {
+                let other_light = SyntheticLight {
+                    direction_to_light: [-1.0, 0.0, 1.0],
+                    ..light
+                };
+                let other =
+                    PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, other_light)
+                        .await
+                        .expect("changed Sun prepare");
+                let mut encoder =
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                assert!(
+                    matches!(
+                        other.encode(&mut encoder, 41, &target, None),
+                        Err(thrum_render::synthetic::RenderError::StaleTarget)
+                    ),
+                    "target cannot sample a previous Sun projection"
+                );
+
+                scene.instances[1].current[3][0] = 50.0;
+                scene.instances[1].current[3][2] = 50.0;
+                let report = shadowed
+                    .upload_instances(&queue, &scene.instances, &[1])
+                    .expect("out-of-envelope presentation update is diagnosed");
+                assert_eq!(
+                    (report.changed_rows, report.dropped_shadow_envelope),
+                    (0, 1)
+                );
+                assert_eq!(
+                    render_pixels(&device, &queue, &shadowed, &target),
+                    shaded,
+                    "out-of-envelope caster retains its last valid GPU pose"
+                );
+            }
+        }
+        let mut off = SyntheticScene::grid(1).expect("off-state fixture");
+        off.view = SyntheticView::perspective(
+            [0.0, 0.0, 3.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            20.0,
+        )
+        .expect("camera");
+        off.sun_shadows = true;
+        let off_light = SyntheticLight {
+            irradiance: [0.0; 3],
+            ..light
+        };
+        let off_prepared =
+            PreparedSynthetic::prepare_with_light(&device, &queue, 41, &off, off_light)
+                .await
+                .expect("disabled Sun prepare");
+        let off_target =
+            OffscreenTarget::new(&device, &off_prepared, 65, 33).expect("off-state target");
+        assert_eq!(
+            off_prepared
+                .graph(&off_target, false)
+                .expect("off-state graph")
+                .dependencies,
+            [(0, 1)],
+            "disabled Sun has no shadow passes or map readers"
+        );
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+fn cascade_overlap_keeps_caster_occlusion_across_split() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let light = SyntheticLight {
+            direction_to_light: [1.0, 0.0, 1.0],
+            irradiance: [4.0; 3],
+        };
+        for depth in [5.5_f32, 5.732, 5.95] {
+            let mut scene = SyntheticScene::grid(2).expect("two boxes");
+            scene.view = SyntheticView::perspective(
+                [0.0, 0.0, 3.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                1.0,
+                1.0,
+                0.1,
+                20.0,
+            )
+            .expect("camera");
+            let receiver_z = 3.0 - depth;
+            place_box(
+                &mut scene.instances[0],
+                [0.0, 0.0, receiver_z],
+                [0.5, 0.5, 0.01],
+            );
+            place_box(
+                &mut scene.instances[1],
+                [1.0, 0.0, receiver_z + 1.0],
+                [0.2; 3],
+            );
+            let direct = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, light)
+                .await
+                .expect("direct prepare");
+            let direct_target = OffscreenTarget::new(&device, &direct, 129, 129).expect("target");
+            let before = render_pixels(&device, &queue, &direct, &direct_target);
+            scene.sun_shadows = true;
+            let shadowed =
+                PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, light)
+                    .await
+                    .expect("shadowed prepare");
+            let shadow_target = OffscreenTarget::new(&device, &shadowed, 129, 129).expect("target");
+            let after = render_pixels(&device, &queue, &shadowed, &shadow_target);
+            let center = (64 * 129 + 64) * 4;
+            assert!(before[center] > 80, "direct receiver at depth {depth}");
+            assert!(
+                u16::from(after[center]) + 25 < u16::from(before[center]),
+                "caster must stay visible through cascade blend at depth {depth}"
+            );
+        }
     });
 }
 

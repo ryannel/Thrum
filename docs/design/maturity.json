@@ -117,6 +117,23 @@
       ],
       "scope": "Four static local lights use a compact 32x18x16 cluster table and the existing metallic-roughness forward closure in the running 10k scene. A finite reverse-Z perspective view, target-sized aux and projected conservative bins now drive it; the old orthographic view remains a pixel oracle. Overflow keeps a deterministic highest-estimated-contribution subset with counters. Live view/light extraction, CSM, cooked content, Chrome/iPhone runtime, visual acceptance and sustained device budgets remain open."
     },
+    "M2_sun_cascades": {
+      "implementation": "partial_two_cascade_synthetic_sun_shadow_path_in_running_v1_scene",
+      "functional_validation": "reverse_depth_texel_stability_off_camera_near_far_caster_and_split_overlap_tests_plus_graph_off_state_target_identity_and_moving_envelope_checks_on_metal",
+      "experienced_quality": "near_and_far_synthetic_cards_inspected_after_bias_repair_not_visual_acceptance",
+      "platform_performance": {
+        "mac": "not_qualified_variable_600_frame_process_tails",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max/Metal final guarded 600-frame process with 10k entities/1.5k moving: 629 committed ticks, 18 catch-up frames, 39 host calls over 16.67 ms; GPU near/far shadow p50/p95 0.061/0.065 and 0.058/0.061 ms; forward 0.164/0.169 ms, display 0.082/0.087 ms; host wall p50/p95/max 2.998/18.656/70.283 ms. Three preceding corrected-cascade runs had 64, 83 and 2 over-deadline calls. A 12-sample Divan assembled-frame probe under variable load showed median 7.79 ms/138 benchmark-thread allocations with GPU timestamps and 5.24 ms/79 without. No sustained device-budget or clean incremental-cost inference.",
+      "evidence": [
+        "../evidence/render/M2-CASCADES-2026-11-04.md"
+      ],
+      "scope": "Two 1024-square D32 reverse-Z Sun maps use the shared instance table and four comparison taps, with two depth passes before the existing forward/display pair. Off-state maps/passes retire. A prepared movement envelope freezes and counts out-of-range presentation rows rather than silently clipping casters. Full dynamic view/light refitting, per-cascade lists, masked casters, split-edge visual quality, Chrome/iPhone runtime and stable frame pacing remain open."
+    },
     "A2_render_extraction": {
       "implementation": "partial_serial_soa_publication_and_sparse_prepared_gpu_instance_update",
       "functional_validation": "extraction_and_upload_unit_tests_plus_real_metal_scene_and_gpu_update_test",

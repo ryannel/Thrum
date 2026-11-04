@@ -73,15 +73,28 @@ async fn run() -> Result<String, String> {
     let encode = percentile(&samples, |sample| sample.encode_cpu.as_secs_f64() * 1e6);
     let wall = percentile(&samples, |sample| sample.wall.as_secs_f64() * 1e3);
     let gpu = if samples.iter().all(|sample| sample.gpu_pass_ns.is_some()) {
-        let forward = percentile(&samples, |sample| {
+        let shadow_near = percentile(&samples, |sample| {
             sample.gpu_pass_ns.expect("checked GPU timestamps")[0] / 1e6
         });
-        let display = percentile(&samples, |sample| {
+        let shadow_far = percentile(&samples, |sample| {
             sample.gpu_pass_ns.expect("checked GPU timestamps")[1] / 1e6
         });
+        let forward = percentile(&samples, |sample| {
+            sample.gpu_pass_ns.expect("checked GPU timestamps")[2] / 1e6
+        });
+        let display = percentile(&samples, |sample| {
+            sample.gpu_pass_ns.expect("checked GPU timestamps")[3] / 1e6
+        });
         format!(
-            "GPU forward p50/p95={:.3}/{:.3} ms; GPU display p50/p95={:.3}/{:.3} ms",
-            forward.0, forward.1, display.0, display.1
+            "GPU shadow near p50/p95={:.3}/{:.3} ms; GPU shadow far p50/p95={:.3}/{:.3} ms; GPU forward p50/p95={:.3}/{:.3} ms; GPU display p50/p95={:.3}/{:.3} ms",
+            shadow_near.0,
+            shadow_near.1,
+            shadow_far.0,
+            shadow_far.1,
+            forward.0,
+            forward.1,
+            display.0,
+            display.1
         )
     } else {
         "GPU timestamps unavailable".to_owned()
