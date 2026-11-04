@@ -1,6 +1,7 @@
 //! Bounded first-profile network data owners. No transport or world authority.
 
 pub mod envelope;
+pub mod future_input;
 pub mod outbound;
 pub mod peer;
 pub mod progress;

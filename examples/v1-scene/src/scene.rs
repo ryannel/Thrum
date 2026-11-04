@@ -18,9 +18,9 @@ pub(crate) const ENTITY_COUNT: usize = 10_000;
 pub(crate) const MOVING_COUNT: usize = 1_500;
 pub(crate) const CONTROLLED_ID: StableId = StableId((ENTITY_COUNT - 1) as u128);
 pub(crate) const LOCAL_PEER: PeerId = PeerId(1);
-const PEER_COUNT: usize = 4;
+pub(crate) const PEER_COUNT: usize = 4;
 
-fn binding(peer: PeerId) -> Ownership {
+pub(crate) fn binding(peer: PeerId) -> Ownership {
     Ownership {
         peer,
         connection_epoch: 1,
