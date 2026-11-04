@@ -7,12 +7,12 @@
   "execution_plan": {
     "milestone": "V1: one 10k-entity game with 1k–2k moving, lit and hot-reloaded on macOS, Chrome WebGPU and iPhone; then four conditioned peers with prediction",
     "active": [
-      "A2 consumer publication and frame packet lifetime",
+      "A3 combined frame job plan, worker extraction and owned packet lifetime",
       "M2 lit renderer surface and device qualification"
     ],
     "next_parallel": [
-      "A3 worker execution from retained committed snapshots",
-      "M2 live camera/light and cascade continuation"
+      "A5 schema delta transport and four-peer prediction/reconciliation",
+      "M3 temporal rendering and GPU-driven culling"
     ],
     "parked": [
       "F3 space/limit/receipt diagnostics",
