@@ -4,8 +4,8 @@
 
 use std::time::Duration;
 
-use thrum_render::timing::GpuTimings;
-use v1_scene::FrameHost;
+use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use v1_scene::{FrameHost, SurfaceOutput};
 
 #[global_allocator]
 static ALLOC: divan::AllocProfiler = divan::AllocProfiler::system();
@@ -14,7 +14,7 @@ fn main() {
     divan::main();
 }
 
-fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool) {
+fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surface: bool) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter =
         pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
@@ -28,16 +28,44 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool) {
         ..Default::default()
     }))
     .expect("device request succeeds");
-    let mut host = pollster::block_on(FrameHost::new(&device, &queue, None))
+    let surface = present_surface.then(|| {
+        device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("V1 benchmark presentation target"),
+            size: wgpu::Extent3d {
+                width: 1280,
+                height: 720,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        })
+    });
+    let surface_view = surface
+        .as_ref()
+        .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
+    let profile = present_surface.then_some(SurfaceProfile {
+        format: wgpu::TextureFormat::Bgra8Unorm,
+        extent: [1280, 720],
+    });
+    let mut host = pollster::block_on(FrameHost::new(&device, &queue, profile))
         .expect("the prepared V1 workload must fit the adapter");
     let device_ref = &device;
     let mut now = Duration::ZERO;
     bencher.bench_local(move || {
         now += Duration::from_nanos(16_666_667);
+        let output = surface_view.as_ref().map(|view| SurfaceOutput {
+            view,
+            extent: [1280, 720],
+        });
         let frame = host
-            .drive(now, None)
+            .drive(now, output.as_ref())
             .expect("the measured fixed-clock host must keep progressing");
         assert!(frame.submitted, "one update gets a free view slot");
+        assert_eq!(frame.surface_presented, present_surface);
         let complete = loop {
             if let Some(sample) = host.poll_completed().expect("GPU progress") {
                 break sample;
@@ -55,10 +83,15 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool) {
 
 #[divan::bench]
 fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, true);
+    measure(bencher, true, false);
 }
 
 #[divan::bench]
 fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, false);
+    measure(bencher, false, false);
+}
+
+#[divan::bench]
+fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
+    measure(bencher, true, true);
 }
