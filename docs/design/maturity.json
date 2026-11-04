@@ -376,6 +376,23 @@
       ],
       "scope": "The live no-socket fixture quiets one peer before a drained tick-300 replacement, publishes a distinct stable and wire actor identity, then changes W1/N1/client epoch and resets complete speculation from authority. Only state-only old return groups are retired. This does not cover uncertain or lost committed results, reliable result/ACK, state-delta baseline encoding, real transport, visible correction histories, collision prediction, cross-platform multiplayer or sustained device budgets."
     },
+    "A5_state_delta_session": {
+      "implementation": "selected_design_only_no_v1_codec_or_session_runtime",
+      "functional_validation": "read_only_design_review_findings_resolved_no_packet_or_replica_proof",
+      "experienced_quality": "not_run",
+      "platform_performance": {
+        "mac": "not_run",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Analytical no-event example only: about 198 application bytes for exact controller plus three compact frame results and reliable framing, plus at least 192 bytes for one four-actor visual datagram, about 390 bytes at 20 Hz or 62.4 kbit/s. This excludes transport/TLS and server control overhead and assumes optional partitions are spread over time; no actual byte, CPU, allocation, sample-age or device measurement exists.",
+      "evidence": [
+        "../design/decisions/A5-STATE-DELTA-SESSION.md"
+      ],
+      "scope": "The selected design uses game-declared schemas, byte-exact field masks, ACKed immutable image bases, separate reliable/datagram sequence spaces, a full-image lifecycle barrier and compact exact reliable controller/frame results. The running four-peer codec, end-to-end ACKs, real transport, visible correction and platform budgets remain open; parked N1 credit/ledger work is not reopened."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",
@@ -2686,7 +2703,7 @@
         "status": "not_inventoried"
       },
       "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
-      "current_design_sha256": "ea1e967bd2ff440df2af58fb66de5392c95c9e90b0e9f9456d69db7df54c892a",
+      "current_design_sha256": "e1c72b93b5c295bcdc993f7a305562f675c6086eed5fa31ddbdc5dc8a696d86d",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing, finite pre-submission payload queue and ordinary sent ledger are implemented; the ordinary peer now preflights joint queued-plus-sent 256-result/128-event identity credit. Event-bearing replica groups still refuse. A test-only complete-partition W1 capture drives four peer-owned queues through nine changed ticks with one slow ACK. Production projection, unified baseline/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2856,7 +2873,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "64d4c3ad0f4e084fdbd4cd2e2814c71b649391cd566e54a2a14b116083942a53",
+  "contract_sha256": "b8c1a6839ed7fedc5b4b2cae9d31806632190d037e656e2f983879aaf6a081f7",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3601,7 +3618,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
     "contract_revision": "C4",
-    "contract_sha256": "64d4c3ad0f4e084fdbd4cd2e2814c71b649391cd566e54a2a14b116083942a53",
+    "contract_sha256": "b8c1a6839ed7fedc5b4b2cae9d31806632190d037e656e2f983879aaf6a081f7",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -3982,7 +3999,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "3f14950f81c5b7e5bd0c64ccfb66612da40ffb812c81b0bb79bf01b26ef38117",
-      "CONTRACTS.md": "64d4c3ad0f4e084fdbd4cd2e2814c71b649391cd566e54a2a14b116083942a53",
+      "CONTRACTS.md": "b8c1a6839ed7fedc5b4b2cae9d31806632190d037e656e2f983879aaf6a081f7",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -4009,7 +4026,7 @@
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "698976ba423fbeee448a6b91b24806b55203e6aab2c7adfca0d8d6fc1c0f649b",
-      "modules/NETWORKING.md": "ea1e967bd2ff440df2af58fb66de5392c95c9e90b0e9f9456d69db7df54c892a",
+      "modules/NETWORKING.md": "e1c72b93b5c295bcdc993f7a305562f675c6086eed5fa31ddbdc5dc8a696d86d",
       "modules/PLATFORM-RUNTIME.md": "96dcffee70ba8aeefd82142bf93196303fb51e48ff4544d6a82ecbbdcbe4ab74",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "cb55fd1d89f489ce6c4367e5af4e8862a81bab882b7860bdda71f290280719b0",

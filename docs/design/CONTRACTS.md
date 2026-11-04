@@ -536,7 +536,8 @@ evidence is unassessed until its applicability to the new assembly is establishe
 their initial algorithms and limits. The [V1 N1 transport/codec decision](decisions/A0-N1-TRANSPORT-CODEC.md)
 supersedes the older [NETWORK-SPEC](NETWORK-SPEC.md) transport and full-record recipe; C13 below
 retains the shared network authority and result semantics. The [V1 input packet](decisions/A5-INPUT-WIRE.md)
-is selected; state-delta and session details still need complete decisions before implementation. Targets remain unmeasured; a future extension
+is selected; the [V1 state-delta/session decision](decisions/A5-STATE-DELTA-SESSION.md)
+selects the next wire and admission model. Targets remain unmeasured; a future extension
 needs an equally complete design before changing admitted semantics.
 
 ## C13 Network authority and replication — N1 with F1/W1/P6
@@ -557,6 +558,11 @@ Transport receipt does not imply gameplay execution. Each admitted input reaches
 identified by connection/input origin and authority tick; result delivery, retention and overload behavior are specified
 in NETWORK-SPEC. Prediction consumes the resolved prefix and individually resolved higher input IDs together with
 the exact authoritative state/tick that represents them; a pending gap may hold back the prefix alone.
+V1 reliable messages and lossy state datagrams have separate epoch-scoped envelope sequence spaces. Only reliable
+messages advance the contiguous application ACK; state images use selective admission ACKs. Loss of a visual
+datagram cannot retain an already admitted reliable gameplay result. One V1 result resolves an atomic ordered
+`InputFrame`; all its actions commit or the frame rejects. A game's required state/dependent-effect closure must
+fit one admitted partition group, or the selected profile refuses it before publication.
 Confirmed events retain origin identity for speculative effect reconciliation. Reconnect takes a new baseline and
 discards old pending input; uncertain one-shots are not retried automatically. Durable game transactions requiring
 cross-reconnect retry need game/P7 operation identity and outcome, not a transport exactly-once promise.
