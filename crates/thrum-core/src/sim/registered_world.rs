@@ -1,22 +1,15 @@
 //! Game-registered component storage with engine-owned identity. This is the
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
-use std::{any::Any, collections::hash_map::RandomState, hash::BuildHasher};
+use std::{collections::hash_map::RandomState, hash::BuildHasher};
 
 use crate::{Handle, StableId, WorldEpoch};
 
-use super::{ComponentKey, ComponentRegistry, ComponentSchemaId};
-
-type SavedValue = Box<dyn Any + Send + Sync>;
-
-struct CapturedEntity {
-    id: StableId,
-    components: Vec<(usize, SavedValue)>,
-}
+use super::{ComponentKey, ComponentRegistry, ComponentSchemaId, schedule::SnapshotColumn};
 
 struct CapturedSlot {
     generation: u64,
-    entity: Option<CapturedEntity>,
+    stable: Option<StableId>,
 }
 
 pub(super) struct WorldCapture {
@@ -24,6 +17,7 @@ pub(super) struct WorldCapture {
     schema: Vec<ComponentSchemaId>,
     types: Vec<ComponentKey>,
     slots: Vec<CapturedSlot>,
+    columns: Vec<Box<dyn SnapshotColumn>>,
     free: Vec<u32>,
 }
 
@@ -168,21 +162,7 @@ impl RegisteredWorld {
             .iter()
             .map(|slot| CapturedSlot {
                 generation: slot.generation,
-                entity: slot.entity.map(|entity| {
-                    let components = self
-                        .registry
-                        .entries
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(index, entry)| {
-                            (entry.capture)(&self.world, entity).map(|value| (index, value))
-                        })
-                        .collect();
-                    CapturedEntity {
-                        id: slot.stable.expect("live slot has stable identity"),
-                        components,
-                    }
-                }),
+                stable: slot.stable,
             })
             .collect();
         WorldCapture {
@@ -200,6 +180,12 @@ impl RegisteredWorld {
                 .map(|entry| entry.key)
                 .collect(),
             slots,
+            columns: self
+                .registry
+                .entries
+                .iter()
+                .map(|entry| (entry.capture)(&self.world))
+                .collect(),
             free: self.free.clone(),
         }
     }
@@ -209,6 +195,7 @@ impl RegisteredWorld {
             || capture.slots.len() != self.slots.len()
             || capture.schema.len() != self.registry.entries.len()
             || capture.types.len() != self.registry.entries.len()
+            || capture.columns.len() != self.registry.entries.len()
             || capture
                 .schema
                 .iter()
@@ -227,22 +214,23 @@ impl RegisteredWorld {
         let mut slots = Vec::with_capacity(capture.slots.len());
         let mut ids = IdIndex::new(capture.slots.len());
         let mut live = 0;
+        let mut cursors = vec![0; capture.columns.len()];
         for (index, saved) in capture.slots.iter().enumerate() {
-            let entity = saved.entity.as_ref().map(|body| {
-                for (entry_index, value) in &body.components {
-                    (self.registry.entries[*entry_index].build)(&mut builder, value.as_ref());
-                }
+            let entity = saved.stable.map(|id| {
                 let key = u32::try_from(index).expect("validated slot capacity");
+                for (column, cursor) in capture.columns.iter().zip(&mut cursors) {
+                    column.build_at(key, cursor, &mut builder);
+                }
                 builder.add(SlotKey(key));
                 let entity = world.spawn(builder.build());
-                ids.insert(body.id, key);
+                ids.insert(id, key);
                 live += 1;
                 entity
             });
             slots.push(Slot {
                 generation: saved.generation,
                 entity,
-                stable: saved.entity.as_ref().map(|body| body.id),
+                stable: saved.stable,
             });
         }
         self.world = world;
