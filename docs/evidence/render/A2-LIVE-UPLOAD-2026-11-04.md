@@ -1,5 +1,7 @@
 # A2 live instance-update diagnostic
 
+Recorded at commit `a7876fd`; the current `v1-scene` command now runs the later paced frame host.
+
 4 November 2026. Apple M3 Max, Metal, macOS, Rust 1.99.1 release, wgpu 30.0.1. `RUSTC_WRAPPER= cargo run -p v1-scene --release` prepares the 10k-instance HDR/display scene from a committed A1 simulation frame at tick 60, then advances the 1,500 movers to tick 120. It updates the same prepared GPU instance table and target, submits another frame and compares readback: **20,963 pixels changed**. The image test checks a real Metal draw, not just CPU table bytes. A separate opt-in Metal test exercises a sparse one-cube write, a full fallback with mixed valid/invalid rows, duplicate-slot refusal and retention of the prior valid draw.
 
 | Local observation | Result |

@@ -49,7 +49,7 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-render"]
 [external_dependencies.divan]
 requirement = "=0.1.21"
 license = "MIT OR Apache-2.0"
-purpose = "Deterministic V1 workload timing and allocation-count benchmarks for simulation and link conditioning"
+purpose = "Deterministic V1 workload timing and allocation-count benchmarks for simulation, link conditioning and assembled GPU frames"
 target_cost = "Development-only benchmark dependency; no runtime or target-device dependency, with benchmark compilation and timing overhead measured separately"
 
 [external_dependencies.base64]

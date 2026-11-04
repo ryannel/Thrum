@@ -1,378 +1,138 @@
-//! V1 construction diagnostic: one committed 10k-entity simulation endpoint
-//! feeds the real offscreen renderer. No window or shipping runtime is implied.
+//! Paced offscreen V1 scene diagnostic. The clock admits every committed
+//! simulation update; rendering consumes the latest complete endpoint.
 
-use std::{
-    fmt::Write as _,
-    num::NonZeroU32,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
-use thrum_core::{
-    StableId, WorldEpoch,
-    sim::{ComponentEntity, Position, SimConfig, Simulation, Velocity},
-};
-use thrum_render::{
-    extract::{RenderColumns, RenderExtractor, SourceTick},
-    synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticScene},
-    timing::GpuTimings,
-};
+use thrum_render::timing::GpuTimings;
+use v1_scene::{FrameHost, FrameSample};
 
-const ENTITY_COUNT: usize = 10_000;
-const MOVING_COUNT: usize = 1_500;
+const FRAMES: usize = 600;
+const WIDTH: usize = 640;
+const HEIGHT: usize = 360;
 
-fn simulation() -> Result<Simulation, String> {
-    let mut sim = Simulation::new(
-        WorldEpoch(1),
-        SimConfig {
-            tick_hz: NonZeroU32::new(60).expect("nonzero fixture tick rate"),
-            entity_capacity: ENTITY_COUNT,
-            peer_capacity: 4,
-            actions_per_frame: 8,
-            movement_speed: 6.0,
-        },
-    )
-    .map_err(|error| format!("simulation setup: {error:?}"))?;
-    for index in 0..ENTITY_COUNT {
-        let x = -0.9 + (index % 100) as f64 * 0.018 + 0.009;
-        let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
-        sim.seed(ComponentEntity {
-            id: StableId(index as u128),
-            position: Position([x, y, 0.5]),
-            velocity: Velocity([if index < MOVING_COUNT { 0.05 } else { 0.0 }, 0.0, 0.0]),
-            health: 100,
-            ownership: None,
-            visual: Some((index % 2) as u64),
-        })
-        .map_err(|error| format!("seed entity {index}: {error:?}"))?;
-    }
-    Ok(sim)
-}
-
-fn extract(extractor: &mut RenderExtractor, sim: &Simulation) -> usize {
-    let report = extractor.extract(
-        SourceTick {
-            epoch: 1,
-            tick: sim.tick(),
-        },
-        [0.0; 3],
-        |sink| {
-            sim.visit_components(|view| {
-                if let Some(visual) = view.visual {
-                    sink.push(view.id.0, view.position.0, visual);
-                }
-            });
-        },
-    );
-    assert_eq!(report.accepted, ENTITY_COUNT, "all fixture visuals fit");
-    assert_eq!(
-        report.dropped_invalid + report.dropped_capacity + report.dropped_duplicate,
-        0
-    );
-    report.history_reused
-}
-
-fn apply_frame_to_scene(
-    scene: &mut SyntheticScene,
-    frame: &RenderColumns,
-    changed_slots: &mut Vec<u32>,
-) -> Result<usize, String> {
-    if scene.instances.len() != frame.len() {
-        return Err("render frame changed fixture instance count".to_owned());
-    }
-    changed_slots.clear();
-    let mut moved = 0;
-    for row in 0..frame.len() {
-        let index = usize::try_from(frame.ids()[row])
-            .map_err(|_| "stable fixture ID exceeds usize".to_owned())?;
-        let instance = scene
-            .instances
-            .get_mut(index)
-            .ok_or_else(|| format!("stable fixture ID {index} outside scene"))?;
-        let current = frame.current()[row];
-        let previous = frame.previous()[row];
-        let material = u32::try_from(frame.visuals()[row])
-            .map_err(|_| "fixture material index exceeds u32".to_owned())?;
-        if instance.current[3][..3] != current
-            || instance.previous[3][..3] != previous
-            || instance.ids[1] != material
-        {
-            instance.current[3][..3].copy_from_slice(&current);
-            instance.previous[3][..3].copy_from_slice(&previous);
-            instance.ids[1] = material;
-            changed_slots.push(u32::try_from(index).expect("10k fixture slot fits u32"));
-        }
-        moved += usize::from((current[0] - previous[0]).abs() > 1e-6);
-    }
-    changed_slots.sort_unstable();
-    Ok(moved)
-}
-
-fn percentile_summary(samples: &mut [f64]) -> (f64, f64) {
-    samples.sort_by(f64::total_cmp);
-    (
-        samples[samples.len() / 2],
-        samples[samples.len() * 95 / 100],
-    )
-}
-
-fn profile_repeated(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    prepared: &PreparedSynthetic,
-    target: &OffscreenTarget,
-    timings: &mut GpuTimings,
-) -> Result<String, String> {
-    let mut encode_us = Vec::with_capacity(32);
-    let mut pass_names = Vec::<String>::new();
-    let mut pass_ns = Vec::<Vec<f64>>::new();
-    for iteration in 0..34 {
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        let start = Instant::now();
-        prepared
-            .encode(&mut encoder, 1, target, Some(timings))
-            .map_err(|error| format!("profile encode: {error:?}"))?;
-        timings
-            .finish_render(1, &encoder)
-            .map_err(|error| format!("profile finish: {error:?}"))?;
-        let elapsed = start.elapsed().as_secs_f64() * 1e6;
-        let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(Duration::from_secs(10)),
-            })
-            .map_err(|error| format!("profile render poll: {error:?}"))?;
-        if timings.is_enabled() {
-            let mut resolve =
-                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            if !timings
-                .resolve_if_ready(1, &mut resolve)
-                .map_err(|error| format!("profile resolve: {error:?}"))?
-            {
-                return Err("profile timestamps were not ready".to_owned());
-            }
-            let submission = queue.submit([resolve.finish()]);
-            device
-                .poll(wgpu::PollType::Wait {
-                    submission_index: Some(submission),
-                    timeout: Some(Duration::from_secs(10)),
-                })
-                .map_err(|error| format!("profile timestamp poll: {error:?}"))?;
-            let passes = timings
-                .try_collect(1)
-                .map_err(|error| format!("profile collect: {error:?}"))?
-                .ok_or_else(|| "profile timestamp readback incomplete".to_owned())?;
-            if iteration == 0 {
-                for pass in &passes {
-                    pass_names.push(pass.name.to_string());
-                    pass_ns.push(Vec::with_capacity(32));
-                }
-            }
-            if passes.len() != pass_names.len()
-                || passes
-                    .iter()
-                    .zip(&pass_names)
-                    .any(|(pass, name)| pass.name.as_ref() != name)
-            {
-                return Err("GPU pass order changed inside one prepared scene".to_owned());
-            }
-            if iteration >= 2 {
-                for (history, pass) in pass_ns.iter_mut().zip(passes) {
-                    history.push(pass.nanoseconds);
-                }
-            }
-        }
-        if iteration >= 2 {
-            encode_us.push(elapsed);
-        }
-    }
-    let (cpu_p50, cpu_p95) = percentile_summary(&mut encode_us);
-    let mut result = format!("encode p50/p95={cpu_p50:.3}/{cpu_p95:.3} us");
-    for (name, mut samples) in pass_names.into_iter().zip(pass_ns) {
-        let (p50, p95) = percentile_summary(&mut samples);
-        write!(result, "; {name} p50/p95={p50:.0}/{p95:.0} ns")
-            .expect("formatting into String cannot fail");
-    }
-    Ok(result)
+fn percentile(samples: &[FrameSample], value: impl Fn(&FrameSample) -> f64) -> (f64, f64) {
+    let mut values: Vec<_> = samples.iter().map(value).collect();
+    values.sort_by(f64::total_cmp);
+    (values[values.len() / 2], values[values.len() * 95 / 100])
 }
 
 async fn run() -> Result<String, String> {
-    let mut sim = simulation()?;
-    let mut extractor = RenderExtractor::new(ENTITY_COUNT);
-    for _ in 0..59 {
-        sim.step(&[])
-            .map_err(|error| format!("warmup tick: {error:?}"))?;
-    }
-    extract(&mut extractor, &sim);
-    let start = Instant::now();
-    sim.step(&[])
-        .map_err(|error| format!("measured tick: {error:?}"))?;
-    let tick_time = start.elapsed();
-    let start = Instant::now();
-    let history_reused = extract(&mut extractor, &sim);
-    let extract_time = start.elapsed();
-    let mut scene = SyntheticScene::grid(u32::try_from(ENTITY_COUNT).expect("10k fits u32"))
-        .map_err(|error| format!("synthetic scene: {error:?}"))?;
-    let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
-    let moved = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots)?;
-    if history_reused != ENTITY_COUNT || moved != MOVING_COUNT {
-        return Err(format!(
-            "history/motion mismatch: {history_reused} reused, {moved} moved"
-        ));
-    }
-
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
         .map_err(|error| format!("native GPU adapter: {error:?}"))?;
     let adapter_name = adapter.get_info().name;
-    let features = GpuTimings::requested_features(&adapter);
     let (device, queue) = adapter
         .request_device(&wgpu::DeviceDescriptor {
-            required_features: features,
+            required_features: GpuTimings::requested_features(&adapter),
             ..Default::default()
         })
         .await
         .map_err(|error| format!("GPU device: {error:?}"))?;
-    let mut prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
-        .await
-        .map_err(|error| format!("prepare: {error:?}"))?;
-    let target = OffscreenTarget::new(&device, &prepared, 640, 360)
-        .map_err(|error| format!("target: {error:?}"))?;
-    let mut pixels = target.readback(&device);
-    let mut timings = GpuTimings::new(&device, &queue, 1, 4)
-        .map_err(|error| format!("GPU timings: {error:?}"))?;
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    let start = Instant::now();
-    prepared
-        .encode(&mut encoder, 1, &target, Some(&mut timings))
-        .map_err(|error| format!("encode scene: {error:?}"))?;
-    pixels
-        .encode(&mut encoder, &target)
-        .map_err(|error| format!("encode readback: {error:?}"))?;
-    timings
-        .finish_render(1, &encoder)
-        .map_err(|error| format!("finish timings: {error:?}"))?;
-    let encode_time = start.elapsed();
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .map_err(|error| format!("render poll: {error:?}"))?;
-    let rgba = pixels
-        .try_collect(1)
-        .map_err(|error| format!("pixel collection: {error:?}"))?
-        .ok_or_else(|| "pixel readback incomplete".to_owned())?;
-    let background = rgba.get(..4).ok_or_else(|| "empty image".to_owned())?;
-    let foreground = rgba
+    let mut host = FrameHost::new(&device, &queue).await?;
+    let origin = Instant::now();
+    let mut last_call = Duration::ZERO;
+    let mut samples = Vec::with_capacity(FRAMES);
+    while samples.len() < FRAMES {
+        let due = host
+            .next_due_in()
+            .ok_or_else(|| "fixed clock stopped before the target frame count".to_owned())?;
+        let since_last_call = origin.elapsed().saturating_sub(last_call);
+        std::thread::sleep(due.saturating_sub(since_last_call));
+        let now = origin.elapsed();
+        let sample = host.drive(now)?;
+        last_call = now;
+        if let Some(sample) = sample {
+            samples.push(sample);
+        }
+    }
+    let elapsed = origin.elapsed();
+    let pixels = host.capture_pixels()?;
+    let background = pixels.get(..4).ok_or_else(|| "empty capture".to_owned())?;
+    let foreground = pixels
         .as_chunks::<4>()
         .0
         .iter()
         .filter(|pixel| pixel.as_slice() != background)
         .count();
     if foreground == 0 {
-        return Err("simulation-driven scene produced no visible geometry".to_owned());
+        return Err("running scene has no visible geometry".to_owned());
     }
     if let Some(path) = std::env::var_os("THRUM_V1_CAPTURE") {
-        let mut ppm = Vec::with_capacity(640 * 360 * 3 + 32);
+        let mut ppm = Vec::with_capacity(WIDTH * HEIGHT * 3 + 32);
         ppm.extend_from_slice(b"P6\n640 360\n255\n");
-        for pixel in rgba.as_chunks::<4>().0 {
+        for pixel in pixels.as_chunks::<4>().0 {
             ppm.extend_from_slice(&pixel[..3]);
         }
         std::fs::write(path, ppm).map_err(|error| format!("capture: {error}"))?;
     }
-    let cold_gpu = if timings.is_enabled() {
-        let mut resolve = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        if !timings
-            .resolve_if_ready(1, &mut resolve)
-            .map_err(|error| format!("resolve timings: {error:?}"))?
-        {
-            return Err("GPU timestamps were not ready after render completion".to_owned());
-        }
-        let submission = queue.submit([resolve.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(Duration::from_secs(10)),
-            })
-            .map_err(|error| format!("timestamp poll: {error:?}"))?;
-        let samples = timings
-            .try_collect(1)
-            .map_err(|error| format!("collect timings: {error:?}"))?
-            .ok_or_else(|| "GPU timestamp readback incomplete".to_owned())?;
+    let tick = percentile(&samples, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
+    let extract = percentile(&samples, |sample| sample.extract_cpu.as_secs_f64() * 1e6);
+    let upload = percentile(&samples, |sample| sample.upload_cpu.as_secs_f64() * 1e6);
+    let encode = percentile(&samples, |sample| sample.encode_cpu.as_secs_f64() * 1e6);
+    let wall = percentile(&samples, |sample| sample.wall.as_secs_f64() * 1e3);
+    let gpu = if samples.iter().all(|sample| sample.gpu_pass_ns.is_some()) {
+        let forward = percentile(&samples, |sample| {
+            sample.gpu_pass_ns.expect("checked GPU timestamps")[0] / 1e6
+        });
+        let display = percentile(&samples, |sample| {
+            sample.gpu_pass_ns.expect("checked GPU timestamps")[1] / 1e6
+        });
         format!(
-            "{} ns",
-            samples.iter().map(|sample| sample.nanoseconds).sum::<f64>()
+            "GPU forward p50/p95={:.3}/{:.3} ms; GPU display p50/p95={:.3}/{:.3} ms",
+            forward.0, forward.1, display.0, display.1
         )
     } else {
-        "unavailable".to_owned()
+        "GPU timestamps unavailable".to_owned()
     };
-    for _ in 0..60 {
-        sim.step(&[])
-            .map_err(|error| format!("later tick: {error:?}"))?;
-    }
-    extract(&mut extractor, &sim);
-    apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots)?;
-    let upload_start = Instant::now();
-    let upload = prepared
-        .upload_instances(&queue, &scene.instances, &changed_slots)
-        .map_err(|error| format!("update GPU instances: {error:?}"))?;
-    if upload.dropped_invalid != 0 || upload.changed_rows != MOVING_COUNT {
-        return Err(format!("unexpected instance update: {upload:?}"));
-    }
-    let upload_time = upload_start.elapsed();
-    let mut second_encoder =
-        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    prepared
-        .encode(&mut second_encoder, 1, &target, None)
-        .map_err(|error| format!("encode updated scene: {error:?}"))?;
-    pixels
-        .encode(&mut second_encoder, &target)
-        .map_err(|error| format!("encode updated readback: {error:?}"))?;
-    let submission = queue.submit([second_encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .map_err(|error| format!("updated render poll: {error:?}"))?;
-    let updated = pixels
-        .try_collect(1)
-        .map_err(|error| format!("updated pixels: {error:?}"))?
-        .ok_or_else(|| "updated pixel readback incomplete".to_owned())?;
-    let changed_pixels = rgba
-        .as_chunks::<4>()
-        .0
+    let completed: u64 = samples
         .iter()
-        .zip(updated.as_chunks::<4>().0)
-        .filter(|(before, after)| before != after)
+        .map(|sample| u64::from(sample.completed_ticks))
+        .sum();
+    let dropped: usize = samples
+        .iter()
+        .map(|sample| sample.dropped_presentation)
+        .sum();
+    let uploaded: usize = samples.iter().map(|sample| sample.uploaded_bytes).sum();
+    let catch_up_frames = samples
+        .iter()
+        .filter(|sample| sample.completed_ticks > 1)
         .count();
-    if changed_pixels == 0 {
-        return Err("uploaded simulation frame did not change rendered pixels".to_owned());
-    }
-    let repeated = profile_repeated(&device, &queue, &prepared, &target, &mut timings)?;
+    let over_deadline = samples
+        .iter()
+        .filter(|sample| sample.wall > Duration::from_nanos(16_666_667))
+        .count();
+    let max_wall = samples
+        .iter()
+        .map(|sample| sample.wall)
+        .max()
+        .expect("600 frames");
     Ok(format!(
-        "adapter={adapter_name}; entities={ENTITY_COUNT}; moving={moved}; tick={:.3} us; extract={:.3} us; cold encode={:.3} us; cold GPU passes={cold_gpu}; upload={:.3} us/{} rows/{} writes/{} bytes; changed_pixels={changed_pixels}; {repeated}; foreground_pixels={foreground}",
-        tick_time.as_secs_f64() * 1e6,
-        extract_time.as_secs_f64() * 1e6,
-        encode_time.as_secs_f64() * 1e6,
-        upload_time.as_secs_f64() * 1e6,
-        upload.changed_rows,
-        upload.writes,
-        upload.bytes,
+        "adapter={adapter_name}; frames={FRAMES}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; foreground_pixels={foreground}; dropped_presentation={dropped}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; host wall p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
+        elapsed.as_secs_f64(),
+        host.tick(),
+        tick.0,
+        tick.1,
+        extract.0,
+        extract.1,
+        upload.0,
+        upload.1,
+        encode.0,
+        encode.1,
+        wall.0,
+        wall.1,
+        max_wall.as_secs_f64() * 1e3,
     ))
 }
 
 #[expect(
     clippy::print_stdout,
-    reason = "this diagnostic CLI reports its measured scene to the caller"
+    reason = "the diagnostic CLI reports its assembled frame measurements"
 )]
 #[expect(
     clippy::print_stderr,
-    reason = "this diagnostic CLI reports setup or GPU failures to the caller"
+    reason = "the diagnostic CLI reports setup and GPU failures"
 )]
 fn main() {
     match pollster::block_on(run()) {

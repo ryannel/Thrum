@@ -1,5 +1,7 @@
 # A2 simulation-to-render diagnostic
 
+Recorded at commit `19136e2`; the current `v1-scene` command now runs the later paced frame host.
+
 4 November 2026. Apple M3 Max, Metal, macOS, Rust 1.99.1 release, wgpu 30.0.1. `RUSTC_WRAPPER= cargo run -p v1-scene --release` runs the actual example against M2's two-pass HDR/display renderer. It seeds 10,000 A1 hecs entities, 1,500 moving, advances 60 committed ticks, extracts adjacent tick views into reused SoA columns, maps them to the synthetic renderer's 10k instances, then renders 640×360 offscreen. The second extraction reused valid history for all 10k and observed 1,500 changed positions. GPU readback contained 108,608 foreground pixels. [The selected HDR/display capture](A2-SIM-RENDER-2026-11-04.png) was inspected; it is a grid diagnostic, not accepted V1 art.
 
 | Observation | Local result |
