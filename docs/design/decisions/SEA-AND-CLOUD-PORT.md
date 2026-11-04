@@ -8,15 +8,12 @@ The reference revisions are committed Broadsides commits `70cf98122` (`codex/wat
 
 This record adds a named `E1.water` profile. It sits beside the [prescribed sea](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river), and does not replace it or [WATER.md](../modules/WATER.md)'s inland designs.
 
-* **Authority.** A CPU f64 analytic long-wave sum is the authority:
-  * at most 192 components, with wavelength of at least 20 m;
-  * height, horizontal (choppy) displacement, orbital velocity and dynamic pressure;
-  * evaluated at committed tick time `t_sim`.
-  
-  A displaced surface point is `x₀ + D(x₀, t)`. Height and contact queries solve for `x₀` with a declared iteration bound and error. The GPU evaluates the same coefficient set for drawing, and the two must agree within the declared tolerance under test. Gameplay, buoyancy and P3 forces use CPU queries only. GPU readback never enters the force path.
-* **Interaction.** Hull loads use strip theory and hydrostatics. Wake crossing uses CPU Kelvin kernels on ticks. Emitters and sources carry stable IDs with generations; capacity overflow is a counted, reported refusal rather than a log line. Hull strip theory and wake crossing form an optional vessel package. The game supplies hull data.
-* **Presentation residual.** GPU work below the 20 m cut-off is a bounded presentation residual that gameplay never reads. It covers FFT short-wave cascades with LEAN slope moments, the eWave wake grid, foam and material transport, and whitewater. Its height and slope error bounds against the authority are declared. Cascades are periodic in time, so they are evaluated from presentation time. Persistent GPU state (wake, foam) advances from tick-derived time, not frame `dt`. It resets on correction, rebuild or profile change.
-* **Inland water.** It stays on WATER.md's CPU shallow-water and generalised-heightfield authority. A GPU finite-volume river is not adopted as authority.
+**Amended 5 November 2026 by [GPU water](E1-GPU-WATER.md).** All water simulation runs on the GPU and water needs no exact replay. The bullets below are the amended profile.
+
+* **Authority.** The GPU sea is the authority: analytic long waves (at most 192 components, wavelength at least 20 m) plus FFT short-wave cascades with LEAN slope moments, evaluated once per tick into a camera-following field clipmap. A CPU f64 evaluator of the same long-wave coefficients remains as the test oracle and the no-GPU fallback; the GPU must match it within the declared tolerance. Bodies read the full GPU state through one batched query with asynchronous readback, one to two ticks late, with latency compensation and a declared error. Synchronous readback is forbidden.
+* **Interaction.** The wake is physical water state, not a residual. A two-level dispersive (eWave) solver, about 0.25 m near and 2 m far, takes hull pressure sources once per tick; bodies feel each other's wakes through the same query, and far bodies use GPU Kelvin packets. Hull loads still use strip theory and hydrostatics, integrated by P3 on the CPU. Emitters and sources carry stable IDs with generations; capacity overflow is a counted, reported refusal rather than a log line. The game supplies hull data.
+* **Whitewater.** Fresh and aged foam, aeration and slick form one transported field, fed by a deposition pass of wake and wave breaking rates, bow, stern-ribbon, cusp, wash and impact sources. Persistent GPU state advances from tick-derived time, not frame `dt`, and resets on rebuild or profile change.
+* **Inland water.** Rivers, lakes and pools run WATER-DYNAMICS' selected shallow-water and generalised-heightfield methods as GPU compute, and carry their own wakes.
 * **Optics.** Optics follow C08: water supplies ordered medium segments `(T,S)` and a reflection provider. Screen-space reflection is first. Ray query on desktop high is a later provider that emits hit distance.
 
 ## Volumetric cloud profile
@@ -75,7 +72,7 @@ The G3 graph design must support:
 
 | | Measured (M3 Max, Metal) | Broadsides target |
 |---|---|---|
-| Sea | 34.4/37.8 ms whole frame (median/p95, 1440p); water's own cost is unmeasured | Surface ≤1.5 ms; waves, interaction and foam ≤0.8 ms |
+| Sea | 22.0/22.8 ms whole-frame GPU (median/p95, 1440p); turning the water surface off saves 5.5 ms and the reflection trace 1.1 ms; other water passes are within run-to-run drift | Surface ≤1.5 ms; waves, interaction and foam ≤0.8 ms |
 | Clouds | About 20 ms and 365 MiB at 1080p | ≤2 ms and ≤64 MB at 1440p |
 
 Neither system has been measured on an iPhone or a non-Apple GPU, and neither has visual acceptance. Thrum qualifies these per recipe.

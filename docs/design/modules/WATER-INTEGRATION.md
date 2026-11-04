@@ -9,13 +9,16 @@ The [commission](WATER.md) remains the family inventory. [Dynamics](WATER-DYNAMI
 [whitewater](WATER-APPEARANCE.md) and [optics](WATER-OPTICS.md) select mechanisms, approximations and real limits.
 This document connects them under existing C4 ownership; it does not revise the smaller initial specification,
 create a second foundation queue or commission a water runtime ahead of the engine.
+**Amended 5 November 2026 by [GPU water](../decisions/E1-GPU-WATER.md):** water state lives on the GPU, queries read
+it back asynchronously, saves capture its fields asynchronously, and water leaves exact replay. Clauses below that
+require CPU/headless authority or headless continuation follow that decision.
 
 ## State and product boundaries
 
 | Owner / product | Required content and validity | Consumer / failure rule |
 | --- | --- | --- |
 | F4/W2 physical package | Model/version, fixed domain and edge topology, bed/solid/hull geometry, units, pressure supports, wet masks, symbols/filter plans, source profiles and exact dependency closure | E1/P3 admission pins the complete swept interaction support independent of render/stream/peer interest. Missing support is unavailable, never calm water |
-| E1 dynamics endpoint | Physical h/bed, total flux and private integrator phase; applied per-hull pressure identity, independent reference datum, inventory/boundary ledgers, actual source/transit state and event cursors | Batched CPU/headless queries and next E1/P3 step. A renderer's filtered normal is not a force/query input |
+| E1 dynamics endpoint | Physical h/bed, total flux and private integrator phase; applied per-hull pressure identity, independent reference datum, inventory/boundary ledgers, actual source/transit state and event cursors | Batched GPU queries read back asynchronously, one to two ticks late, and the next E1/P3 step. A renderer's filtered normal is not a force/query input |
 | P3 body endpoint | Accepted pose/velocity and body properties, cooked volume/drag geometry, force/torque records and source identity | P3 alone integrates. Same admitted geometric algorithm serves floaters, hulls and fixed-body surrogates; object labels do not select private wake emitters |
 | E1 coarse appearance | Front ancestry, area/gas/size populations, actual airborne liquid versus optical tracers, birth/consumption identities and declared proxy/actual work | Save and optional confirmed projections. V5's fine samples are replaceable and cannot create physical deposits |
 | E1/V2 surface products | Endpoint pair/time, domain/branch/chart revision, P/J/P_t, distinct fluid/attachment carrier, support/status/error and modelled residual | V2 geometry, V3 intersections/caustics and V5 attachment use the same evaluator and coverage |
@@ -96,8 +99,8 @@ atomically after reserving old/new/upload peaks and invalidating affected histor
 
 P7 authority save retains all continuation state: physical fields/integrator phase, reference/applied pressure state,
 actual source/transit intervals and ledgers, required coarse populations, consumed-event cursors, RNG/time and exact
-source/model pins. Restart reproduces the admitted headless physical continuation; fine GPU particles/history are
-derived and rebuilt. Saving only current surface height loses velocity, flight and source-off tails.
+source/model pins, with GPU fields captured asynchronously. Restart continues the same behaviour, not a bit-exact
+continuation; a missing field capture restarts that field calm and says so. Fine particles/history are derived and rebuilt. Saving only current surface height loses velocity, flight and source-off tails.
 
 N1's confirmed projection is a different bounded product, not an authority save or whole-grid-per-peer copy.
 Body pose and required water query state use one atomic compatible StateGroup, endpoint and content readiness under
@@ -149,7 +152,7 @@ change physics resolution, timestep, source strength, pressure support or coarse
 No water consumer means no water state/preparation/residency. Drawing off releases optical/fine work after leases and
 fences while retained physical and promised coarse continuation evolve. Source-off stops release/birth, not transit,
 waves or surviving populations. Fully removing coarse appearance is a declared lifecycle change with dependent
-consumers checked; restoring it cannot promise the missing historical tail. Headless physics never waits on a GPU query.
+consumers checked; restoring it cannot promise the missing historical tail. Physics never waits on a GPU query; a late result is extrapolated and counted. Graphics-off keeps GPU water simulation running.
 
 ## Dependency-ordered proof, before a showcase lake
 
