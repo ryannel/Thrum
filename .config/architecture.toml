@@ -41,6 +41,10 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-sou
 manifest = "examples/v1-scene/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core", "thrum-cook", "thrum-render", "thrum-source"]
 
+[packages.v1-scene-ios]
+manifest = "examples/v1-scene-ios/Cargo.toml"
+allowed_workspace_dependencies = ["v1-scene", "thrum-render"]
+
 # Every direct third-party crate must be listed here with an exact Cargo
 # requirement, its declared license, purpose and target/build cost note.
 # The check validates declarations; license/provenance review remains human work.

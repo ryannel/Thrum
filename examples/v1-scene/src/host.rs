@@ -553,6 +553,24 @@ impl FrameHost {
             .map_err(|error| format!("clock resume: {error:?}"))
     }
 
+    /// Finish previously admitted work before starting a fresh platform time
+    /// origin. Hidden time and explicitly refused overload time stay outside
+    /// the authoritative tick history.
+    /// # Errors
+    /// Returns a host fault if admitted ticks cannot drain or resume is invalid.
+    pub fn drain_and_resume(&mut self, now: Duration) -> Result<(), String> {
+        loop {
+            let report = self.drive(now, None)?;
+            if report.queued_ticks == 0 {
+                break;
+            }
+            if report.completed_ticks == 0 {
+                return Err("paused world updates could not drain".to_owned());
+            }
+        }
+        self.resume(now)
+    }
+
     /// Last committed world tick.
     pub fn tick(&self) -> u64 {
         self.sim.tick()

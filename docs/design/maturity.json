@@ -196,14 +196,14 @@
         "mac": "not_qualified_locked_display_no_presented_frame_measurement",
         "windows": "not_run",
         "browser": "separate_v1_chrome_surface_diagnostic_runs",
-        "ios": "simulator_target_compile_only_not_run",
+        "ios": "separate_v1_ios_sim_surface_diagnostic_runs",
         "android": "not_run"
       },
       "diagnostic_measurement": "Apple M3 Max/Metal integrated Divan, 100 samples: four scene passes with timestamps median 1.284 ms/141 benchmark-thread Rust allocator calls/26.37 KB; plus synthetic 1280x720 surface pass median 1.272 ms/155 calls/27.47 KB. Ranges overlap; driver and other-thread allocations, real swapchain cost and device frame budget remain unmeasured.",
       "evidence": [
         "../evidence/render/V1-MACOS-SURFACE-2026-11-04.md"
       ],
-      "scope": "Prepared surface pass and one-request/one-result macOS acquisition worker preserve fixed-step world progress during drawable occlusion. A half-second window-title update presents the latest completed CPU phase and GPU pass timings, or explicitly says timestamps are unavailable; this UI is compile-checked but not yet observed on an unlocked display. Metal synthetic-surface readback proves every oriented SDR pixel and two surface formats; an unlocked 600-frame window run, resize while presenting, visual inspection, callback/GPU costs, cancellable surface lifecycle, device loss, cooked content, broader Chrome qualification and iPhone runtime remain open."
+      "scope": "Prepared surface pass and one-request/one-result macOS acquisition worker preserve fixed-step world progress during drawable occlusion. A half-second window-title update presents the latest completed CPU phase and GPU pass timings, or explicitly says timestamps are unavailable; this UI is compile-checked but not yet observed on an unlocked display. Metal synthetic-surface readback proves every oriented SDR pixel and two surface formats; an unlocked 600-frame window run, resize while presenting, visual inspection, callback/GPU costs, cancellable surface lifecycle, device loss, cooked content, broader Chrome qualification and physical iPhone runtime remain open."
     },
     "V1_browser_surface": {
       "implementation": "partial_thin_chrome_webgpu_canvas_adapter_over_existing_serial_v1_frame_host",
@@ -220,7 +220,25 @@
       "evidence": [
         "../evidence/render/V1-CHROME-WEBGPU-2026-11-04.md"
       ],
-      "scope": "A Wasm-bindgen canvas adapter owns WebGPU surface acquisition, configuration and presentation; the existing fixed-step FrameHost owns one serial simulation and render path. Hidden-time pause, queued-tick drain, counted RAF timestamp clamp, explicit visible overload/refused-tick recovery, conditional acquisition and deferred resize preserve authority progress without silently applying refused wall-time ticks. The scene is synthetic. Cooked hot reload, actual background-tab visibility, surface loss/device recreation, full browser callback cost, long-run memory, visual acceptance, non-Chrome browsers, iPhone rendering and sustained device budgets remain open."
+      "scope": "A Wasm-bindgen canvas adapter owns WebGPU surface acquisition, configuration and presentation; the existing fixed-step FrameHost owns one serial simulation and render path. Hidden-time pause, queued-tick drain, counted RAF timestamp clamp, explicit visible overload/refused-tick recovery, conditional acquisition and deferred resize preserve authority progress without silently applying refused wall-time ticks. The scene is synthetic. Cooked hot reload, actual background-tab visibility, surface loss/device recreation, full browser callback cost, long-run memory, visual acceptance, non-Chrome browsers, physical iPhone rendering and sustained device budgets remain open."
+    },
+    "V1_ios_sim_surface": {
+      "implementation": "partial_thin_uikit_scene_bridge_and_serial_shared_v1_frame_host",
+      "functional_validation": "xcode_27_2_iphone_13_ios_27_2_simulator_600_completed_surface_samples_and_visible_scene; ios_target_strict_clippy_and_unsigned_app_link_pass",
+      "experienced_quality": "synthetic_lit_grid_and_fixed_aspect_portrait_bars_inspected_not_v1_visual_acceptance",
+      "platform_performance": {
+        "mac": "host_m3_max_only_not_native_mac_window_qualification",
+        "windows": "not_run",
+        "browser": "separate_chrome_webgpu_diagnostic_runs",
+        "ios": "iphone_13_simulator_only_not_physical_device_budget",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Xcode 27.2 iOS 27.2 iPhone 13 simulator on Apple M3 Max, Apple iOS simulator GPU, Bgra8Unorm 1170x2289 surface: 602 callbacks, 601 presented, 600 completed surface samples, 602 committed ticks, zero unavailable/overload/refused/shed/report drops. Host drive wall p50/p95 2.215/3.770 ms, CPU tick 117.1/150.5 us, encode 21.0/51.4 us. GPU timestamp queries unavailable. No physical-device, thermal, power or sustained budget claim.",
+      "evidence": [
+        "../evidence/render/V1-IOS-SIM-2026-11-04.md",
+        "../evidence/render/V1-IOS-SIM-2026-11-04.png"
+      ],
+      "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. One visible 600-frame simulator run passes; actual background/resume, surface/device loss, touch input, cooked hot reload, physical iPhone and sustained device/visual budgets remain open."
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
