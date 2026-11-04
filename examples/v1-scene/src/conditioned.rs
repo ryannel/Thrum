@@ -345,7 +345,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual retained_bytes={} visual unchanged_partitions={} visual max_age={} visual project/encode/decode={}/{}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual full images/payload bytes={}/{} visual retained_bytes={} visual unchanged_partitions={} visual max_age={} visual project/encode/decode={}/{}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.scenario,
             self.committed_ticks,
             PEER_COUNT,
@@ -389,6 +389,8 @@ impl fmt::Display for ConditionedReport {
             self.visual.ack_delivered,
             self.visual.rebases,
             self.visual.sent_bytes,
+            self.visual.full_images,
+            self.visual.full_payload_bytes,
             self.visual.retained_bytes,
             self.visual.unchanged_partitions,
             self.visual.max_age,
@@ -926,8 +928,9 @@ impl ConditionedGame {
 /// Run the same 10k V1 simulation with four peer input streams through a
 /// fixed-seed 2–4-tick, 2%-loss in-memory link. Encoded input packets pass
 /// through the conditioner; the confirmed and speculative clients are local
-/// diagnostic consumers. Visual deltas use selective ACK rebasing through
-/// conditioned no-socket packets; reliable repair and OS transport remain open.
+/// diagnostic consumers. Visual full images seed and rebaseline via checked
+/// payload bytes; deltas use selective ACK rebasing through conditioned
+/// no-socket packets. Reliable repair and OS transport remain open.
 ///
 /// # Errors
 /// Returns a staging, capacity, authority or independent-position-check fault.
@@ -969,6 +972,8 @@ mod tests {
         assert!(result.visual.sent > 0);
         assert!(result.visual.dropped > 0);
         assert!(result.visual.delivered > 0);
+        assert_eq!(result.visual.full_images, 16);
+        assert!(result.visual.full_payload_bytes > 0);
         assert!((2..=4).contains(&result.visual.max_age));
         assert!(result.confirmed_groups > 0);
         assert!(result.confirmed_in_flight > 0);
