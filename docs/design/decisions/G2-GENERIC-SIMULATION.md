@@ -1,6 +1,6 @@
 # G2 design: one registered simulation for the running game
 
-4 November 2026. **Implementation target, not yet qualified.** C01/C02 remain binding: stable identity differs from physical slot and backend entity, one fixed tick commits once, failed authority work changes no committed state, and consumers receive immutable leased endpoints. [Storage selection](G2-STORAGE-SELECTION.md) chooses private hecs 0.11.2 with storage-order prepared queries. G1's current page is a migration endpoint, not a reason to keep fixture fields in the engine.
+4–5 November 2026. **Qualified in the running game; see [evidence](../../evidence/v1-workload/G2-GAME-RUNTIME-2026-11-04.md).** C01/C02 remain binding: stable identity differs from physical slot and backend entity, one fixed tick commits once, failed authority work changes no committed state, and consumers receive immutable leased endpoints. [Storage selection](G2-STORAGE-SELECTION.md) chooses private hecs 0.11.2 with storage-order prepared queries. G1's current page is a migration endpoint, not a reason to keep fixture fields in the engine.
 
 ## Ownership and public composition
 

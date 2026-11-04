@@ -7,7 +7,7 @@ use thrum_core::{
     sim::{Read2, ReadPermit, SnapshotId, StructuralChange, WorldRead},
 };
 
-use super::types::{ChangeTicks, Command, Health, Ownership, Position, Velocity, Visual};
+use super::types::{Health, Ownership, Position, Velocity, Visual};
 
 /// Changed physical slots in one complete V1 game tick.
 #[derive(Default)]
@@ -55,6 +55,7 @@ impl DirtySlots {
 
 pub(crate) struct Page {
     id: SnapshotId,
+    timeline: u64,
     ids: Vec<Option<StableId>>,
     generations: Vec<u64>,
     present_marks: Vec<u64>,
@@ -74,6 +75,7 @@ impl Page {
     pub(crate) fn new(epoch: WorldEpoch, capacity: usize) -> Self {
         Self {
             id: SnapshotId { epoch, tick: 0 },
+            timeline: 0,
             ids: vec![None; capacity],
             generations: vec![0; capacity],
             present_marks: vec![u64::MAX; capacity],
@@ -98,56 +100,63 @@ impl Page {
         &mut self,
         world: &WorldRead<'_>,
         query: &mut Read2<Position, Health>,
+        position_read: &ReadPermit<Position>,
         velocity_read: &ReadPermit<Velocity>,
+        health_read: &ReadPermit<Health>,
         ownership_read: &ReadPermit<Ownership>,
         visual_read: &ReadPermit<Visual>,
-        changes: &[ChangeTicks],
-        commands: &[Command],
+        events: &[StructuralChange],
         tick: u64,
+        timeline: u64,
         first: bool,
     ) {
         let since = self.initialized.then_some(self.id.tick);
         self.id.tick = tick;
+        self.timeline = timeline;
         self.baseline = first;
         self.dirty.clear();
         self.events.clear();
         self.live = 0;
-        query.visit(world, |handle, id, position, health| {
-            let slot = handle.slot as usize;
-            self.present_marks[slot] = tick;
-            self.live += 1;
-            let stamp = changes[slot];
-            let structural = since.is_none_or(|old| stamp.structural > old);
-            if structural {
-                self.ids[slot] = Some(id);
-                self.generations[slot] = handle.generation;
-                self.ownership[slot] = world.with(ownership_read, handle, |value| *value).ok();
-                self.visuals[slot] = world.with(visual_read, handle, |value| value.0).ok();
-            }
-            if structural || since.is_none_or(|old| stamp.position > old) {
-                self.positions[slot] = *position;
-            }
-            if structural || since.is_none_or(|old| stamp.velocity > old) {
-                self.velocities[slot] = world
-                    .with(velocity_read, handle, |value| *value)
-                    .unwrap_or_default();
-            }
-            if structural || since.is_none_or(|old| stamp.health > old) {
-                self.health[slot] = health.0;
-            }
-            if first || stamp.position == tick {
-                self.dirty.position.push(handle.slot);
-            }
-            if first || stamp.velocity == tick {
-                self.dirty.velocity.push(handle.slot);
-            }
-            if first || stamp.health == tick {
-                self.dirty.health.push(handle.slot);
-            }
-            if first || stamp.structural == tick {
-                self.dirty.structural.push(handle.slot);
-            }
-        });
+        query.visit_with_changes(
+            world,
+            (position_read, velocity_read, health_read),
+            |handle, id, position, health, stamps| {
+                let slot = handle.slot as usize;
+                self.present_marks[slot] = tick;
+                self.live += 1;
+                let [structural_tick, position_tick, velocity_tick, health_tick] = stamps;
+                let structural = since.is_none_or(|old| structural_tick > old);
+                if structural {
+                    self.ids[slot] = Some(id);
+                    self.generations[slot] = handle.generation;
+                    self.ownership[slot] = world.with(ownership_read, handle, |value| *value).ok();
+                    self.visuals[slot] = world.with(visual_read, handle, |value| value.0).ok();
+                }
+                if structural || since.is_none_or(|old| position_tick > old) {
+                    self.positions[slot] = *position;
+                }
+                if structural || since.is_none_or(|old| velocity_tick > old) {
+                    self.velocities[slot] = world
+                        .with(velocity_read, handle, |value| *value)
+                        .unwrap_or_default();
+                }
+                if structural || since.is_none_or(|old| health_tick > old) {
+                    self.health[slot] = health.0;
+                }
+                if first || structural_tick == tick || position_tick == tick {
+                    self.dirty.position.push(handle.slot);
+                }
+                if first || structural_tick == tick || velocity_tick == tick {
+                    self.dirty.velocity.push(handle.slot);
+                }
+                if first || structural_tick == tick || health_tick == tick {
+                    self.dirty.health.push(handle.slot);
+                }
+                if first || structural_tick == tick {
+                    self.dirty.structural.push(handle.slot);
+                }
+            },
+        );
         for (slot, id) in self.ids.iter_mut().enumerate() {
             if id.is_some() && self.present_marks[slot] != tick {
                 *id = None;
@@ -164,20 +173,14 @@ impl Page {
                 }
             }
         } else {
-            for command in commands {
-                if let Command::Despawn(handle) = command {
-                    self.events.push(StructuralChange::Despawn(*handle));
-                    if self.ids[handle.slot as usize].is_none() {
-                        self.dirty.structural.push(handle.slot);
+            self.events.extend_from_slice(events);
+            for event in events {
+                let slot = match event {
+                    StructuralChange::Despawn(handle) | StructuralChange::Spawn(handle) => {
+                        handle.slot
                     }
-                }
-            }
-            for command in commands {
-                if let Command::Spawn(entity) = command {
-                    self.events.push(StructuralChange::Spawn(
-                        world.handle(entity.id).expect("committed spawn"),
-                    ));
-                }
+                };
+                self.dirty.structural.push(slot);
             }
         }
         self.dirty.structural.sort_unstable();
@@ -219,6 +222,10 @@ impl PublishedPage {
     /// Committed world generation and fixed tick.
     pub fn id(&self) -> SnapshotId {
         self.0.id
+    }
+    /// Replay branch generation for temporal presentation history.
+    pub fn timeline(&self) -> u64 {
+        self.0.timeline
     }
     /// Live entity count.
     pub fn len(&self) -> usize {

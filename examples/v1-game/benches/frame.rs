@@ -2,7 +2,7 @@
 //! Deliberately serial and unpaced; the CLI separately exercises 60 Hz pacing.
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::time::Duration;
+use std::{num::NonZeroUsize, time::Duration};
 
 use thrum_core::sim::ExecutionMode;
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
@@ -39,6 +39,38 @@ fn game_tick_and_publication_rayon(bencher: divan::Bencher<'_, '_>, entity_count
         let result = sim.step(&[]).expect("one parallel candidate commits");
         divan::black_box(result.tick);
         divan::black_box(result.simulated_entities);
+    });
+}
+
+#[divan::bench(args = [10_000, 100_000])]
+fn game_tick_with_rolling_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    let mut history = sim.begin_history(NonZeroUsize::new(64).expect("window"));
+    for _ in 0..65 {
+        sim.step(&[]).expect("warmup tick");
+        history.record(&sim).expect("warmup delta");
+    }
+    bencher.bench_local(move || {
+        sim.step(&[]).expect("one game tick commits");
+        history.record(&sim).expect("one rolling delta commits");
+        divan::black_box(history.latest_tick());
+    });
+}
+
+#[divan::bench(args = [10_000, 100_000])]
+fn game_restore_rolling_window(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    let mut history = sim.begin_history(NonZeroUsize::new(64).expect("window"));
+    for _ in 0..64 {
+        sim.step(&[]).expect("committed tick");
+        history.record(&sim).expect("recorded delta");
+    }
+    let target = history.latest_tick();
+    bencher.bench_local(move || {
+        history
+            .restore_to(&mut sim, target)
+            .expect("same committed endpoint");
+        divan::black_box(sim.tick());
     });
 }
 

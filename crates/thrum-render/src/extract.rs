@@ -8,6 +8,8 @@ pub struct SourceTick {
     pub epoch: u128,
     /// Complete committed simulation tick.
     pub tick: u64,
+    /// Replay branch generation; restore invalidates prior pose history.
+    pub timeline: u64,
 }
 
 /// Counts of accepted and degraded presentation samples for one extraction.
@@ -174,7 +176,9 @@ impl RenderExtractor {
         gather: impl FnOnce(&mut RenderSink<'_>),
     ) -> ExtractReport {
         let adjacent = self.front.source.is_some_and(|previous| {
-            previous.epoch == source.epoch && previous.tick.checked_add(1) == Some(source.tick)
+            previous.epoch == source.epoch
+                && previous.timeline == source.timeline
+                && previous.tick.checked_add(1) == Some(source.tick)
         });
         self.back.clear(
             source,

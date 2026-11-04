@@ -1,15 +1,17 @@
 //! Game-registered component storage with engine-owned identity. This is the
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
-use std::{collections::hash_map::RandomState, hash::BuildHasher};
+use std::{collections::hash_map::RandomState, hash::BuildHasher, mem::size_of};
 
 use crate::{Handle, StableId, WorldEpoch};
 
 use super::{ComponentKey, ComponentRegistry, ComponentSchemaId, schedule::SnapshotColumn};
 
+#[derive(Clone, Copy)]
 struct CapturedSlot {
     generation: u64,
     stable: Option<StableId>,
+    structural_tick: u64,
 }
 
 pub(super) struct WorldCapture {
@@ -19,6 +21,92 @@ pub(super) struct WorldCapture {
     slots: Vec<CapturedSlot>,
     columns: Vec<Box<dyn SnapshotColumn>>,
     free: Vec<u32>,
+    change_ticks: Vec<u64>,
+}
+
+pub(super) struct WorldDelta {
+    slots: Vec<(u32, CapturedSlot)>,
+    events: Vec<super::StructuralChange>,
+    changed: Vec<Vec<(u32, u64)>>,
+    columns: Vec<Box<dyn SnapshotColumn>>,
+}
+
+impl WorldDelta {
+    pub(super) fn reserved_bytes(&self) -> usize {
+        size_of::<Self>()
+            + self.slots.capacity() * size_of::<(u32, CapturedSlot)>()
+            + self.events.capacity() * size_of::<super::StructuralChange>()
+            + self.changed.capacity() * size_of::<Vec<(u32, u64)>>()
+            + self
+                .changed
+                .iter()
+                .map(|column| column.capacity() * size_of::<(u32, u64)>())
+                .sum::<usize>()
+            + self.columns.capacity() * size_of::<Box<dyn SnapshotColumn>>()
+            + self
+                .columns
+                .iter()
+                .map(|column| column.reserved_bytes())
+                .sum::<usize>()
+    }
+}
+
+impl WorldCapture {
+    pub(super) fn reserved_bytes(&self) -> usize {
+        size_of::<Self>()
+            + self.schema.capacity() * size_of::<ComponentSchemaId>()
+            + self.types.capacity() * size_of::<ComponentKey>()
+            + self.slots.capacity() * size_of::<CapturedSlot>()
+            + self.free.capacity() * size_of::<u32>()
+            + self.change_ticks.capacity() * size_of::<u64>()
+            + self.columns.capacity() * size_of::<Box<dyn SnapshotColumn>>()
+            + self
+                .columns
+                .iter()
+                .map(|column| column.reserved_bytes())
+                .sum::<usize>()
+    }
+
+    pub(super) fn clone_independent(&self) -> Self {
+        Self {
+            epoch: self.epoch,
+            schema: self.schema.clone(),
+            types: self.types.clone(),
+            slots: self.slots.clone(),
+            columns: self
+                .columns
+                .iter()
+                .map(|column| column.clone_box())
+                .collect(),
+            free: self.free.clone(),
+            change_ticks: self.change_ticks.clone(),
+        }
+    }
+
+    pub(super) fn advance(&mut self, delta: &WorldDelta) {
+        for event in &delta.events {
+            match event {
+                super::StructuralChange::Despawn(handle) => {
+                    if self.slots[handle.slot as usize].generation != u64::MAX {
+                        self.free.push(handle.slot);
+                    }
+                }
+                super::StructuralChange::Spawn(handle) => {
+                    assert_eq!(self.free.pop(), Some(handle.slot), "recorded slot order");
+                }
+            }
+        }
+        for &(slot, state) in &delta.slots {
+            self.slots[slot as usize] = state;
+        }
+        let component_count = self.columns.len();
+        for (index, (column, changed)) in self.columns.iter_mut().zip(&delta.changed).enumerate() {
+            column.overlay(&*delta.columns[index], changed);
+            for &(slot, tick) in changed {
+                self.change_ticks[slot as usize * component_count + index] = tick;
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -26,6 +114,7 @@ struct Slot {
     generation: u64,
     entity: Option<hecs::Entity>,
     stable: Option<StableId>,
+    structural_tick: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -154,10 +243,71 @@ pub(super) struct RegisteredWorld {
     pub(super) world: hecs::World,
     builder: hecs::EntityBuilder,
     registry: ComponentRegistry,
+    change_ticks: Vec<u64>,
+    changed: Vec<Vec<u32>>,
     live: usize,
 }
 
 impl RegisteredWorld {
+    pub(super) fn empty_delta(&self) -> WorldDelta {
+        WorldDelta {
+            slots: Vec::new(),
+            events: Vec::new(),
+            changed: (0..self.registry.entries.len())
+                .map(|_| Vec::new())
+                .collect(),
+            columns: self
+                .registry
+                .entries
+                .iter()
+                .map(|entry| (entry.empty)())
+                .collect(),
+        }
+    }
+
+    pub(super) fn capture_delta_into(
+        &self,
+        events: &[super::StructuralChange],
+        delta: &mut WorldDelta,
+    ) {
+        delta.events.clear();
+        delta.events.extend_from_slice(events);
+        delta.slots.clear();
+        for event in events {
+            let slot = match event {
+                super::StructuralChange::Despawn(handle)
+                | super::StructuralChange::Spawn(handle) => handle.slot,
+            };
+            let state = self.slots[slot as usize];
+            delta.slots.push((
+                slot,
+                CapturedSlot {
+                    generation: state.generation,
+                    stable: state.stable,
+                    structural_tick: state.structural_tick,
+                },
+            ));
+        }
+        delta.slots.sort_unstable_by_key(|(slot, _)| *slot);
+        delta.slots.dedup_by_key(|(slot, _)| *slot);
+        for (index, (changed, column)) in
+            delta.changed.iter_mut().zip(&mut delta.columns).enumerate()
+        {
+            changed.clear();
+            changed.extend(self.changed[index].iter().map(|slot| {
+                (
+                    *slot,
+                    self.change_ticks[*slot as usize * self.registry.entries.len() + index],
+                )
+            }));
+            changed.sort_unstable_by_key(|(slot, _)| *slot);
+            changed.dedup_by_key(|(slot, _)| *slot);
+            column.clear();
+            for &(slot, _) in changed.iter() {
+                column.capture_slot(self, slot);
+            }
+        }
+    }
     pub(super) fn capture(&self) -> WorldCapture {
         let slots = self
             .slots
@@ -165,6 +315,7 @@ impl RegisteredWorld {
             .map(|slot| CapturedSlot {
                 generation: slot.generation,
                 stable: slot.stable,
+                structural_tick: slot.structural_tick,
             })
             .collect();
         WorldCapture {
@@ -189,6 +340,7 @@ impl RegisteredWorld {
                 .map(|entry| (entry.capture)(&self.world))
                 .collect(),
             free: self.free.clone(),
+            change_ticks: self.change_ticks.clone(),
         }
     }
 
@@ -198,6 +350,7 @@ impl RegisteredWorld {
             || capture.schema.len() != self.registry.entries.len()
             || capture.types.len() != self.registry.entries.len()
             || capture.columns.len() != self.registry.entries.len()
+            || capture.change_ticks.len() != self.change_ticks.len()
             || capture
                 .schema
                 .iter()
@@ -233,6 +386,7 @@ impl RegisteredWorld {
                 generation: saved.generation,
                 entity,
                 stable: saved.stable,
+                structural_tick: saved.structural_tick,
             });
         }
         self.world = world;
@@ -240,6 +394,7 @@ impl RegisteredWorld {
         self.slots = slots;
         self.ids = ids;
         self.free.clone_from(&capture.free);
+        self.change_ticks.clone_from(&capture.change_ticks);
         self.live = live;
         Ok(())
     }
@@ -267,6 +422,10 @@ impl RegisteredWorld {
             return Err(RegisteredWorldError::Capacity);
         }
         let slot_count = u32::try_from(capacity).map_err(|_| RegisteredWorldError::Capacity)?;
+        let component_count = registry.entries.len();
+        let change_count = capacity
+            .checked_mul(component_count)
+            .ok_or(RegisteredWorldError::Capacity)?;
         Ok(Self {
             epoch,
             slots: vec![
@@ -274,6 +433,7 @@ impl RegisteredWorld {
                     generation: 1,
                     entity: None,
                     stable: None,
+                    structural_tick: 0,
                 };
                 capacity
             ],
@@ -282,6 +442,8 @@ impl RegisteredWorld {
             world: hecs::World::new(),
             builder: hecs::EntityBuilder::new(),
             registry,
+            change_ticks: vec![0; change_count],
+            changed: (0..component_count).map(|_| Vec::new()).collect(),
             live: 0,
         })
     }
@@ -300,6 +462,34 @@ impl RegisteredWorld {
             .entries
             .iter()
             .position(|entry| entry.key == key)
+    }
+
+    pub(super) fn change_ticks3_at(&self, slot: u32, components: [usize; 3]) -> [u64; 4] {
+        let row = slot as usize * self.registry.entries.len();
+        [
+            self.slots[slot as usize].structural_tick,
+            self.change_ticks[row + components[0]],
+            self.change_ticks[row + components[1]],
+            self.change_ticks[row + components[2]],
+        ]
+    }
+
+    pub(super) fn mark_changed(&mut self, key: ComponentKey, handle: Handle, tick: u64) {
+        let component = self.component_index(key).expect("prevalidated component");
+        self.change_ticks[handle.slot as usize * self.registry.entries.len() + component] = tick;
+        self.changed[component].push(handle.slot);
+    }
+
+    pub(super) fn begin_tick(&mut self) {
+        for changed in &mut self.changed {
+            changed.clear();
+        }
+    }
+
+    pub(super) fn mark_structural(&mut self, slot: u32) {
+        for changed in &mut self.changed {
+            changed.push(slot);
+        }
     }
 
     pub(super) fn prepare_bundle(
@@ -322,6 +512,7 @@ impl RegisteredWorld {
         &mut self,
         id: StableId,
         builder: &mut hecs::EntityBuilder,
+        tick: u64,
     ) -> Result<Handle, RegisteredWorldError> {
         if self.ids.get(id).is_some() {
             return Err(RegisteredWorldError::DuplicateId);
@@ -332,6 +523,7 @@ impl RegisteredWorld {
         self.free.pop();
         self.slots[slot as usize].entity = Some(entity);
         self.slots[slot as usize].stable = Some(id);
+        self.slots[slot as usize].structural_tick = tick;
         self.ids.insert(id, slot);
         self.live += 1;
         Ok(self.handle_at(slot))
@@ -560,6 +752,14 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
         world: &RegisteredWorld,
         mut visit: impl FnMut(Handle, StableId, &T, &U),
     ) {
+        self.visit_rows(world, |handle, id, a, b, _| visit(handle, id, a, b));
+    }
+
+    pub(super) fn visit_rows(
+        &mut self,
+        world: &RegisteredWorld,
+        mut visit: impl FnMut(Handle, StableId, &T, &U, u32),
+    ) {
         let mut query = self.query.query(&world.world);
         for (key, a, b) in query.iter() {
             let slot = &world.slots[key.0 as usize];
@@ -568,6 +768,7 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
                 slot.stable.expect("queried entity remains live"),
                 a,
                 b,
+                key.0,
             );
         }
     }

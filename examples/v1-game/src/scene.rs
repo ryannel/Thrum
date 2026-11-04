@@ -108,6 +108,7 @@ pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage)
         SourceTick {
             epoch: snapshot.id().epoch.0,
             tick: snapshot.id().tick,
+            timeline: snapshot.timeline(),
         },
         [0.0; 3],
         |sink| {
@@ -185,35 +186,92 @@ mod tests {
         synthetic::SyntheticScene,
     };
 
-    use super::{ENTITY_COUNT, PEER_COUNT, apply_frame_to_scene, control_frame, simulation};
+    use super::{
+        ENTITY_COUNT, PEER_COUNT, apply_frame_to_scene, control_frame, extract, simulation,
+        simulation_with_count,
+    };
+    use crate::simulation::{Command, Position};
+
+    #[test]
+    fn skipped_replay_baseline_invalidates_render_pose_history() {
+        let mut sim = simulation_with_count(4).expect("small game");
+        let mut extractor = RenderExtractor::new(4, 4);
+        sim.step(&[]).expect("tick one");
+        let saved = sim.capture();
+        sim.step(&[]).expect("old tick two");
+        extract(&mut extractor, &sim.published_page().expect("old page"));
+        sim.restore(&saved).expect("restore tick one");
+        let moved = sim.handle(StableId(0)).expect("entity");
+        sim.step(&[Command::SetPosition(moved, Position([1.0, 0.0, 0.5]))])
+            .expect("alternate tick two");
+        sim.step(&[]).expect("alternate tick three");
+        let report = extract(
+            &mut extractor,
+            &sim.published_page().expect("replayed page"),
+        );
+        assert_eq!(report.history_reused, 0);
+        assert!(!extractor.frame().history_valid().iter().any(|valid| *valid));
+    }
 
     #[test]
     fn physical_slot_is_used_instead_of_stable_identity_as_gpu_slot() {
         let ids = [StableId(u128::from(u32::MAX) + 8), StableId(7)];
         let mut scene = SyntheticScene::grid(2).expect("two synthetic instances");
         let mut extractor = RenderExtractor::new(2, 2);
-        extractor.extract(SourceTick { epoch: 1, tick: 1 }, [0.0; 3], |sink| {
-            assert!(sink.push(1, 1, 7, [0.25, 0.0, 0.0], 0));
-            assert!(sink.push(0, 1, ids[0].0, [0.75, 0.0, 0.0], 1));
-        });
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 1,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| {
+                assert!(sink.push(1, 1, 7, [0.25, 0.0, 0.0], 0));
+                assert!(sink.push(0, 1, ids[0].0, [0.75, 0.0, 0.0], 1));
+            },
+        );
         let mut changed = Vec::new();
         let report = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(report.dropped_invalid, 0);
         assert_eq!(changed, [0, 1]);
         assert_eq!(scene.instances[0].current[3][0], 0.75);
         assert_eq!(scene.instances[1].current[3][0], 0.25);
-        extractor.extract(SourceTick { epoch: 1, tick: 2 }, [0.0; 3], |sink| {
-            assert!(sink.push(0, 1, ids[0].0, [0.8, 0.0, 0.0], 1));
-        });
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 2,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| {
+                assert!(sink.push(0, 1, ids[0].0, [0.8, 0.0, 0.0], 1));
+            },
+        );
         // Worker result for tick two is discarded before reaching the scene.
-        extractor.extract(SourceTick { epoch: 1, tick: 3 }, [0.0; 3], |sink| {
-            assert!(sink.push(0, 1, ids[0].0, [0.9, 0.0, 0.0], 1));
-        });
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 3,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| {
+                assert!(sink.push(0, 1, ids[0].0, [0.9, 0.0, 0.0], 1));
+            },
+        );
         apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(scene.instances[1].ids[3], 0, "retired slot is hidden");
-        extractor.extract(SourceTick { epoch: 1, tick: 4 }, [0.0; 3], |sink| {
-            assert!(sink.push(1, 2, 11, [0.3, 0.0, 0.0], 0));
-        });
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 4,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| {
+                assert!(sink.push(1, 2, 11, [0.3, 0.0, 0.0], 0));
+            },
+        );
         apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(scene.instances[1].ids[3], 1, "reused slot is visible");
     }

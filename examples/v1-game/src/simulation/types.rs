@@ -127,16 +127,6 @@ pub enum SimError {
     InvalidEdit,
 }
 
-/// Per-slot V1 change stamps. Engine publication leases own their resulting
-/// endpoint; these stamps are candidate bookkeeping during G2 migration.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(crate) struct ChangeTicks {
-    pub(crate) position: u64,
-    pub(crate) velocity: u64,
-    pub(crate) health: u64,
-    pub(crate) structural: u64,
-}
-
 /// Copied V1 game fields behind one checked handle.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ComponentView {

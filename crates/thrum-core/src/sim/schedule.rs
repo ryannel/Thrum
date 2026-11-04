@@ -57,11 +57,13 @@ impl ComponentRegistry {
         &mut self,
         schema: ComponentSchemaId,
     ) -> Result<ComponentKey, RegistrationError> {
-        self.register_with_snapshot(schema, |value: &T| *value)
+        self.register_with_snapshot(schema, |value: &T| *value, |_| 0)
     }
 
     /// Register a non-Copy value with an explicit independent snapshot copy.
     /// The operation must not retain shared mutable state from its input.
+    /// `nested_bytes` reports heap storage retained by one copied value,
+    /// excluding the inline `T` bytes already counted by the column.
     ///
     /// # Errors
     ///
@@ -70,6 +72,7 @@ impl ComponentRegistry {
         &mut self,
         schema: ComponentSchemaId,
         snapshot: fn(&T) -> T,
+        nested_bytes: fn(&T) -> usize,
     ) -> Result<ComponentKey, RegistrationError> {
         let key = ComponentKey::of::<T>();
         if self.entries.iter().any(|entry| entry.key == key) {
@@ -81,7 +84,14 @@ impl ComponentRegistry {
         self.entries.push(ComponentEntry {
             key,
             schema,
-            capture: Box::new(move |world| capture_component(world, snapshot)),
+            capture: Box::new(move |world| capture_component(world, snapshot, nested_bytes)),
+            empty: Box::new(move || {
+                Box::new(TypedColumn::<T> {
+                    rows: Vec::new(),
+                    snapshot,
+                    nested_bytes,
+                })
+            }),
         });
         Ok(key)
     }
@@ -301,12 +311,21 @@ fn conflicts(a: &SystemSpec, b: &SystemSpec) -> bool {
             .any(|b| a.key == b.key && (a.mode == AccessMode::Write || b.mode == AccessMode::Write))
     })
 }
-use std::any::TypeId;
+use std::{
+    any::{Any, TypeId},
+    mem::size_of,
+};
 
-use super::registered_world::SlotKey;
+use super::registered_world::{RegisteredWorld, SlotKey};
 
 pub(super) trait SnapshotColumn: Send + Sync {
     fn build_at(&self, slot: u32, cursor: &mut usize, builder: &mut hecs::EntityBuilder);
+    fn clone_box(&self) -> Box<dyn SnapshotColumn>;
+    fn clear(&mut self);
+    fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32);
+    fn overlay(&mut self, delta: &dyn SnapshotColumn, changed: &[(u32, u64)]);
+    fn as_any(&self) -> &dyn Any;
+    fn reserved_bytes(&self) -> usize;
 }
 
 type CaptureColumn = Box<dyn Fn(&hecs::World) -> Box<dyn SnapshotColumn> + Send + Sync>;
@@ -314,6 +333,7 @@ type CaptureColumn = Box<dyn Fn(&hecs::World) -> Box<dyn SnapshotColumn> + Send 
 struct TypedColumn<T> {
     rows: Vec<(u32, T)>,
     snapshot: fn(&T) -> T,
+    nested_bytes: fn(&T) -> usize,
 }
 
 impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
@@ -325,17 +345,77 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
             *cursor += 1;
         }
     }
+
+    fn clone_box(&self) -> Box<dyn SnapshotColumn> {
+        Box::new(Self {
+            rows: self
+                .rows
+                .iter()
+                .map(|(slot, value)| (*slot, (self.snapshot)(value)))
+                .collect(),
+            snapshot: self.snapshot,
+            nested_bytes: self.nested_bytes,
+        })
+    }
+
+    fn clear(&mut self) {
+        self.rows.clear();
+    }
+
+    fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32) {
+        let handle = world.handle_at(slot);
+        if let Ok(value) = world.with::<T, _>(handle, |value| (self.snapshot)(value)) {
+            self.rows.push((slot, value));
+        }
+    }
+
+    fn overlay(&mut self, delta: &dyn SnapshotColumn, changed: &[(u32, u64)]) {
+        let delta = delta
+            .as_any()
+            .downcast_ref::<Self>()
+            .expect("same registered schema");
+        for &(slot, _) in changed {
+            let current = self.rows.binary_search_by_key(&slot, |row| row.0);
+            let next = delta.rows.binary_search_by_key(&slot, |row| row.0);
+            match (current, next) {
+                (Ok(at), Ok(from)) => self.rows[at].1 = (self.snapshot)(&delta.rows[from].1),
+                (Err(at), Ok(from)) => self
+                    .rows
+                    .insert(at, (slot, (self.snapshot)(&delta.rows[from].1))),
+                (Ok(at), Err(_)) => {
+                    self.rows.remove(at);
+                }
+                (Err(_), Err(_)) => {}
+            }
+        }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn reserved_bytes(&self) -> usize {
+        size_of::<Self>()
+            + self.rows.capacity() * size_of::<(u32, T)>()
+            + self
+                .rows
+                .iter()
+                .map(|(_, value)| (self.nested_bytes)(value))
+                .sum::<usize>()
+    }
 }
 
 pub(super) struct ComponentEntry {
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
     pub(super) capture: CaptureColumn,
+    pub(super) empty: Box<dyn Fn() -> Box<dyn SnapshotColumn> + Send + Sync>,
 }
 
 fn capture_component<T: Send + Sync + 'static>(
     world: &hecs::World,
     snapshot: fn(&T) -> T,
+    nested_bytes: fn(&T) -> usize,
 ) -> Box<dyn SnapshotColumn> {
     let mut rows: Vec<_> = world
         .query::<(&SlotKey, &T)>()
@@ -343,5 +423,37 @@ fn capture_component<T: Send + Sync + 'static>(
         .map(|(slot, value)| (slot.0, snapshot(value)))
         .collect();
     rows.sort_unstable_by_key(|(slot, _)| *slot);
-    Box::new(TypedColumn { rows, snapshot })
+    Box::new(TypedColumn {
+        rows,
+        snapshot,
+        nested_bytes,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{SnapshotColumn, TypedColumn};
+
+    #[test]
+    fn noncopy_column_delta_overlays_values_membership_and_independent_copy() {
+        let mut baseline = TypedColumn {
+            rows: vec![(0, vec![1_u8, 2]), (2, vec![3_u8])],
+            snapshot: Vec::clone,
+            nested_bytes: Vec::capacity,
+        };
+        let retained = baseline.clone_box();
+        let delta = TypedColumn {
+            rows: vec![(0, vec![9_u8]), (1, vec![7_u8, 8])],
+            snapshot: Vec::clone,
+            nested_bytes: Vec::capacity,
+        };
+        baseline.overlay(&delta, &[(0, 1), (1, 1), (2, 1)]);
+        assert_eq!(baseline.rows, [(0, vec![9]), (1, vec![7, 8])]);
+        let original = retained
+            .as_any()
+            .downcast_ref::<TypedColumn<Vec<u8>>>()
+            .expect("independent typed column");
+        assert_eq!(original.rows, [(0, vec![1, 2]), (2, vec![3])]);
+        assert!(baseline.reserved_bytes() >= 3);
+    }
 }

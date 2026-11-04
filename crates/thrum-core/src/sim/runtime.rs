@@ -18,10 +18,11 @@ use rayon::prelude::*;
 use crate::{Handle, StableId, WorldEpoch};
 
 use super::{
-    AccessMode, ComponentKey, ComponentRegistry, Schedule, ScheduleError, SnapshotRing, SystemId,
-    SystemSpec,
+    AccessMode, ComponentKey, ComponentRegistry, Schedule, ScheduleError, SnapshotRing,
+    StructuralChange, SystemId, SystemSpec,
     registered_world::{
         EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, WorldCapture,
+        WorldDelta,
     },
     transaction::{Edit, EditError, EditScratch},
 };
@@ -32,6 +33,17 @@ pub struct RuntimeCapture {
     world: WorldCapture,
     tick: u64,
     nonce: u64,
+    revision: u64,
+}
+
+/// Reusable changed-component and structural record for one committed tick.
+pub struct RuntimeDelta {
+    world: WorldDelta,
+    from: u64,
+    to: u64,
+    nonce: u64,
+    from_revision: u64,
+    to_revision: u64,
 }
 
 /// Worker selection for one deterministic fixed-tick candidate. Platform
@@ -69,9 +81,68 @@ impl Executor {
 }
 
 impl RuntimeCapture {
+    /// Whether a one-tick delta follows this exact committed endpoint.
+    pub fn accepts_delta(&self, delta: &RuntimeDelta) -> bool {
+        delta.nonce == self.nonce && delta.from == self.tick && delta.from_revision == self.revision
+    }
+
     /// Committed tick represented by this capture.
     pub fn tick(&self) -> u64 {
         self.tick
+    }
+
+    /// Retained full baseline storage including typed component columns.
+    pub fn reserved_bytes(&self) -> usize {
+        self.world.reserved_bytes()
+    }
+
+    /// Independently copy a registered baseline, including authored component values.
+    #[must_use]
+    pub fn clone_independent(&self) -> Self {
+        Self {
+            world: self.world.clone_independent(),
+            tick: self.tick,
+            nonce: self.nonce,
+            revision: self.revision,
+        }
+    }
+
+    /// Advance a full baseline with one contiguous delta from the same runtime.
+    ///
+    /// # Errors
+    ///
+    /// The delta belongs to another runtime or does not follow this capture.
+    ///
+    /// # Panics
+    ///
+    /// Only if an engine-produced delta contradicts its recorded slot order or schema.
+    pub fn advance(&mut self, delta: &RuntimeDelta) -> Result<(), RuntimeError> {
+        if !self.accepts_delta(delta) {
+            return Err(RuntimeError::WrongCapture);
+        }
+        self.world.advance(&delta.world);
+        self.tick = delta.to;
+        self.revision = delta.to_revision;
+        Ok(())
+    }
+}
+
+impl RuntimeDelta {
+    /// Whether this delta immediately follows another on the same branch.
+    pub fn follows(&self, previous: &Self) -> bool {
+        self.nonce == previous.nonce
+            && self.from == previous.to
+            && self.from_revision == previous.to_revision
+    }
+
+    /// Committed tick represented by this one-tick delta.
+    pub fn tick(&self) -> u64 {
+        self.to
+    }
+
+    /// Retained backing storage, including typed component columns.
+    pub fn reserved_bytes(&self) -> usize {
+        self.world.reserved_bytes()
     }
 }
 
@@ -88,6 +159,8 @@ pub enum RuntimeError {
     AlreadyStarted,
     /// This process exhausted unique runtime access-token generations.
     RuntimeExhausted,
+    /// No committed tick exists for a one-tick delta.
+    NoCommittedTick,
     /// The replay capture belongs to another runtime instance.
     WrongCapture,
 }
@@ -103,6 +176,8 @@ impl From<RegisteredWorldError> for RuntimeError {
 pub enum TickError<E> {
     /// The tick counter cannot advance without wrapping.
     TickExhausted,
+    /// The committed endpoint revision cannot advance without wrapping.
+    RevisionExhausted,
     /// Tick-zero seed membership must be published before ticking.
     BaselineRequired,
     /// All preallocated publication pages are leased.
@@ -118,12 +193,26 @@ pub enum TickError<E> {
 /// run only after complete candidate validation and must be infallible.
 pub trait TickGame<P> {
     /// Expected game-rule or input error.
-    type Error;
+    type Error: Send;
     /// Reusable game-owned candidate and query scratch, never committed state.
     type Candidate;
+    /// Private reusable output for one conflict-free parallel system callback.
+    type ParallelOutput: Default + Send;
 
     /// Reset reusable candidate work before the first registered callback.
     fn reset_candidate(&self, candidate: &mut Self::Candidate);
+
+    /// Clear one private parallel buffer before every callback, retaining capacity.
+    fn reset_parallel_output(&self, output: &mut Self::ParallelOutput);
+
+    /// Merge one completed private output in compiled system order.
+    fn merge_parallel(
+        &self,
+        system: SystemId,
+        output: &mut Self::ParallelOutput,
+        candidate: &mut Self::Candidate,
+        tick: u64,
+    );
 
     /// Typed edits prepared in reusable game-owned candidate storage. The
     /// engine validates the entire list before applying any of its members.
@@ -136,13 +225,22 @@ pub trait TickGame<P> {
     fn apply(&mut self, world: &WorldRead<'_>, tick: u64, candidate: &Self::Candidate);
 
     /// Copy one complete committed endpoint into an unleased reusable page.
-    fn capture(&mut self, world: &WorldRead<'_>, page: &mut P, first: bool, tick: u64);
+    fn capture(
+        &mut self,
+        world: &WorldRead<'_>,
+        candidate: &mut Self::Candidate,
+        events: &[StructuralChange],
+        page: &mut P,
+        first: bool,
+        tick: u64,
+        timeline: u64,
+    );
 }
 
 /// One game callback bound to its access declaration before schedule compile.
 pub struct RegisteredSystem<P, G: TickGame<P>> {
     spec: SystemSpec,
-    callback: SystemCallback<P, G>,
+    callback: Callback<P, G>,
 }
 
 type SystemCallback<P, G> = fn(
@@ -153,11 +251,54 @@ type SystemCallback<P, G> = fn(
     &mut <G as TickGame<P>>::Candidate,
 ) -> Result<(), <G as TickGame<P>>::Error>;
 
+type ParallelCallback<P, G> = fn(
+    &G,
+    &WorldRead<'_>,
+    Executor,
+    u64,
+    &mut <G as TickGame<P>>::ParallelOutput,
+) -> Result<(), <G as TickGame<P>>::Error>;
+
+enum Callback<P, G: TickGame<P>> {
+    Serial(SystemCallback<P, G>),
+    Parallel(ParallelCallback<P, G>),
+}
+
+struct BoundSystem<P, G: TickGame<P>> {
+    id: SystemId,
+    callback: Callback<P, G>,
+    output: G::ParallelOutput,
+    #[cfg(not(target_arch = "wasm32"))]
+    result: Option<Result<(), G::Error>>,
+}
+
 impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
     /// Bind one declared system to the game callback the engine will invoke.
     pub fn new(spec: SystemSpec, callback: SystemCallback<P, G>) -> Self {
-        Self { spec, callback }
+        Self {
+            spec,
+            callback: Callback::Serial(callback),
+        }
     }
+
+    /// Bind a conflict-free callback that writes only to its private output.
+    pub fn parallel(spec: SystemSpec, callback: ParallelCallback<P, G>) -> Self {
+        Self {
+            spec,
+            callback: Callback::Parallel(callback),
+        }
+    }
+}
+
+fn check_edit_system<C, E>(
+    edits: &[Edit<C>],
+    before: usize,
+    system: SystemId,
+) -> Result<(), TickError<E>> {
+    if edits.len() < before || edits[before..].iter().any(|edit| edit.system() != system) {
+        return Err(TickError::Edit(EditError::WrongSystem));
+    }
+    Ok(())
 }
 
 /// One engine-owned registered world, compiled schedule and leased page ring.
@@ -165,15 +306,88 @@ impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
 pub struct GameRuntime<P, G: TickGame<P>> {
     world: RegisteredWorld,
     schedule: Schedule,
-    callbacks: Vec<SystemCallback<P, G>>,
+    waves: Vec<Vec<BoundSystem<P, G>>>,
     pages: SnapshotRing<P>,
     tick: u64,
+    timeline: u64,
+    revision: u64,
+    next_revision: u64,
+    delta_from_revision: u64,
+    delta_ready: bool,
     executor: Executor,
     nonce: u64,
     edit_scratch: EditScratch,
+    structural_journal: Vec<StructuralChange>,
 }
 
 impl<P, G: TickGame<P>> GameRuntime<P, G> {
+    /// Whether a retained capture belongs to this exact runtime generation.
+    pub fn matches_capture(&self, capture: &RuntimeCapture) -> bool {
+        capture.nonce == self.nonce
+    }
+
+    /// Allocate an empty reusable delta for this registered schema.
+    pub fn new_delta(&self) -> RuntimeDelta {
+        RuntimeDelta {
+            world: self.world.empty_delta(),
+            from: 0,
+            to: 0,
+            nonce: self.nonce,
+            from_revision: 0,
+            to_revision: 0,
+        }
+    }
+
+    /// Fill a reusable delta immediately after its committed tick.
+    ///
+    /// # Errors
+    ///
+    /// No tick has committed, or the delta belongs to another runtime.
+    pub fn capture_delta_into(&self, delta: &mut RuntimeDelta) -> Result<(), RuntimeError> {
+        if delta.nonce != self.nonce {
+            return Err(RuntimeError::WrongCapture);
+        }
+        if !self.delta_ready {
+            return Err(RuntimeError::NoCommittedTick);
+        }
+        let from = self
+            .tick
+            .checked_sub(1)
+            .ok_or(RuntimeError::NoCommittedTick)?;
+        self.world
+            .capture_delta_into(&self.structural_journal, &mut delta.world);
+        delta.from = from;
+        delta.to = self.tick;
+        delta.from_revision = self.delta_from_revision;
+        delta.to_revision = self.revision;
+        Ok(())
+    }
+
+    /// Rebuild a complete endpoint from one baseline and contiguous deltas.
+    ///
+    /// # Errors
+    ///
+    /// A capture is foreign or the delta sequence has a gap.
+    ///
+    /// # Panics
+    ///
+    /// Only if an engine-produced delta contradicts its recorded slot order or schema.
+    pub fn restore_through(
+        &mut self,
+        base: &RuntimeCapture,
+        deltas: &[RuntimeDelta],
+        make_page: impl FnMut() -> P,
+    ) -> Result<(), RuntimeError> {
+        if base.nonce != self.nonce {
+            return Err(RuntimeError::WrongCapture);
+        }
+        let mut merged = base.clone_independent();
+        for delta in deltas {
+            merged.advance(delta)?;
+        }
+        self.restore(&merged, make_page)
+    }
+
     /// Capture registered components, identities, slot generations and free
     /// order after a complete committed tick. This is a cold replay path.
     pub fn capture(&self) -> RuntimeCapture {
@@ -181,6 +395,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             world: self.world.capture(),
             tick: self.tick,
             nonce: self.nonce,
+            revision: self.revision,
         }
     }
 
@@ -199,8 +414,17 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         if capture.nonce != self.nonce {
             return Err(RuntimeError::WrongCapture);
         }
+        let following_timeline = self
+            .timeline
+            .checked_add(1)
+            .ok_or(RuntimeError::RuntimeExhausted)?;
         self.world.restore(&capture.world)?;
         self.tick = capture.tick;
+        self.timeline = following_timeline;
+        self.revision = capture.revision;
+        self.delta_ready = false;
+        self.world.begin_tick();
+        self.structural_journal.clear();
         self.pages = SnapshotRing::new(make_page);
         Ok(())
     }
@@ -213,8 +437,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     ///
     /// # Panics
     ///
-    /// Panics only if a compiled system is absent from the registrations used
-    /// to build that same schedule.
+    /// Only if the compiled schedule refers to a registration absent from
+    /// its own validated input list.
+    ///
     pub fn new(
         epoch: WorldEpoch,
         capacity: usize,
@@ -227,16 +452,23 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             systems.iter().map(|system| system.spec.clone()).collect(),
         )
         .map_err(RuntimeError::Schedule)?;
-        let callbacks_by_id: HashMap<_, _> = systems
+        let mut callbacks_by_id: HashMap<_, _> = systems
             .into_iter()
             .map(|system| (system.spec.id, system.callback))
             .collect();
-        let callbacks = schedule
-            .order()
-            .map(|spec| {
-                *callbacks_by_id
-                    .get(&spec.id)
-                    .expect("compiled system came from bound registration")
+        let waves = schedule
+            .batches()
+            .map(|batch| {
+                batch
+                    .iter()
+                    .map(|id| BoundSystem {
+                        id: *id,
+                        callback: callbacks_by_id.remove(id).expect("compiled registration"),
+                        output: G::ParallelOutput::default(),
+                        #[cfg(not(target_arch = "wasm32"))]
+                        result: None,
+                    })
+                    .collect()
             })
             .collect();
         let component_count = registry.entries.len();
@@ -249,14 +481,20 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         Ok(Self {
             world,
             schedule,
-            callbacks,
+            waves,
             pages: SnapshotRing::new(make_page),
             tick: 0,
+            timeline: 0,
+            revision: 0,
+            next_revision: 1,
+            delta_from_revision: 0,
+            delta_ready: false,
             executor: Executor {
                 mode: ExecutionMode::Serial,
             },
             nonce,
             edit_scratch: EditScratch::new(capacity, component_count),
+            structural_journal: Vec::with_capacity(128),
         })
     }
 
@@ -381,10 +619,15 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         {
             return Err(RuntimeError::UndeclaredAccess);
         }
+        let component = self
+            .world
+            .component_index(ComponentKey::of::<T>())
+            .ok_or(RuntimeError::UndeclaredAccess)?;
         Ok(ReadPermit {
             marker: PhantomData,
             nonce: self.nonce,
             system,
+            component,
         })
     }
 
@@ -459,7 +702,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     ///
     /// Panics only if an unpublished ring has lost all four private pages or
     /// the game capture callback panics.
-    pub fn publish_initial(&mut self, game: &mut G) {
+    pub fn publish_initial(&mut self, game: &mut G, candidate: &mut G::Candidate) {
         if self.pages.latest().is_none() {
             let world = WorldRead {
                 world: &self.world,
@@ -467,7 +710,17 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                 system: None,
             };
             self.pages
-                .capture(|page, first| game.capture(&world, page, first, self.tick))
+                .capture(|page, first| {
+                    game.capture(
+                        &world,
+                        candidate,
+                        &[],
+                        page,
+                        first,
+                        self.tick,
+                        self.timeline,
+                    );
+                })
                 .expect("unpublished ring has a free page");
         }
     }
@@ -488,8 +741,15 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         &mut self,
         game: &mut G,
         candidate: &mut G::Candidate,
-    ) -> Result<u64, TickError<G::Error>> {
+    ) -> Result<u64, TickError<G::Error>>
+    where
+        G: Sync,
+    {
         let next = self.tick.checked_add(1).ok_or(TickError::TickExhausted)?;
+        let following_revision = self
+            .next_revision
+            .checked_add(1)
+            .ok_or(TickError::RevisionExhausted)?;
         if self.pages.latest().is_none() {
             return Err(TickError::BaselineRequired);
         }
@@ -497,38 +757,81 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             return Err(TickError::PublicationBusy);
         }
         game.reset_candidate(candidate);
-        let mut callback_index = 0;
-        self.schedule.run(|system| {
-            let before = game.edits(candidate).len();
-            let callback = self.callbacks[callback_index];
-            callback_index += 1;
-            callback(
-                game,
-                &WorldRead {
+        for wave in &mut self.waves {
+            #[cfg(not(target_arch = "wasm32"))]
+            if self.executor.mode == ExecutionMode::Rayon
+                && wave.len() > 1
+                && wave
+                    .iter()
+                    .all(|bound| matches!(&bound.callback, Callback::Parallel(_)))
+            {
+                let world = &self.world;
+                let nonce = self.nonce;
+                let executor = self.executor;
+                let game_ref: &G = game;
+                wave.par_iter_mut().for_each(|bound| {
+                    let Callback::Parallel(callback) = &bound.callback else {
+                        unreachable!("wave checked parallel")
+                    };
+                    game_ref.reset_parallel_output(&mut bound.output);
+                    bound.result = Some(callback(
+                        game_ref,
+                        &WorldRead {
+                            world,
+                            nonce,
+                            system: Some(bound.id),
+                        },
+                        executor,
+                        next,
+                        &mut bound.output,
+                    ));
+                });
+                for bound in wave {
+                    bound
+                        .result
+                        .take()
+                        .expect("callback ran")
+                        .map_err(TickError::Game)?;
+                    let before = game.edits(candidate).len();
+                    game.merge_parallel(bound.id, &mut bound.output, candidate, next);
+                    check_edit_system(game.edits(candidate), before, bound.id)?;
+                }
+                continue;
+            }
+            for bound in wave {
+                let before = game.edits(candidate).len();
+                let world = WorldRead {
                     world: &self.world,
                     nonce: self.nonce,
-                    system: Some(system.id),
-                },
-                self.executor,
-                next,
-                candidate,
-            )
-            .map_err(TickError::Game)?;
-            let edits = game.edits(candidate);
-            if edits.len() < before
-                || edits[before..]
-                    .iter()
-                    .any(|edit| edit.system() != system.id)
-            {
-                return Err(TickError::Edit(EditError::WrongSystem));
+                    system: Some(bound.id),
+                };
+                match &bound.callback {
+                    Callback::Serial(callback) => {
+                        callback(game, &world, self.executor, next, candidate)
+                    }
+                    Callback::Parallel(callback) => {
+                        game.reset_parallel_output(&mut bound.output);
+                        callback(game, &world, self.executor, next, &mut bound.output)
+                    }
+                }
+                .map_err(TickError::Game)?;
+                if matches!(&bound.callback, Callback::Parallel(_)) {
+                    game.merge_parallel(bound.id, &mut bound.output, candidate, next);
+                }
+                check_edit_system(game.edits(candidate), before, bound.id)?;
             }
-            Ok(())
-        })?;
+        }
         let edits = game.edits(candidate);
         self.edit_scratch
             .validate(&self.world, self.nonce, edits, candidate)
             .map_err(TickError::Edit)?;
-        self.edit_scratch.apply(&mut self.world, edits, candidate);
+        self.edit_scratch.apply(
+            &mut self.world,
+            edits,
+            candidate,
+            next,
+            &mut self.structural_journal,
+        );
         game.apply(
             &WorldRead {
                 world: &self.world,
@@ -539,13 +842,27 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             candidate,
         );
         self.tick = next;
+        self.delta_from_revision = self.revision;
+        self.revision = self.next_revision;
+        self.next_revision = following_revision;
+        self.delta_ready = true;
         let world = WorldRead {
             world: &self.world,
             nonce: self.nonce,
             system: None,
         };
         self.pages
-            .capture(|page, first| game.capture(&world, page, first, next))
+            .capture(|page, first| {
+                game.capture(
+                    &world,
+                    candidate,
+                    &self.structural_journal,
+                    page,
+                    first,
+                    next,
+                    self.timeline,
+                );
+            })
             .expect("capture reserved before candidate commit");
         Ok(next)
     }
@@ -599,6 +916,7 @@ pub struct ReadPermit<T: Send + Sync + 'static> {
     marker: PhantomData<T>,
     nonce: u64,
     system: SystemId,
+    component: usize,
 }
 
 /// Reusable storage-order read of two registered components.
@@ -618,6 +936,45 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> Read2<T, U> {
         assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
         assert!(world.system.is_none_or(|system| system == self.system));
         self.query.visit(world.world, visit);
+    }
+
+    /// Visit query rows with three registered change stamps and the structural
+    /// stamp. Permits are checked once before entering storage-order traversal.
+    ///
+    /// # Panics
+    ///
+    /// A query or permit belongs to another runtime or system callback.
+    pub fn visit_with_changes<
+        A: Send + Sync + 'static,
+        B: Send + Sync + 'static,
+        C: Send + Sync + 'static,
+    >(
+        &mut self,
+        world: &WorldRead<'_>,
+        permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
+        mut visit: impl FnMut(Handle, StableId, &T, &U, [u64; 4]),
+    ) {
+        assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
+        assert!(world.system.is_none_or(|system| system == self.system));
+        for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
+            assert_eq!(
+                permit, world.nonce,
+                "change permit belongs to another runtime"
+            );
+        }
+        assert!(world.system.is_none_or(|system| {
+            system == permits.0.system && system == permits.1.system && system == permits.2.system
+        }));
+        let components = [
+            permits.0.component,
+            permits.1.component,
+            permits.2.component,
+        ];
+        self.query
+            .visit_rows(world.world, |handle, id, a, b, slot| {
+                let stamps = world.world.change_ticks3_at(slot, components);
+                visit(handle, id, a, b, stamps);
+            });
     }
 
     /// Visit matching entities in stable physical-slot order. Use this for
