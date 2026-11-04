@@ -147,6 +147,26 @@ fn ten_thousand_running_game_ticks_reuse_allocations() {
 }
 
 #[test]
+fn warmed_spawn_churn_reuses_tick_storage() {
+    let mut sim = Simulation::new(WorldEpoch(18), config(2)).expect("game");
+    let mut old = sim.seed(entity(1, 1.0)).expect("mover");
+    for next_id in 2..22 {
+        sim.step(&[Command::Despawn(old), Command::Spawn(entity(next_id, 1.0))])
+            .expect("warm churn");
+        old = sim.handle(StableId(next_id)).expect("new handle");
+    }
+    ALLOCATIONS.with(|count| count.set(0));
+    COUNTING.with(|active| active.set(true));
+    for next_id in 22..122 {
+        sim.step(&[Command::Despawn(old), Command::Spawn(entity(next_id, 1.0))])
+            .expect("steady churn");
+        old = sim.handle(StableId(next_id)).expect("new handle");
+    }
+    COUNTING.with(|active| active.set(false));
+    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+}
+
+#[test]
 fn capture_after_churn_replays_input_and_structure_to_the_same_endpoint() {
     let mut sim = Simulation::new(WorldEpoch(12), config(3)).expect("game");
     let owned = Ownership {

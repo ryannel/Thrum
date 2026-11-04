@@ -7,12 +7,13 @@ mod runtime;
 mod schedule;
 mod snapshot;
 mod snapshot_ring;
+mod transaction;
 
 pub use input::{ControlBinding, FrameError, InputFrame};
 pub use registered_world::{EntityWriter, RegisteredWorldError};
 pub use runtime::{
-    ExecutionMode, Executor, GameRuntime, Read2, ReadPermit, RuntimeCapture, RuntimeError,
-    StructuralPermit, TickError, TickGame, WorldCommit, WorldRead, Write1, WritePermit,
+    ExecutionMode, Executor, GameRuntime, Read2, ReadPermit, RegisteredSystem, RuntimeCapture,
+    RuntimeError, StructuralPermit, TickError, TickGame, WorldRead, WritePermit,
 };
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
@@ -20,3 +21,4 @@ pub use schedule::{
 };
 pub use snapshot::{SnapshotId, StructuralChange};
 pub use snapshot_ring::{PublicationBusy, SnapshotRing};
+pub use transaction::{Edit, EditError};

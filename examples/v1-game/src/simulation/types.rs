@@ -123,6 +123,8 @@ pub enum SimError {
     PublicationBusy,
     /// Replay capture belongs to a different authority or schema.
     InvalidSnapshot,
+    /// Engine preflight rejected a game-authored typed edit batch.
+    InvalidEdit,
 }
 
 /// Per-slot V1 change stamps. Engine publication leases own their resulting

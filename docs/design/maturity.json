@@ -61,8 +61,8 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "partial_running_game_owned_schema_rules_pages_registered_hecs_serial_rayon_replay_and_column_capture",
-      "functional_validation": "running_game_10k_four_peer_serial_rayon_endpoint_equality_after_refusal_churn_and_restore_zero_serial_tick_allocations_explicit_metal_host_passed_review_blockers_open",
+      "implementation": "partial_running_game_owned_schema_rules_pages_registered_hecs_atomic_typed_edits_bound_callbacks_serial_rayon_replay_and_column_capture",
+      "functional_validation": "running_game_10k_four_peer_serial_rayon_endpoint_equality_after_refusal_churn_and_restore_zero_serial_tick_and_spawn_churn_allocations_prior_metal_host_passed_review_blockers_open",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
         "mac": "Apple_M3_Max_game_tick_and_full_capture_restore_diagnostics_not_V1_device_budget_qualified",
@@ -71,8 +71,8 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max complete game tick plus page medians: serial 76.87/774.8 us and Rayon 198.2/1062 us at 10k/100k after 60 warmup ticks. Full capture 93.81/951.1 us, 1.41/14.08 MB; restore 1.531/19.27 ms. No rolling-capture or V1 device qualification.",
-      "scope": "The running V1 game owns all six schema/rule types, inputs and pages. Generic hecs storage, checked identity, token binding, four-page leases and explicit serial/Rayon executor run through one game. A review found generic partial-commit risk, callback registration not yet bound to schedule execution and full captures unsuitable for rolling prediction; G2 remains open.",
+      "diagnostic_measurement": "Apple M3 Max complete game tick plus page medians after typed edits: serial 127/1288 us and Rayon 311/1562 us at 10k/100k after 60 warmup ticks. Full capture earlier 93.81/951.1 us, 1.41/14.08 MB; restore 1.531/19.27 ms. No rolling-capture or V1 device qualification.",
+      "scope": "The running V1 game owns all six schema/rule types, inputs and pages. Generic hecs storage, checked identity, stage-scoped tokens, bound callbacks, atomic typed edits and four-page leases run through one game. Parallel schedule waves, engine-owned change ticks, efficient rolling captures, order-sensitive replay proof and post-transaction Metal check remain; G2 stays open.",
       "evidence": [
         "../evidence/v1-workload/G2-STORAGE-COMPARISON-2026-11-04.md",
         "../evidence/v1-workload/G2-SPLIT-QUERY-2026-11-04.md",

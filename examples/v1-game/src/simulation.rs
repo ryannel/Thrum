@@ -9,8 +9,9 @@ use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
-        ExecutionMode, FrameError, GameRuntime, InputFrame, RegisteredWorldError, RuntimeCapture,
-        RuntimeError, Stage, SystemId, SystemSpec, TickError,
+        ExecutionMode, Executor, FrameError, GameRuntime, InputFrame, RegisteredSystem,
+        RegisteredWorldError, RuntimeCapture, RuntimeError, Stage, SystemId, SystemSpec, TickError,
+        WorldRead,
     },
 };
 
@@ -29,6 +30,9 @@ const RESOLVE: SystemId = SystemId(2);
 const PUBLISH: SystemId = SystemId(3);
 const STRUCTURE: u64 = 7;
 
+type SystemCallback =
+    fn(&Rules, &WorldRead<'_>, Executor, u64, &mut Candidate) -> Result<(), SimError>;
+
 fn component(key: ComponentKey, mode: AccessMode) -> Access {
     Access {
         key: AccessKey::Component(key),
@@ -39,7 +43,7 @@ fn component(key: ComponentKey, mode: AccessMode) -> Access {
 fn setup(
     epoch: WorldEpoch,
     config: SimConfig,
-) -> Result<(GameRuntime<Page>, Rules, Candidate), SimError> {
+) -> Result<(GameRuntime<Page, Rules>, Rules, Candidate), SimError> {
     use AccessMode::{Read, Write};
     let mut registry = ComponentRegistry::default();
     let ownership = registry
@@ -85,9 +89,14 @@ fn setup(
                 component(position, Write),
                 component(velocity, Write),
                 component(health, Write),
+                component(ownership, Read),
                 Access {
                     key: AccessKey::External(1),
                     mode: Read,
+                },
+                Access {
+                    key: AccessKey::External(STRUCTURE),
+                    mode: Write,
                 },
             ],
             after: vec![],
@@ -101,14 +110,24 @@ fn setup(
                 component(health, Write),
                 component(ownership, Read),
                 component(visual, Read),
-                Access {
-                    key: AccessKey::External(STRUCTURE),
-                    mode: Write,
-                },
             ],
             after: vec![],
         },
     ];
+    let callbacks: [SystemCallback; 4] = [
+        Rules::input,
+        |game, world, executor, tick, candidate| {
+            game.simulate(world, executor, tick, candidate);
+            Ok(())
+        },
+        Rules::resolve,
+        |_, _, _, _, _| Ok(()),
+    ];
+    let systems = systems
+        .into_iter()
+        .zip(callbacks)
+        .map(|(spec, callback)| RegisteredSystem::new(spec, callback))
+        .collect();
     let runtime = GameRuntime::new(epoch, config.entity_capacity, registry, systems, || {
         Page::new(epoch, config.entity_capacity)
     })
@@ -126,15 +145,20 @@ fn setup(
         committed_inputs: Vec::with_capacity(config.peer_capacity),
         changes: vec![ChangeTicks::default(); config.entity_capacity],
         changed_positions: 0,
-        position_write: runtime.write1::<Position>(PUBLISH).map_err(map_runtime)?,
+        position_write: runtime
+            .write_permit::<Position>(RESOLVE)
+            .map_err(map_runtime)?,
+        resolve_position_read: runtime
+            .read_permit::<Position>(RESOLVE)
+            .map_err(map_runtime)?,
         velocity_write: runtime
-            .write_permit::<Velocity>(PUBLISH)
+            .write_permit::<Velocity>(RESOLVE)
             .map_err(map_runtime)?,
         health_write: runtime
-            .write_permit::<Health>(PUBLISH)
+            .write_permit::<Health>(RESOLVE)
             .map_err(map_runtime)?,
         structure: runtime
-            .structural_permit(PUBLISH, STRUCTURE)
+            .structural_permit(RESOLVE, STRUCTURE)
             .map_err(map_runtime)?,
         capture_query: runtime
             .read2::<Position, Health>(PUBLISH)
@@ -147,6 +171,16 @@ fn setup(
             .map_err(map_runtime)?,
         health_read: runtime
             .read_permit::<Health>(PUBLISH)
+            .map_err(map_runtime)?,
+        input_health_read: runtime.read_permit::<Health>(INPUT).map_err(map_runtime)?,
+        resolve_health_read: runtime
+            .read_permit::<Health>(RESOLVE)
+            .map_err(map_runtime)?,
+        resolve_velocity_read: runtime
+            .read_permit::<Velocity>(RESOLVE)
+            .map_err(map_runtime)?,
+        resolve_ownership_read: runtime
+            .read_permit::<Ownership>(RESOLVE)
             .map_err(map_runtime)?,
         ownership_read: runtime
             .read_permit::<Ownership>(PUBLISH)
@@ -175,7 +209,7 @@ fn map_runtime(error: RuntimeError) -> SimError {
 
 /// One V1 game world over the engine's generic checked authority.
 pub struct Simulation {
-    runtime: GameRuntime<Page>,
+    runtime: GameRuntime<Page, Rules>,
     rules: Rules,
     candidate: Candidate,
 }
@@ -506,6 +540,7 @@ impl Simulation {
                     SimError::PublicationBusy
                 }
                 TickError::Game(error) => error,
+                TickError::Edit(_) => SimError::InvalidEdit,
             })?;
         Ok(TickOutcome {
             tick,
