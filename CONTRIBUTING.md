@@ -15,8 +15,8 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
 This is a portable library compile check, not a browser runtime/rendering test. The GitHub Actions
-workflow describes Linux, macOS and Windows checks, plus Wasm compilation; a configured job is not
-evidence it has run.
+workflow is manual-only by owner decision; it describes Linux, macOS and Windows checks, plus Wasm
+compilation. Run `./dev check` locally before committing. A configured job is not evidence it has run.
 On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets
 `aarch64-apple-ios`, `aarch64-apple-ios-sim` and `aarch64-linux-android` installed with `rustup target add --toolchain 1.99.1`.
 It compiles only `thrum-core`; app packages, native activity/UI, devices and lifecycle remain separate checks.
