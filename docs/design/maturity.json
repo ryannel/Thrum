@@ -5,7 +5,7 @@
   "contract_revision": "C4",
   "scope_note": "Historical capability entries record implemented and measured scope, not current work priority. The V1 execution plan below supersedes old next-package prose. No complete simulation runtime, renderer, real transport or named-device performance is qualified.",
   "execution_plan": {
-    "milestone": "V1: one 10k-entity game with 1k–2k moving, lit and hot-reloaded on macOS, Chrome WebGPU and iPhone; then four conditioned peers with prediction",
+    "milestone": "V1: one 10k-entity game with 1k\u20132k moving, lit and hot-reloaded on macOS, Chrome WebGPU and iPhone; then four conditioned peers with prediction",
     "active": [
       "A3 combined frame job plan, worker extraction and owned packet lifetime",
       "M2 lit renderer surface and device qualification"
@@ -38,7 +38,7 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max local release diagnostic, selected hecs 0.11.2 private backend: 10k entities / 1.5k moving, serial tick median 51.83 µs, typed visit median 51.93 µs, four full snapshots median 222.8 µs. Zero scoped allocations after representative churn and snapshot warmup. Earlier provisional SoA tick median 20.83 µs. These are not whole-engine or V1 device budgets.",
+      "diagnostic_measurement": "Apple M3 Max local release diagnostic, selected hecs 0.11.2 private backend: 10k entities / 1.5k moving, serial tick median 51.83 \u00b5s, typed visit median 51.93 \u00b5s, four full snapshots median 222.8 \u00b5s. Zero scoped allocations after representative churn and snapshot warmup. Earlier provisional SoA tick median 20.83 \u00b5s. These are not whole-engine or V1 device budgets.",
       "evidence": [
         "../evidence/v1-workload/A1-SIM-2026-11-03.md",
         "../evidence/v1-workload/A1-STORAGE-SPIKE-2026-11-03.md",
@@ -144,7 +144,7 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max Metal HDR/display, 10k hecs entities / 1.5k moving, 640x360 offscreen: one serial tick 46.0–54.3 us and sim visit plus extract 203.8–312.5 us across two initial process runs; 32 warmed samples per run gave CPU encode medians 2.08–3.83 us, forward GPU medians 0.230–0.244 ms with p95 3.74–3.82 ms, tone GPU medians 0.112–0.135 ms with p95 2.32–2.39 ms. Divan isolated extraction median 99.70 us; zero scoped extraction allocations after two-frame warmup. A later sparse prepared-table update changed 20,963 GPU pixels with one 288 KB queue write and took 183, 239 and 400 us CPU in three isolated runs. The consumer-specific visual page captured 10k rows in 32.52 us median and added 1.44 MB logical three-page payload; a separate assembled Metal run measured 1.373 ms median with broad tails and no controlled frame-time delta. No device frame-budget or GPU-upload-allocation claim.",
+      "diagnostic_measurement": "Apple M3 Max Metal HDR/display, 10k hecs entities / 1.5k moving, 640x360 offscreen: one serial tick 46.0\u201354.3 us and sim visit plus extract 203.8\u2013312.5 us across two initial process runs; 32 warmed samples per run gave CPU encode medians 2.08\u20133.83 us, forward GPU medians 0.230\u20130.244 ms with p95 3.74\u20133.82 ms, tone GPU medians 0.112\u20130.135 ms with p95 2.32\u20132.39 ms. Divan isolated extraction median 99.70 us; zero scoped extraction allocations after two-frame warmup. A later sparse prepared-table update changed 20,963 GPU pixels with one 288 KB queue write and took 183, 239 and 400 us CPU in three isolated runs. The consumer-specific visual page captured 10k rows in 32.52 us median and added 1.44 MB logical three-page payload; a separate assembled Metal run measured 1.373 ms median with broad tails and no controlled frame-time delta. No device frame-budget or GPU-upload-allocation claim.",
       "evidence": [
         "../evidence/render/A2-SIM-RENDER-2026-11-04.md",
         "../evidence/render/A2-LIVE-UPLOAD-2026-11-04.md",
@@ -842,20 +842,20 @@
       },
       "i2a_native_owner_local_cost": {
         "evidence": "../evidence/i2a/SOURCE-OWNER-LOCAL-COST-2026-11-03.md",
-        "scope": "Three local optimized runs each time ten public three-file accepted admissions, pin/scene-copy/releases and fresh owner opens after ten edits with the cooperative lock and indexed selected-head audit. Three further runs time one 12 MiB public admission with an A lease live and a pinned B copy. A coordinated existing A reader waits roughly 87–89 ms behind B's large admission in three local runs. The record reports timings and post-admission SQLite lengths; it does not isolate lock syscall or calibrated mutex overhead, representative reader tails, transient allocated-block peak, RSS, cook/compiler path or device performance."
+        "scope": "Three local optimized runs each time ten public three-file accepted admissions, pin/scene-copy/releases and fresh owner opens after ten edits with the cooperative lock and indexed selected-head audit. Three further runs time one 12 MiB public admission with an A lease live and a pinned B copy. A coordinated existing A reader waits roughly 87\u201389 ms behind B's large admission in three local runs. The record reports timings and post-admission SQLite lengths; it does not isolate lock syscall or calibrated mutex overhead, representative reader tails, transient allocated-block peak, RSS, cook/compiler path or device performance."
       },
       "i2a_phased_accepted_admission": {
         "evidence": "../evidence/i2a/SOURCE-PHASED-ACCEPTED-ADMISSION-2026-11-03.md",
-        "scope": "Accepted public admission now holds one admission permit but releases the SQLite-core mutex between completed large-blob chunks and tiny-file batches and while reading/hashing staged bytes. An A lease reads exact bytes after B's first chunk while A remains selected; the phased path passes a precommit process kill, live-lease post-sync final-COMMIT fault, workspace gate and opt-in admitted A/B build. Three local 12 MiB contention runs sampled ten A reads each, with observed maximum copy time 23.477–27.672 ms and B wall 88.942–94.938 ms, versus a separate serialized-baseline reader wait 85.272–90.423 ms. Timers differ and do not prove writer throughput. A later stored-blob verification split passed corruption/refusal/retry and three local 64 MiB contention samples: observed maximum old-pin copy time 16.503–18.444 ms versus 51.889–52.995 ms before the split, with differing B wall times and sample counts. Representative tails, starvation, maximum-profile larger source, final reference-closure hold time, allocations/RSS, sustained WAL pressure, physical peaks and whole source-to-build performance remain open. Three isolated synthetic 100,000-entry manifest-staging runs sampled 31–35 old-pin copies with observed maxima 11.306–12.143 ms and staging wall 95.352–107.085 ms; this does not qualify final publication or full candidate cost. A separate 100,000-reference, 256-distinct-blob final-closure probe observed 38.828–39.909 ms A reader wait and 38.783–39.859 ms final transaction in three runs; representative tails remain unqualified. Three later 100,000-distinct-blob runs measured 97.171–117.654 ms reader wait and 97.122–117.581 ms final closure transaction, identifying the largest measured core hold. A focused 40 MiB reader-blocked WAL probe published eight distinct 4 MiB edits, deferred the next with A readable and no outcome, then published the exact retry after drain; its observed WAL lengths are not physical peaks or a worst-case bound. Three fresh-process 64 MiB admission runs measured 20.742–20.857 MB whole-process peak RSS, with old-pin copy maxima 11.453–17.337 ms; filesystem cache, allocation count and maximum-profile pressure remain open."
+        "scope": "Accepted public admission now holds one admission permit but releases the SQLite-core mutex between completed large-blob chunks and tiny-file batches and while reading/hashing staged bytes. An A lease reads exact bytes after B's first chunk while A remains selected; the phased path passes a precommit process kill, live-lease post-sync final-COMMIT fault, workspace gate and opt-in admitted A/B build. Three local 12 MiB contention runs sampled ten A reads each, with observed maximum copy time 23.477\u201327.672 ms and B wall 88.942\u201394.938 ms, versus a separate serialized-baseline reader wait 85.272\u201390.423 ms. Timers differ and do not prove writer throughput. A later stored-blob verification split passed corruption/refusal/retry and three local 64 MiB contention samples: observed maximum old-pin copy time 16.503\u201318.444 ms versus 51.889\u201352.995 ms before the split, with differing B wall times and sample counts. Representative tails, starvation, maximum-profile larger source, final reference-closure hold time, allocations/RSS, sustained WAL pressure, physical peaks and whole source-to-build performance remain open. Three isolated synthetic 100,000-entry manifest-staging runs sampled 31\u201335 old-pin copies with observed maxima 11.306\u201312.143 ms and staging wall 95.352\u2013107.085 ms; this does not qualify final publication or full candidate cost. A separate 100,000-reference, 256-distinct-blob final-closure probe observed 38.828\u201339.909 ms A reader wait and 38.783\u201339.859 ms final transaction in three runs; representative tails remain unqualified. Three later 100,000-distinct-blob runs measured 97.171\u2013117.654 ms reader wait and 97.122\u2013117.581 ms final closure transaction, identifying the largest measured core hold. A focused 40 MiB reader-blocked WAL probe published eight distinct 4 MiB edits, deferred the next with A readable and no outcome, then published the exact retry after drain; its observed WAL lengths are not physical peaks or a worst-case bound. Three fresh-process 64 MiB admission runs measured 20.742\u201320.857 MB whole-process peak RSS, with old-pin copy maxima 11.453\u201317.337 ms; filesystem cache, allocation count and maximum-profile pressure remain open."
       },
       "i2a_closure_batch_prototype": {
         "evidence": "../evidence/i2a/SOURCE-CLOSURE-BATCH-PROTOTYPE-2026-11-03.md",
-        "scope": "Test-only 128-pair VALUES closure probe retains the final IMMEDIATE root/outcome transaction and exact sorted/deduplicated hash-length pairs. Three 100,000-reference, 256-distinct-blob local runs measured 4.411–5.030 ms final hold plus 2.326–2.830 ms preparation, versus about 39–41 ms per-file. Three 100,000-distinct-blob runs measured 102.356–104.846 ms hold plus 3.519–3.969 ms preparation, overlapping the 97.122–117.581 ms per-file range. This is rejected as the general production solution; old-pin progress during large distinct closure, representative tails and full candidate cost remain open."
+        "scope": "Test-only 128-pair VALUES closure probe retains the final IMMEDIATE root/outcome transaction and exact sorted/deduplicated hash-length pairs. Three 100,000-reference, 256-distinct-blob local runs measured 4.411\u20135.030 ms final hold plus 2.326\u20132.830 ms preparation, versus about 39\u201341 ms per-file. Three 100,000-distinct-blob runs measured 102.356\u2013104.846 ms hold plus 3.519\u20133.969 ms preparation, overlapping the 97.122\u2013117.581 ms per-file range. This is rejected as the general production solution; old-pin progress during large distinct closure, representative tails and full candidate cost remain open."
       },
       "i2a_separate_pinned_reader": {
         "evidence": "../evidence/i2a/SOURCE-READ-CONNECTION-2026-11-03.md",
         "functional_validation": "A verified A pin reads during B's final closure transaction; a waiting A read refuses after an injected post-sync uncertain COMMIT; an explicit checkpoint completes during A's consumer output; existing public admission, fault, kill, blocked-WAL and reopen tests pass",
-        "performance_validation": "Three local 100,000-distinct-blob closure runs copied A in 0.213–0.283 ms while B's exact final transaction took 110.659–125.314 ms. Three fresh-process 64 MiB public admission runs sampled A-copy maxima of 3.254–4.597 ms, writer wall 310.898–322.490 ms and whole-process peak RSS 22,151,168–22,347,776 bytes. Ordinary 12 MiB pinned copies took 7.924–8.309 ms. Four continuous A pins completed 32,849–36,491 verified copies while a 64 MiB B published in 330.624–346.059 ms across three local runs. These are local synthetic samples, not representative tails or attributed overhead.",
+        "performance_validation": "Three local 100,000-distinct-blob closure runs copied A in 0.213\u20130.283 ms while B's exact final transaction took 110.659\u2013125.314 ms. Three fresh-process 64 MiB public admission runs sampled A-copy maxima of 3.254\u20134.597 ms, writer wall 310.898\u2013322.490 ms and whole-process peak RSS 22,151,168\u201322,347,776 bytes. Ordinary 12 MiB pinned copies took 7.924\u20138.309 ms. Four continuous A pins completed 32,849\u201336,491 verified copies while a 64 MiB B published in 330.624\u2013346.059 ms across three local runs. These are local synthetic samples, not representative tails or attributed overhead.",
         "scope": "One read-only SQLite connection per accepted-source owner lets existing pins query immutable A blobs while B stages and checks exact final closure. A shared/exclusive publication gate drains short reads before root/outcome writes and installs quarantine before releasing an uncertain COMMIT. Pin writes, root authority and checkpoints remain on the writer. The reader drops first and both handles disable close-time checkpointing. One sustained externally blocked-WAL case recovers after drain. Continuous-reader checkpoint pressure, portable gate fairness, allocation count, complete source-to-build latency, power-loss and other-platform behavior remain open."
       },
       "i2a_bounded_partial_blob_retry": {
@@ -876,7 +876,7 @@
         "evidence": "../evidence/i2a/SOURCE-PROFILE-CATALOG-2026-11-03.md",
         "implementation": "read_only_owner_backed_capacity_table_and_initial_typed_limit_details",
         "functional_validation": "Inventory distinguishes early-stop lower bounds from exact file lengths; manifest file bounds and accepted canonical-manifest bytes return typed dimensions. Project record/schema/entry arrays refuse before decoding an extra value and return the specific dimension; candidate required-reference overflow reports the processed lower bound. Generic strict JSON reports exact record bytes and lower-bound node/depth observations. Direct schema/history parsers report exact bytes and excess field/version value tokens; malformed tokens stay syntax refusals, and registry/store wrappers preserve typed detail. Direct game parsing reports exact bytes and total/optional field counts, with a passing 256-field boundary and typed 257th key. Existing source revision, accepted root/outcome and F4 consumer tests remain in the repository gate.",
-        "performance_validation": "The catalogue is a static slice with no allocation or I/O. Three exploratory optimized million-value dense-array parser runs took 9.42–9.71 ms before generic JSON typed details and 9.50–10.03 ms afterward on this host; no representative throughput, tail, RSS, combined parser peak or device measurement is claimed.",
+        "performance_validation": "The catalogue is a static slice with no allocation or I/O. Three exploratory optimized million-value dense-array parser runs took 9.42\u20139.71 ms before generic JSON typed details and 9.50\u201310.03 ms afterward on this host; no representative throughput, tail, RSS, combined parser peak or device measurement is claimed.",
         "scope": "Publishes distinct first F3 capacity units/scopes without entering source or product hashes. Schema symbol/text bounds, remaining game opaque limits and authored-environment parser-wide typed propagation, full C12 diagnostic envelopes, simultaneous-maximum qualification, wider profiles and F4 target-support reporting remain open."
       },
       "i2a_stage_space_pressure_detail": {
@@ -1546,7 +1546,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
+        "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Action/context schemas and exact touch/controller/IME adapters."
@@ -1756,7 +1756,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
+        "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Event/action semantics, rule graph/scripting choice, sequence interruption and game policies.",
@@ -1997,7 +1997,7 @@
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "current_design_sha256": "cb55fd1d89f489ce6c4367e5af4e8862a81bab882b7860bdda71f290280719b0",
-      "current_design_delta": "C4 source/run consumers and R0 fixed SDR/spatial display contract selected on paper. The pinned FXAA HLSL reference and isolated WGSL port matched RGB exactly on 1,978,368 selected Metal pixels. The unchanged shader is retained as a notice-carrying standalone implementation input with a fresh independent regression. Three serial-completion 720p isolated timing runs were valid; a later 1080p ablation isolated invalid same-submission counter resolves and obtained 432/432 valid delayed-resolve pairs across three processes, with 144–146 µs GPU stage medians. Native command-buffer span, admitted F4/V1/V4 graph promotion, ordinary moving-game visual acceptance and full runtime/device cost remain open. Prior reviewed hash retained.",
+      "current_design_delta": "C4 source/run consumers and R0 fixed SDR/spatial display contract selected on paper. The pinned FXAA HLSL reference and isolated WGSL port matched RGB exactly on 1,978,368 selected Metal pixels. The unchanged shader is retained as a notice-carrying standalone implementation input with a fresh independent regression. Three serial-completion 720p isolated timing runs were valid; a later 1080p ablation isolated invalid same-submission counter resolves and obtained 432/432 valid delayed-resolve pairs across three processes, with 144\u2013146 \u00b5s GPU stage medians. Native command-buffer span, admitted F4/V1/V4 graph promotion, ordinary moving-game visual acceptance and full runtime/device cost remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -2601,7 +2601,7 @@
         "status": "not_inventoried"
       },
       "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
-      "current_design_sha256": "b629730082481a90c607ddcee876bac32c3070ddf01b45644382a3040c06c611",
+      "current_design_sha256": "2a58895e15b6df789e8ee0d4375f81b2f7f81eb3ae678cbbf0aab71e6cf14b70",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing, finite pre-submission payload queue and ordinary sent ledger are implemented; the ordinary peer now preflights joint queued-plus-sent 256-result/128-event identity credit. Event-bearing replica groups still refuse. A test-only complete-partition W1 capture drives four peer-owned queues through nine changed ticks with one slow ACK. Production projection, unified baseline/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2611,7 +2611,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
+        "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
       },
       "initial_specification_stage": "specified_with_outbound_construction_gap",
       "prior_remaining_detailed_design": "The initial finite four-player WSS protocol still needs exact outbound mandatory burst and multi-group replica admission. Datagram/streamed-server/full-physics prediction and online-service extensions require separate specifications before their claims.",
@@ -2771,7 +2771,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "7bc52bd2e6a847fa0c06df8bd9dc898de2c958d6ca8ed58d8e54bfc5eae1acf2",
+  "contract_sha256": "c50de8ee0a7456b217cceb77e84b2abe153bcecb5c703f6ef288b2729f00e126",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3516,13 +3516,13 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
     "contract_revision": "C4",
-    "contract_sha256": "7bc52bd2e6a847fa0c06df8bd9dc898de2c958d6ca8ed58d8e54bfc5eae1acf2",
+    "contract_sha256": "c50de8ee0a7456b217cceb77e84b2abe153bcecb5c703f6ef288b2729f00e126",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
-      "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1"
+      "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
     },
     "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
     "closed_architectural_findings": [
@@ -3897,7 +3897,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "3f14950f81c5b7e5bd0c64ccfb66612da40ffb812c81b0bb79bf01b26ef38117",
-      "CONTRACTS.md": "7bc52bd2e6a847fa0c06df8bd9dc898de2c958d6ca8ed58d8e54bfc5eae1acf2",
+      "CONTRACTS.md": "c50de8ee0a7456b217cceb77e84b2abe153bcecb5c703f6ef288b2729f00e126",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -3908,7 +3908,7 @@
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
       "MATURITY.md": "9ed4aff909e59d256c8cef5f1eee7a056e84140a43a4ff1eda66f1d018abbdbc",
-      "NETWORK-SPEC.md": "1d9d64b0f58ad7b4193b9aa9f96595f1d59ab9ca809a535e05455ab54277ebe1",
+      "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
@@ -3924,7 +3924,7 @@
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "698976ba423fbeee448a6b91b24806b55203e6aab2c7adfca0d8d6fc1c0f649b",
-      "modules/NETWORKING.md": "b629730082481a90c607ddcee876bac32c3070ddf01b45644382a3040c06c611",
+      "modules/NETWORKING.md": "2a58895e15b6df789e8ee0d4375f81b2f7f81eb3ae678cbbf0aab71e6cf14b70",
       "modules/PLATFORM-RUNTIME.md": "96dcffee70ba8aeefd82142bf93196303fb51e48ff4544d6a82ecbbdcbe4ab74",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "cb55fd1d89f489ce6c4367e5af4e8862a81bab882b7860bdda71f290280719b0",
