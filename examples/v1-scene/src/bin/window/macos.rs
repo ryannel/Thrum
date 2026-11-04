@@ -121,6 +121,7 @@ struct App {
     surface_faults: usize,
     callback_walls: Vec<Duration>,
     samples: Vec<FrameSample>,
+    profiler_title_at: Duration,
     adapter_name: String,
     error: Option<String>,
 }
@@ -148,6 +149,7 @@ impl App {
             surface_faults: 0,
             callback_walls: Vec::with_capacity(FRAMES + 32),
             samples: Vec::with_capacity(FRAMES),
+            profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
         }
@@ -283,6 +285,12 @@ impl App {
         while let Some(sample) = host.poll_completed()? {
             self.samples.push(sample);
         }
+        if now.saturating_sub(self.profiler_title_at) >= Duration::from_millis(500)
+            && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
+        {
+            window.set_title(&profiler_title(sample));
+            self.profiler_title_at = now;
+        }
         self.callback_walls.push(callback_start.elapsed());
         if self.occluded > 120 || self.callbacks > FRAMES * 4 {
             return Err(format!(
@@ -377,6 +385,32 @@ impl App {
             encode.1,
         ))
     }
+}
+
+fn profiler_title(sample: &FrameSample) -> String {
+    let gpu = sample.gpu_pass_ns.map_or_else(
+        || "GPU timestamps unavailable".to_owned(),
+        |passes| {
+            let present = sample.gpu_present_ns.unwrap_or(0.0) / 1e6;
+            format!(
+                "GPU shadow near/far {:.3}/{:.3}, forward {:.3}, display {:.3}, present {:.3} ms",
+                passes[0] / 1e6,
+                passes[1] / 1e6,
+                passes[2] / 1e6,
+                passes[3] / 1e6,
+                present,
+            )
+        },
+    );
+    format!(
+        "Thrum V1 | tick {} ({} updates) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        sample.tick,
+        sample.completed_ticks,
+        sample.tick_cpu.as_secs_f64() * 1e3,
+        sample.extract_cpu.as_secs_f64() * 1e3,
+        sample.upload_cpu.as_secs_f64() * 1e3,
+        sample.encode_cpu.as_secs_f64() * 1e3,
+    )
 }
 
 fn percentile<T>(items: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
