@@ -1,6 +1,6 @@
 use std::num::NonZeroU32;
 
-use crate::{ActorId, Handle, PeerId, StableId, WorldEpoch};
+use crate::{ActorId, Handle, Origin, PeerId, StableId, WorldEpoch};
 
 use super::{
     Access, AccessKey, AccessMode, ComponentKind, FrameError, InputFrame, Schedule, SimAction,
@@ -172,13 +172,16 @@ impl SimulationSnapshot {
 
 /// Complete tick outcome; no consumer can observe a partial stage endpoint.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct TickOutcome {
+pub struct TickOutcome<'a> {
     /// Tick that committed exactly once.
     pub tick: u64,
     /// Number of entities visited by the simulation stage, including idle ones.
     pub simulated_entities: usize,
     /// Position changes to pre-existing entities, excluding despawned records.
     pub changed_positions: usize,
+    /// Exact origins whose pending frames were consumed by this committed tick.
+    /// This borrowed page is valid until the next mutable world operation.
+    pub committed_inputs: &'a [Origin],
 }
 
 struct PeerControl {
@@ -248,6 +251,7 @@ pub struct Simulation {
     tick: u64,
     store: Store,
     peers: Vec<PeerControl>,
+    committed_inputs: Vec<Origin>,
     work: Work,
     schedule: Schedule,
 }
@@ -271,6 +275,7 @@ impl Simulation {
             tick: 0,
             store: Store::new(epoch, config.entity_capacity),
             peers: Vec::with_capacity(config.peer_capacity),
+            committed_inputs: Vec::with_capacity(config.peer_capacity),
             work: Work {
                 positions: vec![Position::default(); config.entity_capacity],
                 velocities: vec![Velocity::default(); config.entity_capacity],
@@ -476,7 +481,7 @@ impl Simulation {
         clippy::float_cmp,
         reason = "change ticks track exact component value changes, not geometric proximity"
     )]
-    pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome, SimError> {
+    pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome<'_>, SimError> {
         let next = self.tick.checked_add(1).ok_or(SimError::TickExhausted)?;
         self.validate_commands(commands)?;
         let simulated_entities = self.len();
@@ -492,6 +497,7 @@ impl Simulation {
         let Self {
             store,
             peers,
+            committed_inputs,
             work,
             schedule,
             tick,
@@ -537,6 +543,12 @@ impl Simulation {
                     }
                 }
                 Stage::Publish => {
+                    committed_inputs.clear();
+                    for peer in peers.iter() {
+                        if let Some(frame) = &peer.pending {
+                            committed_inputs.push(frame.origin);
+                        }
+                    }
                     changed_positions =
                         store.publish_positions(&work.positions, &work.position_marks, next);
                     for &row in &work.touched {
@@ -587,6 +599,7 @@ impl Simulation {
             tick: next,
             simulated_entities,
             changed_positions,
+            committed_inputs,
         })
     }
 

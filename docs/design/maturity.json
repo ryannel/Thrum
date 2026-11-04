@@ -308,6 +308,23 @@
       ],
       "scope": "Actual bounded envelope/input bytes pass through the in-memory conditioner. The engine codec owns structural framing and quantized controls; the V1 game owns action schemas. No live authentication, OS transport, full-frame reliable fallback, downstream state delta, outcome/ACK closure, client prediction or browser/phone multiplayer has run."
     },
+    "A5_committed_inputs": {
+      "implementation": "partial_borrowed_w1_committed_origin_slice_and_four_peer_n1_due_identity_comparison",
+      "functional_validation": "600_tick_encoded_four_peer_run_matches_2380_due_and_committed_origins; rejected_command_same_tick_retry_idle_nonrepeat_and_same_tick_despawn_tests_pass; 500_warmed_tick_zero_rust_heap_allocation_assertion_pass",
+      "experienced_quality": "no_client_result_delivery_prediction_correction_or_visible_multiplayer_acceptance",
+      "platform_performance": {
+        "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
+        "windows": "not_run",
+        "browser": "not_run_committed_result_delivery",
+        "ios": "not_run_committed_result_delivery",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Rust 1.99.1 release: 600-tick encoded four-peer run, 2380 due origins matched W1 committed slice, zero due misses, tick p50/p95 49/53 us in one process. Divan 20 complete-run samples median 29.01 ms versus prior encoded-path medians 29.0/29.4 ms; one extra setup allocation for the reserved peer-capacity origin Vec, 132 total per complete run, zero across 500 warmed ticks. No comparative speed claim.",
+      "evidence": [
+        "../evidence/v1-workload/A5-COMMITTED-INPUTS-2026-11-04.md"
+      ],
+      "scope": "W1 reports only origins consumed at a successful publish barrier; a failed tick returns no outcome and keeps pending frames. The N1 conditioner compares due handoffs before counting accepted frames. Rejected-result retention, application ACK, controller state grouping, state delta, OS transport and client reconciliation remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",
