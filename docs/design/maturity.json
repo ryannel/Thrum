@@ -179,6 +179,7 @@
         "ios": "simulator_target_compile_only_not_run",
         "android": "not_run"
       },
+      "diagnostic_measurement": "Apple M3 Max/Metal integrated Divan, 100 samples: four scene passes with timestamps median 1.284 ms/141 benchmark-thread Rust allocator calls/26.37 KB; plus synthetic 1280x720 surface pass median 1.272 ms/155 calls/27.47 KB. Ranges overlap; driver and other-thread allocations, real swapchain cost and device frame budget remain unmeasured.",
       "evidence": [
         "../evidence/render/V1-MACOS-SURFACE-2026-11-04.md"
       ],
