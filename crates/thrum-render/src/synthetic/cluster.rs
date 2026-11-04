@@ -1,7 +1,9 @@
-//! Compact, deterministic 3D light lists for the fixed orthographic fixture.
+//! Compact, deterministic 3D light lists for a checked synthetic view.
 //! The source registry is external; these are prepared per-view GPU products.
 
 use super::RenderError;
+use super::view::{Projection, SyntheticView};
+use glam::Vec3;
 use std::cmp::Ordering;
 
 pub(super) const X: usize = 32;
@@ -14,7 +16,7 @@ const CAPACITY: usize = 32;
 /// the fixture's world coordinates and intensity is linear RGB candela.
 #[derive(Clone, Copy, Debug)]
 pub struct SyntheticPointLight {
-    /// Position relative to the fixed orthographic camera.
+    /// World-space position.
     pub position: [f32; 3],
     /// Positive finite influence radius in world units.
     pub radius: f32,
@@ -32,6 +34,59 @@ struct Candidate {
 struct Slot {
     len: u8,
     candidates: [Candidate; CAPACITY],
+}
+
+enum ScoreGeometry {
+    Orthographic,
+    Perspective {
+        view: glam::Mat4,
+        fx: f32,
+        fy: f32,
+        depths: [f32; Z],
+    },
+}
+
+impl ScoreGeometry {
+    fn new(view: &SyntheticView) -> Self {
+        match view.projection() {
+            Projection::OrthographicFixture => Self::Orthographic,
+            Projection::Perspective {
+                view,
+                fx,
+                fy,
+                near,
+                far,
+            } => Self::Perspective {
+                view,
+                fx,
+                fy,
+                depths: std::array::from_fn(|z| {
+                    near * (far / near).powf((z as f32 + 0.5) / Z as f32)
+                }),
+            },
+        }
+    }
+
+    fn light_position(&self, world: [f32; 3]) -> [f32; 3] {
+        match self {
+            Self::Orthographic => world,
+            Self::Perspective { view, .. } => {
+                view.transform_point3(Vec3::from_array(world)).to_array()
+            }
+        }
+    }
+
+    fn center(&self, x: usize, y: usize, z: usize) -> [f32; 3] {
+        let nx = -1.0 + 2.0 * (x as f32 + 0.5) / X as f32;
+        let ny = -1.0 + 2.0 * (y as f32 + 0.5) / Y as f32;
+        match self {
+            Self::Orthographic => [nx, ny, (z as f32 + 0.5) / Z as f32],
+            Self::Perspective { fx, fy, depths, .. } => {
+                let depth = depths[z];
+                [nx * depth / fx, ny * depth / fy, -depth]
+            }
+        }
+    }
 }
 impl Default for Slot {
     fn default() -> Self {
@@ -63,22 +118,25 @@ impl ClusterTable {
         }
     }
 
-    pub(super) fn build(lights: &[SyntheticPointLight]) -> Result<Self, RenderError> {
+    pub(super) fn build(
+        lights: &[SyntheticPointLight],
+        view: &SyntheticView,
+    ) -> Result<Self, RenderError> {
         if lights.len() > 4096 {
             return Err(RenderError::SceneCapacity);
         }
         for light in lights.iter().copied() {
             validate(light)?;
         }
-        if !lights
-            .iter()
-            .any(|light| light.candela.iter().any(|value| *value > 0.0) && intersects_view(*light))
-        {
+        if !lights.iter().any(|light| {
+            light.candela.iter().any(|value| *value > 0.0) && bounds(*light, view).is_some()
+        }) {
             // The shader's uniform off-state returns before reading clusters.
             // Keep valid minimal bindings without preparing a dead 3D grid.
             return Ok(Self::empty());
         }
         let mut slots = vec![Slot::default(); COUNT];
+        let score_geometry = ScoreGeometry::new(view);
         let mut light_bytes = Vec::with_capacity(lights.len().max(1) * 32);
         let mut dropped = 0;
         for (index, light) in lights.iter().copied().enumerate() {
@@ -86,20 +144,24 @@ impl ClusterTable {
             if light.candela.iter().all(|value| *value == 0.0) {
                 continue;
             }
-            let Some((lo, hi)) = bounds(light) else {
+            let Some((lo, hi)) = bounds(light, view) else {
                 continue;
             };
             let index = u32::try_from(index).map_err(|_| RenderError::SceneCapacity)?;
+            let score_position = score_geometry.light_position(light.position);
+            let intensity = light.candela.into_iter().fold(0.0, f32::max);
             for z in lo[2]..=hi[2] {
                 for y in lo[1]..=hi[1] {
                     for x in lo[0]..=hi[0] {
-                        if !intersects(light, x, y, z) {
+                        if matches!(view.projection(), Projection::OrthographicFixture)
+                            && !intersects(light, x, y, z)
+                        {
                             continue;
                         }
                         let slot = &mut slots[(z * Y + y) * X + x];
                         let candidate = Candidate {
                             index,
-                            score: score(light, x, y, z),
+                            score: score(score_position, intensity, x, y, z, &score_geometry),
                         };
                         let len = usize::from(slot.len);
                         if len < CAPACITY {
@@ -194,7 +256,23 @@ fn grid_index(value: f32, axis: usize) -> usize {
         .clamp(0.0, (divisions - 1) as f32)) as usize
 }
 
-fn bounds(light: SyntheticPointLight) -> Option<([usize; 3], [usize; 3])> {
+fn bounds(light: SyntheticPointLight, view: &SyntheticView) -> Option<([usize; 3], [usize; 3])> {
+    match view.projection() {
+        Projection::OrthographicFixture => bounds_orthographic(light),
+        Projection::Perspective {
+            view,
+            fx,
+            fy,
+            near,
+            far,
+        } => bounds_perspective(light, view, fx, fy, near, far),
+    }
+}
+
+fn bounds_orthographic(light: SyntheticPointLight) -> Option<([usize; 3], [usize; 3])> {
+    if !intersects_view(light) {
+        return None;
+    }
     if light.position[0] + light.radius < -1.0
         || light.position[0] - light.radius > 1.0
         || light.position[1] + light.radius < -1.0
@@ -211,6 +289,78 @@ fn bounds(light: SyntheticPointLight) -> Option<([usize; 3], [usize; 3])> {
         hi[axis] = grid_index(light.position[axis] + light.radius, axis);
     }
     Some((lo, hi))
+}
+
+// Conservative projected sphere bounds. If it crosses the near plane, all XY
+// columns are included. False-positive cells cost shading; a false negative
+// would make a local light disappear, so this first tier favors coverage.
+fn bounds_perspective(
+    light: SyntheticPointLight,
+    view: glam::Mat4,
+    fx: f32,
+    fy: f32,
+    near: f32,
+    far: f32,
+) -> Option<([usize; 3], [usize; 3])> {
+    let p = view.transform_point3(Vec3::from_array(light.position));
+    let depth = -p.z;
+    let near_depth = depth - light.radius;
+    let far_depth = depth + light.radius;
+    if far_depth < near || near_depth > far {
+        return None;
+    }
+    let z_lo = depth_index(near_depth.max(near), near, far);
+    let z_hi = depth_index(far_depth.min(far), near, far);
+    if near_depth <= near {
+        return Some(([0, 0, z_lo], [X - 1, Y - 1, z_hi]));
+    }
+    let (x_lo, x_hi) = projected_axis(p.x, light.radius, near_depth, far_depth, fx);
+    let (y_lo, y_hi) = projected_axis(p.y, light.radius, near_depth, far_depth, fy);
+    if x_hi < -1.0 || x_lo > 1.0 || y_hi < -1.0 || y_lo > 1.0 {
+        return None;
+    }
+    Some((
+        [ndc_index(x_lo, X), ndc_index(y_lo, Y), z_lo],
+        [ndc_index(x_hi, X), ndc_index(y_hi, Y), z_hi],
+    ))
+}
+
+fn projected_axis(
+    center: f32,
+    radius: f32,
+    near_depth: f32,
+    far_depth: f32,
+    focal: f32,
+) -> (f32, f32) {
+    let a = (center - radius) * focal;
+    let b = (center + radius) * focal;
+    let values = [a / near_depth, a / far_depth, b / near_depth, b / far_depth];
+    (
+        values.into_iter().fold(f32::INFINITY, f32::min),
+        values.into_iter().fold(f32::NEG_INFINITY, f32::max),
+    )
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "finite projected coordinate is clamped to a small cluster axis"
+)]
+fn ndc_index(value: f32, cells: usize) -> usize {
+    ((value.midpoint(1.0) * cells as f32)
+        .floor()
+        .clamp(0.0, (cells - 1) as f32)) as usize
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "finite positive depth is clamped to a small cluster axis"
+)]
+fn depth_index(depth: f32, near: f32, far: f32) -> usize {
+    ((depth / near).ln() / (far / near).ln() * Z as f32)
+        .floor()
+        .clamp(0.0, (Z - 1) as f32) as usize
 }
 
 fn axis_distance(center: f32, low: f32, high: f32) -> f32 {
@@ -244,16 +394,19 @@ fn intersects(light: SyntheticPointLight, x: usize, y: usize, z: usize) -> bool 
     squared <= light.radius * light.radius
 }
 
-fn score(light: SyntheticPointLight, x: usize, y: usize, z: usize) -> f32 {
-    let center = [
-        -1.0 + 2.0 * (x as f32 + 0.5) / X as f32,
-        -1.0 + 2.0 * (y as f32 + 0.5) / Y as f32,
-        (z as f32 + 0.5) / Z as f32,
-    ];
+fn score(
+    position: [f32; 3],
+    intensity: f32,
+    x: usize,
+    y: usize,
+    z: usize,
+    geometry: &ScoreGeometry,
+) -> f32 {
+    let center = geometry.center(x, y, z);
     let squared = (0..3)
-        .map(|axis| (center[axis] - light.position[axis]).powi(2))
+        .map(|axis| (center[axis] - position[axis]).powi(2))
         .sum::<f32>();
-    light.candela.iter().copied().fold(0.0, f32::max) / squared.max(0.0001)
+    intensity / squared.max(0.0001)
 }
 
 #[cfg(test)]
@@ -262,23 +415,30 @@ mod tests {
 
     #[test]
     fn empty_table_has_no_references() {
-        let table = ClusterTable::build(&[]).expect("empty table");
+        let view = SyntheticView::default();
+        let table = ClusterTable::build(&[], &view).expect("empty table");
         assert_eq!(table.heads.len(), 8);
         assert_eq!(table.indices.len(), 4);
         assert!(table.heads.iter().all(|byte| *byte == 0));
-        let disabled = ClusterTable::build(&[SyntheticPointLight {
-            position: [0.0, 0.0, 0.5],
-            radius: 1.0,
-            candela: [0.0; 3],
-        }])
+        let disabled = ClusterTable::build(
+            &[SyntheticPointLight {
+                position: [0.0, 0.0, 0.5],
+                radius: 1.0,
+                candela: [0.0; 3],
+            }],
+            &view,
+        )
         .expect("disabled source");
         assert_eq!(disabled.heads.len(), 8);
         assert_eq!(disabled.indices.len(), 4);
-        let offscreen = ClusterTable::build(&[SyntheticPointLight {
-            position: [4.0, 4.0, 4.0],
-            radius: 0.5,
-            candela: [10.0; 3],
-        }])
+        let offscreen = ClusterTable::build(
+            &[SyntheticPointLight {
+                position: [4.0, 4.0, 4.0],
+                radius: 0.5,
+                candela: [10.0; 3],
+            }],
+            &view,
+        )
         .expect("offscreen source");
         assert!(!offscreen.active);
         assert_eq!(offscreen.heads.len(), 8);
@@ -295,7 +455,7 @@ mod tests {
             CAPACITY + 1
         ];
         lights[CAPACITY].candela = [100.0; 3];
-        let table = ClusterTable::build(&lights).expect("overlap");
+        let table = ClusterTable::build(&lights, &SyntheticView::default()).expect("overlap");
         assert!(table.dropped_references > 0);
         let mut strong_retained = false;
         for head in table.heads.as_chunks::<8>().0 {
@@ -321,8 +481,88 @@ mod tests {
             candela: [1.0; 3],
         };
         assert!(matches!(
-            ClusterTable::build(&[light]),
+            ClusterTable::build(&[light], &SyntheticView::default()),
             Err(RenderError::InvalidLighting)
         ));
+    }
+
+    #[test]
+    fn perspective_translated_camera_keeps_strong_nearby_light_on_overflow() {
+        let view = SyntheticView::perspective(
+            [100.0, 0.0, 2.0],
+            [100.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            20.0,
+        )
+        .expect("translated view");
+        let mut lights = vec![
+            SyntheticPointLight {
+                position: [0.0, 0.0, 1.0],
+                radius: 128.0,
+                candela: [1.0; 3],
+            };
+            CAPACITY
+        ];
+        lights.push(SyntheticPointLight {
+            position: [100.0, 0.0, 1.0],
+            radius: 1.0,
+            candela: [100.0; 3],
+        });
+        let table = ClusterTable::build(&lights, &view).expect("valid clustered view");
+        assert!(table.dropped_references > 0);
+        let slot = (depth_index(1.0, 0.1, 20.0) * Y + Y / 2) * X + X / 2;
+        let head = &table.heads[slot * 8..slot * 8 + 8];
+        let offset = u32::from_le_bytes(head[..4].try_into().expect("offset")) as usize;
+        let count = u32::from_le_bytes(head[4..].try_into().expect("count")) as usize;
+        assert_eq!(count, CAPACITY);
+        assert!(
+            table.indices[offset * 4..(offset + count) * 4]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .any(|item| {
+                    u32::from_le_bytes(*item) == u32::try_from(CAPACITY).expect("small capacity")
+                })
+        );
+    }
+
+    #[test]
+    fn perspective_bounds_cover_translated_rotated_and_near_plane_samples() {
+        let cases = [
+            ([5.0, 1.0, 5.0], [0.0, 0.0, 0.0], [0.1, 0.0, 0.2], 0.4),
+            ([0.0, 0.0, 2.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.85], 0.2),
+        ];
+        for (eye, target, position, radius) in cases {
+            let camera =
+                SyntheticView::perspective(eye, target, [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
+                    .expect("camera");
+            let light = SyntheticPointLight {
+                position,
+                radius,
+                candela: [1.0; 3],
+            };
+            let (lo, hi) = bounds(light, &camera).expect("visible sphere");
+            let Projection::Perspective {
+                view,
+                fx,
+                fy,
+                near,
+                far,
+            } = camera.projection()
+            else {
+                panic!("perspective fixture");
+            };
+            let p = view.transform_point3(Vec3::from_array(position));
+            let d = -p.z;
+            let cell = [
+                ndc_index(p.x * fx / d, X),
+                ndc_index(p.y * fy / d, Y),
+                depth_index(d, near, far),
+            ];
+            assert!((0..3).all(|axis| (lo[axis]..=hi[axis]).contains(&cell[axis])));
+        }
     }
 }

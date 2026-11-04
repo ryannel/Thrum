@@ -1,10 +1,17 @@
 // ABI2 opaque clustered forward diagnostic: Lambert + GGX/Smith/Schlick.
-// Fixed orthographic projection, no normal maps, indirect light or shadows.
+// Checked finite reverse-Z camera, no normal maps, indirect light or shadows.
 struct ViewRecord {
     view_proj: mat4x4<f32>,
     previous_view_proj: mat4x4<f32>,
     camera_xyz_time: vec4<f32>,
     pre_exposure_inv_exposure_jitter: vec4<f32>,
+}
+struct ViewAuxRecord {
+    inverse_view_proj: mat4x4<f32>,
+    viewport_inv_viewport: vec4<f32>,
+    near_far: vec4<f32>,
+    time: vec4<f32>,
+    flags: vec4<u32>,
 }
 struct DirectionalSource {
     direction_to_light: vec4<f32>,
@@ -12,6 +19,7 @@ struct DirectionalSource {
     half_vector_fresnel: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> view: ViewRecord;
+@group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
 @group(1) @binding(0) var<uniform> light: DirectionalSource;
 struct LocalSource {
     position_radius: vec4<f32>,
@@ -73,9 +81,7 @@ struct VertexOutput {
     return output;
 }
 fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>,
-               l: vec3<f32>, irradiance: vec3<f32>, h: vec3<f32>, fresnel_power: f32) -> vec3<f32> {
-    // Parallel receiver-to-camera rays for the fixed orthographic view.
-    let v = vec3(0.0,0.0,-1.0);
+               l: vec3<f32>, v: vec3<f32>, irradiance: vec3<f32>, h: vec3<f32>, fresnel_power: f32) -> vec3<f32> {
     let ci = clamp(dot(n,l),0.0,1.0);
     let co = clamp(dot(n,v),0.0,1.0);
     if ci <= 0.0 || co <= 0.0 { return vec3(0.0); }
@@ -97,12 +103,21 @@ fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>,
     return (diffuse*ci+specular_cosine)*irradiance;
 }
 fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
-                  n: vec3<f32>, world_position: vec3<f32>) -> vec3<f32> {
+                  n: vec3<f32>, v: vec3<f32>, world_position: vec3<f32>, screen_position: vec4<f32>) -> vec3<f32> {
     if light.direction_to_light.w == 0.0 { return vec3(0.0); }
-    let cluster = vec3<u32>(
+    var cluster = vec3<u32>(
         u32(clamp(floor((world_position.x+1.0)*16.0),0.0,31.0)),
         u32(clamp(floor((world_position.y+1.0)*9.0),0.0,17.0)),
         u32(clamp(floor(world_position.z*16.0),0.0,15.0)));
+    if view_aux.flags.x == 1u {
+        let near = view_aux.near_far.x;
+        let far = view_aux.near_far.y;
+        let depth = near*far/(near+screen_position.z*(far-near));
+        cluster = vec3<u32>(
+            u32(clamp(floor(screen_position.x*view_aux.viewport_inv_viewport.z*32.0),0.0,31.0)),
+            u32(clamp(floor((1.0-screen_position.y*view_aux.viewport_inv_viewport.w)*18.0),0.0,17.0)),
+            u32(clamp(floor(log(depth/near)/log(far/near)*16.0),0.0,15.0)));
+    }
     let head = cluster_heads[(cluster.z*18u+cluster.y)*32u+cluster.x];
     var sum = vec3(0.0);
     for (var i = 0u; i < head.count; i++) {
@@ -114,7 +129,6 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
         let distance = sqrt(distance_squared);
         var l = vec3(0.0,0.0,-1.0);
         if distance_squared > 0.000000000001 { l = displacement/distance; }
-        let v = vec3(0.0,0.0,-1.0);
         let hv = l+v;
         var h = v;
         if dot(hv,hv)>0.000001 { h = normalize(hv); }
@@ -122,7 +136,7 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
         let radial = distance/radius;
         let fade = max(0.0,1.0-radial*radial*radial*radial);
         let irradiance = source.candela.rgb*(fade*fade/max(distance_squared,0.000001));
-        sum += direct_brdf(base,metalness,roughness,n,l,irradiance,h,fresnel_power);
+        sum += direct_brdf(base,metalness,roughness,n,l,v,irradiance,h,fresnel_power);
     }
     return sum;
 }
@@ -136,10 +150,19 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
     let metalness = material.surface.z*orm.b;
     let roughness = material.surface.y*orm.g;
     let n = normalize(input.normal);
+    var v = vec3(0.0,0.0,-1.0);
+    var h = light.half_vector_fresnel.xyz;
+    var fresnel_power = light.half_vector_fresnel.w;
+    if view_aux.flags.x == 1u {
+        v = normalize(view.camera_xyz_time.xyz-input.world_position);
+        let hv = light.direction_to_light.xyz+v;
+        h = v;
+        if dot(hv,hv)>0.000001 { h = normalize(hv); }
+        fresnel_power = pow(clamp(1.0-dot(v,h),0.0,1.0),5.0);
+    }
     let colour = direct_brdf(surface_base,metalness,roughness,n,
-            light.direction_to_light.xyz,light.irradiance.rgb,
-            light.half_vector_fresnel.xyz,light.half_vector_fresnel.w)
-        + local_radiance(surface_base,metalness,roughness,n,input.world_position)
+            light.direction_to_light.xyz,v,light.irradiance.rgb,h,fresnel_power)
+        + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
     // before pre-exposure and bound only to the finite fp16 storage envelope.

@@ -76,6 +76,12 @@ license = "Zlib"
 purpose = "Fast randomized stable-ID lookup for prior render samples during A2 extraction"
 target_cost = "Already transitive through hecs; one direct dependency in thrum-render, two preallocated frame maps, measured at 10k visual instances"
 
+[external_dependencies.glam]
+requirement = "=0.33.12"
+license = "MIT OR Apache-2.0"
+purpose = "Checked right-handed WebGPU perspective view construction and per-view clustered light bounds for V1"
+target_cost = "Minimal std/f32 profile with no optional integration dependencies; camera preparation cost and native, Wasm and iOS simulator compile checked separately"
+
 [external_dependencies.winit]
 requirement = "=0.30.13"
 license = "Apache-2.0"

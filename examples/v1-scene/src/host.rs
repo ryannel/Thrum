@@ -5,7 +5,10 @@ use std::time::{Duration, Instant};
 use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
 use thrum_render::{
     extract::RenderExtractor,
-    synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticPointLight, SyntheticScene},
+    synthetic::{
+        OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
+        SyntheticView,
+    },
     timing::GpuTimings,
 };
 
@@ -80,11 +83,21 @@ impl<'a> FrameHost<'a> {
         let count = u32::try_from(ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
             SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
+        scene.view = SyntheticView::perspective(
+            [0.0, 0.0, 2.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            WIDTH as f32 / HEIGHT as f32,
+            0.1,
+            20.0,
+        )
+        .map_err(|error| format!("camera: {error:?}"))?;
         scene.local_lights = [
-            ([-0.55, -0.55, 0.15], [5.0, 0.8, 0.4]),
-            ([0.55, -0.55, 0.15], [0.4, 4.0, 0.8]),
-            ([-0.55, 0.55, 0.15], [0.7, 1.0, 5.0]),
-            ([0.55, 0.55, 0.15], [4.0, 3.0, 0.4]),
+            ([-0.55, -0.55, 1.0], [5.0, 0.8, 0.4]),
+            ([0.55, -0.55, 1.0], [0.4, 4.0, 0.8]),
+            ([-0.55, 0.55, 1.0], [0.7, 1.0, 5.0]),
+            ([0.55, 0.55, 1.0], [4.0, 3.0, 0.4]),
         ]
         .map(|(position, candela)| SyntheticPointLight {
             position,
@@ -94,9 +107,18 @@ impl<'a> FrameHost<'a> {
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
         scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
-        let prepared = PreparedSynthetic::prepare(device, queue, GENERATION, &scene)
-            .await
-            .map_err(|error| format!("prepare: {error:?}"))?;
+        let prepared = PreparedSynthetic::prepare_with_light(
+            device,
+            queue,
+            GENERATION,
+            &scene,
+            SyntheticLight {
+                direction_to_light: [0.4, -0.6, 1.0],
+                irradiance: [4.0; 3],
+            },
+        )
+        .await
+        .map_err(|error| format!("prepare: {error:?}"))?;
         let target = OffscreenTarget::new(device, &prepared, WIDTH, HEIGHT)
             .map_err(|error| format!("target: {error:?}"))?;
         let timings = GpuTimings::new(device, queue, GENERATION, 2)

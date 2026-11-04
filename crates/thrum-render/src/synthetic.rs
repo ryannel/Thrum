@@ -16,12 +16,15 @@ use wgpu::util::DeviceExt;
 
 mod cluster;
 mod upload;
+mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use upload::{InstanceUpload, pack_synthetic_instance};
+use view::AUX_BYTES;
+pub use view::SyntheticView;
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 4;
+pub const SYNTHETIC_REVISION: u64 = 5;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 const VIEW_BYTES: usize = 160;
@@ -42,11 +45,13 @@ pub struct SyntheticScene {
     /// Fixed-view local sources for the synthetic diagnostic. Game light
     /// ownership and live extraction belong to the later V3 scene bridge.
     pub local_lights: Vec<SyntheticPointLight>,
+    /// Unjittered camera used for this prepared view.
+    pub view: SyntheticView,
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
-    /// renders all cubes. World coordinates also form the fixed orthographic clip
-    /// grid; +Z points away from the camera and depth lies in [0,1].
+    /// renders all cubes. The default view uses the historical orthographic
+    /// diagnostic coordinates; callers may supply a checked perspective view.
     /// # Errors
     /// Refuses zero instances or more than one million diagnostic instances.
     pub fn grid(count: u32) -> Result<Self, RenderError> {
@@ -95,6 +100,7 @@ impl SyntheticScene {
             materials,
             instances,
             local_lights: Vec::new(),
+            view: SyntheticView::default(),
         })
     }
 }
@@ -141,8 +147,8 @@ impl SyntheticLight {
         let direction = self
             .direction_to_light
             .map(|value| f64::from(value) / length);
-        // Orthographic receiver-to-camera direction is fixed at -Z, so the
-        // half-vector and Schlick angular power are invariant across fragments.
+        // Orthographic receiver-to-camera direction is fixed at -Z, so this
+        // precomputed half-vector is used only by the orthographic diagnostic.
         // f64 preparation avoids f32 squared-length underflow near opposition.
         let half = [direction[0], direction[1], direction[2] - 1.0];
         let half_length = half.iter().map(|v| v * v).sum::<f64>().sqrt();
@@ -184,6 +190,8 @@ pub enum RenderError {
     UnsupportedSyntheticMaterial,
     /// Invalid directional source or degenerate/unsupported diagnostic transform.
     InvalidLighting,
+    /// Nonfinite or degenerate camera projection.
+    InvalidView,
     /// Authored exposure or its required reciprocal/storage gain is not positive finite.
     InvalidExposure,
     /// Target/readback belongs to another generation, grid or prepared exposure.
@@ -230,7 +238,9 @@ pub struct PreparedSynthetic {
     pipeline: wgpu::RenderPipeline,
     display_pipeline: wgpu::RenderPipeline,
     display_layout: wgpu::BindGroupLayout,
-    view: wgpu::BindGroup,
+    view_layout: wgpu::BindGroupLayout,
+    view_buffer: wgpu::Buffer,
+    view_sample: SyntheticView,
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
     instances: wgpu::BindGroup,
@@ -239,6 +249,7 @@ pub struct PreparedSynthetic {
     instance_bytes: u64,
     instance_count: u32,
     display_gain: f32,
+    exposure_bits: u32,
     local_light_bytes: u64,
     cluster_head_bytes: u64,
     cluster_index_bytes: u64,
@@ -289,7 +300,7 @@ impl PreparedSynthetic {
     ) -> Result<Self, RenderError> {
         let display_gain = checked_display_gain(exposure)?;
         let mut light_data = light.pack()?;
-        let clusters = ClusterTable::build(&scene.local_lights)?;
+        let clusters = ClusterTable::build(&scene.local_lights, &scene.view)?;
         let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
         let local_light_bytes = clusters.lights.len() as u64;
@@ -337,26 +348,23 @@ impl PreparedSynthetic {
             material_count,
             instance_count,
         );
-        // ABI2 ViewRecord: identity current/previous orthographic view projection,
-        // camera at negative Z, fixed storage pre-exposure and inverse authored
-        // exposure; all unused padding stays zero. Display uses a separate e/p uniform.
-        let mut view_data = [0_u8; VIEW_BYTES];
-        for offset in [0, 64] {
-            for diagonal in [0, 20, 40, 60] {
-                view_data[offset + diagonal..offset + diagonal + 4]
-                    .copy_from_slice(&1.0_f32.to_le_bytes());
-            }
-        }
-        view_data[136..140].copy_from_slice(&(-3.0_f32).to_le_bytes());
-        view_data[144..148].copy_from_slice(&PRE_EXPOSURE.to_le_bytes());
-        view_data[148..152].copy_from_slice(&(1.0 / exposure).to_le_bytes());
-        let (view_layout, view) = uniform_group(
-            device,
-            queue,
-            "synthetic ABI2 view",
-            &view_data,
-            wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-        );
+        let view_data = scene.view.pack_view(exposure);
+        let view_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("synthetic ABI2 view"),
+            contents: &view_data,
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
+        let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("synthetic view and target aux"),
+            entries: &[
+                uniform_layout(
+                    0,
+                    VIEW_BYTES as u64,
+                    wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                ),
+                uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
+            ],
+        });
         let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic directional and clustered sources"),
             entries: &[
@@ -558,7 +566,7 @@ impl PreparedSynthetic {
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
                 depth_write_enabled: Some(true),
-                depth_compare: Some(wgpu::CompareFunction::Less),
+                depth_compare: Some(wgpu::CompareFunction::Greater),
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
@@ -589,7 +597,9 @@ impl PreparedSynthetic {
             pipeline,
             display_pipeline,
             display_layout,
-            view,
+            view_layout,
+            view_buffer,
+            view_sample: scene.view,
             light,
             materials,
             instances,
@@ -598,6 +608,7 @@ impl PreparedSynthetic {
             instance_bytes,
             instance_count,
             display_gain,
+            exposure_bits: exposure.to_bits(),
             local_light_bytes,
             cluster_head_bytes,
             cluster_index_bytes,
@@ -638,6 +649,8 @@ impl PreparedSynthetic {
     fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if target.generation != self.key.device_generation
             || target.display_gain.to_bits() != self.display_gain.to_bits()
+            || target.exposure_bits != self.exposure_bits
+            || target.view_sample != self.view_sample
         {
             return Err(RenderError::StaleTarget);
         }
@@ -682,7 +695,7 @@ impl PreparedSynthetic {
                 store: true,
             },
         ];
-        for bytes in [VIEW_BYTES as u64, LIGHT_BYTES as u64] {
+        for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64, LIGHT_BYTES as u64] {
             let uniform = graph.resource(
                 ResourceDescriptor::Buffer {
                     bytes,
@@ -909,7 +922,7 @@ impl PreparedSynthetic {
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: &target.depth,
                 depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
+                    load: wgpu::LoadOp::Clear(0.0),
                     store: wgpu::StoreOp::Discard,
                 }),
                 stencil_ops: None,
@@ -918,7 +931,7 @@ impl PreparedSynthetic {
             ..Default::default()
         });
         pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, &self.view, &[]);
+        pass.set_bind_group(0, &target.view_bind_group, &[]);
         pass.set_bind_group(1, &self.light, &[]);
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, &self.instances, &[]);
@@ -1057,42 +1070,21 @@ fn prepare_display_group(
     })
 }
 
-fn uniform_group(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    label: &str,
-    data: &[u8],
+fn uniform_layout(
+    binding: u32,
+    size: u64,
     visibility: wgpu::ShaderStages,
-) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
-    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some(label),
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(data.len() as u64),
-            },
-            count: None,
-        }],
-    });
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some(label),
-        size: data.len() as u64,
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    queue.write_buffer(&buffer, 0, data);
-    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some(label),
-        layout: &layout,
-        entries: &[wgpu::BindGroupEntry {
-            binding: 0,
-            resource: buffer.as_entire_binding(),
-        }],
-    });
-    (layout, group)
+) -> wgpu::BindGroupLayoutEntry {
+    wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility,
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Uniform,
+            has_dynamic_offset: false,
+            min_binding_size: wgpu::BufferSize::new(size),
+        },
+        count: None,
+    }
 }
 fn storage_layout(
     binding: u32,
@@ -1133,7 +1125,10 @@ pub struct OffscreenTarget {
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
     display: wgpu::BindGroup,
+    view_bind_group: wgpu::BindGroup,
     display_gain: f32,
+    exposure_bits: u32,
+    view_sample: SyntheticView,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -1222,12 +1217,34 @@ impl OffscreenTarget {
             &scene_view,
             prepared.display_gain,
         );
+        let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("synthetic target view aux"),
+            contents: &prepared.view_sample.pack_aux(width, height),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
+        let view_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("synthetic view and target aux"),
+            layout: &prepared.view_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: prepared.view_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: aux.as_entire_binding(),
+                },
+            ],
+        });
         Ok(Self {
             texture,
             view,
             scene_view,
             display,
+            view_bind_group,
             display_gain: prepared.display_gain,
+            exposure_bits: prepared.exposure_bits,
+            view_sample: prepared.view_sample,
             depth,
             width,
             height,
