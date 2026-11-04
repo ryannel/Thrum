@@ -377,8 +377,8 @@
       "scope": "The live no-socket fixture quiets one peer before a drained tick-300 replacement, publishes a distinct stable and wire actor identity, then changes W1/N1/client epoch and resets complete speculation from authority. Only state-only old return groups are retired. This does not cover uncertain or lost committed results, reliable result/ACK, state-delta baseline encoding, real transport, visible correction histories, collision prediction, cross-platform multiplayer or sustained device budgets."
     },
     "A5_state_delta_session": {
-      "implementation": "partial_mode_zero_selective_ack_rebasing_for_one_32_actor_visual_partition_per_peer_in_running_conditioned_fixture",
-      "functional_validation": "golden_delta_and_ack_bytes_all_truncations_noncanonical_varint_invalid_field_reordered_duplicate_and_old_epoch_sample_old_and_evicted_acks_active_base_after_ring_loss_and_independent_quantized_world_oracle_in_600_tick_four_peer_run",
+      "implementation": "partial_mode_zero_selective_ack_rebasing_for_four_32_actor_visual_partitions_per_peer_with_shared_connection_image_history_in_running_conditioned_fixture",
+      "functional_validation": "golden_delta_and_ack_bytes_refusals_128_interest_membership_shared_projection_four_active_partition_ring_reorder_same_epoch_generation_reconnect_late_partition_atomic_failure_lost_ack_return_to_base_correction_and_quiescence_plus_600_tick_four_peer_oracle",
       "experienced_quality": "not_run",
       "platform_performance": {
         "mac": "local_arm64_cpu_diagnostic_only_not_device_network_or_visual_budget_qualification",
@@ -387,13 +387,15 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "The fixed-base 600-tick result is retained in its evidence. In the selective-ACK local macOS arm64 run, 800 visual publications at 280 application bytes each and 20 Hz (44.8 kbit/s downstream per peer) yielded 781 visual deliveries. The return lane sent 781 ACKs/68728 upstream application bytes, dropped 10 and delivered 768, causing 750 sender rebases. Maximum visual sample age was 4 ticks; image/packet backing storage across four peers was 182112 bytes excluding allocator metadata and other game state. Complete conditioned tick wall p50/p95 was 78/121 us; Divan whole-run median 35.37 ms/600 ticks across 56 samples, with 149-150 setup/run/teardown allocations and 5.884 MB. Five hundred warmed ordinary ticks allocated zero. Different local load prevents a before/after speed claim; the 390-byte four-actor-plus-controller publication remains analytical.",
+      "diagnostic_measurement": "The earlier one-partition results remain in their evidence. In the four-partition local macOS arm64 600-tick run, each peer staged 128 interested actors (four controlled movers, 124 static). Of 3200 partition publication opportunities, 2404 unchanged groups sent nothing; 796 visual packets used 112928 downstream application bytes, about 22.6 kbit/s per peer at 20 Hz, excluding exact controller/results and transport. The ACK lane sent 780 and delivered 764, with 746 rebases. Maximum visual age was 4 ticks. Shared projection/encode/decode totals were 3050/160/253 us; retained visual backing storage across four peers and packet slots was 273184 bytes. Complete tick wall p50/p95 was 74/104 us; Divan whole-run median 32.41 ms across 61 samples with 154-155 setup/run/teardown allocations and 5.975 MB. Five hundred warmed ordinary ticks allocated zero. Load variation prevents a controlled speed claim.",
       "evidence": [
         "../design/decisions/A5-STATE-DELTA-SESSION.md",
         "../evidence/v1-workload/A5-VISUAL-DELTA-2026-11-04.md",
-        "../evidence/v1-workload/A5-SELECTIVE-ACK-2026-11-04.md"
+        "../evidence/v1-workload/A5-SELECTIVE-ACK-2026-11-04.md",
+        "../design/decisions/A5-FOUR-PARTITION-IMAGE-POOL.md",
+        "../evidence/v1-workload/A5-FOUR-PARTITION-2026-11-04.md"
       ],
-      "scope": "The running partial path has game-owned 21-bit position/20-bit velocity quantization, byte-exact field masks, selective image ACK and retained-base rebasing for one 32-moving-actor partition per peer. StateAck and InputBatch share the per-peer client datagram sequence. The parser fuzz target compiles but no campaign has run. Four partitions totaling 128 interested actors per client, full-image repair and lifecycle, exact controller/result grouping, real session replay/authentication and transport, visible correction and platform budgets remain open; parked N1 credit/ledger work is not reopened."
+      "scope": "The running partial path has game-owned 21-bit position/20-bit velocity quantization, byte-exact field masks, selective image ACK and retained-base rebasing for four 32-actor partitions per peer, with one shared image history and per-connection sequence/image ID owners. A local baseline is side-loaded. The parser fuzz target compiles but no campaign has run. Full-image repair and encoded lifecycle, exact controller/result grouping, real session replay/authentication and transport, visible correction and platform budgets remain open; parked N1 credit/ledger work is not reopened."
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
