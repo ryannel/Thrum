@@ -17,6 +17,7 @@ struct DirectionalSource {
     direction_to_light: vec4<f32>,
     irradiance: vec4<f32>,
     half_vector_fresnel: vec4<f32>,
+    ambient_irradiance: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
@@ -186,7 +187,8 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     let base=textureSample(base_textures,material_sampler,input.uv,i32(material.texture_layers.x));
     let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
     let emissive=textureSample(emissive_textures,material_sampler,input.uv,i32(material.texture_layers.w));
-    // AO affects indirect illumination only; this diagnostic has none.
+    // AO affects the ambient source only; direct Sun and local lights retain
+    // their independent visibility and incident irradiance.
     let surface_base = material.base.rgb*base.rgb;
     let metalness = material.surface.z*orm.b;
     let roughness = material.surface.y*orm.g;
@@ -204,6 +206,7 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     let colour = direct_brdf(surface_base,metalness,roughness,n,
             light.direction_to_light.xyz,v,light.irradiance.rgb*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
+        + orm.r*(1.0-metalness)*surface_base*light.ambient_irradiance.rgb/3.14159265359
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
     // before pre-exposure and bound only to the finite fp16 storage envelope.

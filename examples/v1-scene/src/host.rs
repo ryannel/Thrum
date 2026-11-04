@@ -9,7 +9,11 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+use thrum_cook::EnvironmentProduct;
 use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
+#[cfg(not(target_arch = "wasm32"))]
+use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
     extract::RenderExtractor,
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
@@ -50,7 +54,8 @@ pub struct FrameSample {
     /// CPU wall time for this drive call, including nonblocking GPU polling.
     /// Separate completed-report draining is outside this value.
     pub wall: Duration,
-    /// Actual GPU timestamps for near/far Sun shadows, forward and display.
+    /// Actual GPU pass durations for near/far Sun shadows, forward and display.
+    /// Disabled shadow passes report zero in their slots.
     pub gpu_pass_ns: Option<[f64; 4]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
@@ -69,6 +74,10 @@ pub struct FrameSample {
     /// Local-light references omitted from this prepared view after a cluster
     /// exceeds its capacity. The fixed fixture prepares them once.
     pub dropped_light_references: usize,
+    /// Authored presentation light channels clamped during preparation.
+    pub clamped_light_channels: usize,
+    /// Cooked visual product used by this submitted frame, if selected.
+    pub visual_revision: Option<[u8; 32]>,
 }
 
 /// One clock callback. A busy presentation ring drops only its optional view;
@@ -114,6 +123,79 @@ struct FrameSlot {
     state: SlotState,
 }
 
+/// A detached copy of the scene and executor handles for preparing one cooked
+/// visual generation without borrowing the ticking host.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct VisualPrepareInputs {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    scene: SyntheticScene,
+    surface: bool,
+    owner: Arc<()>,
+}
+
+/// Prepared product and GPU targets awaiting an extraction-barrier selection.
+/// Keep this value across a busy frame ring and retry publication later.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct PreparedEnvironment {
+    product: Option<EnvironmentProduct>,
+    prepared: Option<PreparedSynthetic>,
+    slots: Option<Vec<FrameSlot>>,
+    owner: Arc<()>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl VisualPrepareInputs {
+    /// Build a complete presentation generation off the authoritative tick path.
+    ///
+    /// # Errors
+    ///
+    /// Returns a GPU preparation fault without affecting the running host.
+    pub async fn prepare(self, product: EnvironmentProduct) -> Result<PreparedEnvironment, String> {
+        let values = product.values();
+        let light = PhotometricEnvironment {
+            toward_sun: values.toward_sun(),
+            sun_lux: values.sun_lux(),
+            sun_colour: values.sun_colour(),
+            ambient_lux: values.ambient_lux(),
+            background_radiance: values.background_radiance(),
+        };
+        let prepared = PreparedSynthetic::prepare_with_photometric_environment(
+            &self.device,
+            &self.queue,
+            GENERATION,
+            &self.scene,
+            light,
+            1.0,
+        )
+        .await
+        .map_err(|error| format!("cooked visual prepare: {error:?}"))?;
+        let mut slots = Vec::with_capacity(IN_FLIGHT);
+        for _ in 0..IN_FLIGHT {
+            slots.push(FrameSlot {
+                target: OffscreenTarget::new(&self.device, &prepared, WIDTH, HEIGHT)
+                    .map_err(|error| format!("cooked target: {error:?}"))?,
+                presentation: None,
+                timings: GpuTimings::new(
+                    &self.device,
+                    &self.queue,
+                    GENERATION,
+                    prepared.scene_pass_count() + u32::from(self.surface),
+                )
+                .map_err(|error| format!("cooked timings: {error:?}"))?,
+                render_done: Arc::new(AtomicBool::new(false)),
+                state: SlotState::Free,
+            });
+        }
+        Ok(PreparedEnvironment {
+            product: Some(product),
+            prepared: Some(prepared),
+            slots: Some(slots),
+            owner: self.owner,
+        })
+    }
+}
+
 /// One fixed-clock simulation and prepared GPU scene. The device and queue
 /// belong to the caller's executor; this host creates no independent GPU owner.
 /// Three prepared targets bound in-flight work and defer GPU timing readback.
@@ -135,6 +217,10 @@ pub struct FrameHost {
     dropped_reports: u64,
     dropped_capture_rows: u64,
     dropped_surface: u64,
+    #[cfg(not(target_arch = "wasm32"))]
+    visual_product: Option<EnvironmentProduct>,
+    #[cfg(not(target_arch = "wasm32"))]
+    visual_owner: Arc<()>,
 }
 
 impl FrameHost {
@@ -238,7 +324,76 @@ impl FrameHost {
             dropped_reports: 0,
             dropped_capture_rows: 0,
             dropped_surface: 0,
+            #[cfg(not(target_arch = "wasm32"))]
+            visual_product: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            visual_owner: Arc::new(()),
         })
+    }
+
+    /// Copy presentation inputs once for an asynchronous visual preparation.
+    /// This copies the finite scene only on accepted edits, never on ticks.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn visual_prepare_inputs(&self) -> VisualPrepareInputs {
+        VisualPrepareInputs {
+            device: self.device.clone(),
+            queue: self.queue.clone(),
+            scene: self.scene.clone(),
+            surface: self.presenter.is_some(),
+            owner: Arc::clone(&self.visual_owner),
+        }
+    }
+
+    /// Select a fully prepared cooked view at a GPU-safe extraction barrier.
+    /// `false` retains the candidate for retry while older packets are live.
+    ///
+    /// # Errors
+    ///
+    /// Returns a binding or full-table upload fault without replacing the active view.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a checked candidate loses an owned resource during the
+    /// final single-threaded move into the active host.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn publish_environment(
+        &mut self,
+        candidate: &mut PreparedEnvironment,
+    ) -> Result<bool, String> {
+        if !Arc::ptr_eq(&candidate.owner, &self.visual_owner) {
+            return Err("visual candidate belongs to another host".to_owned());
+        }
+        self.poll_gpu()?;
+        if self.pending_frames() != 0 {
+            return Ok(false);
+        }
+        let slots = candidate
+            .slots
+            .as_mut()
+            .ok_or_else(|| "visual candidate already published".to_owned())?;
+        for slot in slots.iter_mut() {
+            slot.presentation = self
+                .presenter
+                .as_ref()
+                .map(|presenter| presenter.bind_target(&self.device, &slot.target))
+                .transpose()
+                .map_err(|error| format!("cooked surface binding: {error:?}"))?;
+        }
+        self.changed_slots.clear();
+        for index in 0..self.scene.instances.len() {
+            self.changed_slots
+                .push(u32::try_from(index).map_err(|_| "visual instance slot exceeds u32")?);
+        }
+        candidate
+            .prepared
+            .as_mut()
+            .ok_or_else(|| "visual candidate already published".to_owned())?
+            .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
+            .map_err(|error| format!("cooked full upload: {error:?}"))?;
+        self.prepared = candidate.prepared.take().expect("checked candidate");
+        self.slots = candidate.slots.take().expect("checked candidate");
+        self.visual_product = candidate.product.take();
+        Ok(true)
     }
 
     /// Delay until the next world update is due; the platform owns actual sleep.
@@ -409,6 +564,7 @@ impl FrameHost {
         let upload_cpu = upload_start.elapsed();
 
         let encode_start = Instant::now();
+        let visual_revision = self.current_visual_revision();
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -474,11 +630,26 @@ impl FrameHost {
                 + uploaded.dropped_invalid
                 + uploaded.dropped_shadow_envelope,
             dropped_light_references: self.prepared.dropped_light_references(),
+            clamped_light_channels: self.prepared.presentation_light_clamps(),
+            visual_revision,
         });
         report.submitted = true;
         report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
         Ok(report)
+    }
+
+    fn current_visual_revision(&self) -> Option<[u8; 32]> {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.visual_product
+                .as_ref()
+                .map(|product| *product.revision().as_bytes())
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            None
+        }
     }
 
     /// Render and read back the current committed scene once for visual evidence.
@@ -547,7 +718,7 @@ impl FrameHost {
         self.device
             .poll(wgpu::PollType::Poll)
             .map_err(|error| format!("GPU poll: {error:?}"))?;
-        let max_passes = if self.presenter.is_some() { 5 } else { 4 };
+        let max_passes = self.prepared.scene_pass_count() + u32::from(self.presenter.is_some());
         for slot in &mut self.slots {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);
             match state {
@@ -579,9 +750,11 @@ impl FrameHost {
                 }
                 SlotState::Resolving(mut sample) => match slot.timings.try_collect(GENERATION) {
                     Ok(Some(passes)) => {
-                        if let Some((scene, present)) =
-                            pass_durations(&passes, sample.surface_presented)
-                        {
+                        if let Some((scene, present)) = pass_durations(
+                            &passes,
+                            sample.surface_presented,
+                            self.prepared.scene_pass_count() == 4,
+                        ) {
                             sample.gpu_pass_ns = Some(scene);
                             sample.gpu_present_ns = present;
                         } else {
@@ -614,24 +787,31 @@ fn new_timings(
 fn pass_durations(
     passes: &[thrum_render::timing::PassTiming],
     presented: bool,
+    shadows: bool,
 ) -> Option<([f64; 4], Option<f64>)> {
-    let names = [
+    let shadow_names = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
         "synthetic forward opaque",
         "synthetic tone encode",
     ];
+    let names: &[&str] = if shadows {
+        &shadow_names
+    } else {
+        &shadow_names[2..]
+    };
     (passes.len() == names.len() + usize::from(presented)
         && passes
             .iter()
             .zip(names)
-            .all(|(pass, name)| pass.name.as_ref() == name)
-        && (!presented || passes[4].name.as_ref() == thrum_render::present::PASS_NAME))
+            .all(|(pass, name)| pass.name.as_ref() == *name)
+        && (!presented || passes[names.len()].name.as_ref() == thrum_render::present::PASS_NAME))
         .then(|| {
-            (
-                std::array::from_fn(|index| passes[index].nanoseconds),
-                presented.then(|| passes[4].nanoseconds),
-            )
+            let mut scene = [0.0; 4];
+            for (index, pass) in passes.iter().take(names.len()).enumerate() {
+                scene[index + if shadows { 0 } else { 2 }] = pass.nanoseconds;
+            }
+            (scene, presented.then(|| passes[names.len()].nanoseconds))
         })
 }
 

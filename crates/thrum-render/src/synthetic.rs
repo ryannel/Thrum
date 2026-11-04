@@ -3,7 +3,8 @@
 //! timestamps. One directional metallic-roughness closure and opaque depth are
 //! real, followed by a fixed authored SDR display transform. Fixed-view
 //! clustered local lights and two synthetic Sun cascades are prepared here;
-//! cooked products and the general render scene remain open.
+//! a checked constant-light presentation handoff and the general render scene
+//! remain open.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::graph::{
@@ -32,7 +33,7 @@ pub const SYNTHETIC_REVISION: u64 = 6;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 const VIEW_BYTES: usize = 160;
-const LIGHT_BYTES: usize = 48;
+const LIGHT_BYTES: usize = 64;
 const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 const DISPLAY_BYTES: u64 = 16;
 const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
@@ -131,51 +132,129 @@ impl Default for SyntheticLight {
     }
 }
 impl SyntheticLight {
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "finite normalized source invariants intentionally round once to the f32 GPU ABI"
-    )]
     fn pack(self) -> Result<[u8; LIGHT_BYTES], RenderError> {
-        let length = self
-            .direction_to_light
+        if !self
+            .irradiance
             .iter()
-            .map(|v| f64::from(*v).powi(2))
-            .sum::<f64>()
-            .sqrt();
-        if !length.is_finite()
-            || length == 0.0
-            || !self
-                .irradiance
-                .iter()
-                .all(|v| v.is_finite() && (0.0..=10_000.0).contains(v))
+            .all(|v| v.is_finite() && (0.0..=10_000.0).contains(v))
         {
             return Err(RenderError::InvalidLighting);
         }
-        let direction = self
-            .direction_to_light
-            .map(|value| f64::from(value) / length);
-        // Orthographic receiver-to-camera direction is fixed at -Z, so this
-        // precomputed half-vector is used only by the orthographic diagnostic.
-        // f64 preparation avoids f32 squared-length underflow near opposition.
-        let half = [direction[0], direction[1], direction[2] - 1.0];
-        let half_length = half.iter().map(|v| v * v).sum::<f64>().sqrt();
-        let half = if half_length > 0.0 {
-            half.map(|v| v / half_length)
-        } else {
-            [0.0, 0.0, -1.0]
-        };
-        let angular_fresnel = (1.0 + half[2]).clamp(0.0, 1.0).powi(5) as f32;
-        let mut bytes = [0; LIGHT_BYTES];
-        for i in 0..3 {
-            bytes[i * 4..i * 4 + 4].copy_from_slice(&(direction[i] as f32).to_le_bytes());
-            bytes[32 + i * 4..36 + i * 4].copy_from_slice(&(half[i] as f32).to_le_bytes());
-        }
-        bytes[44..48].copy_from_slice(&angular_fresnel.to_le_bytes());
-        for (i, value) in self.irradiance.into_iter().enumerate() {
-            bytes[16 + i * 4..20 + i * 4].copy_from_slice(&value.to_le_bytes());
-        }
-        Ok(bytes)
+        pack_directional(
+            self.direction_to_light.map(f64::from),
+            self.irradiance,
+            [0.0; 3],
+        )
     }
+}
+
+/// Photometric constant-light quantities from a checked cooked product.
+/// The fields retain source units until one finite GPU preparation.
+#[derive(Clone, Copy, Debug)]
+pub struct PhotometricEnvironment {
+    /// Geometric receiver-to-Sun world direction.
+    pub toward_sun: [f64; 3],
+    /// Perpendicular Sun illuminance in lux.
+    pub sun_lux: f64,
+    /// Nonnegative linear Rec.709 colour with photometric luminance one.
+    pub sun_colour: [f64; 3],
+    /// Isotropic hemispherical incident irradiance in lux.
+    pub ambient_lux: [f64; 3],
+    /// Independent terminal background radiance in cd/m².
+    pub background_radiance: [f64; 3],
+}
+
+enum Lighting {
+    Diagnostic(SyntheticLight),
+    Photometric(PhotometricEnvironment),
+}
+
+impl PhotometricEnvironment {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "validated and presentation-clamped f64 authored quantities round once to the f32 GPU ABI"
+    )]
+    fn pack(self) -> Result<([u8; LIGHT_BYTES], wgpu::Color, usize), RenderError> {
+        const MAX_PRESENTATION_LIGHT: f64 = 10_000_000.0;
+        // Retain F3's exact accepted predicate at this boundary.
+        let luminance =
+            0.2126 * self.sun_colour[0] + 0.7152 * self.sun_colour[1] + 0.0722 * self.sun_colour[2];
+        if !self.sun_lux.is_finite()
+            || self.sun_lux < 0.0
+            || !self.sun_colour.iter().all(|x| x.is_finite() && *x >= 0.0)
+            || (luminance - 1.0).abs() > 1e-9
+            || !self.ambient_lux.iter().all(|x| x.is_finite() && *x >= 0.0)
+            || !self
+                .background_radiance
+                .iter()
+                .all(|x| x.is_finite() && *x >= 0.0)
+        {
+            return Err(RenderError::InvalidLighting);
+        }
+        let mut clamps = 0;
+        let mut limit = |value: f64| {
+            if value > MAX_PRESENTATION_LIGHT {
+                clamps += 1;
+                MAX_PRESENTATION_LIGHT as f32
+            } else {
+                value as f32
+            }
+        };
+        let sun = self.sun_colour.map(|channel| limit(self.sun_lux * channel));
+        let ambient = self.ambient_lux.map(&mut limit);
+        let background = self.background_radiance.map(limit);
+        let bytes = pack_directional(self.toward_sun, sun, ambient)?;
+        Ok((
+            bytes,
+            wgpu::Color {
+                r: f64::from(background[0]) * f64::from(PRE_EXPOSURE),
+                g: f64::from(background[1]) * f64::from(PRE_EXPOSURE),
+                b: f64::from(background[2]) * f64::from(PRE_EXPOSURE),
+                a: 1.0,
+            },
+            clamps,
+        ))
+    }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "validated finite direction rounds once to the f32 shader ABI"
+)]
+fn pack_directional(
+    toward_source: [f64; 3],
+    irradiance: [f32; 3],
+    ambient: [f32; 3],
+) -> Result<[u8; LIGHT_BYTES], RenderError> {
+    let length = toward_source.iter().map(|v| v * v).sum::<f64>().sqrt();
+    if !length.is_finite() || length == 0.0 {
+        return Err(RenderError::InvalidLighting);
+    }
+    let direction = toward_source.map(|value| value / length);
+    // Orthographic receiver-to-camera direction is fixed at -Z, so this
+    // precomputed half-vector is used only by the orthographic diagnostic.
+    // f64 preparation avoids f32 squared-length underflow near opposition.
+    let half = [direction[0], direction[1], direction[2] - 1.0];
+    let half_length = half.iter().map(|v| v * v).sum::<f64>().sqrt();
+    let half = if half_length > 0.0 {
+        half.map(|v| v / half_length)
+    } else {
+        [0.0, 0.0, -1.0]
+    };
+    let angular_fresnel = (1.0 + half[2]).clamp(0.0, 1.0).powi(5) as f32;
+    let mut bytes = [0; LIGHT_BYTES];
+    for i in 0..3 {
+        bytes[i * 4..i * 4 + 4].copy_from_slice(&(direction[i] as f32).to_le_bytes());
+        bytes[32 + i * 4..36 + i * 4].copy_from_slice(&(half[i] as f32).to_le_bytes());
+    }
+    bytes[44..48].copy_from_slice(&angular_fresnel.to_le_bytes());
+    for (i, value) in irradiance.into_iter().enumerate() {
+        bytes[16 + i * 4..20 + i * 4].copy_from_slice(&value.to_le_bytes());
+    }
+    for (i, value) in ambient.into_iter().enumerate() {
+        bytes[48 + i * 4..52 + i * 4].copy_from_slice(&value.to_le_bytes());
+    }
+    Ok(bytes)
 }
 
 fn packed_light_direction(data: &[u8; LIGHT_BYTES]) -> Vec3 {
@@ -272,6 +351,8 @@ pub struct PreparedSynthetic {
     cluster_head_bytes: u64,
     cluster_index_bytes: u64,
     dropped_light_references: usize,
+    presentation_light_clamps: usize,
+    background: wgpu::Color,
     shadow: Option<ShadowPrepared>,
 }
 impl PreparedSynthetic {
@@ -305,10 +386,6 @@ impl PreparedSynthetic {
     /// # Errors
     /// Refuses invalid exposure or its derived reciprocals, unsupported scene
     /// data, device capacity or GPU validation failure.
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
-    )]
     pub async fn prepare_with_light_and_exposure(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -317,9 +394,73 @@ impl PreparedSynthetic {
         light: SyntheticLight,
         exposure: f32,
     ) -> Result<Self, RenderError> {
+        Self::prepare_with_lighting(
+            device,
+            queue,
+            generation,
+            scene,
+            Lighting::Diagnostic(light),
+            exposure,
+        )
+        .await
+    }
+
+    /// Prepare a cooked photometric constant-light generation on this device.
+    ///
+    /// # Errors
+    ///
+    /// Refuses invalid authored quantities, view or GPU preparation.
+    pub async fn prepare_with_photometric_environment(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        generation: u64,
+        scene: &SyntheticScene,
+        environment: PhotometricEnvironment,
+        exposure: f32,
+    ) -> Result<Self, RenderError> {
+        Self::prepare_with_lighting(
+            device,
+            queue,
+            generation,
+            scene,
+            Lighting::Photometric(environment),
+            exposure,
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
+    )]
+    async fn prepare_with_lighting(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        generation: u64,
+        scene: &SyntheticScene,
+        lighting: Lighting,
+        exposure: f32,
+    ) -> Result<Self, RenderError> {
         let display_gain = checked_display_gain(exposure)?;
-        let mut light_data = light.pack()?;
-        let shadow_enabled = scene.sun_shadows && light.irradiance.iter().any(|value| *value > 0.0);
+        let (mut light_data, background, presentation_light_clamps) = match lighting {
+            Lighting::Diagnostic(light) => (
+                light.pack()?,
+                wgpu::Color {
+                    r: 0.02 * f64::from(PRE_EXPOSURE),
+                    g: 0.03 * f64::from(PRE_EXPOSURE),
+                    b: 0.04 * f64::from(PRE_EXPOSURE),
+                    a: 1.0,
+                },
+                0,
+            ),
+            Lighting::Photometric(environment) => environment.pack()?,
+        };
+        let shadow_enabled = scene.sun_shadows
+            && light_data[16..28]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .any(|word| f32::from_le_bytes(*word) > 0.0);
         let clusters = ClusterTable::build(&scene.local_lights, &scene.view)?;
         let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
@@ -672,6 +813,8 @@ impl PreparedSynthetic {
             cluster_head_bytes,
             cluster_index_bytes,
             dropped_light_references,
+            presentation_light_clamps,
+            background,
             shadow,
         })
     }
@@ -679,6 +822,16 @@ impl PreparedSynthetic {
     /// capacity. This is presentation telemetry, not a gameplay light count.
     pub fn dropped_light_references(&self) -> usize {
         self.dropped_light_references
+    }
+    /// Authored light/background channels clamped to the finite presentation
+    /// envelope while preparing this generation.
+    pub fn presentation_light_clamps(&self) -> usize {
+        self.presentation_light_clamps
+    }
+    /// Number of prepared GPU scene passes for this light state. A zero Sun
+    /// omits both cascades and their resources.
+    pub fn scene_pass_count(&self) -> u32 {
+        if self.shadow.is_some() { 4 } else { 2 }
     }
     /// Update sorted, distinct changed slots before the next queue submission.
     /// The caller submits each frame before preparing another one; queue writes
@@ -1079,12 +1232,7 @@ impl PreparedSynthetic {
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.02 * f64::from(PRE_EXPOSURE),
-                        g: 0.03 * f64::from(PRE_EXPOSURE),
-                        b: 0.04 * f64::from(PRE_EXPOSURE),
-                        a: 1.0,
-                    }),
+                    load: wgpu::LoadOp::Clear(self.background),
                     store: wgpu::StoreOp::Store,
                 },
             })],
@@ -1627,6 +1775,55 @@ mod tests {
             SyntheticLight {
                 irradiance: [0.0; 3],
                 ..Default::default()
+            }
+            .pack()
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn photometric_pack_preserves_units_and_counts_presentation_clamps() {
+        let source = PhotometricEnvironment {
+            toward_sun: [0.0, 1.0, 0.0],
+            sun_lux: 100_000.0,
+            sun_colour: [1.0; 3],
+            ambient_lux: [1000.0; 3],
+            background_radiance: [2.0, 3.0, 4.0],
+        };
+        let (bytes, background, clamps) = source.pack().unwrap();
+        assert_eq!(clamps, 0);
+        assert_eq!(
+            f32::from_le_bytes(bytes[16..20].try_into().unwrap()),
+            100_000.0
+        );
+        assert_eq!(
+            f32::from_le_bytes(bytes[48..52].try_into().unwrap()),
+            1000.0
+        );
+        assert_eq!(background.r, 2.0 / 1024.0);
+        let (_, _, clamps) = PhotometricEnvironment {
+            sun_lux: 20_000_000.0,
+            ..source
+        }
+        .pack()
+        .unwrap();
+        assert_eq!(clamps, 3);
+        assert!(matches!(
+            PhotometricEnvironment {
+                ambient_lux: [f64::NAN, 0.0, 0.0],
+                ..source
+            }
+            .pack(),
+            Err(RenderError::InvalidLighting)
+        ));
+        assert!(
+            PhotometricEnvironment {
+                sun_colour: [
+                    0.088_462_886_047_803_61,
+                    0.060_368_322_438_510_39,
+                    12.991_930_293_881_085,
+                ],
+                ..source
             }
             .pack()
             .is_ok()

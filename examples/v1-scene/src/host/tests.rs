@@ -20,6 +20,8 @@ fn sample(tick: u64) -> FrameSample {
         moving: 0,
         dropped_presentation: 0,
         dropped_light_references: 0,
+        clamped_light_channels: 0,
+        visual_revision: None,
     }
 }
 

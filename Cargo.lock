@@ -1878,8 +1878,11 @@ version = "0.1.0"
 dependencies = [
  "divan",
  "pollster",
+ "serde_json",
+ "thrum-cook",
  "thrum-core",
  "thrum-render",
+ "thrum-source",
  "wgpu",
  "winit",
 ]

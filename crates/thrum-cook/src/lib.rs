@@ -7,11 +7,17 @@ use sha2::{Digest, Sha256};
 use std::io;
 mod build_declaration;
 mod native_worktree;
+mod render_environment;
 pub use build_declaration::{
     BuildDeclaration, BuildDeclarationError, read_pinned_build_declaration,
 };
 pub use native_worktree::{
     BuildScratchPlan, MaterializeError, MaterializedSource, materialize_pinned_source,
+};
+pub use render_environment::{
+    EnvironmentArtifact, EnvironmentCookError, EnvironmentLoadError, EnvironmentProduct,
+    EnvironmentProductRevision, EnvironmentValues, cook_render_environment,
+    load_environment_artifact,
 };
 use thrum_source::{
     AcceptedSourceRoot, MAX_RECORD_BYTES, PinnedSource, SourcePath, SourceStoreError, parse_scene,
@@ -395,31 +401,48 @@ pub fn cook_entry_scene(
     })
 }
 
-fn input_hash(pin: &PinnedSource, path: &SourcePath) -> Result<[u8; 32], SceneCookError> {
+fn input_hash(pin: &PinnedSource, path: &SourcePath) -> Result<[u8; 32], RecordReadError> {
     pin.manifest()
         .files()
         .binary_search_by(|file| file.path().cmp(path))
         .ok()
         .map(|index| pin.manifest().files()[index].content_identity().1)
-        .ok_or(SceneCookError::EntryMissing)
+        .ok_or(RecordReadError::Missing)
 }
 
-fn read_record(pin: &mut PinnedSource, path: &SourcePath) -> Result<Vec<u8>, SceneCookError> {
+#[derive(Debug)]
+enum RecordReadError {
+    Missing,
+    TooLarge,
+    Source(SourceStoreError),
+}
+
+impl From<RecordReadError> for SceneCookError {
+    fn from(error: RecordReadError) -> Self {
+        match error {
+            RecordReadError::Missing => Self::EntryMissing,
+            RecordReadError::TooLarge => Self::RecordTooLarge,
+            RecordReadError::Source(error) => Self::Source(error),
+        }
+    }
+}
+
+fn read_record(pin: &mut PinnedSource, path: &SourcePath) -> Result<Vec<u8>, RecordReadError> {
     let entry = pin
         .manifest()
         .files()
         .binary_search_by(|file| file.path().cmp(path))
         .ok()
         .map(|index| &pin.manifest().files()[index])
-        .ok_or(SceneCookError::EntryMissing)?;
+        .ok_or(RecordReadError::Missing)?;
     let (length, _) = entry.content_identity();
-    let capacity = usize::try_from(length).map_err(|_| SceneCookError::RecordTooLarge)?;
+    let capacity = usize::try_from(length).map_err(|_| RecordReadError::TooLarge)?;
     if capacity > MAX_RECORD_BYTES {
-        return Err(SceneCookError::RecordTooLarge);
+        return Err(RecordReadError::TooLarge);
     }
     let mut bytes = Vec::with_capacity(capacity);
     pin.copy_file_to(path, &mut bytes)
-        .map_err(SceneCookError::Source)?;
+        .map_err(RecordReadError::Source)?;
     Ok(bytes)
 }
 
