@@ -274,6 +274,23 @@
       ],
       "scope": "The V1 scene owns four distinct control bindings for four of its 10k entities. One W1 tick admits separate validated InputFrames, and idle peers have no second authority. Peer 1 remains local keyboard control. Conditioned transport, schema codec, remote admission timing, prediction/reconciliation, replication and sustained target/device budgets remain open."
     },
+    "A5_conditioned_input": {
+      "implementation": "partial_preallocated_future_input_window_and_four_peer_no_socket_conditioned_v1_world",
+      "functional_validation": "600_fixed_ticks_four_peers_2_to_4_tick_delay_2_percent_configured_packet_loss_four_sample_redundancy_zero_due_misses_independent_position_trace; invalid_first_valid_second_out_of_order_duplicate_conflict_epoch_reconnect_and_undrained_slot_tests_pass; 500_warmed_tick_zero_rust_heap_allocation_assertion_pass",
+      "experienced_quality": "no_client_replica_prediction_correction_or_visible_multiplayer_acceptance",
+      "platform_performance": {
+        "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
+        "windows": "not_run",
+        "browser": "not_run_conditioned_module_excluded_from_current_browser_scene",
+        "ios": "not_run_conditioned_multiplayer",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Rust 1.99.1 release, one 600-tick run: 2400 packets sent, 55 dropped, 2330 delivered, 15 in flight, 2380 due frames admitted, zero due misses; tick work p50/p95 47/50 us including link and 10k W1 but excluding wall pacing, renderer and OS transport. Divan 20 complete runs: median 28.62 ms and 131 benchmark-thread Rust allocations/5.534 MB per run including setup/teardown. Counting allocator: zero Rust heap allocations across 500 warmed ticks.",
+      "evidence": [
+        "../evidence/v1-workload/A5-CONDITIONED-INPUT-2026-11-04.md"
+      ],
+      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. This is a deterministic in-memory diagnostic, not a socket or schema codec. Deliberate burst loss, exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",

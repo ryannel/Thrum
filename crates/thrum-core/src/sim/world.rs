@@ -394,6 +394,26 @@ impl Simulation {
         Ok(())
     }
 
+    /// Check game action count and numeric values before a future N1 frame
+    /// reserves a timing slot. This is the same action gate used at W1 admission;
+    /// it does not validate peer ownership or consume an input sequence.
+    ///
+    /// # Errors
+    /// Returns `TooManyActions` or `InvalidAction` for an unsupported payload.
+    pub fn validate_frame_actions(&self, frame: &InputFrame<SimAction>) -> Result<(), FrameError> {
+        if frame.actions.len() > self.config.actions_per_frame {
+            return Err(FrameError::TooManyActions);
+        }
+        if frame
+            .actions
+            .iter()
+            .any(|action| matches!(action, SimAction::Impulse(v) if !finite(*v)))
+        {
+            return Err(FrameError::InvalidAction);
+        }
+        Ok(())
+    }
+
     /// Admit exactly one frame for a peer's next tick. Complete validation comes
     /// before sequence mutation; admission does not mutate committed components.
     ///
@@ -402,15 +422,7 @@ impl Simulation {
     /// The peer, connection, actor, tick, sequence, control, axes, actions, or pending-frame slot fails admission.
     pub fn admit_frame(&mut self, frame: InputFrame<SimAction>) -> Result<(), FrameError> {
         frame.validate_axes()?;
-        if frame.actions.len() > self.config.actions_per_frame {
-            return Err(FrameError::TooManyActions);
-        }
-        if frame.actions.iter().any(|action| {
-            matches!(action,
-            SimAction::Impulse(v) if !finite(*v))
-        }) {
-            return Err(FrameError::InvalidAction);
-        }
+        self.validate_frame_actions(&frame)?;
         let peer = self
             .peers
             .iter_mut()

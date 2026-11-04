@@ -14,7 +14,7 @@ allowed_workspace_dependencies = ["thrum-core"]
 
 [packages.thrum-network]
 manifest = "crates/thrum-network/Cargo.toml"
-# Test-only real W1 host integration; the production N1 codec remains independent.
+# The timed input window consumes the shared W1 InputFrame without owning gameplay truth.
 allowed_workspace_dependencies = ["thrum-core"]
 
 [packages.thrum-source]
@@ -39,7 +39,7 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-mobile-shell", "thrum-sou
 
 [packages.v1-scene]
 manifest = "examples/v1-scene/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-core", "thrum-cook", "thrum-render", "thrum-source"]
+allowed_workspace_dependencies = ["thrum-core", "thrum-cook", "thrum-network", "thrum-render", "thrum-source"]
 
 [packages.v1-scene-ios]
 manifest = "examples/v1-scene-ios/Cargo.toml"

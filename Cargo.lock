@@ -1927,6 +1927,7 @@ dependencies = [
  "serde_json",
  "thrum-cook",
  "thrum-core",
+ "thrum-network",
  "thrum-render",
  "thrum-source",
  "wasm-bindgen",
