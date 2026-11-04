@@ -208,6 +208,19 @@ fn dequantize(value: i16) -> Result<f32, InputCodecError> {
     Ok(f32::from(value) / 32767.0)
 }
 
+/// Return the exact normalized axes that a receiver decodes after this input
+/// wire's quantization. Predictors store these values, not raw UI axes.
+///
+/// # Errors
+/// Refuses a nonfinite or out-of-range axis.
+pub fn canonical_axes(axes: [f32; 3]) -> Result<[f32; 3], InputCodecError> {
+    let mut decoded = [0.0; 3];
+    for (output, axis) in decoded.iter_mut().zip(axes) {
+        *output = dequantize(quantize(axis)?)?;
+    }
+    Ok(decoded)
+}
+
 /// Encode complete records into caller-owned scratch. A small destination may
 /// refuse; callers route the whole newest frame to a reliable lane or report
 /// profile refusal rather than splitting its actions.

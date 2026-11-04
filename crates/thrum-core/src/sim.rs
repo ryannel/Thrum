@@ -5,12 +5,14 @@
 //! validates it, then commits once; publication copies never alias those columns.
 //! The storage implementation stays private for the A0 hecs/bevy/custom comparison.
 
+mod controller;
 mod input;
 mod publication;
 mod schedule;
 mod storage;
 mod world;
 
+pub use controller::{ControllerInput, ControllerRule, ControllerStepError};
 pub use input::{FrameError, InputFrame, SimAction};
 pub use publication::{VisualSnapshotLease, VisualSnapshotPool};
 pub use schedule::{

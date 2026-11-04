@@ -1,9 +1,16 @@
 //! Ordered, delayed in-memory controller groups for the first confirmed client
 //! consumer. This is not the V1 state-delta wire or result/ACK retention owner.
 
-use thrum_core::{Origin, sim::ControllerState};
+use std::time::Instant;
+use thrum_core::{
+    Origin,
+    sim::{ControllerRule, ControllerState, SimAction},
+};
 
-use super::PEER_COUNT;
+use super::{
+    PEER_COUNT,
+    predicted::{PredictedPeer, PredictionReport},
+};
 
 const RETURN_CAPACITY: usize = 32;
 const RETURN_SEED: u64 = 0xC0F1_2026_1104;
@@ -76,6 +83,10 @@ impl ConfirmedPeer {
         self.state.position.0
     }
 
+    pub(super) fn state(&self) -> ControllerState {
+        self.state
+    }
+
     pub(super) fn committed_count(&self) -> u64 {
         self.committed_count
     }
@@ -83,6 +94,7 @@ impl ConfirmedPeer {
 
 pub(super) struct ConfirmedLoop {
     clients: [ConfirmedPeer; PEER_COUNT],
+    predicted: [PredictedPeer; PEER_COUNT],
     pending: Vec<Pending>,
     last_arrival: [u64; PEER_COUNT],
     random_state: u64,
@@ -92,7 +104,7 @@ pub(super) struct ConfirmedLoop {
 }
 
 impl ConfirmedLoop {
-    pub(super) fn new(states: &[ControllerState; PEER_COUNT]) -> Self {
+    pub(super) fn new(states: &[ControllerState; PEER_COUNT], rule: ControllerRule) -> Self {
         Self {
             clients: std::array::from_fn(|index| ConfirmedPeer {
                 tick: 0,
@@ -100,6 +112,7 @@ impl ConfirmedLoop {
                 committed_count: 0,
                 last_sequence: None,
             }),
+            predicted: std::array::from_fn(|index| PredictedPeer::new(states[index], rule)),
             pending: Vec::with_capacity(RETURN_CAPACITY),
             last_arrival: [0; PEER_COUNT],
             random_state: RETURN_SEED,
@@ -107,6 +120,20 @@ impl ConfirmedLoop {
             delivered: 0,
             max_age: 0,
         }
+    }
+
+    pub(super) fn author(
+        &mut self,
+        peer_index: usize,
+        target: u64,
+        origin: Origin,
+        axes: [f32; 3],
+        actions: &[SimAction],
+    ) -> Result<(), String> {
+        self.predicted
+            .get_mut(peer_index)
+            .ok_or("prediction peer index outside session")?
+            .author(target, origin, axes, actions)
     }
 
     fn random(&mut self) -> u64 {
@@ -152,11 +179,18 @@ impl ConfirmedLoop {
     }
 
     pub(super) fn deliver(&mut self, now: u64) -> Result<(), String> {
+        let frame_started = Instant::now();
         let mut index = 0;
         while index < self.pending.len() {
             if self.pending[index].arrival <= now {
                 let pending = self.pending.swap_remove(index);
                 self.clients[pending.peer_index].admit(pending.group)?;
+                self.predicted[pending.peer_index].confirm(
+                    pending.group.tick,
+                    pending.group.state,
+                    pending.group.committed,
+                    frame_started,
+                );
                 self.delivered += 1;
                 self.max_age = self.max_age.max(now - pending.group.tick);
             } else {
@@ -168,6 +202,10 @@ impl ConfirmedLoop {
 
     pub(super) fn clients(&self) -> &[ConfirmedPeer; PEER_COUNT] {
         &self.clients
+    }
+
+    pub(super) fn prediction_reports(&self) -> [PredictionReport; PEER_COUNT] {
+        self.predicted.each_ref().map(PredictedPeer::report)
     }
 
     pub(super) fn counts(&self) -> (u64, u64, usize, u64) {
@@ -202,7 +240,8 @@ mod tests {
     #[test]
     fn refused_groups_leave_the_confirmed_client_unchanged() {
         let states = states();
-        let mut loopback = ConfirmedLoop::new(&states);
+        let rule = scene::simulation().expect("V1 world").controller_rule();
+        let mut loopback = ConfirmedLoop::new(&states, rule);
         let client = &mut loopback.clients[0];
         let initial = *client;
         let mut group = Group {
@@ -238,7 +277,8 @@ mod tests {
     #[test]
     fn committed_origin_cannot_repeat_or_go_backwards() {
         let states = states();
-        let mut loopback = ConfirmedLoop::new(&states);
+        let rule = scene::simulation().expect("V1 world").controller_rule();
+        let mut loopback = ConfirmedLoop::new(&states, rule);
         let client = &mut loopback.clients[0];
         let origin = Origin {
             peer: states[0].binding.peer,
