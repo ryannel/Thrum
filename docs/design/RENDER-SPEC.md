@@ -35,8 +35,9 @@ the module/pipeline and reports validation/translation/driver errors. Native pip
 creation can still stall; WebGPU `createRenderPipelineAsync` resolves only after creation
 and may reject. wgpu adapter behavior must be checked at the selected version rather than
 promising one universal async call. Prepare required work off the draw path where the
-adapter permits and hold local loading until completion. A driver cache is optional and
-discardable, keyed to the actual adapter; it is never the F4 product.
+adapter permits and hold local loading until completion. A driver cache is discardable,
+keyed to the actual adapter, driver and recipe; it is never the F4 product. Native targets
+persist it across runs by default so repeat launches skip pipeline compilation.
 [WebGPU pipeline creation](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createrenderpipelineasync),
 [wgpu pipeline-cache contract](https://docs.rs/wgpu/30.0.1/wgpu/struct.PipelineCache.html).
 
@@ -44,8 +45,12 @@ discardable, keyed to the actual adapter; it is never the F4 product.
 cross-target failure modes with no initial content need. Arbitrary runtime shader graphs
 or custom generated shader code make the finite closure unverifiable. A later specialized
 native provider may supply a separately versioned shader path, but it is not the portable
-baseline or an implied material compatibility promise. No shader compiler framework,
-binary plugin ABI or WebGL fallback is selected now.
+baseline or an implied material compatibility promise. No binary plugin ABI or WebGL
+fallback is selected now. G3 decides, in a time-boxed spike, between WGSL with Naga
+specialization and a shading library such as Slang compiled to MSL, SPIR-V and WGSL through
+wgpu passthrough. The decision is judged on recipe variant count, specialization constants,
+f16, subgroup, mesh-shader and ray-query reach on each recipe
+([hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md)).
 
 ## 2. Material closure and binding ABI
 

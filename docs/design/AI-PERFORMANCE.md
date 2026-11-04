@@ -24,6 +24,13 @@ need not already dominate a profiler before its representation and avoidable cos
 Cost-aware design begins before code; measured qualification begins when a correct executable slice exists.
 Neither a minimal first game nor a portable baseline defines the engine's eventual performance ceiling.
 
+**Full use of the hardware, 4 November 2026.** Performance comes from using what each device actually has, not from
+one path tuned for the weakest target. The [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md) selects a
+capability registry, four frame recipes (Apple tile, Android tile, desktop high, portable), one frame contract for
+reconstruction, interpolation and denoising providers, and a closed-loop quality governor. CPU core classes, vector
+units, unified memory, platform IO, display timing and network offload are investment fronts as much as GPU features.
+A dedicated path keeps a portable fallback and is promoted only by a measured win on its own hardware.
+
 Lower the threshold for investigation and controlled specialization. Agent effort can absorb difficult layouts,
 generated code, compile/cook specialization, SIMD, GPU kernels, incremental updates and distinct hardware paths.
 Internal authoring convenience alone does not veto a credible performance advantage. Keep the public engine model
@@ -56,8 +63,9 @@ not a permanent ranking of fashionable features. Candidate techniques below requ
 | Audio/UI/input — A1/U1/P1 | Mixing/spatial updates, text shaping/layout, retained invalidation, dispatch and input-to-feedback path | Relevant I3 slices; deadline misses, visible/audible response, allocation and correctness across focus/lifecycle changes |
 | Creator/AI iteration — T1/T2/F4 | Compilation, incremental builds/cook, shader preparation, inspection, restart, tests and retained disk; trustworthy cheap evaluation | I1 establishes scoped fixtures/evidence, I2a/I3a measure real edit-to-useful-result; campaign tooling grows with consumers |
 
-Cross-platform scaling applies to every row. Compare Mac/Windows CPU and GPU paths, browser startup and memory,
-and sustained mobile energy/thermal behavior where supported; no desktop score certifies another profile. Preserve
+Cross-platform scaling applies to every row. Compare each recipe against portable on the same device (Apple,
+Android, NVIDIA, AMD, Intel), browser startup and memory, and sustained mobile energy/thermal behavior where
+supported; no desktop score certifies another profile. Preserve
 feature-off savings and game semantics. Don't add every candidate backend or technique simply because AI can write it.
 
 ### The cost account in each owning design

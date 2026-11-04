@@ -56,12 +56,12 @@ earlier evaluator conclusions. Judge the actual artifact and decision trail, not
 2. “Use the engine-module-design skill to design a character animation module for desktop and mobile profiles. It
    must coordinate with physics, gameplay state, camera and content import. Identify a consequential boundary change
    if one appears, and report what evidence would be needed before implementation.”
-3. “Use the engine-module-design skill to assess reusing Bevy's asset-loading subsystem in a custom-host engine.
+3. “Use the engine-module-design skill to assess reusing an open-source engine's asset-loading subsystem in a custom-host engine.
    Compare source-level reuse, reimplementation of the idea and an alternate library; state provenance, license
    obligations and the evidence needed before declaring the choice integrated.”
 
 The first prompt checks whole-engine ownership and bounded commissions; the second checks module integration and
-design maturity; the third checks selective reuse without accidentally restoring Bevy as the host.
+design maturity; the third checks selective reuse without accidentally adopting another engine as the host.
 
 ## Lifecycle skill refinement — 1 November 2026
 

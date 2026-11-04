@@ -53,6 +53,10 @@ For per-tick, per-frame and per-message code:
 - Use a fast non-cryptographic hasher for internal maps.
 - Account cost before choosing a representation, using
   [the cost account](../../../docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design).
+- Use the hardware the device has. Select accelerated paths (GPU family features, tile memory,
+  SIMD, core classes, platform IO) from the capability registry, never by probing privately, and
+  keep a portable fallback that the same tests exercise. See
+  [the hardware-native decision](../../../docs/design/decisions/HARDWARE-NATIVE-ENGINE.md).
 
 ## Verify
 
@@ -63,13 +67,16 @@ For per-tick, per-frame and per-message code:
 - Every parser of untrusted bytes gets a fuzz target.
 - Device, frame-time and visual claims come only from runs on named targets. Record the numbers
   in the maturity ledger, separately for implementation, correctness, visuals and device.
+- A dedicated recipe or accelerated path records its win against portable on the same device and
+  its image or result difference within tolerance. Without that, it is implemented, not qualified.
 - Evidence per slice is at most one page: screenshots, one timing table and an oracle diff when
   relevant. Bulk output follows [the storage rules](../../../docs/ASSET-LIFECYCLE.md).
 - Run `./dev check` before each commit.
 
 ## Before committing
 
-- Did this add a second path for an existing behaviour?
+- Did this add a second path for an existing behaviour? A registry-selected hardware path with a
+  portable fallback and a measured win is intended; any other duplicate is not.
 - Did the public API grow, and does each new public item need to be public?
 - Is the rigour proportional to the state it protects?
 - Is there an allocation, clone or repeated decode on a hot path?

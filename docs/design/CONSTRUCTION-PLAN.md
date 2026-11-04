@@ -192,8 +192,8 @@ contract after the target is reasoned, using the module reconciliation skill. Cl
 replace or defer, with evidence and dependency cost. Existing rendering code already has a wgpu boundary; that is a
 candidate integration advantage, not validation of the whole renderer or permission to transplant all its policies.
 
-Bevy may contribute ideas about schedules, entity generations, table/sparse storage, scenes, reflection, extraction
-and feature composition. Study its actual source/docs and alternatives; do not copy by resemblance or dependency name.
+Open-source engines may contribute ideas about schedules, entity generations, table/sparse storage, scenes, reflection, extraction
+and feature composition. Study actual source/docs and alternatives; do not copy by resemblance or dependency name.
 Copied components need exact origin/license/notices and a maintained adaptation boundary. Prefer standalone mature
 libraries for expensive commodity functions where their supported targets and model satisfy the contracts. No code
 has been copied or vendored during this design commission.

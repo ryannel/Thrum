@@ -6,8 +6,8 @@ The [brief](ARCHITECTURE-BRIEF.md) defines the product; [DESIGN](../provenance/C
 ## Design commission — historical scope
 
 Develop a cohesive, analytically justified architecture and structured implementation plan for a custom
-Bevy-independent 3D game engine targeting Mac, PC, browser and mobile app stores, with exceptional visual quality,
-high performance, configurable capabilities and AI-oriented development. Use Sol agents at high reasoning for
+3D game engine targeting Mac, PC, browser and mobile app stores, with exceptional visual quality,
+full use of each device's hardware, configurable capabilities and AI-oriented development. Use Sol agents at high reasoning for
 bounded recursive research. Derive the system from mathematical/domain knowledge, published evidence, explicit
 representations, governing relationships, approximations and cost/error models before implementation; use experiments
 only to validate stated predictions and genuine empirical uncertainties, never as a substitute for missing design.
@@ -81,7 +81,7 @@ compact and respect source limits. Record inaccessible consequential evidence an
 Classify decisions as selected by the user, recommended/provisional, open, rejected or superseded. Separate production
 practice, research candidate and original hypothesis. Proven techniques are the baseline; experimental providers
 compete at defined seams. Borrowing code requires exact source revision, license/notice retention and a maintenance
-plan. Do not silently vendor a large framework or reintroduce the rejected Bevy host through indirect dependencies.
+plan. Do not silently vendor a large framework or adopt another engine as host through indirect dependencies.
 
 ## Required synthesis
 

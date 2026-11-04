@@ -27,5 +27,6 @@ if Python is not installed as `python3`. Fetch the locked Rust dependencies once
 - [Repository layout](docs/REPOSITORY.md): where work belongs and how it is retained.
 - [Maturity ledger](docs/design/MATURITY.md): design is separate from running proof.
 
-Bevy is a reference, not a dependency. Reuse decisions are recorded before adding libraries.
+Thrum aims to use the hardware each device provides; see [the hardware-native decision](docs/design/decisions/HARDWARE-NATIVE-ENGINE.md).
+Reuse decisions are recorded before adding libraries.
 Plans were copied from Broadsides; [provenance](docs/provenance/IMPORT.md) records the import.
