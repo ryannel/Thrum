@@ -3,8 +3,8 @@ use std::num::NonZeroU32;
 use crate::{ActorId, Handle, Origin, PeerId, StableId, WorldEpoch};
 
 use super::{
-    Access, AccessKey, AccessMode, ComponentKey, FrameError, InputFrame, Schedule, SimAction,
-    Stage, SystemId, SystemSpec,
+    Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId, FrameError,
+    InputFrame, Schedule, SimAction, Stage, SystemId, SystemSpec,
     controller::{ControllerRule, integrate_position, resolve_control},
     storage::{Health, Store},
 };
@@ -773,6 +773,19 @@ fn apply_input(
 
 fn fixture_schedule() -> Schedule {
     use AccessMode::{Read, Write};
+    let mut registry = ComponentRegistry::default();
+    registry
+        .register::<Ownership>(ComponentSchemaId(1))
+        .expect("distinct fixture component type and schema");
+    registry
+        .register::<Velocity>(ComponentSchemaId(2))
+        .expect("distinct fixture component type and schema");
+    registry
+        .register::<Health>(ComponentSchemaId(3))
+        .expect("distinct fixture component type and schema");
+    registry
+        .register::<Position>(ComponentSchemaId(4))
+        .expect("distinct fixture component type and schema");
     let component = |key, mode| Access {
         key: AccessKey::Component(key),
         mode,
@@ -781,49 +794,52 @@ fn fixture_schedule() -> Schedule {
         key: AccessKey::External(key),
         mode,
     };
-    Schedule::new(vec![
-        SystemSpec {
-            id: SystemId(0),
-            stage: Stage::Input,
-            accesses: vec![
-                component(ComponentKey::of::<Ownership>(), Read),
-                component(ComponentKey::of::<Velocity>(), Write),
-                component(ComponentKey::of::<Health>(), Write),
-                external(0, Read),
-            ],
-            after: vec![],
-        },
-        SystemSpec {
-            id: SystemId(1),
-            stage: Stage::Simulate,
-            accesses: vec![
-                component(ComponentKey::of::<Velocity>(), Read),
-                component(ComponentKey::of::<Position>(), Write),
-            ],
-            after: vec![],
-        },
-        SystemSpec {
-            id: SystemId(2),
-            stage: Stage::Resolve,
-            accesses: vec![
-                component(ComponentKey::of::<Position>(), Write),
-                component(ComponentKey::of::<Velocity>(), Write),
-                component(ComponentKey::of::<Health>(), Write),
-                external(1, Read),
-            ],
-            after: vec![],
-        },
-        SystemSpec {
-            id: SystemId(3),
-            stage: Stage::Publish,
-            accesses: vec![
-                component(ComponentKey::of::<Position>(), Read),
-                component(ComponentKey::of::<Velocity>(), Read),
-                component(ComponentKey::of::<Health>(), Read),
-                external(2, Write),
-            ],
-            after: vec![],
-        },
-    ])
+    Schedule::new(
+        &registry,
+        vec![
+            SystemSpec {
+                id: SystemId(0),
+                stage: Stage::Input,
+                accesses: vec![
+                    component(ComponentKey::of::<Ownership>(), Read),
+                    component(ComponentKey::of::<Velocity>(), Write),
+                    component(ComponentKey::of::<Health>(), Write),
+                    external(0, Read),
+                ],
+                after: vec![],
+            },
+            SystemSpec {
+                id: SystemId(1),
+                stage: Stage::Simulate,
+                accesses: vec![
+                    component(ComponentKey::of::<Velocity>(), Read),
+                    component(ComponentKey::of::<Position>(), Write),
+                ],
+                after: vec![],
+            },
+            SystemSpec {
+                id: SystemId(2),
+                stage: Stage::Resolve,
+                accesses: vec![
+                    component(ComponentKey::of::<Position>(), Write),
+                    component(ComponentKey::of::<Velocity>(), Write),
+                    component(ComponentKey::of::<Health>(), Write),
+                    external(1, Read),
+                ],
+                after: vec![],
+            },
+            SystemSpec {
+                id: SystemId(3),
+                stage: Stage::Publish,
+                accesses: vec![
+                    component(ComponentKey::of::<Position>(), Read),
+                    component(ComponentKey::of::<Velocity>(), Read),
+                    component(ComponentKey::of::<Health>(), Read),
+                    external(2, Write),
+                ],
+                after: vec![],
+            },
+        ],
+    )
     .expect("fixed fixture graph is acyclic")
 }

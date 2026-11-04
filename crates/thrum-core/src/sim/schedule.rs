@@ -27,6 +27,55 @@ impl ComponentKey {
     }
 }
 
+/// Stable game-assigned schema identity, distinct from process-local `TypeId`.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ComponentSchemaId(pub u128);
+
+/// Setup-time component catalogue. A game registers its types before the
+/// schedule is compiled; tick execution performs no registry lookup.
+#[derive(Default)]
+pub struct ComponentRegistry {
+    entries: Vec<(ComponentKey, ComponentSchemaId)>,
+}
+
+/// Registration fails without changing the catalogue.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RegistrationError {
+    /// This Rust component type is already registered.
+    DuplicateType,
+    /// This stable schema identity belongs to another component type.
+    DuplicateSchema,
+}
+
+impl ComponentRegistry {
+    /// Register one game component type and its durable schema identity.
+    ///
+    /// # Errors
+    ///
+    /// The type or schema identity was already registered.
+    pub fn register<T: 'static>(
+        &mut self,
+        schema: ComponentSchemaId,
+    ) -> Result<ComponentKey, RegistrationError> {
+        let key = ComponentKey::of::<T>();
+        if self.entries.iter().any(|(existing, _)| *existing == key) {
+            return Err(RegistrationError::DuplicateType);
+        }
+        if self.entries.iter().any(|(_, existing)| *existing == schema) {
+            return Err(RegistrationError::DuplicateSchema);
+        }
+        self.entries.push((key, schema));
+        Ok(key)
+    }
+
+    /// Stable schema identity for a registered process-local component key.
+    pub fn schema(&self, key: ComponentKey) -> Option<ComponentSchemaId> {
+        self.entries
+            .iter()
+            .find_map(|(candidate, schema)| (*candidate == key).then_some(*schema))
+    }
+}
+
 /// Shared access identity. External IDs must name one owner-defined resource.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AccessKey {
@@ -70,6 +119,8 @@ pub struct SystemSpec {
 /// Graph construction error; a failed compile produces no executable schedule.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScheduleError {
+    /// A system names a component not registered for this game.
+    UnknownComponent,
     /// Registration identities must be unique.
     DuplicateSystem,
     /// Explicit predecessor is absent.
@@ -99,9 +150,17 @@ impl Schedule {
     /// # Errors
     ///
     /// A system ID repeats, a dependency is missing or backwards across stages, or the graph has a cycle.
-    pub fn new(systems: Vec<SystemSpec>) -> Result<Self, ScheduleError> {
+    pub fn new(
+        registry: &ComponentRegistry,
+        systems: Vec<SystemSpec>,
+    ) -> Result<Self, ScheduleError> {
         let n = systems.len();
         for (i, system) in systems.iter().enumerate() {
+            if system.accesses.iter().any(|access| {
+                matches!(access.key, AccessKey::Component(key) if registry.schema(key).is_none())
+            }) {
+                return Err(ScheduleError::UnknownComponent);
+            }
             if systems[..i].iter().any(|prior| prior.id == system.id) {
                 return Err(ScheduleError::DuplicateSystem);
             }
