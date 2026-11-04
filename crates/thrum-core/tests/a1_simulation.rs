@@ -467,6 +467,45 @@ fn only_actual_component_changes_advance_change_ticks() {
 }
 
 #[test]
+fn static_entity_enters_motion_archetype_after_validated_velocity_edit() {
+    let mut sim = Simulation::new(WorldEpoch(1), config(1)).expect("one entity fits");
+    let handle = sim.seed(entity(1, 0.0)).expect("static entity seeds");
+    let baseline = sim.published_page().expect("initial static page");
+    assert_eq!(baseline.position(handle), Some(Position::default()));
+
+    let first = sim
+        .step(&[Command::SetVelocity(handle, Velocity([60.0, 0.0, 0.0]))])
+        .expect("validated velocity edit commits");
+    assert_eq!(first.changed_positions, 0);
+    assert_eq!(sim.get(handle).expect("live entity").changes.velocity, 1);
+    assert_eq!(
+        sim.published_page().expect("first page").velocity(handle),
+        Some(Velocity([60.0, 0.0, 0.0]))
+    );
+
+    let second = sim.step(&[]).expect("new motion archetype participates");
+    assert_eq!(second.changed_positions, 1);
+    assert_eq!(
+        sim.get(handle).expect("same handle").position,
+        Position([1.0, 0.0, 0.0])
+    );
+    assert_eq!(baseline.position(handle), Some(Position::default()));
+
+    sim.step(&[Command::SetVelocity(handle, Velocity::default())])
+        .expect("stop commits after one final motion step");
+    assert_eq!(
+        sim.get(handle).expect("same handle").position,
+        Position([2.0, 0.0, 0.0])
+    );
+    let stopped = sim.step(&[]).expect("static archetype remains present");
+    assert_eq!(stopped.changed_positions, 0);
+    assert_eq!(
+        sim.get(handle).expect("same handle").position,
+        Position([2.0, 0.0, 0.0])
+    );
+}
+
+#[test]
 fn existing_fixed_clock_drives_every_stage_without_render_or_input_callbacks() {
     let mut sim = Simulation::new(WorldEpoch(1), config(1))
         .expect("test setup or assertion requires a value");

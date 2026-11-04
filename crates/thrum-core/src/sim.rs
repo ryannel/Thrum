@@ -16,7 +16,7 @@ pub use controller::{ControllerInput, ControllerRule, ControllerStepError};
 pub use input::{FrameError, InputFrame, SimAction};
 pub use published::{DirtySlots, PublishedPage, SnapshotId, StructuralChange};
 pub use schedule::{
-    Access, AccessKey, AccessMode, ComponentKind, Schedule, ScheduleError, Stage, SystemId,
+    Access, AccessKey, AccessMode, ComponentKey, Schedule, ScheduleError, Stage, SystemId,
     SystemSpec,
 };
 pub use world::{
