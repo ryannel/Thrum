@@ -17,6 +17,8 @@ use thrum_core::{
     sim::{Simulation, VisualSnapshotPool},
 };
 #[cfg(not(target_arch = "wasm32"))]
+use thrum_render::extract::SourceTick;
+#[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
     extract::{ExtractReport, RenderExtractor},
@@ -48,6 +50,8 @@ const IN_FLIGHT: usize = 3;
 pub struct FrameSample {
     /// Last complete world tick used by the draw.
     pub tick: u64,
+    /// GPU submission order; independent of the visual source tick.
+    pub submission_order: u64,
     /// Committed updates served in this host call, including catch-up work.
     pub completed_ticks: u32,
     /// Due updates still queued after this call.
@@ -62,6 +66,8 @@ pub struct FrameSample {
     pub worker_ready_ns: u32,
     /// Committed ticks newer than this view at submission.
     pub visual_age_ticks: u32,
+    /// A completed scene target was presented again while native extraction was busy.
+    pub reused_visual: bool,
     /// CPU time for scene mapping, ABI packing and queue writes.
     pub upload_cpu: Duration,
     /// CPU time for render command encoding and timestamp registration.
@@ -110,7 +116,7 @@ pub struct DriveReport {
     pub submitted: bool,
     /// An acquired platform surface received this frame in the same submission.
     pub surface_presented: bool,
-    /// No frame slot was free, so this optional view was skipped.
+    /// A fresh optional view was skipped; a stale scene may still be submitted.
     pub dropped_view: bool,
     /// CPU wall time for the entire callback, including nonblocking GPU polling.
     pub wall: Duration,
@@ -242,14 +248,21 @@ pub struct FrameHost {
     worker_ready: Option<CompletedExtract>,
     #[cfg(not(target_arch = "wasm32"))]
     visual_generation: u64,
+    #[cfg(not(target_arch = "wasm32"))]
+    last_view_source: Option<SourceTick>,
+    #[cfg(not(target_arch = "wasm32"))]
+    last_render_slot: Option<usize>,
     scene: SyntheticScene,
     changed_slots: Vec<u32>,
     prepared: PreparedSynthetic,
     presenter: Option<SurfacePresenter>,
     slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
+    next_submission_order: u64,
     dropped_views: u64,
     dropped_stale_views: u64,
+    #[cfg(not(target_arch = "wasm32"))]
+    reused_views: u64,
     dropped_reports: u64,
     dropped_capture_rows: u64,
     dropped_surface: u64,
@@ -354,6 +367,11 @@ impl FrameHost {
         }
         let clock = TickClock::new(ClockConfig::default(), Duration::ZERO)
             .map_err(|error| format!("clock: {error:?}"))?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let initial_source = SourceTick {
+            epoch: sim.epoch().0,
+            tick: sim.tick(),
+        };
         Ok(Self {
             device: device.clone(),
             queue: queue.clone(),
@@ -367,14 +385,21 @@ impl FrameHost {
             worker_ready: None,
             #[cfg(not(target_arch = "wasm32"))]
             visual_generation: 0,
+            #[cfg(not(target_arch = "wasm32"))]
+            last_view_source: Some(initial_source),
+            #[cfg(not(target_arch = "wasm32"))]
+            last_render_slot: None,
             scene,
             changed_slots,
             prepared,
             presenter,
             slots,
             completed: VecDeque::with_capacity(IN_FLIGHT),
+            next_submission_order: 0,
             dropped_views: 0,
             dropped_stale_views: 0,
+            #[cfg(not(target_arch = "wasm32"))]
+            reused_views: 0,
             dropped_reports: 0,
             dropped_capture_rows: 0,
             dropped_surface: 0,
@@ -421,6 +446,26 @@ impl FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_ready_view(&self) -> bool {
         self.worker_ready.is_some()
+    }
+
+    /// A previously prepared scene can be shown while the native worker is late.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn has_reusable_view(&self) -> bool {
+        self.worker.as_ref().is_some_and(NativeWorker::is_busy)
+            && self
+                .last_view_source
+                .is_some_and(|source| source.epoch == self.sim.epoch().0)
+            && self.last_render_slot.is_some_and(|index| {
+                self.slots
+                    .get(index)
+                    .is_some_and(|slot| matches!(slot.state, SlotState::Free))
+            })
+    }
+
+    /// Surface frames drawn from an older prepared scene while extraction was busy.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn reused_views(&self) -> u64 {
+        self.reused_views
     }
 
     /// Select a fully prepared cooked view at a GPU-safe extraction barrier.
@@ -473,6 +518,8 @@ impl FrameHost {
         self.slots = candidate.slots.take().expect("checked candidate");
         self.visual_product = candidate.product.take();
         self.visual_generation = self.visual_generation.wrapping_add(1);
+        self.last_view_source = None;
+        self.last_render_slot = None;
         if let Some(extractor) = self.extractor.as_mut() {
             extractor.invalidate_history();
         }
@@ -547,18 +594,15 @@ impl FrameHost {
             .iter()
             .filter_map(|slot| match slot.state {
                 SlotState::Free => None,
-                SlotState::Rendering(sample) | SlotState::Resolving(sample) => Some(sample.tick),
+                SlotState::Rendering(sample) | SlotState::Resolving(sample) => {
+                    Some(sample.submission_order)
+                }
             })
             .min();
-        if self
-            .completed
-            .front()
-            .is_some_and(|sample| oldest_pending.is_none_or(|pending| sample.tick < pending))
-        {
-            Ok(self.completed.pop_front())
-        } else {
-            Ok(None)
-        }
+        Ok(pop_report_before_pending(
+            &mut self.completed,
+            oldest_pending,
+        ))
     }
 
     /// Admit monotonic host time through the shared fixed-step clock. Every due
@@ -699,9 +743,64 @@ impl FrameHost {
             .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
             .map_err(|error| format!("instance update: {error:?}"))?;
         let upload_cpu = upload_start.elapsed();
+        self.encode_prepared(
+            slot_index,
+            report,
+            surface,
+            FrameSample {
+                tick: frame.frame_tick,
+                submission_order: 0,
+                completed_ticks: frame.completed_ticks,
+                queued_ticks: frame.queued_ticks,
+                tick_cpu: frame.tick_cpu,
+                extract_cpu: frame.extract_cpu,
+                worker_queue_ns: duration_ns_u32(frame.worker_queue_cpu),
+                worker_ready_ns: duration_ns_u32(frame.worker_ready_cpu),
+                visual_age_ticks: u32::try_from(self.sim.tick().saturating_sub(frame.frame_tick))
+                    .unwrap_or(u32::MAX),
+                reused_visual: false,
+                upload_cpu,
+                encode_cpu: Duration::ZERO,
+                wall: Duration::ZERO,
+                gpu_pass_ns: None,
+                gpu_present_ns: None,
+                surface_presented: false,
+                timing_fault: false,
+                uploaded_rows: uploaded.changed_rows,
+                uploaded_bytes: uploaded.bytes,
+                moving,
+                dropped_presentation: frame.extracted.dropped_capacity
+                    + frame.extracted.dropped_duplicate
+                    + frame.extracted.dropped_invalid
+                    + dropped_invalid
+                    + uploaded.dropped_invalid
+                    + uploaded.dropped_shadow_envelope,
+                dropped_light_references: self.prepared.dropped_light_references(),
+                clamped_light_channels: self.prepared.presentation_light_clamps(),
+                visual_revision: self.current_visual_revision(),
+            },
+            wall_start,
+        )?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.last_view_source = Some(SourceTick {
+                epoch: self.sim.epoch().0,
+                tick: frame.frame_tick,
+            });
+            self.last_render_slot = Some(slot_index);
+        }
+        Ok(())
+    }
 
+    fn encode_prepared(
+        &mut self,
+        slot_index: usize,
+        report: &mut DriveReport,
+        surface: Option<&SurfaceOutput<'_>>,
+        sample: FrameSample,
+        wall_start: Instant,
+    ) -> Result<(), String> {
         let encode_start = Instant::now();
-        let visual_revision = self.current_visual_revision();
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -735,6 +834,28 @@ impl FrameHost {
         } else {
             false
         };
+        self.finish_encoded(
+            slot_index,
+            report,
+            encoder,
+            sample,
+            wall_start,
+            encode_start,
+            surface_presented,
+        )
+    }
+
+    fn finish_encoded(
+        &mut self,
+        slot_index: usize,
+        report: &mut DriveReport,
+        encoder: wgpu::CommandEncoder,
+        mut sample: FrameSample,
+        wall_start: Instant,
+        encode_start: Instant,
+        surface_presented: bool,
+    ) -> Result<(), String> {
+        let slot = &mut self.slots[slot_index];
         slot.timings
             .finish_render(GENERATION, &encoder)
             .map_err(|error| format!("finish timestamps: {error:?}"))?;
@@ -744,39 +865,82 @@ impl FrameHost {
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
-        slot.state = SlotState::Rendering(FrameSample {
-            tick: frame.frame_tick,
-            completed_ticks: frame.completed_ticks,
-            queued_ticks: frame.queued_ticks,
-            tick_cpu: frame.tick_cpu,
-            extract_cpu: frame.extract_cpu,
-            worker_queue_ns: duration_ns_u32(frame.worker_queue_cpu),
-            worker_ready_ns: duration_ns_u32(frame.worker_ready_cpu),
-            visual_age_ticks: u32::try_from(self.sim.tick().saturating_sub(frame.frame_tick))
-                .unwrap_or(u32::MAX),
-            upload_cpu,
-            encode_cpu,
-            wall: wall_start.elapsed(),
-            gpu_pass_ns: None,
-            gpu_present_ns: None,
-            surface_presented,
-            timing_fault: false,
-            uploaded_rows: uploaded.changed_rows,
-            uploaded_bytes: uploaded.bytes,
-            moving,
-            dropped_presentation: frame.extracted.dropped_capacity
-                + frame.extracted.dropped_duplicate
-                + frame.extracted.dropped_invalid
-                + dropped_invalid
-                + uploaded.dropped_invalid
-                + uploaded.dropped_shadow_envelope,
-            dropped_light_references: self.prepared.dropped_light_references(),
-            clamped_light_channels: self.prepared.presentation_light_clamps(),
-            visual_revision,
-        });
+        sample.encode_cpu = encode_cpu;
+        sample.wall = wall_start.elapsed();
+        sample.surface_presented = surface_presented;
+        sample.submission_order = self.next_submission_order;
+        self.next_submission_order = self.next_submission_order.wrapping_add(1);
+        slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
+        Ok(())
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn submit_reused_view(
+        &mut self,
+        slot_index: usize,
+        report: &mut DriveReport,
+        surface: &SurfaceOutput<'_>,
+        source: SourceTick,
+        tick_cpu: Duration,
+        wall_start: Instant,
+    ) -> Result<(), String> {
+        let encode_start = Instant::now();
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let slot = &mut self.slots[slot_index];
+        self.presenter
+            .as_ref()
+            .ok_or("reused view needs a presenter")?
+            .encode(
+                &mut encoder,
+                slot.presentation
+                    .as_ref()
+                    .ok_or("reused view source binding unavailable")?,
+                surface.view,
+                surface.extent,
+                Some(&mut slot.timings),
+            )
+            .map_err(|error| format!("reused surface encode: {error:?}"))?;
+        self.finish_encoded(
+            slot_index,
+            report,
+            encoder,
+            FrameSample {
+                tick: source.tick,
+                submission_order: 0,
+                completed_ticks: report.completed_ticks,
+                queued_ticks: report.queued_ticks,
+                tick_cpu,
+                extract_cpu: Duration::ZERO,
+                worker_queue_ns: 0,
+                worker_ready_ns: 0,
+                visual_age_ticks: u32::try_from(self.sim.tick().saturating_sub(source.tick))
+                    .unwrap_or(u32::MAX),
+                reused_visual: true,
+                upload_cpu: Duration::ZERO,
+                encode_cpu: Duration::ZERO,
+                wall: Duration::ZERO,
+                gpu_pass_ns: None,
+                gpu_present_ns: None,
+                surface_presented: false,
+                timing_fault: false,
+                uploaded_rows: 0,
+                uploaded_bytes: 0,
+                moving: 0,
+                dropped_presentation: 0,
+                dropped_light_references: self.prepared.dropped_light_references(),
+                clamped_light_channels: self.prepared.presentation_light_clamps(),
+                visual_revision: self.current_visual_revision(),
+            },
+            wall_start,
+            encode_start,
+            true,
+        )?;
+        self.reused_views = self.reused_views.saturating_add(1);
         Ok(())
     }
 
@@ -807,6 +971,7 @@ impl FrameHost {
                 {
                     self.dropped_views = self.dropped_views.saturating_add(1);
                     report.dropped_view = true;
+                    self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
                     return Ok(());
                 }
                 let publication_start = Instant::now();
@@ -834,6 +999,15 @@ impl FrameHost {
                             queued_ticks: report.queued_ticks,
                         },
                     );
+                return Ok(());
+            }
+            if self
+                .worker
+                .as_ref()
+                .expect("native worker enabled")
+                .is_busy()
+            {
+                self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
             }
             return Ok(());
         }
@@ -901,6 +1075,35 @@ impl FrameHost {
             }
         };
         self.submit_extracted(slot_index, report, surface, frame, wall_start)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn try_submit_reused_view(
+        &mut self,
+        report: &mut DriveReport,
+        tick_cpu: Duration,
+        wall_start: Instant,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<(), String> {
+        let Some((surface, source)) = surface.zip(self.last_view_source) else {
+            return Ok(());
+        };
+        if source.epoch != self.sim.epoch().0
+            || self
+                .presenter
+                .as_ref()
+                .is_none_or(|presenter| presenter.extent() != surface.extent)
+        {
+            return Ok(());
+        }
+        let Some(slot_index) = self.last_render_slot.filter(|&index| {
+            self.slots
+                .get(index)
+                .is_some_and(|slot| matches!(slot.state, SlotState::Free))
+        }) else {
+            return Ok(());
+        };
+        self.submit_reused_view(slot_index, report, surface, source, tick_cpu, wall_start)
     }
 
     fn current_visual_revision(&self) -> Option<[u8; 32]> {
@@ -1058,6 +1261,7 @@ impl FrameHost {
                             &passes,
                             sample.surface_presented,
                             self.prepared.scene_pass_count() == 4,
+                            sample.reused_visual,
                         ) {
                             sample.gpu_pass_ns = Some(scene);
                             sample.gpu_present_ns = present;
@@ -1092,7 +1296,14 @@ fn pass_durations(
     passes: &[thrum_render::timing::PassTiming],
     presented: bool,
     shadows: bool,
+    reused_visual: bool,
 ) -> Option<([f64; 4], Option<f64>)> {
+    if reused_visual {
+        return (passes.len() == 1
+            && presented
+            && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
+            .then(|| ([0.0; 4], Some(passes[0].nanoseconds)));
+    }
     let shadow_names = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
@@ -1127,7 +1338,7 @@ fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: F
     if queue.len() == IN_FLIGHT {
         if queue
             .front()
-            .is_some_and(|oldest| sample.tick <= oldest.tick)
+            .is_some_and(|oldest| sample.submission_order <= oldest.submission_order)
         {
             *dropped += 1;
             return;
@@ -1137,9 +1348,22 @@ fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: F
     }
     let insert = queue
         .iter()
-        .position(|prior| prior.tick > sample.tick)
+        .position(|prior| prior.submission_order > sample.submission_order)
         .unwrap_or(queue.len());
     queue.insert(insert, sample);
+}
+
+fn pop_report_before_pending(
+    queue: &mut VecDeque<FrameSample>,
+    oldest_pending: Option<u64>,
+) -> Option<FrameSample> {
+    queue
+        .front()
+        .is_some_and(|sample| {
+            oldest_pending.is_none_or(|pending| sample.submission_order < pending)
+        })
+        .then(|| queue.pop_front())
+        .flatten()
 }
 
 #[cfg(test)]

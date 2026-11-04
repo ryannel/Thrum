@@ -1,9 +1,10 @@
-use super::{FrameSample, IN_FLIGHT, retain_sample};
+use super::{FrameSample, IN_FLIGHT, pop_report_before_pending, retain_sample};
 use std::{collections::VecDeque, time::Duration};
 
 fn sample(tick: u64) -> FrameSample {
     FrameSample {
         tick,
+        submission_order: tick,
         completed_ticks: 1,
         queued_ticks: 0,
         tick_cpu: Duration::ZERO,
@@ -11,6 +12,7 @@ fn sample(tick: u64) -> FrameSample {
         worker_queue_ns: 0,
         worker_ready_ns: 0,
         visual_age_ticks: 0,
+        reused_visual: false,
         upload_cpu: Duration::ZERO,
         encode_cpu: Duration::ZERO,
         wall: Duration::ZERO,
@@ -26,6 +28,33 @@ fn sample(tick: u64) -> FrameSample {
         clamped_light_channels: 0,
         visual_revision: None,
     }
+}
+
+#[test]
+fn reused_source_ticks_do_not_hide_earlier_completed_submissions() {
+    let mut queue = VecDeque::with_capacity(IN_FLIGHT);
+    let mut dropped = 0;
+    let mut first = sample(1);
+    first.submission_order = 7;
+    let mut second = sample(1);
+    second.submission_order = 8;
+    retain_sample(&mut queue, &mut dropped, first);
+    assert_eq!(
+        pop_report_before_pending(&mut queue, Some(second.submission_order))
+            .expect("earlier completed submission")
+            .submission_order,
+        first.submission_order
+    );
+    assert!(queue.is_empty());
+    retain_sample(&mut queue, &mut dropped, second);
+    assert!(pop_report_before_pending(&mut queue, Some(7)).is_none());
+    assert_eq!(
+        pop_report_before_pending(&mut queue, None)
+            .expect("remaining submission")
+            .submission_order,
+        second.submission_order
+    );
+    assert_eq!(dropped, 0);
 }
 
 #[test]
