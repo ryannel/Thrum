@@ -141,8 +141,10 @@ visual fallback, never an out-of-range shader index. Passes declare exact subset
 of this layout; extensions cannot silently add a fifth group or assume bindless
 textures. `instance_index` selects the object record, material row and transform;
 no dynamic per-object uniform binding is required. The integrated workload's 32 surface
-lights per cluster (8 mobile) is an F2 capacity limit with diagnosed overflow,
-not shader truncation. Resource/texture counts and storage sizes must pass the
+lights per cluster (8 mobile) is an F2 capacity limit. Oversubscription keeps a
+deterministic highest-contribution subset, counts omitted references and shows
+the quality degradation in developer telemetry; no shader reads beyond the
+prepared list. Resource/texture counts and storage sizes must pass the
 queried adapter limits; wgpu's documented default WebGPU limits include four bind
 groups, 16 sampled textures and 256-byte dynamic uniform offset alignment.
 [wgpu limits](https://docs.rs/wgpu/30.0.1/wgpu/struct.Limits.html).
@@ -414,9 +416,11 @@ Visibility includes casters outside the camera frustum. The 2048² D32 Sun
 map uses a fixed authored light-space receiver volume and four equal-weight
 comparison taps; constant/slope bias is an authored, dimensioned recipe value
 converted through the actual map projection. Masked shadow, depth and forward
-evaluate the same UV/alpha cutoff and geometry. A missing required role or a
-light/instance list exceeding its declared capacity rejects view readiness;
-it never becomes an opaque mask, omitted shadow or truncated light. Off-state
+evaluate the same UV/alpha cutoff and geometry. A missing required role rejects
+view readiness; it never becomes an opaque mask or omitted required shadow.
+Render-derived light/instance demand over capacity uses a declared deterministic
+quality fallback with visible counters, while invalid authored source still
+refuses admission. Off-state
 passes/resources retire after their final CPU reader and GPU completion.
 
 **Light and display.** R0 ambient is a typed isotropic diffuse irradiance in

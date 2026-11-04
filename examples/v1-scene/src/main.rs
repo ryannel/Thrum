@@ -95,6 +95,7 @@ async fn run() -> Result<String, String> {
         .map(|sample| sample.dropped_presentation)
         .sum();
     let uploaded: usize = samples.iter().map(|sample| sample.uploaded_bytes).sum();
+    let dropped_light_references = samples[0].dropped_light_references;
     let catch_up_frames = samples
         .iter()
         .filter(|sample| sample.completed_ticks > 1)
@@ -109,7 +110,7 @@ async fn run() -> Result<String, String> {
         .max()
         .expect("600 frames");
     Ok(format!(
-        "adapter={adapter_name}; frames={FRAMES}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; foreground_pixels={foreground}; dropped_presentation={dropped}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; host wall p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
+        "adapter={adapter_name}; frames={FRAMES}; elapsed={:.3} s; committed_ticks={completed}; final_tick={}; catch_up_frames={catch_up_frames}; over_deadline={over_deadline}; foreground_pixels={foreground}; dropped_presentation={dropped}; dropped_light_references={dropped_light_references}; uploaded_bytes={uploaded}; tick p50/p95={:.3}/{:.3} us; extract p50/p95={:.3}/{:.3} us; upload p50/p95={:.3}/{:.3} us; encode p50/p95={:.3}/{:.3} us; host wall p50/p95/max={:.3}/{:.3}/{:.3} ms; {gpu}",
         elapsed.as_secs_f64(),
         host.tick(),
         tick.0,
