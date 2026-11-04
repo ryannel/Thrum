@@ -10,4 +10,5 @@ pub mod r4;
 pub mod replica;
 pub mod retirement;
 pub mod sent;
+pub mod state_ack;
 pub mod state_delta;
