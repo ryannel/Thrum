@@ -28,9 +28,17 @@ struct Packet {
     samples: [Option<Sample>; HISTORY],
 }
 
+#[derive(Clone, Copy)]
+struct BurstLoss {
+    peer: PeerId,
+    first_tick: u64,
+    last_tick: u64,
+}
+
 struct ConditionedLink {
     random_state: u64,
     pending: Vec<Packet>,
+    burst_loss: Option<BurstLoss>,
     sent: u64,
     dropped: u64,
     delivered: u64,
@@ -43,6 +51,7 @@ impl ConditionedLink {
         Self {
             random_state: SEED,
             pending: Vec::with_capacity(PACKET_CAPACITY),
+            burst_loss: None,
             sent: 0,
             dropped: 0,
             delivered: 0,
@@ -63,7 +72,11 @@ impl ConditionedLink {
     fn send(&mut self, peer: PeerId, now: u64) -> Result<(), String> {
         self.sent += 1;
         let random = self.random();
-        if random % 100 < 2 {
+        if random % 100 < 2
+            || self.burst_loss.is_some_and(|burst| {
+                burst.peer == peer && (burst.first_tick..=burst.last_tick).contains(&now)
+            })
+        {
             self.dropped += 1;
             return Ok(());
         }
@@ -374,12 +387,12 @@ mod tests {
     use std::num::NonZeroUsize;
 
     use thrum_core::{
-        PeerId,
-        sim::{FrameError, SimAction},
+        PeerId, StableId,
+        sim::{Command, ComponentEntity, FrameError, SimAction, Velocity},
     };
     use thrum_network::future_input::{FutureInputError, FutureInputWindow, StageResult};
 
-    use super::{run, scene};
+    use super::{BurstLoss, ConditionedGame, run, scene};
 
     #[test]
     fn four_conditioned_peers_advance_the_shared_10k_world() {
@@ -415,5 +428,88 @@ mod tests {
             }),
             Ok(StageResult::Queued)
         );
+    }
+
+    #[test]
+    fn burst_loss_holds_one_actor_then_recovers_without_skipping_world_ticks() {
+        let mut game = ConditionedGame::new().expect("10k conditioned game");
+        game.link.burst_loss = Some(BurstLoss {
+            peer: PeerId(1),
+            first_tick: 100,
+            last_tick: 105,
+        });
+        for _ in 0..600 {
+            game.step().expect("authoritative tick");
+        }
+        let result = game.finish().expect("held-axis trace after burst");
+        assert_eq!(result.committed_ticks, 600);
+        assert!(result.due_misses > 0, "burst must open a due-input gap");
+        assert!(
+            result.accepted_frames > 2_300,
+            "input must resume after burst"
+        );
+    }
+
+    #[test]
+    fn reconnect_flushes_old_input_before_new_actor_accepts_control() {
+        let mut sim = scene::simulation().expect("10k world");
+        let peer = PeerId(1);
+        let id = StableId(u128::try_from(scene::ENTITY_COUNT - 1).expect("fixture ID"));
+        let old_handle = sim.handle(id).expect("old actor");
+        let old_position = sim.get(old_handle).expect("old position").position;
+        let mut window = FutureInputWindow::new(
+            &[scene::binding(peer)],
+            NonZeroUsize::new(8).expect("nonzero"),
+            sim.tick(),
+        )
+        .expect("future window");
+        assert_eq!(
+            window.stage(scene::control_frame(peer, [1.0, 0.0, 0.0], 2, 2), |frame| {
+                sim.validate_frame_actions(frame)
+            }),
+            Ok(StageResult::Queued)
+        );
+        sim.step(&[Command::Despawn(old_handle)])
+            .expect("retire actor at tick 1");
+        window.commit_tick(1).expect("empty tick 1 handoff");
+
+        let mut new_binding = scene::binding(peer);
+        new_binding.connection_epoch = 2;
+        sim.step(&[Command::Spawn(ComponentEntity {
+            id,
+            position: old_position,
+            velocity: Velocity([0.0; 3]),
+            health: 100,
+            ownership: Some(new_binding),
+            visual: Some(1),
+        })])
+        .expect("spawn new actor at tick 2");
+        let new_handle = sim.handle(id).expect("replacement actor");
+        sim.register_peer(new_binding, new_handle)
+            .expect("new connection epoch");
+        window.reconnect(new_binding).expect("flush old input");
+        window.commit_tick(2).expect("flushed old due frame");
+        assert_eq!(
+            window.stage(scene::control_frame(peer, [1.0, 0.0, 0.0], 3, 3), |frame| {
+                sim.validate_frame_actions(frame)
+            }),
+            Err(FutureInputError::WrongConnection)
+        );
+        let mut new_frame = scene::control_frame(peer, [1.0, 0.0, 0.0], 3, 1);
+        new_frame.origin.connection_epoch = 2;
+        assert_eq!(
+            window.stage(new_frame, |frame| sim.validate_frame_actions(frame)),
+            Ok(StageResult::Queued)
+        );
+        let due = window
+            .take_due(peer)
+            .expect("known peer")
+            .expect("new due frame");
+        sim.admit_frame(due).expect("new connection controls actor");
+        sim.step(&[]).expect("new epoch tick 3");
+        window.commit_tick(3).expect("matching N1 cursor");
+        assert!(sim.get(old_handle).is_err(), "retired handle stays stale");
+        let moved = sim.get(new_handle).expect("new actor position").position.0;
+        assert!((moved[0] - old_position.0[0] - 0.1).abs() < 1e-9);
     }
 }

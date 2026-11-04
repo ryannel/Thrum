@@ -73,6 +73,14 @@ fn future_frames_stage_out_of_order_and_leave_w1_due_order_explicit() {
         11
     );
     assert!(window.take_due(PeerId(2)).expect("known peer").is_none());
+    assert_eq!(
+        stage(&mut window, frame(1, 7, 11, 15, 1.0)),
+        Err(FutureInputError::Late)
+    );
+    assert_eq!(
+        stage(&mut window, frame(2, 9, 11, 15, 1.0)),
+        Err(FutureInputError::Late)
+    );
     window.commit_tick(11).expect("drained tick");
     assert_eq!(window.committed_tick(), 11);
     assert_eq!(
@@ -155,7 +163,7 @@ fn invalid_identity_axes_and_reconnect_do_not_replace_a_future_frame() {
         Err(FutureInputError::WrongConnection)
     );
     assert_eq!(
-        stage(&mut window, frame(1, 8, 5, 1, 0.0)),
+        stage(&mut window, frame(1, 8, 6, 1, 0.0)),
         Ok(StageResult::Queued)
     );
 }

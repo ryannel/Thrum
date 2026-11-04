@@ -276,7 +276,7 @@
     },
     "A5_conditioned_input": {
       "implementation": "partial_preallocated_future_input_window_and_four_peer_no_socket_conditioned_v1_world",
-      "functional_validation": "600_fixed_ticks_four_peers_2_to_4_tick_delay_2_percent_configured_packet_loss_four_sample_redundancy_zero_due_misses_independent_position_trace; invalid_first_valid_second_out_of_order_duplicate_conflict_epoch_reconnect_and_undrained_slot_tests_pass; 500_warmed_tick_zero_rust_heap_allocation_assertion_pass",
+      "functional_validation": "600_fixed_ticks_four_peers_2_to_4_tick_delay_2_percent_configured_packet_loss_four_sample_redundancy_zero_due_misses_independent_position_trace; six_packet_peer_burst_600_tick_held_control_and_recovery_test; 10k_world_despawn_spawn_reconnect_old_epoch_flush_test; invalid_first_valid_second_out_of_order_duplicate_conflict_epoch_late_after_handoff_and_undrained_slot_tests_pass; 500_warmed_tick_zero_rust_heap_allocation_assertion_pass",
       "experienced_quality": "no_client_replica_prediction_correction_or_visible_multiplayer_acceptance",
       "platform_performance": {
         "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
@@ -289,7 +289,7 @@
       "evidence": [
         "../evidence/v1-workload/A5-CONDITIONED-INPUT-2026-11-04.md"
       ],
-      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. This is a deterministic in-memory diagnostic, not a socket or schema codec. Deliberate burst loss, exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open."
+      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. Once a peer's due handoff is observed, further input for that tick is late. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. A deliberate local burst and a separate world reconnect test pass. This is a deterministic in-memory diagnostic, not a socket or schema codec. Exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open."
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",

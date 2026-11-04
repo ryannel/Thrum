@@ -50,6 +50,7 @@ pub enum StageResult {
 struct PeerSlots<A> {
     binding: Ownership,
     frames: Box<[Option<InputFrame<A>>]>,
+    last_handoff_tick: u64,
 }
 
 /// Preallocated future frames for registered peers. This owner never changes W1 state.
@@ -96,7 +97,11 @@ impl<A: PartialEq> FutureInputWindow<A> {
                 .take(future_ticks.get())
                 .collect::<Vec<_>>()
                 .into_boxed_slice();
-            peers.push(PeerSlots { binding, frames });
+            peers.push(PeerSlots {
+                binding,
+                frames,
+                last_handoff_tick: committed_tick,
+            });
         }
         Ok(Self {
             peers,
@@ -141,6 +146,9 @@ impl<A: PartialEq> FutureInputWindow<A> {
         if frame.actor != peer.binding.actor {
             return Err(FutureInputError::WrongActor);
         }
+        if frame.tick <= peer.last_handoff_tick {
+            return Err(FutureInputError::Late);
+        }
         validate_actions(&frame).map_err(FutureInputError::InvalidPayload)?;
         let index =
             usize::try_from(frame.tick % self.horizon).map_err(|_| FutureInputError::TooEarly)?;
@@ -159,6 +167,8 @@ impl<A: PartialEq> FutureInputWindow<A> {
 
     /// Move this peer's next-tick frame to the authoritative admission owner.
     /// An absent frame means W1 will hold its previous axes.
+    /// Once the handoff is observed, another frame for that peer/tick is late,
+    /// even if no frame was present. This closes the pre-tick receive boundary.
     ///
     /// # Errors
     /// Returns `UnknownPeer` for an unregistered peer.
@@ -172,6 +182,7 @@ impl<A: PartialEq> FutureInputWindow<A> {
             .iter_mut()
             .find(|owner| owner.binding.peer == peer)
             .ok_or(FutureInputError::UnknownPeer)?;
+        slot.last_handoff_tick = due;
         let index =
             usize::try_from(due % self.horizon).map_err(|_| FutureInputError::WrongCommit)?;
         if slot.frames[index]
