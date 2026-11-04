@@ -1673,7 +1673,7 @@
       },
       "initial_specifications": {
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
+        "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Region/portal formats, proxy tolerances, active-set transaction and support pins."
@@ -1802,7 +1802,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
+        "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Solver/controller library audit, contact/substep/tolerance and moving-platform model."
@@ -1846,7 +1846,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
+        "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Graph/IK/compression and prior-sample retention, root and ragdoll transitions."
@@ -1885,7 +1885,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
+        "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Nav tile/obstacle update algorithms, agent budgets and replanning policy."
@@ -2266,7 +2266,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb",
+        "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc",
         "RENDER-SPEC.md": "e0697aae0ab928852a2feafacae89b9b1007ca429176751942818ef710e94fd2"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -2514,7 +2514,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
+        "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Regime-specific dynamics/discretization, body-force closure, query/optical consistency.",
@@ -3687,14 +3687,14 @@
     "decision": "selected",
     "stage": "architecture_and_initial_specification",
     "record": "ARCHITECTURE-DECISIONS.md",
-    "record_sha256": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
+    "record_sha256": "60ae4dd4e4048cf615a7178624cd4b355265715d4eb790da790cac6dcc125cd7",
     "contract_revision": "C4",
     "contract_sha256": "8d4751df39b96f42e2accb0b2e95b6e68bc1d85809db510740d4a82b6dd66226",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "e0697aae0ab928852a2feafacae89b9b1007ca429176751942818ef710e94fd2",
-      "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb",
+      "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc",
       "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38"
     },
     "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
@@ -4065,7 +4065,7 @@
       "AI-PERFORMANCE.md": "43a879da96f010f893eeceb23dec8973b835a0baec2d513da931ef0d194e9d85",
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
       "ARCHITECTURE-BRIEF.md": "0c7907c3afe287474ae5db5749e71823ef5b8f822d9c65f96f0b1927addbf041",
-      "ARCHITECTURE-DECISIONS.md": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
+      "ARCHITECTURE-DECISIONS.md": "60ae4dd4e4048cf615a7178624cd4b355265715d4eb790da790cac6dcc125cd7",
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
@@ -4084,7 +4084,7 @@
       "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
-      "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb",
+      "PLAY-ENVIRONMENT-SPEC.md": "62552689fbc09915219d8ed26c7755f476e0ec70d4fe7d574a835e71f4619bdc",
       "README.md": "8838d9593691372f4d889a3f331c8c4c91cb9eb961a969c2715b95b32113416c",
       "RENDER-SPEC.md": "e0697aae0ab928852a2feafacae89b9b1007ca429176751942818ef710e94fd2",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
@@ -4384,9 +4384,21 @@
       "broadsides_clouds": "codex/clouds-procedural-publish-20261104@8b6262f13",
       "dependency": "none; reviewed module-by-module port after G7"
     },
-    "scope": "Spectral sea E1.water profile (CPU f64 long-wave authority, GPU residual), weather-map volumetric E1.clouds provider over a CPU-queryable tau source, ownership split, hardware and frame-contract obligations, G3 consumers and porting policy.",
+    "scope": "Spectral sea E1.water profile (amended 2026-11-05 by gpu_water_authority: GPU authority, interactive wake, asynchronous body queries), weather-map volumetric E1.clouds provider over a CPU-queryable tau source, ownership split, hardware and frame-contract obligations, G3 consumers and porting policy.",
     "implementation": "not_started",
-    "external_measurements": "Broadsides M3 Max only: sea whole frame 34.4/37.8 ms median/p95 at 1440p with water cost unmeasured; clouds about 20 ms and 365.5 MiB at 1080p. Not Thrum evidence.",
+    "external_measurements": "Broadsides M3 Max only: sea whole-frame GPU 22.0/22.8 ms median/p95 at 1440p, water surface off saves 5.5 ms (subtractive, 4 Nov); clouds about 20 ms and 365.5 MiB at 1080p. Not Thrum evidence.",
+    "device_evidence": []
+  },
+  "gpu_water_authority": {
+    "as_of": "2026-11-05",
+    "decision": "selected",
+    "requirement_basis": [
+      "E20",
+      "E21"
+    ],
+    "record": "decisions/E1-GPU-WATER.md",
+    "scope": "All water simulation on the GPU: spectral sea, two-level interactive wake, inland shallow water and whitewater; bodies read water through one batched asynchronous query; water leaves exact replay; CPU analytic sea kept as test oracle and no-GPU fallback.",
+    "implementation": "not_started",
     "device_evidence": []
   }
 }

@@ -131,8 +131,8 @@ return once under the declared causal schedule. Height fields do not answer unsu
 
 Solver domains are independent of stream cells and peer interest. W2 pins required query/boundary support or uses a
 proved transfer/reduced-state scheme; offscreen is not permission to discard live water. Save/replication compatibility
-includes model, domain/edge topology, forcing and required state. CPU/headless physical semantics remain authoritative;
-visual residuals have bounded contact/shoreline error. Client prediction of water-contacting bodies is off unless
+includes model, domain/edge topology, forcing and required state. Each domain's GPU state is its authority, per [GPU water](decisions/E1-GPU-WATER.md) (5 November 2026), which
+replaced CPU/headless authority; water needs no exact replay. Visual residuals have bounded contact/shoreline error. Client prediction of water-contacting bodies is off unless
 the complete P3/E1 state, boundary forcing and once-only disturbance closure can be captured and replayed.
 
 **Why:** a universal solver imposes unsuitable cost and topology; automatic seam blending invents physics. Explicit

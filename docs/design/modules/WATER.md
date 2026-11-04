@@ -5,7 +5,10 @@ This refines `E1.water` within [Environment](ENVIRONMENT.md), under [C4](../CONT
 The [initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river) remain selected for their
 admitted scope. This document carries the broader water brief into Thrum and names the work needed before it can
 be implemented. The [sea and cloud port decision](../decisions/SEA-AND-CLOUD-PORT.md) adds the spectral sea profile
-(CPU f64 long-wave authority, GPU short-wave/wake/foam presentation residual) ported from the Broadsides Rust sea. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
+ported from the Broadsides Rust sea. **[GPU water](../decisions/E1-GPU-WATER.md) (5 November 2026) amends this
+document:** all water simulation runs on the GPU, wakes are physical interactive state, bodies read water through an
+asynchronous batched query, and water needs no exact replay. Where a clause below says CPU authority, CPU queries or
+headless replay, that decision governs. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
 to resolve analytically, not promises that a future experiment will supply a missing mechanism. No runtime is commissioned here.
 The [2 November gap closure](../research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
 adds a moving-shore rain operating model and provisional smooth finite shore
@@ -65,12 +68,12 @@ qualification, a different category from those missing mechanisms. The full-fami
 | WAT-02 | Depth-dependent wave transformation, crest breaking, foam and shoreline response | Selected GH depth response plus tracked-front/noncontact presentation; physical breaker-loss/contact and broader coast remain open | E1, W2, V2/V5 |
 | WAT-03 | Rivers/streams flow around bed and obstacles | Initial shallow baseline retained; wider GH current/pressure uses resolved bed/thick obstacles. Thin walls and unresolved/narrow geometry remain open | E1, W2, P3 |
 | WAT-04 | A fall carries discharge into a finite receiving pool and creates a local response | Selected finite release intervals, moving first-hit event recomputation, volume/momentum/mean traction and source-off continuation in WATER-DYNAMICS; unimplemented | E1, P3, V2/V5, A1 |
-| WAT-05 | Lakes/pools receive sources, waves and floaters | Selected bounded shared GH graph with finite inventory, CPU queries and same P3 body path; shore stability and surrogate accuracy unqualified | E1, P3, W2 |
+| WAT-05 | Lakes/pools receive sources, waves and floaters | Selected bounded shared GH graph with finite inventory, run on the GPU, asynchronous batched queries and same P3 body path; shore stability and surrogate accuracy unqualified | E1, P3, W2 |
 | WAT-06 | Rain fills depressions, overflows and drains without detached downhill blobs or area popping | Selected projected triangle storage and preconnected wet-edge exchange only. Advancing dry-slope film transport remains structurally open | E1 surfaces/water, W2, V3 |
 | WAT-07 | Hulls and floaters receive and generate meaningful disturbances | Selected reference-immersion pressure surrogate plus same P3 geometry/drag, explicit transient/nonlocal errors and work ledger; no rigid exclusion guarantee | E1, P3, F4 |
 | WAT-08 | Foam/bubbles form, travel, disperse and survive source-off | Selected causal area/gas/liquid populations and defined carriers, rise, transfer and source-off in WATER-APPEARANCE; calibration/dense flow unqualified or open | E1 appearance, V5, V3, A1 |
 | WAT-09 | Reflection, refraction, water material, underwater light and caustics agree | Selected common evaluator, bounded regional visibility/ordered media, single light partition and temporal/error rules in WATER-OPTICS; device and image proof unrun | V3, V1, E1, V2/V4 |
-| WAT-10 | Same physical outcome across views, headless play, saves and optional replicas | Bounded product/time/readiness/save/confirmed-projection semantics specified in WATER-INTEGRATION under existing contracts; executable bindings and qualification absent | E1, F1/F3/F4, W1/W2, P7, N1 |
+| WAT-10 | Consistent physical outcome across views, saves and optional replicas; exact replay not required | Product/time/readiness/save/projection semantics in WATER-INTEGRATION, amended by GPU water; executable bindings and qualification absent | E1, F1/F3/F4, W1/W2, P7, N1 |
 
 A stationary obstacle in current and a moving hull share relative-flow/contact facts, not automatically the same
 numerical solver. A heightfield with no current advection or pressure/contact operator cannot generate the missing
@@ -93,7 +96,8 @@ capabilities; none follows merely from drawing transparent water. Bounded combin
 Use ordinary typed registration and named capabilities under Thrum's composition model. No water-specific service
 locator, generic solver-coupling bus or mandatory crate split is commissioned. Separate dynamics, queries, appearance
 and transport responsibilities without duplicating their shared state. Baseline physical queries remain CPU-owned or
-analytically reproducible headless; a different backend must separately meet authority, latency and target contracts.
+analytically reproducible headless. Superseded by GPU water: the GPU state is the authority, read through an
+asynchronous batched query; the CPU analytic sea is the test oracle and the declared no-GPU fallback.
 
 ## Analytical obligations and complete operating cases
 
@@ -136,7 +140,7 @@ rejection workload, not a water allocation or demonstrated capacity. At 30 Hz pr
 | Work / residency multiplier | Design comparison and removable work |
 | --- | --- |
 | Active physical cells × substeps × stencil/pass cost | Compare supported CPU layouts/SIMD/jobs, prepared static topology and justified sparse/refined support. A cheap local operator still has CFL, wet/dry and resolution limits; an iterative/global operator must include its iterations/transforms |
-| Queries × bodies × wet-volume elements × ticks | Batch by committed snapshot/domain; prepare invariant hull geometry; compare analytic evaluation and maintained CPU query products. Synchronous GPU readback on the force path is a latency risk, not a default |
+| Queries × bodies × wet-volume elements × ticks | Batch by committed snapshot/domain; prepare invariant hull geometry; compare analytic evaluation and maintained CPU query products. Selected: one batched GPU query per tick with asynchronous readback, one to two ticks late and latency-compensated; synchronous readback is forbidden |
 | Population state × transport/birth/rise steps | Shared cause records, compact active support and explicit bounded visual population/LOD; rendering culling must not cancel required persistent state |
 | Surface samples, refractive pixels/rays, lights and views × passes | Share view-independent geometry/field preparation; use filtered detail, classified work, history validity and declared scene/probe fallbacks; count receiver/occluder capture and bandwidth |
 | Solver state + staged next state + leased snapshots + saves + queries | Account peak simultaneous owners/versions. Avoid cloning full grids per view/peer/tick; lease/backpressure must fit F1's still-active memory foundation work |

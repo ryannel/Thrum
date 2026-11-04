@@ -4,13 +4,15 @@
 unqualified.** This is D2-water B beneath the [water commission](WATER.md), not a replacement for the smaller
 [initial sea/shallow specification](../PLAY-ENVIRONMENT-SPEC.md). Relationships labelled derived or authored below
 are Thrum's adaptations, not claims about private engines or guarantees inherited from a paper.
+**Amended 5 November 2026 by [GPU water](../decisions/E1-GPU-WATER.md):** the methods below run as GPU compute and
+are the water authority; bodies read them through an asynchronous batched query. Exact replay is not required.
 
 ## Representations and selection
 
 | Role | Selected mechanism | Reason and real limit |
 | --- | --- | --- |
 | Prescribed far water / cheap pond | Retain the initial analytic/prescribed provider | Low-cost headless queries; no claim of finite storage or interactive wake feedback |
-| Connected interactive graph water | Complete generalized-heightfield bulk/dispersive/transport method, CPU authority | One graph state supports current, wakes, finite storage and shore response; not overturning, 3D vortices or arbitrary thin obstacles |
+| Connected interactive graph water | Complete generalized-heightfield bulk/dispersive/transport method, GPU authority | One graph state supports current, wakes, finite storage and shore response; not overturning, 3D vortices or arbitrary thin obstacles |
 | Floating-body disturbance | Geometry-derived, reference-immersion pressure surrogate, plus geometric P3 buoyancy/drag | Produces queryable waves with modest state; explicitly nonreciprocal and not exact rigid-hull exclusion |
 | Detached flow | Finite discharge intervals and ballistic transit, earliest receiver contact and accounted return | A genuine donor/transit/receiver connection; no general 3D splash or waterfall-volume solver |
 | Thin rain/puddles | Separate connected-triangle volume/head flow, below | Basin filling and exchange over preconnected wet edges; advancing runoff over dry slopes remains unselected |
@@ -265,7 +267,7 @@ the admitted tolerance. No boundary-clipped renormalization may silently change 
 more efficient kernels may qualify; no cell count or speed has been certified.
 
 Count `substeps × [cells × filter passes + depth bins × cells log(cells) + advection + hull elements + event recomputes]`,
-plus source solves, pressure footprints and staged/leased products. CPU execution avoids force-path GPU readback;
+plus source solves, pressure footprints and staged/leased products. GPU execution uses asynchronous batched query readback;
 it does not make global transforms/filter iterations free. Queries, field preparation and solver steps are shared
 across views/bodies. Whole-scene budgets, not this document, decide admissible workload.
 
