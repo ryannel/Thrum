@@ -345,7 +345,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual retained_bytes={} visual max_age={} visual encode/decode={}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual retained_bytes={} visual unchanged_partitions={} visual max_age={} visual project/encode/decode={}/{}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.scenario,
             self.committed_ticks,
             PEER_COUNT,
@@ -390,7 +390,9 @@ impl fmt::Display for ConditionedReport {
             self.visual.rebases,
             self.visual.sent_bytes,
             self.visual.retained_bytes,
+            self.visual.unchanged_partitions,
             self.visual.max_age,
+            self.visual.project_ns / 1_000,
             self.visual.encode_ns / 1_000,
             self.visual.decode_ns / 1_000,
             self.tick_p50_ns / 1_000,
@@ -646,7 +648,9 @@ impl ConditionedGame {
         }
         if reconnect {
             self.commit_reconnect(tick)?;
-            self.visual.rebaseline(&self.sim, self.bindings[0])?;
+            for binding in self.bindings {
+                self.visual.rebaseline(&self.sim, binding)?;
+            }
         }
         self.visual.step(&self.sim, tick)?;
         for (index, peer) in PEERS.into_iter().enumerate() {
