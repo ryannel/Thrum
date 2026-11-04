@@ -4,8 +4,8 @@
 //! configuration/generation changes, retain their plans, then reuse per frame.
 //! Timestamp resolve/readback is a later host submission after a nonblocking
 //! completion callback; it never waits in the frame encode/submit path.
-//! Synthetic output is diagnostic,
-//! not the lit PBR/CSM scene or a cooked-content readiness claim.
+//! The synthetic lit output is diagnostic, not a complete clustered/CSM scene
+//! or a cooked-content readiness claim.
 
 pub mod abi;
 pub mod graph;

@@ -1,7 +1,8 @@
 //! Prepared in-memory instanced diagnostic. It exercises the real material and
 //! instance tables, four texture-class bindings, graph declaration and optional
 //! timestamps. One directional metallic-roughness closure and opaque depth are
-//! real; clustered lights, shadows, HDR/display and cooked products remain unbuilt.
+//! real, followed by a fixed authored SDR display transform. Clustered lights,
+//! shadows and cooked products remain unbuilt.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::graph::{
@@ -11,14 +12,18 @@ use crate::graph::{
 use crate::timing::{GpuTimings, TimingError};
 use std::collections::BTreeSet;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
+use wgpu::util::DeviceExt;
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 2;
+pub const SYNTHETIC_REVISION: u64 = 3;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 const VIEW_BYTES: usize = 160;
 const LIGHT_BYTES: usize = 48;
-/// Explicit output encoding: linear unorm diagnostic colour, no display transform.
+const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
+const DISPLAY_BYTES: u64 = 16;
+const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+/// Explicit shader sRGB encoding after exposure, tone and gamut mapping.
 pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 /// Immutable CPU scene, converted at prepare time rather than each draw.
@@ -167,7 +172,9 @@ pub enum RenderError {
     UnsupportedSyntheticMaterial,
     /// Invalid directional source or degenerate/unsupported diagnostic transform.
     InvalidLighting,
-    /// Target/readback belongs to another generation or grid.
+    /// Authored exposure or its required reciprocal/storage gain is not positive finite.
+    InvalidExposure,
+    /// Target/readback belongs to another generation, grid or prepared exposure.
     StaleTarget,
     /// Target dimensions exceed device limits or overflow readback arithmetic.
     TargetExtent,
@@ -190,11 +197,13 @@ impl From<TimingError> for RenderError {
     }
 }
 
-/// Fully prepared closure for one opaque static diagnostic draw role. Required
-/// pipeline creation finishes before this object is returned; encode never builds it.
+/// Fully prepared opaque/static forward and SDR display roles. Both pipelines
+/// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
+    display_pipeline: wgpu::RenderPipeline,
+    display_layout: wgpu::BindGroupLayout,
     view: wgpu::BindGroup,
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
@@ -202,6 +211,7 @@ pub struct PreparedSynthetic {
     material_bytes: u64,
     instance_bytes: u64,
     instance_count: u32,
+    display_gain: f32,
 }
 impl PreparedSynthetic {
     /// Prepare on the V1 executor's existing device and upload queue. No private
@@ -220,10 +230,6 @@ impl PreparedSynthetic {
     /// Zero irradiance disables direct lighting; emission remains independent.
     /// # Errors
     /// Refuses invalid lights/transforms/materials, device capacity or GPU validation failure.
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
-    )]
     pub async fn prepare_with_light(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -231,6 +237,26 @@ impl PreparedSynthetic {
         scene: &SyntheticScene,
         light: SyntheticLight,
     ) -> Result<Self, RenderError> {
+        Self::prepare_with_light_and_exposure(device, queue, generation, scene, light, 1.0).await
+    }
+    /// Prepare with one authored positive exposure shared by the ABI2 view and
+    /// target display transform. Exposure is immutable after preparation.
+    /// # Errors
+    /// Refuses invalid exposure or its derived reciprocals, unsupported scene
+    /// data, device capacity or GPU validation failure.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
+    )]
+    pub async fn prepare_with_light_and_exposure(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        generation: u64,
+        scene: &SyntheticScene,
+        light: SyntheticLight,
+        exposure: f32,
+    ) -> Result<Self, RenderError> {
+        let display_gain = checked_display_gain(exposure)?;
         let light_data = light.pack()?;
         let limits = device.limits();
         let classes = TextureClasses::defaults(&limits)?;
@@ -285,7 +311,8 @@ impl PreparedSynthetic {
         let instance_buffer =
             storage_buffer(device, queue, "synthetic forward opaque", &packed_instances);
         // ABI2 ViewRecord: identity current/previous orthographic view projection,
-        // camera at negative Z, unit pre-exposure; all unused padding stays zero.
+        // camera at negative Z, fixed storage pre-exposure and inverse authored
+        // exposure; all unused padding stays zero. Display uses a separate e/p uniform.
         let mut view_data = [0_u8; VIEW_BYTES];
         for offset in [0, 64] {
             for diagonal in [0, 20, 40, 60] {
@@ -294,14 +321,14 @@ impl PreparedSynthetic {
             }
         }
         view_data[136..140].copy_from_slice(&(-3.0_f32).to_le_bytes());
-        view_data[144..148].copy_from_slice(&1.0_f32.to_le_bytes());
-        view_data[148..152].copy_from_slice(&1.0_f32.to_le_bytes());
+        view_data[144..148].copy_from_slice(&PRE_EXPOSURE.to_le_bytes());
+        view_data[148..152].copy_from_slice(&(1.0 / exposure).to_le_bytes());
         let (view_layout, view) = uniform_group(
             device,
             queue,
             "synthetic ABI2 view",
             &view_data,
-            wgpu::ShaderStages::VERTEX,
+            wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
         );
         let (light_layout, light) = uniform_group(
             device,
@@ -464,7 +491,7 @@ impl PreparedSynthetic {
                 entry_point: Some("fragment"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: OUTPUT_FORMAT,
+                    format: SCENE_FORMAT,
                     blend: None,
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
@@ -472,6 +499,7 @@ impl PreparedSynthetic {
             multiview_mask: None,
             cache: None,
         });
+        let (display_pipeline, display_layout) = prepare_display_pipeline(device);
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
         }
@@ -482,6 +510,8 @@ impl PreparedSynthetic {
                 role: 0,
             },
             pipeline,
+            display_pipeline,
+            display_layout,
             view,
             light,
             materials,
@@ -489,13 +519,28 @@ impl PreparedSynthetic {
             material_bytes,
             instance_bytes,
             instance_count,
+            display_gain,
         })
     }
     /// Prepared generation-local finite draw tuple.
     pub fn pipeline_key(&self) -> PipelineKey {
         self.key
     }
-    /// Compile the actual draw + optional readback declaration. Allocation and
+    fn display_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 1,
+            ..self.key
+        }
+    }
+    fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
+        if target.generation != self.key.device_generation
+            || target.display_gain.to_bits() != self.display_gain.to_bits()
+        {
+            return Err(RenderError::StaleTarget);
+        }
+        Ok(())
+    }
+    /// Compile the actual draw, display + optional readback declaration. Allocation and
     /// graph analysis happen at preparation/target changes, not per instance.
     /// # Errors
     /// Refuses a stale target generation or invalid typed resource/pass declarations.
@@ -504,9 +549,7 @@ impl PreparedSynthetic {
         target: &OffscreenTarget,
         readback: bool,
     ) -> Result<CompiledGraph, RenderError> {
-        if target.generation != self.key.device_generation {
-            return Err(RenderError::StaleTarget);
-        }
+        self.check_target(target)?;
         let mut graph = FrameGraph::default();
         let material = graph.resource(
             ResourceDescriptor::Buffer {
@@ -589,6 +632,32 @@ impl PreparedSynthetic {
                 store: true,
             });
         }
+        let scene = graph.resource(
+            ResourceDescriptor::Texture {
+                width: target.width,
+                height: target.height,
+                layers: 1,
+                mips: 1,
+                samples: 1,
+                format: SCENE_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+            },
+            ResourceScope::Imported { initialized: false },
+        )?;
+        accesses.push(Access {
+            resource: scene.clone(),
+            range: 0..1,
+            kind: AccessKind::AttachmentClear,
+            store: true,
+        });
+        graph.pass(Pass {
+            name: "synthetic forward opaque".into(),
+            scope: PassScope::View(1),
+            pipeline: Some(self.key),
+            accesses,
+            external_side_effect: false,
+        });
         let output = graph.resource(
             ResourceDescriptor::Texture {
                 width: target.width,
@@ -601,17 +670,37 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: false },
         )?;
-        accesses.push(Access {
-            resource: output.clone(),
-            range: 0..1,
-            kind: AccessKind::AttachmentClear,
-            store: true,
-        });
+        let display = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: DISPLAY_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
         graph.pass(Pass {
-            name: "synthetic forward opaque".into(),
+            name: "synthetic tone encode".into(),
             scope: PassScope::View(1),
-            pipeline: Some(self.key),
-            accesses,
+            pipeline: Some(self.display_key()),
+            accesses: vec![
+                Access {
+                    resource: scene,
+                    range: 0..1,
+                    kind: AccessKind::SampledRead,
+                    store: true,
+                },
+                Access {
+                    resource: display,
+                    range: 0..DISPLAY_BYTES,
+                    kind: AccessKind::UniformRead,
+                    store: true,
+                },
+                Access {
+                    resource: output.clone(),
+                    range: 0..1,
+                    kind: AccessKind::AttachmentClear,
+                    store: true,
+                },
+            ],
             external_side_effect: !readback,
         });
         if readback {
@@ -644,7 +733,10 @@ impl PreparedSynthetic {
                 external_side_effect: true,
             });
         }
-        Ok(graph.compile(self.key.device_generation, &BTreeSet::from([self.key]))?)
+        Ok(graph.compile(
+            self.key.device_generation,
+            &BTreeSet::from([self.key, self.display_key()]),
+        )?)
     }
     /// Encode an already prepared draw. The caller owns submission and device
     /// polling. Skipping or failing this method cannot advance view histories.
@@ -655,26 +747,30 @@ impl PreparedSynthetic {
         encoder: &mut wgpu::CommandEncoder,
         generation: u64,
         target: &OffscreenTarget,
-        timings: Option<&mut GpuTimings>,
+        mut timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
-        if generation != self.key.device_generation || target.generation != generation {
+        self.check_target(target)?;
+        if generation != self.key.device_generation {
             return Err(RenderError::StaleTarget);
         }
-        let timestamps = match timings {
+        if let Some(timings) = timings.as_deref_mut() {
+            timings.check_passes(generation, 2)?;
+        }
+        let timestamps = match timings.as_deref_mut() {
             Some(timings) => timings.pass_writes(generation, "synthetic forward opaque")?,
             None => None,
         };
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("synthetic forward opaque"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &target.view,
+                view: &target.scene_view,
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.02,
-                        g: 0.03,
-                        b: 0.04,
+                        r: 0.02 * f64::from(PRE_EXPOSURE),
+                        g: 0.03 * f64::from(PRE_EXPOSURE),
+                        b: 0.04 * f64::from(PRE_EXPOSURE),
                         a: 1.0,
                     }),
                     store: wgpu::StoreOp::Store,
@@ -697,9 +793,140 @@ impl PreparedSynthetic {
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, &self.instances, &[]);
         pass.draw(0..36, 0..self.instance_count);
+        drop(pass);
+        let timestamps = match timings {
+            Some(timings) => timings.pass_writes(generation, "synthetic tone encode")?,
+            None => None,
+        };
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("synthetic tone encode"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &target.view,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            timestamp_writes: timestamps,
+            ..Default::default()
+        });
+        pass.set_pipeline(&self.display_pipeline);
+        pass.set_bind_group(0, &target.display, &[]);
+        pass.draw(0..3, 0..1);
         Ok(())
     }
 }
+fn checked_display_gain(exposure: f32) -> Result<f32, RenderError> {
+    let inverse = 1.0 / exposure;
+    let gain = exposure / PRE_EXPOSURE;
+    if !exposure.is_finite()
+        || exposure <= 0.0
+        || !inverse.is_finite()
+        || inverse <= 0.0
+        || !gain.is_finite()
+        || gain <= 0.0
+    {
+        return Err(RenderError::InvalidExposure);
+    }
+    Ok(gain)
+}
+
+fn prepare_display_pipeline(
+    device: &wgpu::Device,
+) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("synthetic display layout"),
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(DISPLAY_BYTES),
+                },
+                count: None,
+            },
+        ],
+    });
+    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("synthetic display"),
+        bind_group_layouts: &[Some(&layout)],
+        immediate_size: 0,
+    });
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("synthetic authored SDR display"),
+        source: wgpu::ShaderSource::Wgsl(include_str!("synthetic_display.wgsl").into()),
+    });
+    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("prepared synthetic tone encode role"),
+        layout: Some(&pipeline_layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: Some("vertex"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[],
+        },
+        primitive: wgpu::PrimitiveState::default(),
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: Some("fragment"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format: OUTPUT_FORMAT,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        multiview_mask: None,
+        cache: None,
+    });
+    (pipeline, layout)
+}
+
+fn prepare_display_group(
+    device: &wgpu::Device,
+    layout: &wgpu::BindGroupLayout,
+    scene: &wgpu::TextureView,
+    gain: f32,
+) -> wgpu::BindGroup {
+    let mut bytes = [0; 16];
+    bytes[..4].copy_from_slice(&gain.to_le_bytes());
+    let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("synthetic checked display e/p"),
+        contents: &bytes,
+        usage: wgpu::BufferUsages::UNIFORM,
+    });
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("synthetic display inputs"),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(scene),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: uniform.as_entire_binding(),
+            },
+        ],
+    })
+}
+
 fn uniform_group(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -774,6 +1001,9 @@ fn storage_buffer(
 pub struct OffscreenTarget {
     texture: wgpu::Texture,
     view: wgpu::TextureView,
+    scene_view: wgpu::TextureView,
+    display: wgpu::BindGroup,
+    display_gain: f32,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -781,12 +1011,14 @@ pub struct OffscreenTarget {
     row_bytes: u32,
 }
 impl OffscreenTarget {
-    /// Allocate a nonempty bounded target on the executor's device.
+    /// Allocate a nonempty bounded target and immutable display bind group from
+    /// one prepared view's generation/exposure, on the executor's device. The
+    /// prepared view retains both pipelines across resize and additional targets.
     /// # Errors
     /// Refuses empty/overflowing targets or extents beyond the device limits.
     pub fn new(
         device: &wgpu::Device,
-        generation: u64,
+        prepared: &PreparedSynthetic,
         width: u32,
         height: u32,
     ) -> Result<Self, RenderError> {
@@ -837,13 +1069,39 @@ impl OffscreenTarget {
                 view_formats: &[],
             })
             .create_view(&wgpu::TextureViewDescriptor::default());
+        let scene_view = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("synthetic pre-exposed scene HDR"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: SCENE_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let display = prepare_display_group(
+            device,
+            &prepared.display_layout,
+            &scene_view,
+            prepared.display_gain,
+        );
         Ok(Self {
             texture,
             view,
+            scene_view,
+            display,
+            display_gain: prepared.display_gain,
             depth,
             width,
             height,
-            generation,
+            generation: prepared.key.device_generation,
             row_bytes,
         })
     }
@@ -871,7 +1129,8 @@ impl OffscreenTarget {
     }
 }
 
-/// One bounded asynchronous readback slot, reusable after collection.
+/// One bounded asynchronous sRGB-encoded SDR RGBA8 readback slot, reusable
+/// after collection. Each pixel retains four bytes including opaque alpha.
 pub struct PixelReadback {
     buffer: wgpu::Buffer,
     generation: u64,
@@ -959,6 +1218,29 @@ impl PixelReadback {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exposure_refuses_invalid_input_and_derived_gain() {
+        for exposure in [
+            0.0,
+            -1.0,
+            f32::NAN,
+            f32::INFINITY,
+            f32::MAX,
+            f32::from_bits(1),
+        ] {
+            assert!(matches!(
+                checked_display_gain(exposure),
+                Err(RenderError::InvalidExposure)
+            ));
+        }
+        for exposure in [0.25, 1.0] {
+            assert_eq!(
+                checked_display_gain(exposure).unwrap().to_bits(),
+                (exposure * 1024.0).to_bits()
+            );
+        }
+    }
 
     #[test]
     fn light_preparation_normalizes_extremes_and_refuses_bad_sources() {

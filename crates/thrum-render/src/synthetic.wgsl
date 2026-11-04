@@ -93,6 +93,9 @@ fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>) ->
     // AO affects indirect illumination only; this diagnostic has none.
     let colour = direct_brdf(material.base.rgb*base.rgb,material.surface.z*orm.b,material.surface.y*orm.g,normalize(input.normal))
         + material.emissive_cutoff.rgb*emissive.rgb;
-    // Explicit bounded linear diagnostic target, before any V4 display transform.
-    return vec4(clamp(colour,vec3(0.0),vec3(1.0)),1.0);
+    // Keep scene radiance above one. Repair unsupported presentation arithmetic
+    // before pre-exposure and bound only to the finite fp16 storage envelope.
+    let finite = select(vec3(0.0), colour, colour >= vec3(0.0));
+    let bounded = min(finite, vec3(3.402823e38));
+    return vec4(clamp(bounded*view.pre_exposure_inv_exposure_jitter.x,vec3(0.0),vec3(65504.0)),1.0);
 }
