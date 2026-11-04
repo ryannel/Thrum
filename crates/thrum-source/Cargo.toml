@@ -6,7 +6,6 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
-base64 = { version = "=0.23.1", default-features = false }
 fs4 = { version = "=1.1.0", default-features = false, features = ["sync"] }
 rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled"] }
 serde = { version = "=1.0.229", features = ["derive"] }

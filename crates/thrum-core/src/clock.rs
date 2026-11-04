@@ -133,11 +133,6 @@ impl TickClock {
         ))
     }
 
-    pub(crate) fn report_cpu_overload(&mut self) {
-        self.state = ClockState::Overloaded;
-        self.fractional_tick = 0;
-    }
-
     /// Stop advancing world time immediately. Already admitted updates remain.
     pub fn pause(&mut self) {
         self.state = ClockState::Paused;

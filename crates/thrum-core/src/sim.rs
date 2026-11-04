@@ -1,5 +1,5 @@
-//! Provisional A1 simulation seam. This is a bounded component/schedule fixture,
-//! not the selected ECS, general game API, physics solver or replacement I1 host.
+//! Provisional simulation seam. This is a bounded component/schedule fixture,
+//! not the selected generic game API or physics solver.
 //!
 //! One [`Simulation`] owns its component columns. It stages a whole fixed tick,
 //! validates it, then commits once; publication copies never alias those columns.

@@ -1,7 +1,7 @@
 # M1 renderer foundation
 
 3 November 2026. Selected bounded implementation under the active
-[V1 order](../../BUILD-PLAN.md#active-order),
+[V1 order](../../BUILD-PLAN.md#parked-retained-in-git-history),
 [C06–C08](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) and the
 [render specification](../RENDER-SPEC.md). This is a renderer foundation with
 one real lit diagnostic, not M2 clustered-forward/CSM qualification.

@@ -43,7 +43,7 @@ fn main() -> TaskResult {
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests\n  check-docs             Links, metadata, design hashes and crate policy\n  check-web              Compile the portable core for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests, game Wasm compile\n  check-docs             Links, metadata, design hashes and crate policy\n  check-web              Compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
@@ -53,7 +53,8 @@ fn main() -> TaskResult {
             "--locked",
             "--offline",
             "--package",
-            "thrum-core",
+            "v1-game",
+            "--lib",
             "--target",
             "wasm32-unknown-unknown",
         ])?,
@@ -95,6 +96,16 @@ fn main() -> TaskResult {
                 "--",
                 "-D",
                 "warnings",
+            ])?;
+            cargo(&[
+                "check",
+                "--locked",
+                "--offline",
+                "--package",
+                "v1-game",
+                "--lib",
+                "--target",
+                "wasm32-unknown-unknown",
             ])?;
             cargo(&["test", "--locked", "--offline", "--workspace"])?;
         }

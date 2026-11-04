@@ -1,0 +1,22 @@
+[package]
+name = "v1-game-ios"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Thin UIKit scene shell for the shared V1 game diagnostic"
+
+[lib]
+crate-type = ["staticlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+v1-game = { path = "../v1-game" }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+pollster = "=1.0.1"
+thrum-render = { path = "../../crates/thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal", "wgsl"] }
+winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }

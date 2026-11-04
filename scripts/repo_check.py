@@ -67,6 +67,14 @@ def check_packages(root, metadata, policy):
     if packages.keys() != configured.keys():
         errors.append(f"package registry mismatch: actual={sorted(packages)}, policy={sorted(configured)}")
     manifests = {str(Path(p["manifest_path"]).resolve().parent): name for name, p in packages.items()}
+    boundary = policy.get("boundaries", {})
+    game = boundary.get("external_game")
+    if game is not None and (
+        game not in packages
+        or (root / boundary.get("game_manifest", "")).resolve()
+        != Path(packages[game]["manifest_path"]).resolve()
+    ):
+        errors.append("V1 external game must be registered at its declared manifest")
     external = policy.get("external_dependencies", {})
     used_external = set()
     for name, package in packages.items():
@@ -97,6 +105,8 @@ def check_packages(root, metadata, policy):
                     errors.append(f"{name}: path dependency outside registered workspace: {dep_path}")
                 else:
                     actual_edges.add(dependency)
+                    if dependency == game and name != game and name != "v1-game-ios":
+                        errors.append(f"engine package depends on external game: {name}")
                     if dependency not in allowed:
                         errors.append(f"forbidden workspace dependency: {name} -> {dependency}")
             else:
@@ -118,6 +128,34 @@ def check_packages(root, metadata, policy):
             errors.append(f"unused workspace dependency policy for {name}: {sorted(allowed - actual_edges)}")
     if external.keys() - used_external:
         errors.append(f"unused external dependency policy: {sorted(external.keys() - used_external)}")
+    return errors
+
+
+def check_unused_direct_dependencies(metadata, policy):
+    """Reject a direct dependency whose crate name is never referenced in package Rust source."""
+    errors = []
+    members = set(metadata["workspace_members"])
+    for package in metadata["packages"]:
+        if package["id"] not in members:
+            continue
+        directory = Path(package["manifest_path"]).parent
+        implicit = policy["packages"][package["name"]].get("implicit_dependencies", {})
+        declared = {
+            (dependency.get("rename") or dependency["name"])
+            for dependency in package["dependencies"]
+        }
+        for name, reason in implicit.items():
+            if name not in declared or not reason.strip():
+                errors.append(f"invalid implicit dependency record: {package['name']} -> {name}")
+        source = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in directory.rglob("*.rs")
+            if "target" not in path.parts
+        )
+        for dependency in package["dependencies"]:
+            name = (dependency.get("rename") or dependency["name"]).replace("-", "_")
+            if dependency["name"] not in implicit and not re.search(r"\b" + re.escape(name) + r"\s*::", source):
+                errors.append(f"unused direct dependency: {package['name']} -> {name}")
     return errors
 
 
@@ -272,6 +310,7 @@ def main():
     output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, encoding="utf-8")
     metadata = json.loads(output)
     errors += check_packages(ROOT, metadata, policy)
+    errors += check_unused_direct_dependencies(metadata, policy)
     errors += check_manifest_inventory(ROOT, metadata)
     if errors:
         print("\n".join(sorted(set(errors))), file=sys.stderr)

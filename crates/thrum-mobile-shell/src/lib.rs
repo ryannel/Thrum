@@ -5,10 +5,6 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-mod receipts;
-
-pub use receipts::{LocalDelivery, LocalReceiptCursor, LocalReceiptError};
-
 /// The maximum simultaneous touch starts retained by the initial shell.
 pub const TOUCH_CAPACITY: usize = 16;
 
