@@ -5,9 +5,7 @@ use std::{mem::size_of, sync::Arc};
 
 use crate::{Handle, StableId, WorldEpoch};
 
-use super::{ChangeTicks, Command, Ownership, Position, Velocity, storage::Store};
-
-const PAGE_COUNT: usize = 4;
+use super::{ChangeTicks, Command, Ownership, Position, SnapshotRing, Velocity, storage::Store};
 
 /// Identity of one complete committed endpoint.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -311,26 +309,18 @@ impl PublishedPage {
 }
 
 pub(super) struct PublicationRing {
-    pages: Vec<Arc<Page>>,
-    cursor: usize,
-    latest: Option<PublishedPage>,
-    previous: Option<PublishedPage>,
+    ring: SnapshotRing<Page>,
 }
 
 impl PublicationRing {
     pub(super) fn new(epoch: WorldEpoch, capacity: usize) -> Self {
         Self {
-            pages: (0..PAGE_COUNT)
-                .map(|_| Arc::new(Page::with_capacity(epoch, capacity)))
-                .collect(),
-            cursor: 0,
-            latest: None,
-            previous: None,
+            ring: SnapshotRing::new(|| Page::with_capacity(epoch, capacity)),
         }
     }
 
     pub(super) fn can_capture(&self) -> bool {
-        self.pages.iter().any(|page| Arc::strong_count(page) == 1)
+        self.ring.can_capture()
     }
 
     pub(super) fn capture(
@@ -340,33 +330,19 @@ impl PublicationRing {
         tick: u64,
         commands: &[Command],
     ) {
-        let index = (0..self.pages.len())
-            .map(|offset| (self.cursor + offset) % self.pages.len())
-            .find(|&index| Arc::strong_count(&self.pages[index]) == 1)
+        self.ring
+            .capture(|page, first| page.capture(store, epoch, tick, commands, first))
             .expect("page reserved before world commit");
-        let first = self.latest.is_none();
-        Arc::get_mut(&mut self.pages[index])
-            .expect("unleased page")
-            .capture(store, epoch, tick, commands, first);
-        self.cursor = (index + 1) % self.pages.len();
-        self.previous = self.latest.take();
-        self.latest = Some(PublishedPage(Arc::clone(&self.pages[index])));
     }
 
     pub(super) fn latest(&self) -> Option<PublishedPage> {
-        self.latest.clone()
+        self.ring.latest().map(PublishedPage)
     }
     pub(super) fn previous(&self) -> Option<PublishedPage> {
-        self.previous.clone()
+        self.ring.previous().map(PublishedPage)
     }
 
     pub(super) fn reserved_bytes(&self) -> usize {
-        size_of::<Self>()
-            + self.pages.capacity() * size_of::<Arc<Page>>()
-            + self
-                .pages
-                .iter()
-                .map(|page| page.reserved_bytes() + 2 * size_of::<usize>())
-                .sum::<usize>()
+        self.ring.reserved_bytes(Page::reserved_bytes)
     }
 }

@@ -344,6 +344,22 @@ impl RegisteredWorld {
             query: hecs::PreparedQuery::new(),
         })
     }
+
+    /// Prepare one mutable component column for repeated validated commits.
+    ///
+    /// # Errors
+    ///
+    /// The type is absent from setup registration.
+    pub fn write1<T: Send + Sync + 'static>(
+        &self,
+    ) -> Result<PreparedWrite1<T>, RegisteredWorldError> {
+        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
+            return Err(RegisteredWorldError::UnregisteredComponent);
+        }
+        Ok(PreparedWrite1 {
+            query: hecs::PreparedQuery::new(),
+        })
+    }
 }
 
 /// Prepared read of two game-owned component types in backend storage order.
@@ -371,6 +387,40 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
                 slot.stable.expect("queried entity remains live"),
                 a,
                 b,
+            );
+        }
+    }
+}
+
+/// Prepared mutable visit of one registered game component. A caller validates
+/// its full candidate transaction before invoking this commit-time cursor.
+pub struct PreparedWrite1<T: Send + Sync + 'static> {
+    query: hecs::PreparedQuery<(&'static SlotKey, &'static mut T)>,
+}
+
+impl<T: Send + Sync + 'static> PreparedWrite1<T> {
+    /// Visit matching entities in backend storage order with checked identity.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the private slot-to-entity invariant has been broken.
+    pub fn visit(
+        &mut self,
+        world: &mut RegisteredWorld,
+        mut visit: impl FnMut(Handle, StableId, &mut T),
+    ) {
+        let slots = &world.slots;
+        let epoch = world.epoch;
+        for (key, component) in self.query.query_mut(&mut world.world) {
+            let slot = &slots[key.0 as usize];
+            visit(
+                Handle {
+                    epoch,
+                    slot: key.0,
+                    generation: slot.generation,
+                },
+                slot.stable.expect("queried entity remains live"),
+                component,
             );
         }
     }
@@ -435,6 +485,12 @@ mod tests {
             visited.push((handle, id, position.0, velocity.0));
         });
         assert_eq!(visited, [(first, StableId(1), 2.0, 3.0)]);
+        let mut write = world.write1::<Position>().expect("position registered");
+        write.visit(&mut world, |handle, id, position| {
+            assert_eq!((handle, id), (first, StableId(1)));
+            position.0 += 4.0;
+        });
+        assert_eq!(world.with::<Position, _>(first, |value| value.0), Ok(6.0));
         world.despawn(first).expect("first entity live");
         assert_eq!(
             world.with::<Position, _>(first, |value| *value),

@@ -6,7 +6,7 @@ use crate::{Handle, StableId, WorldEpoch};
 use super::{
     ChangeTicks, ComponentEntity, ComponentRegistry, ComponentView, Ownership, Position, SimError,
     Velocity,
-    registered_world::{PreparedRead2, RegisteredWorld, SlotKey},
+    registered_world::{PreparedRead2, PreparedWrite1, RegisteredWorld, SlotKey},
 };
 
 #[derive(Clone, Copy)]
@@ -17,6 +17,7 @@ pub(super) struct Visual(u64);
 pub(super) struct Store {
     world: RegisteredWorld,
     motion: PreparedRead2<Position, Velocity>,
+    positions: PreparedWrite1<Position>,
     pub(super) changes: Vec<ChangeTicks>,
 }
 
@@ -27,9 +28,13 @@ impl Store {
         let motion = world
             .read2::<Position, Velocity>()
             .expect("fixture registers position and velocity");
+        let positions = world
+            .write1::<Position>()
+            .expect("fixture registers position");
         Self {
             world,
             motion,
+            positions,
             changes: vec![ChangeTicks::default(); capacity],
         }
     }
@@ -223,14 +228,15 @@ impl Store {
         tick: u64,
     ) -> usize {
         let mut changed = 0;
-        for (key, position) in self.world.world.query_mut::<(&SlotKey, &mut Position)>() {
-            let row = key.0 as usize;
-            if marks[row] == tick && *position != candidates[row] {
-                *position = candidates[row];
-                self.changes[row].position = tick;
-                changed += 1;
-            }
-        }
+        self.positions
+            .visit(&mut self.world, |handle, _, position| {
+                let row = handle.slot as usize;
+                if marks[row] == tick && *position != candidates[row] {
+                    *position = candidates[row];
+                    self.changes[row].position = tick;
+                    changed += 1;
+                }
+            });
         changed
     }
 

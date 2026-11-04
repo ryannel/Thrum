@@ -17,7 +17,9 @@ fn main() {
 #[divan::bench(args = [10_000, 100_000])]
 fn game_tick_and_publication(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
     let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
-    sim.step(&[]).expect("initial publication succeeds");
+    for _ in 0..60 {
+        sim.step(&[]).expect("warmup publication succeeds");
+    }
     bencher.bench_local(move || {
         let result = sim.step(&[]).expect("one game tick commits");
         divan::black_box(result.tick);
