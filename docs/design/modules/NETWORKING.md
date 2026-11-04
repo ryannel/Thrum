@@ -147,11 +147,11 @@ interest controls bandwidth and information disclosure;
 it is distinct from that client's W2 streaming cells and camera-frustum culling. Required dependency groups travel or
 activate together. Unknown required schemas fail; unsupported optional fields follow the declared protocol policy.
 
-Optional water queries replicate a coherent group: body pose and matching sample tick, domain generation, required
-physical projection, edge/source revisions, boundary data and validity. A retained exact pose may be referenced, but
-missing correspondence rejects the group. A partial group is unavailable, never dry/empty. Server solver support persists
-independently of peer interest. View-only surface residuals stay within contact/shoreline error limits against the
-physical query, including underwater occupancy; client pixels do not supply server forces or saved state.
+Water is shared by causes, not state, under the [water decision](../decisions/E1-GPU-WATER.md). Peers run their own
+GPU water from session content, the shared tick, replicated body state and reliable water event records. Wave events
+are scheduled ahead of their start tick. The authority computes every water force; client pixels never supply server
+forces or saved state. Server solver support persists independently of peer interest. A missing cause is unavailable,
+never calm water.
 
 Gameplay-significant visual cues constrain client quality: F2 admits only tiers meeting the game’s cue/error envelope.
 Server information disclosure never relies on fog/cloud pixels hiding an already replicated secret. Purely cosmetic
@@ -175,8 +175,9 @@ a dependent body/fluid interaction by rewinding only one entity and claim it is 
 physics/world rollback is not promised. Quantization and platform differences cause corrections; fixed dt does not
 prove cross-platform determinism. Rendering may smooth a correction under a declared policy while gameplay state is
 already corrected; teleport/topology/content changes invalidate affected V2/V3/V4/V5/E1 histories under C07.
-Water-contacting bodies default to confirmed interpolation; enabling prediction requires the complete P3/E1 domain,
-boundary forcing, dependent-body state and once-only disturbance closure. A visual sea mesh or seed is insufficient.
+Remote water-contacting bodies use confirmed interpolation on local water. A player's own vessel may be predicted
+against local water fed by the same causes as the authority's; the local water is not rolled back, and corrections are
+smoothed within the water decision's conformance tolerance.
 
 Confirmed effects use authoritative event identity. A permitted speculative cosmetic effect uses a stable
 `(connection epoch, input sequence, effect kind, ordinal)` key, echoed on authoritative confirmation where applicable.

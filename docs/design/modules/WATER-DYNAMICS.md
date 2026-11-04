@@ -4,8 +4,8 @@
 unqualified.** This is D2-water B beneath the [water commission](WATER.md), not a replacement for the smaller
 [initial sea/shallow specification](../PLAY-ENVIRONMENT-SPEC.md). Relationships labelled derived or authored below
 are Thrum's adaptations, not claims about private engines or guarantees inherited from a paper.
-**Amended 5 November 2026 by [GPU water](../decisions/E1-GPU-WATER.md):** the methods below run as GPU compute and
-are the water authority; bodies read them through an asynchronous batched query. Exact replay is not required.
+Per the [water decision](../decisions/E1-GPU-WATER.md), the methods below run as GPU compute and are the water
+authority; bodies read them through an asynchronous batched query. Exact replay is not required.
 
 ## Representations and selection
 

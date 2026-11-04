@@ -5,10 +5,10 @@ This refines `E1.water` within [Environment](ENVIRONMENT.md), under [C4](../CONT
 The [initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river) remain selected for their
 admitted scope. This document carries the broader water brief into Thrum and names the work needed before it can
 be implemented. The [sea and cloud port decision](../decisions/SEA-AND-CLOUD-PORT.md) adds the spectral sea profile
-ported from the Broadsides Rust sea. **[GPU water](../decisions/E1-GPU-WATER.md) (5 November 2026) amends this
-document:** all water simulation runs on the GPU, wakes are physical interactive state, bodies read water through an
-asynchronous batched query, and water needs no exact replay. Where a clause below says CPU authority, CPU queries or
-headless replay, that decision governs. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
+ported from the Broadsides Rust sea. The [water decision](../decisions/E1-GPU-WATER.md) owns where water runs,
+body forces, replay and multiplayer: all water simulation runs on the GPU, wakes are physical interactive state,
+bodies read water through an asynchronous batched query, multiplayer shares causes rather than water state, and
+water needs no exact replay. The wider bounded selection is linked below; numerical algorithms still unselected remain decisions
 to resolve analytically, not promises that a future experiment will supply a missing mechanism. No runtime is commissioned here.
 The [2 November gap closure](../research/RENDER-ENVIRONMENT-TERRAIN-GAP-CLOSURE-2026-11-02.md)
 adds a moving-shore rain operating model and provisional smooth finite shore
@@ -73,7 +73,7 @@ qualification, a different category from those missing mechanisms. The full-fami
 | WAT-07 | Hulls and floaters receive and generate meaningful disturbances | Selected reference-immersion pressure surrogate plus same P3 geometry/drag, explicit transient/nonlocal errors and work ledger; no rigid exclusion guarantee | E1, P3, F4 |
 | WAT-08 | Foam/bubbles form, travel, disperse and survive source-off | Selected causal area/gas/liquid populations and defined carriers, rise, transfer and source-off in WATER-APPEARANCE; calibration/dense flow unqualified or open | E1 appearance, V5, V3, A1 |
 | WAT-09 | Reflection, refraction, water material, underwater light and caustics agree | Selected common evaluator, bounded regional visibility/ordered media, single light partition and temporal/error rules in WATER-OPTICS; device and image proof unrun | V3, V1, E1, V2/V4 |
-| WAT-10 | Consistent physical outcome across views, saves and optional replicas; exact replay not required | Product/time/readiness/save/projection semantics in WATER-INTEGRATION, amended by GPU water; executable bindings and qualification absent | E1, F1/F3/F4, W1/W2, P7, N1 |
+| WAT-10 | Players and views share the water that matters (big waves, wake bumps, currents); exact replay not required | Shared causes, force providers, conformance and divergence tests in the water decision; save/readiness semantics in WATER-INTEGRATION; executable bindings and qualification absent | E1, F1/F3/F4, W1/W2, P7, N1 |
 
 A stationary obstacle in current and a moving hull share relative-flow/contact facts, not automatically the same
 numerical solver. A heightfield with no current advection or pressure/contact operator cannot generate the missing
@@ -90,14 +90,13 @@ capabilities; none follows merely from drawing transparent water. Bounded combin
 | E1 ↔ P3 | Supported surface/flow/occupancy queries; body-relative contact, force/impulse and disturbance IDs | P3 alone integrates bodies. Define per-mode reaction destinations, approximation/work ledger and self-field treatment; never apply a reaction twice |
 | E1 → V2/V3/V5 | Committed interfaces/derivatives, material populations, causal events and prior-state evaluation | Distinguish physical surface from bounded render residual; share attachment/location/time and invalidate affected histories on source/correction/topology changes |
 | V3/V1 ↔ E1 | Shared scene lights/media, visibility and graph resources | V3 owns optical transport, V1 execution; E1 does not acquire a private Sun, display transform, renderer or GPU submission authority |
-| E1 → P7/N1 | Durable state/forcing and separately bounded confirmed query/interaction projections | Saves, rendering and network products are different products; water prediction remains off without complete replay support |
+| E1 → P7/N1 | Durable state/forcing and separately bounded confirmed query/interaction projections | Saves, rendering and network products are different products. The network carries water causes, never grids; a player's own vessel may be predicted against local water under the water decision |
 | E1 → surfaces/A1/P5 | Actual deposit/impact/contact facts, local flow/validity and physical obstacles | Wetness and audio read causal sources, not culled particle counts; navigation/occupancy cannot be inferred from a visible water mesh |
 
 Use ordinary typed registration and named capabilities under Thrum's composition model. No water-specific service
 locator, generic solver-coupling bus or mandatory crate split is commissioned. Separate dynamics, queries, appearance
-and transport responsibilities without duplicating their shared state. Baseline physical queries remain CPU-owned or
-analytically reproducible headless. Superseded by GPU water: the GPU state is the authority, read through an
-asynchronous batched query; the CPU analytic sea is the test oracle and the declared no-GPU fallback.
+and transport responsibilities without duplicating their shared state. Physical queries read the GPU state through an asynchronous batched query; an
+authority with no GPU uses the declared CPU conformance model.
 
 ## Analytical obligations and complete operating cases
 

@@ -131,9 +131,9 @@ return once under the declared causal schedule. Height fields do not answer unsu
 
 Solver domains are independent of stream cells and peer interest. W2 pins required query/boundary support or uses a
 proved transfer/reduced-state scheme; offscreen is not permission to discard live water. Save/replication compatibility
-includes model, domain/edge topology, forcing and required state. Each domain's GPU state is its authority, per [GPU water](decisions/E1-GPU-WATER.md) (5 November 2026), which
-replaced CPU/headless authority; water needs no exact replay. Visual residuals have bounded contact/shoreline error. Client prediction of water-contacting bodies is off unless
-the complete P3/E1 state, boundary forcing and once-only disturbance closure can be captured and replayed.
+includes model, domain/edge topology, forcing and required state. Each domain's GPU state is its authority and water needs no exact replay, per the [water decision](decisions/E1-GPU-WATER.md).
+Multiplayer shares water causes, not state; the authority computes forces, and a player's own vessel may be predicted
+against local water fed by the same causes. Visual residuals have bounded contact/shoreline error.
 
 **Why:** a universal solver imposes unsuitable cost and topology; automatic seam blending invents physics. Explicit
 limited interfaces let simple water remain simple and reserve richer coupling for a complete mathematical design.
@@ -227,7 +227,7 @@ The user subsequently requested closure of the named remaining gaps. [BASELINE-S
 and selects concrete source/storage/transform, shader/colour/media, play/water, networking and target/workload rules.
 Its four detailed specifications govern the admitted initial implementation. They replace the earlier open choices
 above, not the larger engine's ownership model. The network profile includes real WSS, committed per-action outcomes, atomic lifecycle/state groups, exact gameplay
-compatibility, bounded baselines and queues, and a concrete simultaneous R4 workload. Prediction and water projection
+compatibility, bounded baselines and queues, and a concrete simultaneous R4 workload. Prediction and water event records
 are optional extensions, with an explicit early I2n construction milestone.
 
 Dependency resolution, executable APIs/conformance, recovery injection, measured performance and visual/device
