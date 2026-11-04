@@ -6,11 +6,13 @@
 //! The storage implementation stays private for the A0 hecs/bevy/custom comparison.
 
 mod input;
+mod publication;
 mod schedule;
 mod storage;
 mod world;
 
 pub use input::{FrameError, InputFrame, SimAction};
+pub use publication::{VisualSnapshotLease, VisualSnapshotPool};
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKind, Schedule, ScheduleError, Stage, SystemId,
     SystemSpec,

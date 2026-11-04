@@ -6,10 +6,13 @@
 #[path = "../tests/support/v1_workload.rs"]
 mod support;
 
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, NonZeroUsize};
 use thrum_core::{
     StableId, WorldEpoch,
-    sim::{ComponentEntity, Position, SimConfig, Simulation, SimulationSnapshot, Velocity},
+    sim::{
+        ComponentEntity, Position, SimConfig, Simulation, SimulationSnapshot, Velocity,
+        VisualSnapshotPool,
+    },
 };
 
 #[global_allocator]
@@ -104,5 +107,17 @@ fn a1_four_full_snapshots(bencher: divan::Bencher<'_, '_>) {
             sim.copy_snapshot_into(snapshot);
         }
         divan::black_box(&snapshots);
+    });
+}
+
+#[divan::bench]
+fn a2_visual_snapshot_page(bencher: divan::Bencher<'_, '_>) {
+    let sim = component_fixture();
+    let mut pages = VisualSnapshotPool::new(NonZeroUsize::new(3).expect("three slots"), 10_000);
+    drop(pages.publish(&sim).expect("warm visual page"));
+    bencher.bench_local(move || {
+        let page = pages.publish(&sim).expect("available page");
+        divan::black_box(page.ids());
+        drop(page);
     });
 }

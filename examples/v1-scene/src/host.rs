@@ -2,6 +2,7 @@
 
 use std::{
     collections::VecDeque,
+    num::NonZeroUsize,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -11,7 +12,10 @@ use std::{
 
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_cook::EnvironmentProduct;
-use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
+use thrum_core::{
+    ClockConfig, ClockState, TickClock,
+    sim::{Simulation, VisualSnapshotPool},
+};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
@@ -206,6 +210,7 @@ pub struct FrameHost {
     queue: wgpu::Queue,
     clock: TickClock,
     sim: Simulation,
+    snapshots: VisualSnapshotPool,
     extractor: RenderExtractor,
     scene: SyntheticScene,
     changed_slots: Vec<u32>,
@@ -228,14 +233,24 @@ impl FrameHost {
     /// surface presentation pass before the first draw.
     /// # Errors
     /// Returns setup, device or scene preparation errors without a partial host.
+    /// # Panics
+    /// Panics only if the compiled prepared-frame ring size is zero.
     pub async fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         surface: Option<SurfaceProfile>,
     ) -> Result<Self, String> {
         let sim = scene::simulation()?;
+        let mut snapshots = VisualSnapshotPool::new(
+            NonZeroUsize::new(IN_FLIGHT).expect("nonzero prepared frame ring"),
+            ENTITY_COUNT,
+        );
         let mut extractor = RenderExtractor::new(ENTITY_COUNT);
-        scene::extract(&mut extractor, &sim);
+        let initial = snapshots
+            .publish(&sim)
+            .ok_or("initial visual page unavailable")?;
+        scene::extract(&mut extractor, &initial);
+        drop(initial);
         let count = u32::try_from(ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
             SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
@@ -313,6 +328,7 @@ impl FrameHost {
             queue: queue.clone(),
             clock,
             sim,
+            snapshots,
             extractor,
             scene,
             changed_slots,
@@ -546,7 +562,14 @@ impl FrameHost {
         };
 
         let extract_start = Instant::now();
-        let extracted = scene::extract(&mut self.extractor, &self.sim);
+        let Some(snapshot) = self.snapshots.publish(&self.sim) else {
+            self.dropped_views += 1;
+            report.dropped_view = true;
+            report.wall = wall_start.elapsed();
+            return Ok(report);
+        };
+        let extracted = scene::extract(&mut self.extractor, &snapshot);
+        drop(snapshot);
         let extract_cpu = extract_start.elapsed();
         let upload_start = Instant::now();
         let ApplyReport {
@@ -663,7 +686,12 @@ impl FrameHost {
             .source()
             .is_none_or(|source| source.tick != self.sim.tick())
         {
-            let extracted = scene::extract(&mut self.extractor, &self.sim);
+            let snapshot = self
+                .snapshots
+                .publish(&self.sim)
+                .ok_or("visual snapshot pages held during capture")?;
+            let extracted = scene::extract(&mut self.extractor, &snapshot);
+            drop(snapshot);
             let applied = scene::apply_frame_to_scene(
                 &mut self.scene,
                 self.extractor.frame(),
