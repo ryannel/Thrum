@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 
 use thrum_core::{
     StableId, WorldEpoch,
-    sim::{ComponentEntity, Position, SimConfig, Simulation, Velocity},
+    sim::{ComponentEntity, Position, SimConfig, Simulation, Velocity, VisualSnapshotLease},
 };
 use thrum_render::{
     extract::{ExtractReport, RenderColumns, RenderExtractor, SourceTick},
@@ -42,21 +42,29 @@ pub(crate) fn simulation() -> Result<Simulation, String> {
     Ok(sim)
 }
 
-pub(crate) fn extract(extractor: &mut RenderExtractor, sim: &Simulation) -> ExtractReport {
-    extractor.extract(
+pub(crate) fn extract(
+    extractor: &mut RenderExtractor,
+    snapshot: &VisualSnapshotLease,
+) -> ExtractReport {
+    let mut report = extractor.extract(
         SourceTick {
-            epoch: 1,
-            tick: sim.tick(),
+            epoch: snapshot.epoch().0,
+            tick: snapshot.tick(),
         },
         [0.0; 3],
         |sink| {
-            sim.visit_components(|view| {
-                if let Some(visual) = view.visual {
-                    sink.push(view.id.0, view.position.0, visual);
-                }
-            });
+            for ((id, position), visual) in snapshot
+                .ids()
+                .iter()
+                .zip(snapshot.positions())
+                .zip(snapshot.visuals())
+            {
+                sink.push(id.0, position.0, *visual);
+            }
         },
-    )
+    );
+    report.dropped_capacity += snapshot.dropped_capacity();
+    report
 }
 
 #[derive(Clone, Copy, Debug, Default)]

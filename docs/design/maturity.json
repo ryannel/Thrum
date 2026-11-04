@@ -134,8 +134,8 @@
       "scope": "Two 1024-square D32 reverse-Z Sun maps use the shared instance table and four comparison taps, with two depth passes before the existing forward/display pair. Off-state maps/passes retire. A prepared movement envelope freezes and counts out-of-range presentation rows rather than silently clipping casters. Full dynamic view/light refitting, per-cascade lists, masked casters, split-edge visual quality, Chrome/iPhone runtime and stable frame pacing remain open."
     },
     "A2_render_extraction": {
-      "implementation": "partial_serial_soa_publication_and_sparse_prepared_gpu_instance_update",
-      "functional_validation": "extraction_and_upload_unit_tests_plus_real_metal_scene_and_gpu_update_test",
+      "implementation": "partial_committed_visual_page_leases_serial_soa_extraction_and_sparse_prepared_gpu_instance_update",
+      "functional_validation": "held_page_exhaustion_and_zero_warmed_allocation_tests_plus_extraction_upload_and_real_metal_host_tests",
       "experienced_quality": "diagnostic_grid_capture_inspected_not_v1_visual_acceptance",
       "platform_performance": {
         "mac": "not_qualified_isolated_diagnostic_only",
@@ -144,12 +144,13 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max Metal HDR/display, 10k hecs entities / 1.5k moving, 640x360 offscreen: one serial tick 46.0–54.3 us and sim visit plus extract 203.8–312.5 us across two initial process runs; 32 warmed samples per run gave CPU encode medians 2.08–3.83 us, forward GPU medians 0.230–0.244 ms with p95 3.74–3.82 ms, tone GPU medians 0.112–0.135 ms with p95 2.32–2.39 ms. Divan isolated extraction median 99.70 us; zero scoped extraction allocations after two-frame warmup. A later sparse prepared-table update changed 20,963 GPU pixels with one 288 KB queue write and took 183, 239 and 400 us CPU in three isolated runs. No frame-budget or GPU-upload-allocation claim.",
+      "diagnostic_measurement": "Apple M3 Max Metal HDR/display, 10k hecs entities / 1.5k moving, 640x360 offscreen: one serial tick 46.0–54.3 us and sim visit plus extract 203.8–312.5 us across two initial process runs; 32 warmed samples per run gave CPU encode medians 2.08–3.83 us, forward GPU medians 0.230–0.244 ms with p95 3.74–3.82 ms, tone GPU medians 0.112–0.135 ms with p95 2.32–2.39 ms. Divan isolated extraction median 99.70 us; zero scoped extraction allocations after two-frame warmup. A later sparse prepared-table update changed 20,963 GPU pixels with one 288 KB queue write and took 183, 239 and 400 us CPU in three isolated runs. The consumer-specific visual page captured 10k rows in 32.52 us median and added 1.44 MB logical three-page payload; a separate assembled Metal run measured 1.373 ms median with broad tails and no controlled frame-time delta. No device frame-budget or GPU-upload-allocation claim.",
       "evidence": [
         "../evidence/render/A2-SIM-RENDER-2026-11-04.md",
-        "../evidence/render/A2-LIVE-UPLOAD-2026-11-04.md"
+        "../evidence/render/A2-LIVE-UPLOAD-2026-11-04.md",
+        "../evidence/render/A2-VISUAL-LEASE-2026-11-04.md"
       ],
-      "scope": "Synchronous presentation copy from committed A1 tick into reused SoA columns, stable-ID prior matching and explicit drop telemetry; a prepared GPU instance table updates sorted changed slots and degrades malformed rows. Real Mac offscreen consumer and pixel change pass. Async SnapshotLease/RenderPacket, submission/fence lifetime, sustained pacing and Chrome/iPhone execution remain open."
+      "scope": "A committed W1 visual read-model page copies only IDs, positions and visual selectors into preallocated SoA columns; held Arc leases survive later ticks and capacity pressure sheds optional views. The serial V1 host releases its lease after V2 extraction. Stable-ID prior matching and explicit drop telemetry feed the prepared GPU instance table. Real Mac offscreen consumer and pixel change pass. Worker execution, the full C02 multi-consumer bundle, owned RenderPacket, submission/fence lifetime, sustained pacing and Chrome/iPhone execution remain open."
     },
     "V1_serial_frame_host": {
       "implementation": "partial_fixed_clock_serial_offscreen_simulation_to_gpu_host",

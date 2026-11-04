@@ -293,6 +293,10 @@ impl Simulation {
     pub fn tick(&self) -> u64 {
         self.tick
     }
+    /// World generation shared by committed consumer snapshots.
+    pub fn epoch(&self) -> WorldEpoch {
+        self.epoch
+    }
     /// Current live entity count.
     pub fn len(&self) -> usize {
         self.store.len()

@@ -8,7 +8,7 @@
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     cell::Cell,
-    num::NonZeroU32,
+    num::{NonZeroU32, NonZeroUsize},
     time::Duration,
 };
 
@@ -16,7 +16,7 @@ use thrum_core::{
     ActorId, ClockConfig, Handle, Origin, PeerId, StableId, TickClock, WorldEpoch,
     sim::{
         Command, ComponentEntity, FrameError, InputFrame, Ownership, Position, SimAction,
-        SimConfig, SimError, Simulation, SimulationSnapshot, Stage, Velocity,
+        SimConfig, SimError, Simulation, SimulationSnapshot, Stage, Velocity, VisualSnapshotPool,
     },
 };
 
@@ -500,8 +500,61 @@ fn query_and_snapshot_cover_sparse_archetypes() {
 }
 
 #[test]
+fn visual_page_leases_survive_world_ticks_and_exhaustion_sheds_only_views() {
+    let mut sim = Simulation::new(WorldEpoch(7), config(2)).expect("valid fixture");
+    sim.seed(entity(1, 1.0)).expect("first visual entity");
+    sim.seed(entity(2, 0.0)).expect("second visual entity");
+    let mut pool = VisualSnapshotPool::new(NonZeroUsize::new(2).expect("two slots"), 2);
+
+    let old = pool.publish(&sim).expect("first free page");
+    assert_eq!((old.epoch(), old.tick()), (WorldEpoch(7), 0));
+    assert_eq!(old.ids().len(), 2);
+    let old_position = old
+        .ids()
+        .iter()
+        .position(|id| *id == StableId(1))
+        .map(|index| old.positions()[index])
+        .expect("moving visual is present");
+    sim.step(&[]).expect("committed tick");
+    let current = pool.publish(&sim).expect("second free page");
+    assert_eq!(current.tick(), 1);
+    let current_position = current
+        .ids()
+        .iter()
+        .position(|id| *id == StableId(1))
+        .map(|index| current.positions()[index])
+        .expect("moving visual is present");
+    assert!(current_position.0[0] > old_position.0[0]);
+    assert_eq!(
+        old.positions()[old
+            .ids()
+            .iter()
+            .position(|id| *id == StableId(1))
+            .expect("old identity")],
+        old_position
+    );
+
+    sim.step(&[])
+        .expect("world advances with both pages leased");
+    assert!(pool.publish(&sim).is_none());
+    assert_eq!(pool.dropped_views(), 1);
+    assert_eq!(sim.tick(), 2);
+    drop(old);
+    let newest = pool.publish(&sim).expect("released page reused");
+    assert_eq!(newest.tick(), 2);
+    assert_eq!(current.tick(), 1, "other lease is immutable");
+
+    let mut narrow = VisualSnapshotPool::new(NonZeroUsize::new(1).expect("one slot"), 1);
+    let degraded = narrow.publish(&sim).expect("bounded visual page");
+    assert_eq!(degraded.ids().len(), 1);
+    assert_eq!(degraded.dropped_capacity(), 1);
+}
+
+#[test]
 fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup() {
     let mut sim = workload();
+    let mut visual_pages =
+        VisualSnapshotPool::new(NonZeroUsize::new(3).expect("three slots"), 10_000);
     let mut snapshots = std::array::from_fn::<_, 4, _>(|_| {
         SimulationSnapshot::with_capacity(WorldEpoch(1), 10_000)
     });
@@ -520,6 +573,7 @@ fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup
     for snapshot in &mut snapshots {
         sim.copy_snapshot_into(snapshot);
     }
+    drop(visual_pages.publish(&sim).expect("warm visual page"));
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
     let mut churn_pairs = 0;
@@ -555,6 +609,9 @@ fn ten_thousand_entity_ticks_churn_and_four_copies_allocate_nothing_after_warmup
         for snapshot in &mut snapshots {
             sim.copy_snapshot_into(snapshot);
         }
+        let visual_page = visual_pages.publish(&sim).expect("reused visual page");
+        std::hint::black_box(visual_page.ids());
+        drop(visual_page);
     }
     COUNTING.with(|active| active.set(false));
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
