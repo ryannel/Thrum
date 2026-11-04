@@ -48,30 +48,46 @@ pub(crate) fn control_frame(
 }
 
 pub(crate) fn simulation() -> Result<Simulation, String> {
+    simulation_with_count(ENTITY_COUNT)
+}
+
+/// Build a parameterized V1 workload for the game-tick benchmark.
+///
+/// # Errors
+///
+/// Returns fixture setup or seeding failure.
+pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> {
+    if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
+        return Err("fixture entity count is outside the physical slot range".into());
+    }
     let mut sim = Simulation::new(
         WorldEpoch(1),
         SimConfig {
-            tick_hz: NonZeroU32::new(60).expect("nonzero fixture tick rate"),
-            entity_capacity: ENTITY_COUNT,
+            tick_hz: NonZeroU32::new(60).ok_or("invalid fixture tick rate")?,
+            entity_capacity: entity_count,
             peer_capacity: PEER_COUNT,
             actions_per_frame: 8,
             movement_speed: 6.0,
         },
     )
     .map_err(|error| format!("simulation setup: {error:?}"))?;
-    for index in 0..ENTITY_COUNT {
+    let moving_count = entity_count / ENTITY_COUNT * MOVING_COUNT
+        + entity_count % ENTITY_COUNT * MOVING_COUNT / ENTITY_COUNT;
+    for index in 0..entity_count {
         let x = -0.9 + (index % 100) as f64 * 0.018 + 0.009;
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
-        let peer_number = ENTITY_COUNT - index;
-        let ownership = (peer_number <= PEER_COUNT).then(|| {
-            binding(PeerId(
-                u64::try_from(peer_number).expect("four-peer fixture identity"),
-            ))
-        });
+        let peer_number = entity_count - index;
+        let ownership = if peer_number <= PEER_COUNT {
+            Some(binding(PeerId(
+                u64::try_from(peer_number).map_err(|error| error.to_string())?,
+            )))
+        } else {
+            None
+        };
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
             position: Position([x, y, 0.5]),
-            velocity: Velocity([if index < MOVING_COUNT { 0.05 } else { 0.0 }, 0.0, 0.0]),
+            velocity: Velocity([if index < moving_count { 0.05 } else { 0.0 }, 0.0, 0.0]),
             health: 100,
             ownership,
             visual: Some((index % 2) as u64),
@@ -79,8 +95,10 @@ pub(crate) fn simulation() -> Result<Simulation, String> {
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }
     for peer_number in 1..=PEER_COUNT {
-        let peer = PeerId(u64::try_from(peer_number).expect("four-peer fixture identity"));
-        let id = StableId(u128::try_from(ENTITY_COUNT - peer_number).expect("fixture identity"));
+        let peer = PeerId(u64::try_from(peer_number).map_err(|error| error.to_string())?);
+        let id = StableId(
+            u128::try_from(entity_count - peer_number).map_err(|error| error.to_string())?,
+        );
         let controlled = sim.handle(id).ok_or("seeded control identity missing")?;
         sim.register_peer(binding(peer), controlled)
             .map_err(|error| format!("register control peer {peer_number}: {error:?}"))?;

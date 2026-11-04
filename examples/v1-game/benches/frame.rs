@@ -5,13 +5,24 @@
 use std::time::Duration;
 
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
-use v1_game::{FrameHost, SurfaceOutput};
+use v1_game::{FrameHost, SurfaceOutput, simulation_with_count};
 
 #[global_allocator]
 static ALLOC: divan::AllocProfiler = divan::AllocProfiler::system();
 
 fn main() {
     divan::main();
+}
+
+#[divan::bench(args = [10_000, 100_000])]
+fn game_tick_and_publication(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    sim.step(&[]).expect("initial publication succeeds");
+    bencher.bench_local(move || {
+        let result = sim.step(&[]).expect("one game tick commits");
+        divan::black_box(result.tick);
+        divan::black_box(result.simulated_entities);
+    });
 }
 
 fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surface: bool) {
