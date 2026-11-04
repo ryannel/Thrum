@@ -2,6 +2,7 @@
 
 pub mod envelope;
 pub mod future_input;
+pub mod input_batch;
 pub mod outbound;
 pub mod peer;
 pub mod progress;

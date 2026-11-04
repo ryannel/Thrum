@@ -289,7 +289,24 @@
       "evidence": [
         "../evidence/v1-workload/A5-CONDITIONED-INPUT-2026-11-04.md"
       ],
-      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. Once a peer's due handoff is observed, further input for that tick is late. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. A deliberate local burst and a separate world reconnect test pass. This is a deterministic in-memory diagnostic, not a socket or schema codec. Exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open."
+      "scope": "N1 retains decoded future control frames in a preallocated peer/tick window and validates identity, axes and W1 game actions before slot reservation. Once a peer's due handoff is observed, further input for that tick is late. W1 alone admits due frames and commits the 10k world; repeated packet samples are idempotent or late. A deliberate local burst and a separate world reconnect test pass. This initial deterministic in-memory diagnostic preceded the encoded input path recorded in A5_input_wire. Exact result/ACK closure, production retry, client prediction/reconciliation, browser/phone multiplayer and sustained budgets remain open."
+    },
+    "A5_input_wire": {
+      "implementation": "partial_generic_bounded_input_batch_codec_and_encoded_four_peer_conditioner_with_game_declared_action_layout",
+      "functional_validation": "600_fixed_ticks_four_peers_encoded_input_packet_delay_loss_independent_held_axis_trace; complete_packet_game_validation_before_future_staging; wrong_epoch_and_unknown_second_action_refuse_without_first_slot_mutation; little_endian_action_oracle_quantizer_boundary_truncation_reserved_axis_actor_map_tests; 500_warmed_tick_zero_rust_heap_allocation_assertion_pass; stdin_fuzz_target_build_and_one_arbitrary_input_smoke_pass",
+      "experienced_quality": "no_client_replica_prediction_correction_or_visible_multiplayer_acceptance",
+      "platform_performance": {
+        "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
+        "windows": "not_run",
+        "browser": "not_run_encoded_multiplayer",
+        "ios": "not_run_encoded_multiplayer",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Rust 1.99.1 release: 600 ticks, 2400 sent/55 dropped/2330 delivered/15 in-flight packets, 452856 application bytes sent and 439626 delivered. Two process tick p50/p95 observations 49/58 and 61/79 us under variable load; encode/decode totals 115/382 and 144/476 us. Three Divan 20-sample medians 34.24, 29.4 and 29.0 ms per complete run; first noisy run max 81.62 ms. 131 benchmark-thread Rust allocations per complete run including setup/teardown; zero across 500 warmed ticks. No comparative speed claim.",
+      "evidence": [
+        "../evidence/v1-workload/A5-INPUT-WIRE-2026-11-04.md"
+      ],
+      "scope": "Actual bounded envelope/input bytes pass through the in-memory conditioner. The engine codec owns structural framing and quantized controls; the V1 game owns action schemas. No live authentication, OS transport, full-frame reliable fallback, downstream state delta, outcome/ACK closure, client prediction or browser/phone multiplayer has run."
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
@@ -1546,7 +1563,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
+        "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Action/context schemas and exact touch/controller/IME adapters."
@@ -1756,7 +1773,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
+        "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Event/action semantics, rule graph/scripting choice, sequence interruption and game policies.",
@@ -2601,7 +2618,7 @@
         "status": "not_inventoried"
       },
       "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
-      "current_design_sha256": "2a58895e15b6df789e8ee0d4375f81b2f7f81eb3ae678cbbf0aab71e6cf14b70",
+      "current_design_sha256": "ea1e967bd2ff440df2af58fb66de5392c95c9e90b0e9f9456d69db7df54c892a",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing, finite pre-submission payload queue and ordinary sent ledger are implemented; the ordinary peer now preflights joint queued-plus-sent 256-result/128-event identity credit. Event-bearing replica groups still refuse. A test-only complete-partition W1 capture drives four peer-owned queues through nine changed ticks with one slow ACK. Production projection, unified baseline/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2611,7 +2628,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
+        "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38"
       },
       "initial_specification_stage": "specified_with_outbound_construction_gap",
       "prior_remaining_detailed_design": "The initial finite four-player WSS protocol still needs exact outbound mandatory burst and multi-group replica admission. Datagram/streamed-server/full-physics prediction and online-service extensions require separate specifications before their claims.",
@@ -2771,7 +2788,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "c50de8ee0a7456b217cceb77e84b2abe153bcecb5c703f6ef288b2729f00e126",
+  "contract_sha256": "64d4c3ad0f4e084fdbd4cd2e2814c71b649391cd566e54a2a14b116083942a53",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3516,13 +3533,13 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
     "contract_revision": "C4",
-    "contract_sha256": "c50de8ee0a7456b217cceb77e84b2abe153bcecb5c703f6ef288b2729f00e126",
+    "contract_sha256": "64d4c3ad0f4e084fdbd4cd2e2814c71b649391cd566e54a2a14b116083942a53",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "11bc46acd9d76ea0e3004157e9e17115b4abf42d7e4bba2bdc9d2ae6372a397b",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
-      "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54"
+      "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38"
     },
     "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
     "closed_architectural_findings": [
@@ -3897,7 +3914,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "3f14950f81c5b7e5bd0c64ccfb66612da40ffb812c81b0bb79bf01b26ef38117",
-      "CONTRACTS.md": "c50de8ee0a7456b217cceb77e84b2abe153bcecb5c703f6ef288b2729f00e126",
+      "CONTRACTS.md": "64d4c3ad0f4e084fdbd4cd2e2814c71b649391cd566e54a2a14b116083942a53",
       "DESIGN-PROGRAMME.md": "dd1c6aa5196a16f3f355ea98331c4e8371e9fa6b30a82dcbcade89ef839e9a97",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -3908,7 +3925,7 @@
       "INTEGRATION-REVIEW.md": "e1cb8c645ed4a398087e804637c1e722b61aade614934aa555123b05ad86f3b5",
       "LIFECYCLE-WALKTHROUGHS.md": "68b2fdeecaaecf5e706cb5b03d6bb32b0c32ed152c8e55e29a3340aee59e7c85",
       "MATURITY.md": "9ed4aff909e59d256c8cef5f1eee7a056e84140a43a4ff1eda66f1d018abbdbc",
-      "NETWORK-SPEC.md": "8cde0f293b1064b5bf39151691f48678f4434f990fa90fdd88d86f8253d3dd54",
+      "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "a405b25c989770cd0fe3837366eefa98c7dff7e4152f58c544070e8017f72273",
@@ -3924,7 +3941,7 @@
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
       "modules/ENVIRONMENT.md": "698976ba423fbeee448a6b91b24806b55203e6aab2c7adfca0d8d6fc1c0f649b",
-      "modules/NETWORKING.md": "2a58895e15b6df789e8ee0d4375f81b2f7f81eb3ae678cbbf0aab71e6cf14b70",
+      "modules/NETWORKING.md": "ea1e967bd2ff440df2af58fb66de5392c95c9e90b0e9f9456d69db7df54c892a",
       "modules/PLATFORM-RUNTIME.md": "96dcffee70ba8aeefd82142bf93196303fb51e48ff4544d6a82ecbbdcbe4ab74",
       "modules/PLAY-SYSTEMS.md": "52ffe7a860e9b50ca4f91fc1222611a05c3d557d2fb8bb982ad639d313382193",
       "modules/RENDERING.md": "cb55fd1d89f489ce6c4367e5af4e8862a81bab882b7860bdda71f290280719b0",

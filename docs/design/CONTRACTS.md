@@ -535,8 +535,8 @@ evidence is unassessed until its applicability to the new assembly is establishe
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select
 their initial algorithms and limits. The [V1 N1 transport/codec decision](decisions/A0-N1-TRANSPORT-CODEC.md)
 supersedes the older [NETWORK-SPEC](NETWORK-SPEC.md) transport and full-record recipe; C13 below
-retains the shared network authority and result semantics. The V1 wire codec and session details
-still need a complete decision before implementation. Targets remain unmeasured; a future extension
+retains the shared network authority and result semantics. The [V1 input packet](decisions/A5-INPUT-WIRE.md)
+is selected; state-delta and session details still need complete decisions before implementation. Targets remain unmeasured; a future extension
 needs an equally complete design before changing admitted semantics.
 
 ## C13 Network authority and replication — N1 with F1/W1/P6
