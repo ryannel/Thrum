@@ -28,8 +28,15 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+thrum-cook = { path = "../../crates/thrum-cook" }
+
 [dev-dependencies]
 divan = "=0.1.21"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+serde_json = { version = "=1.0.154", features = ["float_roundtrip", "raw_value"] }
+thrum-source = { path = "../../crates/thrum-source" }
 
 [[bench]]
 name = "frame"
