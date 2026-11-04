@@ -1,4 +1,4 @@
-// ABI2 opaque directional forward diagnostic: Lambert + GGX/Smith/Schlick.
+// ABI2 opaque clustered forward diagnostic: Lambert + GGX/Smith/Schlick.
 // Fixed orthographic projection, no normal maps, indirect light or shadows.
 struct ViewRecord {
     view_proj: mat4x4<f32>,
@@ -13,6 +13,17 @@ struct DirectionalSource {
 }
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(1) @binding(0) var<uniform> light: DirectionalSource;
+struct LocalSource {
+    position_radius: vec4<f32>,
+    candela: vec4<f32>,
+}
+struct ClusterHead {
+    offset: u32,
+    count: u32,
+}
+@group(1) @binding(1) var<storage, read> local_lights: array<LocalSource>;
+@group(1) @binding(2) var<storage, read> cluster_heads: array<ClusterHead>;
+@group(1) @binding(3) var<storage, read> cluster_indices: array<u32>;
 struct MaterialRecord {
     base: vec4<f32>,
     emissive_cutoff: vec4<f32>,
@@ -40,6 +51,7 @@ struct VertexOutput {
     @location(0) uv: vec2<f32>,
     @location(1) @interpolate(flat) material: u32,
     @location(2) normal: vec3<f32>,
+    @location(3) world_position: vec3<f32>,
 }
 @vertex fn vertex(@builtin(vertex_index) vertex_index: u32, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     let positions = array<vec2<f32>,6>(vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(-1.0,1.0),vec2(1.0,-1.0),vec2(1.0,1.0));
@@ -52,29 +64,28 @@ struct VertexOutput {
     let local = n + t*p.x + cross(n,t)*p.y;
     let instance = instances[instance_index];
     var output: VertexOutput;
-    output.position = view.view_proj * instance.current * vec4(local,1.0);
+    let world = instance.current * vec4(local,1.0);
+    output.position = view.view_proj * world;
+    output.world_position = world.xyz;
     output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
     output.uv = p*0.5+vec2(0.5);
     output.material = instance.ids.y;
     return output;
 }
-fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>) -> vec3<f32> {
-    let l = light.direction_to_light.xyz;
+fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>,
+               l: vec3<f32>, irradiance: vec3<f32>, h: vec3<f32>, fresnel_power: f32) -> vec3<f32> {
     // Parallel receiver-to-camera rays for the fixed orthographic view.
     let v = vec3(0.0,0.0,-1.0);
     let ci = clamp(dot(n,l),0.0,1.0);
     let co = clamp(dot(n,v),0.0,1.0);
     if ci <= 0.0 || co <= 0.0 { return vec3(0.0); }
-    // The fixed orthographic view makes H and (1-v.h)^5 source invariants;
-    // preparation computes them once in f64, including near opposition.
-    let h = light.half_vector_fresnel.xyz;
     let ch = clamp(dot(n,h),0.0,1.0);
     let alpha = max(0.045,roughness)*max(0.045,roughness);
     let a2 = alpha*alpha;
     let d_base = (1.0-ch*ch)+ch*ch*a2;
     let d = a2/(3.14159265359*d_base*d_base);
     let f0 = mix(vec3(0.04),base,metalness);
-    let fresnel = f0+(vec3(1.0)-f0)*light.half_vector_fresnel.w;
+    let fresnel = f0+(vec3(1.0)-f0)*fresnel_power;
     // Cancel Smith's ci*co and the outgoing cosine, then scale the remaining
     // ci/co pair. A grazing denominator cannot underflow into 0/0.
     let cosine_scale = max(ci,co);
@@ -83,7 +94,37 @@ fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>) ->
     let smith_denominator = 2.0*(ci_scaled*sqrt(a2+(1.0-a2)*co*co)+co_scaled*sqrt(a2+(1.0-a2)*ci*ci));
     let specular_cosine = d*fresnel*ci_scaled/smith_denominator;
     let diffuse = (1.0-metalness)*(vec3(1.0)-fresnel)*base/3.14159265359;
-    return (diffuse*ci+specular_cosine)*light.irradiance.rgb;
+    return (diffuse*ci+specular_cosine)*irradiance;
+}
+fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
+                  n: vec3<f32>, world_position: vec3<f32>) -> vec3<f32> {
+    if light.direction_to_light.w == 0.0 { return vec3(0.0); }
+    let cluster = vec3<u32>(
+        u32(clamp(floor((world_position.x+1.0)*16.0),0.0,31.0)),
+        u32(clamp(floor((world_position.y+1.0)*9.0),0.0,17.0)),
+        u32(clamp(floor(world_position.z*16.0),0.0,15.0)));
+    let head = cluster_heads[(cluster.z*18u+cluster.y)*32u+cluster.x];
+    var sum = vec3(0.0);
+    for (var i = 0u; i < head.count; i++) {
+        let source = local_lights[cluster_indices[head.offset+i]];
+        let displacement = source.position_radius.xyz-world_position;
+        let distance_squared = dot(displacement,displacement);
+        let radius = source.position_radius.w;
+        if distance_squared >= radius*radius { continue; }
+        let distance = sqrt(distance_squared);
+        var l = vec3(0.0,0.0,-1.0);
+        if distance_squared > 0.000000000001 { l = displacement/distance; }
+        let v = vec3(0.0,0.0,-1.0);
+        let hv = l+v;
+        var h = v;
+        if dot(hv,hv)>0.000001 { h = normalize(hv); }
+        let fresnel_power = pow(clamp(1.0-dot(v,h),0.0,1.0),5.0);
+        let radial = distance/radius;
+        let fade = max(0.0,1.0-radial*radial*radial*radial);
+        let irradiance = source.candela.rgb*(fade*fade/max(distance_squared,0.000001));
+        sum += direct_brdf(base,metalness,roughness,n,l,irradiance,h,fresnel_power);
+    }
+    return sum;
 }
 @fragment fn fragment(input:VertexOutput)->@location(0) vec4<f32> {
     let material=materials[input.material];
@@ -91,7 +132,14 @@ fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>) ->
     let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
     let emissive=textureSample(emissive_textures,material_sampler,input.uv,i32(material.texture_layers.w));
     // AO affects indirect illumination only; this diagnostic has none.
-    let colour = direct_brdf(material.base.rgb*base.rgb,material.surface.z*orm.b,material.surface.y*orm.g,normalize(input.normal))
+    let surface_base = material.base.rgb*base.rgb;
+    let metalness = material.surface.z*orm.b;
+    let roughness = material.surface.y*orm.g;
+    let n = normalize(input.normal);
+    let colour = direct_brdf(surface_base,metalness,roughness,n,
+            light.direction_to_light.xyz,light.irradiance.rgb,
+            light.half_vector_fresnel.xyz,light.half_vector_fresnel.w)
+        + local_radiance(surface_base,metalness,roughness,n,input.world_position)
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
     // before pre-exposure and bound only to the finite fp16 storage envelope.

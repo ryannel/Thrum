@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 use thrum_core::{ClockConfig, ClockState, TickClock, sim::Simulation};
 use thrum_render::{
     extract::RenderExtractor,
-    synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticScene},
+    synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticPointLight, SyntheticScene},
     timing::GpuTimings,
 };
 
@@ -47,6 +47,9 @@ pub struct FrameSample {
     pub moving: usize,
     /// Presentation samples/updates dropped with explicit telemetry.
     pub dropped_presentation: usize,
+    /// Local-light references omitted from this prepared view after a cluster
+    /// exceeds its capacity. The fixed fixture prepares them once.
+    pub dropped_light_references: usize,
 }
 
 /// One fixed-clock simulation and prepared GPU scene. The device and queue
@@ -77,6 +80,18 @@ impl<'a> FrameHost<'a> {
         let count = u32::try_from(ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
             SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
+        scene.local_lights = [
+            ([-0.55, -0.55, 0.15], [5.0, 0.8, 0.4]),
+            ([0.55, -0.55, 0.15], [0.4, 4.0, 0.8]),
+            ([-0.55, 0.55, 0.15], [0.7, 1.0, 5.0]),
+            ([0.55, 0.55, 0.15], [4.0, 3.0, 0.4]),
+        ]
+        .map(|(position, candela)| SyntheticPointLight {
+            position,
+            radius: 0.6,
+            candela,
+        })
+        .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
         scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
         let prepared = PreparedSynthetic::prepare(device, queue, GENERATION, &scene)
@@ -197,6 +212,7 @@ impl<'a> FrameHost<'a> {
                 + extracted.dropped_invalid
                 + dropped_invalid
                 + uploaded.dropped_invalid,
+            dropped_light_references: self.prepared.dropped_light_references(),
         }))
     }
 

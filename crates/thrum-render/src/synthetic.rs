@@ -1,8 +1,8 @@
 //! Prepared in-memory instanced diagnostic. It exercises the real material and
 //! instance tables, four texture-class bindings, graph declaration and optional
 //! timestamps. One directional metallic-roughness closure and opaque depth are
-//! real, followed by a fixed authored SDR display transform. Clustered lights,
-//! shadows and cooked products remain unbuilt.
+//! real, followed by a fixed authored SDR display transform. Fixed-view
+//! clustered local lights are prepared here; shadows/cooked products remain open.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::graph::{
@@ -14,11 +14,14 @@ use std::collections::BTreeSet;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use wgpu::util::DeviceExt;
 
+mod cluster;
 mod upload;
+use cluster::ClusterTable;
+pub use cluster::SyntheticPointLight;
 use upload::{InstanceUpload, pack_synthetic_instance};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 3;
+pub const SYNTHETIC_REVISION: u64 = 4;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 const VIEW_BYTES: usize = 160;
@@ -36,6 +39,9 @@ pub struct SyntheticScene {
     pub materials: Vec<MaterialRecord>,
     /// Nonempty indexed draw instances.
     pub instances: Vec<InstanceRecord>,
+    /// Fixed-view local sources for the synthetic diagnostic. Game light
+    /// ownership and live extraction belong to the later V3 scene bridge.
+    pub local_lights: Vec<SyntheticPointLight>,
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
@@ -88,6 +94,7 @@ impl SyntheticScene {
         Ok(Self {
             materials,
             instances,
+            local_lights: Vec::new(),
         })
     }
 }
@@ -232,6 +239,10 @@ pub struct PreparedSynthetic {
     instance_bytes: u64,
     instance_count: u32,
     display_gain: f32,
+    local_light_bytes: u64,
+    cluster_head_bytes: u64,
+    cluster_index_bytes: u64,
+    dropped_light_references: usize,
 }
 impl PreparedSynthetic {
     /// Prepare on the V1 executor's existing device and upload queue. No private
@@ -277,8 +288,21 @@ impl PreparedSynthetic {
         exposure: f32,
     ) -> Result<Self, RenderError> {
         let display_gain = checked_display_gain(exposure)?;
-        let light_data = light.pack()?;
+        let mut light_data = light.pack()?;
+        let clusters = ClusterTable::build(&scene.local_lights)?;
+        let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
+        light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
+        let local_light_bytes = clusters.lights.len() as u64;
+        let cluster_head_bytes = clusters.heads.len() as u64;
+        let cluster_index_bytes = clusters.indices.len() as u64;
+        let dropped_light_references = clusters.dropped_references;
         let limits = device.limits();
+        if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
+            .into_iter()
+            .any(|bytes| bytes > limits.max_storage_buffer_binding_size)
+        {
+            return Err(RenderError::SceneCapacity);
+        }
         let classes = TextureClasses::defaults(&limits)?;
         let (material_bytes, instance_bytes) =
             abi::table_bytes(scene.materials.len(), scene.instances.len(), &limits)?;
@@ -333,13 +357,63 @@ impl PreparedSynthetic {
             &view_data,
             wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
         );
-        let (light_layout, light) = uniform_group(
+        let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("synthetic directional and clustered sources"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: wgpu::BufferSize::new(LIGHT_BYTES as u64),
+                    },
+                    count: None,
+                },
+                storage_layout(1, wgpu::ShaderStages::FRAGMENT, 32),
+                storage_layout(2, wgpu::ShaderStages::FRAGMENT, 8),
+                storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
+            ],
+        });
+        let directional = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("synthetic directional source"),
+            size: LIGHT_BYTES as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        queue.write_buffer(&directional, 0, &light_data);
+        let local_lights =
+            storage_buffer(device, queue, "synthetic local lights", &clusters.lights);
+        let cluster_heads =
+            storage_buffer(device, queue, "synthetic cluster heads", &clusters.heads);
+        let cluster_indices = storage_buffer(
             device,
             queue,
-            "synthetic directional source",
-            &light_data,
-            wgpu::ShaderStages::FRAGMENT,
+            "synthetic cluster indices",
+            &clusters.indices,
         );
+        let light = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("synthetic clustered light lists"),
+            layout: &light_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: directional.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: local_lights.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: cluster_heads.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: cluster_indices.as_entire_binding(),
+                },
+            ],
+        });
         let mut entries = vec![storage_layout(
             0,
             wgpu::ShaderStages::FRAGMENT,
@@ -524,7 +598,16 @@ impl PreparedSynthetic {
             instance_bytes,
             instance_count,
             display_gain,
+            local_light_bytes,
+            cluster_head_bytes,
+            cluster_index_bytes,
+            dropped_light_references,
         })
+    }
+    /// Local-light references dropped when a cluster exceeds its declared
+    /// capacity. This is presentation telemetry, not a gameplay light count.
+    pub fn dropped_light_references(&self) -> usize {
+        self.dropped_light_references
     }
     /// Update sorted, distinct changed slots before the next queue submission.
     /// The caller submits each frame before preparing another one; queue writes
@@ -614,6 +697,7 @@ impl PreparedSynthetic {
                 store: true,
             });
         }
+        self.append_cluster_reads(&mut graph, &mut accesses)?;
         let depth = graph.resource(
             ResourceDescriptor::Texture {
                 width: target.width,
@@ -757,6 +841,32 @@ impl PreparedSynthetic {
             self.key.device_generation,
             &BTreeSet::from([self.key, self.display_key()]),
         )?)
+    }
+    fn append_cluster_reads(
+        &self,
+        graph: &mut FrameGraph,
+        accesses: &mut Vec<Access>,
+    ) -> Result<(), RenderError> {
+        for bytes in [
+            self.local_light_bytes,
+            self.cluster_head_bytes,
+            self.cluster_index_bytes,
+        ] {
+            let storage = graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes,
+                    usage: wgpu::BufferUsages::STORAGE,
+                },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            accesses.push(Access {
+                resource: storage,
+                range: 0..bytes,
+                kind: AccessKind::StorageRead,
+                store: true,
+            });
+        }
+        Ok(())
     }
     /// Encode an already prepared draw. The caller owns submission and device
     /// polling. Skipping or failing this method cannot advance view histories.

@@ -2,7 +2,9 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use thrum_render::abi::MaterialRecord;
-use thrum_render::synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene};
+use thrum_render::synthetic::{
+    OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
+};
 use thrum_render::timing::GpuTimings;
 
 /// Opt-in integration test: a real adapter is required, never replaced by a mock.
@@ -471,6 +473,82 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         eprintln!(
             "adapter={} backend={:?} driver={} timestamps={enabled}; directional BRDF/emission/depth, HDR contrast, authored exposure and tone/sRGB pixel checks plus 10,000-cube 1080p run passed",
             info.name, info.backend, info.driver
+        );
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+fn clustered_local_light_changes_only_its_receiver_region() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut scene = SyntheticScene::grid(1).expect("fixture");
+        scene.instances[0].current = [
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.6, 0.0, 0.0],
+            [0.0, 0.0, 0.1, 0.0],
+            [0.0, 0.0, 0.5, 1.0],
+        ];
+        scene.instances[0].previous = scene.instances[0].current;
+        scene.instances[0].normal = [
+            [1.0 / 0.6, 0.0, 0.0, 0.0],
+            [0.0, 1.0 / 0.6, 0.0, 0.0],
+            [0.0, 0.0, 10.0, 0.0],
+        ];
+        let unlit = SyntheticLight {
+            direction_to_light: [0.0, 0.0, -1.0],
+            irradiance: [0.0; 3],
+        };
+        let baseline = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("baseline prepare");
+        let baseline_target = OffscreenTarget::new(&device, &baseline, 65, 33).expect("target");
+        let dark = render_pixels(&device, &queue, &baseline, &baseline_target);
+        scene.local_lights.push(SyntheticPointLight {
+            position: [0.0, 0.0, 0.0],
+            radius: 0.9,
+            candela: [4.0, 0.2, 0.1],
+        });
+        let lit = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("clustered prepare");
+        assert_eq!(lit.dropped_light_references(), 0);
+        let lit_target = OffscreenTarget::new(&device, &lit, 65, 33).expect("lit target");
+        let bright = render_pixels(&device, &queue, &lit, &lit_target);
+        let center = (16 * 65 + 32) * 4;
+        assert_eq!(&dark[center..center + 3], &[0, 0, 0]);
+        assert!(bright[center] > 100, "local source must light cube center");
+        assert!(bright[center] > bright[center + 1]);
+        assert_eq!(&dark[..4], &bright[..4], "background stays unlit");
+        scene.local_lights[0].position = [0.0, 0.0, 0.4];
+        let coincident = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("coincident light prepare");
+        let coincident_target =
+            OffscreenTarget::new(&device, &coincident, 65, 33).expect("coincident target");
+        let near = render_pixels(&device, &queue, &coincident, &coincident_target);
+        assert!(
+            near[center] > 100,
+            "near-field source must not create a dark core"
+        );
+        scene.local_lights[0].candela = [0.0; 3];
+        let disabled = PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, unlit)
+            .await
+            .expect("disabled source prepare");
+        let disabled_target =
+            OffscreenTarget::new(&device, &disabled, 65, 33).expect("disabled target");
+        let disabled_pixels = render_pixels(&device, &queue, &disabled, &disabled_target);
+        assert_eq!(
+            disabled_pixels, dark,
+            "zero-candela light must not illuminate"
         );
     });
 }
