@@ -4,6 +4,7 @@ use std::{hint::black_box, io::Read};
 
 use thrum_network::{
     envelope::{self, Kind},
+    state_ack,
     state_delta::{Actor, Image, Scope, decode_delta},
     state_schema,
 };
@@ -47,6 +48,7 @@ fn main() -> std::io::Result<()> {
     };
     let mut scratch = base;
     let _ = black_box(decode_delta(&PoseWire, image, &bytes, &mut scratch));
+    let _ = black_box(state_ack::decode(&bytes));
     if let Ok(message) = envelope::decode(&bytes)
         && message.header.kind == Kind::StateGroup
     {
@@ -56,6 +58,11 @@ fn main() -> std::io::Result<()> {
             message.payload,
             &mut scratch,
         ));
+    }
+    if let Ok(message) = envelope::decode(&bytes)
+        && message.header.kind == Kind::StateAck
+    {
+        let _ = black_box(state_ack::decode(message.payload));
     }
     Ok(())
 }

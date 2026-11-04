@@ -45,7 +45,7 @@ fn malformed_header_and_length_refuse() {
         (0, b'X', EnvelopeError::Magic),
         (4, 2, EnvelopeError::Version),
         (6, 0, EnvelopeError::ReservedKind),
-        (6, 14, EnvelopeError::ReservedKind),
+        (6, 15, EnvelopeError::ReservedKind),
         (7, 1, EnvelopeError::ReservedField),
         (12, 1, EnvelopeError::ReservedField),
         (8, 1, EnvelopeError::Length),

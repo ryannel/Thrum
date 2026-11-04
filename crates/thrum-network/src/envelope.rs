@@ -38,6 +38,8 @@ pub enum Kind {
     Close = 12,
     /// Staging acknowledgement for one baseline chunk.
     BaselineChunkAck = 13,
+    /// Selective acknowledgement for one admitted state image.
+    StateAck = 14,
 }
 
 impl TryFrom<u8> for Kind {
@@ -58,6 +60,7 @@ impl TryFrom<u8> for Kind {
             11 => Self::Clock,
             12 => Self::Close,
             13 => Self::BaselineChunkAck,
+            14 => Self::StateAck,
             _ => return Err(EnvelopeError::ReservedKind),
         })
     }
@@ -67,7 +70,7 @@ impl TryFrom<u8> for Kind {
 /// sender sequence, acknowledgement and state before payload admission.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Header {
-    /// One of the thirteen first-version application kinds.
+    /// One of the fourteen first-version application kinds.
     pub kind: Kind,
     /// Match-scoped identity; zero for initial Hello.
     pub match_id: [u8; 16],
@@ -102,7 +105,7 @@ pub enum EnvelopeError {
     Magic,
     /// Protocol major is not one.
     Version,
-    /// Kind is outside the thirteen selected first-version values.
+    /// Kind is outside the fourteen selected first-version values.
     ReservedKind,
     /// Flags or reserved header bytes are nonzero.
     ReservedField,

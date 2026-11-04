@@ -164,6 +164,7 @@ impl ConditionedLink {
         &mut self,
         now: u64,
         newest: Sample,
+        datagram_sequence: u64,
         first_created: u64,
         force_delivery: bool,
     ) -> Result<(), String> {
@@ -204,7 +205,7 @@ impl ConditionedLink {
                 kind: Kind::InputBatch,
                 match_id: MATCH_ID,
                 connection_epoch: newest.binding.connection_epoch,
-                message_sequence: now,
+                message_sequence: datagram_sequence,
                 server_tick: now,
                 acknowledged_sequence: 0,
             },
@@ -344,7 +345,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual bytes={} visual max_age={} visual encode/decode={}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "scenario={:?} ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late/stale={}/{}/{} accepted={} due_misses={} confirmed delivered/in_flight/retired/rebaselines/max_age={}/{}/{}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} visual sent/dropped/delivered/stale/reordered={}/{}/{}/{}/{} visual ACK sent/dropped/delivered/rebased={}/{}/{}/{} visual bytes={} visual retained_bytes={} visual max_age={} visual encode/decode={}/{} us tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.scenario,
             self.committed_ticks,
             PEER_COUNT,
@@ -383,7 +384,12 @@ impl fmt::Display for ConditionedReport {
             self.visual.delivered,
             self.visual.stale,
             self.visual.reordered,
+            self.visual.ack_sent,
+            self.visual.ack_dropped,
+            self.visual.ack_delivered,
+            self.visual.rebases,
             self.visual.sent_bytes,
+            self.visual.retained_bytes,
             self.visual.max_age,
             self.visual.encode_ns / 1_000,
             self.visual.decode_ns / 1_000,
@@ -561,7 +567,9 @@ impl ConditionedGame {
             } else {
                 1
             };
-            self.link.send(tick, sample, first_created, false)?;
+            let datagram_sequence = self.visual.next_client_sequence(index)?;
+            self.link
+                .send(tick, sample, datagram_sequence, first_created, false)?;
         }
         let mut receiver = PacketReceiver {
             sim: &self.sim,
@@ -697,8 +705,14 @@ impl ConditionedGame {
         self.expected[0] = state.position.0;
         self.held[0] = [0.0; 3];
         // A delayed packet from the old epoch must be counted and discarded.
-        self.link
-            .send(tick, control_sample(old_binding, tick), 1, true)?;
+        let old_datagram_sequence = self.visual.next_client_sequence(0)?;
+        self.link.send(
+            tick,
+            control_sample(old_binding, tick),
+            old_datagram_sequence,
+            1,
+            true,
+        )?;
         Ok(())
     }
 
@@ -908,8 +922,8 @@ impl ConditionedGame {
 /// Run the same 10k V1 simulation with four peer input streams through a
 /// fixed-seed 2–4-tick, 2%-loss in-memory link. Encoded input packets pass
 /// through the conditioner; the confirmed and speculative clients are local
-/// diagnostic consumers. Visual deltas use a fixed baseline and conditioned
-/// no-socket packets; selective ACK rebasing and OS transport remain open.
+/// diagnostic consumers. Visual deltas use selective ACK rebasing through
+/// conditioned no-socket packets; reliable repair and OS transport remain open.
 ///
 /// # Errors
 /// Returns a staging, capacity, authority or independent-position-check fault.
