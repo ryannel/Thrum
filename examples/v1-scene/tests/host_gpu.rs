@@ -141,6 +141,52 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
 }
 
 #[test]
+#[ignore = "requires a real native GPU adapter for the local InputFrame-to-world route"]
+fn local_controls_use_validated_input_and_hold_until_replaced() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("native device");
+        let mut host = FrameHost::new(&device, &queue, None)
+            .await
+            .expect("prepared game host");
+        let initial = host.controlled_position().expect("seeded player");
+        host.set_controls([1.0, 0.0, 0.0])
+            .expect("normalized local control");
+        assert_eq!(
+            host.drive(Duration::from_nanos(16_666_667), None)
+                .expect("first controlled tick")
+                .completed_ticks,
+            1
+        );
+        assert!(host.set_controls([2.0, 0.0, 0.0]).is_err());
+        assert_eq!(
+            host.drive(Duration::from_nanos(33_333_334), None)
+                .expect("held control tick")
+                .completed_ticks,
+            1
+        );
+        let moving = host.controlled_position().expect("same player");
+        assert!((moving[0] - initial[0] - 0.2).abs() < 1e-9);
+        assert_eq!(moving[1], initial[1]);
+        host.set_controls([0.0; 3]).expect("release control");
+        assert_eq!(
+            host.drive(Duration::from_nanos(50_000_001), None)
+                .expect("released control tick")
+                .completed_ticks,
+            1
+        );
+        assert_eq!(host.controlled_position(), Some(moving));
+    });
+}
+
+#[test]
 #[ignore = "requires a real native GPU adapter for the worker-to-frame handoff"]
 fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_world_ticks() {
     pollster::block_on(async {

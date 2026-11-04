@@ -203,6 +203,23 @@ impl BrowserGame {
         Ok(())
     }
 
+    /// Sample normalized player movement for the next authoritative world tick.
+    ///
+    /// # Errors
+    /// Returns a JavaScript error for a nonfinite or out-of-range axis.
+    pub fn set_controls(&mut self, x: f32, y: f32) -> Result<(), JsValue> {
+        self.host.set_controls([x, y, 0.0]).map_err(js_error)
+    }
+
+    /// Committed position of the one local player in this V1 fixture.
+    #[must_use]
+    pub fn controlled_position(&self) -> String {
+        self.host.controlled_position().map_or_else(
+            || "player unavailable".to_owned(),
+            |position| format!("player x={:.3} y={:.3}", position[0], position[1]),
+        )
+    }
+
     /// Pause for a hidden tab and restart the clock when it becomes visible.
     /// Queued accepted ticks drain before resume; hidden wall time is not admitted.
     ///

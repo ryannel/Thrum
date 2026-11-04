@@ -240,6 +240,23 @@
       ],
       "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. One visible 600-frame simulator run passes; actual background/resume, surface/device loss, touch input, cooked hot reload, physical iPhone and sustained device/visual budgets remain open."
     },
+    "V1_local_player_input": {
+      "implementation": "partial_one_local_peer_keyboard_axes_through_shared_fixed_tick_input_frame_admission",
+      "functional_validation": "native_metal_host_hold_invalid_refusal_release_and_existing_frame_regression_pass; chrome_156_live_keyboard_motion_and_600_gpu_complete_samples_pass",
+      "experienced_quality": "synthetic_grid_only_no_input_to_display_latency_or_visual_acceptance",
+      "platform_performance": {
+        "mac": "native_offscreen_host_test_only_locked_display_prevents_visible_keyboard_run",
+        "windows": "not_run",
+        "browser": "chrome_156_apple_m3_max_600_frame_diagnostic_not_sustained_budget",
+        "ios": "no_touch_input",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Chrome 156 WebGPU on Apple M3 Max at 1280x720: held D moved committed local player x from 0.891 to 11.691; 601 ticks, 601 presented, 600 GPU-complete samples, zero unavailable/overload/refused/shed/report drops. CPU tick p50/p95 200/400 us and encode 200/300 us. No input-specific overhead isolation or input-to-display latency measurement.",
+      "evidence": [
+        "../evidence/render/V1-LOCAL-INPUT-2026-11-04.md"
+      ],
+      "scope": "One V1 fixture entity is registered to a local peer and actor. macOS and Chrome keyboard states sample changed normalized axes at the next due fixed tick and use Simulation::admit_frame before the shared world step; invalid axes retain prior held controls. No new action schema or second authority. Four-peer transport, prediction/reconciliation, touch controls, physical device input, focused visible macOS run and input-to-display latency remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",
