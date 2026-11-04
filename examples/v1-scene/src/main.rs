@@ -71,9 +71,15 @@ fn extract(extractor: &mut RenderExtractor, sim: &Simulation) -> usize {
     report.history_reused
 }
 
-fn scene_from_frame(frame: &RenderColumns) -> Result<(SyntheticScene, usize), String> {
-    let mut scene = SyntheticScene::grid(u32::try_from(frame.len()).expect("10k fits u32"))
-        .map_err(|error| format!("synthetic scene: {error:?}"))?;
+fn apply_frame_to_scene(
+    scene: &mut SyntheticScene,
+    frame: &RenderColumns,
+    changed_slots: &mut Vec<u32>,
+) -> Result<usize, String> {
+    if scene.instances.len() != frame.len() {
+        return Err("render frame changed fixture instance count".to_owned());
+    }
+    changed_slots.clear();
     let mut moved = 0;
     for row in 0..frame.len() {
         let index = usize::try_from(frame.ids()[row])
@@ -84,13 +90,21 @@ fn scene_from_frame(frame: &RenderColumns) -> Result<(SyntheticScene, usize), St
             .ok_or_else(|| format!("stable fixture ID {index} outside scene"))?;
         let current = frame.current()[row];
         let previous = frame.previous()[row];
-        instance.current[3][..3].copy_from_slice(&current);
-        instance.previous[3][..3].copy_from_slice(&previous);
-        instance.ids[1] = u32::try_from(frame.visuals()[row])
+        let material = u32::try_from(frame.visuals()[row])
             .map_err(|_| "fixture material index exceeds u32".to_owned())?;
+        if instance.current[3][..3] != current
+            || instance.previous[3][..3] != previous
+            || instance.ids[1] != material
+        {
+            instance.current[3][..3].copy_from_slice(&current);
+            instance.previous[3][..3].copy_from_slice(&previous);
+            instance.ids[1] = material;
+            changed_slots.push(u32::try_from(index).expect("10k fixture slot fits u32"));
+        }
         moved += usize::from((current[0] - previous[0]).abs() > 1e-6);
     }
-    Ok((scene, moved))
+    changed_slots.sort_unstable();
+    Ok(moved)
 }
 
 fn percentile_summary(samples: &mut [f64]) -> (f64, f64) {
@@ -197,7 +211,10 @@ async fn run() -> Result<String, String> {
     let start = Instant::now();
     let history_reused = extract(&mut extractor, &sim);
     let extract_time = start.elapsed();
-    let (scene, moved) = scene_from_frame(extractor.frame())?;
+    let mut scene = SyntheticScene::grid(u32::try_from(ENTITY_COUNT).expect("10k fits u32"))
+        .map_err(|error| format!("synthetic scene: {error:?}"))?;
+    let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
+    let moved = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots)?;
     if history_reused != ENTITY_COUNT || moved != MOVING_COUNT {
         return Err(format!(
             "history/motion mismatch: {history_reused} reused, {moved} moved"
@@ -218,7 +235,7 @@ async fn run() -> Result<String, String> {
         })
         .await
         .map_err(|error| format!("GPU device: {error:?}"))?;
-    let prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
+    let mut prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
         .await
         .map_err(|error| format!("prepare: {error:?}"))?;
     let target = OffscreenTarget::new(&device, &prepared, 640, 360)
@@ -293,12 +310,59 @@ async fn run() -> Result<String, String> {
     } else {
         "unavailable".to_owned()
     };
+    for _ in 0..60 {
+        sim.step(&[])
+            .map_err(|error| format!("later tick: {error:?}"))?;
+    }
+    extract(&mut extractor, &sim);
+    apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots)?;
+    let upload_start = Instant::now();
+    let upload = prepared
+        .upload_instances(&queue, &scene.instances, &changed_slots)
+        .map_err(|error| format!("update GPU instances: {error:?}"))?;
+    if upload.dropped_invalid != 0 || upload.changed_rows != MOVING_COUNT {
+        return Err(format!("unexpected instance update: {upload:?}"));
+    }
+    let upload_time = upload_start.elapsed();
+    let mut second_encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    prepared
+        .encode(&mut second_encoder, 1, &target, None)
+        .map_err(|error| format!("encode updated scene: {error:?}"))?;
+    pixels
+        .encode(&mut second_encoder, &target)
+        .map_err(|error| format!("encode updated readback: {error:?}"))?;
+    let submission = queue.submit([second_encoder.finish()]);
+    device
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submission),
+            timeout: Some(Duration::from_secs(10)),
+        })
+        .map_err(|error| format!("updated render poll: {error:?}"))?;
+    let updated = pixels
+        .try_collect(1)
+        .map_err(|error| format!("updated pixels: {error:?}"))?
+        .ok_or_else(|| "updated pixel readback incomplete".to_owned())?;
+    let changed_pixels = rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(updated.as_chunks::<4>().0)
+        .filter(|(before, after)| before != after)
+        .count();
+    if changed_pixels == 0 {
+        return Err("uploaded simulation frame did not change rendered pixels".to_owned());
+    }
     let repeated = profile_repeated(&device, &queue, &prepared, &target, &mut timings)?;
     Ok(format!(
-        "adapter={adapter_name}; entities={ENTITY_COUNT}; moving={moved}; tick={:.3} us; extract={:.3} us; cold encode={:.3} us; cold GPU passes={cold_gpu}; {repeated}; foreground_pixels={foreground}",
+        "adapter={adapter_name}; entities={ENTITY_COUNT}; moving={moved}; tick={:.3} us; extract={:.3} us; cold encode={:.3} us; cold GPU passes={cold_gpu}; upload={:.3} us/{} rows/{} writes/{} bytes; changed_pixels={changed_pixels}; {repeated}; foreground_pixels={foreground}",
         tick_time.as_secs_f64() * 1e6,
         extract_time.as_secs_f64() * 1e6,
         encode_time.as_secs_f64() * 1e6,
+        upload_time.as_secs_f64() * 1e6,
+        upload.changed_rows,
+        upload.writes,
+        upload.bytes,
     ))
 }
 

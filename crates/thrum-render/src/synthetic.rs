@@ -14,6 +14,9 @@ use std::collections::BTreeSet;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use wgpu::util::DeviceExt;
 
+mod upload;
+use upload::{InstanceUpload, pack_synthetic_instance};
+
 /// Synthetic source revision; not a substitute for an F4 product identity.
 pub const SYNTHETIC_REVISION: u64 = 3;
 /// Portable opaque depth; no sampling or separate prepass is needed.
@@ -168,6 +171,8 @@ pub enum RenderError {
     Validation(String),
     /// Empty/unreasonably large synthetic fixture.
     SceneCapacity,
+    /// Changed instance slots were out of bounds, duplicated or unordered.
+    InvalidInstanceUpdate,
     /// Unsupported semantic flags, skinning or mapped normals in this diagnostic.
     UnsupportedSyntheticMaterial,
     /// Invalid directional source or degenerate/unsupported diagnostic transform.
@@ -197,6 +202,20 @@ impl From<TimingError> for RenderError {
     }
 }
 
+/// Work enqueued for one instance-table update. Bytes count payload sent to
+/// the queue, not driver staging overhead or GPU transfer time.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct InstanceUploadReport {
+    /// Rows whose packed ABI bytes changed since the preceding submitted view.
+    pub changed_rows: usize,
+    /// Malformed presentation rows kept at their previously valid GPU value.
+    pub dropped_invalid: usize,
+    /// Queue write calls made for this update.
+    pub writes: usize,
+    /// Payload bytes enqueued, including unchanged rows in a full fallback.
+    pub bytes: usize,
+}
+
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
@@ -208,6 +227,7 @@ pub struct PreparedSynthetic {
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
     instances: wgpu::BindGroup,
+    instance_upload: InstanceUpload,
     material_bytes: u64,
     instance_bytes: u64,
     instance_count: u32,
@@ -280,36 +300,19 @@ impl PreparedSynthetic {
             usize::try_from(instance_bytes).map_err(|_| RenderError::SceneCapacity)?,
         );
         for instance in &scene.instances {
-            if instance.ids[2] != 0 {
-                return Err(RenderError::UnsupportedSyntheticMaterial);
-            }
-            // The bounded cube evaluator needs finite nondegenerate normal axes.
-            // General affine/singular-transform policy belongs to cooked geometry.
-            if instance.normal.iter().any(|column| {
-                let length2 = column[..3]
-                    .iter()
-                    .map(|v| f64::from(*v).powi(2))
-                    .sum::<f64>();
-                !(1e-12..=1e12).contains(&length2)
-            }) || instance
-                .current
-                .iter()
-                .flatten()
-                .any(|v| !v.is_finite() || v.abs() > 1e6)
-                || instance.current[0][3] != 0.0
-                || instance.current[1][3] != 0.0
-                || instance.current[2][3] != 0.0
-                || instance.current[3][3].to_bits() != 1.0_f32.to_bits()
-            {
-                return Err(RenderError::InvalidLighting);
-            }
-            packed_instances.extend_from_slice(&instance.pack(material_count)?);
+            packed_instances.extend_from_slice(&pack_synthetic_instance(instance, material_count)?);
         }
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let material_buffer =
             storage_buffer(device, queue, "synthetic materials", &packed_materials);
         let instance_buffer =
             storage_buffer(device, queue, "synthetic forward opaque", &packed_instances);
+        let instance_upload = InstanceUpload::new(
+            instance_buffer,
+            packed_instances,
+            material_count,
+            instance_count,
+        );
         // ABI2 ViewRecord: identity current/previous orthographic view projection,
         // camera at negative Z, fixed storage pre-exposure and inverse authored
         // exposure; all unused padding stays zero. Display uses a separate e/p uniform.
@@ -451,7 +454,7 @@ impl PreparedSynthetic {
             layout: &instance_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: instance_buffer.as_entire_binding(),
+                resource: instance_upload.buffer().as_entire_binding(),
             }],
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -516,11 +519,28 @@ impl PreparedSynthetic {
             light,
             materials,
             instances,
+            instance_upload,
             material_bytes,
             instance_bytes,
             instance_count,
             display_gain,
         })
+    }
+    /// Update sorted, distinct changed slots before the next queue submission.
+    /// The caller submits each frame before preparing another one; queue writes
+    /// are ordered after prior submitted frames. Malformed presentation rows
+    /// retain their prior valid value and are counted. Omitted slots also retain
+    /// their prior data.
+    /// # Errors
+    /// Refuses an invalid slot list or changed table size.
+    pub fn upload_instances(
+        &mut self,
+        queue: &wgpu::Queue,
+        instances: &[InstanceRecord],
+        changed_slots: &[u32],
+    ) -> Result<InstanceUploadReport, RenderError> {
+        self.instance_upload
+            .replace(queue, instances, changed_slots)
     }
     /// Prepared generation-local finite draw tuple.
     pub fn pipeline_key(&self) -> PipelineKey {
