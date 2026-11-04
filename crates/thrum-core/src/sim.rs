@@ -10,17 +10,21 @@ mod input;
 mod published;
 mod registered_world;
 mod schedule;
+mod snapshot_ring;
 mod storage;
 mod world;
 
 pub use controller::{ControllerInput, ControllerRule, ControllerStepError};
 pub use input::{FrameError, InputFrame, SimAction};
 pub use published::{DirtySlots, PublishedPage, SnapshotId, StructuralChange};
-pub use registered_world::{EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError};
+pub use registered_world::{
+    EntityWriter, PreparedRead2, PreparedWrite1, RegisteredWorld, RegisteredWorldError,
+};
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
     RegistrationError, Schedule, ScheduleError, Stage, SystemId, SystemSpec,
 };
+pub use snapshot_ring::{PublicationBusy, SnapshotRing};
 pub use world::{
     ChangeTicks, Command, ComponentEntity, ComponentView, ControllerState, Ownership, Position,
     SimConfig, SimError, Simulation, TickOutcome, Velocity,
