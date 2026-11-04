@@ -24,7 +24,8 @@ V1 test game, but no general engine runtime exists yet; examples of future SDK c
   `docs/evidence/`, and follow [the storage rules](docs/ASSET-LIFECYCLE.md) for bulk outputs.
 - If work is delegated, use bounded Sol High commissions with shared contracts, file ownership,
   affected consumers and completion criteria. Integrate and verify the combined result sequentially.
-- Work only in this repository. Broadsides is historical context and is not a build dependency.
+- Work only in this repository. Broadsides is historical context and is not a build dependency. Its Rust sea and clouds
+  port after G7 module by module under [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md).
   Do not modify it, import its assets/code wholesale, or apply its TS/foundation workflow here.
 
 Local commits are useful verified checkpoints. Do not push, publish or deploy without authorization.

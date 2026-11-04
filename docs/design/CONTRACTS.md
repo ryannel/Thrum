@@ -267,6 +267,9 @@ denoising providers, whether Thrum's own, platform hardware (MetalFX) or vendor 
 contract and are selected through F2's registry.
 V3/E1/V5 own their effect-specific histories; V1 owns persistent GPU lifetime. Shared invalidation reaches all affected
 owners. Detailed derivation is in the [temporal composition study](research/TEMPORAL-COMPOSITION.md).
+Effect histories for volumetric and water effects key on view, resolution and epoch, use ping-pong or world-anchored
+wrapping storage rather than per-frame full copies, output at render resolution and contribute to the reactive mask;
+their update cadence is a quality-governor setting with declared invalidation, never a private upscaler.
 History retention does not bypass C02's snapshot budget. Extracted prior poses or leased products have explicit caps;
 an old/skipped view without valid retained data resets rather than borrowing reclaimed world memory.
 

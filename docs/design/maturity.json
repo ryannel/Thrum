@@ -1670,7 +1670,7 @@
       },
       "initial_specifications": {
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d"
+        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Region/portal formats, proxy tolerances, active-set transaction and support pins."
@@ -1799,7 +1799,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d"
+        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Solver/controller library audit, contact/substep/tolerance and moving-platform model."
@@ -1843,7 +1843,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d"
+        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Graph/IK/compression and prior-sample retention, root and ragdoll transitions."
@@ -1882,7 +1882,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d"
+        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Nav tile/obstacle update algorithms, agent budgets and replanning policy."
@@ -2253,7 +2253,7 @@
         "A04",
         "A05"
       ],
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 source/run/network consumers, bounded authored source quantities and V3 light handoff, and moving-shore rain exposure reconciled. The constant-light subset has provisional staged F3 and test-only exact-root proofs; its historical F4 160-byte pure codec was golden-tested and is now parked in Git, while admitted pin-to-product cooking and publication remain open. A restricted exact-rational moving-shore first-hit proof selects affine-area source integration for prescribed tide. Adversarial material review found opposite-direction transitions within one homogenized cell require a whole-cell chronology bound. Fixed columns fail general stocked-coast coverage under the studied 8192-column/local-error profile. Source-height density cohorts close a restricted tide law; exact Q(sqrt401) validation carries canonical true-area cap/refill on the 1:20 bank, while eight bands refuse some weather/deposition histories. Nine named fresh-history f64 episodes pass a conditional mass+density-L1 certificate, but its rational source predicates and verifier cost do not qualify incremental runtime or saved-state receipts. General metrics, film/water response, authored rain schema 2, admitted lease/F4 integration, smooth finite-shore numerics, visuals and device cost remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2263,7 +2263,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d",
+        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb",
         "RENDER-SPEC.md": "e0697aae0ab928852a2feafacae89b9b1007ca429176751942818ef710e94fd2"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -2294,7 +2294,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 file-first admission/restart and bounded authored Sun, phase, layered-wind, static-rain and interval-receipt semantics selected. An isolated proposed schema-2 F3 grammar/fixture closure now has independent parser and phase-oracle evidence, but owner adoption, production F3/F4 binding and runtime proof remain open; prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2332,7 +2332,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2375,7 +2375,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 file-first admission/restart and bounded periodic cloud optical-depth source, wind advection, low-Sun fallback and V3 single-attenuation handoff selected. Visible volume, F3 payload and runtime/device proof remain open; prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2420,7 +2420,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2459,7 +2459,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2501,7 +2501,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "current_design_sha256": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prescribed tide's moving-shore first-hit source receipts have a restricted exact-rational offline proof. Fixed columns fail useful stocked-coast coverage under the studied 8192-column/local-error profile. Source-height density cohorts pass an independent exact restricted tide law and canonical true-area bridge on a 1:20 bank, but exceed eight bands under some weather/deposition histories. Nine fresh-history f64 cases pass an independent interval certificate; rational source predicates, high verifier cost, incremental saved-state/receipt error, general metrics, finite-water capacity/HLL, full material exchange and runtime remain unqualified. Prior reviewed hashes retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2511,7 +2511,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d"
+        "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Regime-specific dynamics/discretization, body-force closure, query/optical consistency.",
@@ -2941,7 +2941,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "3d0c61b233f4784914b36a982ededefadd1f33fc0c357858c3567dcb8a596839",
+  "contract_sha256": "01261f902b10b8057000365f61810c56547bf6b91224c00898c80d90f9641134",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3686,12 +3686,12 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
     "contract_revision": "C4",
-    "contract_sha256": "3d0c61b233f4784914b36a982ededefadd1f33fc0c357858c3567dcb8a596839",
+    "contract_sha256": "01261f902b10b8057000365f61810c56547bf6b91224c00898c80d90f9641134",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "e0697aae0ab928852a2feafacae89b9b1007ca429176751942818ef710e94fd2",
-      "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d",
+      "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb",
       "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38"
     },
     "method": "C3 studies retained historically; C4 selected file-first/restart/preload simplifications and closed SR01-SR08 through coordinated source/network/delivery specification plus cross-owner adverse traces and independent arithmetic. No runtime proof.",
@@ -4067,7 +4067,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "8084b1fd0ced016cd362da7be54b1ea26b93918b33bb74f10cc304570512d68a",
-      "CONTRACTS.md": "3d0c61b233f4784914b36a982ededefadd1f33fc0c357858c3567dcb8a596839",
+      "CONTRACTS.md": "01261f902b10b8057000365f61810c56547bf6b91224c00898c80d90f9641134",
       "DESIGN-PROGRAMME.md": "1d5d87fcf28fad58b00a997a64d8ec992f0e9befd6b8f32213ea044fec802223",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
@@ -4081,7 +4081,7 @@
       "NETWORK-SPEC.md": "6c4608805b0dd618a66f0a230e75e0d30f927ac5a98713a62baccda5d6842a38",
       "PERFORMANCE-WALKTHROUGHS.md": "e515a669f0454ea2257f7da2fde50f93a8bf108e184000e69f12521eb0142bd5",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
-      "PLAY-ENVIRONMENT-SPEC.md": "e7d1e6236d53851abb29516f0b1d6b2c999f5c9ed90eaaee2228cda9aa36883d",
+      "PLAY-ENVIRONMENT-SPEC.md": "22a24f810c8be1911bc4e073f8ab66f442bc510f7e3afd8b24d555435731dccb",
       "README.md": "8838d9593691372f4d889a3f331c8c4c91cb9eb961a969c2715b95b32113416c",
       "RENDER-SPEC.md": "e0697aae0ab928852a2feafacae89b9b1007ca429176751942818ef710e94fd2",
       "SCENARIO-WALKTHROUGHS.md": "6ec3cd7653148d5467a52c4f7656e4bae9533afd8e0825d3d44205a8ccbddf8b",
@@ -4093,7 +4093,7 @@
       "TRAVELLER-APP.md": "93edf76b93b66f47a2db7b132bbfa56c8d2e2572343694a15dcad51c9060a25d",
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "361b0df949b9a54236db2d4e728ad25607168bd233172aa28f93a3566808f4da",
-      "modules/ENVIRONMENT.md": "49d6626b2a17664634b9ee4bae10620a939660aafb4d17e6917da012622a637a",
+      "modules/ENVIRONMENT.md": "95c1c89ac7461c8258f72f14f456c9385c1df4cdf00aa746946ff5ee4d593fef",
       "modules/NETWORKING.md": "e1c72b93b5c295bcdc993f7a305562f675c6086eed5fa31ddbdc5dc8a696d86d",
       "modules/PLATFORM-RUNTIME.md": "cb3dcaafee56f14474a3a0ebf3c44962d60fbd1cb770616fd3c1e300de98589b",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
@@ -4365,6 +4365,25 @@
     "promotion_rule": "A dedicated recipe or path keeps a portable fallback and is promoted only by a measured win on its own hardware with image difference within tolerance.",
     "implementation": "not_started",
     "sequencing": "G3 registry, portable and Apple tile recipes, frame contract, derived attachments, pipeline caches, GPU culling; G4 display link, EDR, reconstruction, governor, latency; G5 meshlets, KTX2, BLAKE3, mapped products; G6 QUIC offload and QoS threads; after G7 Android tile, desktop high, vendor providers, ray tracing and ML.",
+    "device_evidence": []
+  },
+  "sea_and_cloud_port_design": {
+    "as_of": "2026-11-04",
+    "decision": "selected",
+    "requirement_basis": [
+      "E03",
+      "E20",
+      "E21"
+    ],
+    "record": "decisions/SEA-AND-CLOUD-PORT.md",
+    "source_reference": {
+      "broadsides_water": "codex/water-rust-system@70cf98122",
+      "broadsides_clouds": "codex/clouds-procedural-publish-20261104@8b6262f13",
+      "dependency": "none; reviewed module-by-module port after G7"
+    },
+    "scope": "Spectral sea E1.water profile (CPU f64 long-wave authority, GPU residual), weather-map volumetric E1.clouds provider over a CPU-queryable tau source, ownership split, hardware and frame-contract obligations, G3 consumers and porting policy.",
+    "implementation": "not_started",
+    "external_measurements": "Broadsides M3 Max only: sea whole frame 34.4/37.8 ms median/p95 at 1440p with water cost unmeasured; clouds about 20 ms and 365.5 MiB at 1080p. Not Thrum evidence.",
     "device_evidence": []
   }
 }
