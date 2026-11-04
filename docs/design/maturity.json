@@ -342,6 +342,23 @@
       ],
       "scope": "The authority alone commits controller values. The four clients admit complete copied values and exact committed origins through an ordered, delayed lossless in-memory lane. Reconnect baseline transition, rejected-result retention, reliable ACK, state-delta codec, real transport, prediction/reconciliation and browser/phone multiplayer remain open."
     },
+    "A5_controller_replay": {
+      "implementation": "partial_four_peer_shared_fixture_rule_wire_canonical_controller_prediction_with_64_tick_inline_histories_and_shared_frame_budget",
+      "functional_validation": "600_tick_10k_world_2384_confirmed_groups_and_2364_committed_origins_match_predicted_records; seven_packet_direction_reversal_burst_corrects_and_replays_within_nine_steps; fractional_axis_plus_actions_wire_oracle_wrong_origin_refusal_and_forced_budget_fallback_pass; 500_warmed_tick_zero_allocation_assertion_passes",
+      "experienced_quality": "no_visible_correction_render_history_or_device_multiplayer_acceptance",
+      "platform_performance": {
+        "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
+        "windows": "not_run",
+        "browser": "not_run_conditioned_prediction",
+        "ios": "not_run_conditioned_prediction",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Rust 1.99.1 release: ordinary 600-tick four-peer run with 2384 prediction matches, 2364 exact delivered origins, zero corrections/fallbacks, four horizons at tick 605, 103264 bytes retained prediction owners and one-process tick p50/p95 52/93 us. Divan 20 complete-run median 29.41 ms, with nearby 29.02/34.88 ms observations under variable local load; 138 benchmark-thread Rust allocations including setup/teardown, zero across 500 warmed ticks. Unpaired timing does not establish a speed difference.",
+      "evidence": [
+        "../evidence/v1-workload/A5-CONTROLLER-REPLAY-2026-11-04.md"
+      ],
+      "scope": "The current no-collision/no-resolve V1 controller fixture predicts locally from wire-canonical authored frames with exact origin identity, reconciles complete confirmed states and falls back under one shared replay budget. Origin matching is diagnostic and does not retain reliable results or acknowledge them. Integrated reconnect baseline, reliable result/ACK, state delta, real transport, visible correction histories, cross-platform multiplayer and sustained device budgets remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",

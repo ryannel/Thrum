@@ -5,7 +5,8 @@ use std::num::NonZeroU32;
 use thrum_core::{
     ActorId, Origin, PeerId, StableId, WorldEpoch,
     sim::{
-        Command, ComponentEntity, InputFrame, Ownership, Position, SimConfig, Simulation, Velocity,
+        Command, ComponentEntity, ControllerInput, ControllerStepError, FrameError, InputFrame,
+        Ownership, Position, SimAction, SimConfig, Simulation, Velocity,
     },
 };
 
@@ -41,7 +42,7 @@ fn fixture() -> (Simulation, thrum_core::Handle, Ownership) {
     (sim, handle, binding)
 }
 
-fn frame(binding: Ownership, tick: u64, sequence: u64) -> InputFrame<thrum_core::sim::SimAction> {
+fn frame(binding: Ownership, tick: u64, sequence: u64) -> InputFrame<SimAction> {
     InputFrame {
         origin: Origin {
             peer: binding.peer,
@@ -98,4 +99,83 @@ fn same_tick_despawn_still_resolves_the_consumed_input_origin() {
     assert_eq!(committed.committed_inputs, &[origin]);
     assert!(sim.handle(StableId(1)).is_none());
     assert!(sim.controller_state(binding.peer).is_err());
+}
+
+#[test]
+fn pure_controller_rule_matches_committed_input_actions_and_held_ticks() {
+    let (mut sim, _, binding) = fixture();
+    let rule = sim.controller_rule();
+    let mut predicted = sim.controller_state(binding.peer).expect("initial control");
+    let mut impulse = frame(binding, 1, 1);
+    impulse.axes = [0.5, 0.0, 0.0];
+    impulse.actions.push(SimAction::Impulse([1.0, 0.0, 0.0]));
+    predicted = rule
+        .advance(
+            predicted,
+            ControllerInput::Frame {
+                axes: impulse.axes,
+                actions: &impulse.actions,
+            },
+        )
+        .expect("pure first tick");
+    sim.admit_frame(impulse).expect("admit impulse");
+    sim.step(&[]).expect("commit impulse");
+    assert_eq!(
+        predicted,
+        sim.controller_state(binding.peer).expect("tick one")
+    );
+
+    predicted = rule
+        .advance(predicted, ControllerInput::Hold)
+        .expect("pure held tick");
+    sim.step(&[]).expect("commit held tick");
+    assert_eq!(
+        predicted,
+        sim.controller_state(binding.peer).expect("tick two")
+    );
+
+    let mut damage = frame(binding, 3, 2);
+    damage.axes = [-0.25, 0.0, 0.0];
+    damage.actions.push(SimAction::Damage(17));
+    predicted = rule
+        .advance(
+            predicted,
+            ControllerInput::Frame {
+                axes: damage.axes,
+                actions: &damage.actions,
+            },
+        )
+        .expect("pure damage tick");
+    sim.admit_frame(damage).expect("admit damage");
+    sim.step(&[]).expect("commit damage");
+    assert_eq!(
+        predicted,
+        sim.controller_state(binding.peer).expect("tick three")
+    );
+    assert_eq!(predicted.health, 83);
+
+    assert_eq!(
+        rule.advance(
+            predicted,
+            ControllerInput::Frame {
+                axes: [2.0, 0.0, 0.0],
+                actions: &[],
+            }
+        ),
+        Err(ControllerStepError::InvalidInput(FrameError::InvalidAxis))
+    );
+    assert_eq!(
+        rule.advance(
+            predicted,
+            ControllerInput::Frame {
+                axes: [0.0; 3],
+                actions: &[SimAction::Impulse([f64::NAN, 0.0, 0.0])],
+            }
+        ),
+        Err(ControllerStepError::InvalidInput(FrameError::InvalidAction))
+    );
+    assert_eq!(
+        predicted,
+        sim.controller_state(binding.peer).expect("unchanged")
+    );
 }

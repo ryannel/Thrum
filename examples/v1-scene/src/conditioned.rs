@@ -2,11 +2,12 @@
 //! The same V1 simulation owns gameplay; N1 only stages future frames.
 
 mod confirmed;
+mod predicted;
 
 use std::{fmt, num::NonZeroUsize, time::Instant};
 
 use thrum_core::{
-    PeerId, StableId,
+    Origin, PeerId, StableId,
     sim::{SimAction, Simulation},
 };
 use thrum_network::{
@@ -86,6 +87,7 @@ impl ActionWire<SimAction> for SceneActionWire {
 struct Sample {
     peer: PeerId,
     target: u64,
+    origin: Origin,
     axes: [f32; 3],
 }
 
@@ -143,14 +145,18 @@ impl ConditionedLink {
         x
     }
 
-    fn send(&mut self, peer: PeerId, now: u64) -> Result<(), String> {
+    fn send(&mut self, peer: PeerId, now: u64, newest: Sample) -> Result<(), String> {
         let started = Instant::now();
         let count = HISTORY.min(usize::try_from(now).map_err(|_| "tick count overflow")?);
         let frames = std::array::from_fn::<_, HISTORY, _>(|age| {
             let created = now
                 .saturating_sub(u64::try_from(age).expect("four history slots"))
                 .max(1);
-            let sample = control_sample(peer, created);
+            let sample = if age == 0 {
+                newest
+            } else {
+                control_sample(peer, created)
+            };
             scene::control_frame(sample.peer, sample.axes, sample.target, sample.target)
         });
         let records = std::array::from_fn::<_, HISTORY, _>(|index| EncodeRecord {
@@ -236,6 +242,11 @@ fn control_sample(peer: PeerId, created: u64) -> Sample {
     Sample {
         peer,
         target: created + LEAD_TICKS,
+        origin: Origin {
+            peer,
+            connection_epoch: scene::binding(peer).connection_epoch,
+            sequence: created + LEAD_TICKS,
+        },
         axes,
     }
 }
@@ -276,6 +287,17 @@ pub struct ConditionedReport {
     confirmed_in_flight: usize,
     confirmed_max_age: u64,
     confirmed_ticks: [u64; PEER_COUNT],
+    predicted_ticks: [u64; PEER_COUNT],
+    prediction_matches: u64,
+    prediction_corrections: u64,
+    prediction_fallbacks: u64,
+    prediction_resolved_origins: u64,
+    prediction_missed_authored: u64,
+    prediction_origin_mismatches: u64,
+    replay_steps: u64,
+    max_replay_steps: usize,
+    max_correction_m: f64,
+    prediction_retained_bytes: usize,
     tick_p50_ns: u64,
     tick_p95_ns: u64,
     encode_ns: u128,
@@ -287,7 +309,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late={}/{} accepted={} due_misses={} confirmed delivered/in_flight/max_age={}/{}/{} client_ticks={:?} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late={}/{} accepted={} due_misses={} confirmed delivered/in_flight/max_age={}/{}/{} client_ticks={:?} prediction ticks={:?} matches/corrections/fallbacks/replay/max_replay={}/{}/{}/{}/{} origin resolved/missed/mismatch={}/{}/{} max_correction_m={:.6} prediction_retained_bytes={} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.committed_ticks,
             PEER_COUNT,
             self.sent_packets,
@@ -306,6 +328,17 @@ impl fmt::Display for ConditionedReport {
             self.confirmed_in_flight,
             self.confirmed_max_age,
             self.confirmed_ticks,
+            self.predicted_ticks,
+            self.prediction_matches,
+            self.prediction_corrections,
+            self.prediction_fallbacks,
+            self.replay_steps,
+            self.max_replay_steps,
+            self.prediction_resolved_origins,
+            self.prediction_missed_authored,
+            self.prediction_origin_mismatches,
+            self.max_correction_m,
+            self.prediction_retained_bytes,
             self.tick_p50_ns / 1_000,
             self.tick_p95_ns / 1_000,
             self.encode_ns / 1_000,
@@ -406,11 +439,12 @@ impl ConditionedGame {
                 .controller_state(PEERS[index])
                 .map_err(|error| format!("initial controller: {error:?}"))?;
         }
+        let rule = sim.controller_rule();
         Ok(Self {
             sim,
             window,
             link: ConditionedLink::new(),
-            confirmed: ConfirmedLoop::new(&states),
+            confirmed: ConfirmedLoop::new(&states, rule),
             held: [[0.0; 3]; PEER_COUNT],
             expected,
             expected_history: Vec::with_capacity(
@@ -435,8 +469,11 @@ impl ConditionedGame {
         }
         let tick = self.sim.tick() + 1;
         let started = Instant::now();
-        for peer in PEERS {
-            self.link.send(peer, tick)?;
+        for (index, peer) in PEERS.into_iter().enumerate() {
+            let sample = control_sample(peer, tick);
+            self.confirmed
+                .author(index, sample.target, sample.origin, sample.axes, &[])?;
+            self.link.send(peer, tick, sample)?;
         }
         let mut receiver = PacketReceiver {
             sim: &self.sim,
@@ -579,6 +616,67 @@ impl ConditionedGame {
         if self.accepted_frames != delivered_origins + self.confirmed.in_flight_committed() {
             return Err("confirmed result origin accounting diverged".to_owned());
         }
+        let predictions = self.confirmed.prediction_reports();
+        let mut predicted_ticks = [0; PEER_COUNT];
+        let mut prediction_matches = 0;
+        let mut prediction_corrections = 0;
+        let mut prediction_fallbacks = 0;
+        let mut prediction_resolved_origins = 0;
+        let mut prediction_missed_authored = 0;
+        let mut prediction_origin_mismatches = 0;
+        let mut replay_steps = 0;
+        let mut max_replay_steps = 0;
+        let mut max_correction_m: f64 = 0.0;
+        let mut prediction_retained_bytes = 0;
+        for (index, prediction) in predictions.into_iter().enumerate() {
+            if prediction.active {
+                if prediction.tick != TICKS + LEAD_TICKS {
+                    return Err(
+                        "prediction branch did not reach the local input horizon".to_owned()
+                    );
+                }
+                let mut expected_future = self
+                    .expected_history
+                    .get(usize::try_from(confirmed_ticks[index] - 1).map_err(|_| "tick index")?)
+                    .ok_or("confirmed trace tick missing")?[index];
+                for target in confirmed_ticks[index] + 1..=prediction.tick {
+                    let sample = control_sample(PEERS[index], target - LEAD_TICKS);
+                    for (position, axis) in expected_future.iter_mut().zip(sample.axes) {
+                        *position += f64::from(axis) * 0.1;
+                    }
+                }
+                if prediction
+                    .state
+                    .position
+                    .0
+                    .iter()
+                    .zip(expected_future)
+                    .any(|(actual, expected)| (actual - expected).abs() > 1e-8)
+                {
+                    return Err(
+                        "predicted controller differs from authored future trace".to_owned()
+                    );
+                }
+            } else if prediction.tick != confirmed_ticks[index]
+                || prediction.state != self.confirmed.clients()[index].state()
+            {
+                return Err("fallback did not present the latest confirmed controller".to_owned());
+            }
+            predicted_ticks[index] = prediction.tick;
+            prediction_matches += prediction.matches;
+            prediction_corrections += prediction.corrections;
+            prediction_fallbacks += prediction.fallbacks;
+            prediction_resolved_origins += prediction.resolved_origins;
+            prediction_missed_authored += prediction.missed_authored;
+            prediction_origin_mismatches += prediction.origin_mismatches;
+            replay_steps += prediction.replay_steps;
+            max_replay_steps = max_replay_steps.max(prediction.max_replay_steps);
+            max_correction_m = max_correction_m.max(prediction.max_correction_m);
+            prediction_retained_bytes += prediction.retained_bytes;
+        }
+        if prediction_fallbacks == 0 && prediction_resolved_origins != delivered_origins {
+            return Err("predicted input origins diverged from confirmed results".to_owned());
+        }
         self.times.sort_unstable();
         Ok(ConditionedReport {
             committed_ticks: self.sim.tick(),
@@ -598,6 +696,17 @@ impl ConditionedGame {
             confirmed_in_flight,
             confirmed_max_age,
             confirmed_ticks,
+            predicted_ticks,
+            prediction_matches,
+            prediction_corrections,
+            prediction_fallbacks,
+            prediction_resolved_origins,
+            prediction_missed_authored,
+            prediction_origin_mismatches,
+            replay_steps,
+            max_replay_steps,
+            max_correction_m,
+            prediction_retained_bytes,
             tick_p50_ns: *self
                 .times
                 .get(self.times.len() / 2)
@@ -615,7 +724,8 @@ impl ConditionedGame {
 
 /// Run the same 10k V1 simulation with four peer input streams through a
 /// fixed-seed 2–4-tick, 2%-loss in-memory link. Encoded input packets pass
-/// through the conditioner; there is no OS transport or client replica yet.
+/// through the conditioner; the confirmed and speculative clients are local
+/// diagnostic consumers, with no OS transport or state-delta wire yet.
 ///
 /// # Errors
 /// Returns a staging, capacity, authority or independent-position-check fault.
@@ -662,6 +772,8 @@ mod tests {
                 .iter()
                 .all(|tick| (596..=600).contains(tick))
         );
+        assert_eq!(result.prediction_origin_mismatches, 0);
+        assert_eq!(result.prediction_missed_authored, 0);
     }
 
     #[test]
@@ -695,8 +807,8 @@ mod tests {
         let mut game = ConditionedGame::new().expect("10k conditioned game");
         game.link.burst_loss = Some(BurstLoss {
             peer: PeerId(1),
-            first_tick: 100,
-            last_tick: 105,
+            first_tick: 89,
+            last_tick: 95,
         });
         for _ in 0..600 {
             game.step().expect("authoritative tick");
@@ -708,6 +820,13 @@ mod tests {
             result.accepted_frames > 2_300,
             "input must resume after burst"
         );
+        assert!(
+            result.prediction_corrections > 0,
+            "burst must correct a speculative branch"
+        );
+        assert!(result.prediction_missed_authored > 0);
+        assert!(result.max_replay_steps <= 9);
+        assert!(result.max_correction_m > 0.0);
     }
 
     #[test]

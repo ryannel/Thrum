@@ -4,7 +4,9 @@ use crate::{ActorId, Handle, Origin, PeerId, StableId, WorldEpoch};
 
 use super::{
     Access, AccessKey, AccessMode, ComponentKind, FrameError, InputFrame, Schedule, SimAction,
-    Stage, SystemId, SystemSpec, storage::Store,
+    Stage, SystemId, SystemSpec,
+    controller::{ControllerRule, integrate_position, resolve_control},
+    storage::Store,
 };
 
 /// Right-handed Y-up world position in f64 metres. A1 has no hierarchy/TRS solver.
@@ -310,6 +312,11 @@ impl Simulation {
     pub fn tick_hz(&self) -> NonZeroU32 {
         self.config.tick_hz
     }
+    /// Immutable controller recipe used by both this world and a separate
+    /// speculative fixture branch. Capture it when the match starts.
+    pub fn controller_rule(&self) -> ControllerRule {
+        ControllerRule::from_config(self.config)
+    }
     /// Last fully committed world tick.
     pub fn tick(&self) -> u64 {
         self.tick
@@ -554,9 +561,7 @@ impl Simulation {
                     store.for_each_motion(|row, mut position, base_velocity| {
                         let velocity = work.velocity(row, base_velocity, next);
                         if velocity.0 != [0.0; 3] {
-                            for (p, v) in position.0.iter_mut().zip(velocity.0) {
-                                *p += v * dt;
-                            }
+                            position = integrate_position(position, velocity, dt);
                             work.set_position(row, position, next);
                         }
                     });
@@ -749,24 +754,12 @@ fn apply_input(
             continue;
         };
         let axes = peer.pending.as_ref().map_or(peer.axes, |frame| frame.axes);
-        let mut velocity = Velocity(axes.map(|axis| f64::from(axis) * movement_speed));
-        let mut health = store.health(row);
-        let mut damaged = false;
-        if let Some(frame) = &peer.pending {
-            for action in &frame.actions {
-                match action {
-                    SimAction::Impulse(impulse) => {
-                        for (v, delta) in velocity.0.iter_mut().zip(impulse) {
-                            *v += delta;
-                        }
-                    }
-                    SimAction::Damage(damage) => {
-                        health = health.saturating_sub(*damage);
-                        damaged = true;
-                    }
-                }
-            }
-        }
+        let actions = peer
+            .pending
+            .as_ref()
+            .map_or(&[][..], |frame| frame.actions.as_slice());
+        let (velocity, health, damaged) =
+            resolve_control(axes, actions, store.health(row), movement_speed);
         work.set_velocity(row, velocity, tick);
         if damaged {
             work.set_health(row, health, tick);

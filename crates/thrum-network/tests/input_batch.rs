@@ -5,7 +5,7 @@ use thrum_core::{
     sim::{InputFrame, Ownership},
 };
 use thrum_network::input_batch::{
-    ActionView, ActionWire, EncodeRecord, InputCodecError, decode, encode,
+    ActionView, ActionWire, EncodeRecord, InputCodecError, canonical_axes, decode, encode,
 };
 
 struct TinyAction;
@@ -154,6 +154,12 @@ fn quantizer_boundaries_and_invalid_axes_are_explicit() {
     let axes: Vec<_> = decoded.records().map(|record| record.axes).collect();
     assert_eq!(axes[0], [0.0, 0.0, 0.0]);
     assert_eq!(axes[1], [1.0 / 32767.0, -1.0 / 32767.0, 1.0]);
+    assert_eq!(canonical_axes(records[0].axes), Ok(axes[0]));
+    assert_eq!(canonical_axes(records[1].axes), Ok(axes[1]));
+    assert_eq!(
+        canonical_axes([0.5, -0.5, 0.0]),
+        Ok([16384.0 / 32767.0, -16384.0 / 32767.0, 0.0])
+    );
     let mut reserved = bytes;
     reserved[25..27].copy_from_slice(&i16::MIN.to_le_bytes());
     assert_eq!(
