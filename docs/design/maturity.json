@@ -154,20 +154,21 @@
     },
     "A3_native_extraction": {
       "implementation": "partial_one_bounded_native_worker_over_committed_visual_page_with_serial_browser_route",
-      "functional_validation": "native_column_equivalence_and_page_release_unit_test_plus_real_metal_same_tick_wake_busy_tick_capture_over_horizon_and_generation_tests",
+      "functional_validation": "native_column_equivalence_and_page_release_unit_test_plus_real_metal_same_tick_wake_busy_tick_capture_over_horizon_generation_and_600_tick_slow_worker_reuse_tests",
       "experienced_quality": "not_reviewed_visible_window_locked",
       "platform_performance": {
-        "mac": "diagnostic_offscreen_600_frame_runs_not_qualified_whole_frame_or_visible_surface",
+        "mac": "diagnostic_offscreen_600_frame_runs_and_blocked_worker_reuse_not_qualified_whole_frame_or_visible_surface",
         "windows": "not_run",
         "browser": "compile_only_not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max/Metal, serial-worker-worker-serial paced 600-frame pre-drop-counter process timings: callback CPU p50/p95 0.808/1.605, 0.276/0.526, 0.281/0.575, 0.692/1.198 ms; worker queue p50 8.8 us. Post-fix worker/serial 600-frame pair: 1203/602 callbacks, callback CPU p50/p95 0.200/0.344 versus 0.649/1.001 ms, one/zero shed optional views, zero stale views and timing faults. A separate 600-warm-frame counting-allocator probe measured host tick/page/dispatch scope median/max 1/2 allocations and 656/2176 bytes; worker intervals from one completion wake to the next measured 0/0 allocations and bytes. These are not total CPU or whole-frame speedup measurements; retained peak and whole-process allocations remain unmeasured.",
+      "diagnostic_measurement": "Apple M3 Max/Metal, serial-worker-worker-serial paced 600-frame pre-drop-counter process timings: callback CPU p50/p95 0.808/1.605, 0.276/0.526, 0.281/0.575, 0.692/1.198 ms; worker queue p50 8.8 us. Post-fix worker/serial 600-frame pair: 1203/602 callbacks, callback CPU p50/p95 0.200/0.344 versus 0.649/1.001 ms, one/zero shed optional views, zero stale views and timing faults. A separate 600-warm-frame counting-allocator probe measured host tick/page/dispatch scope median/max 1/2 allocations and 656/2176 bytes; worker intervals from one completion wake to the next measured 0/0 allocations and bytes. A blocked-worker Metal test committed 600 more ticks with 600 shed fresh views and 600 surface-only reused submissions, zero scene passes per reused frame, explicit visual ages and fresh tick-602 recovery. These are not total CPU or whole-frame speedup measurements; retained peak and whole-process allocations remain unmeasured.",
       "evidence": [
-        "../evidence/render/A3-NATIVE-EXTRACTION-2026-11-04.md"
+        "../evidence/render/A3-NATIVE-EXTRACTION-2026-11-04.md",
+        "../evidence/render/A3-SLOW-WORKER-2026-11-04.md"
       ],
-      "scope": "One native Rayon extraction lane owns a committed page lease and reused extractor, returns columns before a macOS surface request, and lets zero-update callbacks submit a ready view. Busy views are counted; retired-generation and over-horizon results refresh from the latest committed page. The serial browser route remains. Combined F1 graph, generic system parallelism, owned GPU packets, controlled overlap/allocations, visible macOS surface run and browser/iPhone runtime remain open."
+      "scope": "One native Rayon extraction lane owns a committed page lease and reused extractor, returns columns before a macOS surface request, and lets zero-update callbacks submit a ready view. Busy fresh views are counted and can re-present a pinned completed target with explicit age and reuse telemetry; retired-generation and over-horizon results refresh from the latest committed page. The serial browser route remains. Combined F1 graph, generic system parallelism, owned GPU packets, controlled overlap/allocations, GPU-pressure cadence, visible macOS surface run and browser/iPhone runtime remain open."
     },
     "V1_serial_frame_host": {
       "implementation": "partial_fixed_clock_serial_offscreen_simulation_to_gpu_host",

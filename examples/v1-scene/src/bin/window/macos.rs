@@ -330,7 +330,7 @@ impl App {
         self.callback_walls.push(callback_start.elapsed());
         if self.occluded > 120 || self.callbacks > FRAMES * 4 {
             return Err(format!(
-                "600 presented frames unavailable: presented={}, tick={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}",
+                "600 presented frames unavailable: presented={}, tick={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
                 self.presented,
                 host.tick(),
                 self.unavailable,
@@ -340,6 +340,7 @@ impl App {
                 self.surface_faults,
                 host.dropped_views(),
                 host.dropped_stale_views(),
+                host.reused_views(),
                 host.dropped_surface()
             ));
         }
@@ -398,7 +399,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -414,6 +415,7 @@ impl App {
             host.dropped_surface(),
             host.dropped_views(),
             host.dropped_stale_views(),
+            host.reused_views(),
             host.dropped_reports(),
             wall.0,
             wall.1,
@@ -441,10 +443,11 @@ fn profiler_title(sample: &FrameSample) -> String {
         },
     );
     format!(
-        "Thrum V1 | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, queue {:.3}, ready {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        "Thrum V1 | tick {} ({} updates, view age {}, reused {}) | CPU tick {:.3}, extract {:.3}, queue {:.3}, ready {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
         sample.tick,
         sample.completed_ticks,
         sample.visual_age_ticks,
+        sample.reused_visual,
         sample.tick_cpu.as_secs_f64() * 1e3,
         sample.extract_cpu.as_secs_f64() * 1e3,
         f64::from(sample.worker_queue_ns) / 1e6,
@@ -509,7 +512,9 @@ impl ApplicationHandler<UserEvent> for App {
             let size = window.inner_size();
             let extent = [size.width, size.height];
             let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
-            if host.has_ready_view()
+            let since_call = self.origin.elapsed().saturating_sub(self.last_call);
+            let delay = due.saturating_sub(since_call);
+            if (host.has_ready_view() || (delay.is_zero() && host.has_reusable_view()))
                 && !self.acquiring
                 && host.pending_frames() < if reconfigure { 1 } else { 3 }
             {
@@ -531,8 +536,6 @@ impl ApplicationHandler<UserEvent> for App {
                     }
                 }
             }
-            let since_call = self.origin.elapsed().saturating_sub(self.last_call);
-            let delay = due.saturating_sub(since_call);
             if delay.is_zero() {
                 window.request_redraw();
                 event_loop.set_control_flow(ControlFlow::Wait);

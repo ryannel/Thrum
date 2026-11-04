@@ -7,7 +7,23 @@ use std::{
 };
 
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
-use v1_scene::{FrameHost, SurfaceOutput};
+use v1_scene::{FrameHost, FrameSample, SurfaceOutput};
+
+fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        if let Some(sample) = host.poll_completed().expect("GPU progress") {
+            return sample;
+        }
+        assert!(Instant::now() < deadline, "GPU completion timed out");
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_millis(100)),
+            })
+            .expect("GPU wait");
+    }
+}
 
 #[test]
 #[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
@@ -284,5 +300,131 @@ fn native_view_beyond_two_ticks_refreshes_from_the_latest_committed_world() {
         };
         assert_eq!(sample.tick, 4);
         assert_eq!(sample.visual_age_ticks, 0);
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter for persistent slow-worker presentation"]
+fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                required_features: GpuTimings::requested_features(&adapter),
+                ..Default::default()
+            })
+            .await
+            .expect("device");
+        let extent = [640, 360];
+        let format = wgpu::TextureFormat::Bgra8Unorm;
+        let target = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("slow-worker presentation target"),
+            size: wgpu::Extent3d {
+                width: extent[0],
+                height: extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = target.create_view(&wgpu::TextureViewDescriptor::default());
+        let output = SurfaceOutput {
+            view: &view,
+            extent,
+        };
+        let mut host = FrameHost::new(&device, &queue, Some(SurfaceProfile { format, extent }))
+            .await
+            .expect("prepared scene and presenter");
+        let (wake, awakened) = mpsc::sync_channel::<()>(0);
+        host.enable_native_worker(move || {
+            let _ = wake.send(());
+        })
+        .expect("worker");
+
+        let first_time = Duration::from_nanos(16_666_667);
+        host.drive(first_time, None).expect("first tick dispatches");
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !host.has_ready_view() {
+            host.drive(first_time, None).expect("poll worker result");
+            assert!(Instant::now() < deadline, "first extraction did not finish");
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let first = host
+            .drive(first_time, Some(&output))
+            .expect("first fresh surface frame");
+        assert!(first.submitted && first.surface_presented);
+        assert!(!first.dropped_view);
+        let first_sample = await_sample(&mut host, &device);
+        assert_eq!(first_sample.tick, 1);
+        assert_eq!(first_sample.visual_age_ticks, 0);
+        assert!(!first_sample.reused_visual);
+        host.drive(Duration::from_nanos(33_333_334), None)
+            .expect("second extraction queues behind stalled callback");
+
+        for tick in 3_u64..=602 {
+            let now = Duration::from_nanos(tick * 16_666_667);
+            let world = host
+                .drive(now, None)
+                .expect("world ticks while worker is stalled");
+            assert_eq!(world.tick, tick);
+            assert!(world.dropped_view);
+            assert!(host.has_reusable_view());
+            let fallback = host
+                .drive(now, Some(&output))
+                .expect("reuse prepared scene on a zero-tick callback");
+            assert_eq!(fallback.completed_ticks, 0);
+            assert!(fallback.submitted && fallback.surface_presented);
+            assert_eq!(host.reused_views(), tick - 2);
+            assert_eq!(host.tick(), tick);
+            let sample = await_sample(&mut host, &device);
+            assert_eq!(sample.tick, 1);
+            assert_eq!(
+                sample.visual_age_ticks,
+                u32::try_from(tick - 1).expect("small age")
+            );
+            assert!(sample.reused_visual);
+            assert!(sample.surface_presented);
+            assert_eq!(sample.uploaded_rows, 0);
+            assert!(!sample.timing_fault);
+            if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
+                assert_eq!(sample.gpu_pass_ns, Some([0.0; 4]));
+                assert!(sample.gpu_present_ns.is_some());
+            }
+        }
+        assert_eq!(host.dropped_views(), 600);
+        assert_eq!(host.reused_views(), 600);
+        awakened
+            .recv_timeout(Duration::from_secs(2))
+            .expect("release first completion callback");
+        let now = Duration::from_nanos(602 * 16_666_667);
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !host.has_ready_view() {
+            host.drive(now, None).expect("poll delayed worker result");
+            assert!(
+                Instant::now() < deadline,
+                "delayed extraction did not return"
+            );
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let recovered = host
+            .drive(now, Some(&output))
+            .expect("over-horizon worker result refreshes latest world");
+        assert!(recovered.submitted && recovered.surface_presented);
+        assert_eq!(host.dropped_stale_views(), 1);
+        let sample = await_sample(&mut host, &device);
+        assert_eq!(sample.tick, 602);
+        assert_eq!(sample.visual_age_ticks, 0);
+        assert!(!sample.reused_visual);
+        awakened
+            .recv_timeout(Duration::from_secs(2))
+            .expect("release second completion callback");
     });
 }
