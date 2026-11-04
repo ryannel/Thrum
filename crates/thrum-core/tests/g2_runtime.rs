@@ -50,6 +50,7 @@ impl TickGame<Page> for Rules {
         &self,
         world: &WorldRead<'_>,
         _schedule: &thrum_core::sim::Schedule,
+        _executor: thrum_core::sim::Executor,
         _tick: u64,
         candidate: &mut Candidate,
     ) -> Result<(), GameError> {

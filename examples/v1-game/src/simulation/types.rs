@@ -3,7 +3,28 @@
 
 use std::num::NonZeroU32;
 
-use thrum_core::{Handle, StableId, sim::Ownership};
+use thrum_core::{ActorId, Handle, PeerId, StableId, sim::ControlBinding};
+
+/// Game-owned component binding a controlled actor to a peer.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ownership {
+    /// Controlling peer identity.
+    pub peer: PeerId,
+    /// Peer connection generation.
+    pub connection_epoch: u64,
+    /// Controlled actor identity.
+    pub actor: ActorId,
+}
+
+impl From<Ownership> for ControlBinding {
+    fn from(value: Ownership) -> Self {
+        Self {
+            peer: value.peer,
+            connection_epoch: value.connection_epoch,
+            actor: value.actor,
+        }
+    }
+}
 
 /// V1 world position in metres, right-handed and Y-up.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -100,6 +121,8 @@ pub enum SimError {
     TickExhausted,
     /// Every page in the engine publication ring is leased.
     PublicationBusy,
+    /// Replay capture belongs to a different authority or schema.
+    InvalidSnapshot,
 }
 
 /// Per-slot V1 change stamps. Engine publication leases own their resulting

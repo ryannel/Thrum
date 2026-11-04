@@ -50,8 +50,8 @@ allowed_workspace_dependencies = ["v1-game", "thrum-render"]
 [external_dependencies.rayon]
 requirement = "=1.12.0"
 license = "MIT OR Apache-2.0"
-purpose = "Long-lived native V1 frame extraction worker pool over retained committed visual pages"
-target_cost = "Native V1 scene only; one bounded extraction task and one worker initially, with dispatch, wake, allocation and overlap costs measured against the serial path; browser Wasm stays serial"
+purpose = "Native frame extraction and optional parallel registered simulation jobs"
+target_cost = "Native-only worker pool; the V1 simulation measures serial/Rayon crossover and the browser stays serial. Core-class affinity is selected by the platform runtime rather than assumed by a tick"
 
 [external_dependencies.wasm-bindgen]
 requirement = "=0.2.129"

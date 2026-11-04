@@ -2,7 +2,7 @@
 
 use thrum_core::{
     ActorId, Origin, PeerId,
-    sim::{InputFrame, Ownership},
+    sim::{ControlBinding, InputFrame},
 };
 use thrum_network::input_batch::{
     ActionView, ActionWire, EncodeRecord, InputCodecError, canonical_axes, decode, encode,
@@ -48,8 +48,8 @@ fn frame(sequence: u64, tick: u64, axes: [f32; 3], actions: Vec<u16>) -> InputFr
     frame
 }
 
-fn owner() -> Ownership {
-    Ownership {
+fn owner() -> ControlBinding {
+    ControlBinding {
         peer: PeerId(3),
         connection_epoch: 9,
         actor: ActorId(5),

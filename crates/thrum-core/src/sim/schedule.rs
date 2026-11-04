@@ -35,7 +35,7 @@ pub struct ComponentSchemaId(pub u128);
 /// schedule is compiled; tick execution performs no registry lookup.
 #[derive(Default)]
 pub struct ComponentRegistry {
-    entries: Vec<(ComponentKey, ComponentSchemaId)>,
+    pub(super) entries: Vec<ComponentEntry>,
 }
 
 /// Registration fails without changing the catalogue.
@@ -53,18 +53,23 @@ impl ComponentRegistry {
     /// # Errors
     ///
     /// The type or schema identity was already registered.
-    pub fn register<T: 'static>(
+    pub fn register<T: Clone + Send + Sync + 'static>(
         &mut self,
         schema: ComponentSchemaId,
     ) -> Result<ComponentKey, RegistrationError> {
         let key = ComponentKey::of::<T>();
-        if self.entries.iter().any(|(existing, _)| *existing == key) {
+        if self.entries.iter().any(|entry| entry.key == key) {
             return Err(RegistrationError::DuplicateType);
         }
-        if self.entries.iter().any(|(_, existing)| *existing == schema) {
+        if self.entries.iter().any(|entry| entry.schema == schema) {
             return Err(RegistrationError::DuplicateSchema);
         }
-        self.entries.push((key, schema));
+        self.entries.push(ComponentEntry {
+            key,
+            schema,
+            capture: capture_component::<T>,
+            build: build_component::<T>,
+        });
         Ok(key)
     }
 
@@ -72,7 +77,7 @@ impl ComponentRegistry {
     pub fn schema(&self, key: ComponentKey) -> Option<ComponentSchemaId> {
         self.entries
             .iter()
-            .find_map(|(candidate, schema)| (*candidate == key).then_some(*schema))
+            .find_map(|entry| (entry.key == key).then_some(entry.schema))
     }
 }
 
@@ -283,4 +288,36 @@ fn conflicts(a: &SystemSpec, b: &SystemSpec) -> bool {
             .any(|b| a.key == b.key && (a.mode == AccessMode::Write || b.mode == AccessMode::Write))
     })
 }
-use std::any::TypeId;
+use std::any::{Any, TypeId};
+
+type ErasedComponent = Box<dyn Any + Send + Sync>;
+
+#[derive(Clone, Copy)]
+pub(super) struct ComponentEntry {
+    pub(super) key: ComponentKey,
+    pub(super) schema: ComponentSchemaId,
+    pub(super) capture: fn(&hecs::World, hecs::Entity) -> Option<ErasedComponent>,
+    pub(super) build: fn(&mut hecs::EntityBuilder, &dyn Any),
+}
+
+fn capture_component<T: Clone + Send + Sync + 'static>(
+    world: &hecs::World,
+    entity: hecs::Entity,
+) -> Option<ErasedComponent> {
+    world.get::<&T>(entity).ok().map(|value| {
+        let saved: ErasedComponent = Box::new((*value).clone());
+        saved
+    })
+}
+
+fn build_component<T: Clone + Send + Sync + 'static>(
+    builder: &mut hecs::EntityBuilder,
+    value: &dyn Any,
+) {
+    builder.add(
+        value
+            .downcast_ref::<T>()
+            .expect("snapshot schema matches the registered component")
+            .clone(),
+    );
+}

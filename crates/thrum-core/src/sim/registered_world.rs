@@ -1,11 +1,31 @@
 //! Game-registered component storage with engine-owned identity. This is the
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
-use std::{collections::hash_map::RandomState, hash::BuildHasher};
+use std::{any::Any, collections::hash_map::RandomState, hash::BuildHasher};
 
 use crate::{Handle, StableId, WorldEpoch};
 
-use super::{ComponentKey, ComponentRegistry};
+use super::{ComponentKey, ComponentRegistry, ComponentSchemaId};
+
+type SavedValue = Box<dyn Any + Send + Sync>;
+
+struct CapturedEntity {
+    id: StableId,
+    components: Vec<(usize, SavedValue)>,
+}
+
+struct CapturedSlot {
+    generation: u64,
+    entity: Option<CapturedEntity>,
+}
+
+pub(super) struct WorldCapture {
+    epoch: WorldEpoch,
+    schema: Vec<ComponentSchemaId>,
+    types: Vec<ComponentKey>,
+    slots: Vec<CapturedSlot>,
+    free: Vec<u32>,
+}
 
 #[derive(Clone, Copy)]
 struct Slot {
@@ -95,6 +115,10 @@ pub enum RegisteredWorldError {
     DuplicateComponent,
     /// The checked entity does not contain this registered component.
     MissingComponent,
+    /// Capture and receiver have different generations, capacity or schema.
+    SnapshotMismatch,
+    /// A typed access token belongs to another compiled runtime.
+    WrongRuntime,
 }
 
 /// Reusable typed bundle writer. It never exposes hecs IDs or a mutable world.
@@ -138,6 +162,98 @@ pub(super) struct RegisteredWorld {
 }
 
 impl RegisteredWorld {
+    pub(super) fn capture(&self) -> WorldCapture {
+        let slots = self
+            .slots
+            .iter()
+            .map(|slot| CapturedSlot {
+                generation: slot.generation,
+                entity: slot.entity.map(|entity| {
+                    let components = self
+                        .registry
+                        .entries
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, entry)| {
+                            (entry.capture)(&self.world, entity).map(|value| (index, value))
+                        })
+                        .collect();
+                    CapturedEntity {
+                        id: slot.stable.expect("live slot has stable identity"),
+                        components,
+                    }
+                }),
+            })
+            .collect();
+        WorldCapture {
+            epoch: self.epoch,
+            schema: self
+                .registry
+                .entries
+                .iter()
+                .map(|entry| entry.schema)
+                .collect(),
+            types: self
+                .registry
+                .entries
+                .iter()
+                .map(|entry| entry.key)
+                .collect(),
+            slots,
+            free: self.free.clone(),
+        }
+    }
+
+    pub(super) fn restore(&mut self, capture: &WorldCapture) -> Result<(), RegisteredWorldError> {
+        if capture.epoch != self.epoch
+            || capture.slots.len() != self.slots.len()
+            || capture.schema.len() != self.registry.entries.len()
+            || capture.types.len() != self.registry.entries.len()
+            || capture
+                .schema
+                .iter()
+                .zip(&self.registry.entries)
+                .any(|(schema, entry)| *schema != entry.schema)
+            || capture
+                .types
+                .iter()
+                .zip(&self.registry.entries)
+                .any(|(key, entry)| *key != entry.key)
+        {
+            return Err(RegisteredWorldError::SnapshotMismatch);
+        }
+        let mut world = hecs::World::new();
+        let mut builder = hecs::EntityBuilder::new();
+        let mut slots = Vec::with_capacity(capture.slots.len());
+        let mut ids = IdIndex::new(capture.slots.len());
+        let mut live = 0;
+        for (index, saved) in capture.slots.iter().enumerate() {
+            let entity = saved.entity.as_ref().map(|body| {
+                for (entry_index, value) in &body.components {
+                    (self.registry.entries[*entry_index].build)(&mut builder, value.as_ref());
+                }
+                let key = u32::try_from(index).expect("validated slot capacity");
+                builder.add(SlotKey(key));
+                let entity = world.spawn(builder.build());
+                ids.insert(body.id, key);
+                live += 1;
+                entity
+            });
+            slots.push(Slot {
+                generation: saved.generation,
+                entity,
+                stable: saved.entity.as_ref().map(|body| body.id),
+            });
+        }
+        self.world = world;
+        self.builder = builder;
+        self.slots = slots;
+        self.ids = ids;
+        self.free.clone_from(&capture.free);
+        self.live = live;
+        Ok(())
+    }
+
     pub(super) fn epoch(&self) -> WorldEpoch {
         self.epoch
     }
@@ -191,22 +307,6 @@ impl RegisteredWorld {
 
     pub(super) fn reusable_after_despawn(&self, handle: Handle) -> bool {
         self.slots[handle.slot as usize].generation != u64::MAX
-    }
-
-    pub(super) fn live_slot(&self, slot: usize) -> bool {
-        self.slots[slot].entity.is_some()
-    }
-
-    pub(super) fn id_at_slot(&self, slot: usize) -> StableId {
-        self.slots[slot]
-            .stable
-            .expect("live physical slot has stable identity")
-    }
-
-    pub(super) fn entity_at_slot(&self, slot: usize) -> hecs::Entity {
-        self.slots[slot]
-            .entity
-            .expect("live physical slot has private entity")
     }
 
     /// Resolve a persistent identity to its current checked physical handle.
@@ -387,6 +487,29 @@ impl RegisteredWorld {
         })
     }
 
+    /// Visit matching components in canonical physical-slot order for
+    /// order-sensitive reductions and events. Independent kernels should use
+    /// the prepared storage-order cursor instead.
+    pub(super) fn visit_canonical<T: Send + Sync + 'static, U: Send + Sync + 'static>(
+        &self,
+        mut visit: impl FnMut(Handle, StableId, &T, &U),
+    ) {
+        for (index, slot) in self.slots.iter().enumerate() {
+            let Some(entity) = slot.entity else { continue };
+            let (Ok(a), Ok(b)) = (self.world.get::<&T>(entity), self.world.get::<&U>(entity))
+            else {
+                continue;
+            };
+            let key = u32::try_from(index).expect("validated slot capacity");
+            visit(
+                self.handle_at(key),
+                slot.stable.expect("live slot has stable identity"),
+                &a,
+                &b,
+            );
+        }
+    }
+
     /// Prepare one mutable component column for repeated validated commits.
     ///
     /// # Errors
@@ -476,18 +599,18 @@ mod tests {
     use crate::sim::ComponentSchemaId;
 
     #[derive(Clone, Copy, Debug, PartialEq)]
-    struct Position(f64);
+    struct Height(f64);
     #[derive(Clone, Copy)]
-    struct Velocity(f64);
+    struct Drift(f64);
     struct Unregistered;
 
     fn world() -> RegisteredWorld {
         let mut registry = ComponentRegistry::default();
         registry
-            .register::<Position>(ComponentSchemaId(1))
+            .register::<Height>(ComponentSchemaId(1))
             .expect("position registers");
         registry
-            .register::<Velocity>(ComponentSchemaId(2))
+            .register::<Drift>(ComponentSchemaId(2))
             .expect("velocity registers");
         RegisteredWorld::new(WorldEpoch(7), 2, registry).expect("capacity fits")
     }
@@ -505,43 +628,41 @@ mod tests {
         assert_eq!(world.len(), 0);
         let first = world
             .spawn(StableId(1), |entity| {
-                entity.add(Position(2.0))?;
-                entity.add(Velocity(3.0))?;
+                entity.add(Height(2.0))?;
+                entity.add(Drift(3.0))?;
                 Ok(())
             })
             .expect("registered bundle spawns");
         assert_eq!(world.handle(StableId(1)), Some(first));
         assert_eq!(
-            world.with::<Position, _>(first, |value| *value),
-            Ok(Position(2.0))
+            world.with::<Height, _>(first, |value| *value),
+            Ok(Height(2.0))
         );
         assert_eq!(
             world.spawn(StableId(1), |_| Ok(())),
             Err(RegisteredWorldError::DuplicateId)
         );
-        let mut query = world
-            .read2::<Position, Velocity>()
-            .expect("query registered");
+        let mut query = world.read2::<Height, Drift>().expect("query registered");
         let mut visited = Vec::new();
         query.visit(&world, |handle, id, position, velocity| {
             visited.push((handle, id, position.0, velocity.0));
         });
         assert_eq!(visited, [(first, StableId(1), 2.0, 3.0)]);
-        let mut write = world.write1::<Position>().expect("position registered");
+        let mut write = world.write1::<Height>().expect("position registered");
         write.visit(&mut world, |handle, id, position| {
             assert_eq!((handle, id), (first, StableId(1)));
             position.0 += 4.0;
         });
-        assert_eq!(world.with::<Position, _>(first, |value| value.0), Ok(6.0));
+        assert_eq!(world.with::<Height, _>(first, |value| value.0), Ok(6.0));
         world.despawn(first).expect("first entity live");
         assert_eq!(
-            world.with::<Position, _>(first, |value| *value),
+            world.with::<Height, _>(first, |value| *value),
             Err(RegisteredWorldError::InvalidHandle)
         );
         let replacement = world
             .spawn(StableId(2), |entity| {
-                entity.add(Position(5.0))?;
-                entity.add(Velocity(7.0))?;
+                entity.add(Height(5.0))?;
+                entity.add(Drift(7.0))?;
                 Ok(())
             })
             .expect("retired slot reused");
@@ -559,8 +680,8 @@ mod tests {
         let mut world = world();
         assert_eq!(
             world.spawn(StableId(1), |entity| {
-                entity.add(Position(1.0))?;
-                entity.add(Position(2.0))?;
+                entity.add(Height(1.0))?;
+                entity.add(Height(2.0))?;
                 Ok(())
             }),
             Err(RegisteredWorldError::DuplicateComponent)
@@ -568,14 +689,14 @@ mod tests {
         assert_eq!(world.len(), 0);
         let handle = world
             .spawn(StableId(1), |entity| {
-                entity.add(Position(3.0))?;
+                entity.add(Height(3.0))?;
                 Ok(())
             })
             .expect("failed builder was cleared");
         assert_eq!(handle.slot, 0);
         assert_eq!(
-            world.with::<Position, _>(handle, |value| *value),
-            Ok(Position(3.0))
+            world.with::<Height, _>(handle, |value| *value),
+            Ok(Height(3.0))
         );
     }
 

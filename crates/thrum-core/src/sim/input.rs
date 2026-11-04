@@ -1,4 +1,4 @@
-use crate::{ActorId, Origin};
+use crate::{ActorId, Origin, PeerId};
 use smallvec::SmallVec;
 
 /// One connection's continuous controls and discrete actions for one fixed tick.
@@ -48,13 +48,15 @@ impl<A, const AXES: usize> InputFrame<A, AXES> {
     }
 }
 
-/// Small fixture action set, not an engine-wide game action schema.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum SimAction {
-    /// Add metres/second for this tick after applying held movement controls.
-    Impulse([f64; 3]),
-    /// Subtract health with saturation at zero.
-    Damage(u16),
+/// Authenticated peer-to-actor binding, independent of a game's component type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ControlBinding {
+    /// Controlling peer identity.
+    pub peer: PeerId,
+    /// Peer connection generation.
+    pub connection_epoch: u64,
+    /// Controlled actor identity.
+    pub actor: ActorId,
 }
 
 /// Input admission failure. Refusal changes neither sequence nor held controls.
@@ -76,6 +78,8 @@ pub enum FrameError {
     StaleSequence,
     /// This peer already has a complete admitted frame for the next tick.
     PendingFrame,
+    /// Every publication page is leased, so another due tick cannot commit.
+    PublicationBusy,
     /// The configured per-frame action count was exceeded.
     TooManyActions,
     /// The registered controlled entity is stale or its ownership changed.

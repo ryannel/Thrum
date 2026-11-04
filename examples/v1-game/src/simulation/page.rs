@@ -1,14 +1,13 @@
 //! Game-owned V1 page columns in the engine's generic immutable lease ring.
 
-use std::sync::Arc;
+use std::{mem::size_of, sync::Arc};
 
 use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{Read2, ReadPermit, SnapshotId, StructuralChange, WorldRead},
 };
 
-use super::types::{ChangeTicks, Command, Health, Position, Velocity, Visual};
-use thrum_core::sim::Ownership;
+use super::types::{ChangeTicks, Command, Health, Ownership, Position, Velocity, Visual};
 
 /// Changed physical slots in one complete V1 game tick.
 #[derive(Default)]
@@ -68,6 +67,7 @@ pub(crate) struct Page {
     events: Vec<StructuralChange>,
     live: usize,
     initialized: bool,
+    baseline: bool,
 }
 
 impl Page {
@@ -86,6 +86,7 @@ impl Page {
             events: Vec::with_capacity(capacity.saturating_mul(2)),
             live: 0,
             initialized: false,
+            baseline: false,
         }
     }
 
@@ -107,6 +108,7 @@ impl Page {
     ) {
         let since = self.initialized.then_some(self.id.tick);
         self.id.tick = tick;
+        self.baseline = first;
         self.dirty.clear();
         self.events.clear();
         self.live = 0;
@@ -182,6 +184,26 @@ impl Page {
         self.dirty.structural.dedup();
         self.initialized = true;
     }
+
+    pub(crate) fn reserved_bytes(&self) -> usize {
+        fn bytes<T>(values: &Vec<T>) -> usize {
+            values.capacity() * size_of::<T>()
+        }
+        size_of::<Self>()
+            + bytes(&self.ids)
+            + bytes(&self.generations)
+            + bytes(&self.present_marks)
+            + bytes(&self.positions)
+            + bytes(&self.velocities)
+            + bytes(&self.health)
+            + bytes(&self.ownership)
+            + bytes(&self.visuals)
+            + bytes(&self.dirty.position)
+            + bytes(&self.dirty.velocity)
+            + bytes(&self.dirty.health)
+            + bytes(&self.dirty.structural)
+            + bytes(&self.events)
+    }
 }
 
 /// Shared immutable lease of one complete V1 game endpoint.
@@ -189,6 +211,11 @@ impl Page {
 pub struct PublishedPage(pub(crate) Arc<Page>);
 
 impl PublishedPage {
+    /// Whether this page starts a new complete membership stream, including
+    /// a restored replay endpoint at a nonzero tick.
+    pub fn is_baseline(&self) -> bool {
+        self.0.baseline
+    }
     /// Committed world generation and fixed tick.
     pub fn id(&self) -> SnapshotId {
         self.0.id
