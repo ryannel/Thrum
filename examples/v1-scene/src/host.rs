@@ -409,6 +409,7 @@ impl FrameHost {
         self.prepared = candidate.prepared.take().expect("checked candidate");
         self.slots = candidate.slots.take().expect("checked candidate");
         self.visual_product = candidate.product.take();
+        self.extractor.invalidate_history();
         Ok(true)
     }
 
