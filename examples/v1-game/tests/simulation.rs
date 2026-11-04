@@ -4,7 +4,7 @@
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     cell::Cell,
-    num::NonZeroU32,
+    num::{NonZeroU32, NonZeroUsize},
 };
 
 use thrum_core::{
@@ -223,6 +223,108 @@ fn capture_after_churn_replays_input_and_structure_to_the_same_endpoint() {
     assert_eq!(sim.handle(StableId(3)), Some(replacement));
     assert_eq!(sim.get(old), Err(SimError::InvalidHandle));
     assert_eq!(replay(&mut sim), expected);
+}
+
+#[test]
+fn rolling_history_reuses_deltas_and_replays_after_churn() {
+    let mut sim = Simulation::new(WorldEpoch(24), config(3)).expect("game");
+    let owned = Ownership {
+        peer: PeerId(2),
+        connection_epoch: 1,
+        actor: ActorId(7),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(owned);
+    let player_handle = sim.seed(player).expect("player");
+    let old = sim.seed(entity(2, 1.0)).expect("mover");
+    sim.register_peer(owned, player_handle).expect("peer");
+    let mut history = sim.begin_history(NonZeroUsize::new(4).expect("window"));
+    sim.step(&[Command::Despawn(old), Command::Spawn(entity(3, 2.0))])
+        .expect("churn");
+    history.record(&sim).expect("first delta");
+    let replacement = sim.handle(StableId(3)).expect("replacement");
+    let mut frame = InputFrame::new(
+        Origin {
+            peer: owned.peer,
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        owned.actor,
+        2,
+        [1.0, 0.0, 0.0],
+    );
+    frame.actions.push(SimAction::Damage(9));
+    sim.admit_frame(frame).expect("admitted");
+    sim.step(&[]).expect("input tick");
+    history.record(&sim).expect("input delta");
+    for _ in 0..2 {
+        sim.step(&[]).expect("moving tick");
+        history.record(&sim).expect("moving delta");
+    }
+    let target = sim.tick();
+    assert_eq!(target, 4);
+    let command = Command::SetVelocity(replacement, Velocity([3.0, 0.0, 0.0]));
+    sim.step(&[command]).expect("future tick");
+    history.record(&sim).expect("future delta");
+    let expected = sim.published_page().expect("future page");
+    sim.step(&[]).expect("advance window");
+    history.record(&sim).expect("bounded delta");
+    assert_eq!((history.oldest_tick(), history.latest_tick()), (2, 6));
+    history
+        .restore_to(&mut sim, target)
+        .expect("retained endpoint");
+    assert!(sim.published_page().expect("replay baseline").is_baseline());
+    assert_eq!(sim.tick(), 4);
+    sim.step(&[command]).expect("replayed future");
+    history.record(&sim).expect("replayed delta");
+    let actual = sim.published_page().expect("replayed page");
+    assert_eq!(actual.position(replacement), expected.position(replacement));
+    assert_eq!(actual.velocity(replacement), expected.velocity(replacement));
+    assert_eq!(actual.health(player_handle), expected.health(player_handle));
+    assert_eq!(actual.structural_events(), expected.structural_events());
+    assert_eq!(history.latest_tick(), 5);
+}
+
+#[test]
+fn rolling_history_has_bounded_reused_storage_at_game_scales() {
+    for count in [10_000, 100_000] {
+        let mut sim = simulation_with_count(count).expect("game fixture");
+        let full_bytes = sim.capture().reserved_bytes();
+        let mut history = sim.begin_history(NonZeroUsize::new(64).expect("window"));
+        for _ in 0..65 {
+            sim.step(&[]).expect("warm tick");
+            history.record(&sim).expect("warm delta");
+        }
+        let retained_bytes = history.reserved_bytes();
+        assert!(retained_bytes < full_bytes * 6);
+        ALLOCATIONS.with(|count| count.set(0));
+        COUNTING.with(|active| active.set(true));
+        for _ in 0..100 {
+            sim.step(&[]).expect("steady tick");
+            history.record(&sim).expect("reused delta");
+        }
+        COUNTING.with(|active| active.set(false));
+        assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    }
+}
+
+#[test]
+fn rolling_history_refuses_a_divergent_same_tick_future() {
+    let mut sim = Simulation::new(WorldEpoch(30), config(2)).expect("game");
+    let moving = sim.seed(entity(1, 1.0)).expect("moving entity");
+    let mut history = sim.begin_history(NonZeroUsize::new(4).expect("window"));
+    sim.step(&[]).expect("tick one");
+    history.record(&sim).expect("first delta");
+    let saved = sim.capture();
+    sim.step(&[Command::SetVelocity(moving, Velocity([2.0, 0.0, 0.0]))])
+        .expect("first future");
+    history.record(&sim).expect("first future delta");
+    sim.restore(&saved).expect("branch point");
+    sim.step(&[Command::SetVelocity(moving, Velocity([3.0, 0.0, 0.0]))])
+        .expect("divergent future");
+    sim.step(&[]).expect("numerically next tick");
+    assert_eq!(history.record(&sim), Err(SimError::InvalidSnapshot));
+    assert_eq!(history.latest_tick(), 2);
 }
 
 #[test]

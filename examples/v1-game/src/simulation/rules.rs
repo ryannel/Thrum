@@ -12,10 +12,10 @@ use thrum_core::{
 };
 
 use super::{
+    INPUT, INPUT_HEALTH,
     page::Page,
     types::{
-        ChangeTicks, Command, Health, Ownership, Position, SimAction, SimConfig, SimError,
-        Velocity, Visual,
+        Command, Health, Ownership, Position, SimAction, SimConfig, SimError, Velocity, Visual,
     },
 };
 
@@ -63,6 +63,7 @@ fn fill_spawn(
 
 pub(super) struct Candidate {
     pub(super) motion: Option<Read2<Position, Velocity>>,
+    pub(super) capture_query: Read2<Position, Health>,
     motion_jobs: Vec<MotionJob>,
     positions: Vec<Position>,
     base_positions: Vec<Position>,
@@ -86,6 +87,12 @@ pub(super) struct Candidate {
     edits: Vec<Edit<Candidate>>,
 }
 
+#[derive(Default)]
+pub(super) struct ParallelOutput {
+    velocities: Vec<(Handle, Velocity)>,
+    health: Vec<(Handle, u16)>,
+}
+
 struct MotionJob {
     handle: Handle,
     position: Position,
@@ -93,9 +100,14 @@ struct MotionJob {
 }
 
 impl Candidate {
-    pub(super) fn new(capacity: usize, motion: Read2<Position, Velocity>) -> Self {
+    pub(super) fn new(
+        capacity: usize,
+        motion: Read2<Position, Velocity>,
+        capture_query: Read2<Position, Health>,
+    ) -> Self {
         Self {
             motion: Some(motion),
+            capture_query,
             motion_jobs: Vec::with_capacity(capacity.min(2_048)),
             positions: vec![Position::default(); capacity],
             base_positions: vec![Position::default(); capacity],
@@ -183,14 +195,12 @@ pub(super) struct Rules {
     pub(super) peers: Vec<PeerControl>,
     pub(super) commands: Vec<Command>,
     pub(super) committed_inputs: Vec<Origin>,
-    pub(super) changes: Vec<ChangeTicks>,
     pub(super) changed_positions: usize,
     pub(super) position_write: WritePermit<Position>,
     pub(super) resolve_position_read: ReadPermit<Position>,
     pub(super) velocity_write: WritePermit<Velocity>,
     pub(super) health_write: WritePermit<Health>,
     pub(super) structure: StructuralPermit,
-    pub(super) capture_query: Read2<Position, Health>,
     pub(super) position_read: ReadPermit<Position>,
     pub(super) velocity_read: ReadPermit<Velocity>,
     pub(super) health_read: ReadPermit<Health>,
@@ -203,31 +213,58 @@ pub(super) struct Rules {
 }
 
 impl Rules {
-    pub(super) fn input(
+    pub(super) fn input_velocity(
         &self,
-        world: &WorldRead<'_>,
+        _world: &WorldRead<'_>,
         _executor: Executor,
-        tick: u64,
-        candidate: &mut Candidate,
-    ) -> Result<(), SimError> {
+        _tick: u64,
+        output: &mut ParallelOutput,
+    ) {
+        output.velocities.clear();
         for peer in &self.peers {
             if !peer.active {
                 continue;
             }
-            let health = world
-                .with(&self.input_health_read, peer.handle, |value| value.0)
-                .map_err(|_| SimError::InvalidHandle)?;
             let axes = peer.pending.as_ref().map_or(peer.axes, |frame| frame.axes);
             let actions = peer
                 .pending
                 .as_ref()
                 .map_or(&[][..], |frame| frame.actions.as_slice());
-            let (velocity, health, damaged) =
-                resolve_control(axes, actions, health, self.config.movement_speed);
-            candidate.set_velocity(peer.handle, velocity, tick);
-            if damaged {
-                candidate.set_health(peer.handle, health, tick);
+            output.velocities.push((
+                peer.handle,
+                resolve_velocity(axes, actions, self.config.movement_speed),
+            ));
+        }
+    }
+
+    pub(super) fn input_health(
+        &self,
+        world: &WorldRead<'_>,
+        _executor: Executor,
+        _tick: u64,
+        output: &mut ParallelOutput,
+    ) -> Result<(), SimError> {
+        output.health.clear();
+        for peer in &self.peers {
+            if !peer.active {
+                continue;
             }
+            let actions = peer
+                .pending
+                .as_ref()
+                .map_or(&[][..], |frame| frame.actions.as_slice());
+            if !actions
+                .iter()
+                .any(|action| matches!(action, SimAction::Damage(_)))
+            {
+                continue;
+            }
+            let initial = world
+                .with(&self.input_health_read, peer.handle, |value| value.0)
+                .map_err(|_| SimError::InvalidHandle)?;
+            output
+                .health
+                .push((peer.handle, resolve_health(initial, actions)));
         }
         Ok(())
     }
@@ -393,16 +430,44 @@ impl Rules {
 impl TickGame<Page> for Rules {
     type Error = SimError;
     type Candidate = Candidate;
+    type ParallelOutput = ParallelOutput;
 
     fn reset_candidate(&self, candidate: &mut Candidate) {
         candidate.reset();
+    }
+
+    fn reset_parallel_output(&self, output: &mut ParallelOutput) {
+        output.velocities.clear();
+        output.health.clear();
+    }
+
+    fn merge_parallel(
+        &self,
+        system: thrum_core::sim::SystemId,
+        output: &mut ParallelOutput,
+        candidate: &mut Candidate,
+        tick: u64,
+    ) {
+        match system {
+            INPUT => {
+                for (handle, velocity) in output.velocities.drain(..) {
+                    candidate.set_velocity(handle, velocity, tick);
+                }
+            }
+            INPUT_HEALTH => {
+                for (handle, health) in output.health.drain(..) {
+                    candidate.set_health(handle, health, tick);
+                }
+            }
+            _ => unreachable!("only two V1 input systems use parallel output"),
+        }
     }
 
     fn edits<'a>(&self, candidate: &'a Candidate) -> &'a [Edit<Candidate>] {
         &candidate.edits
     }
 
-    fn apply(&mut self, world: &WorldRead<'_>, tick: u64, candidate: &Candidate) {
+    fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, candidate: &Candidate) {
         self.committed_inputs.clear();
         for peer in &self.peers {
             if let Some(frame) = &peer.pending {
@@ -412,46 +477,16 @@ impl TickGame<Page> for Rules {
         self.changed_positions = 0;
         for &row in &candidate.touched {
             if candidate.position_changed[row] {
-                self.changes[row].position = tick;
                 self.changed_positions += 1;
             }
         }
-        for &row in &candidate.touched {
-            if candidate.velocity_marks[row] == tick
-                && candidate.base_velocity[row] != candidate.velocities[row]
-            {
-                self.changes[row].velocity = tick;
-            }
-            if candidate.health_marks[row] == tick
-                && candidate.base_health[row] != candidate.health[row].0
-            {
-                self.changes[row].health = tick;
-            }
-        }
         for command in &self.commands {
-            if let Command::Despawn(handle) = command {
-                if self.changes[handle.slot as usize].position == tick {
-                    self.changed_positions -= 1;
-                }
-                self.changes[handle.slot as usize] = ChangeTicks::default();
-                if let Some(peer) = self.peers.iter_mut().find(|peer| peer.handle == *handle) {
-                    peer.active = false;
-                    peer.axes = [0.0; 3];
-                    peer.pending = None;
-                }
-            }
-        }
-        for command in &self.commands {
-            if let Command::Spawn(entity) = command {
-                let handle = world
-                    .handle(entity.id)
-                    .expect("prevalidated spawn committed");
-                self.changes[handle.slot as usize] = ChangeTicks {
-                    position: tick,
-                    velocity: tick,
-                    health: tick,
-                    structural: tick,
-                };
+            if let Command::Despawn(handle) = command
+                && let Some(peer) = self.peers.iter_mut().find(|peer| peer.handle == *handle)
+            {
+                peer.active = false;
+                peer.axes = [0.0; 3];
+                peer.pending = None;
             }
         }
         for peer in &mut self.peers {
@@ -461,16 +496,27 @@ impl TickGame<Page> for Rules {
         }
     }
 
-    fn capture(&mut self, world: &WorldRead<'_>, page: &mut Page, first: bool, tick: u64) {
+    fn capture(
+        &mut self,
+        world: &WorldRead<'_>,
+        candidate: &mut Candidate,
+        events: &[thrum_core::sim::StructuralChange],
+        page: &mut Page,
+        first: bool,
+        tick: u64,
+        timeline: u64,
+    ) {
         page.capture(
             world,
-            &mut self.capture_query,
+            &mut candidate.capture_query,
+            &self.position_read,
             &self.velocity_read,
+            &self.health_read,
             &self.ownership_read,
             &self.visual_read,
-            &self.changes,
-            &self.commands,
+            events,
             tick,
+            timeline,
             first,
         );
     }
@@ -487,27 +533,23 @@ fn integrate_position(mut position: Position, velocity: Velocity, dt: f64) -> Po
     position
 }
 
-fn resolve_control(
-    axes: [f32; 3],
-    actions: &[SimAction],
-    initial_health: u16,
-    speed: f64,
-) -> (Velocity, u16, bool) {
+fn resolve_velocity(axes: [f32; 3], actions: &[SimAction], speed: f64) -> Velocity {
     let mut velocity = Velocity(axes.map(|axis| f64::from(axis) * speed));
-    let mut health = initial_health;
-    let mut damaged = false;
     for action in actions {
-        match action {
-            SimAction::Impulse(impulse) => {
-                for (value, delta) in velocity.0.iter_mut().zip(impulse) {
-                    *value += delta;
-                }
-            }
-            SimAction::Damage(damage) => {
-                health = health.saturating_sub(*damage);
-                damaged = true;
+        if let SimAction::Impulse(impulse) = action {
+            for (value, delta) in velocity.0.iter_mut().zip(impulse) {
+                *value += delta;
             }
         }
     }
-    (velocity, health, damaged)
+    velocity
+}
+
+fn resolve_health(mut health: u16, actions: &[SimAction]) -> u16 {
+    for action in actions {
+        if let SimAction::Damage(damage) = action {
+            health = health.saturating_sub(*damage);
+        }
+    }
+    health
 }

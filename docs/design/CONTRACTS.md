@@ -259,6 +259,8 @@ fabricated rigid vector.
 
 Each history key includes view, provider, resolution and relevant content/device/profile epochs. Reset or reproject
 only under documented validity conditions. A camera cut cannot retain old temporal samples as if it were smooth motion.
+G2 restore advances a replay timeline generation carried by each published page. V2 includes it in temporal-source
+identity, so skipping the replay baseline cannot make a divergent numeric tick look adjacent to abandoned poses.
 V4 owns image reconstruction/exposure/display; renderer features supply semantic inputs, not private rival upscalers.
 Each view publishes one frame contract: jittered and unjittered projection, current and previous view-projection,
 motion vectors in the convention above, reversed-Z depth, exposure, reactive/transparency mask, cut/reset flags and

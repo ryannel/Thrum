@@ -381,6 +381,7 @@ impl FrameHost {
         let initial_source = SourceTick {
             epoch: sim.epoch().0,
             tick: sim.tick(),
+            timeline: 0,
         };
         Ok(Self {
             device: device.clone(),
@@ -961,6 +962,7 @@ impl FrameHost {
             self.last_view_source = Some(SourceTick {
                 epoch: self.sim.epoch().0,
                 tick: frame.frame_tick,
+                timeline: 0,
             });
             self.last_render_slot = Some(slot_index);
         }

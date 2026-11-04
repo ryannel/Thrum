@@ -6,8 +6,8 @@ use std::{any::Any, collections::HashSet};
 use crate::{Handle, StableId};
 
 use super::{
-    ComponentKey, EntityWriter, RegisteredWorldError, StructuralPermit, SystemId, WritePermit,
-    registered_world::RegisteredWorld,
+    ComponentKey, EntityWriter, RegisteredWorldError, StructuralChange, StructuralPermit, SystemId,
+    WritePermit, registered_world::RegisteredWorld,
 };
 
 type ValueAt<C> = fn(&C, usize) -> &dyn Any;
@@ -366,32 +366,42 @@ impl EditScratch {
         world: &mut RegisteredWorld,
         edits: &[Edit<C>],
         candidate: &C,
+        tick: u64,
+        journal: &mut Vec<StructuralChange>,
     ) {
+        journal.clear();
+        world.begin_tick();
         for edit in edits {
             if let EditKind::Component {
                 handle,
                 index,
                 value,
                 apply,
+                key,
                 ..
             } = &edit.inner
             {
                 let empty: &dyn Any = &();
                 let value = value.map_or(empty, |get| get(candidate, *index));
                 apply(world, *handle, value).expect("whole batch prevalidated");
+                world.mark_changed(*key, *handle, tick);
             }
         }
         for edit in edits {
             if let EditKind::Despawn { handle, .. } = &edit.inner {
                 world.despawn(*handle).expect("whole batch prevalidated");
+                world.mark_structural(handle.slot);
+                journal.push(StructuralChange::Despawn(*handle));
             }
         }
         let mut spawn = 0;
         for edit in edits {
             if let EditKind::Spawn { id, .. } = &edit.inner {
-                world
-                    .spawn_prepared(*id, &mut self.builders[spawn])
+                let handle = world
+                    .spawn_prepared(*id, &mut self.builders[spawn], tick)
                     .expect("whole batch prevalidated");
+                world.mark_structural(handle.slot);
+                journal.push(StructuralChange::Spawn(handle));
                 spawn += 1;
             }
         }

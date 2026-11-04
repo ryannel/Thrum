@@ -1,37 +1,38 @@
 //! V1 game's authority composed from generic engine storage, schedule and page
 //! leases. The game owns all schema, rule, input and projection values.
 
+mod history;
 mod page;
 mod rules;
 mod types;
+
+use std::mem::size_of;
 
 use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
-        ExecutionMode, Executor, FrameError, GameRuntime, InputFrame, RegisteredSystem,
-        RegisteredWorldError, RuntimeCapture, RuntimeError, Stage, SystemId, SystemSpec, TickError,
-        WorldRead,
+        ExecutionMode, FrameError, GameRuntime, InputFrame, RegisteredSystem, RegisteredWorldError,
+        RuntimeCapture, RuntimeError, Stage, SystemId, SystemSpec, TickError,
     },
 };
 
+pub use history::SimulationHistory;
 use page::Page;
 pub use page::{DirtySlots, PublishedPage};
 use rules::{Candidate, PeerControl, Rules, finite};
-use types::{ChangeTicks, Health, Visual};
 pub use types::{
     Command, ComponentEntity, ComponentView, Ownership, Position, SimAction, SimConfig, SimError,
     TickOutcome, Velocity,
 };
+use types::{Health, Visual};
 
 const INPUT: SystemId = SystemId(0);
+const INPUT_HEALTH: SystemId = SystemId(4);
 const SIMULATE: SystemId = SystemId(1);
 const RESOLVE: SystemId = SystemId(2);
 const PUBLISH: SystemId = SystemId(3);
 const STRUCTURE: u64 = 7;
-
-type SystemCallback =
-    fn(&Rules, &WorldRead<'_>, Executor, u64, &mut Candidate) -> Result<(), SimError>;
 
 fn component(key: ComponentKey, mode: AccessMode) -> Access {
     Access {
@@ -66,9 +67,19 @@ fn setup(
             id: INPUT,
             stage: Stage::Input,
             accesses: vec![
-                component(ownership, Read),
-                component(health, Read),
                 component(velocity, Write),
+                Access {
+                    key: AccessKey::External(0),
+                    mode: Read,
+                },
+            ],
+            after: vec![],
+        },
+        SystemSpec {
+            id: INPUT_HEALTH,
+            stage: Stage::Input,
+            accesses: vec![
+                component(health, Write),
                 Access {
                     key: AccessKey::External(0),
                     mode: Read,
@@ -114,20 +125,21 @@ fn setup(
             after: vec![],
         },
     ];
-    let callbacks: [SystemCallback; 4] = [
-        Rules::input,
-        |game, world, executor, tick, candidate| {
+    let [input, input_health, simulate, resolve, publish]: [SystemSpec; 5] =
+        systems.try_into().map_err(|_| SimError::InvalidConfig)?;
+    let systems = vec![
+        RegisteredSystem::parallel(input, |game: &Rules, world, executor, tick, output| {
+            game.input_velocity(world, executor, tick, output);
+            Ok(())
+        }),
+        RegisteredSystem::parallel(input_health, Rules::input_health),
+        RegisteredSystem::new(simulate, |game, world, executor, tick, candidate| {
             game.simulate(world, executor, tick, candidate);
             Ok(())
-        },
-        Rules::resolve,
-        |_, _, _, _, _| Ok(()),
+        }),
+        RegisteredSystem::new(resolve, Rules::resolve),
+        RegisteredSystem::new(publish, |_, _, _, _, _| Ok(())),
     ];
-    let systems = systems
-        .into_iter()
-        .zip(callbacks)
-        .map(|(spec, callback)| RegisteredSystem::new(spec, callback))
-        .collect();
     let runtime = GameRuntime::new(epoch, config.entity_capacity, registry, systems, || {
         Page::new(epoch, config.entity_capacity)
     })
@@ -137,13 +149,15 @@ fn setup(
         runtime
             .read2::<Position, Velocity>(SIMULATE)
             .map_err(map_runtime)?,
+        runtime
+            .read2::<Position, Health>(PUBLISH)
+            .map_err(map_runtime)?,
     );
     let rules = Rules {
         config,
         peers: Vec::with_capacity(config.peer_capacity),
         commands: Vec::with_capacity(128),
         committed_inputs: Vec::with_capacity(config.peer_capacity),
-        changes: vec![ChangeTicks::default(); config.entity_capacity],
         changed_positions: 0,
         position_write: runtime
             .write_permit::<Position>(RESOLVE)
@@ -160,9 +174,6 @@ fn setup(
         structure: runtime
             .structural_permit(RESOLVE, STRUCTURE)
             .map_err(map_runtime)?,
-        capture_query: runtime
-            .read2::<Position, Health>(PUBLISH)
-            .map_err(map_runtime)?,
         position_read: runtime
             .read_permit::<Position>(PUBLISH)
             .map_err(map_runtime)?,
@@ -172,7 +183,9 @@ fn setup(
         health_read: runtime
             .read_permit::<Health>(PUBLISH)
             .map_err(map_runtime)?,
-        input_health_read: runtime.read_permit::<Health>(INPUT).map_err(map_runtime)?,
+        input_health_read: runtime
+            .read_permit::<Health>(INPUT_HEALTH)
+            .map_err(map_runtime)?,
         resolve_health_read: runtime
             .read_permit::<Health>(RESOLVE)
             .map_err(map_runtime)?,
@@ -198,7 +211,8 @@ fn map_runtime(error: RuntimeError) -> SimError {
         RuntimeError::World(RegisteredWorldError::DuplicateId) => SimError::DuplicateId,
         RuntimeError::World(RegisteredWorldError::InvalidHandle) => SimError::InvalidHandle,
         RuntimeError::World(RegisteredWorldError::SnapshotMismatch)
-        | RuntimeError::WrongCapture => SimError::InvalidSnapshot,
+        | RuntimeError::WrongCapture
+        | RuntimeError::NoCommittedTick => SimError::InvalidSnapshot,
         RuntimeError::World(_)
         | RuntimeError::Schedule(_)
         | RuntimeError::UndeclaredAccess
@@ -218,7 +232,23 @@ pub struct Simulation {
 pub struct SimulationCapture {
     runtime: RuntimeCapture,
     peers: Vec<PeerControl>,
-    changes: Vec<ChangeTicks>,
+}
+
+impl SimulationCapture {
+    /// Retained baseline component and peer-resource storage.
+    pub fn reserved_bytes(&self) -> usize {
+        self.runtime.reserved_bytes() + peer_storage_bytes(&self.peers)
+    }
+}
+
+fn peer_storage_bytes(peers: &Vec<PeerControl>) -> usize {
+    peers.capacity() * size_of::<PeerControl>()
+        + peers
+            .iter()
+            .filter_map(|peer| peer.pending.as_ref())
+            .filter(|frame| frame.actions.spilled())
+            .map(|frame| frame.actions.capacity() * size_of::<SimAction>())
+            .sum::<usize>()
 }
 
 impl Simulation {
@@ -227,7 +257,6 @@ impl Simulation {
         SimulationCapture {
             runtime: self.runtime.capture(),
             peers: self.rules.peers.clone(),
-            changes: self.rules.changes.clone(),
         }
     }
 
@@ -244,11 +273,11 @@ impl Simulation {
             .restore(&capture.runtime, || Page::new(epoch, capacity))
             .map_err(map_runtime)?;
         self.rules.peers.clone_from(&capture.peers);
-        self.rules.changes.clone_from(&capture.changes);
         self.rules.commands.clear();
         self.rules.committed_inputs.clear();
         self.rules.changed_positions = 0;
-        self.runtime.publish_initial(&mut self.rules);
+        self.runtime
+            .publish_initial(&mut self.rules, &mut self.candidate);
         Ok(())
     }
 
@@ -339,7 +368,6 @@ impl Simulation {
                 Ok(())
             })
             .map_err(map_runtime)?;
-        self.rules.changes[handle.slot as usize] = ChangeTicks::default();
         Ok(handle)
     }
 
@@ -382,7 +410,8 @@ impl Simulation {
     ///
     /// The engine page ring is unexpectedly unavailable.
     pub fn published_page(&mut self) -> Result<PublishedPage, SimError> {
-        self.runtime.publish_initial(&mut self.rules);
+        self.runtime
+            .publish_initial(&mut self.rules, &mut self.candidate);
         self.runtime
             .latest()
             .map(PublishedPage)
@@ -527,7 +556,8 @@ impl Simulation {
     /// Panics only if a game callback violates its validated commit invariant.
     pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome<'_>, SimError> {
         self.validate_commands(commands)?;
-        self.runtime.publish_initial(&mut self.rules);
+        self.runtime
+            .publish_initial(&mut self.rules, &mut self.candidate);
         let simulated_entities = self.runtime.len();
         self.rules.commands.clear();
         self.rules.commands.extend_from_slice(commands);
@@ -535,7 +565,7 @@ impl Simulation {
             .runtime
             .step(&mut self.rules, &mut self.candidate)
             .map_err(|error| match error {
-                TickError::TickExhausted => SimError::TickExhausted,
+                TickError::TickExhausted | TickError::RevisionExhausted => SimError::TickExhausted,
                 TickError::BaselineRequired | TickError::PublicationBusy => {
                     SimError::PublicationBusy
                 }

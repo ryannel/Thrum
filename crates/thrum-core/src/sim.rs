@@ -13,7 +13,7 @@ pub use input::{ControlBinding, FrameError, InputFrame};
 pub use registered_world::{EntityWriter, RegisteredWorldError};
 pub use runtime::{
     ExecutionMode, Executor, GameRuntime, Read2, ReadPermit, RegisteredSystem, RuntimeCapture,
-    RuntimeError, StructuralPermit, TickError, TickGame, WorldRead, WritePermit,
+    RuntimeDelta, RuntimeError, StructuralPermit, TickError, TickGame, WorldRead, WritePermit,
 };
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,

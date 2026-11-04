@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "target": "custom-hardware-native-3d-engine",
-  "as_of": "2026-11-04",
+  "as_of": "2026-11-05",
   "contract_revision": "C4",
-  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0 and G1 are complete; G2 runs game-owned schema/rules over generic hecs storage, with transaction, callback-binding and rolling-capture review blockers. G3 follows G2. No general engine runtime, real transport, cooked game loop or V1 device performance is qualified.",
+  "scope_note": "Historical capability entries preserve prior measurements, not current-tree availability or work priority. G0\u2013G2 are complete; G3 is next. No general engine runtime, real transport, cooked game loop or V1 device performance is qualified.",
   "execution_plan": {
     "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering and budgets on macOS and physical iPhone; Chrome WebGPU reduced-tier smoke only; then four rendered peers over conditioned native QUIC",
     "active": [
-      "G2 generic simulation: close reviewed atomic-edit, callback-binding and rolling-capture gates"
+      "G3 executing renderer: capability registry, portable and Apple tile graph recipes, game-owned cooked content"
     ],
     "next_parallel": [
-      "G3 executing render graph after reviewed two-page design"
+      "G4 presentation clock after G3 frame contract"
     ],
     "parked": [
       "A5 in-memory ACK/rebase/retry/reconnect/lane work until G6 real transport",
@@ -24,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G0 and G1 are complete; parked means retained as reference, not in progress. Historical partial implementation does not imply active construction or current-tree availability."
+    "interpretation": "G0\u2013G2 are complete; parked means retained as reference, not in progress. Historical partial implementation does not imply active construction or current-tree availability."
   },
   "v1_slices": {
     "G0_boundary": {
@@ -61,8 +61,8 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "partial_running_game_owned_schema_rules_pages_registered_hecs_atomic_typed_edits_bound_callbacks_serial_rayon_replay_and_column_capture",
-      "functional_validation": "running_game_10k_four_peer_serial_rayon_endpoint_equality_after_refusal_churn_and_restore_zero_serial_tick_and_spawn_churn_allocations_prior_metal_host_passed_review_blockers_open",
+      "implementation": "complete_running_game_owned_schema_rules_pages_registered_hecs_atomic_typed_edits_bound_serial_rayon_callbacks_engine_change_stamps_bounded_rolling_capture_and_replay",
+      "functional_validation": "full_dev_check_running_game_10k_four_peer_serial_rayon_equal_after_refusal_churn_and_restore_zero_warmed_serial_tick_churn_and_10k_100k_history_allocations_noncopy_column_overlay_divergent_branch_and_render_timeline_tests_independent_review_no_blocker",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
         "mac": "Apple_M3_Max_game_tick_and_full_capture_restore_diagnostics_not_V1_device_budget_qualified",
@@ -71,8 +71,8 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max complete game tick plus page medians after typed edits: serial 127/1288 us and Rayon 311/1562 us at 10k/100k after 60 warmup ticks. Full capture earlier 93.81/951.1 us, 1.41/14.08 MB; restore 1.531/19.27 ms. No rolling-capture or V1 device qualification.",
-      "scope": "The running V1 game owns all six schema/rule types, inputs and pages. Generic hecs storage, checked identity, stage-scoped tokens, bound callbacks, atomic typed edits and four-page leases run through one game. Parallel schedule waves, engine-owned change ticks, efficient rolling captures, order-sensitive replay proof and post-transaction Metal check remain; G2 stays open.",
+      "diagnostic_measurement": "Apple M3 Max complete game tick plus page medians: serial 138.1/1394 us and Rayon 324.2/1656 us at 10k/100k; serial tick plus rolling delta 192.3/2060 us. 64-tick history previously measured about 7.45/64.7 MB at 10k/100k. Local diagnostics, not V1 device budget qualification.",
+      "scope": "Running V1 game owns all schema, rule, input and page types. Engine owns registered hecs storage, checked identity, stage permits, atomic typed edits, change stamps, structural journal, serial/Rayon waves, complete pages and predecessor-bound rolling deltas. Replay generation invalidates render pose history. G3 moves FrameHost into engine; no G2 physical-iPhone claim.",
       "evidence": [
         "../evidence/v1-workload/G2-STORAGE-COMPARISON-2026-11-04.md",
         "../evidence/v1-workload/G2-SPLIT-QUERY-2026-11-04.md",
@@ -2944,7 +2944,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "01261f902b10b8057000365f61810c56547bf6b91224c00898c80d90f9641134",
+  "contract_sha256": "8d4751df39b96f42e2accb0b2e95b6e68bc1d85809db510740d4a82b6dd66226",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3689,7 +3689,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "a318afee27110c76992b9847fd44364925d626df1edac72e9b7f829e15514c02",
     "contract_revision": "C4",
-    "contract_sha256": "01261f902b10b8057000365f61810c56547bf6b91224c00898c80d90f9641134",
+    "contract_sha256": "8d4751df39b96f42e2accb0b2e95b6e68bc1d85809db510740d4a82b6dd66226",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4070,7 +4070,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "8084b1fd0ced016cd362da7be54b1ea26b93918b33bb74f10cc304570512d68a",
-      "CONTRACTS.md": "01261f902b10b8057000365f61810c56547bf6b91224c00898c80d90f9641134",
+      "CONTRACTS.md": "8d4751df39b96f42e2accb0b2e95b6e68bc1d85809db510740d4a82b6dd66226",
       "DESIGN-PROGRAMME.md": "1d5d87fcf28fad58b00a997a64d8ec992f0e9befd6b8f32213ea044fec802223",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",

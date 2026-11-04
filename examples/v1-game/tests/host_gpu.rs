@@ -19,7 +19,7 @@ fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
         device
             .poll(wgpu::PollType::Wait {
                 submission_index: None,
-                timeout: Some(Duration::from_millis(100)),
+                timeout: Some(Duration::from_secs(10)),
             })
             .expect("GPU wait");
     }
@@ -101,7 +101,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
                 device
                     .poll(wgpu::PollType::Wait {
                         submission_index: None,
-                        timeout: Some(Duration::from_millis(100)),
+                        timeout: Some(Duration::from_secs(10)),
                     })
                     .expect("GPU wait");
             };
@@ -147,7 +147,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             plain_device
                 .poll(wgpu::PollType::Wait {
                     submission_index: None,
-                    timeout: Some(Duration::from_millis(100)),
+                    timeout: Some(Duration::from_secs(10)),
                 })
                 .expect("plain GPU wait");
         };

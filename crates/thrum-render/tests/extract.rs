@@ -49,7 +49,30 @@ unsafe impl GlobalAlloc for CountingAllocator {
 }
 
 fn source(epoch: u128, tick: u64) -> SourceTick {
-    SourceTick { epoch, tick }
+    SourceTick {
+        epoch,
+        tick,
+        timeline: 0,
+    }
+}
+
+#[test]
+fn replay_generation_blocks_adjacent_pose_reuse() {
+    let mut extractor = RenderExtractor::new(1, 1);
+    extractor.extract(source(1, 2), [0.0; 3], |sink| {
+        assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0));
+    });
+    let report = extractor.extract(
+        SourceTick {
+            epoch: 1,
+            tick: 3,
+            timeline: 1,
+        },
+        [0.0; 3],
+        |sink| assert!(sink.push(0, 1, 1, [5.0, 0.0, 0.0], 0)),
+    );
+    assert_eq!(report.history_reused, 0);
+    assert_eq!(extractor.frame().previous()[0], [5.0, 0.0, 0.0]);
 }
 
 #[test]
