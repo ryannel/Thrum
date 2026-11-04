@@ -79,6 +79,22 @@ pub struct ComponentView<'a> {
     pub(super) world_borrow: std::marker::PhantomData<&'a ()>,
 }
 
+/// One committed owned controller projection for a confirmed client. This is
+/// a copied gameplay value, never a render packet or second world authority.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ControllerState {
+    /// Exact current peer, epoch and controlled actor binding.
+    pub binding: Ownership,
+    /// Committed world position.
+    pub position: Position,
+    /// Committed velocity after held control and this tick's actions.
+    pub velocity: Velocity,
+    /// Committed fixture health.
+    pub health: u16,
+    /// Held axes that the next input stage uses if no frame arrives.
+    pub held_axes: [f32; 3],
+}
+
 /// Resolve-stage edits. A batch validates fully against the pre-tick identity
 /// map before simulation. Conflicting writes/destruction reject the whole batch;
 /// same-batch spawn references and stable-ID replacement are deliberately absent.
@@ -346,6 +362,31 @@ impl Simulation {
     /// The handle is stale or belongs to another world.
     pub fn get(&self, handle: Handle) -> Result<ComponentView<'_>, SimError> {
         self.store.row(handle).map(|row| self.store.view(row))
+    }
+
+    /// Copy one active peer's complete controller value at the current
+    /// committed world tick. A caller pairs it with that tick's result origins
+    /// before publishing a client group.
+    ///
+    /// # Errors
+    /// The peer is absent/inactive, its handle is stale, or ownership changed.
+    pub fn controller_state(&self, peer_id: PeerId) -> Result<ControllerState, SimError> {
+        let peer = self
+            .peers
+            .iter()
+            .find(|peer| peer.binding.peer == peer_id && peer.active)
+            .ok_or(SimError::InvalidOwnership)?;
+        let row = self.store.row(peer.handle)?;
+        if self.store.ownership(row) != Some(peer.binding) {
+            return Err(SimError::InvalidOwnership);
+        }
+        Ok(ControllerState {
+            binding: peer.binding,
+            position: self.store.position(row),
+            velocity: self.store.velocity(row),
+            health: self.store.health(row),
+            held_axes: peer.axes,
+        })
     }
 
     /// Visit typed component columns without allocating temporary records.

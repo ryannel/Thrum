@@ -1,6 +1,8 @@
 //! Four-peer 10k-world no-socket diagnostic with deterministic delayed input.
 //! The same V1 simulation owns gameplay; N1 only stages future frames.
 
+mod confirmed;
+
 use std::{fmt, num::NonZeroUsize, time::Instant};
 
 use thrum_core::{
@@ -14,6 +16,7 @@ use thrum_network::{
 };
 
 use crate::scene::{self, ENTITY_COUNT, PEER_COUNT};
+use confirmed::ConfirmedLoop;
 
 const TICKS: u64 = 600;
 const LEAD_TICKS: u64 = 5;
@@ -269,6 +272,10 @@ pub struct ConditionedReport {
     late_frames: u64,
     due_misses: u64,
     accepted_frames: u64,
+    confirmed_groups: u64,
+    confirmed_in_flight: usize,
+    confirmed_max_age: u64,
+    confirmed_ticks: [u64; PEER_COUNT],
     tick_p50_ns: u64,
     tick_p95_ns: u64,
     encode_ns: u128,
@@ -280,7 +287,7 @@ impl fmt::Display for ConditionedReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late={}/{} accepted={} due_misses={} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
+            "ticks={} peers={} packets sent/dropped/delivered/in_flight={}/{}/{}/{} bytes sent/delivered={}/{} delay_ticks={}-{} duplicate/late={}/{} accepted={} due_misses={} confirmed delivered/in_flight/max_age={}/{}/{} client_ticks={:?} tick p50/p95={}/{} us encode/decode total={}/{} us final_positions={:?}",
             self.committed_ticks,
             PEER_COUNT,
             self.sent_packets,
@@ -295,6 +302,10 @@ impl fmt::Display for ConditionedReport {
             self.late_frames,
             self.accepted_frames,
             self.due_misses,
+            self.confirmed_groups,
+            self.confirmed_in_flight,
+            self.confirmed_max_age,
+            self.confirmed_ticks,
             self.tick_p50_ns / 1_000,
             self.tick_p95_ns / 1_000,
             self.encode_ns / 1_000,
@@ -359,8 +370,10 @@ pub struct ConditionedGame {
     sim: Simulation,
     window: FutureInputWindow<SimAction>,
     link: ConditionedLink,
+    confirmed: ConfirmedLoop,
     held: [[f32; 3]; PEER_COUNT],
     expected: [[f64; 3]; PEER_COUNT],
+    expected_history: Vec<[[f64; 3]; PEER_COUNT]>,
     times: Vec<u64>,
     duplicate_frames: u64,
     late_frames: u64,
@@ -384,12 +397,25 @@ impl ConditionedGame {
         )
         .map_err(|error| format!("future input setup: {error:?}"))?;
         let expected = controlled_positions(&sim)?;
+        let mut states = [sim
+            .controller_state(PEERS[0])
+            .map_err(|error| format!("initial controller: {error:?}"))?;
+            PEER_COUNT];
+        for (index, state) in states.iter_mut().enumerate() {
+            *state = sim
+                .controller_state(PEERS[index])
+                .map_err(|error| format!("initial controller: {error:?}"))?;
+        }
         Ok(Self {
             sim,
             window,
             link: ConditionedLink::new(),
+            confirmed: ConfirmedLoop::new(&states),
             held: [[0.0; 3]; PEER_COUNT],
             expected,
+            expected_history: Vec::with_capacity(
+                usize::try_from(TICKS).map_err(|_| "tick count overflow")?,
+            ),
             times: Vec::with_capacity(usize::try_from(TICKS).map_err(|_| "tick count overflow")?),
             duplicate_frames: 0,
             late_frames: 0,
@@ -450,7 +476,7 @@ impl ConditionedGame {
             .committed_inputs
             .iter()
             .copied()
-            .eq(due_origins.into_iter().flatten())
+            .eq(due_origins.iter().flatten().copied())
         {
             return Err("W1 committed input origins diverged from N1 due handoff".to_owned());
         }
@@ -462,6 +488,25 @@ impl ConditionedGame {
         if outcome.tick != tick {
             return Err("world tick diverged from conditioned run".to_owned());
         }
+        for (index, peer) in PEERS.into_iter().enumerate() {
+            let state = self
+                .sim
+                .controller_state(peer)
+                .map_err(|error| format!("committed controller: {error:?}"))?;
+            if state
+                .position
+                .0
+                .iter()
+                .zip(self.expected[index])
+                .any(|(actual, expected)| (actual - expected).abs() > 1e-8)
+            {
+                return Err("confirmed controller differs from independent trace".to_owned());
+            }
+            self.confirmed
+                .send(index, tick, state, due_origins[index])?;
+        }
+        self.expected_history.push(self.expected);
+        self.confirmed.deliver(tick)?;
         self.times
             .push(u64::try_from(started.elapsed().as_nanos()).map_err(|_| "tick timer overflow")?);
         Ok(())
@@ -496,6 +541,44 @@ impl ConditionedGame {
                 );
             }
         }
+        let (confirmed_sent, confirmed_groups, confirmed_in_flight, confirmed_max_age) =
+            self.confirmed.counts();
+        if confirmed_sent != TICKS * u64::try_from(PEER_COUNT).map_err(|_| "peer count overflow")?
+            || confirmed_sent
+                != confirmed_groups
+                    + u64::try_from(confirmed_in_flight)
+                        .map_err(|_| "return group count overflow")?
+        {
+            return Err("confirmed return lane group accounting diverged".to_owned());
+        }
+        let mut confirmed_ticks = [0; PEER_COUNT];
+        let mut delivered_origins = 0;
+        for (index, client) in self.confirmed.clients().iter().enumerate() {
+            let history_index = usize::try_from(
+                client
+                    .tick()
+                    .checked_sub(1)
+                    .ok_or("client received no confirmed group")?,
+            )
+            .map_err(|_| "client tick overflow")?;
+            let expected = self
+                .expected_history
+                .get(history_index)
+                .ok_or("client confirmed beyond the authority")?[index];
+            if client
+                .position()
+                .iter()
+                .zip(expected)
+                .any(|(actual, expected)| (actual - expected).abs() > 1e-8)
+            {
+                return Err("confirmed client diverged from authority trace".to_owned());
+            }
+            confirmed_ticks[index] = client.tick();
+            delivered_origins += client.committed_count();
+        }
+        if self.accepted_frames != delivered_origins + self.confirmed.in_flight_committed() {
+            return Err("confirmed result origin accounting diverged".to_owned());
+        }
         self.times.sort_unstable();
         Ok(ConditionedReport {
             committed_ticks: self.sim.tick(),
@@ -511,6 +594,10 @@ impl ConditionedGame {
             late_frames: self.late_frames,
             due_misses: self.due_misses,
             accepted_frames: self.accepted_frames,
+            confirmed_groups,
+            confirmed_in_flight,
+            confirmed_max_age,
+            confirmed_ticks,
             tick_p50_ns: *self
                 .times
                 .get(self.times.len() / 2)
@@ -566,6 +653,15 @@ mod tests {
         assert!(result.delivered_packets > 0);
         assert!(result.accepted_frames > 0);
         assert!(result.duplicate_frames > 0);
+        assert!(result.confirmed_groups > 0);
+        assert!(result.confirmed_in_flight > 0);
+        assert!((2..=4).contains(&result.confirmed_max_age));
+        assert!(
+            result
+                .confirmed_ticks
+                .iter()
+                .all(|tick| (596..=600).contains(tick))
+        );
     }
 
     #[test]

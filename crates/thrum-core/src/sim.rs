@@ -18,6 +18,6 @@ pub use schedule::{
     SystemSpec,
 };
 pub use world::{
-    ChangeTicks, Command, ComponentEntity, ComponentView, Ownership, Position, SimConfig, SimError,
-    Simulation, SimulationSnapshot, TickOutcome, Velocity,
+    ChangeTicks, Command, ComponentEntity, ComponentView, ControllerState, Ownership, Position,
+    SimConfig, SimError, Simulation, SimulationSnapshot, TickOutcome, Velocity,
 };

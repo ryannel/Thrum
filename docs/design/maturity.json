@@ -325,6 +325,23 @@
       ],
       "scope": "W1 reports only origins consumed at a successful publish barrier; a failed tick returns no outcome and keeps pending frames. The N1 conditioner compares due handoffs before counting accepted frames. Rejected-result retention, application ACK, controller state grouping, state delta, OS transport and client reconciliation remain open."
     },
+    "A5_confirmed_client": {
+      "implementation": "partial_checked_committed_controller_projection_and_ordered_bounded_in_memory_four_peer_return_lane",
+      "functional_validation": "600_tick_four_peer_run_admits_2384_confirmed_groups_with_16_in_flight; independent_tick_trace_and_origin_conservation_match; malformed_stale_duplicate_and_misbound_groups_refuse_without_client_mutation; 500_warmed_tick_zero_allocation_assertion_passes",
+      "experienced_quality": "no_local_prediction_correction_or_visible_multiplayer_acceptance",
+      "platform_performance": {
+        "mac": "apple_m3_max_headless_release_diagnostic_not_wall_paced_or_rendered",
+        "windows": "not_run",
+        "browser": "not_run_confirmed_client_path",
+        "ios": "not_run_confirmed_client_path",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max Rust 1.99.1 release: 600 ticks and 2384 confirmed groups delivered, 16 in flight, maximum group age four ticks, four client ticks at 596, authority tick p50/p95 47/51 us in one local process. Divan 20 complete-run samples median 35.24 ms with 134 benchmark-thread Rust allocations including setup and teardown; zero across 500 warmed ticks. Timing is variable and does not establish a speed difference from prior runs.",
+      "evidence": [
+        "../evidence/v1-workload/A5-CONFIRMED-CLIENT-2026-11-04.md"
+      ],
+      "scope": "The authority alone commits controller values. The four clients admit complete copied values and exact committed origins through an ordered, delayed lossless in-memory lane. Reconnect baseline transition, rejected-result retention, reliable ACK, state-delta codec, real transport, prediction/reconciliation and browser/phone multiplayer remain open."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",
       "functional_validation": "real_metal_idle_catch_up_ordered_deferred_timing_enabled_disabled_capture_and_clock_overload_test_plus_late_report_eviction_unit_and_two_600_frame_process_runs",
