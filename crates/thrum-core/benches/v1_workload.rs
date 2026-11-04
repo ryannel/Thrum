@@ -39,23 +39,23 @@ fn four_peer_conditioner(bencher: divan::Bencher<'_, '_>) {
     });
 }
 
-fn component_fixture() -> Simulation {
+fn component_fixture(count: usize) -> Simulation {
     let mut sim = Simulation::new(
         WorldEpoch(1),
         SimConfig {
             tick_hz: NonZeroU32::new(60).expect("test setup or assertion requires a value"),
-            entity_capacity: support::ENTITY_COUNT,
+            entity_capacity: count,
             peer_capacity: support::PEER_COUNT,
             actions_per_frame: 8,
             movement_speed: 6.0,
         },
     )
     .expect("test setup or assertion requires a value");
-    for id in 0..support::ENTITY_COUNT {
+    for id in 0..count {
         sim.seed(ComponentEntity {
             id: StableId(id as u128),
             position: Position::default(),
-            velocity: Velocity([if id < support::MOVING_COUNT { 1.0 } else { 0.0 }, 0.0, 0.0]),
+            velocity: Velocity([if id < count * 15 / 100 { 1.0 } else { 0.0 }, 0.0, 0.0]),
             health: 100,
             ownership: None,
             visual: Some(2),
@@ -67,7 +67,7 @@ fn component_fixture() -> Simulation {
 
 #[divan::bench]
 fn g1_tick_and_publication(bencher: divan::Bencher<'_, '_>) {
-    let mut sim = component_fixture();
+    let mut sim = component_fixture(support::ENTITY_COUNT);
     for _ in 0..60 {
         sim.step(&[]).expect("warmup tick succeeds");
     }
@@ -80,9 +80,21 @@ fn g1_tick_and_publication(bencher: divan::Bencher<'_, '_>) {
     });
 }
 
+#[divan::bench(args = [10_000, 100_000])]
+fn g2_split_tick_and_publication(bencher: divan::Bencher<'_, '_>, count: usize) {
+    let mut sim = component_fixture(count);
+    for _ in 0..60 {
+        sim.step(&[]).expect("warmup tick succeeds");
+    }
+    bencher.bench_local(move || {
+        divan::black_box(sim.step(&[]).expect("committed split tick"));
+        divan::black_box(&sim);
+    });
+}
+
 #[divan::bench]
 fn a1_component_query(bencher: divan::Bencher<'_, '_>) {
-    let sim = component_fixture();
+    let sim = component_fixture(support::ENTITY_COUNT);
     bencher.bench_local(move || {
         sim.visit_components(|view| {
             divan::black_box(view);
@@ -92,7 +104,7 @@ fn a1_component_query(bencher: divan::Bencher<'_, '_>) {
 
 #[divan::bench]
 fn g1_page_read(bencher: divan::Bencher<'_, '_>) {
-    let mut sim = component_fixture();
+    let mut sim = component_fixture(support::ENTITY_COUNT);
     let page = sim.published_page().expect("seeded page");
     bencher.bench_local(move || {
         page.visit(|handle, id, position, visual| {

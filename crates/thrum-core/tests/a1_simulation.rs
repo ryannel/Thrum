@@ -667,6 +667,36 @@ fn ten_thousand_entity_ticks_and_publication_allocate_nothing_after_warmup() {
 }
 
 #[test]
+fn hundred_thousand_split_world_retains_statics_without_steady_allocations() {
+    const COUNT: usize = 100_000;
+    const MOVING: usize = 15_000;
+    let mut sim = Simulation::new(WorldEpoch(2), config(COUNT)).expect("100k capacity fits");
+    for id in 0..COUNT {
+        sim.seed(entity(id as u128, if id < MOVING { 1.0 } else { 0.0 }))
+            .expect("unique entity");
+    }
+    drop(sim.published_page().expect("initial 100k page"));
+    for _ in 0..60 {
+        sim.step(&[]).expect("warmup tick commits");
+    }
+    ALLOCATIONS.with(|count| count.set(0));
+    COUNTING.with(|active| active.set(true));
+    for _ in 0..60 {
+        std::hint::black_box(sim.step(&[]).expect("steady tick commits"));
+    }
+    COUNTING.with(|active| active.set(false));
+    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    let page = sim.published_page().expect("latest 100k page");
+    assert_eq!(page.len(), COUNT);
+    assert_eq!(page.dirty().position().len(), MOVING);
+    let moving = sim.handle(StableId(0)).expect("moving identity");
+    let static_body = sim.handle(StableId(99_999)).expect("static identity");
+    let moving_position = page.position(moving).expect("moving position published");
+    assert!((moving_position.0[0] - 2.0).abs() < 1e-12);
+    assert_eq!(page.position(static_body), Some(Position::default()));
+}
+
+#[test]
 fn admitted_action_frames_and_committed_pages_allocate_nothing_after_warmup() {
     let (mut sim, handle, binding) = controlled();
     drop(sim.published_page().expect("seeded page"));
