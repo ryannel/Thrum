@@ -414,9 +414,11 @@ flux register with opposite signs; momentum/energy/traction need their own speci
 An imposed sea level may drive a river without river discharge changing the sea: this is external reservoir exchange,
 not global conservation. Stateful solver support/forcing stays resident or transfers by a proved policy.
 
-Baseline physical queries are CPU-owned or analytically reproducible headless. GPU visual residuals have bounded
-shore/contact error. Saves and semantic network manifests include required model/domain/edge/forcing revisions.
-Water-contact prediction is off unless the full P3/E1 state, dependencies and once-only disturbance ledger are replayable.
+Water physical queries read each domain's GPU state through an asynchronous batched query, or a declared CPU
+conformance model on an authority without a GPU; water needs no exact replay ([water decision](decisions/E1-GPU-WATER.md)).
+Drawn-only detail has bounded shore/contact error. Saves and semantic network manifests include required
+model/domain/edge/forcing revisions. Multiplayer shares water causes, not state; a player's own vessel may be
+predicted against local water.
 
 ## C10 Persistence, reproducibility and authored operations — P7/F3/T1
 
@@ -597,8 +599,8 @@ cross-reconnect retry need game/P7 operation identity and outcome, not a transpo
 Replication is a purpose-specific immutable projection, not render/save/ECS serialization. Each published group includes
 its lifecycle changes and required dependent state atomically: no spawn/re-entry before its first usable state. Dependent
 removal effects commit together. Missing required content keeps the group unadmitted, never defaulted. Interest exit
-has its own generation and is distinct from destruction and authoritative region streaming. Optional water projections
-pair a sample with its matching body pose/time inside the same admission unit. Full-group versus delta encoding is
+has its own generation and is distinct from destruction and authoritative region streaming. Water is shared by
+causes, not samples: water event records travel reliably and body poses carry no water sample. Full-group versus delta encoding is
 adapter policy; V1 selects acknowledged deltas in the A0 N1 decision, with exact byte/cadence bounds still to qualify.
 
 Slow peers cannot pin world snapshots or stall the authority. Bound per-peer and aggregate queue/history/work resources;

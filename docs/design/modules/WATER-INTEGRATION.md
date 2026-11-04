@@ -9,9 +9,9 @@ The [commission](WATER.md) remains the family inventory. [Dynamics](WATER-DYNAMI
 [whitewater](WATER-APPEARANCE.md) and [optics](WATER-OPTICS.md) select mechanisms, approximations and real limits.
 This document connects them under existing C4 ownership; it does not revise the smaller initial specification,
 create a second foundation queue or commission a water runtime ahead of the engine.
-**Amended 5 November 2026 by [GPU water](../decisions/E1-GPU-WATER.md):** water state lives on the GPU, queries read
-it back asynchronously, saves capture its fields asynchronously, and water leaves exact replay. Clauses below that
-require CPU/headless authority or headless continuation follow that decision.
+The [water decision](../decisions/E1-GPU-WATER.md) sets authority, forces, replay and multiplayer: water state lives
+on the GPU, queries read it back asynchronously, saves capture its fields asynchronously, water leaves exact replay
+and the network carries causes rather than water state.
 
 ## State and product boundaries
 
@@ -102,11 +102,12 @@ actual source/transit intervals and ledgers, required coarse populations, consum
 source/model pins, with GPU fields captured asynchronously. Restart continues the same behaviour, not a bit-exact
 continuation; a missing field capture restarts that field calm and says so. Fine particles/history are derived and rebuilt. Saving only current surface height loses velocity, flight and source-off tails.
 
-N1's confirmed projection is a different bounded product, not an authority save or whole-grid-per-peer copy.
-Body pose and required water query state use one atomic compatible StateGroup, endpoint and content readiness under
-C13. A client cannot query a new hull against stale incompatible water. Initial water prediction is off; replicas
-interpolate confirmed compatible state and may reconstruct optional fine visuals within the declared surface-error
-envelope. Reliable consumed-event cursors prevent duplicate births after join/reconnect. A game needing authoritative
+Multiplayer shares causes, not water state. Every machine runs its own GPU water from the same causes: session
+content (preset, seed, tide), N1's tick, reliable wave/impact/inflow event records and replicated body state. The
+authority computes every force. Remote vessels show the authority's interpolated pose on local water; a player's own
+vessel may be predicted against local water, with smoothed correction. Domains failing the divergence test get a
+coarse correction stream; no full grid is replicated. A client cannot run a new content revision against stale
+water: water content readiness follows C13. Reliable consumed-event cursors prevent duplicate births after join/reconnect. A game needing authoritative
 foam visibility/navigation must retain its coarse facts in the physical compatibility/projection contract explicitly.
 
 ## Supported combinations and remaining family gaps

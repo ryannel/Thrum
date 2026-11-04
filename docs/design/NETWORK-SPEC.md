@@ -357,43 +357,31 @@ quaternion double-angle conversion give a conservative small-error angular bound
 norm ≤√6δ; normalization gives angular error below 0.01 degrees, also inside 0.02. Conformance still checks the actual
 codec, sign/fold boundaries and malformed inputs; those checks verify these specified bounds rather than discover them.
 
-The optional initial water projection is a 96-byte record per floating body, at most four records/group; it is a confirmed
-sample for that body, not an arbitrary client-accessible copy of the shallow solver. Fields, packed sequentially with
-no padding, are `body:u64, domain:u64, domainGeneration:u32, sourceRevisionIndex:u32, edgeRevisionIndex:u32,
-supportFlags:u32, sampleTick:u64, sectorXYZ:3×i32, sampleOffsetMm:3×i32, stageOffsetMm:i32, depthMm:u32,
-normalOct:2×i16, velocityCmPerSec:3×i16, heightErrorMm:u16, velocityErrorCmPerSec:u16,
-normalErrorMilliDeg:u16, supportRadiusCm:u16, maxAgeTicks:u16, reserved:u32`. Domain wire IDs and revision indexes
-map to the pinned semantic manifest; an unknown mapping rejects the whole group. Stage is relative to the sector's
-Y origin. For a normal `n`, divide by `|nx|+|ny|+|nz|`, take xy, and when z<0 fold xy to
-`(1-|y|,1-|x|) * signNotZero(x,y)`; round each to signed i16 using scale 32767. Decode x/y by 32767,
-set z=`1-|x|-|y|`, unfold x/y by the same sign rule when z<0, and normalize the resulting vector.
-`signNotZero(0)=+1`; zero/nonfinite input rejects. This is the fixed octahedral normal codec for schema 1. Unavailable,
-dry and valid samples are distinct supportFlags; unavailable values must not become zero-water queries.
+Water is shared by causes, not by state, under the [water decision](decisions/E1-GPU-WATER.md). Every peer runs
+its own GPU water from session content (preset, seed, tide), the shared tick, replicated body state and reliable
+water event records. The authority computes every water force. No water grid or per-body water sample is replicated.
 
-Stage/depth quantization contributes ≤0.5 mm each, flow ≤0.5 cm/s per component and normal ≤0.02 degrees (to be
-verified by codec conformance). Reported error fields include quantization, provider error and sample-age uncertainty,
-rounded upward, with at most six-tick query age relative to the consumer’s requested evaluation tick.
-A water StateGroup includes each body pose at `sampleTick` with its matching query record, domain/revision and
-support status in the same atomic admission unit; a previously retained exact pose may instead be referenced by
-identity and tick, and the whole group rejects if it is absent. A delayed presentation can use that matched historical
-pair; it is not a valid current-time gameplay query. Missing correspondence rejects interpolation rather than mixing
-time samples. A schema overflow or error exceeding the consumer tolerance yields unavailable,
-never saturated false precision. NormalErrorMilliDeg uses millidegrees, not radians. SupportRadius describes the
-provider-validated query footprint; clients cannot extrapolate a point to a whole river. The four-record state payload
-is 384 bytes, comfortably below the atomic group limit. Local boat forces and volume flux remain server-owned.
+A water event record carries `event:u64, generation:u32, kind:u16, flags:u16, startTick:u64`, then a kind-specific
+payload of at most 64 bytes:
+* **wave:** origin, direction, height, period and shape;
+* **impact:** point and energy;
+* **inflow/level/gate:** domain, edge and new value.
 
-Other interaction queries travel as typed actor requests and authority results; initial clients do not receive or
-predict the entire 128×64 shallow grid. Visual water can use a separate admitted approximation, constrained at the
-confirmed contacts/shore by declared cue/error bounds. Games requiring locally queryable flooding throughout that
-field need a new declared projection/profile, not silent partial-grid replication. No generic compression may change
-physical semantics.
+Events travel reliably in the event stream. A wave event's `startTick` must lead its send tick by at least the largest
+admitted client latency plus the interpolation buffer, and at least one second. A late or missing event makes that
+cause unavailable and shows network status; it is never silently dropped from local water.
+
+A finite domain that fails the water decision's divergence test may declare a coarse correction stream: at most 32²
+height and flow samples at about 1 Hz, delta-coded, about 1–2 KB/s. Clients nudge towards it. No generic compression
+may change physical semantics.
 
 Remote presentation interpolates with a 100 ms buffer. At most 100 ms of declared extrapolation is permitted; then
 hold a stale pose and show network status. At 500 ms without usable state, suspend local predicted interaction;
 after five seconds, disconnect. A missing heartbeat cannot stall server tick publication.
 
 Initial optional prediction is **only an isolated kinematic capsule against static collision**. No dynamic body,
-moving platform, water, damage/inventory effect or other predicted actor participates. Capture position, velocity,
+moving platform, water, damage/inventory effect or other predicted actor participates. Predicting a player's own
+vessel against local water is a later provider under the water decision. Capture position, velocity,
 ground/contact mode, controller state, input sequence, tick and immutable collision revision. Keep 64 ticks, at most
 256 KiB, and replay at most eight ticks or 1 ms CPU per presented frame, whichever comes first. Partial replay remains
 unpublished; present confirmed state until the branch catches up. If it cannot catch up within four frames or any
@@ -515,7 +503,7 @@ the design does not claim a hard whole-browser memory cap from a Rust queue limi
 
 Before code, the state trace covers mixed accepted/rejected actions, a later sequence resolving across a pending timed
 gap, duplicate and expired inputs, uncertain one-shot reconnect, durable operation lookup, spawn/first-state and
-detach/dependent-state atomicity, optional water pose/sample correspondence, visual-only compatible versus collider/rule
+detach/dependent-state atomicity, optional water event records and lead time, visual-only compatible versus collider/rule
 incompatible client builds, fresh join, dropped acknowledgement, partial baseline and same-epoch result-rich resync,
 interest leave/re-enter, source edit during match, slow GPU, mobile suspend/resume and exhausted bounded retention
 without changing authority.

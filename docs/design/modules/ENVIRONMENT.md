@@ -342,8 +342,8 @@ worlds preload their required physical support; visual residency and no-sky rend
 physical-domain streaming needs its own complete transfer/conservation/admission design, not mandatory full-world
 resume serialization in every initial provider.
 
-The fixed water projection is an optional E1 network recipe described in NETWORK-SPEC, not a generic N1 requirement.
-When selected, each confirmed query and body pose share one atomic group and evaluation tick, with declared domain,
-validity/error and semantic manifest mapping. Gameplay query meaning cannot be changed by client visual tier.
+Multiplayer water shares causes, not state, under the [water decision](../decisions/E1-GPU-WATER.md); its event
+records are an optional E1 network recipe in NETWORK-SPEC, not a generic N1 requirement. Gameplay force meaning
+cannot be changed by client visual tier.
 R4's first multiplayer workload contains no water or prediction; the separate R3/R4 combination has its own admission
 calculation. This removes optional codec/solver cost from unrelated games without losing physical coupling contracts.
