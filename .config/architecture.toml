@@ -52,6 +52,30 @@ license = "MIT OR Apache-2.0"
 purpose = "Long-lived native V1 frame extraction worker pool over retained committed visual pages"
 target_cost = "Native V1 scene only; one bounded extraction task and one worker initially, with dispatch, wake, allocation and overlap costs measured against the serial path; browser Wasm stays serial"
 
+[external_dependencies.wasm-bindgen]
+requirement = "=0.2.129"
+license = "MIT OR Apache-2.0"
+purpose = "Export the existing V1 frame host to a thin Chrome WebGPU page"
+target_cost = "Browser V1 scene only; JS/Wasm boundary once per animation callback, with no duplicate simulation or render implementation"
+
+[external_dependencies.wasm-bindgen-futures]
+requirement = "=0.4.79"
+license = "MIT OR Apache-2.0"
+purpose = "Return asynchronous wgpu adapter, device and prepared-scene startup to the browser page"
+target_cost = "Browser V1 scene startup only; no per-frame future allocation from this adapter"
+
+[external_dependencies.web-sys]
+requirement = "=0.3.106"
+license = "MIT OR Apache-2.0"
+purpose = "Pass the browser canvas to wgpu without a second window framework"
+target_cost = "Browser V1 scene only with canvas and diagnostic console bindings; no DOM traversal or per-frame browser object retention"
+
+[external_dependencies.web-time]
+requirement = "=1.1.0"
+license = "MIT OR Apache-2.0"
+purpose = "Measure browser frame callback CPU stages with the Web Performance monotonic clock"
+target_cost = "Browser V1 scene only; one monotonic clock read per measured stage, with native std::time retained"
+
 [external_dependencies.divan]
 requirement = "=0.1.21"
 license = "MIT OR Apache-2.0"

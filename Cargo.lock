@@ -1929,6 +1929,10 @@ dependencies = [
  "thrum-core",
  "thrum-render",
  "thrum-source",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
  "wgpu",
  "winit",
 ]

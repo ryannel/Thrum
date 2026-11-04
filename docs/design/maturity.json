@@ -195,7 +195,7 @@
       "platform_performance": {
         "mac": "not_qualified_locked_display_no_presented_frame_measurement",
         "windows": "not_run",
-        "browser": "compile_only_not_run",
+        "browser": "separate_v1_chrome_surface_diagnostic_runs",
         "ios": "simulator_target_compile_only_not_run",
         "android": "not_run"
       },
@@ -203,7 +203,24 @@
       "evidence": [
         "../evidence/render/V1-MACOS-SURFACE-2026-11-04.md"
       ],
-      "scope": "Prepared surface pass and one-request/one-result macOS acquisition worker preserve fixed-step world progress during drawable occlusion. A half-second window-title update presents the latest completed CPU phase and GPU pass timings, or explicitly says timestamps are unavailable; this UI is compile-checked but not yet observed on an unlocked display. Metal synthetic-surface readback proves every oriented SDR pixel and two surface formats; an unlocked 600-frame window run, resize while presenting, visual inspection, callback/GPU costs, cancellable surface lifecycle, device loss, cooked content and Chrome/iPhone runtime remain open."
+      "scope": "Prepared surface pass and one-request/one-result macOS acquisition worker preserve fixed-step world progress during drawable occlusion. A half-second window-title update presents the latest completed CPU phase and GPU pass timings, or explicitly says timestamps are unavailable; this UI is compile-checked but not yet observed on an unlocked display. Metal synthetic-surface readback proves every oriented SDR pixel and two surface formats; an unlocked 600-frame window run, resize while presenting, visual inspection, callback/GPU costs, cancellable surface lifecycle, device loss, cooked content, broader Chrome qualification and iPhone runtime remain open."
+    },
+    "V1_browser_surface": {
+      "implementation": "partial_thin_chrome_webgpu_canvas_adapter_over_existing_serial_v1_frame_host",
+      "functional_validation": "chrome_156_real_webgpu_600_complete_frames_plus_two_second_pause_960x540_resize_and_250ms_visible_overload_recovery_probes; strict_wasm_clippy_and_overridden_cargo_target_dir_build_pass",
+      "experienced_quality": "synthetic_lit_grid_and_fixed_aspect_bars_visually_inspected_not_v1_art_acceptance",
+      "platform_performance": {
+        "mac": "browser_on_apple_m3_max_diagnostic_not_native_window_qualification",
+        "windows": "not_run",
+        "browser": "chrome_156_apple_m3_max_600_frame_diagnostic_not_sustained_budget",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Chrome 156.0.8078.80 WebGPU on Apple M3 Max, final 1280x720 canvas artifact: 601 presented / 600 complete timed samples, 1204 callbacks, 601 world ticks, zero unavailable/shed/report drops, tick CPU p50/p95 300/400 us, encode 100/200 us, GPU near/far/forward/display/present p50 0.066/0.066/0.131/0.066/0.066 ms. Two-second pause probe finished at 12.040 s with 601 ticks and one counted same-frame timestamp clamp. Resize to 960x540 finished with 611 ticks, 3 shed optional views and zero report/timing faults. A visible 250ms delayed callback counted one overload/15 refused ticks and still finished 600 timed frames. Browser timing values are coarse/quantized; no sustained budget claim.",
+      "evidence": [
+        "../evidence/render/V1-CHROME-WEBGPU-2026-11-04.md"
+      ],
+      "scope": "A Wasm-bindgen canvas adapter owns WebGPU surface acquisition, configuration and presentation; the existing fixed-step FrameHost owns one serial simulation and render path. Hidden-time pause, queued-tick drain, counted RAF timestamp clamp, explicit visible overload/refused-tick recovery, conditional acquisition and deferred resize preserve authority progress without silently applying refused wall-time ticks. The scene is synthetic. Cooked hot reload, actual background-tab visibility, surface loss/device recreation, full browser callback cost, long-run memory, visual acceptance, non-Chrome browsers, iPhone rendering and sustained device budgets remain open."
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_three_slot_offscreen_gpu_frame_ring_in_running_v1_scene",

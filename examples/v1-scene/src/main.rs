@@ -76,6 +76,12 @@ async fn run() -> Result<String, String> {
         let now = origin.elapsed();
         let callback_start = Instant::now();
         let report = host.drive(now, None)?;
+        if let Some(refused_ticks) = report.overload {
+            return Err(format!(
+                "fixed-clock overload: {} ticks refused, {} still queued",
+                refused_ticks, report.queued_ticks
+            ));
+        }
         while let Some(sample) = host.poll_completed()? {
             if samples.len() < FRAMES {
                 samples.push(sample);
