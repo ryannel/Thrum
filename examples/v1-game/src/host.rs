@@ -357,6 +357,8 @@ impl EncodedFrame<'_> {
         let encode_cpu = self.scene_encode_cpu + present_start.elapsed();
         let mut report = self.report.take().ok_or("encoded report consumed")?;
         let sample = self.sample.take().ok_or("encoded sample consumed")?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let presentation_alpha = sample.presentation_alpha;
         self.host.finish_encoded(
             self.slot_index,
             &mut report,
@@ -371,6 +373,7 @@ impl EncodedFrame<'_> {
         {
             self.host.last_view_source = Some(self.source);
             self.host.last_render_slot = Some(self.slot_index);
+            self.host.last_presentation_alpha = Some(presentation_alpha);
         }
         Ok(report)
     }
@@ -552,6 +555,8 @@ pub struct FrameHost {
     last_view_source: Option<SourceTick>,
     #[cfg(not(target_arch = "wasm32"))]
     last_render_slot: Option<usize>,
+    #[cfg(not(target_arch = "wasm32"))]
+    last_presentation_alpha: Option<f32>,
     scene: SyntheticScene,
     render_extent: [u32; 2],
     changed_slots: Vec<u32>,
@@ -745,6 +750,8 @@ impl FrameHost {
             #[cfg(not(target_arch = "wasm32"))]
             #[cfg(not(target_arch = "wasm32"))]
             last_render_slot: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            last_presentation_alpha: None,
             scene,
             render_extent: config.render_extent,
             changed_slots,
@@ -805,6 +812,26 @@ impl FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_ready_view(&self) -> bool {
         self.worker_ready.is_some()
+    }
+
+    /// A retained current-tick extraction can be sampled at a later display
+    /// time without asking the worker or advancing the authoritative world.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn can_interpolate_current_source(&self) -> bool {
+        self.worker.as_ref().is_some_and(|worker| !worker.is_busy())
+            && self
+                .extractor
+                .as_ref()
+                .and_then(|extractor| extractor.frame().source())
+                .is_some_and(|source| {
+                    source.epoch == self.sim.epoch().0
+                        && source.timeline == self.sim.timeline()
+                        && source.tick == self.sim.tick()
+                })
+            && self
+                .slots
+                .iter()
+                .any(|slot| matches!(slot.state, SlotState::Free))
     }
 
     /// A previously prepared scene can be shown while the native worker is late.
@@ -879,6 +906,7 @@ impl FrameHost {
         self.visual_generation = self.visual_generation.wrapping_add(1);
         self.last_view_source = None;
         self.last_render_slot = None;
+        self.last_presentation_alpha = None;
         if let Some(extractor) = self.extractor.as_mut() {
             extractor.invalidate_history();
         }
@@ -1309,11 +1337,14 @@ impl FrameHost {
         let Some(prepared) = self.prepare_extracted(slot_index, report, frame)? else {
             return Ok(());
         };
+        #[cfg(not(target_arch = "wasm32"))]
+        let presentation_alpha = prepared.sample.presentation_alpha;
         self.encode_prepared(slot_index, report, surface, prepared.sample, wall_start)?;
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.last_view_source = Some(prepared.source);
             self.last_render_slot = Some(slot_index);
+            self.last_presentation_alpha = Some(presentation_alpha);
         }
         Ok(())
     }
@@ -1579,7 +1610,7 @@ impl FrameHost {
             encoder,
             FrameSample {
                 tick: source.tick,
-                presentation_alpha: 1.0,
+                presentation_alpha: self.last_presentation_alpha.unwrap_or(1.0),
                 submission_order: 0,
                 completed_ticks: report.completed_ticks,
                 queued_ticks: report.queued_ticks,
@@ -1647,6 +1678,7 @@ impl FrameHost {
                 self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
             } else {
                 self.dispatch_latest_native(report, tick_cpu)?;
+                self.try_submit_interpolated_view(report, tick_cpu, wall_start, surface)?;
             }
             return Ok(());
         }
@@ -1700,7 +1732,7 @@ impl FrameHost {
                 completed_ticks: report.completed_ticks,
                 queued_ticks: report.queued_ticks,
                 frame_tick: self.sim.tick(),
-                presentation_alpha: 1.0,
+                presentation_alpha: self.clock.presentation_alpha(),
             }
         } else {
             SubmitFrame {
@@ -1712,7 +1744,11 @@ impl FrameHost {
                 completed_ticks: completed.completed_ticks,
                 queued_ticks: completed.queued_ticks,
                 frame_tick: completed.tick,
-                presentation_alpha: 1.0,
+                presentation_alpha: if completed.tick == self.sim.tick() {
+                    self.clock.presentation_alpha()
+                } else {
+                    1.0
+                },
             }
         };
         self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
@@ -1796,6 +1832,77 @@ impl FrameHost {
             return Ok(());
         };
         self.submit_reused_view(slot_index, report, surface, source, tick_cpu, wall_start)
+    }
+
+    /// Re-sample the retained extracted endpoints for a new display time even
+    /// when no world tick or extraction ran. This keeps high-refresh motion
+    /// smooth without inventing another authoritative state or worker task.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn try_submit_interpolated_view(
+        &mut self,
+        report: &mut DriveReport,
+        tick_cpu: Duration,
+        wall_start: Instant,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<(), String> {
+        let Some(surface) = surface else {
+            return Ok(());
+        };
+        if self
+            .presenter
+            .as_ref()
+            .is_none_or(|presenter| presenter.extent() != surface.extent)
+        {
+            return Ok(());
+        }
+        let Some(source) = self
+            .extractor
+            .as_ref()
+            .and_then(|extractor| extractor.frame().source())
+        else {
+            return Ok(());
+        };
+        if source.epoch != self.sim.epoch().0
+            || source.timeline != self.sim.timeline()
+            || source.tick != self.sim.tick()
+        {
+            return Ok(());
+        }
+        let alpha = self.clock.presentation_alpha();
+        if self.last_view_source == Some(source)
+            && self
+                .last_presentation_alpha
+                .is_some_and(|previous| previous.to_bits() == alpha.to_bits())
+        {
+            return Ok(());
+        }
+        let Some(slot_index) = self
+            .slots
+            .iter()
+            .position(|slot| matches!(slot.state, SlotState::Free))
+        else {
+            self.dropped_views = self.dropped_views.saturating_add(1);
+            report.dropped_view = true;
+            return Ok(());
+        };
+        self.submit_extracted(
+            slot_index,
+            report,
+            Some(surface),
+            SubmitFrame {
+                extracted: ExtractReport::default(),
+                extract_cpu: Duration::ZERO,
+                worker_queue_cpu: Duration::ZERO,
+                worker_ready_cpu: Duration::ZERO,
+                tick_cpu,
+                completed_ticks: report.completed_ticks,
+                queued_ticks: report.queued_ticks,
+                frame_tick: source.tick,
+                presentation_alpha: alpha,
+            },
+            wall_start,
+        )?;
+        Ok(())
     }
 
     #[cfg(not(target_arch = "wasm32"))]
