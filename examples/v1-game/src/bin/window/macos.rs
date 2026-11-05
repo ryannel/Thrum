@@ -435,7 +435,12 @@ impl App {
             ));
         }
         let tick = percentile(&presented, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
+        let upload = percentile(&presented, |sample| sample.upload_cpu.as_secs_f64() * 1e6);
+        let view = percentile(&presented, |sample| f64::from(sample.view_update_ns) / 1e3);
         let encode = percentile(&presented, |sample| sample.encode_cpu.as_secs_f64() * 1e6);
+        let frame_cpu = percentile(&presented, |sample| {
+            (sample.upload_cpu + sample.encode_cpu).as_secs_f64() * 1e6
+        });
         let gpu = if presented
             .iter()
             .all(|sample| sample.gpu_present_ns.is_some())
@@ -454,7 +459,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -476,8 +481,14 @@ impl App {
             wall.1,
             tick.0,
             tick.1,
+            view.0,
+            view.1,
+            upload.0,
+            upload.1,
             encode.0,
             encode.1,
+            frame_cpu.0,
+            frame_cpu.1,
         ))
     }
 }

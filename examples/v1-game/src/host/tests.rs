@@ -14,6 +14,7 @@ fn sample(tick: u64) -> FrameSample {
         visual_age_ticks: 0,
         reused_visual: false,
         upload_cpu: Duration::ZERO,
+        view_update_ns: 0,
         encode_cpu: Duration::ZERO,
         wall: Duration::ZERO,
         gpu_pass_ns: None,

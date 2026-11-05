@@ -105,6 +105,8 @@ pub(super) struct ClusterTable {
     pub(super) indices: Vec<u8>,
     pub(super) dropped_references: usize,
     pub(super) active: bool,
+    slots: Vec<Slot>,
+    max_lights: usize,
 }
 
 impl ClusterTable {
@@ -115,6 +117,8 @@ impl ClusterTable {
             indices: vec![0; 4],
             dropped_references: 0,
             active: false,
+            slots: Vec::new(),
+            max_lights: 0,
         }
     }
 
@@ -125,6 +129,40 @@ impl ClusterTable {
         if lights.len() > 4096 {
             return Err(RenderError::SceneCapacity);
         }
+        let mut table = Self::empty();
+        table.max_lights = lights.len();
+        if table.max_lights != 0 {
+            table.slots.resize(COUNT, Slot::default());
+            table.lights.reserve(table.max_lights * 32);
+            table.heads.reserve(COUNT * 8);
+            table
+                .indices
+                .reserve(COUNT * table.max_lights.min(CAPACITY) * 4);
+        }
+        table.rebuild(lights, view)?;
+        Ok(table)
+    }
+
+    pub(super) fn capacities(&self) -> [u64; 3] {
+        if self.max_lights == 0 {
+            return [32, 8, 4];
+        }
+        [
+            (self.max_lights * 32) as u64,
+            (COUNT * 8) as u64,
+            (COUNT * self.max_lights.min(CAPACITY) * 4) as u64,
+        ]
+    }
+
+    /// Reuse the bounded candidate and packed-byte capacity across live views.
+    pub(super) fn rebuild(
+        &mut self,
+        lights: &[SyntheticPointLight],
+        view: &SyntheticView,
+    ) -> Result<(), RenderError> {
+        if lights.len() > 4096 || lights.len() > self.max_lights {
+            return Err(RenderError::SceneCapacity);
+        }
         for light in lights.iter().copied() {
             validate(light)?;
         }
@@ -133,14 +171,34 @@ impl ClusterTable {
         }) {
             // The shader's uniform off-state returns before reading clusters.
             // Keep valid minimal bindings without preparing a dead 3D grid.
-            return Ok(Self::empty());
+            self.lights.clear();
+            self.lights.resize(32, 0);
+            self.heads.clear();
+            self.heads.resize(8, 0);
+            self.indices.clear();
+            self.indices.resize(4, 0);
+            self.dropped_references = 0;
+            self.active = false;
+            return Ok(());
         }
-        let mut slots = vec![Slot::default(); COUNT];
+        if self.slots.len() == COUNT {
+            for slot in &mut self.slots {
+                slot.len = 0;
+            }
+        } else {
+            self.slots.resize(COUNT, Slot::default());
+        }
         let score_geometry = ScoreGeometry::new(view);
-        let mut light_bytes = Vec::with_capacity(lights.len().max(1) * 32);
+        self.lights.clear();
+        self.lights.reserve(self.max_lights * 32);
+        self.heads.clear();
+        self.heads.reserve(COUNT * 8);
+        self.indices.clear();
+        self.indices
+            .reserve(COUNT * self.max_lights.min(CAPACITY) * 4);
         let mut dropped = 0;
         for (index, light) in lights.iter().copied().enumerate() {
-            pack_light(light, &mut light_bytes);
+            pack_light(light, &mut self.lights);
             if light.candela.iter().all(|value| *value == 0.0) {
                 continue;
             }
@@ -158,7 +216,7 @@ impl ClusterTable {
                         {
                             continue;
                         }
-                        let slot = &mut slots[(z * Y + y) * X + x];
+                        let slot = &mut self.slots[(z * Y + y) * X + x];
                         let candidate = Candidate {
                             index,
                             score: score(score_position, intensity, x, y, z, &score_geometry),
@@ -187,32 +245,30 @@ impl ClusterTable {
                 }
             }
         }
-        if light_bytes.is_empty() {
-            light_bytes.resize(32, 0);
+        if self.lights.is_empty() {
+            self.lights.resize(32, 0);
         }
-        let mut heads = Vec::with_capacity(COUNT * 8);
-        let mut indices = Vec::new();
-        for slot in &mut slots {
+        for slot in &mut self.slots {
             let len = usize::from(slot.len);
             slot.candidates[..len].sort_unstable_by_key(|candidate| candidate.index);
             let offset =
-                u32::try_from(indices.len() / 4).map_err(|_| RenderError::SceneCapacity)?;
-            heads.extend_from_slice(&offset.to_le_bytes());
-            heads.extend_from_slice(&u32::from(slot.len).to_le_bytes());
+                u32::try_from(self.indices.len() / 4).map_err(|_| RenderError::SceneCapacity)?;
+            self.heads.extend_from_slice(&offset.to_le_bytes());
+            self.heads
+                .extend_from_slice(&u32::from(slot.len).to_le_bytes());
             for candidate in &slot.candidates[..len] {
-                indices.extend_from_slice(&candidate.index.to_le_bytes());
+                self.indices
+                    .extend_from_slice(&candidate.index.to_le_bytes());
             }
         }
-        if indices.is_empty() {
-            return Ok(Self::empty());
+        if self.indices.is_empty() {
+            self.indices.resize(4, 0);
+            self.active = false;
+        } else {
+            self.active = true;
         }
-        Ok(Self {
-            lights: light_bytes,
-            heads,
-            indices,
-            dropped_references: dropped,
-            active: true,
-        })
+        self.dropped_references = dropped;
+        Ok(())
     }
 }
 
@@ -471,6 +527,57 @@ mod tests {
                 .any(|item| u32::from_le_bytes(*item) == u32::try_from(CAPACITY).unwrap());
         }
         assert!(strong_retained, "strongest source must survive overflow");
+    }
+
+    #[test]
+    fn rebuilt_overflow_matches_fresh_view_without_old_references() {
+        let mut lights = vec![
+            SyntheticPointLight {
+                position: [0.0, 0.0, 0.5],
+                radius: 0.5,
+                candela: [1.0; 3],
+            };
+            CAPACITY + 1
+        ];
+        let view = SyntheticView::default();
+        let mut reused = ClusterTable::build(&lights, &view).expect("first view");
+        lights[0].position = [4.0; 3];
+        lights[CAPACITY].candela = [100.0; 3];
+        reused.rebuild(&lights, &view).expect("changed view");
+        let fresh = ClusterTable::build(&lights, &view).expect("fresh reference");
+        assert_eq!(reused.lights, fresh.lights);
+        assert_eq!(reused.heads, fresh.heads);
+        assert_eq!(reused.indices, fresh.indices);
+        assert_eq!(reused.dropped_references, fresh.dropped_references);
+    }
+
+    #[test]
+    fn initially_dark_light_activates_without_growing_cpu_buffers() {
+        let mut light = SyntheticPointLight {
+            position: [0.0, 0.0, 0.5],
+            radius: 0.5,
+            candela: [0.0; 3],
+        };
+        let view = SyntheticView::default();
+        let mut table = ClusterTable::build(&[light], &view).expect("dark prepare");
+        let capacities = [
+            table.slots.capacity(),
+            table.lights.capacity(),
+            table.heads.capacity(),
+            table.indices.capacity(),
+        ];
+        light.candela = [10.0; 3];
+        table.rebuild(&[light], &view).expect("activate light");
+        assert!(table.active);
+        assert_eq!(
+            capacities,
+            [
+                table.slots.capacity(),
+                table.lights.capacity(),
+                table.heads.capacity(),
+                table.indices.capacity(),
+            ]
+        );
     }
 
     #[test]

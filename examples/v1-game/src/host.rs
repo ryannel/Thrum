@@ -24,8 +24,8 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
-        SyntheticView,
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight,
+        SyntheticScene, SyntheticView,
     },
     timing::GpuTimings,
 };
@@ -46,6 +46,41 @@ const WIDTH: u32 = 640;
 const HEIGHT: u32 = 360;
 const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 3;
+const GAME_SUN: SyntheticLight = SyntheticLight {
+    direction_to_light: [0.4, -0.6, 1.0],
+    irradiance: [4.0; 3],
+};
+
+#[cfg(not(target_arch = "wasm32"))]
+fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironment {
+    let values = product.values();
+    PhotometricEnvironment {
+        toward_sun: values.toward_sun(),
+        sun_lux: values.sun_lux(),
+        sun_colour: values.sun_colour(),
+        ambient_lux: values.ambient_lux(),
+        background_radiance: values.background_radiance(),
+    }
+}
+
+fn frame_phase(tick: u64) -> f32 {
+    let cycle = u16::try_from(tick % 360).expect("phase is less than 360");
+    f32::from(cycle) * (std::f32::consts::TAU / 360.0)
+}
+
+fn frame_view(tick: u64) -> Result<SyntheticView, String> {
+    let phase = frame_phase(tick);
+    SyntheticView::perspective(
+        [phase.sin() * 0.08, (phase.cos() - 1.0) * 0.04, 2.0],
+        [0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        1.0,
+        WIDTH as f32 / HEIGHT as f32,
+        0.1,
+        20.0,
+    )
+    .map_err(|error| format!("live camera: {error:?}"))
+}
 
 /// One completed simulation-to-GPU frame. GPU pass values are absent when the
 /// adapter lacks timestamp queries or a timing readback fails. Callback time
@@ -74,6 +109,8 @@ pub struct FrameSample {
     pub reused_visual: bool,
     /// CPU time for scene mapping, ABI packing and queue writes.
     pub upload_cpu: Duration,
+    /// Nanoseconds within upload for live camera, local lights and cascade refit.
+    pub view_update_ns: u32,
     /// CPU time for render command encoding and timestamp registration.
     pub encode_cpu: Duration,
     /// CPU wall time for this drive call, including nonblocking GPU polling.
@@ -89,11 +126,11 @@ pub struct FrameSample {
     /// The GPU frame completed but its optional timing batch was unusable.
     pub timing_fault: bool,
     /// Records whose changed ABI bytes were enqueued for upload.
-    pub uploaded_rows: usize,
+    pub uploaded_rows: u32,
     /// Queue payload bytes for this update.
     pub uploaded_bytes: usize,
     /// Accepted movers with valid adjacent-tick previous positions.
-    pub moving: usize,
+    pub moving: u32,
     /// Presentation samples/updates dropped with explicit telemetry.
     pub dropped_presentation: usize,
     /// Local-light references omitted from this prepared view after a cluster
@@ -199,14 +236,7 @@ impl VisualPrepareInputs {
     ///
     /// Returns a GPU preparation fault without affecting the running host.
     pub async fn prepare(self, product: EnvironmentProduct) -> Result<PreparedEnvironment, String> {
-        let values = product.values();
-        let light = PhotometricEnvironment {
-            toward_sun: values.toward_sun(),
-            sun_lux: values.sun_lux(),
-            sun_colour: values.sun_colour(),
-            ambient_lux: values.ambient_lux(),
-            background_radiance: values.background_radiance(),
-        };
+        let light = photometric(&product);
         let prepared = PreparedSynthetic::prepare_with_photometric_environment(
             &self.device,
             &self.queue,
@@ -289,6 +319,17 @@ pub struct FrameHost {
 }
 
 impl FrameHost {
+    fn frame_lighting(&self, tick: u64) -> FrameLighting {
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(product) = &self.visual_product {
+            return FrameLighting::Photometric(photometric(product));
+        }
+        FrameLighting::Diagnostic(SyntheticLight {
+            direction_to_light: [0.4 + frame_phase(tick).sin() * 0.1, -0.6, 1.0],
+            ..GAME_SUN
+        })
+    }
+
     /// Prepare one 10k-entity scene, all four scene passes and an optional
     /// surface presentation pass before the first draw.
     /// # Errors
@@ -335,18 +376,10 @@ impl FrameHost {
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
         scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
-        let prepared = PreparedSynthetic::prepare_with_light(
-            device,
-            queue,
-            GENERATION,
-            &scene,
-            SyntheticLight {
-                direction_to_light: [0.4, -0.6, 1.0],
-                irradiance: [4.0; 3],
-            },
-        )
-        .await
-        .map_err(|error| format!("prepare: {error:?}"))?;
+        let prepared =
+            PreparedSynthetic::prepare_with_light(device, queue, GENERATION, &scene, GAME_SUN)
+                .await
+                .map_err(|error| format!("prepare: {error:?}"))?;
         let presenter = match surface {
             Some(profile) => Some(
                 SurfacePresenter::prepare(device, GENERATION, [WIDTH, HEIGHT], profile)
@@ -939,6 +972,18 @@ impl FrameHost {
                 .frame(),
             &mut self.changed_slots,
         );
+        self.scene.view = frame_view(frame.frame_tick)?;
+        let lighting = self.frame_lighting(frame.frame_tick);
+        let view_update_start = Instant::now();
+        self.prepared
+            .update_frame(
+                &self.queue,
+                &mut self.slots[slot_index].target,
+                &self.scene,
+                lighting,
+            )
+            .map_err(|error| format!("live view update: {error:?}"))?;
+        let view_update_cpu = view_update_start.elapsed();
         let uploaded = self
             .prepared
             .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
@@ -965,15 +1010,16 @@ impl FrameHost {
                     .unwrap_or(u32::MAX),
                 reused_visual: false,
                 upload_cpu,
+                view_update_ns: duration_ns_u32(view_update_cpu),
                 encode_cpu: Duration::ZERO,
                 wall: Duration::ZERO,
                 gpu_pass_ns: None,
                 gpu_present_ns: None,
                 surface_presented: false,
                 timing_fault: false,
-                uploaded_rows: uploaded.changed_rows,
+                uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,
-                moving,
+                moving: u32::try_from(moving).unwrap_or(u32::MAX),
                 dropped_presentation: frame.extracted.dropped_capacity
                     + frame.extracted.dropped_duplicate
                     + frame.extracted.dropped_invalid
@@ -1050,7 +1096,9 @@ impl FrameHost {
             wall_start,
             encode_start,
             surface_presented,
-        )
+        )?;
+        self.prepared.commit_frame();
+        Ok(())
     }
 
     fn finish_encoded(
@@ -1130,6 +1178,7 @@ impl FrameHost {
                     .unwrap_or(u32::MAX),
                 reused_visual: true,
                 upload_cpu: Duration::ZERO,
+                view_update_ns: 0,
                 encode_cpu: Duration::ZERO,
                 wall: Duration::ZERO,
                 gpu_pass_ns: None,
@@ -1385,8 +1434,13 @@ impl FrameHost {
             .unwrap_or(u64::MAX);
             self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
         }
-        let target = OffscreenTarget::new(&self.device, &self.prepared, WIDTH, HEIGHT)
+        self.scene.view = frame_view(self.sim.tick())?;
+        let lighting = self.frame_lighting(self.sim.tick());
+        let mut target = OffscreenTarget::new(&self.device, &self.prepared, WIDTH, HEIGHT)
             .map_err(|error| format!("capture target: {error:?}"))?;
+        self.prepared
+            .update_frame(&self.queue, &mut target, &self.scene, lighting)
+            .map_err(|error| format!("capture view update: {error:?}"))?;
         let mut pixels = target.readback(&self.device);
         let mut encoder = self
             .device

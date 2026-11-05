@@ -168,9 +168,31 @@ pub struct PhotometricEnvironment {
     pub background_radiance: [f64; 3],
 }
 
-enum Lighting {
+/// One frame's directional and background lighting in a declared unit system.
+#[derive(Clone, Copy, Debug)]
+pub enum FrameLighting {
+    /// Finite diagnostic illumination for the synthetic game scene.
     Diagnostic(SyntheticLight),
+    /// Photometric environment converted at the presentation boundary.
     Photometric(PhotometricEnvironment),
+}
+
+fn pack_frame_lighting(
+    lighting: FrameLighting,
+) -> Result<([u8; LIGHT_BYTES], wgpu::Color, usize), RenderError> {
+    match lighting {
+        FrameLighting::Diagnostic(light) => Ok((
+            light.pack()?,
+            wgpu::Color {
+                r: 0.02 * f64::from(PRE_EXPOSURE),
+                g: 0.03 * f64::from(PRE_EXPOSURE),
+                b: 0.04 * f64::from(PRE_EXPOSURE),
+                a: 1.0,
+            },
+            0,
+        )),
+        FrameLighting::Photometric(environment) => environment.pack(),
+    }
 }
 
 impl PhotometricEnvironment {
@@ -346,6 +368,13 @@ pub struct PreparedSynthetic {
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
     view_sample: SyntheticView,
+    pending_view: Option<SyntheticView>,
+    frame_revision: u64,
+    directional_buffer: wgpu::Buffer,
+    local_light_buffer: wgpu::Buffer,
+    cluster_head_buffer: wgpu::Buffer,
+    cluster_index_buffer: wgpu::Buffer,
+    clusters: ClusterTable,
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
     instances: wgpu::BindGroup,
@@ -407,7 +436,7 @@ impl PreparedSynthetic {
             queue,
             generation,
             scene,
-            Lighting::Diagnostic(light),
+            FrameLighting::Diagnostic(light),
             exposure,
         )
         .await
@@ -431,7 +460,7 @@ impl PreparedSynthetic {
             queue,
             generation,
             scene,
-            Lighting::Photometric(environment),
+            FrameLighting::Photometric(environment),
             exposure,
         )
         .await
@@ -446,35 +475,19 @@ impl PreparedSynthetic {
         queue: &wgpu::Queue,
         generation: u64,
         scene: &SyntheticScene,
-        lighting: Lighting,
+        lighting: FrameLighting,
         exposure: f32,
     ) -> Result<Self, RenderError> {
         let display_gain = checked_display_gain(exposure)?;
-        let (mut light_data, background, presentation_light_clamps) = match lighting {
-            Lighting::Diagnostic(light) => (
-                light.pack()?,
-                wgpu::Color {
-                    r: 0.02 * f64::from(PRE_EXPOSURE),
-                    g: 0.03 * f64::from(PRE_EXPOSURE),
-                    b: 0.04 * f64::from(PRE_EXPOSURE),
-                    a: 1.0,
-                },
-                0,
-            ),
-            Lighting::Photometric(environment) => environment.pack()?,
-        };
-        let shadow_enabled = scene.sun_shadows
-            && light_data[16..28]
-                .as_chunks::<4>()
-                .0
-                .iter()
-                .any(|word| f32::from_le_bytes(*word) > 0.0);
+        let (mut light_data, background, presentation_light_clamps) =
+            pack_frame_lighting(lighting)?;
+        // Prepare the declared shadow recipe even while the Sun is dark, so a
+        // later live light change can use the same pipelines and target maps.
+        let shadow_enabled = scene.sun_shadows;
         let clusters = ClusterTable::build(&scene.local_lights, &scene.view)?;
         let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
-        let local_light_bytes = clusters.lights.len() as u64;
-        let cluster_head_bytes = clusters.heads.len() as u64;
-        let cluster_index_bytes = clusters.indices.len() as u64;
+        let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
         let dropped_light_references = clusters.dropped_references;
         let limits = device.limits();
         if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
@@ -507,21 +520,31 @@ impl PreparedSynthetic {
             packed_instances.extend_from_slice(&pack_synthetic_instance(instance, material_count)?);
         }
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
-        let material_buffer =
-            storage_buffer(device, queue, "synthetic materials", &packed_materials);
-        let instance_buffer =
-            storage_buffer(device, queue, "synthetic forward opaque", &packed_instances);
+        let material_buffer = storage_buffer(
+            device,
+            queue,
+            "synthetic materials",
+            &packed_materials,
+            material_bytes,
+        );
+        let instance_buffer = storage_buffer(
+            device,
+            queue,
+            "synthetic forward opaque",
+            &packed_instances,
+            instance_bytes,
+        );
         let mut instance_upload = InstanceUpload::new(
             instance_buffer,
             packed_instances,
             material_count,
             instance_count,
         );
-        let view_data = scene.view.pack_view(exposure);
+        let view_data = scene.view.pack_view(&scene.view, exposure);
         let view_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic ABI2 view"),
             contents: &view_data,
-            usage: wgpu::BufferUsages::UNIFORM,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let mut view_entries = vec![
             uniform_layout(
@@ -581,15 +604,26 @@ impl PreparedSynthetic {
             mapped_at_creation: false,
         });
         queue.write_buffer(&directional, 0, &light_data);
-        let local_lights =
-            storage_buffer(device, queue, "synthetic local lights", &clusters.lights);
-        let cluster_heads =
-            storage_buffer(device, queue, "synthetic cluster heads", &clusters.heads);
+        let local_lights = storage_buffer(
+            device,
+            queue,
+            "synthetic local lights",
+            &clusters.lights,
+            local_light_bytes,
+        );
+        let cluster_heads = storage_buffer(
+            device,
+            queue,
+            "synthetic cluster heads",
+            &clusters.heads,
+            cluster_head_bytes,
+        );
         let cluster_indices = storage_buffer(
             device,
             queue,
             "synthetic cluster indices",
             &clusters.indices,
+            cluster_index_bytes,
         );
         let light = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic clustered light lists"),
@@ -815,6 +849,13 @@ impl PreparedSynthetic {
             view_layout,
             view_buffer,
             view_sample: scene.view,
+            pending_view: None,
+            frame_revision: 0,
+            directional_buffer: directional,
+            local_light_buffer: local_lights,
+            cluster_head_buffer: cluster_heads,
+            cluster_index_buffer: cluster_indices,
+            clusters,
             light,
             materials,
             instances,
@@ -843,10 +884,82 @@ impl PreparedSynthetic {
     pub fn presentation_light_clamps(&self) -> usize {
         self.presentation_light_clamps
     }
-    /// Number of prepared GPU scene passes for this light state. A zero Sun
-    /// omits both cascades and their resources.
+    /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         if self.shadow.is_some() { 4 } else { 2 }
+    }
+    /// Update one live view and its directional, local-light and cascade data.
+    /// Pipelines, bind groups and target textures stay prepared. Call after the
+    /// previous frame was submitted, then commit the view only after this frame
+    /// is submitted. A dropped frame leaves temporal history unchanged.
+    /// # Errors
+    /// Refuses a foreign target, changed scene capacity or invalid frame data
+    /// before modifying the GPU buffers.
+    pub fn update_frame(
+        &mut self,
+        queue: &wgpu::Queue,
+        target: &mut OffscreenTarget,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+    ) -> Result<(), RenderError> {
+        self.check_owner(target)?;
+        if scene.instances.len()
+            != usize::try_from(self.instance_count).map_err(|_| RenderError::SceneCapacity)?
+        {
+            return Err(RenderError::SceneCapacity);
+        }
+        let (mut light_data, background, clamps) = pack_frame_lighting(lighting)?;
+        self.clusters.rebuild(&scene.local_lights, &scene.view)?;
+        if [
+            (self.clusters.lights.len(), self.local_light_bytes),
+            (self.clusters.heads.len(), self.cluster_head_bytes),
+            (self.clusters.indices.len(), self.cluster_index_bytes),
+        ]
+        .into_iter()
+        .any(|(len, capacity)| u64::try_from(len).map_or(true, |len| len > capacity))
+        {
+            return Err(RenderError::SceneCapacity);
+        }
+        let has_local_lights: f32 = if self.clusters.active { 1.0 } else { 0.0 };
+        light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
+        if let Some(shadow) = self.shadow.as_mut() {
+            shadow.update(
+                queue,
+                &scene.view,
+                &scene.instances,
+                packed_light_direction(&light_data),
+            )?;
+        }
+        queue.write_buffer(
+            &self.view_buffer,
+            0,
+            &scene
+                .view
+                .pack_view(&self.view_sample, f32::from_bits(self.exposure_bits)),
+        );
+        queue.write_buffer(
+            &target.aux_buffer,
+            0,
+            &scene.view.pack_aux(target.width, target.height),
+        );
+        queue.write_buffer(&self.directional_buffer, 0, &light_data);
+        queue.write_buffer(&self.local_light_buffer, 0, &self.clusters.lights);
+        queue.write_buffer(&self.cluster_head_buffer, 0, &self.clusters.heads);
+        queue.write_buffer(&self.cluster_index_buffer, 0, &self.clusters.indices);
+        self.dropped_light_references = self.clusters.dropped_references;
+        self.presentation_light_clamps = clamps;
+        self.background = background;
+        self.pending_view = Some(scene.view);
+        self.frame_revision = self.frame_revision.wrapping_add(1);
+        target.frame_revision = self.frame_revision;
+        Ok(())
+    }
+
+    /// Advance previous-view history after the host submits the encoded frame.
+    pub fn commit_frame(&mut self) {
+        if let Some(view) = self.pending_view.take() {
+            self.view_sample = view;
+        }
     }
     /// Update sorted, distinct changed slots before the next queue submission.
     /// The caller submits each frame before preparing another one; queue writes
@@ -884,15 +997,19 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
-    fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
+    fn check_owner(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if !Arc::ptr_eq(&self.owner, &target.prepared_owner)
             || target.generation != self.key.device_generation
             || target.display_gain.to_bits() != self.display_gain.to_bits()
             || target.exposure_bits != self.exposure_bits
-            || target.view_sample != self.view_sample
-            || target.shadow.as_ref().map(|shadow| &shadow.sample_data)
-                != self.shadow.as_ref().map(|shadow| &shadow.sample_data)
         {
+            return Err(RenderError::StaleTarget);
+        }
+        Ok(())
+    }
+    fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
+        self.check_owner(target)?;
+        if target.frame_revision != self.frame_revision {
             return Err(RenderError::StaleTarget);
         }
         Ok(())
@@ -1499,10 +1616,11 @@ fn storage_buffer(
     queue: &wgpu::Queue,
     label: &str,
     data: &[u8],
+    capacity: u64,
 ) -> wgpu::Buffer {
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some(label),
-        size: data.len() as u64,
+        size: capacity,
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
@@ -1531,13 +1649,14 @@ pub struct OffscreenTarget {
     view_bind_group: wgpu::BindGroup,
     display_gain: f32,
     exposure_bits: u32,
-    view_sample: SyntheticView,
+    aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
     generation: u64,
     row_bytes: u32,
+    frame_revision: u64,
 }
 impl OffscreenTarget {
     /// Allocate a nonempty bounded target and immutable display bind group from
@@ -1593,13 +1712,15 @@ impl OffscreenTarget {
         );
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
-            contents: &prepared.view_sample.pack_aux(width, height),
-            usage: wgpu::BufferUsages::UNIFORM,
+            contents: &prepared
+                .pending_view
+                .unwrap_or(prepared.view_sample)
+                .pack_aux(width, height),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let shadow = match (&prepared.shadow, &ids.shadow) {
-            (Some(prepared_shadow), Some(id)) => Some(ShadowTarget::new(
+            (Some(_prepared_shadow), Some(id)) => Some(ShadowTarget::new(
                 textures.texture(id).ok_or(RenderError::GraphPassMismatch)?,
-                prepared_shadow,
             )),
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
@@ -1647,13 +1768,14 @@ impl OffscreenTarget {
             view_bind_group,
             display_gain: prepared.display_gain,
             exposure_bits: prepared.exposure_bits,
-            view_sample: prepared.view_sample,
+            aux_buffer: aux,
             shadow,
             depth,
             width,
             height,
             generation: prepared.key.device_generation,
             row_bytes,
+            frame_revision: prepared.frame_revision,
         })
     }
     /// Target extent in pixels.

@@ -7,7 +7,7 @@ use std::{num::NonZeroUsize, time::Duration};
 use thrum_core::{StableId, sim::ExecutionMode};
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
 use v1_game::{
-    FrameHost, SurfaceOutput,
+    FrameHost, FrameSample, SurfaceOutput,
     simulation::{Command, ComponentEntity, Position, Velocity},
     simulation_with_count,
 };
@@ -178,7 +178,8 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surfac
         .expect("the prepared V1 workload must fit the adapter");
     let device_ref = &device;
     let mut now = Duration::ZERO;
-    bencher.bench_local(move || {
+    let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
+    bencher.bench_local(|| {
         now += Duration::from_nanos(16_666_667);
         let output = surface_view.as_ref().map(|view| SurfaceOutput {
             view,
@@ -200,8 +201,43 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surfac
                 })
                 .expect("GPU completion");
         };
+        samples.push(complete);
         divan::black_box(complete);
     });
+    report_frame_cpu(&samples, gpu_timestamps, present_surface);
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "the explicit integrated frame benchmark reports its measured CPU stages"
+)]
+fn report_frame_cpu(samples: &[FrameSample], gpu_timestamps: bool, present_surface: bool) {
+    if samples.is_empty() {
+        return;
+    }
+    let percentile = |value: fn(&FrameSample) -> f64| {
+        let mut values: Vec<f64> = samples.iter().map(value).collect();
+        values.sort_by(f64::total_cmp);
+        (values[values.len() / 2], values[values.len() * 95 / 100])
+    };
+    let upload = percentile(|sample| sample.upload_cpu.as_secs_f64() * 1e6);
+    let view = percentile(|sample| f64::from(sample.view_update_ns) / 1e3);
+    let encode = percentile(|sample| sample.encode_cpu.as_secs_f64() * 1e6);
+    let combined = percentile(|sample| (sample.upload_cpu + sample.encode_cpu).as_secs_f64() * 1e6);
+    eprintln!(
+        "V1 frame CPU n={} timestamps={} surface={} live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us",
+        samples.len(),
+        gpu_timestamps,
+        present_surface,
+        view.0,
+        view.1,
+        upload.0,
+        upload.1,
+        encode.0,
+        encode.1,
+        combined.0,
+        combined.1,
+    );
 }
 
 #[divan::bench]

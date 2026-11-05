@@ -129,10 +129,12 @@ impl SyntheticView {
         self.projection
     }
 
-    pub(super) fn pack_view(&self, exposure: f32) -> [u8; VIEW_BYTES] {
+    pub(super) fn pack_view(&self, previous: &Self, exposure: f32) -> [u8; VIEW_BYTES] {
         let mut bytes = [0; VIEW_BYTES];
         for (offset, value) in self.view_proj.to_cols_array().into_iter().enumerate() {
             bytes[offset * 4..offset * 4 + 4].copy_from_slice(&value.to_le_bytes());
+        }
+        for (offset, value) in previous.view_proj.to_cols_array().into_iter().enumerate() {
             bytes[64 + offset * 4..68 + offset * 4].copy_from_slice(&value.to_le_bytes());
         }
         for (axis, value) in self.camera.to_array().into_iter().enumerate() {
@@ -221,5 +223,32 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn live_view_packet_retains_the_last_submitted_projection() {
+        let before = SyntheticView::perspective(
+            [0.0, 0.0, 3.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            20.0,
+        )
+        .expect("first view");
+        let after = SyntheticView::perspective(
+            [0.3, 0.0, 3.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            20.0,
+        )
+        .expect("second view");
+        let packet = after.pack_view(&before, 1.0);
+        assert_ne!(&packet[..64], &packet[64..128]);
+        assert_eq!(&packet[64..128], &before.pack_view(&before, 1.0)[..64]);
     }
 }

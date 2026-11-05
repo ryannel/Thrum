@@ -24,7 +24,13 @@ struct Cascade {
     matrix: Mat4,
     depth_row: [f32; 4],
     depth_span: f32,
+    buffer: wgpu::Buffer,
     view_group: wgpu::BindGroup,
+}
+
+struct FittedShadow {
+    matrices: [(Mat4, f32); MAPS],
+    samples: [u8; SAMPLE_BYTES],
 }
 
 impl Cascade {
@@ -45,7 +51,6 @@ impl Cascade {
 pub(super) struct ShadowPrepared {
     pipeline: wgpu::RenderPipeline,
     cascades: [Cascade; MAPS],
-    pub(super) sample_data: [u8; SAMPLE_BYTES],
     pub(super) sample_buffer: wgpu::Buffer,
     pub(super) sampler: wgpu::Sampler,
 }
@@ -53,7 +58,6 @@ pub(super) struct ShadowPrepared {
 pub(super) struct ShadowTarget {
     views: [wgpu::TextureView; MAPS],
     pub(super) array_view: wgpu::TextureView,
-    pub(super) sample_data: [u8; SAMPLE_BYTES],
 }
 
 impl ShadowPrepared {
@@ -70,38 +74,7 @@ impl ShadowPrepared {
         light_direction: Vec3,
         instance_layout: &wgpu::BindGroupLayout,
     ) -> Result<Self, RenderError> {
-        let Projection::Perspective {
-            view: camera_view,
-            fx,
-            fy,
-            near,
-            far,
-        } = view.projection()
-        else {
-            return Err(RenderError::InvalidView);
-        };
-        let split = split_depth(near, far);
-        let overlap = (split * 0.05).max(0.05);
-        let matrix_data = [
-            cascade_matrix(
-                camera_view,
-                fx,
-                fy,
-                near,
-                split + overlap,
-                light_direction,
-                instances,
-            )?,
-            cascade_matrix(
-                camera_view,
-                fx,
-                fy,
-                split - overlap,
-                far,
-                light_direction,
-                instances,
-            )?,
-        ];
+        let fitted = fit_shadow(view, instances, light_direction)?;
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic Sun cascade view"),
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -115,11 +88,11 @@ impl ShadowPrepared {
                 count: None,
             }],
         });
-        let cascades = matrix_data.map(|(matrix, depth_span)| {
+        let cascades = fitted.matrices.map(|(matrix, depth_span)| {
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("synthetic Sun cascade matrix"),
                 contents: &matrix_bytes(matrix),
-                usage: wgpu::BufferUsages::UNIFORM,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
             let view_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("synthetic Sun cascade view"),
@@ -138,6 +111,7 @@ impl ShadowPrepared {
                     matrix.w_axis.z,
                 ],
                 depth_span,
+                buffer,
                 view_group,
             }
         });
@@ -172,21 +146,10 @@ impl ShadowPrepared {
             multiview_mask: None,
             cache: None,
         });
-        let mut samples = [0_u8; SAMPLE_BYTES];
-        for (index, cascade) in cascades.iter().enumerate() {
-            samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(cascade.matrix));
-            let scale = 1.0 / cascade.depth_span;
-            samples[144 + index * 4..148 + index * 4]
-                .copy_from_slice(&(BIAS_BASE_WORLD * scale).to_le_bytes());
-            samples[152 + index * 4..156 + index * 4]
-                .copy_from_slice(&(BIAS_SLOPE_WORLD * scale).to_le_bytes());
-        }
-        samples[128..132].copy_from_slice(&split.to_le_bytes());
-        samples[132..136].copy_from_slice(&overlap.to_le_bytes());
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),
-            contents: &samples,
-            usage: wgpu::BufferUsages::UNIFORM,
+            contents: &fitted.samples,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("synthetic Sun comparison"),
@@ -196,10 +159,32 @@ impl ShadowPrepared {
         Ok(Self {
             pipeline,
             cascades,
-            sample_data: samples,
             sample_buffer,
             sampler,
         })
+    }
+
+    pub(super) fn update(
+        &mut self,
+        queue: &wgpu::Queue,
+        view: &SyntheticView,
+        instances: &[InstanceRecord],
+        light_direction: Vec3,
+    ) -> Result<(), RenderError> {
+        let fitted = fit_shadow(view, instances, light_direction)?;
+        for (cascade, (matrix, span)) in self.cascades.iter_mut().zip(fitted.matrices) {
+            queue.write_buffer(&cascade.buffer, 0, &matrix_bytes(matrix));
+            cascade.matrix = matrix;
+            cascade.depth_row = [
+                matrix.x_axis.z,
+                matrix.y_axis.z,
+                matrix.z_axis.z,
+                matrix.w_axis.z,
+            ];
+            cascade.depth_span = span;
+        }
+        queue.write_buffer(&self.sample_buffer, 0, &fitted.samples);
+        Ok(())
     }
 
     pub(super) fn encode_cascade(
@@ -243,7 +228,7 @@ impl ShadowPrepared {
 }
 
 impl ShadowTarget {
-    pub(super) fn new(texture: &wgpu::Texture, prepared: &ShadowPrepared) -> Self {
+    pub(super) fn new(texture: &wgpu::Texture) -> Self {
         let views = std::array::from_fn(|index| {
             texture.create_view(&wgpu::TextureViewDescriptor {
                 label: Some("synthetic Sun cascade layer"),
@@ -258,11 +243,7 @@ impl ShadowTarget {
             dimension: Some(wgpu::TextureViewDimension::D2Array),
             ..Default::default()
         });
-        Self {
-            views,
-            array_view,
-            sample_data: prepared.sample_data,
-        }
+        Self { views, array_view }
     }
 }
 
@@ -274,14 +255,67 @@ fn matrix_bytes(matrix: Mat4) -> [u8; 64] {
     bytes
 }
 
+fn fit_shadow(
+    view: &SyntheticView,
+    instances: &[InstanceRecord],
+    light_direction: Vec3,
+) -> Result<FittedShadow, RenderError> {
+    let Projection::Perspective {
+        view: camera_view,
+        fx,
+        fy,
+        near,
+        far,
+    } = view.projection()
+    else {
+        return Err(RenderError::InvalidView);
+    };
+    let split = split_depth(near, far);
+    let overlap = (split * 0.05).max(0.05);
+    let rotation = light_rotation(light_direction);
+    let caster_depth = caster_depth_bounds(rotation, instances);
+    let matrices = [
+        cascade_matrix(
+            camera_view,
+            fx,
+            fy,
+            near,
+            split + overlap,
+            rotation,
+            caster_depth,
+        )?,
+        cascade_matrix(
+            camera_view,
+            fx,
+            fy,
+            split - overlap,
+            far,
+            rotation,
+            caster_depth,
+        )?,
+    ];
+    let mut samples = [0_u8; SAMPLE_BYTES];
+    for (index, (matrix, span)) in matrices.iter().enumerate() {
+        samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(*matrix));
+        let scale = 1.0 / span;
+        samples[144 + index * 4..148 + index * 4]
+            .copy_from_slice(&(BIAS_BASE_WORLD * scale).to_le_bytes());
+        samples[152 + index * 4..156 + index * 4]
+            .copy_from_slice(&(BIAS_SLOPE_WORLD * scale).to_le_bytes());
+    }
+    samples[128..132].copy_from_slice(&split.to_le_bytes());
+    samples[132..136].copy_from_slice(&overlap.to_le_bytes());
+    Ok(FittedShadow { matrices, samples })
+}
+
 fn cascade_matrix(
     camera_view: Mat4,
     fx: f32,
     fy: f32,
     near: f32,
     far: f32,
-    direction: Vec3,
-    instances: &[InstanceRecord],
+    rotation: Mat4,
+    caster_depth: Option<(f32, f32)>,
 ) -> Result<(Mat4, f32), RenderError> {
     let camera_world = camera_view.inverse();
     let corners: [Vec3; 8] = std::array::from_fn(|index| {
@@ -296,12 +330,6 @@ fn cascade_matrix(
         .map(|corner| corner.distance(center))
         .fold(0.0, f32::max);
     let radius = (radius * 16.0).ceil() / 16.0;
-    let up = if direction.cross(Vec3::Y).length_squared() < 0.01 {
-        Vec3::Z
-    } else {
-        Vec3::Y
-    };
-    let rotation = glam::camera::rh::view::look_at_mat4(Vec3::ZERO, -direction, up);
     let center_light = rotation.transform_point3(center);
     let texel = 2.0 * radius / SIZE as f32;
     let snapped_x = (center_light.x / texel).round() * texel;
@@ -314,25 +342,9 @@ fn cascade_matrix(
         min_depth = min_depth.min(depth);
         max_depth = max_depth.max(depth);
     }
-    for instance in instances {
-        let center = Vec3::new(
-            instance.current[3][0],
-            instance.current[3][1],
-            instance.current[3][2],
-        );
-        let extent = (0..3)
-            .map(|axis| {
-                Vec3::new(
-                    instance.current[axis][0],
-                    instance.current[axis][1],
-                    instance.current[axis][2],
-                )
-                .length()
-            })
-            .sum::<f32>();
-        let depth = -light_view.transform_point3(center).z;
-        min_depth = min_depth.min(depth - extent);
-        max_depth = max_depth.max(depth + extent);
+    if let Some((caster_min, caster_max)) = caster_depth {
+        min_depth = min_depth.min(caster_min);
+        max_depth = max_depth.max(caster_max);
     }
     min_depth -= 0.5;
     max_depth += 0.5;
@@ -356,6 +368,46 @@ fn cascade_matrix(
     Ok((matrix, span))
 }
 
+fn light_rotation(direction: Vec3) -> Mat4 {
+    let up = if direction.cross(Vec3::Y).length_squared() < 0.01 {
+        Vec3::Z
+    } else {
+        Vec3::Y
+    };
+    glam::camera::rh::view::look_at_mat4(Vec3::ZERO, -direction, up)
+}
+
+/// Exact affine-box extent along light depth, shared by both cascades.
+/// XY texel snapping does not change this depth axis.
+fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(f32, f32)> {
+    if instances.is_empty() {
+        return None;
+    }
+    let depth_axis = Vec3::new(-rotation.x_axis.z, -rotation.y_axis.z, -rotation.z_axis.z);
+    let offset = -rotation.w_axis.z;
+    let mut minimum = f32::INFINITY;
+    let mut maximum = f32::NEG_INFINITY;
+    for instance in instances {
+        let center = Vec3::new(
+            instance.current[3][0],
+            instance.current[3][1],
+            instance.current[3][2],
+        );
+        let depth = depth_axis.dot(center) + offset;
+        let extent = instance.current[..3]
+            .iter()
+            .map(|column| {
+                depth_axis
+                    .dot(Vec3::new(column[0], column[1], column[2]))
+                    .abs()
+            })
+            .sum::<f32>();
+        minimum = minimum.min(depth - extent);
+        maximum = maximum.max(depth + extent);
+    }
+    Some((minimum, maximum))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -370,7 +422,8 @@ mod tests {
             glam::camera::rh::view::look_at_mat4(Vec3::new(0.0, 0.0, 3.0), Vec3::ZERO, Vec3::Y);
         let light = Vec3::new(1.0, 0.0, 1.0).normalize();
         let (matrix, _) =
-            cascade_matrix(camera, 1.0, 1.0, near, split, light, &[]).expect("finite cascade");
+            cascade_matrix(camera, 1.0, 1.0, near, split, light_rotation(light), None)
+                .expect("finite cascade");
         let receiver = matrix.project_point3(Vec3::ZERO);
         let caster = matrix.project_point3(Vec3::new(1.0, 0.0, 1.0));
         assert!((receiver.x - caster.x).abs() < 1e-5);
@@ -391,14 +444,38 @@ mod tests {
             Vec3::new(0.0, 0.0001, 0.0),
             Vec3::Y,
         );
+        let rotation = light_rotation(light);
         let (a, _) =
-            cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, light, &[]).expect("first cascade");
+            cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, rotation, None).expect("first cascade");
         let (b, _) =
-            cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, light, &[]).expect("shifted cascade");
+            cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, rotation, None).expect("shifted cascade");
         let point = Vec3::new(0.2, -0.1, 0.0);
         let before = a.project_point3(point);
         let after = b.project_point3(point);
         assert!((before.x - after.x).abs() < 1e-5);
         assert!((before.y - after.y).abs() < 1e-5);
+    }
+
+    #[test]
+    fn shared_caster_bounds_enclose_every_affine_cube_corner() {
+        let mut instance = InstanceRecord::identity(0, 0);
+        instance.current[0] = [1.3, 0.4, 0.2, 0.0];
+        instance.current[1] = [-0.2, 0.8, 0.5, 0.0];
+        instance.current[2] = [0.1, -0.3, 1.1, 0.0];
+        instance.current[3] = [2.0, -1.0, 4.0, 1.0];
+        let rotation = light_rotation(Vec3::new(0.3, -0.8, 0.6).normalize());
+        let (low, high) = caster_depth_bounds(rotation, &[instance.clone()]).expect("one caster");
+        for bits in 0..8 {
+            let local = Vec3::new(
+                if bits & 1 == 0 { -1.0 } else { 1.0 },
+                if bits & 2 == 0 { -1.0 } else { 1.0 },
+                if bits & 4 == 0 { -1.0 } else { 1.0 },
+            );
+            let transform = Mat4::from_cols_array_2d(&instance.current);
+            let depth = -rotation
+                .transform_point3(transform.transform_point3(local))
+                .z;
+            assert!(depth >= low - 1e-5 && depth <= high + 1e-5);
+        }
     }
 }
