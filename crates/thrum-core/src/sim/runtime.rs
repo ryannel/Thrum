@@ -5,6 +5,7 @@ use std::{
     collections::HashMap,
     marker::PhantomData,
     mem::size_of,
+    panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
     sync::{
         Arc,
         atomic::{AtomicU64, Ordering},
@@ -23,8 +24,8 @@ use super::{
     StructuralChange, SystemId, SystemSpec,
     column_store::TypedStore,
     registered_world::{
-        EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, WorldCapture,
-        WorldDelta, WorldUndo,
+        EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, TentativeDirty,
+        WorldCapture, WorldDelta, WorldUndo,
     },
     transaction::{Edit, EditError, EditScratch},
 };
@@ -354,9 +355,18 @@ type ParallelCallback<P, G> = fn(
     &mut <G as TickGame<P>>::ParallelOutput,
 ) -> Result<(), <G as TickGame<P>>::Error>;
 
+type DirectCallback<P, G> = fn(
+    &G,
+    &mut WorldTxn<'_>,
+    Executor,
+    u64,
+    &mut <G as TickGame<P>>::Candidate,
+) -> Result<(), <G as TickGame<P>>::Error>;
+
 enum Callback<P, G: TickGame<P>> {
     Serial(SystemCallback<P, G>),
     Parallel(ParallelCallback<P, G>),
+    Direct(DirectCallback<P, G>),
 }
 
 struct BoundSystem<P, G: TickGame<P>> {
@@ -383,6 +393,15 @@ impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
             callback: Callback::Parallel(callback),
         }
     }
+
+    /// Bind a typed in-place system. Tentative component writes roll back if
+    /// this or any later precommit callback refuses the tick.
+    pub fn direct(spec: SystemSpec, callback: DirectCallback<P, G>) -> Self {
+        Self {
+            spec,
+            callback: Callback::Direct(callback),
+        }
+    }
 }
 
 fn check_edit_system<C, E>(
@@ -394,6 +413,45 @@ fn check_edit_system<C, E>(
         return Err(TickError::Edit(EditError::WrongSystem));
     }
     Ok(())
+}
+
+struct DirectDirty {
+    words: Vec<Vec<u64>>,
+    slots: Vec<(usize, u32)>,
+}
+
+impl DirectDirty {
+    fn new(components: usize, capacity: usize) -> Self {
+        Self {
+            words: vec![vec![0; capacity.div_ceil(64)]; components],
+            slots: Vec::with_capacity(capacity),
+        }
+    }
+
+    fn clear(&mut self) {
+        for &(component, slot) in &self.slots {
+            self.words[component][slot as usize / 64] &= !(1_u64 << (slot % 64));
+        }
+        self.slots.clear();
+    }
+}
+
+impl TentativeDirty for DirectDirty {
+    fn mark_first(&mut self, component: usize, slot: u32) -> bool {
+        let word = &mut self.words[component][slot as usize / 64];
+        let bit = 1_u64 << (slot % 64);
+        if *word & bit != 0 {
+            return false;
+        }
+        *word |= bit;
+        self.slots.push((component, slot));
+        true
+    }
+
+    fn unmark_last(&mut self, component: usize, slot: u32) {
+        assert_eq!(self.slots.pop(), Some((component, slot)));
+        self.words[component][slot as usize / 64] &= !(1_u64 << (slot % 64));
+    }
 }
 
 /// One engine-owned registered world, compiled schedule and leased page ring.
@@ -415,6 +473,8 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     executor: Executor,
     nonce: u64,
     edit_scratch: EditScratch,
+    direct_dirty: DirectDirty,
+    abort_undo: WorldUndo,
     structural_journal: Vec<StructuralChange>,
 }
 
@@ -717,6 +777,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                 current.checked_add(1)
             })
             .map_err(|_| RuntimeError::RuntimeExhausted)?;
+        let abort_undo = world.empty_undo();
         Ok(Self {
             world,
             schedule,
@@ -736,6 +797,8 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             },
             nonce,
             edit_scratch: EditScratch::new(capacity, component_count),
+            direct_dirty: DirectDirty::new(component_count, capacity),
+            abort_undo,
             structural_journal: Vec::with_capacity(128),
         })
     }
@@ -843,6 +906,43 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             query: self.world.read2::<T, U>()?,
             nonce: self.nonce,
             system,
+        })
+    }
+
+    /// Prepare a storage-order query whose access is `&mut T` and `&U`.
+    /// The distinct columns and schedule permissions are checked once.
+    ///
+    /// # Errors
+    ///
+    /// The types are identical, absent or undeclared for this system.
+    pub fn write_read2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static>(
+        &self,
+        system: SystemId,
+    ) -> Result<WriteRead2<T, U>, RuntimeError> {
+        let first = self
+            .world
+            .component_index(ComponentKey::of::<T>())
+            .ok_or(RuntimeError::UndeclaredAccess)?;
+        let second = self
+            .world
+            .component_index(ComponentKey::of::<U>())
+            .ok_or(RuntimeError::UndeclaredAccess)?;
+        if first == second
+            || !self
+                .schedule
+                .permits(system, ComponentKey::of::<T>(), AccessMode::Write)
+            || !self
+                .schedule
+                .permits(system, ComponentKey::of::<U>(), AccessMode::Read)
+        {
+            return Err(RuntimeError::UndeclaredAccess);
+        }
+        Ok(WriteRead2 {
+            first,
+            second,
+            nonce: self.nonce,
+            system,
+            marker: PhantomData,
         })
     }
 
@@ -1081,76 +1181,125 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         if !self.initial_published {
             return Err(TickError::BaselineRequired);
         }
+        self.direct_dirty.clear();
+        let txn_undo = match undo.as_deref_mut() {
+            Some(record) => &mut record.world,
+            None => &mut self.abort_undo,
+        };
+        txn_undo.clear();
         game.reset_candidate(candidate);
-        for wave in &mut self.waves {
-            #[cfg(not(target_arch = "wasm32"))]
-            // Two tiny input callbacks stay on the tick caller to avoid pool scheduling.
-            if self.executor.mode != ExecutionMode::Serial
-                && (wave.len() > 3 || self.executor.mode == ExecutionMode::RayonForced)
-                && wave
-                    .iter()
-                    .all(|bound| matches!(&bound.callback, Callback::Parallel(_)))
-            {
-                let world = &self.world;
-                let nonce = self.nonce;
-                let executor = self.executor;
-                let game_ref: &G = game;
-                wave.par_iter_mut().for_each(|bound| {
-                    let Callback::Parallel(callback) = &bound.callback else {
-                        unreachable!("wave checked parallel")
-                    };
-                    game_ref.reset_parallel_output(&mut bound.output);
-                    bound.result = Some(callback(
-                        game_ref,
-                        &WorldRead {
-                            world,
-                            nonce,
-                            system: Some(bound.id),
-                        },
-                        executor,
-                        next,
-                        &mut bound.output,
-                    ));
-                });
+        let preparation = catch_unwind(AssertUnwindSafe(|| -> Result<(), TickError<G::Error>> {
+            for wave in &mut self.waves {
+                #[cfg(not(target_arch = "wasm32"))]
+                // Two tiny input callbacks stay on the tick caller to avoid pool scheduling.
+                if self.executor.mode != ExecutionMode::Serial
+                    && (wave.len() > 3 || self.executor.mode == ExecutionMode::RayonForced)
+                    && wave
+                        .iter()
+                        .all(|bound| matches!(&bound.callback, Callback::Parallel(_)))
+                {
+                    let world = &self.world;
+                    let nonce = self.nonce;
+                    let executor = self.executor;
+                    let game_ref: &G = game;
+                    wave.par_iter_mut().for_each(|bound| {
+                        let Callback::Parallel(callback) = &bound.callback else {
+                            unreachable!("wave checked parallel")
+                        };
+                        game_ref.reset_parallel_output(&mut bound.output);
+                        bound.result = Some(callback(
+                            game_ref,
+                            &WorldRead {
+                                world,
+                                nonce,
+                                system: Some(bound.id),
+                            },
+                            executor,
+                            next,
+                            &mut bound.output,
+                        ));
+                    });
+                    for bound in wave {
+                        bound
+                            .result
+                            .take()
+                            .expect("callback ran")
+                            .map_err(TickError::Game)?;
+                        let before = game.edits(candidate).len();
+                        game.merge_parallel(bound.id, &mut bound.output, candidate, next);
+                        check_edit_system(game.edits(candidate), before, bound.id)?;
+                    }
+                    continue;
+                }
                 for bound in wave {
-                    bound
-                        .result
-                        .take()
-                        .expect("callback ran")
-                        .map_err(TickError::Game)?;
                     let before = game.edits(candidate).len();
-                    game.merge_parallel(bound.id, &mut bound.output, candidate, next);
+                    match &bound.callback {
+                        Callback::Serial(callback) => callback(
+                            game,
+                            &WorldRead {
+                                world: &self.world,
+                                nonce: self.nonce,
+                                system: Some(bound.id),
+                            },
+                            self.executor,
+                            next,
+                            candidate,
+                        ),
+                        Callback::Parallel(callback) => {
+                            game.reset_parallel_output(&mut bound.output);
+                            callback(
+                                game,
+                                &WorldRead {
+                                    world: &self.world,
+                                    nonce: self.nonce,
+                                    system: Some(bound.id),
+                                },
+                                self.executor,
+                                next,
+                                &mut bound.output,
+                            )
+                        }
+                        Callback::Direct(callback) => callback(
+                            game,
+                            &mut WorldTxn {
+                                world: &mut self.world,
+                                undo: txn_undo,
+                                dirty: &mut self.direct_dirty,
+                                nonce: self.nonce,
+                                system: bound.id,
+                            },
+                            self.executor,
+                            next,
+                            candidate,
+                        ),
+                    }
+                    .map_err(TickError::Game)?;
+                    if matches!(&bound.callback, Callback::Parallel(_)) {
+                        game.merge_parallel(bound.id, &mut bound.output, candidate, next);
+                    }
                     check_edit_system(game.edits(candidate), before, bound.id)?;
                 }
-                continue;
             }
-            for bound in wave {
-                let before = game.edits(candidate).len();
-                let world = WorldRead {
-                    world: &self.world,
-                    nonce: self.nonce,
-                    system: Some(bound.id),
-                };
-                match &bound.callback {
-                    Callback::Serial(callback) => {
-                        callback(game, &world, self.executor, next, candidate)
-                    }
-                    Callback::Parallel(callback) => {
-                        game.reset_parallel_output(&mut bound.output);
-                        callback(game, &world, self.executor, next, &mut bound.output)
-                    }
-                }
-                .map_err(TickError::Game)?;
-                if matches!(&bound.callback, Callback::Parallel(_)) {
-                    game.merge_parallel(bound.id, &mut bound.output, candidate, next);
-                }
-                check_edit_system(game.edits(candidate), before, bound.id)?;
+            let edits = game.edits(candidate);
+            self.edit_scratch
+                .validate(&self.world, self.nonce, edits, candidate)
+                .map_err(TickError::Edit)?;
+            Ok(())
+        }));
+        match preparation {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => {
+                txn_undo.abort_tentative(&mut self.world);
+                self.direct_dirty.clear();
+                return Err(error);
+            }
+            Err(payload) => {
+                txn_undo.abort_tentative(&mut self.world);
+                self.direct_dirty.clear();
+                resume_unwind(payload);
             }
         }
         let edits = game.edits(candidate);
-        self.edit_scratch
-            .validate(&self.world, self.nonce, edits, candidate)
-            .map_err(TickError::Edit)?;
         if let Some(record) = undo.as_deref_mut() {
             record.events.reserve(edits.len());
         }
@@ -1160,8 +1309,10 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             candidate,
             next,
             &mut self.structural_journal,
+            &self.direct_dirty.slots,
             undo.as_deref_mut().map(|record| &mut record.world),
         );
+        self.direct_dirty.clear();
         game.apply(
             &WorldRead {
                 world: &self.world,
@@ -1218,6 +1369,57 @@ pub struct WorldRead<'a> {
     world: &'a RegisteredWorld,
     nonce: u64,
     system: Option<SystemId>,
+}
+
+/// Tentative typed writes for one declared system. The runtime retains
+/// preimages and publishes change ticks only after the whole tick succeeds.
+pub struct WorldTxn<'a> {
+    world: &'a mut RegisteredWorld,
+    undo: &'a mut WorldUndo,
+    dirty: &'a mut DirectDirty,
+    nonce: u64,
+    system: SystemId,
+}
+
+/// Prepared storage-order access to distinct `&mut T` and `&U` columns.
+pub struct WriteRead2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> {
+    first: usize,
+    second: usize,
+    nonce: u64,
+    system: SystemId,
+    marker: PhantomData<(T, U)>,
+}
+
+impl<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> Copy for WriteRead2<T, U> {}
+
+impl<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> Clone for WriteRead2<T, U> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl WorldTxn<'_> {
+    /// Visit matching rows in deterministic slot order. Return `true` for a
+    /// changed value and `false` for an unchanged value. A callback refusal
+    /// restores all tentative writes before returning.
+    ///
+    /// # Errors
+    ///
+    /// The game callback refuses one row.
+    ///
+    /// # Panics
+    ///
+    /// The query belongs to a different runtime or system callback.
+    pub fn visit<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, E>(
+        &mut self,
+        query: &WriteRead2<T, U>,
+        visit: impl FnMut(Handle, StableId, &mut T, &U) -> Result<bool, E>,
+    ) -> Result<(), E> {
+        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
+        assert_eq!(query.system, self.system, "query belongs to another system");
+        self.world
+            .visit_mut2(query.first, query.second, self.undo, self.dirty, visit)
+    }
 }
 
 /// Checked live slot borrowed from one immutable authority view.

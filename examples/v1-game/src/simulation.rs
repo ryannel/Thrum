@@ -135,10 +135,7 @@ fn setup(
             Ok(())
         }),
         RegisteredSystem::parallel(input_health, Rules::input_health),
-        RegisteredSystem::new(simulate, |game, world, executor, tick, candidate| {
-            game.simulate(world, executor, tick, candidate);
-            Ok(())
-        }),
+        RegisteredSystem::direct(simulate, Rules::simulate),
         RegisteredSystem::new(resolve, Rules::resolve),
         RegisteredSystem::new(publish, |_, _, _, _, _| Ok(())),
     ];
@@ -149,7 +146,7 @@ fn setup(
     let candidate = Candidate::new(
         config.entity_capacity,
         runtime
-            .read2::<Position, Velocity>(SIMULATE)
+            .write_read2::<Position, Velocity>(SIMULATE)
             .map_err(map_runtime)?,
         runtime
             .read2::<Position, Health>(PUBLISH)
