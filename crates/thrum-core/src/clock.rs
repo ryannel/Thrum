@@ -116,15 +116,26 @@ impl TickClock {
     /// Rendering may interpolate between the previous and current committed
     /// states with this value; pending work or a stopped clock uses the latest
     /// committed state. This does not admit or consume a world update.
+    pub fn presentation_alpha(&self) -> f32 {
+        self.presentation_alpha_at(Duration::ZERO)
+    }
+
+    /// Interpolation fraction at a future display target without admitting
+    /// simulation time. A target beyond the next update uses the latest
+    /// committed endpoint; delayed work still reports an exact endpoint.
     #[expect(
         clippy::cast_precision_loss,
-        reason = "the fractional numerator is below one billion and f32 resolution is sufficient for presentation"
+        reason = "the clamped numerator is below one billion and f32 resolution is sufficient for presentation"
     )]
-    pub fn presentation_alpha(&self) -> f32 {
+    pub fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         if self.state != ClockState::Active || self.queued != 0 || self.presentation_hold {
             return 1.0;
         }
-        self.fractional_tick as f32 / NANOS_PER_SECOND as f32
+        let target_fraction = self.fractional_tick.saturating_add(
+            lead.as_nanos()
+                .saturating_mul(u128::from(self.config.tick_hz.get())),
+        );
+        target_fraction.min(NANOS_PER_SECOND) as f32 / NANOS_PER_SECOND as f32
     }
 
     /// Delay from the last host callback until the next world update is due.

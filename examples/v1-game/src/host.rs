@@ -539,6 +539,7 @@ pub struct FrameHost {
     device: wgpu::Device,
     queue: wgpu::Queue,
     clock: TickClock,
+    presentation_lead: Duration,
     sim: Simulation,
     projections: Option<ProjectionOutbox>,
     desired_axes: [f32; 3],
@@ -583,6 +584,16 @@ impl FrameHost {
     pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
     /// Device generation shared by this provisional V1 host and its pipelines.
     pub const DEVICE_GENERATION: u64 = GENERATION;
+
+    /// Set the lead to the platform's next display target. Simulation still
+    /// advances only to the callback's observed monotonic time.
+    pub fn set_presentation_lead(&mut self, lead: Duration) {
+        self.presentation_lead = lead;
+    }
+
+    fn presentation_alpha(&self) -> f32 {
+        self.clock.presentation_alpha_at(self.presentation_lead)
+    }
 
     #[cfg_attr(
         target_arch = "wasm32",
@@ -733,6 +744,7 @@ impl FrameHost {
             device: device.clone(),
             queue: queue.clone(),
             clock,
+            presentation_lead: Duration::ZERO,
             sim,
             projections: None,
             desired_axes: [0.0; 3],
@@ -812,6 +824,24 @@ impl FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_ready_view(&self) -> bool {
         self.worker_ready.is_some()
+    }
+
+    /// A retained tick pair can be sampled again at a new display target
+    /// without waiting for another simulation update or extraction.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn has_current_scene_for_display(&self) -> bool {
+        self.worker_ready.is_none()
+            && self.extractor.is_some()
+            && self.worker.as_ref().is_some_and(|worker| !worker.is_busy())
+            && self.last_view_source.is_some_and(|source| {
+                source.epoch == self.sim.epoch().0
+                    && source.timeline == self.sim.timeline()
+                    && source.tick == self.sim.tick()
+            })
+            && self
+                .slots
+                .iter()
+                .any(|slot| matches!(slot.state, SlotState::Free))
     }
 
     /// A previously prepared scene can be shown while the native worker is late.
@@ -1301,7 +1331,7 @@ impl FrameHost {
             completed_ticks,
             queued_ticks,
             frame_tick: self.sim.tick(),
-            presentation_alpha: self.clock.presentation_alpha(),
+            presentation_alpha: self.presentation_alpha(),
         })
     }
 
@@ -1655,6 +1685,25 @@ impl FrameHost {
                     report.dropped_view = true;
                 }
                 self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
+            } else if self.has_current_scene_for_display() && surface.is_some() {
+                if let Some(slot_index) = self
+                    .slots
+                    .iter()
+                    .position(|slot| matches!(slot.state, SlotState::Free))
+                {
+                    let frame = SubmitFrame {
+                        extracted: ExtractReport::default(),
+                        extract_cpu: Duration::ZERO,
+                        worker_queue_cpu: Duration::ZERO,
+                        worker_ready_cpu: Duration::ZERO,
+                        tick_cpu,
+                        completed_ticks: report.completed_ticks,
+                        queued_ticks: report.queued_ticks,
+                        frame_tick: self.sim.tick(),
+                        presentation_alpha: self.presentation_alpha(),
+                    };
+                    self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
+                }
             } else {
                 self.dispatch_latest_native(report, tick_cpu)?;
             }
@@ -1710,7 +1759,7 @@ impl FrameHost {
                 completed_ticks: report.completed_ticks,
                 queued_ticks: report.queued_ticks,
                 frame_tick: self.sim.tick(),
-                presentation_alpha: self.clock.presentation_alpha(),
+                presentation_alpha: self.presentation_alpha(),
             }
         } else {
             SubmitFrame {
@@ -1723,7 +1772,7 @@ impl FrameHost {
                 queued_ticks: completed.queued_ticks,
                 frame_tick: completed.tick,
                 presentation_alpha: if completed.tick == self.sim.tick() {
-                    self.clock.presentation_alpha()
+                    self.presentation_alpha()
                 } else {
                     1.0
                 },

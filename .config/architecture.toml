@@ -93,6 +93,24 @@ license = "Apache-2.0"
 purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell, plus the V1 macOS surface diagnostic"
 target_cost = "Target-specific platform glue and transitive closure; macOS surface callback and startup measured with the V1 scene, first iOS static-library compile measured separately, Android native build requires NDK and GameActivity packaging"
 
+[external_dependencies.objc2]
+requirement = "=0.6.5"
+license = "MIT OR Apache-2.0"
+purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the V1 window"
+target_cost = "macOS-only; already transitive in the locked Metal closure; callback sends one event without frame work"
+
+[external_dependencies.objc2-foundation]
+requirement = "=0.3.2"
+license = "MIT OR Apache-2.0"
+purpose = "Main-thread NSObject target and run-loop ownership for the macOS view display link"
+target_cost = "macOS-only framework binding; no engine or iPhone runtime edge"
+
+[external_dependencies.objc2-quartz-core]
+requirement = "=0.3.2"
+license = "MIT OR Apache-2.0"
+purpose = "CADisplayLink target timestamps and 120 Hz frame-rate range on the Mac display"
+target_cost = "macOS-only framework binding; Winit proxy traffic and callback allocations remain open G3b frame-thread measurements"
+
 [external_dependencies.wgpu]
 requirement = "=30.0.1"
 license = "MIT OR Apache-2.0"

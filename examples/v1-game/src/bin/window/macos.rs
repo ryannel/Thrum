@@ -1,6 +1,9 @@
 //! The platform owns the surface and event loop; the shared host owns world
 //! ticks, GPU scene packets and the prepared presentation pass.
 
+#[path = "macos/display_link.rs"]
+mod display_link;
+
 use std::{
     sync::Arc,
     sync::mpsc::{self, Receiver, SyncSender, TryRecvError},
@@ -8,6 +11,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use display_link::ViewDisplayLink;
+use objc2_quartz_core::CACurrentMediaTime;
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
 use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
@@ -33,10 +38,11 @@ const KEY_DOWN: u8 = 128;
 enum UserEvent {
     Extracted,
     SurfaceAcquired,
+    DisplayTarget(f64),
 }
 
 struct SurfaceState {
-    surface: wgpu::Surface<'static>,
+    surface: Arc<wgpu::Surface<'static>>,
     config: wgpu::SurfaceConfiguration,
 }
 
@@ -57,6 +63,8 @@ enum Acquired {
 struct SurfaceWorker {
     request: SyncSender<AcquireRequest>,
     result: Receiver<Acquired>,
+    join: thread::JoinHandle<()>,
+    surface_owner: Arc<wgpu::Surface<'static>>,
 }
 
 impl SurfaceWorker {
@@ -65,11 +73,12 @@ impl SurfaceWorker {
         device: wgpu::Device,
         wake: EventLoopProxy<UserEvent>,
     ) -> Result<Self, String> {
+        let surface_owner = Arc::clone(&state.surface);
         // A zero-capacity request handshake prevents reconfigure until the
         // event loop has presented or dropped the previously acquired frame.
         let (request, requests) = mpsc::sync_channel::<AcquireRequest>(0);
         let (results, result) = mpsc::sync_channel(1);
-        thread::Builder::new()
+        let join = thread::Builder::new()
             .name("v1-surface-acquire".into())
             .spawn(move || {
                 let mut needs_reconfigure = false;
@@ -119,13 +128,45 @@ impl SurfaceWorker {
                 }
             })
             .map_err(|error| format!("surface worker: {error}"))?;
-        Ok(Self { request, result })
+        Ok(Self {
+            request,
+            result,
+            join,
+            surface_owner,
+        })
+    }
+
+    fn shutdown(self) {
+        let Self {
+            request,
+            result,
+            join,
+            surface_owner,
+        } = self;
+        // Both channels close first: the worker may be blocked on the next
+        // request or a full result slot holding a drawable.
+        drop(request);
+        drop(result);
+        // Metal may wait indefinitely inside nextDrawable after a hide/close
+        // race. Never block AppKit teardown on that call. The detached worker
+        // retains its own surface/device owners until the call returns.
+        if join.is_finished() {
+            drop(join.join());
+        } else {
+            drop(join);
+        }
+        drop(surface_owner);
     }
 }
 
 struct App {
     wake: EventLoopProxy<UserEvent>,
+    display_link: Option<ViewDisplayLink>,
     window: Option<Arc<Window>>,
+    display_target: Option<f64>,
+    display_link_callbacks: usize,
+    last_display_wake: Instant,
+    pending_display_target: bool,
     surface: Option<SurfaceWorker>,
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
@@ -156,7 +197,12 @@ impl App {
     fn new(wake: EventLoopProxy<UserEvent>) -> Self {
         Self {
             wake,
+            display_link: None,
             window: None,
+            display_target: None,
+            display_link_callbacks: 0,
+            last_display_wake: Instant::now(),
+            pending_display_target: false,
             surface: None,
             surface_format: None,
             surface_extent: [0, 0],
@@ -239,9 +285,11 @@ impl App {
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
         let instance = wgpu::Instance::new(descriptor);
-        let surface = instance
-            .create_surface(Arc::clone(&window))
-            .map_err(|error| format!("surface: {error}"))?;
+        let surface = Arc::new(
+            instance
+                .create_surface(Arc::clone(&window))
+                .map_err(|error| format!("surface: {error}"))?,
+        );
         let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             compatible_surface: Some(&surface),
             power_preference: wgpu::PowerPreference::HighPerformance,
@@ -288,7 +336,12 @@ impl App {
             let _ = extract_wake.send_event(UserEvent::Extracted);
         })?;
         self.origin = Instant::now();
+        self.last_display_wake = self.origin;
         self.window = Some(window);
+        self.display_link = Some(ViewDisplayLink::start(
+            self.window.as_ref().ok_or("window missing")?,
+            wake.clone(),
+        )?);
         self.surface_format = Some(config.format);
         self.surface_extent = [config.width, config.height];
         self.worker_extent = self.surface_extent;
@@ -304,8 +357,14 @@ impl App {
     }
 
     fn draw(&mut self) -> Result<(), String> {
+        if !self.pending_display_target
+            && Instant::now() < self.last_display_wake + Duration::from_millis(25)
+        {
+            return Ok(());
+        }
         let callback_start = Instant::now();
         let now = self.origin.elapsed();
+        let media_now = CACurrentMediaTime();
         self.last_call = now;
         self.callbacks += 1;
         let size = self.window.as_ref().ok_or("window missing")?.inner_size();
@@ -364,7 +423,16 @@ impl App {
             view,
             extent: self.surface_extent,
         });
+        let lead = self.display_target.map_or(Duration::ZERO, |target| {
+            let seconds = target - media_now;
+            if seconds.is_finite() && seconds > 0.0 {
+                Duration::from_secs_f64(seconds.min(0.05))
+            } else {
+                Duration::ZERO
+            }
+        });
         let host = self.host.as_mut().ok_or("host missing")?;
+        host.set_presentation_lead(lead);
         let report = host.drive(now, output.as_ref())?;
         if let Some(refused_ticks) = report.overload {
             return Err(format!(
@@ -378,6 +446,7 @@ impl App {
                 .ok_or("queue missing")?
                 .present(frame.ok_or("surface pass without acquired frame")?);
             self.presented += 1;
+            self.pending_display_target = false;
         }
         while let Some(sample) = host.poll_completed()? {
             self.samples.push(sample);
@@ -389,11 +458,12 @@ impl App {
             self.profiler_title_at = now;
         }
         self.callback_walls.push(callback_start.elapsed());
-        if self.occluded > 120 || self.callbacks > FRAMES * 4 {
+        if now >= Duration::from_secs(30) {
             return Err(format!(
-                "600 presented frames unavailable: presented={}, tick={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
+                "600 presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
                 self.presented,
                 host.tick(),
+                self.display_link_callbacks,
                 self.unavailable,
                 self.occluded,
                 self.waiting_acquire,
@@ -465,13 +535,14 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
             self.surface_extent[1],
             self.presented,
             self.callbacks,
+            self.display_link_callbacks,
             host.tick(),
             self.unavailable,
             self.occluded,
@@ -496,6 +567,15 @@ impl App {
             frame_cpu.0,
             frame_cpu.1,
         ))
+    }
+}
+
+impl Drop for App {
+    fn drop(&mut self) {
+        drop(self.display_link.take());
+        if let Some(surface) = self.surface.take() {
+            surface.shutdown();
+        }
     }
 }
 
@@ -557,8 +637,16 @@ impl ApplicationHandler<UserEvent> for App {
         }
     }
 
-    fn user_event(&mut self, _event_loop: &ActiveEventLoop, _event: UserEvent) {
-        if let Some(window) = &self.window {
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: UserEvent) {
+        if let UserEvent::DisplayTarget(target) = event {
+            self.display_target = Some(target);
+            self.display_link_callbacks += 1;
+            self.last_display_wake = Instant::now();
+            self.pending_display_target = true;
+        }
+        if (self.pending_display_target || self.display_link_callbacks == 0)
+            && let Some(window) = &self.window
+        {
             window.request_redraw();
         }
     }
@@ -600,14 +688,13 @@ impl ApplicationHandler<UserEvent> for App {
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         if let (Some(window), Some(host), Some(surface)) = (&self.window, &self.host, &self.surface)
-            && let Some(due) = host.next_due_in()
         {
             let size = window.inner_size();
             let extent = [size.width, size.height];
             let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
-            let since_call = self.origin.elapsed().saturating_sub(self.last_call);
-            let delay = due.saturating_sub(since_call);
-            if (host.has_ready_view() || (delay.is_zero() && host.has_reusable_view()))
+            if (host.has_ready_view()
+                || host.has_current_scene_for_display()
+                || host.has_reusable_view())
                 && !self.acquiring
                 && host.pending_frames()
                     < if reconfigure {
@@ -634,11 +721,23 @@ impl ApplicationHandler<UserEvent> for App {
                     }
                 }
             }
-            if delay.is_zero() {
-                window.request_redraw();
-                event_loop.set_control_flow(ControlFlow::Wait);
+            let watchdog = self.last_display_wake + Duration::from_millis(25);
+            if Instant::now() < watchdog {
+                event_loop.set_control_flow(ControlFlow::WaitUntil(watchdog));
+            } else if let Some(due) = host.next_due_in() {
+                // The view's link stops off-display. This existing clock wake
+                // services world ticks only until display callbacks resume;
+                // a later G3b slice moves the simulation to its own thread.
+                let since_call = self.origin.elapsed().saturating_sub(self.last_call);
+                let delay = due.saturating_sub(since_call);
+                if delay.is_zero() {
+                    window.request_redraw();
+                    event_loop.set_control_flow(ControlFlow::Wait);
+                } else {
+                    event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + delay));
+                }
             } else {
-                event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + delay));
+                event_loop.set_control_flow(ControlFlow::Wait);
             }
         }
     }
