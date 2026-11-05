@@ -77,11 +77,11 @@ The G3 graph design must support:
 | Sea | 22.0/22.8 ms whole-frame GPU (median/p95, 1440p); turning the water surface off saves 5.5 ms and the reflection trace 1.1 ms; other water passes are within run-to-run drift | Surface ≤1.5 ms; waves, interaction and foam ≤0.8 ms |
 | Clouds | About 20 ms and 365 MiB at 1080p | ≤2 ms and ≤64 MB at 1440p |
 
-Neither system has been measured on an iPhone or a non-Apple GPU, and neither has visual acceptance. Thrum qualifies these per recipe.
+Neither system has been measured on an iPhone or a non-Apple GPU, and neither has passed visual review. Thrum qualifies these per recipe.
 
 ## Porting policy
 
-Port module by module after G7; design work may start earlier.
+Port module by module after V1 (G7), as the website demos need them; design work may start earlier.
 * **Lift:** the `bw_water` maths and the WESL algorithms (FFT, LEAN, eWave, foam, density, lighting, phase), each through review. Re-derive the golden tests in Thrum. Record the source commit, path and licence for each lifted file.
 * **Rewrite:** the `RenderModule`, `pass_list` and `TargetPool` plumbing becomes the Thrum executor. The `bw_frame` packets become the tick page and `ViewPacket`. The Bevy host glue is rewritten.
 * **Never:** a wholesale import, or a Broadsides build dependency.

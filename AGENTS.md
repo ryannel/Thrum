@@ -1,7 +1,7 @@
 # Thrum — contributor instructions
 
-Thrum is a reusable Rust 3D engine. Start at [README](README.md) and the relevant item in
-[the build plan](docs/BUILD-PLAN.md). A provisional simulation and synthetic renderer run in the
+Thrum is a native-first, reusable Rust 3D engine and a showcase of AI-driven engineering. Start at
+[README](README.md), then the purpose and relevant item in [the build plan](docs/BUILD-PLAN.md). A provisional simulation and synthetic renderer run in the
 V1 test game, but no general engine runtime exists yet; examples of future SDK commands in design documents are proposals, not commands to execute.
 
 - For code changes, read [CONTRIBUTING](CONTRIBUTING.md) and use `.agents/skills/engine-contributor`. Use `./dev check`; documentation-only
@@ -27,5 +27,10 @@ V1 test game, but no general engine runtime exists yet; examples of future SDK c
 - Work only in this repository. Broadsides is historical context and is not a build dependency. Its Rust sea and clouds
   port after G7 module by module under [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md).
   Do not modify it, import its assets/code wholesale, or apply its TS/foundation workflow here.
+
+- Keep building. Agents review visual output themselves (images and sequences) and independently, following
+  [visual review and human steering](docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering). Owner digests
+  are asynchronous: never wait for a reply to a progress report. Stop to ask only for direction changes,
+  spending, publishing or irreversible actions, and continue with unblocked work meanwhile.
 
 Local commits are useful verified checkpoints. Do not push, publish or deploy without authorization.

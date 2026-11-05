@@ -23,14 +23,15 @@ benefit. F1 scheduling and F3 schemas stay ours. A backend
 handle or Rust type ID is never a public object, source, save or network identity. Compiler/library pins and target
 qualification remain mandatory before construction uses these dependencies; selecting a library is not installing it.
 
-This is a reusable 3D engine for desktop, browser demos and native mobile. Apple silicon Mac and Windows are the
-initial desktop interpretations, WebGPU the browser profile, iOS/iPadOS and Android the mobile interpretation.
-Linux/Intel coverage is deferred, not a claim of impossibility. Authoring OS, build host and player support are
-separate. Native mobile packaging uses its required SDK/toolchain; browser demos do not substitute for app-store
-delivery. Named qualification candidates and workload limits are selected in [the baseline specification](BASELINE-SPEC.md).
-No minimum device or OS is certified by this document. The [single budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
-remains an unmeasured engineering envelope. Use the named candidates for target-dependent implementation and qualification; do not turn their selection into a
-certified hardware floor.
+This is a reusable, native-first 3D engine for desktop, browser demos and native mobile, using each device's
+hardware fully. Apple silicon Mac and Windows are the desktop interpretations, WebGPU the browser profile running the
+portable recipe at showcase quality, iOS/iPadOS and Android the mobile interpretation. Linux/Intel coverage is
+deferred, not a claim of impossibility. Authoring OS, build host and player support are separate. Native mobile
+packaging uses its required SDK/toolchain; browser demos do not substitute for app-store delivery. V1 proves on this
+M3 Max, the iOS simulator and Chrome under [the build plan](../BUILD-PLAN.md#goal-and-exit-rule); the other named
+candidates in [the baseline specification](BASELINE-SPEC.md) follow on rented hardware. No minimum device or OS is
+certified by this document, and the [single budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
+remains an unmeasured engineering envelope; do not turn a candidate into a certified hardware floor.
 
 ## A01, A02 and J04 — Source, play and iteration
 
@@ -193,19 +194,20 @@ Baseline presentation interpolates confirmed state. Prediction is opt-in and req
 closure, correction and effect deduplication. Do not promise universal rollback or cross-platform lockstep. Bound
 queues/history, reject stale connections and expose missing content. Networking-off removes sockets, replication scans
 and prediction buffers. [N1](modules/NETWORKING.md) owns join/reconnect, input admission, interest, snapshot grouping,
-transport capabilities and failure behavior. Its first transport reference is reliable WebSocket-compatible messaging;
-latency-sensitive datagrams remain a separately qualified adapter, not a browser UDP assumption.
+transport capabilities and failure behavior. V1 proves these contracts headless in G2S; transport follows V1 under
+the [A0 N1 decision](decisions/A0-N1-TRANSPORT-CODEC.md), never as a browser UDP assumption.
 
 ## WP02–WP06 — Simpler delivery and honest maturity
 
 Keep one construction sequence with an early complete R0 game: selected source, local authority, one action/rule,
 one camera/material, save, inspect/restart and a clean recipient export. Only its required I1/I2/D2 subset precedes
-I3a; full region streaming and editor machinery do not. Include an in-memory authority/replica fixture early and real
-I2n alongside this small game, before broad I3b integration. Prediction, delta compression and water are not arbitrary
-prerequisites; the first N1 encoding is selected against the concrete R4 byte/cadence recipe.
+I3a; full region streaming and editor machinery do not. Include an in-memory authority/replica fixture early; real
+I2n transport follows V1. Prediction, delta compression and water are not arbitrary prerequisites; the N1 encoding
+is selected against the concrete R4 byte/cadence recipe.
 
-Thin iOS/Android development shells exercise boot, tick, surface recovery, suspend and input alongside the early
-runtime work before dependent assumptions harden. Full thermal/device/accessibility/store qualification remains I4.
+Thin iOS/Android development shells exercise boot, tick, surface recovery, suspend and input before dependent
+assumptions harden; V1 does this for iOS on the simulator. Device, thermal, accessibility and store qualification
+remains I4 on rented devices after V1.
 I3b later exercises richer play/presentation and explicit two-region transitions; live streaming has its own complete
 recipe and admission proof rather than an implicit whole-world-copy implementation.
 
@@ -226,9 +228,9 @@ historical review evidence. Selected architecture is separate from detailed desi
 The user subsequently requested closure of the named remaining gaps. [BASELINE-SPEC](BASELINE-SPEC.md) itemises G01–G10
 and selects concrete source/storage/transform, shader/colour/media, play/water, networking and target/workload rules.
 Its four detailed specifications govern the admitted initial implementation. They replace the earlier open choices
-above, not the larger engine's ownership model. The network profile includes real WSS, committed per-action outcomes, atomic lifecycle/state groups, exact gameplay
-compatibility, bounded baselines and queues, and a concrete simultaneous R4 workload. Prediction and water event records
-are optional extensions, with an explicit early I2n construction milestone.
+above, not the larger engine's ownership model. The network profile includes committed per-action outcomes, atomic lifecycle/state groups, exact gameplay
+compatibility, bounded baselines and queues, and a concrete simultaneous R4 workload; its transport follows V1.
+Prediction and water event records are optional extensions.
 
 Dependency resolution, executable APIs/conformance, recovery injection, measured performance and visual/device
 qualification remain implementation evidence. Unsupported richer providers are recorded as extensions with design

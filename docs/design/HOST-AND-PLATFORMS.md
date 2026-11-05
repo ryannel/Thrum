@@ -81,8 +81,8 @@ benefit warrants separate implementations, shader paths and validation. Browser 
 Propose a portable native raster/compute baseline with optional advanced providers. Recommend initial Apple-silicon
 qualification, while leaving exact generations and Intel coverage open. Qualify browser WebGPU separately, including
 download/startup, memory, async loading, shader preparation and input/audio lifecycle. WebGL2 is optional extra scope.
-The browser can use reduced scene extent, cheaper representations and different lighting providers while retaining
-shared world semantics and content sources. Desktop quality need not be capped by browser limits.
+The browser runs the portable recipe at showcase quality, because website demos run there; it may use cheaper
+representations and different providers while retaining shared world semantics, and never caps native quality.
 
 Profiles must select compatible providers, not just dial sample counts. No retained consumer may depend on a disabled
 provider without an explicit substitute. Gameplay-affecting quality changes require separate acceptance. GPU effects,

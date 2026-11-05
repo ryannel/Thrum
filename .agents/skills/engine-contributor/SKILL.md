@@ -5,21 +5,30 @@ description: Implement, refactor or review Thrum engine code toward the active b
 
 # Engine contributor
 
-Thrum succeeds when engine code runs on named targets within its budget. Judge each change by
-whether it moves the active milestone in [the build plan](../../../docs/BUILD-PLAN.md) forward,
-not by how much it proves.
+Thrum is a showcase of AI-driven engineering: butter-smooth, high-end visuals and performance beyond what a human
+team would build and maintain, first shown in teaching demos on the owner's website. Engine code succeeds when it
+runs on named targets within budget and looks right there. Judge each change by whether it moves the active gate in
+[the build plan](../../../docs/BUILD-PLAN.md) forward, not by how much it proves.
 
 ## Pick the work
 
-- Take the next unchecked item in the build plan's active order. Prefer the smallest change that
-  makes a path run end to end or removes a measured cost.
-- Extend running paths before hardening inactive ones. Code with no consumer by the end of a slice
-  does not land. Parked tracks stay parked unless the user reopens them.
-- Research or design only to unblock a named decision. Keep the record to two pages under
-  `docs/design/decisions/`.
-- Before building a subsystem, look for a proven crate that meets the targets (Wasm, mobile,
-  determinism where needed). Adopt it with a reuse record rather than reimplementing it for
-  control you will not use.
+- Take the next unchecked gate in the build plan's active order. Prefer the smallest change that makes a path run end
+  to end, removes a measured cost or raises visible quality.
+- Aim for showcase quality, not parity. Prefer named techniques, paper reproductions and specialisations agents can
+  sustain (per-family kernels, exhaustive variant search, autotuned parameters). Each needs a measured win over
+  portable or a reproduced reference result, and joins the
+  [technique register](../../../docs/design/AI-PERFORMANCE.md#technique-register). Other engines are context, not gates.
+- Native leads and uses every hardware feature; the browser runs the portable recipe at showcase quality and never
+  limits native. Single-player fidelity and performance lead; G2S proves multiplayer headless and transport is parked
+  until after V1.
+- Extend running paths before hardening inactive ones. Code with no consumer by the end of a slice does not land.
+  Parked tracks stay parked unless the owner reopens them.
+- Research or design only to unblock a named decision. Keep the record to two pages under `docs/design/decisions/`.
+- Before building a general subsystem, look for a proven crate that meets the targets (Wasm, mobile, determinism where
+  needed) and adopt it with a reuse record. Build your own where a specialised path is the point and can show its win.
+- Keep building. Stop and ask only to change purpose, the V1 exit or gate order, to spend money, to push, publish,
+  license or deploy, or before an irreversible action, and continue unblocked work meanwhile. Never wait for a reply to
+  a progress report. See [steering](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering).
 
 ## Match rigour to the state
 
@@ -65,12 +74,28 @@ For per-tick, per-frame and per-message code:
 - Timing lives in `benches/` with stored baselines, never in ignored tests or examples.
   Allocation claims use the counting-allocator assertion.
 - Every parser of untrusted bytes gets a fuzz target.
-- Device, frame-time and visual claims come only from runs on named targets. Record the numbers
-  in the maturity ledger, separately for implementation, correctness, visuals and device.
+- Device, frame-time and visual claims come only from runs on named targets: this M3 Max, the
+  iPhone simulator (function only, never speed) and Chrome. Label Mac stand-ins for iPhone
+  “proxy”. Record results in the maturity ledger, separately for implementation, correctness,
+  visuals and device.
 - A dedicated recipe or accelerated path records its win against portable on the same device and
   its image or result difference within tolerance. Without that, it is implemented, not qualified.
-- Evidence per slice is at most one page: screenshots, one timing table and an oracle diff when
-  relevant. Bulk output follows [the storage rules](../../../docs/ASSET-LIFECYCLE.md).
+- Visible output passes agent visual review before the change lands; agents can and do inspect images:
+  1. Capture fixed cameras and a short sequence from the exact build on the named target.
+  2. Run automated image checks: a perceptual difference such as FLIP against the portable recipe
+     or ground-truth oracle within the declared tolerance, and no NaN, black, clipped, banded or
+     flickering output.
+  3. Inspect the stills, a contact sheet and the sequence yourself against the gate's look target
+     and its paper or reference images. Record findings.
+  4. Give an independent reviewer agent the captures and look target, not your verdict, to hunt
+     for artifacts and motion faults. Fix its findings or record them as open.
+  5. Record `agent_reviewed` for experienced quality in the maturity ledger.
+  6. When a gate closes or something first becomes visible, add a visual digest to the gate's
+     evidence page and notify the owner: contact sheet, short clip, numbers and open look questions,
+     each with your recommended answer. Then carry on with that recommendation. Owner feedback
+     steers the current or next slice; owner `accepted` is recorded but never a gate condition.
+- Evidence is at most one page per gate, including its visual digest: stills, one timing table and
+  an oracle diff when relevant. Bulk output follows [the storage rules](../../../docs/ASSET-LIFECYCLE.md).
 - Run `./dev check` before each commit.
 
 ## Before committing
@@ -80,4 +105,5 @@ For per-tick, per-frame and per-message code:
 - Did the public API grow, and does each new public item need to be public?
 - Is the rigour proportional to the state it protects?
 - Is there an allocation, clone or repeated decode on a hot path?
-- Did the slice move the milestone, and does the report separate measured results from open gates?
+- Did visible output pass agent visual review, with findings fixed or recorded?
+- Did the slice move the gate, and does the report separate measured results from open gates?

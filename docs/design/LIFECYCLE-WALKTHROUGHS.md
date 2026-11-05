@@ -21,8 +21,8 @@ Blender export substitutes for them. A short current package record points to th
 production-index entry makes it discoverable. Trial history stays in the existing run/review note.
 
 One browser export is staged and checked in the actual consumer. Within the requested local integration, the agent
-can wire and preview B while marking paint/appearance review pending. It must not silently turn preview into accepted
-art. The real game must load the selected package and dependencies without scratch paths. Keep A for its open choice,
+can wire and preview B, record its agent visual review and leave the creator's paint choice open. It must not present
+the preview as the creator's chosen art. The real game must load the selected package and dependencies without scratch paths. Keep A for its open choice,
 B's required sources and decisive review evidence. Owned rejected candidates and redundant previews can retire once
 inspected and unused. No full generation-folder archive is needed.
 

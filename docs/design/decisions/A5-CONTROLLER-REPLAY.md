@@ -1,6 +1,6 @@
 # A5 decision: shared controller replay for the V1 conditioned game
 
-4 November 2026. **Selected for the first four-peer V1 prediction slice.** This narrows [the input-timing decision](A5-INPUT-TIMING-RECONCILIATION.md) to the current 10k world, whose controlled actors have no collision or external resolve commands. [C02/C13](../CONTRACTS.md) still give W1 the only gameplay authority. Confirmed state and speculative controller state have separate owners. A future collision provider, authoritative teleport or game rule change must expand the captured closure or disable this predictor; a position-only rollback would be incomplete.
+4 November 2026. **Selected for the first four-peer prediction slice. Parked with the network track until after V1.** This narrows [the input-timing decision](A5-INPUT-TIMING-RECONCILIATION.md) to the current 10k world, whose controlled actors have no collision or external resolve commands. [C02/C13](../CONTRACTS.md) still give W1 the only gameplay authority. Confirmed state and speculative controller state have separate owners. A future collision provider, authoritative teleport or game rule change must expand the captured closure or disable this predictor; a position-only rollback would be incomplete.
 
 ## Rule and history
 

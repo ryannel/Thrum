@@ -110,7 +110,7 @@ Arbitrary function-length or parameter-count rules should not force awkward abst
 
 Changing a rule, suppression, expected image, threshold or fixture is visible as such in the change report. Fixing a
 failure and changing its acceptance condition are different claims. Agents must not silently weaken gates to report
-success. CI rechecks the integrated revision with recorded tool/configuration versions; local hooks are convenience.
+success. `./dev check` on the integrated revision is the gate; CI is manual-only by owner decision and local hooks are convenience.
 Scoped selection should include source, schema, content, shader, configuration and deleted dependency edges, with a
 conservative broader check when impact is unknown. A zero-test selection or unavailable GPU is not a behavioral pass.
 
@@ -145,7 +145,28 @@ Dry-run cost/impact estimates must be labeled estimates, not execution or perfor
 Agents need visual and motion feedback as well as text. A capture records the actual target or labeled proxy, camera,
 exposure, content, source/build, world snapshot and presentation sample/history identifiers. A video or filmstrip plus
 input/state trace can expose an animation or water failure a still misses. Headless state checks do not establish
-image quality, and an LLM critique does not substitute for recorded human visual acceptance or device measurement.
+image quality, and no visual review substitutes for device measurement.
+
+## Visual review and human steering
+
+Agents can read images, so visual review is part of agent work. The owner steers direction and taste
+without becoming a checkpoint. Agents build continuously, and a report never pauses building.
+
+| Layer | Who and when | Blocking? |
+| --- | --- | --- |
+| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Bound the difference from the portable recipe or a ground-truth oracle with a perceptual metric such as FLIP. Flag NaN, black, clipped, banded and flickering output. | Yes, for that change |
+| Agent visual review | The implementing agent inspects stills, a contact sheet and the sequence against the gate's look target and its paper or reference images, then records findings. An independent reviewer agent tries to find artifacts and motion faults. | Yes, before the gate closes |
+| Owner steer | When a gate closes or something first becomes visible, add a visual digest to the gate's one-page evidence and notify the owner: contact sheet, short clip, numbers and open look questions, each with a recommended answer. Proceed on those recommendations. | Never |
+
+Owner feedback arrives as steering on the current or next slice. It is folded in like any other requirement and is not
+a sign-off the agent waits for. Owner acceptance is recorded in the maturity ledger as experienced quality. Agent
+review, recorded as `agent_reviewed`, is the evidence a gate needs.
+
+Stop and ask the owner only to change purpose, the V1 exit or gate order; to spend money, such as renting cloud
+machines or devices; to push, publish, choose a license or deploy; or for destructive or irreversible actions. While one
+of these waits, continue with other unblocked work. Look questions with credible alternatives proceed on the agent's
+recommendation; the digest names the alternative so the owner can redirect cheaply. Visual quality
+claims come only from the named target or a labelled proxy, never from a description of the intended result.
 
 ## Ambitious performance improvement
 
@@ -209,6 +230,9 @@ from a long chat. Failed, skipped or outdated evidence cannot promote maturity a
 
 ## Delivery order and behavioral qualification
 
+The [build plan](../BUILD-PLAN.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
+describe what the tooling needs, not an order of work.
+
 | Stage | Deliver the smallest useful part | Completion boundary |
 | --- | --- | --- |
 | D1/I1 contributor foundation | Scoped instructions, pinned tools, public boundaries, compiler/format/lint/dependency checks and headless rule fixture | Clean checkout can make and verify one owned code change; no GUI or every-platform prerequisite |
@@ -220,7 +244,8 @@ Compiler/lint/docs work can start before runtime tools exist. A01/A02 gate claim
 all useful contributor tooling. Introduce `runtime-diagnosis` when inspect/replay is operational. Start with existing
 tooling before building custom compiler plugins or a large orchestration service.
 
-Evaluate the skills by fresh-agent tasks on pinned fixtures: ordinary bug repair, new game from empty source, external
+Evaluate the skills by fresh-agent tasks on pinned fixtures; G6's fresh agent building a new small scene from public docs
+is the first. Later tasks cover ordinary bug repair, new game from empty source, external
 library use, a cross-boundary schema change, a visual/runtime mismatch and a clean handoff. Include routing cases where
 a typo does not trigger architecture research and a model change does require shared review. Record completed behavior,
 API invention, unrelated edits, weakened checks, recovery quality, unnecessary context and elapsed time when runnable.

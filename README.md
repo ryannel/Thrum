@@ -1,12 +1,15 @@
 # Thrum
 
-A Rust 3D game engine being built for beautiful, flexible games on modern desktops,
-WebGPU browsers and native mobile platforms. Features and visual quality are selected
-per game; local and multiplayer play share the same authoritative rules.
+A native-first Rust 3D engine that aims to be production grade. It exists to learn, to practise the craft and to
+show how far AI-driven engineering can push performance and visual quality. It will run interactive teaching
+demos on the owner's website with public source, and later, games. Native platforms use the hardware each device
+provides. Browsers run a portable WebGPU tier at showcase quality. Single-player fidelity leads; local and
+multiplayer play share the same authoritative rules.
 
 **Status:** a provisional 10,000-entity simulation feeds a synthetic lit scene in the
 `examples/v1-game` test consumer on macOS and Chrome WebGPU; a thin iPhone simulator shell
-also exists. There is no finished game, real transport or shipping runtime yet. The [V1 build plan](docs/BUILD-PLAN.md)
+also exists. There is no finished scene, demo, real transport or shipping runtime yet. V1 ends in a
+single-player showcase scene. The [V1 build plan](docs/BUILD-PLAN.md)
 is the active work queue.
 
 Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or newer:

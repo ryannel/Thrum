@@ -1,19 +1,16 @@
 # N1 initial protocol specification
 
 1 November 2026. **Historical I2n protocol recipe, retained for its reviewed authority, result and
-replica-admission analysis.** The 3 November [V1 N1 decision](decisions/A0-N1-TRANSPORT-CODEC.md)
-supersedes this document's WebSocket-first transport, fixed full-record StateGroups, fixed eight-input
-batch and fixed future-window choices. The 4 November [timing decision](decisions/A5-INPUT-TIMING-RECONCILIATION.md)
-sets the first V1 conditioned fixture. Do not implement the superseded byte and transport recipe as
-the V1 target. C13 remains the shared authority contract; the [V1 input packet](decisions/A5-INPUT-WIRE.md)
-is selected, while state-delta and session details still require decisions. The first local game
-needs no transport. The historical limits below describe one profile, not an engine ceiling.
-The [provisional outbound cadence study](research/N1-OUTBOUND-CADENCE-2026-11-03.md)
-records an open construction decision: 60 Hz authority groups cannot be
-collapsed into a 20 Hz latest-state sample when lifecycle or mandatory
-outcomes occur, and the current I1 replica admits only one group per tick.
-Its revised burst and multi-group admission proof must precede I2n runtime
-promotion.
+replica-admission analysis.** The whole transport track is parked until after V1
+([build plan](../BUILD-PLAN.md#parked-retained-in-git-history)); V1 proves the C13 authority, admission,
+rollback and replay contracts headless in G2S, and the first local game needs no transport. When the track
+reopens, the [A0 N1 decision](decisions/A0-N1-TRANSPORT-CODEC.md) supersedes this document's WebSocket-first
+transport, fixed full-record StateGroups, fixed eight-input batch and fixed future-window choices, with the
+[timing decision](decisions/A5-INPUT-TIMING-RECONCILIATION.md)'s conditioned fixture and the selected
+[input packet](decisions/A5-INPUT-WIRE.md); state-delta and session details still need decisions. The historical
+limits below describe one profile, not an engine ceiling. The [outbound cadence study](research/N1-OUTBOUND-CADENCE-2026-11-03.md)
+keeps open that 60 Hz authority groups cannot collapse into a 20 Hz latest-state sample when lifecycle or mandatory
+outcomes occur; its burst and multi-group admission proof must precede I2n runtime promotion.
 
 The [fresh review](SIMPLIFICATION-REVIEW.md) identified SR01–SR03/SR07. The bounded outcome, atomic group,
 compatibility and analytical R4 recipes below close those design gaps for the first I2n construction slice. Runtime,

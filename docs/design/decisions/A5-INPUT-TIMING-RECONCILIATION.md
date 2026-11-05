@@ -1,6 +1,6 @@
 # A5 decision: timed input staging and controlled prediction
 
-4 November 2026. **Selected for the V1 four-peer fixture; preallocated staging and an encoded no-socket 600-tick input run pass, while state deltas, client prediction/reconciliation and device qualification remain open.** This refines [the N1 transport/codec decision](A0-N1-TRANSPORT-CODEC.md), [the input packet](A5-INPUT-WIRE.md) and [C02/C13](../CONTRACTS.md). The existing W1 `Simulation::admit_frame` accepts only the next authoritative tick and must remain the sole gameplay admission gate. N1 may hold future input bytes and frames, but a transport receipt neither commits gameplay nor changes a world component.
+4 November 2026. **Selected for the four-peer fixture, parked with the network track until after V1; preallocated staging and an encoded no-socket 600-tick input run pass, while state deltas, client prediction/reconciliation and device qualification remain open.** This refines [the N1 transport/codec decision](A0-N1-TRANSPORT-CODEC.md), [the input packet](A5-INPUT-WIRE.md) and [C02/C13](../CONTRACTS.md). The existing W1 `Simulation::admit_frame` accepts only the next authoritative tick and must remain the sole gameplay admission gate. N1 may hold future input bytes and frames, but a transport receipt neither commits gameplay nor changes a world component.
 
 ## Timing and ownership
 

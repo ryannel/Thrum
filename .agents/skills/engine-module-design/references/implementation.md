@@ -75,7 +75,10 @@ different; none substitutes for usable frame pacing and preserved experience.
 
 Use [review](review.md) for design, implementation, experienced output and performance claims as appropriate. Resolve
 actionable findings, verify consequential resolutions independently when available, and rerun affected checks. Check
-whether a fix weakened another required cue; more tests or reviewer agreement cannot establish user acceptance.
+whether a fix weakened another required cue. Visible output passes agent visual review on the named target:
+automated image checks, your own inspection of stills and a sequence, and an independent reviewer agent; record it as
+`agent_reviewed`. Tests and source review do not substitute for looking at the output. Owner feedback steers later
+slices and is never a pause.
 
 Continue commissioned work through running, inspection and correction. Deliver the result, meaningful verification,
 measured cost and remaining limits. Separate a bounded prototype from full-regime delivery, and unrun qualification

@@ -4,7 +4,7 @@ Revision C4, 1 November 2026. Reconciled source, iteration and multiplayer basel
 [Decision record](ARCHITECTURE-DECISIONS.md) resolves A01–A05/J01–J04 and integrates the whole-plan review.
 All domain authors read this contract set and the [brief](ARCHITECTURE-BRIEF.md). Propose changes with affected owners;
 do not create a private alternative. The coordinator reconciles both producer and consumers before accepting a change.
-[The baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and numerical envelopes.
+[The build plan](../BUILD-PLAN.md) sets V1 targets and gate budgets; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
 This document owns cross-module invariants; the five baseline specifications own selected algorithms and adapter
 policies; module designs own responsibility and consumer consequences. These are responsibilities, not
 a demand for separate crates or a universal messaging framework.
@@ -559,8 +559,9 @@ complete current output are never silently truncated to meet a cap. The
 the first integration order and unresolved qualifications.
 
 Evidence identifies code/design revision, configuration, content hashes, device/backend, duration and method. Design,
-implementation, correctness, perceptual acceptance and platform/performance qualification are separate states. Human
-appearance approval does not certify performance; a fast frame does not certify the complete feature. Existing branch
+implementation, correctness, perceptual acceptance and platform/performance qualification are separate states. Agent
+visual review (`agent_reviewed`) is a gate's visual evidence; owner acceptance is recorded as experienced quality and
+never gates. Neither certifies performance; a fast frame does not certify the complete feature. Existing branch
 evidence is unassessed until its applicability to the new assembly is established. Performance evidence names the
 recipe and the capability-registry digest. A dedicated recipe or path records its frame time, bandwidth or latency
 against the portable recipe on the same device, its image difference from portable within the declared tolerance, and
@@ -571,13 +572,14 @@ their initial algorithms and limits. The [V1 N1 transport/codec decision](decisi
 supersedes the older [NETWORK-SPEC](NETWORK-SPEC.md) transport and full-record recipe; C13 below
 retains the shared network authority and result semantics. The [V1 input packet](decisions/A5-INPUT-WIRE.md)
 is selected; the [V1 state-delta/session decision](decisions/A5-STATE-DELTA-SESSION.md)
-selects the next wire and admission model. Targets remain unmeasured; a future extension
-needs an equally complete design before changing admitted semantics.
+selects the next wire and admission model. These transport decisions are parked until after V1. Targets remain
+unmeasured; a future extension needs an equally complete design before changing admitted semantics.
 
 ## C13 Network authority and replication — N1 with F1/W1/P6
 
 [Network sessions](modules/NETWORKING.md) select server-authoritative simulation and typed actor intent; standalone
-uses the same rules and local authority. A listen host adds local presentation, a dedicated host may omit it. Match,
+uses the same rules and local authority. V1 proves these contracts headless in G2S; the wire rules below, named V1 in
+their decisions, belong to the transport track that follows V1. A listen host adds local presentation, a dedicated host may omit it. Match,
 wire, local world and durable identities have different scopes. Wire IDs never reuse within a match. Replicas and
 optional prediction branches cannot commit authoritative gameplay or saves.
 

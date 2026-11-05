@@ -233,7 +233,7 @@ been solved. Conversely, a workflow that changes source during play must meet it
 can tune away the missing meaning of a field, query or readiness state.
 
 These extend the existing T2 commission/result design and coordinator handoff, not the runtime module map. No new
-mandatory plugin system, universal benchmark service or automatic appearance approval follows. Independent inputs:
+mandatory plugin system or universal benchmark service follows, and appearance still needs agent visual review rather than a scalar score. Independent inputs:
 [rendering](../evidence/handoffs/2026-11-01-engine-performance-walkthroughs/RENDER.md),
 [browser](../evidence/handoffs/2026-11-01-engine-performance-walkthroughs/BROWSER.md),
 [mobile](../evidence/handoffs/2026-11-01-engine-performance-walkthroughs/MOBILE.md).

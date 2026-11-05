@@ -1,13 +1,13 @@
 # Detailed design and construction plan
 
-1 November 2026. Selected ordering and remaining detailed-design commissions for the [integrated design](SYSTEM-DESIGN.md). Runtime construction is not
-performed in this commission. Derive mechanisms analytically first; qualification checks stated predictions and
-empirical limits. An unresolved producer, representation or coupling remains a design task, never a disguised test.
+1 November 2026. Longer-range package map and detailed-design commissions for the [integrated design](SYSTEM-DESIGN.md).
+**The [build plan](../BUILD-PLAN.md) owns the current gate order and V1 exit**; packages below map onto its gates or
+follow V1. Derive mechanisms analytically first; qualification checks stated predictions and empirical limits. An
+unresolved producer, representation or coupling remains a design task, never a disguised test.
 
-The [simplification review](SIMPLIFICATION-REVIEW.md) led to the smaller R0/I2n order below. The
-[baseline](BASELINE-SPEC.md) owns portable transition and browser admission worksheets; the
-[network specification](NETWORK-SPEC.md#r4-encoded-admission-fixture) owns R4 encoded-byte and latency admission. Those are analytical gates before
-dependent construction, not measured runtime or platform qualification.
+The [baseline](BASELINE-SPEC.md) owns post-V1 portable transition and browser admission worksheets; the
+[network specification](NETWORK-SPEC.md#r4-encoded-admission-fixture) owns R4 encoded-byte and latency admission, which
+follows V1 with the transport track. Those are analytical gates, not measured runtime or platform qualification.
 
 ## Decisions before construction
 
@@ -18,11 +18,11 @@ remain the destination and extension map. A richer provider does not inherit rea
 
 | Area | Concrete initial selection | Implementation/qualification obligation |
 | --- | --- | --- |
-| Host/targets | Rust 1.99.1, winit 0.30.13, wgpu 30.0.1; named Mac/Windows/browser/iOS/Android reference candidates | Resolve/pin full dependency/native toolchains, compile adapters, then qualify actual target behavior |
+| Host/targets | Rust 1.99.1, winit 0.30.13, wgpu 30.0.1; V1 proof on this M3 Max, the iOS simulator and Chrome; other named candidates after V1 on rented hardware | Resolve/pin full dependency/native toolchains, compile adapters, then qualify actual target behavior |
 | Source/world/storage | Ordinary working files admitted as one immutable native source snapshot; private hecs 0.11.2; finite TRS envelope; restart/visible stop-load for first substantive replacement | [FOUNDATION-SPEC](FOUNDATION-SPEC.md): implement native admission/recovery, world and save failure traces; browser authoring follows a named need, while browser play cache and player save remain in scope |
 | Rendering/media | WGSL/Naga ABI, finite material/pipeline plan, Rec.709 photometric transport and joint single-scatter air/fog | [RENDER-SPEC](RENDER-SPEC.md): codec/layout, pipeline preparation, numerical/visual and per-device proof |
 | Play/environment | Rapier adapter, owned clip/IK runtime, Recast/Detour navigation; prescribed sea and finite shallow operator with explicit validity | [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md): implement exact selected operators, compile/notice checks and coupled numerical/cost proof |
-| Multiplayer N1 | Four-player finite preloaded server world, concrete WSS protocol, typed intents, committed outcomes and atomic full StateGroups; optional prediction/water recipes | [NETWORK-SPEC](NETWORK-SPEC.md): early I2n vertical path, encoded R4 fixture, playable/degraded latency cases and fault qualification; no deferred authority redesign |
+| Multiplayer N1 | Server authority, typed intents, validation at admission, committed outcomes, rollback and amended-input replay; transport per the [A0 N1 decision](decisions/A0-N1-TRANSPORT-CODEC.md) | G2S proves the authority contracts headless in V1; I2n transport, the R4 fixture and fault qualification follow V1; no deferred authority redesign |
 | Creator/release | One native source/operation surface, isolated play/restart, one first-game development export, then spatial authoring; pinned-release SDK and bounded retained outputs | Implement actual CLI/workbench commands against the schemas; test clean recipient/export/recovery; no upgrade promise without its separate evidence |
 
 These are specifications and bounded proof obligations, not completed runtime features. Unsupported initial combinations
@@ -50,7 +50,7 @@ D0 records this selected baseline and its detailed obligations in the [developer
 D1 specifies the required registration, schema/access/schedule validation and profile locks without constructing
 general provider search or gameplay live-removal machinery by default. I1 implements the smallest game-owned extension
 and a headless profile. I2a admits one snapshot and save path for R0; I2b grows content/region capability only after
-the useful game and early network path have exercised those boundaries. The first I4 target slice accompanies I3a;
+the useful game has exercised those boundaries. The first I4 target slice accompanies I3a;
 I4 qualifies the broader profiles. Public extension conformance and absent-feature cost remain acceptance criteria.
 
 | Package | Deliverable and prerequisites | Analytical acceptance before building | Later qualification prediction |
@@ -61,17 +61,16 @@ I4 qualifies the broader profiles. Public extension conformance and absent-featu
 | I1 Custom substrate and headless runtime | Selected adapters, clocks, jobs, schemas, diagnostics and local authority/replica roles; a focused iOS simulator and Android package pass exposes platform seams without requiring phone-game qualification now; depends completed relevant D1 | Implementation plan names resource/lifecycle invariants, dependency costs and deterministic envelope; in-memory two-peer fixture starts with typed action and state boundaries | Selected local headless path preserves one world authority and is qualified with clock, callback, replica and sustained local cost evidence; visible phone presentation and named-device performance remain separate I4 gates |
 | I2a Minimal source/content/save path | One bounded preloaded R0 region, working-file admission to one immutable snapshot, basic cook/load, private save/restore and isolated restart; depends I1 and required D1/F4 subset | Required gameplay/render products, exact source/build/save identities and interrupted admission/recovery are specified; substantive edits restart | One editable source change survives admission, run, private save, restart, restore and failed-cook recovery without region streaming or full workbench machinery |
 | I3a Small rendered game and one development export | One camera, basic material, action/rule/state/result, inspect/restart, source edit and clean recipient handoff; depends I2a, required D2 subset and one I4 target slice | Source/play/shader/input mechanisms complete for this game; browser boot worksheet and render demand apply to any browser export; omitted capabilities require no runtime work | Newcomer and veteran create the same small game from empty/starter source, edit and export it without full character/environment/audio prerequisites |
-| I2n Multiplayer vertical path | Run the same small-game actions through finite preloaded server/replica worlds and real WSS; typed intents, committed per-action outcomes, atomic bounded full StateGroups, compatible join/reconnect, interest and effect identity; depends I1/I2a identity/content and NETWORK-SPEC, develops alongside I3a | Trace content-before-baseline, epoch/action resolution, atomic spawn/first state, finite encoded R4 bytes/cadence/bursts and aggregate queues; full groups selected for the first recipe, with deltas/prediction/water optional | Four-peer reference session including native/browser clients, real delay/stall/reconnect faults, no duplicated committed effect, independent GPU loading and playable versus degraded whole-game frame/state-age evidence |
+| I2n Multiplayer vertical path | Run the same small-game actions through finite preloaded server/replica worlds and the selected real transport; typed intents, committed per-action outcomes, atomic bounded full StateGroups, compatible join/reconnect, interest and effect identity; depends I1/I2a identity/content, G2S and NETWORK-SPEC; follows V1 | Trace content-before-baseline, epoch/action resolution, atomic spawn/first state, finite encoded R4 bytes/cadence/bursts and aggregate queues; full groups selected for the first recipe, with deltas/prediction/water optional | Four-peer reference session including native/browser clients, real delay/stall/reconnect faults, no duplicated committed effect, independent GPU loading and playable versus degraded whole-game frame/state-age evidence |
 | I2b Broader content/region and artist path | Import/reimport, source operations, two-region load/unload, visual preview and spatial workbench; depends I2a and the relevant D1/D2 contracts | Scoped live region activation, provider transfer and old/new peak fit a named workload; otherwise visible stop/load is explicit; no portable seamless claim follows from R2 | The R1 authored scene edits, cooks, activates, unloads and restores without changing identity or losing state; separate live-transition qualification records peaks |
 | I3b Integrated play/presentation path | Character motion/animation, renderer baseline, audio/UI and one selected environmental provider; depends the necessary I2b region/content subset and D2 | Trace full tick/frame, motion history, transport composition and simultaneous cost; no missing integration assigned to 'later' | One scene supports overhead and first-person views, required collisions, coherent light, source events and valid temporal inputs |
 | I4 Whole-engine selectable profiles | Package native desktop/browser/mobile variants, feature removal and quality lifecycle; one development target slice accompanies I3a, bounded portable playback and save follow, full qualification follows I3b/I2b as appropriate | Specify every substitution, resource retirement, history invalidation, game-semantic invariant and offline/runtime product; browser authoring is outside first SDK, browser play/cache/save are included | Profiles preserve semantics and satisfy measured footprint/frame/startup/lifecycle limits on named devices; live streaming only where separately admitted |
 | I5 Advanced and distinctive capabilities | Research-derived enhancements to lighting, geometry, environment, animation or quality allocation | Establish prior art/gap and full compatible design; baseline remains usable; no novelty claim without comparison | Advance improves a required cue/cost under fair content and full-scene evidence, without regressions elsewhere |
 
-I2n is part of the core construction sequence alongside I3a and before broad I3b integration; it consumes I2a's
-small identity/content path, not all of I2b's streaming/editor work. I3a first runs locally, then its network variant
-exercises the same public actions. The bounded in-memory authority/replica fixture starts in I1/I2a, before real
-transport. Production online services remain optional. The first SDK may ship the local game before the network
-variant, but I2n is a committed near-term vertical path and its contracts cannot be postponed or redesigned later.
+I2n follows V1 with the parked transport track. V1 keeps it additive: the I1/I2a in-memory authority/replica
+fixture and G2S prove admission validation, amended-input replay, rollback and full-state equality headless. I2n
+consumes I2a's small identity/content path, not all of I2b's streaming/editor work, and runs the same public actions.
+Production online services remain optional. Its contracts are kept now and cannot be redesigned later.
 
 Work may overlap where contracts are settled, but integration checkpoints are sequential and owned. D1/D2 authors
 exchange interface changes continuously. Do not fully implement one module while its coupled representation remains
@@ -134,7 +133,7 @@ claiming these APIs ready for network games, implement a bounded in-memory two-p
 server/replica separation, mixed accepted/rejected action outcomes, stale/duplicate inputs, atomic spawn/first state,
 interest leave/re-enter, coherent baseline and missing gameplay content, distinct private saves and server build
 pinning. This fits the small substrate/world path and does not make production online services a prerequisite for
-I3a. I2n then qualifies real transports, join/reconnect, loss/delay/overload and effect deduplication against the
+I3a. After V1, I2n qualifies real transports, join/reconnect, loss/delay/overload and effect deduplication against the
 [R4 recipe and playable/degraded latency classes](NETWORK-SPEC.md#r4-encoded-admission-fixture). A game that selects prediction must qualify its
 complete closure; the first network game need not select it.
 
@@ -211,8 +210,9 @@ runtime, visual or platform maturity claim.
 
 Qualification covers functionality, stability in motion, approximation error, actual disabled costs, CPU/GPU tails,
 memory peaks, download/startup and sustained mobile thermal/lifecycle behaviour. Fix the input/content/profile and
-capture provenance. Keep authored/artistic choices distinct from physical model claims. User visual acceptance applies
-only to the reviewed build/camera/profile, and store packaging success is not store approval.
+capture provenance. Keep authored/artistic choices distinct from physical model claims. Agent visual review
+(`agent_reviewed`) gates visible work; it and asynchronous owner acceptance, recorded as experienced quality and never
+a gate condition, apply only to the reviewed build/camera/profile. Store packaging success is not store approval.
 
 Promote maturity per [MATURITY](MATURITY.md), not by completing a checklist in one subsystem. A complete required
 dependency closure must run together before a profile is qualified. If observations contradict the predicted model,

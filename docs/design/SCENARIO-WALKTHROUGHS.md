@@ -192,12 +192,13 @@ list. J03's standalone-library evaluation remains detailed design; no library wa
 
 ## Next genuine dogfood
 
-After the foundation is implemented, use S01 for the smallest complete create/change/play/build path, S05 to expose
+The first running dogfood is G6 in the [build plan](../BUILD-PLAN.md#active-gate-order-and-budgets): a fresh agent
+with only public docs builds a new small scene and logs its friction. After that, use S01 for the smallest complete create/change/play/build path, S05 to expose
 gameplay-versus-visual quality mistakes, and S09 to expose source/target/asset/shader problems. Use S06 when alternative
 media integration is implemented. Those are complementary running checks, not permission to discover missing
 architectural mechanisms by trial. Record task completion, unexpected concepts, actionable errors, restart latency,
-output quality and real target costs. Actual usability requires people using the engine; these paper traces cannot
-establish that it feels simple or produces beautiful results.
+output quality and real target costs. Fresh-agent runs and, later, people using the engine establish usability; these
+paper traces cannot establish that it feels simple or produces beautiful results.
 
 Full agent traces: [small games](../evidence/handoffs/2026-11-01-engine-dogfood/SMALL-GAMES.md),
 [model-heavy games](../evidence/handoffs/2026-11-01-engine-dogfood/MODEL-GAMES.md),

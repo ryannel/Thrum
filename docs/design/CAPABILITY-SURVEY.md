@@ -3,7 +3,8 @@
 1 November 2026. Official feature pages and selected manuals for twelve engines were inspected by the coordinator
 and three fresh Sol High agents. This updates the **recommended design inventory**, not implemented capabilities.
 The [brief](ARCHITECTURE-BRIEF.md) remains the module map; [construction](CONSTRUCTION-PLAN.md) remains the ordered plan.
-Custom host, 3D, Mac/PC, browser demos and native mobile remain the target. A01–A05 remain open.
+Custom host, 3D, Mac/PC, browser demos and native mobile remain the target. A01–A05 remain open. The
+[build plan](../BUILD-PLAN.md) now owns V1 scope; engine comparisons inform the inventory but are not quality gates.
 
 The strongest lesson is to describe complete creator outcomes alongside runtime responsibilities. We already cover
 most broad engine systems. Several apparent omissions disappear when reading the owner designs, particularly
@@ -75,14 +76,14 @@ geometry. The survey provides no reason to remove those responsibilities or aban
 | Visual scripting, runtime script VM, arbitrary native code reload, general graph editors | Remove any implication of baseline support. Retain code/data extension seams and selected authoring tools; add a language/editor only for an identified creator need. |
 | Arbitrary renderer replacement, runtime plugin unload, every provider combination | Not promised. Preserve headless operation, feature omission, constrained rendering extensions and supported model combinations. |
 | Video playback, splats/VRM, advanced terrain sculpting/roads, full cinematics suite, digital-human/ability packages | Optional later capability or game package; no baseline module commissioned. Video has separate decode/sync/caption/platform obligations. |
-| Normal co-op/networking | **Still an important open D0 product decision.** Replication, authority, prediction and save compatibility can change boundaries; replay/headless support does not supply networking. Do not postpone this decision until a networking feature is requested in code. |
+| Normal co-op/networking | **Since decided:** multiplayer is first-class in the architecture (E13). Replication, authority, prediction and save compatibility shape boundaries now; V1 proves fitness headless (G2S) and transport follows V1. |
 | Pure 2D, MMO, XR/consoles, LiveOps/account/commerce/cloud services | Outside or unselected scope. Their presence on product pages does not justify adding them. |
 | Equal feature parity on all platforms, native mobile via a WebView, zero-cost disabled features | Remove these blanket claims. Retained consumers can require shared work; qualify actual artifact size, residual jobs/memory and target-specific substitutions. |
 
 ## Coordination and qualification
 
-D0 selects the first target/workload combinations, ordinary-networking disposition and which optional capabilities are
-actually commissioned. D1 integrates content demand/delivery, localization source formats and iteration rules with
+D0 selected the first target/workload combinations, the networking disposition and which optional capabilities are
+commissioned; the build plan now sequences them. D1 integrates content demand/delivery, localization source formats and iteration rules with
 A01/A02. D2 handles render/animation/material requirements with A03. No UI proposal closes an authority or readiness gap.
 Feature-qualified I3/I4 slices follow those mechanisms; optional tools must not delay the first small complete game.
 

@@ -115,7 +115,8 @@ reconciled against the target; they do not inherit qualification from a differen
 
 An AI-oriented workflow requires inspectable schemas and diagnostics, explicit command/query contracts, deterministic
 or reproducible headless scenarios where possible, source-to-runtime provenance, bounded context entry points and
-small owned changes. Visual quality still needs rendered evidence and human acceptance. No language-model service is
+small owned changes. Visual quality still needs rendered evidence, gated by automated checks and agent review with
+asynchronous owner steer ([steering](AI-DEVELOPMENT.md#visual-review-and-human-steering)). No language-model service is
 required at game runtime by this development requirement.
 
 ## Completion for this commission

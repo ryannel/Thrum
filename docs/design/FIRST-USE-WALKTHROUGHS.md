@@ -154,8 +154,8 @@ usable. A minimum workbench is a constrained client of existing operations, not 
 
 ## Definition of a credible first-use path
 
-After the relevant D0–D2 mechanisms, I1–I3 construction and I4 slice for one exported target, qualify one complete
-path before multiplying templates:
+G6 in the [build plan](../BUILD-PLAN.md#active-gate-order-and-budgets) runs the first slice of this path with a fresh
+agent and public docs. As targets and tools ship, qualify one complete path before multiplying templates:
 
 1. On a clean supported host, discover prerequisites and run the named starter using version-matched instructions.
 2. Find the source of an object and action. Change appearance and one rule through public documented surfaces.
@@ -169,8 +169,8 @@ reimports an asset without silently losing overrides; the specialist path change
 authority. Explicitly retained private test saves may survive a restart; unsaved play state is discarded. Their
 retention policy remains A01 work. Record steps needing undocumented knowledge,
 user-edited files, error recovery, task completion and actual cold/warm edit-to-play latency when tools exist. No
-arbitrary success time or usability score is assigned now. Clean target exports, device tests and human visual review
-remain distinct evidence. These checks validate reasoned workflows; they do not substitute for missing architecture.
+arbitrary success time or usability score is assigned now. Clean target exports, device tests and
+[agent visual review](AI-DEVELOPMENT.md#visual-review-and-human-steering) remain distinct evidence. These checks validate reasoned workflows; they do not substitute for missing architecture.
 
 Full traces: [games](../evidence/handoffs/2026-11-01-engine-first-use/GAMES.md),
 [extensions](../evidence/handoffs/2026-11-01-engine-first-use/EXTENSIONS.md),
