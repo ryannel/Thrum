@@ -78,6 +78,7 @@ pub struct TickClock {
     state: ClockState,
     last_time: Duration,
     fractional_tick: u128,
+    presentation_hold: bool,
     queued: u32,
 }
 
@@ -96,6 +97,7 @@ impl TickClock {
             state: ClockState::Active,
             last_time: start,
             fractional_tick: 0,
+            presentation_hold: false,
             queued: 0,
         })
     }
@@ -108,6 +110,21 @@ impl TickClock {
     /// Due updates retained for service.
     pub fn queued_ticks(&self) -> u32 {
         self.queued
+    }
+
+    /// Fraction of the next world interval elapsed at the last host callback.
+    /// Rendering may interpolate between the previous and current committed
+    /// states with this value; pending work or a stopped clock uses the latest
+    /// committed state. This does not admit or consume a world update.
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "the fractional numerator is below one billion and f32 resolution is sufficient for presentation"
+    )]
+    pub fn presentation_alpha(&self) -> f32 {
+        if self.state != ClockState::Active || self.queued != 0 || self.presentation_hold {
+            return 1.0;
+        }
+        self.fractional_tick as f32 / NANOS_PER_SECOND as f32
     }
 
     /// Delay from the last host callback until the next world update is due.
@@ -137,6 +154,7 @@ impl TickClock {
     pub fn pause(&mut self) {
         self.state = ClockState::Paused;
         self.fractional_tick = 0;
+        self.presentation_hold = true;
     }
 
     /// Restart from a new wall-time origin after prior work is complete.
@@ -156,6 +174,7 @@ impl TickClock {
         }
         self.last_time = now;
         self.fractional_tick = 0;
+        self.presentation_hold = true;
         self.state = ClockState::Active;
         Ok(())
     }
@@ -228,6 +247,7 @@ impl TickClock {
                 Ok(keep_running) => {
                     self.queued -= 1;
                     completed += 1;
+                    self.presentation_hold = false;
                     if !keep_running {
                         break;
                     }

@@ -27,6 +27,42 @@ fn display_callbacks_do_not_set_simulation_rate() {
 }
 
 #[test]
+fn presentation_fraction_advances_between_world_ticks_without_extra_steps() {
+    let mut clock = TickClock::new(ClockConfig::default(), Duration::ZERO).expect("clock");
+    let half = clock
+        .advance(Duration::from_nanos(8_333_333), 4, || Ok::<_, ()>(()))
+        .expect("half tick");
+    assert_eq!(half.completed, 0);
+    assert!((clock.presentation_alpha() - 0.5).abs() < 1e-6);
+    let whole = clock
+        .advance(Duration::from_nanos(16_666_667), 4, || Ok::<_, ()>(()))
+        .expect("first whole tick");
+    assert_eq!(whole.completed, 1);
+    assert!(clock.presentation_alpha() < 1e-6);
+    clock.pause();
+    assert_eq!(clock.presentation_alpha(), 1.0);
+    clock
+        .resume(Duration::from_secs(1))
+        .expect("resume after drained pause");
+    clock
+        .advance(
+            Duration::from_secs(1) + Duration::from_nanos(8_333_333),
+            4,
+            || Ok::<_, ()>(()),
+        )
+        .expect("first resumed display callback");
+    assert_eq!(clock.presentation_alpha(), 1.0);
+    clock
+        .advance(
+            Duration::from_secs(1) + Duration::from_nanos(16_666_667),
+            4,
+            || Ok::<_, ()>(()),
+        )
+        .expect("first resumed world tick");
+    assert!(clock.presentation_alpha() < 1e-6);
+}
+
+#[test]
 fn a_game_can_select_a_higher_world_update_rate() {
     let config = ClockConfig {
         tick_hz: NonZeroU32::new(120).expect("test setup or assertion requires a value"),
