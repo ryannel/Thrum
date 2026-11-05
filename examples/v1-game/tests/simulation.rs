@@ -10,7 +10,7 @@ use std::{
 
 use thrum_core::{
     ActorId, Origin, PeerId, StableId, WorldEpoch,
-    sim::{ExecutionMode, InputFrame},
+    sim::{ExecutionMode, FrameError, InputFrame},
 };
 use v1_game::simulation::{
     Command, ComponentEntity, Ownership, Position, SimAction, SimConfig, SimError, Simulation,
@@ -801,6 +801,50 @@ fn reused_page_recovers_an_older_position_edit_without_republishing_it() {
         Some(sim.get(moving).expect("live").position)
     );
     assert_eq!(page.dirty().position(), &[moving.slot]);
+}
+
+#[test]
+fn admission_rejects_finite_motion_beyond_game_speed_limit_without_consuming_sequence() {
+    let mut sim = Simulation::new(WorldEpoch(341), config(1)).expect("game");
+    let owner = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(owner);
+    let handle = sim.seed(player).expect("player");
+    sim.register_peer(owner, handle).expect("binding");
+    let mut frame = InputFrame::new(
+        Origin {
+            peer: owner.peer,
+            connection_epoch: owner.connection_epoch,
+            sequence: 1,
+        },
+        owner.actor,
+        1,
+        [1.0, 0.0, 0.0],
+    );
+    frame.actions.push(SimAction::Impulse([600.0, 0.0, 0.0]));
+    frame.actions.push(SimAction::Impulse([600.0, 0.0, 0.0]));
+    assert_eq!(
+        sim.admit_frame(frame.clone()),
+        Err(FrameError::InvalidAction)
+    );
+    assert_eq!(sim.tick(), 0);
+    assert_eq!(
+        sim.get(handle).expect("unchanged player").velocity,
+        Velocity::default()
+    );
+
+    frame.actions.truncate(1);
+    sim.admit_frame(frame)
+        .expect("same sequence remains available");
+    sim.step(&[]).expect("admitted motion commits once");
+    assert_eq!(
+        sim.get(handle).expect("player").velocity,
+        Velocity([606.0, 0.0, 0.0])
+    );
 }
 
 #[test]
