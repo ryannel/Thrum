@@ -399,6 +399,34 @@ fn leased_pages_drop_publication_but_never_block_authority_or_lose_recovery_base
 }
 
 #[test]
+fn restore_with_every_old_page_leased_keeps_old_views_and_publishes_a_new_baseline() {
+    let mut sim = Simulation::new(WorldEpoch(16), config(2)).expect("game");
+    let handle = sim.seed(entity(1, 0.0)).expect("body");
+    let old = std::array::from_fn::<_, 4, _>(|index| {
+        if index != 0 {
+            sim.step(&[Command::SetPosition(
+                handle,
+                Position([index as f64, 0.0, 0.0]),
+            )])
+            .expect("next tick");
+        }
+        sim.published_page().expect("held endpoint")
+    });
+    let saved = sim.capture();
+    sim.step(&[Command::SetPosition(handle, Position([9.0, 0.0, 0.0]))])
+        .expect("unpublished future tick");
+    sim.restore(&saved).expect("restore with full old ring");
+    let current = sim.published_page().expect("new baseline");
+    assert!(current.is_baseline());
+    assert_eq!(current.id().tick, 3);
+    assert_eq!(current.position(handle).expect("restored body").0[0], 3.0);
+    for (tick, page) in old.iter().enumerate() {
+        assert_eq!(page.id().tick, tick as u64);
+        assert_eq!(page.position(handle).expect("old body").0[0], tick as f64);
+    }
+}
+
+#[test]
 fn old_page_reuse_after_journal_horizon_refreshes_membership_without_a_baseline() {
     let mut sim = Simulation::new(WorldEpoch(31), config(2)).expect("game");
     let old = sim.seed(entity(1, 1.0)).expect("mover");

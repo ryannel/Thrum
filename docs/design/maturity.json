@@ -61,7 +61,7 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "owned_slot_columns_changed_pages_and_position_batches_complete_G2R_speed_and_undo_open",
+      "implementation": "owned_columns_changed_pages_batch_edits_and_page_reuse_complete_G2R_open",
       "functional_validation": "full_dev_check_running_game_10k_four_peer_serial_rayon_equal_after_refusal_churn_and_restore_zero_warmed_serial_tick_churn_and_10k_100k_history_allocations_noncopy_column_overlay_divergent_branch_and_render_timeline_tests_independent_review_no_blocker",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
@@ -71,7 +71,7 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "M3 Max paired full-game tick+page p50/p95: batched 48/49-51 us at 10k, 477-486/500-519 us at 100k; prior 68/69-75 and 700/708-719 us. All sampled ticks: zero allocations. Copying eight-tick restore: 3.22/3.63 ms at 10k. V1 budgets open.",
+      "diagnostic_measurement": "M3 Max paired full-game tick+page p50/p95: batched 48/49-51 us at 10k, 477-486/500-519 us at 100k; prior 68/69-75 and 700/708-719 us. All sampled ticks: zero allocations. 8-tick rewind p95 0.83 ms/33 allocs at 10k (was 0.95 ms/102). V1 budgets open.",
       "scope": "V1 game owns schema, rules, input and pages; engine owns slot columns, changed-slot journal and copying history. G2R needs tick/rollback budgets. FrameHost waits for G3b; no iPhone claim.",
       "evidence": [
         "../evidence/v1-workload/G2-STORAGE-COMPARISON-2026-11-04.md",
