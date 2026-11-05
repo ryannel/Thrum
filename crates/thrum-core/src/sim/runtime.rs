@@ -145,6 +145,13 @@ impl Executor {
     }
 
     /// Execute independent candidate jobs, never direct committed-world edits.
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::unused_self,
+            reason = "the executor mode selects native Rayon; browser builds deliberately run every mode serially"
+        )
+    )]
     pub fn for_each_mut<T: Send>(self, jobs: &mut [T], run: impl Fn(&mut T) + Send + Sync) {
         #[cfg(not(target_arch = "wasm32"))]
         if self.mode != ExecutionMode::Serial && jobs.len() > 1 {

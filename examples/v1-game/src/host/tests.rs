@@ -394,7 +394,10 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
             .expect("native GPU adapter");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: thrum_render::timing::GpuTimings::requested_features(&adapter),
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
                 ..Default::default()
             })
             .await

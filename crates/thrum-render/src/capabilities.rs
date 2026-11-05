@@ -12,15 +12,22 @@ pub struct DeviceCapabilities {
 }
 
 impl DeviceCapabilities {
+    /// Optional timestamp feature to request while the platform creates its
+    /// device. The enabled result is captured in this record afterward.
+    #[must_use]
+    pub fn requested_timing_features(adapter: &wgpu::Adapter) -> wgpu::Features {
+        adapter.features() & wgpu::Features::TIMESTAMP_QUERY
+    }
     /// Capture the adapter and enabled device at platform creation.
     #[must_use]
     pub fn capture(adapter: &wgpu::Adapter, device: &wgpu::Device, generation: u64) -> Self {
         Self::from_info(device, generation, adapter.get_info())
     }
 
-    // Old device-only preparation constructors still serve tests and callers
-    // being migrated; the live host uses the platform's adapter capture.
-    pub(crate) fn legacy_from_device(device: &wgpu::Device, generation: u64) -> Self {
+    /// Capture from a device when the adapter handle is no longer retained.
+    /// The live platform should pass its adapter directly to `capture`.
+    #[must_use]
+    pub fn capture_device(device: &wgpu::Device, generation: u64) -> Self {
         Self::from_info(device, generation, device.adapter_info())
     }
 

@@ -15,7 +15,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::present::SurfaceProfile;
 use v1_game::{FrameHost, SurfaceOutput};
 
 const MEASURED_FRAMES: usize = 600;
@@ -183,7 +183,10 @@ fn late_surface_submit_reports_main_thread_allocation_cost() {
             .expect("native Metal adapter");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
                 ..Default::default()
             })
             .await

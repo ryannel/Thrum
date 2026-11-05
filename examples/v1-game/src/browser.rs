@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
@@ -58,7 +58,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         .map_err(js_error)?;
     let (device, queue) = adapter
         .request_device(&wgpu::DeviceDescriptor {
-            required_features: GpuTimings::requested_features(&adapter),
+            required_features: DeviceCapabilities::requested_timing_features(&adapter),
             ..Default::default()
         })
         .await

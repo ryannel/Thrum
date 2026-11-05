@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
 use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
@@ -250,7 +250,7 @@ impl App {
         .map_err(|error| format!("adapter: {error:?}"))?;
         self.adapter_name = adapter.get_info().name;
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            required_features: GpuTimings::requested_features(&adapter),
+            required_features: DeviceCapabilities::requested_timing_features(&adapter),
             ..Default::default()
         }))
         .map_err(|error| format!("device: {error:?}"))?;

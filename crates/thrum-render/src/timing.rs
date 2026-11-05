@@ -5,6 +5,8 @@
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 
+use crate::capabilities::DeviceCapabilities;
+
 /// One pass duration, separate from CPU encode time or display latency.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PassTiming {
@@ -98,11 +100,6 @@ pub struct GpuTimings {
     enabled: Option<Enabled>,
 }
 impl GpuTimings {
-    /// Request only `TIMESTAMP_QUERY` at device creation when the adapter offers
-    /// it. Pass-boundary writes need no native inside-pass timestamp feature.
-    pub fn requested_features(adapter: &wgpu::Adapter) -> wgpu::Features {
-        adapter.features() & wgpu::Features::TIMESTAMP_QUERY
-    }
     /// Allocate bounded query/resolve/readback storage on the executor's device.
     /// Feature absent from the *enabled device* is a successful disabled path.
     ///
@@ -110,17 +107,20 @@ impl GpuTimings {
     ///
     /// Returns an error if the query count or timestamp period is invalid.
     pub fn new(
-        device: &wgpu::Device,
+        capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
-        generation: u64,
         max_passes: u32,
     ) -> Result<Self, TimingError> {
-        if !device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
+        if !capabilities
+            .features()
+            .contains(wgpu::Features::TIMESTAMP_QUERY)
+        {
             return Ok(Self {
-                generation,
+                generation: capabilities.generation(),
                 enabled: None,
             });
         }
+        let device = capabilities.device();
         let count = max_passes
             .checked_mul(2)
             .filter(|n| *n > 0 && *n <= wgpu::QUERY_SET_MAX_QUERIES)
@@ -148,7 +148,7 @@ impl GpuTimings {
             mapped_at_creation: false,
         });
         Ok(Self {
-            generation,
+            generation: capabilities.generation(),
             enabled: Some(Enabled {
                 query,
                 resolve,
