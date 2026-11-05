@@ -86,6 +86,13 @@ impl Page {
         self.dirty_words[slot / 64] |= 1_u64 << (slot % 64);
     }
 
+    fn refresh_position(&mut self, slot: usize, position: Position, dirty: bool) {
+        self.positions[slot] = position;
+        if dirty {
+            self.mark_dirty(slot, POSITION_DIRTY);
+        }
+    }
+
     pub(crate) fn new(epoch: WorldEpoch, capacity: usize) -> Self {
         Self {
             id: SnapshotId { epoch, tick: 0 },
@@ -220,6 +227,22 @@ impl Page {
                     }
                     return;
                 };
+                let [structural_tick, position_tick, velocity_tick, health_tick] = world
+                    .change_ticks3(live, (position_read, velocity_read, health_read))
+                    .expect("same runtime live slot");
+                if old_present
+                    && structural_tick <= old
+                    && velocity_tick <= old
+                    && health_tick <= old
+                {
+                    if position_tick <= old {
+                        return;
+                    }
+                    if let Some(position) = positions.get(live).expect("same runtime live slot") {
+                        self.refresh_position(slot, *position, position_tick == tick);
+                        return;
+                    }
+                }
                 let (Some(position), Some(health)) = (
                     positions.get(live).expect("same runtime live slot"),
                     healths.get(live).expect("same runtime live slot"),
@@ -233,9 +256,6 @@ impl Page {
                 if !old_present {
                     self.live += 1;
                 }
-                let [structural_tick, position_tick, velocity_tick, health_tick] = world
-                    .change_ticks3(live, (position_read, velocity_read, health_read))
-                    .expect("same runtime live slot");
                 let structural = structural_tick > old
                     || self.ids[slot] != Some(live.stable_id())
                     || self.generations[slot] != live.handle().generation;

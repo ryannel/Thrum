@@ -145,13 +145,14 @@ fn validate_batch_replace<T: Clone + Send + Sync + 'static>(
     let rows = values
         .downcast_ref::<Vec<(Handle, T)>>()
         .ok_or(EditError::WrongValueType)?;
+    let column = world.column_at::<T>(component);
     for (handle, _) in rows {
         scratch.validate_component(
             world,
             *handle,
             component,
             ComponentEditKind::Replace,
-            present::<T>,
+            || column.get(handle.slot as usize).is_some(),
         )?;
     }
     Ok(())
@@ -341,7 +342,9 @@ impl EditScratch {
                     if *token != nonce {
                         return Err(EditError::WrongRuntime);
                     }
-                    self.validate_component(world, *handle, *component, *kind, *present)?;
+                    self.validate_component(world, *handle, *component, *kind, || {
+                        present(world, *component, handle.slot)
+                    })?;
                     if let Some(value) = value
                         && !valid_value(value(candidate, *index))
                     {
@@ -418,7 +421,7 @@ impl EditScratch {
         handle: Handle,
         component: usize,
         kind: ComponentEditKind,
-        present: Presence,
+        present: impl FnOnce() -> bool,
     ) -> Result<(), EditError> {
         world.entity(handle).map_err(EditError::World)?;
         let slot = handle.slot as usize;
@@ -430,7 +433,7 @@ impl EditScratch {
             return Err(EditError::Conflict);
         }
         self.marks[mark] = self.generation;
-        let exists = present(world, component, handle.slot);
+        let exists = present();
         if exists != (kind != ComponentEditKind::Insert) {
             return Err(EditError::World(if exists {
                 RegisteredWorldError::DuplicateComponent
