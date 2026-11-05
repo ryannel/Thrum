@@ -17,6 +17,9 @@ struct Height(f64);
 #[derive(Clone, Copy)]
 struct Drift(f64);
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Tag(u32);
+
 #[derive(Default)]
 struct Page {
     tick: u64,
@@ -60,10 +63,17 @@ struct Rules {
     write: WritePermit<Height>,
     height_read: ReadPermit<Height>,
     bytes_read: ReadPermit<Vec<u8>>,
+    tag_read: ReadPermit<Tag>,
+    tag_write: WritePermit<Tag>,
     structure: StructuralPermit,
     reject: bool,
     bad_edit: Option<Handle>,
     churn: Option<(Handle, StableId)>,
+    optional_edit: Option<(Handle, bool)>,
+}
+
+fn tag_at(_candidate: &Candidate, _index: usize) -> &dyn std::any::Any {
+    &Tag(7)
 }
 
 impl Rules {
@@ -112,6 +122,13 @@ impl Rules {
                 .edits
                 .push(Edit::spawn(&self.structure, StableId(2), 0, fill_spawn));
         }
+        if let Some((handle, insert)) = self.optional_edit {
+            candidate.edits.push(if insert {
+                Edit::insert(&self.tag_write, handle, 0, tag_at)
+            } else {
+                Edit::remove(&self.tag_write, handle)
+            });
+        }
         Ok(())
     }
 }
@@ -146,6 +163,7 @@ impl TickGame<Page> for Rules {
 
     fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {
         self.churn = None;
+        self.optional_edit = None;
     }
 
     fn capture(
@@ -205,6 +223,9 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     let payload = registry
         .register_with_snapshot::<Vec<u8>>(ComponentSchemaId(0xA3), Vec::clone, Vec::capacity)
         .expect("independent heap component schema");
+    let tag = registry
+        .register::<Tag>(ComponentSchemaId(0xA4))
+        .expect("optional tag schema");
     let mut runtime = GameRuntime::new(
         WorldEpoch(9),
         2,
@@ -214,7 +235,11 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
                 system(
                     1,
                     Stage::Simulate,
-                    &[(height, AccessMode::Write), (drift, AccessMode::Read)],
+                    &[
+                        (height, AccessMode::Write),
+                        (drift, AccessMode::Read),
+                        (tag, AccessMode::Write),
+                    ],
                     true,
                 ),
                 Rules::simulate,
@@ -245,24 +270,9 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Err(RuntimeError::UndeclaredAccess)
     ));
     let mut candidate = test_candidate(&runtime);
-    let mut game = Rules {
-        write: runtime
-            .write_permit::<Height>(SystemId(1))
-            .expect("declared height write"),
-        height_read: runtime
-            .read_permit::<Height>(SystemId(1))
-            .expect("declared sparse read"),
-        bytes_read: runtime
-            .read_permit::<Vec<u8>>(SystemId(2))
-            .expect("declared payload read"),
-        structure: runtime
-            .structural_permit(SystemId(1), 7)
-            .expect("declared structure"),
-        reject: false,
-        bad_edit: None,
-        churn: None,
-    };
+    let mut game = test_rules(&runtime);
     let first = seed_test_world(&mut runtime);
+    assert_invalid_journal_access(&runtime, &game, first);
     assert_eq!(
         runtime.step(&mut game, &mut candidate),
         Err(TickError::BaselineRequired)
@@ -393,6 +403,89 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Err(RuntimeError::WrongCapture),
         "a numerically adjacent tick from another branch is not contiguous"
     );
+    assert_optional_component_history(&mut runtime, &mut game, &mut candidate);
+}
+
+fn test_rules(runtime: &GameRuntime<Page, Rules>) -> Rules {
+    Rules {
+        write: runtime
+            .write_permit::<Height>(SystemId(1))
+            .expect("declared height write"),
+        height_read: runtime
+            .read_permit::<Height>(SystemId(1))
+            .expect("declared sparse read"),
+        bytes_read: runtime
+            .read_permit::<Vec<u8>>(SystemId(2))
+            .expect("declared payload read"),
+        tag_read: runtime
+            .read_permit::<Tag>(SystemId(1))
+            .expect("declared tag read"),
+        tag_write: runtime
+            .write_permit::<Tag>(SystemId(1))
+            .expect("declared tag write"),
+        structure: runtime
+            .structural_permit(SystemId(1), 7)
+            .expect("declared structure"),
+        reject: false,
+        bad_edit: None,
+        churn: None,
+        optional_edit: None,
+    }
+}
+
+fn assert_optional_component_history(
+    runtime: &mut GameRuntime<Page, Rules>,
+    game: &mut Rules,
+    candidate: &mut Candidate,
+) {
+    let handle = runtime.handle(StableId(2)).expect("unchanged entity");
+    let before = runtime.capture();
+    game.optional_edit = Some((handle, true));
+    runtime.step(game, candidate).expect("insert optional tag");
+    let inserted = runtime.capture();
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Ok(Tag(7))
+    );
+    let mut insert_delta = runtime.new_delta();
+    runtime
+        .capture_delta_into(&mut insert_delta)
+        .expect("insert delta");
+    let mut replayed = before.clone_independent();
+    replayed.advance(&insert_delta).expect("apply insert delta");
+    runtime
+        .restore(&replayed, Page::default)
+        .expect("restore inserted tag");
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Ok(Tag(7))
+    );
+    runtime.publish_initial(game, candidate);
+    game.optional_edit = Some((handle, false));
+    runtime.step(game, candidate).expect("remove optional tag");
+    let mut remove_delta = runtime.new_delta();
+    runtime
+        .capture_delta_into(&mut remove_delta)
+        .expect("remove delta");
+    replayed.advance(&remove_delta).expect("apply remove delta");
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Err(RegisteredWorldError::MissingComponent)
+    );
+    runtime
+        .restore(&replayed, Page::default)
+        .expect("restore removed tag");
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Err(RegisteredWorldError::MissingComponent)
+    );
+    runtime
+        .restore(&inserted, Page::default)
+        .expect("restore saved insert");
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Ok(Tag(7))
+    );
 }
 
 fn seed_test_world(runtime: &mut GameRuntime<Page, Rules>) -> Handle {
@@ -431,4 +524,19 @@ fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
         edits: Vec::new(),
         spawns: Vec::new(),
     }
+}
+
+fn assert_invalid_journal_access(runtime: &GameRuntime<Page, Rules>, game: &Rules, first: Handle) {
+    assert_eq!(
+        runtime.read().change_ticks3(
+            Handle {
+                epoch: first.epoch,
+                slot: u32::MAX,
+                generation: first.generation,
+            },
+            (&game.height_read, &game.height_read, &game.height_read),
+        ),
+        Err(RegisteredWorldError::InvalidHandle)
+    );
+    assert!(!runtime.read().visit_changes_since(0, 99, |_| {}));
 }

@@ -1,6 +1,7 @@
 //! Registered game simulation: checked identity, schedule access, one committed
 //! tick and immutable endpoint leases. Concrete fields and rules belong to games.
 
+mod column_store;
 mod input;
 mod registered_world;
 mod runtime;

@@ -87,12 +87,6 @@ license = "MIT OR Apache-2.0"
 purpose = "Deterministic V1 workload timing and allocation-count benchmarks for simulation, link conditioning and assembled GPU frames"
 target_cost = "Development-only benchmark dependency; no runtime or target-device dependency, with benchmark compilation and timing overhead measured separately"
 
-[external_dependencies.hecs]
-requirement = "=0.11.2"
-license = "MIT OR Apache-2.0"
-purpose = "Private W1 typed component storage selected by the three-candidate V1 workload spike"
-target_cost = "Three normal transitive crates in the selected profile; A1 measures checked-handle adaptation, serial and parallel queries, four-peer extraction, rollback and native/Wasm cost before qualification"
-
 [external_dependencies.smallvec]
 requirement = "=1.16.4"
 license = "MIT OR Apache-2.0"

@@ -18,10 +18,10 @@ All prototype samples allocated zero bytes and passed paired state/page/replay c
 
 ## Selected operating model
 
-Keep registration, schedule, permits, game rules and stable slot table. Use archetype-local typed columns, resolving each column once per query/batch. Keep movers and statics separate. Independent kernels use deterministic storage order; order-sensitive rules and published lists use canonical slots. Measure row-move ordering in the complete game. Preflight every typed and structural edit before direct column commits. No unchecked game storage access.
+Keep registration, schedule, permits, rules and slots. Integrated slot columns use presence bitmaps and checked handles; page fallback scans all slots and edits remain per-item erased. Split movers/statics and resolve columns once per typed batch; measure row moves if archetypes replace slot indexing. Preflight all edits before commit.
 
-Refresh four immutable pages from bounded changed-slot journals; gaps and replay branches force a full baseline. Record preimages and structural inverses in a preallocated caller-selected undo window; benchmark eight ticks while retaining longer windows. Reverse undo restores rows, generations, IDs, free-list order, components and peer resources. Branches invalidate visual history, never held leases. Cold save capture may still copy.
+Refresh four immutable pages from bounded changed-slot journals; an old page gets a full refresh, while skipped publication or a replay branch starts a baseline. Record preimages and structural inverses in a preallocated caller-selected undo window; benchmark eight ticks while retaining longer windows. Reverse undo restores rows, generations, IDs, free-list order, components and peer resources. Branches invalidate visual history, never held leases. Cold save capture may still copy.
 
 ## Qualification and reversal
 
-Compare the same four-peer game at 10k/100k: churn, refusal, serial/Rayon, full state, sorted dirty lists and byte-identical replay. Measure complete tick+page and eight-tick rewind p50/p95, plus all-sample zero allocations; time baseline publication separately. Targets: 25/300 µs tick and 100 µs/1 ms rewind. Profile misses before final backend selection. Remove hecs from production after the game qualifies.
+M3 Max owned-column full-game p50/p95: 89/92–107 µs at 10k, 903/912–915 µs at 100k, versus paired hecs 123/127 and 1240/1254–1274 µs. Sampled allocations peak at zero; churn, refusal, serial/Rayon and page tests pass. Both tick budgets remain open. Compare the same game and exact replay after typed batches and in-place undo; targets remain 25/300 µs tick and 100 µs/1 ms eight-tick rewind. Profile misses before final layout selection.

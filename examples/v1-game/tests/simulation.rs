@@ -399,6 +399,58 @@ fn leased_pages_drop_publication_but_never_block_authority_or_lose_recovery_base
 }
 
 #[test]
+fn old_page_reuse_after_journal_horizon_refreshes_membership_without_a_baseline() {
+    let mut sim = Simulation::new(WorldEpoch(31), config(2)).expect("game");
+    let old = sim.seed(entity(1, 1.0)).expect("mover");
+    sim.seed(entity(2, 0.0)).expect("static");
+    let held = sim.published_page().expect("tick-zero page");
+    for _ in 0..6 {
+        sim.step(&[]).expect("advance while old page held");
+    }
+    sim.step(&[Command::Despawn(old), Command::Spawn(entity(3, 2.0))])
+        .expect("change membership beyond held page horizon");
+    let replacement = sim.handle(StableId(3)).expect("replacement");
+    assert_eq!(replacement.slot, old.slot);
+    drop(held);
+    for _ in 0..8 {
+        sim.step(&[]).expect("reuse old page");
+        let page = sim.published_page().expect("published endpoint");
+        assert!(!page.is_baseline(), "adjacent endpoints remain incremental");
+        assert_eq!(page.stable_id(old.slot), Some(StableId(3)));
+        assert_eq!(
+            page.position(replacement),
+            Some(sim.get(replacement).expect("live").position)
+        );
+    }
+}
+
+#[test]
+fn four_tick_page_catch_up_keeps_old_lease_and_current_dirty_flags() {
+    let mut sim = Simulation::new(WorldEpoch(32), config(1)).expect("game");
+    let old = sim.seed(entity(1, 1.0)).expect("mover");
+    drop(sim.published_page().expect("tick-zero page"));
+    sim.step(&[]).expect("first tick");
+    let held = sim.published_page().expect("immutable tick-one lease");
+    let held_position = held.position(old).expect("old body");
+    sim.step(&[Command::Despawn(old), Command::Spawn(entity(2, 2.0))])
+        .expect("same-slot churn");
+    let replacement = sim.handle(StableId(2)).expect("replacement");
+    sim.step(&[]).expect("third tick");
+    sim.step(&[]).expect("reuse tick-zero page at tick four");
+    let current = sim.published_page().expect("caught-up page");
+    assert!(!current.is_baseline());
+    assert_eq!(current.stable_id(old.slot), Some(StableId(2)));
+    assert_eq!(
+        current.position(replacement),
+        Some(sim.get(replacement).expect("live").position)
+    );
+    assert_eq!(current.dirty().position(), &[old.slot]);
+    assert_eq!(current.dirty().structural(), []);
+    assert_eq!(held.stable_id(old.slot), Some(StableId(1)));
+    assert_eq!(held.position(old), Some(held_position));
+}
+
+#[test]
 fn four_peer_ten_thousand_entity_serial_and_rayon_replay_match() {
     let mut sim = simulation_with_count(10_000).expect("running game fixture");
     let old = sim.handle(StableId(9_995)).expect("static body");

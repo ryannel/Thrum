@@ -924,6 +924,60 @@ pub struct WorldRead<'a> {
 }
 
 impl WorldRead<'_> {
+    /// Whether a page's changed-slot interval is still in the bounded journal.
+    pub fn has_changes_since(&self, since: u64, current: u64) -> bool {
+        self.world.has_changes_since(since, current)
+    }
+
+    /// Visit changed slots in tick order. A slot may appear in several ticks.
+    /// Returns false and visits nothing if the interval is no longer retained.
+    pub fn visit_changes_since(&self, since: u64, current: u64, visit: impl FnMut(u32)) -> bool {
+        self.world.visit_changes_since(since, current, visit)
+    }
+
+    /// Resolve one live physical slot without exposing its storage row.
+    pub fn live_at_slot(&self, slot: u32) -> Option<(Handle, StableId)> {
+        self.world.live_at_slot(slot)
+    }
+
+    /// Read structural and three registered component change ticks at a checked handle.
+    ///
+    /// # Errors
+    ///
+    /// The handle is stale or foreign.
+    ///
+    /// # Panics
+    ///
+    /// A permit belongs to another runtime or system callback.
+    pub fn change_ticks3<
+        A: Send + Sync + 'static,
+        B: Send + Sync + 'static,
+        C: Send + Sync + 'static,
+    >(
+        &self,
+        handle: Handle,
+        permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
+    ) -> Result<[u64; 4], RegisteredWorldError> {
+        for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
+            assert_eq!(
+                permit, self.nonce,
+                "change permit belongs to another runtime"
+            );
+        }
+        assert!(self.system.is_none_or(|system| {
+            system == permits.0.system && system == permits.1.system && system == permits.2.system
+        }));
+        self.world.entity(handle)?;
+        Ok(self.world.change_ticks3_at(
+            handle.slot,
+            [
+                permits.0.component,
+                permits.1.component,
+                permits.2.component,
+            ],
+        ))
+    }
+
     /// Resolve a stable identity at this committed endpoint.
     pub fn handle(&self, id: StableId) -> Option<Handle> {
         self.world.handle(id)
@@ -955,7 +1009,7 @@ impl WorldRead<'_> {
         if self.system.is_some_and(|system| system != permit.system) {
             return Err(RegisteredWorldError::WrongSystem);
         }
-        self.world.with(handle, read)
+        self.world.with_index(permit.component, handle, read)
     }
 }
 
