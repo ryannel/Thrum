@@ -21,6 +21,7 @@ use thrum_render::extract::SourceTick;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
+    capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
@@ -464,6 +465,7 @@ struct PreparedSample {
 pub struct VisualPrepareInputs {
     device: wgpu::Device,
     queue: wgpu::Queue,
+    capabilities: DeviceCapabilities,
     scene: SyntheticScene,
     surface: bool,
     render_extent: [u32; 2],
@@ -489,12 +491,11 @@ impl VisualPrepareInputs {
     /// Returns a GPU preparation fault without affecting the running host.
     pub async fn prepare(self, product: EnvironmentProduct) -> Result<PreparedEnvironment, String> {
         let light = photometric(&product);
-        let prepared = PreparedSynthetic::prepare_with_photometric_environment(
-            &self.device,
+        let prepared = PreparedSynthetic::prepare_with_capabilities(
+            &self.capabilities,
             &self.queue,
-            GENERATION,
             &self.scene,
-            light,
+            FrameLighting::Photometric(light),
             1.0,
         )
         .await
@@ -581,6 +582,8 @@ pub struct FrameHost {
 impl FrameHost {
     /// Maximum submitted scene frames awaiting GPU completion.
     pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
+    /// Device generation shared by this provisional V1 host and its pipelines.
+    pub const DEVICE_GENERATION: u64 = GENERATION;
 
     fn frame_lighting(&self, tick: u64, alpha: f32) -> FrameLighting {
         #[cfg(not(target_arch = "wasm32"))]
@@ -602,6 +605,31 @@ impl FrameHost {
     pub async fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
+        config: FrameConfig,
+    ) -> Result<Self, String> {
+        Self::new_inner(device, queue, None, config).await
+    }
+
+    /// Build the live V1 host from the platform's immutable adapter record.
+    ///
+    /// # Errors
+    /// Refuses a mismatched device generation or ordinary scene preparation failure.
+    pub async fn new_with_capabilities(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+    ) -> Result<Self, String> {
+        if !capabilities.matches(device) || capabilities.generation() != GENERATION {
+            return Err("capability record does not match the host device".to_owned());
+        }
+        Self::new_inner(device, queue, Some(capabilities), config).await
+    }
+
+    async fn new_inner(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: Option<&DeviceCapabilities>,
         config: FrameConfig,
     ) -> Result<Self, String> {
         let [width, height] = config.render_extent;
@@ -643,10 +671,23 @@ impl FrameHost {
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
         scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots, 1.0);
-        let prepared =
-            PreparedSynthetic::prepare_with_light(device, queue, GENERATION, &scene, GAME_SUN)
+        let prepared = match capabilities {
+            Some(capabilities) => {
+                PreparedSynthetic::prepare_with_capabilities(
+                    capabilities,
+                    queue,
+                    &scene,
+                    FrameLighting::Diagnostic(GAME_SUN),
+                    1.0,
+                )
                 .await
-                .map_err(|error| format!("prepare: {error:?}"))?;
+            }
+            None => {
+                PreparedSynthetic::prepare_with_light(device, queue, GENERATION, &scene, GAME_SUN)
+                    .await
+            }
+        }
+        .map_err(|error| format!("prepare: {error:?}"))?;
         let presenter = match config.surface {
             Some(profile) => Some(
                 SurfacePresenter::prepare(device, GENERATION, config.render_extent, profile)
@@ -736,6 +777,7 @@ impl FrameHost {
         VisualPrepareInputs {
             device: self.device.clone(),
             queue: self.queue.clone(),
+            capabilities: self.prepared.capabilities().clone(),
             scene: self.scene.clone(),
             surface: self.presenter.is_some(),
             render_extent: self.render_extent,

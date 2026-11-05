@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
 use v1_game::{FrameHost, FrameSample, SurfaceOutput};
 
 fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
@@ -227,9 +227,16 @@ fn ready_worker_view_does_not_skip_the_next_committed_tick() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("native device");
-        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
-            .await
-            .expect("prepared game");
+        let capabilities =
+            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            v1_game::FrameConfig::default(),
+        )
+        .await
+        .expect("prepared game");
         let (wake, woke) = mpsc::sync_channel(2);
         host.enable_native_worker(move || {
             let _ = wake.try_send(());

@@ -1,7 +1,8 @@
 //! Typed GPU pass declarations and preparation-time lifetime analysis.
 //!
-//! The graph preserves declared order. Overlapping accesses involving a write
-//! become hazard edges; wgpu applies concrete API transitions while encoding.
+//! A prepared graph orders live passes by dependencies, then derives attachment
+//! operations and transient lifetimes from that order. wgpu applies concrete
+//! API transitions while encoding.
 //! Exact-compatible, nonoverlapping transient texture lifetimes share a
 //! physical allocation retained by the target until its GPU work completes.
 
@@ -227,8 +228,8 @@ pub enum PassScope {
     View(u64),
 }
 
-/// A pass declaration, ordered by insertion. No automatic pass culling hides
-/// external side effects or unmodelled ownership.
+/// A pass declaration. Insertion order breaks ties between independent work;
+/// `external_side_effect` retains presentation and readback outputs.
 #[derive(Clone, Debug)]
 pub struct Pass {
     /// Diagnostic name.
@@ -249,12 +250,18 @@ struct Resource {
     scope: ResourceScope,
 }
 
+struct PassSchedule {
+    order: Vec<usize>,
+    edges: Vec<(usize, usize)>,
+}
+
 /// Preparation-time graph; compile once per structure/generation change and
 /// retain the plan across frames with the same resource and pipeline closure.
 #[derive(Default)]
 pub struct FrameGraph {
     resources: Vec<Resource>,
     passes: Vec<Pass>,
+    explicit_dependencies: Vec<(usize, usize)>,
     owner: Arc<()>,
 }
 
@@ -292,6 +299,17 @@ pub enum GraphError {
         /// Offending pass.
         pass: usize,
     },
+    /// An explicit dependency names a missing pass or points to itself.
+    InvalidDependency,
+    /// Overlapping writes leave a read's producer unspecified.
+    AmbiguousProducer {
+        /// Reading pass.
+        pass: usize,
+        /// Resource with multiple possible producers.
+        resource: ResourceId,
+    },
+    /// Live pass dependencies form a cycle.
+    DependencyCycle,
 }
 
 /// A dependency with an overlapping write. These are API-independent reasons
@@ -326,7 +344,7 @@ pub struct Lifetime {
 pub struct CompiledGraph {
     /// Device generation used to validate the closure. Recompile after loss.
     pub device_generation: u64,
-    /// Unique pass-to-pass hazard edges in declaration order.
+    /// Unique live pass dependencies, using declaration indices.
     pub dependencies: Vec<(usize, usize)>,
     /// Detailed overlapping-use reasons.
     pub hazards: Vec<Hazard>,
@@ -334,6 +352,10 @@ pub struct CompiledGraph {
     pub lifetimes: Vec<Lifetime>,
     /// Number of transient slots after exact-descriptor reuse.
     pub transient_slots: usize,
+    /// Declaration indices in actual execution order.
+    pub pass_order: Vec<usize>,
+    /// Passes removed because no output consumes them.
+    pub culled_passes: usize,
     pipeline_pass_count: usize,
     passes: Vec<CompiledPass>,
     resources: Vec<Resource>,
@@ -575,12 +597,18 @@ impl CompiledGraph {
 }
 
 impl FrameGraph {
-    fn attachment_store(&self, index: usize, access: &Access) -> bool {
-        if self.passes[index].external_side_effect {
+    fn attachment_store(&self, order: &[usize], position: usize, access: &Access) -> bool {
+        if self.passes[order[position]].external_side_effect
+            || matches!(
+                self.resources[access.resource.index].scope,
+                ResourceScope::Persistent { .. }
+            )
+        {
             return true;
         }
         let mut live = vec![access.range.clone()];
-        for pass in &self.passes[index + 1..] {
+        for &index in &order[position + 1..] {
+            let pass = &self.passes[index];
             for next in &pass.accesses {
                 if next.resource != access.resource {
                     continue;
@@ -619,9 +647,25 @@ impl FrameGraph {
         self.resources.push(Resource { descriptor, scope });
         Ok(id)
     }
-    /// Append one pass to the intended execution order.
-    pub fn pass(&mut self, pass: Pass) {
+    /// Append a pass and return its declaration index for explicit dependencies.
+    pub fn pass(&mut self, pass: Pass) -> usize {
+        let index = self.passes.len();
         self.passes.push(pass);
+        index
+    }
+    /// Require `before` to execute before `after`. A direct writer-to-reader
+    /// edge also selects a producer when several writers overlap that read.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an absent pass or self-dependency. Cycles are
+    /// checked when compiling the graph.
+    pub fn dependency(&mut self, before: usize, after: usize) -> Result<(), GraphError> {
+        if before == after || before >= self.passes.len() || after >= self.passes.len() {
+            return Err(GraphError::InvalidDependency);
+        }
+        self.explicit_dependencies.push((before, after));
+        Ok(())
     }
     /// Inspect the exact allocation properties for an identity from this graph.
     /// A foreign identity returns None even when its numeric slot matches.
@@ -646,41 +690,115 @@ impl FrameGraph {
     pub fn passes(&self) -> &[Pass] {
         &self.passes
     }
-    /// Validate closure and initialization, derive hazards and reuse. This is
-    /// preparation work (quadratic in declared accesses), never per-instance work.
-    ///
-    /// # Errors
-    ///
-    /// Returns a graph error for invalid resource identity, access, pipeline
-    /// closure or uninitialized reads.
-    pub fn compile(
-        &self,
-        generation: u64,
-        prepared: &BTreeSet<PipelineKey>,
-    ) -> Result<CompiledGraph, GraphError> {
-        let mut initialized: Vec<Vec<Range<u64>>> = self
-            .resources
-            .iter()
-            .map(|r| match r.scope {
-                ResourceScope::Transient
-                | ResourceScope::Imported { initialized: false }
+    fn initial_contents(&self, resource: usize) -> bool {
+        matches!(
+            self.resources[resource].scope,
+            ResourceScope::Imported { initialized: true }
                 | ResourceScope::Persistent {
-                    initialized: false, ..
-                } => Vec::new(),
-                _ => std::iter::once(0..r.descriptor.units()).collect(),
-            })
-            .collect();
-        let mut prior: Vec<(usize, &Access)> = Vec::new();
-        let mut hazards = Vec::new();
-        let mut edges = BTreeSet::new();
-        let mut bounds: Vec<Option<(usize, usize)>> = vec![None; self.resources.len()];
-        for (index, pass) in self.passes.iter().enumerate() {
-            if pass
-                .pipeline
-                .is_some_and(|key| key.device_generation != generation || !prepared.contains(&key))
-            {
-                return Err(GraphError::PipelineNotReady { pass: index });
+                    initialized: true,
+                    ..
+                }
+        )
+    }
+
+    fn selected_producers(
+        &self,
+        consumer: usize,
+        access: &Access,
+        require_explicit_overlap: bool,
+    ) -> Result<Vec<(usize, Range<u64>)>, GraphError> {
+        let mut cuts = vec![access.range.start, access.range.end];
+        for pass in &self.passes {
+            for write in &pass.accesses {
+                if write.resource == access.resource
+                    && write.kind.writes()
+                    && overlap(&write.range, &access.range)
+                {
+                    cuts.push(write.range.start.max(access.range.start));
+                    cuts.push(write.range.end.min(access.range.end));
+                }
             }
+        }
+        cuts.sort_unstable();
+        cuts.dedup();
+        let mut selected = Vec::new();
+        for pair in cuts.windows(2) {
+            let range = pair[0]..pair[1];
+            let writers = self
+                .passes
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| *index != consumer)
+                .filter(|(_, pass)| {
+                    pass.accesses.iter().any(|write| {
+                        write.resource == access.resource
+                            && write.kind.writes()
+                            && write.range.start <= range.start
+                            && write.range.end >= range.end
+                    })
+                })
+                .map(|(index, _)| index)
+                .collect::<Vec<_>>();
+            let explicit = writers
+                .iter()
+                .copied()
+                .filter(|&writer| self.explicit_dependencies.contains(&(writer, consumer)))
+                .collect::<Vec<_>>();
+            let prior = writers
+                .iter()
+                .copied()
+                .filter(|&writer| writer < consumer)
+                .max();
+            let producer = if explicit.len() > 1 {
+                return Err(GraphError::AmbiguousProducer {
+                    pass: consumer,
+                    resource: access.resource.clone(),
+                });
+            } else if let Some(&chosen) = explicit.first() {
+                if chosen < consumer
+                    && writers.iter().any(|&writer| {
+                        writer > chosen
+                            && writer < consumer
+                            && !self.explicit_dependencies.contains(&(consumer, writer))
+                    })
+                {
+                    return Err(GraphError::AmbiguousProducer {
+                        pass: consumer,
+                        resource: access.resource.clone(),
+                    });
+                }
+                Some(chosen)
+            } else if prior.is_none() && self.initial_contents(access.resource.index) {
+                None
+            } else if require_explicit_overlap && writers.len() > 1 {
+                return Err(GraphError::AmbiguousProducer {
+                    pass: consumer,
+                    resource: access.resource.clone(),
+                });
+            } else if let Some(prior) = prior {
+                Some(prior)
+            } else if writers.len() == 1 {
+                Some(writers[0])
+            } else if writers.is_empty() {
+                return Err(GraphError::UninitializedRead {
+                    pass: consumer,
+                    resource: access.resource.clone(),
+                });
+            } else {
+                return Err(GraphError::AmbiguousProducer {
+                    pass: consumer,
+                    resource: access.resource.clone(),
+                });
+            };
+            if let Some(writer) = producer {
+                selected.push((writer, range));
+            }
+        }
+        Ok(selected)
+    }
+
+    fn validate_declarations(&self) -> Result<(), GraphError> {
+        for (index, pass) in self.passes.iter().enumerate() {
             for (a_index, access) in pass.accesses.iter().enumerate() {
                 if !Arc::ptr_eq(&access.resource.owner, &self.owner) {
                     return Err(GraphError::InvalidRange { pass: index });
@@ -705,6 +823,171 @@ impl FrameGraph {
                 }) {
                     return Err(GraphError::ConflictingPassAccess { pass: index });
                 }
+            }
+        }
+        Ok(())
+    }
+
+    fn schedule(&self) -> Result<PassSchedule, GraphError> {
+        // Graphs with no published output remain all-pass diagnostic plans for
+        // existing callers. The game graph declares present/readback roots.
+        let mut live = self
+            .passes
+            .iter()
+            .map(|pass| {
+                pass.external_side_effect
+                    || pass.accesses.iter().any(|access| {
+                        access.kind.writes()
+                            && matches!(
+                                self.resources[access.resource.index].scope,
+                                ResourceScope::Persistent { .. }
+                            )
+                    })
+            })
+            .collect::<Vec<_>>();
+        let diagnostic = !live.iter().any(|&root| root);
+        if diagnostic {
+            live.fill(true);
+        }
+        let mut data_edges = Vec::new();
+        let mut selected = Vec::new();
+        let mut queue = live
+            .iter()
+            .enumerate()
+            .filter_map(|(index, &is_live)| is_live.then_some(index))
+            .collect::<Vec<_>>();
+        while let Some(consumer) = queue.pop() {
+            for &(producer, after) in &self.explicit_dependencies {
+                if after == consumer && !live[producer] {
+                    live[producer] = true;
+                    queue.push(producer);
+                }
+            }
+            for access in &self.passes[consumer].accesses {
+                if !access.kind.reads() {
+                    continue;
+                }
+                for (producer, range) in self.selected_producers(consumer, access, !diagnostic)? {
+                    data_edges.push((producer, consumer));
+                    selected.push((consumer, producer, access.resource.clone(), range));
+                    if !live[producer] {
+                        live[producer] = true;
+                        queue.push(producer);
+                    }
+                }
+            }
+        }
+        let mut edges = BTreeSet::new();
+        edges.extend(data_edges);
+        edges.extend(
+            self.explicit_dependencies
+                .iter()
+                .copied()
+                .filter(|&(before, after)| live[before] && live[after]),
+        );
+        for (before, prior) in self.passes.iter().enumerate() {
+            if !live[before] {
+                continue;
+            }
+            for (after, next) in self.passes.iter().enumerate().skip(before + 1) {
+                if !live[after] || edges.contains(&(after, before)) {
+                    continue;
+                }
+                let conflicts = prior.accesses.iter().any(|a| {
+                    next.accesses.iter().any(|b| {
+                        a.resource == b.resource
+                            && overlap(&a.range, &b.range)
+                            && (a.kind.writes() || b.kind.writes())
+                    })
+                });
+                if !conflicts {
+                    continue;
+                }
+                let before_read_waits_for_later_write = prior.accesses.iter().any(|a| {
+                    a.kind.reads()
+                        && next.accesses.iter().any(|b| {
+                            a.resource == b.resource
+                                && b.kind.writes()
+                                && overlap(&a.range, &b.range)
+                                && selected.iter().any(|(reader, writer, resource, range)| {
+                                    *reader == before
+                                        && *writer >= after
+                                        && *resource == a.resource
+                                        && overlap(range, &b.range)
+                                })
+                        })
+                });
+                if !before_read_waits_for_later_write {
+                    edges.insert((before, after));
+                }
+            }
+        }
+        let mut order = Vec::with_capacity(live.iter().filter(|&&value| value).count());
+        let mut remaining = live;
+        loop {
+            let next = remaining.iter().enumerate().find_map(|(index, &is_live)| {
+                (is_live
+                    && !edges
+                        .iter()
+                        .any(|&(before, after)| after == index && remaining[before]))
+                .then_some(index)
+            });
+            let Some(next) = next else {
+                if remaining.iter().any(|&value| value) {
+                    return Err(GraphError::DependencyCycle);
+                }
+                break;
+            };
+            remaining[next] = false;
+            order.push(next);
+        }
+        Ok(PassSchedule {
+            order,
+            edges: edges.into_iter().collect(),
+        })
+    }
+    /// Validate closure and initialization, derive hazards and reuse. This is
+    /// preparation work (quadratic in declared accesses), never per-instance work.
+    ///
+    /// # Errors
+    ///
+    /// Returns a graph error for invalid resource identity, access, pipeline
+    /// closure or uninitialized reads.
+    pub fn compile(
+        &self,
+        generation: u64,
+        prepared: &BTreeSet<PipelineKey>,
+    ) -> Result<CompiledGraph, GraphError> {
+        self.validate_declarations()?;
+        let PassSchedule {
+            order,
+            edges: schedule_edges,
+        } = self.schedule()?;
+        let mut initialized: Vec<Vec<Range<u64>>> = self
+            .resources
+            .iter()
+            .map(|r| match r.scope {
+                ResourceScope::Transient
+                | ResourceScope::Imported { initialized: false }
+                | ResourceScope::Persistent {
+                    initialized: false, ..
+                } => Vec::new(),
+                _ => std::iter::once(0..r.descriptor.units()).collect(),
+            })
+            .collect();
+        let mut prior: Vec<(usize, &Access)> = Vec::new();
+        let mut hazards = Vec::new();
+        let mut edges = BTreeSet::from_iter(schedule_edges);
+        let mut bounds: Vec<Option<(usize, usize)>> = vec![None; self.resources.len()];
+        for (position, &index) in order.iter().enumerate() {
+            let pass = &self.passes[index];
+            if pass
+                .pipeline
+                .is_some_and(|key| key.device_generation != generation || !prepared.contains(&key))
+            {
+                return Err(GraphError::PipelineNotReady { pass: index });
+            }
+            for access in &pass.accesses {
                 if access.kind.reads()
                     && !covered(&initialized[access.resource.index], &access.range)
                 {
@@ -734,7 +1017,7 @@ impl FrameGraph {
                         access.kind,
                         AccessKind::AttachmentClear | AccessKind::AttachmentLoad
                     ) {
-                        self.attachment_store(index, access)
+                        self.attachment_store(&order, position, access)
                     } else {
                         access.store
                     };
@@ -744,7 +1027,7 @@ impl FrameGraph {
                 }
                 bounds[access.resource.index] = Some(
                     bounds[access.resource.index]
-                        .map_or((index, index), |(first, _)| (first, index)),
+                        .map_or((position, position), |(first, _)| (first, position)),
                 );
             }
             prior.extend(pass.accesses.iter().map(|a| (index, a)));
@@ -789,19 +1072,19 @@ impl FrameGraph {
             hazards,
             lifetimes,
             transient_slots: slots.len(),
-            pipeline_pass_count: self
-                .passes
+            pass_order: order.clone(),
+            culled_passes: self.passes.len() - order.len(),
+            pipeline_pass_count: order
                 .iter()
-                .filter(|pass| pass.pipeline.is_some())
+                .filter(|&&index| self.passes[index].pipeline.is_some())
                 .count(),
-            passes: self
-                .passes
+            passes: order
                 .iter()
                 .enumerate()
-                .map(|(index, pass)| CompiledPass {
-                    name: pass.name.clone(),
-                    pipeline: pass.pipeline,
-                    attachments: pass
+                .map(|(position, &index)| CompiledPass {
+                    name: self.passes[index].name.clone(),
+                    pipeline: self.passes[index].pipeline,
+                    attachments: self.passes[index]
                         .accesses
                         .iter()
                         .filter(|access| {
@@ -814,7 +1097,7 @@ impl FrameGraph {
                             resource: access.resource.clone(),
                             range: access.range.clone(),
                             load: access.kind == AccessKind::AttachmentLoad,
-                            store: self.attachment_store(index, access),
+                            store: self.attachment_store(&order, position, access),
                         })
                         .collect(),
                 })
@@ -902,7 +1185,13 @@ mod tests {
                 external_side_effect: name == "sample",
             });
         }
+        assert!(matches!(
+            graph.compile(1, &BTreeSet::new()),
+            Err(super::GraphError::AmbiguousProducer { pass: 2, .. })
+        ));
+        graph.dependency(1, 2).expect("select sampled clear");
         let compiled = graph.compile(1, &BTreeSet::new()).expect("valid graph");
+        assert_eq!(compiled.pass_order, [1, 2]);
         let mut stores = Vec::new();
         compiled
             .record(|pass| {
@@ -913,7 +1202,8 @@ mod tests {
                 Ok::<_, ()>(())
             })
             .expect("recording succeeds");
-        assert_eq!(stores, [wgpu::StoreOp::Discard, wgpu::StoreOp::Store]);
+        assert_eq!(compiled.culled_passes, 1);
+        assert_eq!(stores, [wgpu::StoreOp::Store]);
     }
 
     #[test]
@@ -943,7 +1233,7 @@ mod tests {
                     kind,
                     store: true,
                 }],
-                external_side_effect: name == "present",
+                external_side_effect: name != "producer",
             });
         }
         let compiled = graph.compile(1, &BTreeSet::new()).expect("valid closure");
@@ -959,5 +1249,281 @@ mod tests {
         });
         assert_eq!(result, Err("encoder refused"));
         assert_eq!(visited, ["producer", "consumer"]);
+    }
+
+    #[test]
+    fn later_declared_producer_executes_before_its_live_consumer() {
+        let mut graph = FrameGraph::default();
+        let buffer = graph
+            .resource(
+                ResourceDescriptor::Buffer {
+                    bytes: 16,
+                    usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                },
+                ResourceScope::Transient,
+            )
+            .expect("buffer");
+        for (name, kind, external_side_effect) in [
+            ("consumer", AccessKind::CopyRead, true),
+            ("producer", AccessKind::CopyWrite, false),
+        ] {
+            graph.pass(Pass {
+                name: name.into(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: vec![Access {
+                    resource: buffer.clone(),
+                    range: 0..16,
+                    kind,
+                    store: true,
+                }],
+                external_side_effect,
+            });
+        }
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("topology");
+        assert_eq!(compiled.pass_order, [1, 0]);
+        assert_eq!(compiled.dependencies, [(1, 0)]);
+        assert_eq!(
+            (compiled.lifetimes[0].first, compiled.lifetimes[0].last),
+            (0, 1)
+        );
+        let mut visited = Vec::new();
+        compiled
+            .record(|pass| {
+                visited.push(pass.name.clone());
+                Ok::<_, ()>(())
+            })
+            .expect("record");
+        assert_eq!(visited, ["producer", "consumer"]);
+    }
+
+    #[test]
+    fn live_outputs_cull_dead_work_and_reuse_disjoint_transients() {
+        let mut graph = FrameGraph::default();
+        let mut resources = Vec::new();
+        for _ in 0..3 {
+            resources.push(
+                graph
+                    .resource(
+                        ResourceDescriptor::Buffer {
+                            bytes: 16,
+                            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                        },
+                        ResourceScope::Transient,
+                    )
+                    .expect("buffer"),
+            );
+        }
+        let write = |name: &str, resource: &super::ResourceId| Pass {
+            name: name.into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![Access {
+                resource: resource.clone(),
+                range: 0..16,
+                kind: AccessKind::CopyWrite,
+                store: true,
+            }],
+            external_side_effect: false,
+        };
+        let read = |name: &str, resource: &super::ResourceId| Pass {
+            name: name.into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![Access {
+                resource: resource.clone(),
+                range: 0..16,
+                kind: AccessKind::CopyRead,
+                store: true,
+            }],
+            external_side_effect: true,
+        };
+        graph.pass(write("dead", &resources[0]));
+        graph.pass(write("first", &resources[1]));
+        graph.pass(read("first output", &resources[1]));
+        graph.pass(write("second", &resources[2]));
+        graph.pass(read("second output", &resources[2]));
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("live outputs");
+        assert_eq!(compiled.culled_passes, 1);
+        assert_eq!(compiled.pass_order, [1, 2, 3, 4]);
+        assert_eq!(compiled.lifetimes.len(), 2);
+        assert_eq!(compiled.transient_slots, 1);
+    }
+
+    #[test]
+    fn cycle_and_invalid_dependency_refuse_before_execution() {
+        let mut graph = FrameGraph::default();
+        let a = graph
+            .resource(
+                ResourceDescriptor::Buffer {
+                    bytes: 16,
+                    usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                },
+                ResourceScope::Transient,
+            )
+            .expect("first buffer");
+        let b = graph
+            .resource(
+                ResourceDescriptor::Buffer {
+                    bytes: 16,
+                    usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                },
+                ResourceScope::Transient,
+            )
+            .expect("second buffer");
+        assert_eq!(
+            graph.dependency(0, 0),
+            Err(super::GraphError::InvalidDependency)
+        );
+        for (read, write) in [(&b, &a), (&a, &b)] {
+            graph.pass(Pass {
+                name: "cycle".into(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: vec![
+                    Access {
+                        resource: read.clone(),
+                        range: 0..16,
+                        kind: AccessKind::CopyRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: write.clone(),
+                        range: 0..16,
+                        kind: AccessKind::CopyWrite,
+                        store: true,
+                    },
+                ],
+                external_side_effect: read == &b,
+            });
+        }
+        assert_eq!(
+            graph.compile(1, &BTreeSet::new()).unwrap_err(),
+            super::GraphError::DependencyCycle
+        );
+    }
+
+    #[test]
+    fn persistent_history_write_is_live_and_stored_for_the_next_frame() {
+        let mut graph = FrameGraph::default();
+        let history = graph
+            .resource(
+                ResourceDescriptor::Texture {
+                    width: 4,
+                    height: 4,
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                },
+                ResourceScope::Persistent {
+                    owner: 7,
+                    epoch: 2,
+                    initialized: false,
+                },
+            )
+            .expect("history texture");
+        graph.pass(Pass {
+            name: "history publish".into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![Access {
+                resource: history.clone(),
+                range: 0..1,
+                kind: AccessKind::AttachmentClear,
+                store: false,
+            }],
+            external_side_effect: false,
+        });
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("history root");
+        assert_eq!(compiled.pass_order, [0]);
+        assert_eq!(compiled.culled_passes, 0);
+        compiled
+            .record(|pass| {
+                let ops = pass
+                    .attachment_ops(&history, 0..1, wgpu::Color::BLACK)
+                    .expect("history attachment");
+                assert_eq!(ops.store, wgpu::StoreOp::Store);
+                Ok::<_, ()>(())
+            })
+            .expect("record");
+    }
+
+    #[test]
+    fn explicit_prerequisite_survives_culling_with_its_output() {
+        let mut graph = FrameGraph::default();
+        let pass = |name: &str, external_side_effect| Pass {
+            name: name.into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: Vec::new(),
+            external_side_effect,
+        };
+        let prerequisite = graph.pass(pass("prerequisite", false));
+        graph.pass(pass("unrelated", false));
+        let output = graph.pass(pass("output", true));
+        graph
+            .dependency(prerequisite, output)
+            .expect("valid prerequisite");
+        let compiled = graph
+            .compile(1, &BTreeSet::new())
+            .expect("live prerequisite");
+        assert_eq!(compiled.pass_order, [prerequisite, output]);
+        assert_eq!(compiled.culled_passes, 1);
+        assert_eq!(compiled.dependencies, [(prerequisite, output)]);
+        let mut recorded = Vec::new();
+        compiled
+            .record(|pass| {
+                recorded.push(pass.name.clone());
+                Ok::<_, ()>(())
+            })
+            .expect("record");
+        assert_eq!(recorded, ["prerequisite", "output"]);
+    }
+
+    #[test]
+    fn selecting_an_older_writer_requires_moving_later_writes_after_the_read() {
+        let mut graph = FrameGraph::default();
+        let buffer = graph
+            .resource(
+                ResourceDescriptor::Buffer {
+                    bytes: 16,
+                    usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                },
+                ResourceScope::Transient,
+            )
+            .expect("buffer");
+        for (name, kind, external_side_effect) in [
+            ("first write", AccessKind::CopyWrite, false),
+            ("second write", AccessKind::CopyWrite, true),
+            ("read first", AccessKind::CopyRead, true),
+        ] {
+            graph.pass(Pass {
+                name: name.into(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: vec![Access {
+                    resource: buffer.clone(),
+                    range: 0..16,
+                    kind,
+                    store: true,
+                }],
+                external_side_effect,
+            });
+        }
+        graph.dependency(0, 2).expect("select first writer");
+        assert_eq!(
+            graph.compile(1, &BTreeSet::new()).unwrap_err(),
+            super::GraphError::AmbiguousProducer {
+                pass: 2,
+                resource: buffer.clone(),
+            }
+        );
+        graph.dependency(2, 1).expect("read before second writer");
+        let compiled = graph
+            .compile(1, &BTreeSet::new())
+            .expect("ordered versions");
+        assert_eq!(compiled.pass_order, [0, 2, 1]);
     }
 }
