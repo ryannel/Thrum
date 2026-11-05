@@ -447,6 +447,44 @@ fn failed_game_tick_preserves_input_and_page_then_churn_reuses_checked_slot() {
 }
 
 #[test]
+fn damage_then_health_command_rewinds_to_the_original_value() {
+    let mut sim = Simulation::new(WorldEpoch(91), config(1)).expect("game");
+    let owner = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(owner);
+    let handle = sim.seed(player).expect("owned player");
+    sim.register_peer(owner, handle).expect("peer binding");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(4).expect("window"))
+        .expect("history");
+    let mut input = InputFrame::new(
+        Origin {
+            peer: owner.peer,
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        owner.actor,
+        1,
+        [0.0; 3],
+    );
+    input.actions.push(SimAction::Damage(7));
+    sim.admit_frame(input).expect("input");
+    history
+        .step(&mut sim, &[Command::SetHealth(handle, 80)])
+        .expect("damage then command");
+    assert_eq!(sim.get(handle).expect("committed player").health, 80);
+    assert_eq!(sim.published_page().expect("page").health(handle), Some(80));
+    history.rewind(&mut sim, 1).expect("rewind");
+    assert_eq!(sim.get(handle).expect("restored player").health, 100);
+    assert!(history.replay_next(&mut sim).expect("replay"));
+    assert_eq!(sim.get(handle).expect("replayed player").health, 80);
+}
+
+#[test]
 fn ten_thousand_running_game_ticks_reuse_allocations() {
     let mut sim = Simulation::new(WorldEpoch(4), config(10_000)).expect("game");
     for index in 0usize..10_000 {

@@ -137,7 +137,7 @@ fn setup(
         systems.try_into().map_err(|_| SimError::InvalidConfig)?;
     let systems = vec![
         RegisteredSystem::direct(input, Rules::input_velocity),
-        RegisteredSystem::parallel(input_health, Rules::input_health),
+        RegisteredSystem::direct(input_health, Rules::input_health),
         RegisteredSystem::direct(simulate, Rules::simulate),
         RegisteredSystem::new(resolve, Rules::resolve),
     ];
@@ -161,6 +161,9 @@ fn setup(
             .map_err(map_runtime)?,
         input_velocity_write: runtime
             .write_permit::<Velocity>(INPUT)
+            .map_err(map_runtime)?,
+        input_health_write: runtime
+            .write_permit::<Health>(INPUT_HEALTH)
             .map_err(map_runtime)?,
         resolve_position_read: runtime
             .read_permit::<Position>(RESOLVE)
