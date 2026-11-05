@@ -10,9 +10,103 @@ use thrum_render::synthetic::{
 use thrum_render::timing::{GpuTimings, TimingError};
 
 #[test]
-#[ignore = "requires the Metal host gate; ./dev check runs this regression on macOS"]
+#[cfg(target_os = "macos")]
 fn scene_depth_uses_32_bit_float() {
-    assert_eq!(DEPTH_FORMAT, wgpu::TextureFormat::Depth32Float);
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::METAL,
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
+        });
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("Metal adapter required for depth format regression");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("Metal device");
+        let depth = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("production scene depth format regression"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: DEPTH_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let view = depth.create_view(&wgpu::TextureViewDescriptor::default());
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("depth32 readback"),
+            size: 256,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        {
+            let _pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("clear production depth"),
+                color_attachments: &[],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(0.25),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+        }
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &depth,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::DepthOnly,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &readback,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(256),
+                    rows_per_image: Some(1),
+                },
+            },
+            wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+        );
+        let (send, receive) = std::sync::mpsc::channel();
+        encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
+            send.send(result).expect("depth readback receiver");
+        });
+        let submission = queue.submit([encoder.finish()]);
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(std::time::Duration::from_secs(10)),
+            })
+            .expect("depth submission");
+        receive
+            .recv()
+            .expect("depth callback")
+            .expect("mapped depth");
+        let mapped = readback.slice(..).get_mapped_range().expect("depth bytes");
+        let value = f32::from_le_bytes(mapped[..4].try_into().expect("four depth bytes"));
+        assert!(
+            (value - 0.25).abs() < 1e-6,
+            "32-bit depth clear read back {value}"
+        );
+    });
 }
 
 /// Opt-in integration test: a real adapter is required, never replaced by a mock.
@@ -926,23 +1020,17 @@ fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
 }
 
 #[test]
-#[ignore = "requires Metal; ./dev check runs this regression on macOS"]
+#[cfg(target_os = "macos")]
 fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::METAL,
             ..wgpu::InstanceDescriptor::new_without_display_handle()
         });
-        let adapter = match instance
+        let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-        {
-            Ok(adapter) => adapter,
-            Err(error) => {
-                eprintln!("SKIP moving shadow caster regression: no Metal adapter ({error})");
-                return;
-            }
-        };
+            .expect("Metal adapter required for moving shadow caster regression");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await

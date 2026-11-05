@@ -16,22 +16,10 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-render/Cargo.toml"
 allowed_workspace_dependencies = []
 
-[packages.thrum-mobile-shell]
-manifest = "crates/thrum-mobile-shell/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-core"]
-
 [packages.thrum-network]
 manifest = "crates/thrum-network/Cargo.toml"
 # The timed input window consumes the shared W1 InputFrame without owning gameplay truth.
 allowed_workspace_dependencies = ["thrum-core"]
-
-[packages.thrum-source]
-manifest = "crates/thrum-source/Cargo.toml"
-allowed_workspace_dependencies = []
-
-[packages.thrum-cook]
-manifest = "crates/thrum-cook/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-content-runtime", "thrum-source"]
 
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
@@ -39,7 +27,7 @@ allowed_workspace_dependencies = []
 
 [packages.v1-game]
 manifest = "examples/v1-game/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-content-runtime", "thrum-core", "thrum-cook", "thrum-render", "thrum-source"]
+allowed_workspace_dependencies = ["thrum-content-runtime", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
 [packages.v1-game-ios]
@@ -116,51 +104,3 @@ requirement = "=1.0.1"
 license = "Apache-2.0/MIT"
 purpose = "Block first mobile adapter/device creation in the initial shell and opt-in local renderer device tests"
 target_cost = "Small native/test dependency; runtime startup blocking must be measured and replaced if it harms responsiveness"
-
-[external_dependencies.serde]
-requirement = "=1.0.229"
-license = "MIT OR Apache-2.0"
-purpose = "Strict bounded editable-source JSON decoding through DeserializeSeed"
-target_cost = "Native tooling only; serde derive adds a build-time proc macro for strict render-object visitors, with no reflection or simulation runtime dependency; clean-build cost remains to measure"
-
-[external_dependencies.fs4]
-requirement = "=1.1.0"
-license = "MIT OR Apache-2.0"
-purpose = "Native available-space, allocation-granularity and cooperative lock probes for source staging, build-input materialization and the first T2 job owner"
-target_cost = "Native source/cook/job tooling only; sync OS filesystem bindings, no game callback or portable core dependency"
-
-[external_dependencies.rusqlite]
-requirement = "=0.40.2"
-license = "MIT"
-purpose = "Native source blobs, manifests, root/outcome transactions and verified reader leases, including provisional snapshot qualification"
-target_cost = "Native source tooling with a bundled SQLite C build and disk I/O; no portable core or game-callback dependency. A provisional root is not accepted-source or ready-build authority"
-
-[external_dependencies.serde_json]
-requirement = "=1.0.154"
-license = "MIT OR Apache-2.0"
-purpose = "Strict source and first-profile build-declaration JSON parsing, stable round-trip f64 semantics and exact optional-value carry-through in native tooling"
-target_cost = "Native source/cook tooling only; float_roundtrip adds parser work and raw_value retains untouched source syntax, with bounded record memory separate from streaming scratch"
-
-[external_dependencies.serde_json_canonicalizer]
-requirement = "=0.4.1"
-license = "MIT"
-purpose = "Independent RFC 8785 JCS oracle for native source-manifest conformance tests"
-target_cost = "Native tooling dev-dependency only; production manifest emission streams fixed-order fields without serializer allocation"
-
-[external_dependencies.sha2]
-requirement = "=0.11.1"
-license = "MIT OR Apache-2.0"
-purpose = "SHA-256 of exact source file bytes and canonical tree manifests"
-target_cost = "Native source and cook tooling only; source-byte/product hashing scales with declared content and remains outside simulation callbacks"
-
-[external_dependencies.unicase]
-requirement = "=2.10.0"
-license = "MIT OR Apache-2.0"
-purpose = "Full Unicode case-fold collision detection for cross-target source paths"
-target_cost = "Native tooling only; allocate folded metadata once per candidate path, not during simulation"
-
-[external_dependencies.unicode-normalization]
-requirement = "=0.1.26"
-license = "MIT OR Apache-2.0"
-purpose = "NFC validation of source paths before immutable capture"
-target_cost = "Native tooling only; Unicode tables add binary/build cost and path checks occur once per candidate"
