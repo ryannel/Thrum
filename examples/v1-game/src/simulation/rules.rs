@@ -12,7 +12,6 @@ use thrum_core::{
 };
 
 use super::{
-    INPUT_HEALTH,
     page::Page,
     types::{
         Command, Health, Ownership, Position, SimAction, SimConfig, SimError, Velocity, Visual,
@@ -85,11 +84,6 @@ pub(super) struct Candidate {
     touched: Vec<usize>,
     spawns: Vec<super::types::ComponentEntity>,
     edits: Vec<Edit<Candidate>>,
-}
-
-#[derive(Default)]
-pub(super) struct ParallelOutput {
-    health: Vec<(Handle, u16)>,
 }
 
 impl Candidate {
@@ -179,6 +173,7 @@ pub(super) struct Rules {
     pub(super) changed_positions: usize,
     pub(super) position_write: WritePermit<Position>,
     pub(super) input_velocity_write: WritePermit<Velocity>,
+    pub(super) input_health_write: WritePermit<Health>,
     pub(super) resolve_position_read: ReadPermit<Position>,
     pub(super) velocity_write: WritePermit<Velocity>,
     pub(super) health_write: WritePermit<Health>,
@@ -239,12 +234,11 @@ impl Rules {
 
     pub(super) fn input_health(
         &self,
-        world: &WorldRead<'_>,
+        world: &mut WorldTxn<'_>,
         _executor: Executor,
         _tick: u64,
-        output: &mut ParallelOutput,
+        _candidate: &mut Candidate,
     ) -> Result<(), SimError> {
-        output.health.clear();
         for peer in &self.peers {
             if !peer.active {
                 continue;
@@ -262,9 +256,13 @@ impl Rules {
             let initial = world
                 .with(&self.input_health_read, peer.handle, |value| value.0)
                 .map_err(|_| SimError::InvalidHandle)?;
-            output
-                .health
-                .push((peer.handle, resolve_health(initial, actions)));
+            world
+                .put(
+                    &self.input_health_write,
+                    peer.handle,
+                    Health(resolve_health(initial, actions)),
+                )
+                .map_err(|_| SimError::InvalidHandle)?;
         }
         Ok(())
     }
@@ -425,31 +423,21 @@ impl Rules {
 impl TickGame<Page> for Rules {
     type Error = SimError;
     type Candidate = Candidate;
-    type ParallelOutput = ParallelOutput;
+    type ParallelOutput = ();
 
     fn reset_candidate(&self, candidate: &mut Candidate) {
         candidate.reset();
     }
 
-    fn reset_parallel_output(&self, output: &mut ParallelOutput) {
-        output.health.clear();
-    }
+    fn reset_parallel_output(&self, _output: &mut ()) {}
 
     fn merge_parallel(
         &self,
-        system: thrum_core::sim::SystemId,
-        output: &mut ParallelOutput,
-        candidate: &mut Candidate,
-        tick: u64,
+        _system: thrum_core::sim::SystemId,
+        _output: &mut (),
+        _candidate: &mut Candidate,
+        _tick: u64,
     ) {
-        match system {
-            INPUT_HEALTH => {
-                for (handle, health) in output.health.drain(..) {
-                    candidate.set_health(handle, health, tick);
-                }
-            }
-            _ => unreachable!("only two V1 input systems use parallel output"),
-        }
     }
 
     fn edits<'a>(&self, candidate: &'a Candidate) -> &'a [Edit<Candidate>] {

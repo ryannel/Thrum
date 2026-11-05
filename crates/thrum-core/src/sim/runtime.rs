@@ -1683,6 +1683,26 @@ impl<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> Clone for Write
 }
 
 impl WorldTxn<'_> {
+    /// Read a checked component under this system's declared read permit.
+    ///
+    /// # Errors
+    ///
+    /// The permit is foreign, the handle is stale, or the component is absent.
+    pub fn with<T: Send + Sync + 'static, R>(
+        &self,
+        permit: &ReadPermit<T>,
+        handle: Handle,
+        read: impl FnOnce(&T) -> R,
+    ) -> Result<R, RegisteredWorldError> {
+        if permit.nonce != self.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
+        if permit.system != self.system {
+            return Err(RegisteredWorldError::WrongSystem);
+        }
+        self.world.with(handle, read)
+    }
+
     /// Tentatively insert or replace one checked component under this system's
     /// declared write permit. A refused tick restores its first preimage.
     ///

@@ -1,4 +1,4 @@
-//! Opt-in Metal measurement of allocations on both sides of the A3 handoff.
+//! Metal measurement of allocations on both sides of the A3 handoff.
 #![cfg(not(target_arch = "wasm32"))]
 #![allow(
     unsafe_code,
@@ -9,7 +9,7 @@ use std::{
     alloc::{GlobalAlloc, Layout, System},
     cell::Cell,
     sync::{
-        Arc,
+        Arc, Mutex,
         atomic::{AtomicU64, Ordering},
     },
     time::{Duration, Instant},
@@ -19,6 +19,7 @@ use thrum_render::present::SurfaceProfile;
 use v1_game::{FrameHost, SurfaceOutput};
 
 const MEASURED_FRAMES: usize = 600;
+static METAL_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 thread_local! {
     static TRACK: Cell<bool> = const { Cell::new(false) };
@@ -68,6 +69,7 @@ unsafe impl GlobalAlloc for CountingAllocator {
 
 #[test]
 fn bounded_native_handoff_reports_main_and_worker_allocation_cost() {
+    let _metal_guard = METAL_TEST_LOCK.lock().expect("Metal test lock");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
@@ -173,6 +175,7 @@ fn bounded_native_handoff_reports_main_and_worker_allocation_cost() {
 
 #[test]
 fn late_surface_submit_reports_main_thread_allocation_cost() {
+    let _metal_guard = METAL_TEST_LOCK.lock().expect("Metal test lock");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
