@@ -10,7 +10,7 @@ use std::{
 use thrum_core::{StableId, sim::ExecutionMode};
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
 use v1_game::{
-    FrameConfig, FrameHost, FrameSample, SurfaceOutput,
+    FrameConfig, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost,
     simulation::{Command, ComponentEntity, Position, Velocity},
     simulation_with_count,
 };
@@ -384,6 +384,7 @@ fn measure(
     let device_ref = &device;
     let mut now = Duration::ZERO;
     let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
+    let mut callback_cpu = Vec::with_capacity(callbacks_per_sample);
     let mut callbacks = 0_usize;
     let mut run = || {
         for _ in 0..callbacks_per_sample {
@@ -403,6 +404,7 @@ fn measure(
                 .as_ref()
                 .zip(surface_extent)
                 .map(|(view, extent)| SurfaceOutput { view, extent });
+            let callback_start = Instant::now();
             let frame = if let Some((threaded_host, _controls)) = &mut threaded_host {
                 threaded_host
                     .drive(now, output.as_ref())
@@ -424,16 +426,25 @@ fn measure(
             };
             if !frame.submitted {
                 assert!(allow_unsent_callback, "one update gets a free view slot");
+                if let Some((threaded_host, _controls)) = &mut threaded_host {
+                    drain_threaded(threaded_host, &mut samples);
+                    callback_cpu.push(callback_start.elapsed());
+                }
                 continue;
             }
             assert_eq!(frame.surface_presented, surface_extent.is_some());
+            if let Some((threaded_host, _controls)) = &mut threaded_host {
+                drain_threaded(threaded_host, &mut samples);
+                callback_cpu.push(callback_start.elapsed());
+                continue;
+            }
             let complete = loop {
-                let next = if let Some((threaded_host, _controls)) = &mut threaded_host {
-                    threaded_host.poll_completed()
-                } else {
-                    host.as_mut().expect("inline host").poll_completed()
-                };
-                if let Some(sample) = next.expect("GPU progress") {
+                if let Some(sample) = host
+                    .as_mut()
+                    .expect("inline host")
+                    .poll_completed()
+                    .expect("GPU progress")
+                {
                     break sample;
                 }
                 device_ref
@@ -452,6 +463,18 @@ fn measure(
     } else {
         run();
     }
+    if let Some((threaded_host, _controls)) = &mut threaded_host {
+        while threaded_host.pending_frames() != 0 {
+            device_ref
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("threaded GPU completion");
+            drain_threaded(threaded_host, &mut samples);
+        }
+        drain_threaded(threaded_host, &mut samples);
+    }
     assert!(
         !samples.is_empty() && samples.len() >= callbacks / 2,
         "baseline needs frames from at least half its callbacks: {} of {callbacks}",
@@ -463,6 +486,34 @@ fn measure(
         gpu_timestamps,
         render_extent,
         surface_extent,
+    );
+    if mode == FrameMode::Threaded {
+        report_threaded_callback(&callback_cpu);
+    }
+}
+
+fn drain_threaded(host: &mut ThreadedFrameHost, samples: &mut Vec<FrameSample>) {
+    while let Some(sample) = host.poll_completed().expect("threaded GPU progress") {
+        samples.push(sample);
+    }
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "the explicit benchmark reports render-owner callback cost including GPU polling"
+)]
+fn report_threaded_callback(callbacks: &[Duration]) {
+    assert!(!callbacks.is_empty(), "threaded callback samples required");
+    let mut micros: Vec<f64> = callbacks
+        .iter()
+        .map(|duration| duration.as_secs_f64() * 1e6)
+        .collect();
+    micros.sort_by(f64::total_cmp);
+    eprintln!(
+        "V1 threaded callback including GPU poll p50/p95/p99={:.1}/{:.1}/{:.1} us",
+        micros[micros.len() / 2],
+        micros[micros.len() * 95 / 100],
+        micros[micros.len() * 99 / 100]
     );
 }
 
