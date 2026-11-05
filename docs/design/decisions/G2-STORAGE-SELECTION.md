@@ -24,4 +24,4 @@ Refresh four immutable pages from bounded changed-slot journals; an old page get
 
 ## Qualification and reversal
 
-M3 Max owned-column full-game p50/p95: 68/69–71 µs at 10k, 700/708–710 µs at 100k, versus paired hecs 123/127 and 1240/1254–1274 µs. Sampled allocations peak at zero; churn, refusal, serial/Rayon and page tests pass. Both tick budgets remain open. Compare the same game and exact replay after typed batches and in-place undo; targets remain 25/300 µs tick and 100 µs/1 ms eight-tick rewind. Profile misses before final layout selection.
+M3 Max full-game tick+page p50/p95: owned 68/69–75 µs at 10k, 700/708–719 µs at 100k; batched positions 54–56/56–67 and 546–555/554–564 µs. Hecs was 123/127 and 1240/1254–1274 µs. Sampled allocations peak at zero; churn, refusal, serial/Rayon and page tests pass. Both tick budgets remain open. Compare the same game and exact replay after in-place undo; targets remain 25/300 µs tick and 100 µs/1 ms eight-tick rewind. Profile misses before final layout selection.

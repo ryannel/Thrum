@@ -31,16 +31,13 @@ struct Candidate {
     order_query: Read2<Height, Drift>,
     order: Vec<StableId>,
     capture: Read2<Height, Drift>,
-    positions: Vec<Option<Height>>,
-    handles: Vec<Option<Handle>>,
+    batch: Vec<(Handle, Height)>,
     edits: Vec<Edit<Candidate>>,
     spawns: Vec<StableId>,
 }
 
-fn position_at(candidate: &Candidate, row: usize) -> &dyn std::any::Any {
-    candidate.positions[row]
-        .as_ref()
-        .expect("prepared position")
+fn height_batch(candidate: &Candidate) -> &dyn std::any::Any {
+    &candidate.batch
 }
 
 fn fill_spawn(
@@ -70,6 +67,7 @@ struct Rules {
     bad_edit: Option<Handle>,
     churn: Option<(Handle, StableId)>,
     optional_edit: Option<(Handle, bool)>,
+    duplicate_batch: bool,
 }
 
 fn tag_at(_candidate: &Candidate, _index: usize) -> &dyn std::any::Any {
@@ -89,17 +87,16 @@ impl Rules {
             .order_query
             .visit_canonical(world, |_, id, _, _| candidate.order.push(id));
         candidate.motion.visit(world, |handle, _, height, drift| {
-            candidate.positions[handle.slot as usize] = Some(Height(height.0 + drift.0));
-            candidate.handles[handle.slot as usize] = Some(handle);
             if self.churn.is_none_or(|(old, _)| old != handle) {
-                candidate.edits.push(Edit::replace(
-                    &self.write,
-                    handle,
-                    handle.slot as usize,
-                    position_at,
-                ));
+                candidate.batch.push((handle, Height(height.0 + drift.0)));
             }
         });
+        if self.duplicate_batch {
+            candidate.batch.push(candidate.batch[0]);
+        }
+        candidate
+            .edits
+            .push(Edit::replace_batch(&self.write, height_batch));
         if let Some((old, replacement)) = self.churn {
             world
                 .with(&self.height_read, old, |height| height.0)
@@ -139,8 +136,7 @@ impl TickGame<Page> for Rules {
     type ParallelOutput = ();
 
     fn reset_candidate(&self, candidate: &mut Candidate) {
-        candidate.positions.fill(None);
-        candidate.handles.fill(None);
+        candidate.batch.clear();
         candidate.order.clear();
         candidate.edits.clear();
         candidate.spawns.clear();
@@ -308,6 +304,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Ok(Height(3.0))
     );
     assert_eq!(runtime.latest().expect("first tick").rows[0].2, Height(3.0));
+    assert_duplicate_batch_refuses(&mut runtime, &mut game, &mut candidate, first);
     game.bad_edit = Some(first);
     assert_eq!(
         runtime.step(&mut game, &mut candidate),
@@ -406,6 +403,25 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     assert_optional_component_history(&mut runtime, &mut game, &mut candidate);
 }
 
+fn assert_duplicate_batch_refuses(
+    runtime: &mut GameRuntime<Page, Rules>,
+    game: &mut Rules,
+    candidate: &mut Candidate,
+    first: Handle,
+) {
+    game.duplicate_batch = true;
+    assert_eq!(
+        runtime.step(game, candidate),
+        Err(TickError::Edit(thrum_core::sim::EditError::Conflict))
+    );
+    assert_eq!(runtime.tick(), 1);
+    assert_eq!(
+        runtime.read().with(&game.height_read, first, |h| *h),
+        Ok(Height(3.0))
+    );
+    game.duplicate_batch = false;
+}
+
 fn test_rules(runtime: &GameRuntime<Page, Rules>) -> Rules {
     Rules {
         write: runtime
@@ -430,6 +446,7 @@ fn test_rules(runtime: &GameRuntime<Page, Rules>) -> Rules {
         bad_edit: None,
         churn: None,
         optional_edit: None,
+        duplicate_batch: false,
     }
 }
 
@@ -519,8 +536,7 @@ fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
         capture: runtime
             .read2::<Height, Drift>(SystemId(2))
             .expect("declared capture read"),
-        positions: vec![None; 2],
-        handles: vec![None; 2],
+        batch: Vec::new(),
         edits: Vec::new(),
         spawns: Vec::new(),
     }
