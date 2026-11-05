@@ -207,84 +207,89 @@ impl Page {
                 .column(ownership_read)
                 .expect("declared ownership read");
             let visuals = world.column(visual_read).expect("declared visual read");
-            let retained = world.visit_changes_since(old, tick, |key| {
-                let slot = key as usize;
-                let old_present = self.ids[slot].is_some();
-                let Some(live) = world.live_at_slot(key) else {
-                    if old_present {
-                        self.ids[slot] = None;
-                        self.live -= 1;
-                    }
-                    return;
-                };
-                let [structural_tick, position_tick, velocity_tick, health_tick] = world
-                    .change_ticks3(live, (position_read, velocity_read, health_read))
-                    .expect("same runtime live slot");
-                if old_present
-                    && structural_tick <= old
-                    && velocity_tick <= old
-                    && health_tick <= old
-                {
-                    if position_tick <= old {
+            let retained = world.visit_changes_with_ticks3(
+                old,
+                tick,
+                (position_read, velocity_read, health_read),
+                |key, live| {
+                    let slot = key as usize;
+                    let old_present = self.ids[slot].is_some();
+                    let Some((live, [structural_tick, position_tick, velocity_tick, health_tick])) =
+                        live
+                    else {
+                        if old_present {
+                            self.ids[slot] = None;
+                            self.live -= 1;
+                        }
                         return;
+                    };
+                    if old_present
+                        && structural_tick <= old
+                        && velocity_tick <= old
+                        && health_tick <= old
+                    {
+                        if position_tick <= old {
+                            return;
+                        }
+                        if let Some(position) = positions.get(live).expect("same runtime live slot")
+                        {
+                            self.refresh_position(slot, *position, position_tick == tick);
+                            return;
+                        }
                     }
-                    if let Some(position) = positions.get(live).expect("same runtime live slot") {
-                        self.refresh_position(slot, *position, position_tick == tick);
+                    let (Some(position), Some(health)) = (
+                        positions.get(live).expect("same runtime live slot"),
+                        healths.get(live).expect("same runtime live slot"),
+                    ) else {
+                        if old_present {
+                            self.ids[slot] = None;
+                            self.live -= 1;
+                        }
                         return;
+                    };
+                    if !old_present {
+                        self.live += 1;
                     }
-                }
-                let (Some(position), Some(health)) = (
-                    positions.get(live).expect("same runtime live slot"),
-                    healths.get(live).expect("same runtime live slot"),
-                ) else {
-                    if old_present {
-                        self.ids[slot] = None;
-                        self.live -= 1;
+                    let structural = structural_tick > old
+                        || self.ids[slot] != Some(live.stable_id())
+                        || self.generations[slot] != live.handle().generation;
+                    if structural {
+                        self.ids[slot] = Some(live.stable_id());
+                        self.generations[slot] = live.handle().generation;
+                        self.ownership[slot] =
+                            owners.get(live).expect("same runtime live slot").copied();
+                        self.visuals[slot] = visuals
+                            .get(live)
+                            .expect("same runtime live slot")
+                            .map(|value| value.0);
                     }
-                    return;
-                };
-                if !old_present {
-                    self.live += 1;
-                }
-                let structural = structural_tick > old
-                    || self.ids[slot] != Some(live.stable_id())
-                    || self.generations[slot] != live.handle().generation;
-                if structural {
-                    self.ids[slot] = Some(live.stable_id());
-                    self.generations[slot] = live.handle().generation;
-                    self.ownership[slot] =
-                        owners.get(live).expect("same runtime live slot").copied();
-                    self.visuals[slot] = visuals
-                        .get(live)
-                        .expect("same runtime live slot")
-                        .map(|value| value.0);
-                }
-                if structural || position_tick > old {
-                    self.positions[slot] = *position;
-                }
-                if structural || velocity_tick > old {
-                    self.velocities[slot] = velocities
-                        .get(live)
-                        .expect("same runtime live slot")
-                        .copied()
-                        .unwrap_or_default();
-                }
-                if structural || health_tick > old {
-                    self.health[slot] = health.0;
-                }
-                if structural_tick == tick || position_tick == tick {
-                    self.mark_dirty(slot, POSITION_DIRTY);
-                }
-                if structural_tick == tick || velocity_tick == tick {
-                    self.mark_dirty(slot, VELOCITY_DIRTY);
-                }
-                if structural_tick == tick || health_tick == tick {
-                    self.mark_dirty(slot, HEALTH_DIRTY);
-                }
-                if structural_tick == tick {
-                    self.mark_dirty(slot, STRUCTURAL_DIRTY);
-                }
-            });
+                    if structural || position_tick > old {
+                        self.positions[slot] = *position;
+                    }
+                    if structural || velocity_tick > old {
+                        self.velocities[slot] = velocities
+                            .get(live)
+                            .expect("same runtime live slot")
+                            .copied()
+                            .unwrap_or_default();
+                    }
+                    if structural || health_tick > old {
+                        self.health[slot] = health.0;
+                    }
+                    if structural_tick == tick || position_tick == tick {
+                        self.mark_dirty(slot, POSITION_DIRTY);
+                    }
+                    if structural_tick == tick || velocity_tick == tick {
+                        self.mark_dirty(slot, VELOCITY_DIRTY);
+                    }
+                    if structural_tick == tick || health_tick == tick {
+                        self.mark_dirty(slot, HEALTH_DIRTY);
+                    }
+                    if structural_tick == tick {
+                        self.mark_dirty(slot, STRUCTURAL_DIRTY);
+                    }
+                },
+            );
             debug_assert!(retained, "availability was checked before page refresh");
         }
         if full_refresh {
