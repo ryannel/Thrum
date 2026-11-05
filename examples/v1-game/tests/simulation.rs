@@ -79,6 +79,7 @@ fn entity(id: u128, speed: f64) -> ComponentEntity {
 
 fn whole_world_hash(sim: &Simulation, ids: &[StableId]) -> u64 {
     let mut hash = std::collections::hash_map::DefaultHasher::new();
+    sim.capture().hash_authority_metadata(&mut hash);
     sim.len().hash(&mut hash);
     sim.tick().hash(&mut hash);
     for id in ids {
@@ -287,6 +288,12 @@ fn corrected_retained_peer_input_matches_the_straight_player_row() {
         .get(straight.handle(player).expect("straight player"))
         .expect("straight row");
     assert_eq!(predicted_row, straight_row);
+    let ids = (0..4_u128).map(StableId).collect::<Vec<_>>();
+    assert_eq!(
+        whole_world_hash(&predicted, &ids),
+        whole_world_hash(&straight, &ids),
+        "corrected replay differs from a straight run in world metadata or component values"
+    );
     assert_eq!(predicted.tick(), 8);
     assert_eq!(
         predicted

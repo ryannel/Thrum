@@ -236,6 +236,48 @@ pub struct SimulationCapture {
 }
 
 impl SimulationCapture {
+    /// Hash engine-owned identity, free-list and change-tick metadata for a
+    /// complete-state replay comparison alongside game field values.
+    pub fn hash_authority_metadata(&self, hash: &mut impl std::hash::Hasher) {
+        use std::hash::Hash;
+
+        self.runtime.hash_authority_metadata(hash);
+        self.resource_revision.hash(hash);
+        self.peers.len().hash(hash);
+        for peer in &self.peers {
+            peer.binding.peer.hash(hash);
+            peer.binding.connection_epoch.hash(hash);
+            peer.binding.actor.hash(hash);
+            peer.handle.hash(hash);
+            peer.active.hash(hash);
+            peer.last_sequence.hash(hash);
+            peer.axes.map(f32::to_bits).hash(hash);
+            peer.recompute_velocity.hash(hash);
+            if let Some(frame) = &peer.pending {
+                true.hash(hash);
+                frame.origin.hash(hash);
+                frame.actor.hash(hash);
+                frame.tick.hash(hash);
+                frame.axes.map(f32::to_bits).hash(hash);
+                frame.actions.len().hash(hash);
+                for action in &frame.actions {
+                    match action {
+                        SimAction::Impulse(values) => {
+                            0_u8.hash(hash);
+                            values.map(f64::to_bits).hash(hash);
+                        }
+                        SimAction::Damage(value) => {
+                            1_u8.hash(hash);
+                            value.hash(hash);
+                        }
+                    }
+                }
+            } else {
+                false.hash(hash);
+            }
+        }
+    }
+
     /// Retained baseline component and peer-resource storage.
     pub fn reserved_bytes(&self) -> usize {
         self.runtime.reserved_bytes() + peer_storage_bytes(&self.peers)

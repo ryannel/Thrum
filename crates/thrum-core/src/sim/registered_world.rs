@@ -2,7 +2,10 @@
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
 use std::{
-    collections::hash_map::RandomState, hash::BuildHasher, marker::PhantomData, mem::size_of,
+    collections::hash_map::RandomState,
+    hash::{BuildHasher, Hash, Hasher},
+    marker::PhantomData,
+    mem::size_of,
 };
 
 use crate::{Handle, StableId, WorldEpoch};
@@ -33,6 +36,7 @@ pub(super) struct WorldCapture {
     columns: Vec<Box<dyn SnapshotColumn>>,
     free: Vec<u32>,
     change_ticks: Vec<u64>,
+    id_index_slots: Vec<Option<u32>>,
 }
 
 pub(super) struct WorldDelta {
@@ -261,6 +265,21 @@ impl WorldDelta {
 }
 
 impl WorldCapture {
+    pub(super) fn hash_metadata(&self, hash: &mut impl Hasher) {
+        self.epoch.hash(hash);
+        self.schema.hash(hash);
+        self.types.hash(hash);
+        self.slots.len().hash(hash);
+        for slot in &self.slots {
+            slot.generation.hash(hash);
+            slot.stable.hash(hash);
+            slot.structural_tick.hash(hash);
+        }
+        self.free.hash(hash);
+        self.change_ticks.hash(hash);
+        self.id_index_slots.hash(hash);
+    }
+
     pub(super) fn reserved_bytes(&self) -> usize {
         size_of::<Self>()
             + self.schema.capacity() * size_of::<ComponentSchemaId>()
@@ -268,6 +287,7 @@ impl WorldCapture {
             + self.slots.capacity() * size_of::<CapturedSlot>()
             + self.free.capacity() * size_of::<u32>()
             + self.change_ticks.capacity() * size_of::<u64>()
+            + self.id_index_slots.capacity() * size_of::<Option<u32>>()
             + self.columns.capacity() * size_of::<Box<dyn SnapshotColumn>>()
             + self
                 .columns
@@ -289,6 +309,7 @@ impl WorldCapture {
                 .collect(),
             free: self.free.clone(),
             change_ticks: self.change_ticks.clone(),
+            id_index_slots: self.id_index_slots.clone(),
         }
     }
 
@@ -301,6 +322,7 @@ impl WorldCapture {
         self.slots.clone_from(&source.slots);
         self.free.clone_from(&source.free);
         self.change_ticks.clone_from(&source.change_ticks);
+        self.id_index_slots.clone_from(&source.id_index_slots);
         for (target, source) in self.columns.iter_mut().zip(&source.columns) {
             target.copy_from(source.as_ref());
         }
@@ -321,6 +343,7 @@ impl WorldCapture {
         }
         for &(slot, state) in &delta.slots {
             self.slots[slot as usize] = state;
+            self.id_index_slots[slot as usize] = state.stable.map(|_| slot);
         }
         let component_count = self.columns.len();
         for (index, (column, changed)) in self.columns.iter_mut().zip(&delta.changed).enumerate() {
@@ -625,6 +648,11 @@ impl RegisteredWorld {
                 .collect(),
             free: self.free.clone(),
             change_ticks: self.change_ticks.clone(),
+            id_index_slots: self
+                .slots
+                .iter()
+                .map(|slot| slot.stable.and_then(|id| self.ids.get(id)))
+                .collect(),
         }
     }
 
@@ -635,6 +663,18 @@ impl RegisteredWorld {
             || capture.types.len() != self.registry.entries.len()
             || capture.columns.len() != self.registry.entries.len()
             || capture.change_ticks.len() != self.change_ticks.len()
+            || capture.id_index_slots.len() != self.slots.len()
+            || capture
+                .slots
+                .iter()
+                .zip(&capture.id_index_slots)
+                .enumerate()
+                .any(|(slot, (state, mapped))| {
+                    *mapped
+                        != state
+                            .stable
+                            .map(|_| u32::try_from(slot).expect("slot fits u32"))
+                })
             || capture
                 .schema
                 .iter()
