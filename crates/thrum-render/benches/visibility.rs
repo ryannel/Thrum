@@ -1,5 +1,5 @@
 //! Paired GPU cost of drawing 10k versus 1k active rows from the same
-//! 10k-slot scene. Shadow and forward pass timestamps exclude GPU waits.
+//! 10k-slot scene. Shadow, forward and transform-history timestamps exclude GPU waits.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::{Duration, Instant};
@@ -17,7 +17,7 @@ fn sample(
     prepared: &PreparedSynthetic,
     target: &OffscreenTarget,
     timings: &mut GpuTimings,
-) -> (f64, f64) {
+) -> (f64, f64, f64) {
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     let started = Instant::now();
     prepared
@@ -56,7 +56,11 @@ fn sample(
         .filter(|pass| pass.name.as_ref() != "synthetic tone encode")
         .map(|pass| pass.nanoseconds / 1_000_000.0)
         .sum();
-    (gpu_ms, cpu_us)
+    let history_ms = passes
+        .iter()
+        .find(|pass| pass.name.as_ref() == "synthetic transform history")
+        .map_or(0.0, |pass| pass.nanoseconds / 1_000_000.0);
+    (gpu_ms, history_ms, cpu_us)
 }
 
 fn percentiles(values: &mut [f64]) -> (f64, f64) {
@@ -136,13 +140,19 @@ fn main() {
             Vec::with_capacity(BLOCKS * 2),
             Vec::with_capacity(BLOCKS * 2),
         ];
+        let mut history = [
+            Vec::with_capacity(BLOCKS * 2),
+            Vec::with_capacity(BLOCKS * 2),
+        ];
         let mut gpu_delta = Vec::with_capacity(BLOCKS);
         for _ in 0..BLOCKS {
             let mut block = [0.0; 4];
             for (position, index) in [0, 1, 1, 0].into_iter().enumerate() {
                 let (prepared, target) = variants[index];
-                let (gpu_ms, cpu_us) = sample(&device, &queue, prepared, target, &mut timings);
+                let (gpu_ms, history_ms, cpu_us) =
+                    sample(&device, &queue, prepared, target, &mut timings);
                 gpu[index].push(gpu_ms);
+                history[index].push(history_ms);
                 cpu[index].push(cpu_us);
                 block[position] = gpu_ms;
             }
@@ -152,13 +162,19 @@ fn main() {
         let sparse_gpu = percentiles(&mut gpu[1]);
         let full_cpu = percentiles(&mut cpu[0]);
         let sparse_cpu = percentiles(&mut cpu[1]);
+        let full_history = percentiles(&mut history[0]);
+        let sparse_history = percentiles(&mut history[1]);
         gpu_delta.sort_by(f64::total_cmp);
         println!(
-            "adapter={adapter_name}; 640x360 10k slots, shadows on; ABBA {BLOCKS} blocks; active rows 10000→1000; shadow+forward GPU p50/p95 ms {:.3}/{:.3}→{:.3}/{:.3}; within-block sparse-minus-full GPU p50 ms {:.3}; CPU encode p50/p95 us {:.1}/{:.1}→{:.1}/{:.1}",
+            "adapter={adapter_name}; 640x360 10k slots, shadows on; ABBA {BLOCKS} blocks; active rows 10000→1000; shadow+forward+history GPU p50/p95 ms {:.3}/{:.3}→{:.3}/{:.3}; history alone {:.3}/{:.3}→{:.3}/{:.3}; within-block sparse-minus-full GPU p50 ms {:.3}; CPU encode p50/p95 us {:.1}/{:.1}→{:.1}/{:.1}",
             full_gpu.0,
             full_gpu.1,
             sparse_gpu.0,
             sparse_gpu.1,
+            full_history.0,
+            full_history.1,
+            sparse_history.0,
+            sparse_history.1,
             gpu_delta[BLOCKS / 2],
             full_cpu.0,
             full_cpu.1,

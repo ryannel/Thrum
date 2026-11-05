@@ -50,6 +50,7 @@ impl PackedInstances {
             bytes.extend_from_slice(&pack_synthetic_instance(
                 &instances[slot as usize],
                 material_count,
+                slot,
             )?);
         }
         debug_assert_eq!(physical_to_slot.len(), count as usize);
@@ -170,7 +171,8 @@ impl InstanceUpload {
             }
             previous_slot = Some(slot);
             let index = slot as usize;
-            let Ok(bytes) = pack_synthetic_instance(&instances[index], self.material_count) else {
+            let Ok(bytes) = pack_synthetic_instance(&instances[index], self.material_count, slot)
+            else {
                 dropped_invalid += 1;
                 continue;
             };
@@ -336,7 +338,11 @@ fn build_runs(actual: &[u32], runs: &mut Vec<UploadRun>) -> bool {
 pub(super) fn pack_synthetic_instance(
     instance: &InstanceRecord,
     material_count: u32,
+    logical_slot: u32,
 ) -> Result<[u8; abi::INSTANCE_BYTES], RenderError> {
+    if instance.ids[0] != logical_slot {
+        return Err(RenderError::InvalidInstanceIdentity);
+    }
     if instance.ids[2] != 0 {
         return Err(RenderError::UnsupportedSyntheticMaterial);
     }

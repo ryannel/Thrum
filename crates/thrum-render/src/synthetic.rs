@@ -25,19 +25,21 @@ use wgpu::util::DeviceExt;
 
 mod cluster;
 mod cluster_gpu;
+mod history_gpu;
 mod shadow;
 mod upload;
 mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
+use history_gpu::TransformHistory;
 use shadow::{ShadowPrepared, ShadowTarget};
 use upload::{InstanceUpload, PackedInstances};
 pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 9;
+pub const SYNTHETIC_REVISION: u64 = 10;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -45,6 +47,7 @@ const LIGHT_BYTES: usize = 64;
 const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 const DISPLAY_BYTES: u64 = 16;
 const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
 const CUBE_INDICES: [u16; 36] = [
     0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18,
     18, 17, 19, 20, 21, 22, 22, 21, 23,
@@ -316,6 +319,8 @@ pub enum RenderError {
     SceneCapacity,
     /// Changed instance slots were out of bounds, duplicated or unordered.
     InvalidInstanceUpdate,
+    /// A record's logical GPU slot does not match its scene row.
+    InvalidInstanceIdentity,
     /// Unsupported semantic flags, skinning or mapped normals in this diagnostic.
     UnsupportedSyntheticMaterial,
     /// Invalid directional source or degenerate/unsupported diagnostic transform.
@@ -391,7 +396,8 @@ pub struct PreparedSynthetic {
     cluster_compute: Option<ClusterCompute>,
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
-    instances: wgpu::BindGroup,
+    history: TransformHistory,
+    history_source: Option<(u128, u64)>,
     instance_upload: InstanceUpload,
     material_bytes: u64,
     instance_bytes: u64,
@@ -438,7 +444,7 @@ impl SceneContext<'_> {
         shadow.encode_cascade(
             self.encoder,
             shadow_target,
-            &self.prepared.instances,
+            self.prepared.history.read_group(),
             &self.prepared.cube_indices,
             self.prepared.instance_upload.active_count(),
             self.prepared.instance_upload.two_sided_count() != 0,
@@ -460,6 +466,16 @@ impl SceneContext<'_> {
             self.generation,
             self.target,
             pass,
+            self.timings.as_deref_mut(),
+        )
+    }
+
+    fn publish_history(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared.history.encode(
+            self.encoder,
+            self.generation,
+            pass,
+            self.prepared.instance_upload.active_count(),
             self.timings.as_deref_mut(),
         )
     }
@@ -628,6 +644,11 @@ impl PreparedSynthetic {
             u32::try_from(scene.materials.len()).map_err(|_| RenderError::SceneCapacity)?;
         let instance_count =
             u32::try_from(scene.instances.len()).map_err(|_| RenderError::SceneCapacity)?;
+        if u64::from(instance_count) * history_gpu::ENTRY_BYTES
+            > limits.max_storage_buffer_binding_size
+        {
+            return Err(RenderError::SceneCapacity);
+        }
         let mut packed_materials = Vec::with_capacity(
             usize::try_from(material_bytes).map_err(|_| RenderError::SceneCapacity)?,
         );
@@ -807,12 +828,19 @@ impl PreparedSynthetic {
         });
         let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ABI2 instance table"),
-            entries: &[storage_layout(
-                0,
-                wgpu::ShaderStages::VERTEX,
-                abi::INSTANCE_BYTES as u64,
-            )],
+            entries: &[
+                storage_layout(0, wgpu::ShaderStages::VERTEX, abi::INSTANCE_BYTES as u64),
+                storage_layout(1, wgpu::ShaderStages::VERTEX, history_gpu::ENTRY_BYTES),
+                uniform_layout(2, 16, wgpu::ShaderStages::VERTEX),
+            ],
         });
+        let history = TransformHistory::new(
+            device,
+            queue,
+            instance_upload.buffer(),
+            &instance_layout,
+            instance_count,
+        );
         let shadow = if shadow_enabled {
             let direction = packed_light_direction(&light_data);
             Some(ShadowPrepared::new(
@@ -904,14 +932,6 @@ impl PreparedSynthetic {
                 },
             ],
         });
-        let instances = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("synthetic forward opaque"),
-            layout: &instance_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: instance_upload.buffer().as_entire_binding(),
-            }],
-        });
         let bind_group_layouts = [
             Some(&view_layout),
             Some(&light_layout),
@@ -957,11 +977,18 @@ impl PreparedSynthetic {
                         "fragment"
                     }),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: SCENE_FORMAT,
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
+                    targets: &[
+                        Some(wgpu::ColorTargetState {
+                            format: SCENE_FORMAT,
+                            blend: None,
+                            write_mask: wgpu::ColorWrites::ALL,
+                        }),
+                        Some(wgpu::ColorTargetState {
+                            format: MOTION_FORMAT,
+                            blend: None,
+                            write_mask: wgpu::ColorWrites::ALL,
+                        }),
+                    ],
                 }),
                 multiview_mask: None,
                 cache: None,
@@ -1022,7 +1049,8 @@ impl PreparedSynthetic {
             cluster_compute,
             light,
             materials,
-            instances,
+            history,
+            history_source: None,
             instance_upload,
             material_bytes,
             instance_bytes,
@@ -1059,7 +1087,7 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        2 + u32::from(self.shadow.is_some()) * 2 + u32::from(self.cluster_compute.is_some())
+        3 + u32::from(self.shadow.is_some()) * 2 + u32::from(self.cluster_compute.is_some())
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1123,6 +1151,10 @@ impl PreparedSynthetic {
                 packed_light_direction(&light_data),
             )?;
         }
+        self.history.set_extent(queue, target.extent());
+        if scene.view.history_reset() {
+            self.history.reset(queue);
+        }
         queue.write_buffer(
             &self.view_buffer,
             0,
@@ -1153,9 +1185,19 @@ impl PreparedSynthetic {
     }
 
     /// Advance previous-view history after the host submits the encoded frame.
-    pub fn commit_frame(&mut self) {
+    pub fn commit_frame(&mut self, queue: &wgpu::Queue) {
         if let Some(view) = self.pending_view.take() {
             self.view_sample = view;
+            self.history.submitted(queue);
+        }
+    }
+    /// Reset temporal correspondence when the authoritative world or replay
+    /// timeline changes. A later submitted view establishes fresh history.
+    pub fn synchronize_history(&mut self, queue: &wgpu::Queue, epoch: u128, timeline: u64) {
+        let source = (epoch, timeline);
+        if self.history_source != Some(source) {
+            self.history.reset(queue);
+            self.history_source = Some(source);
         }
     }
     /// Update sorted, distinct changed slots before the next queue submission.
@@ -1197,6 +1239,12 @@ impl PreparedSynthetic {
     fn cluster_key(&self) -> PipelineKey {
         PipelineKey {
             role: 4,
+            ..self.key
+        }
+    }
+    fn history_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 5,
             ..self.key
         }
     }
@@ -1254,6 +1302,7 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
+        let (history_read, history_write, history_bytes) = self.history_resources(&mut graph)?;
         let cube_indices = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: CUBE_INDEX_BYTES,
@@ -1278,6 +1327,12 @@ impl PreparedSynthetic {
             Access {
                 resource: instance.clone(),
                 range: 0..self.instance_bytes,
+                kind: AccessKind::StorageRead,
+                store: true,
+            },
+            Access {
+                resource: history_read,
+                range: 0..history_bytes,
                 kind: AccessKind::StorageRead,
                 store: true,
             },
@@ -1375,13 +1430,41 @@ impl PreparedSynthetic {
             kind: AccessKind::AttachmentClear,
             store: true,
         });
-        graph.pass(Pass {
+        let motion = graph.resource(
+            ResourceDescriptor::Texture {
+                width,
+                height,
+                layers: 1,
+                mips: 1,
+                samples: 1,
+                format: MOTION_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC,
+            },
+            ResourceScope::Transient,
+        )?;
+        accesses.push(Access {
+            resource: motion.clone(),
+            range: 0..1,
+            kind: AccessKind::AttachmentClear,
+            store: true,
+        });
+        let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
             pipeline: Some(self.key),
             accesses,
-            external_side_effect: false,
+            external_side_effect: true,
         });
+        self.append_history_publish(
+            &mut graph,
+            &mut prepared_keys,
+            forward,
+            instance,
+            history_write,
+            history_bytes,
+        )?;
         let output = self.append_display_passes(&mut graph, &scene, width, height)?;
         let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
@@ -1392,10 +1475,66 @@ impl PreparedSynthetic {
             TargetResources {
                 depth,
                 scene,
+                motion,
                 output,
                 shadow,
             },
         ))
+    }
+
+    fn history_resources(
+        &self,
+        graph: &mut FrameGraph,
+    ) -> Result<(ResourceId, ResourceId, u64), RenderError> {
+        let bytes = u64::from(self.instance_count) * history_gpu::ENTRY_BYTES;
+        let descriptor = ResourceDescriptor::Buffer {
+            bytes,
+            usage: wgpu::BufferUsages::STORAGE,
+        };
+        let scope = ResourceScope::History {
+            owner: 1,
+            epoch: self.key.device_generation,
+            initialized: true,
+        };
+        Ok((
+            graph.resource(descriptor.clone(), scope)?,
+            graph.resource(descriptor, scope)?,
+            bytes,
+        ))
+    }
+
+    fn append_history_publish(
+        &self,
+        graph: &mut FrameGraph,
+        prepared_keys: &mut BTreeSet<PipelineKey>,
+        forward: usize,
+        instance: ResourceId,
+        history_write: ResourceId,
+        history_bytes: u64,
+    ) -> Result<(), RenderError> {
+        prepared_keys.insert(self.history_key());
+        let publish = graph.pass(Pass {
+            name: "synthetic transform history".into(),
+            scope: PassScope::View(1),
+            pipeline: Some(self.history_key()),
+            accesses: vec![
+                Access {
+                    resource: instance,
+                    range: 0..self.instance_bytes,
+                    kind: AccessKind::StorageRead,
+                    store: true,
+                },
+                Access {
+                    resource: history_write,
+                    range: 0..history_bytes,
+                    kind: AccessKind::StorageWrite,
+                    store: true,
+                },
+            ],
+            external_side_effect: false,
+        });
+        graph.dependency(forward, publish)?;
+        Ok(())
     }
 
     fn append_readback_pass(
@@ -1681,6 +1820,11 @@ impl PreparedSynthetic {
                         frame.cluster(pass)
                     })
                 }
+                Some(key) if key == self.history_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.publish_history(pass)
+                    })
+                }
                 Some(key) if key == self.display_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
                         frame.tone(pass)
@@ -1774,12 +1918,20 @@ impl PreparedSynthetic {
         let mut pass = compiled
             .begin_render(
                 encoder,
-                Some(GraphColorAttachment {
-                    resource: &target.ids.scene,
-                    range: 0..1,
-                    view: &target.scene_view,
-                    clear: self.background,
-                }),
+                [
+                    Some(GraphColorAttachment {
+                        resource: &target.ids.scene,
+                        range: 0..1,
+                        view: &target.scene_view,
+                        clear: self.background,
+                    }),
+                    Some(GraphColorAttachment {
+                        resource: &target.ids.motion,
+                        range: 0..1,
+                        view: &target.motion_view,
+                        clear: wgpu::Color::TRANSPARENT,
+                    }),
+                ],
                 Some(GraphDepthAttachment {
                     resource: &target.ids.depth,
                     range: 0..1,
@@ -1798,7 +1950,7 @@ impl PreparedSynthetic {
         pass.set_bind_group(0, &target.view_bind_group, &[]);
         pass.set_bind_group(1, &self.light, &[]);
         pass.set_bind_group(2, &self.materials, &[]);
-        pass.set_bind_group(3, &self.instances, &[]);
+        pass.set_bind_group(3, self.history.read_group(), &[]);
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
         let indices = if matches!(view.projection(), Projection::OrthographicFixture) {
             &self.cube_reversed_indices
@@ -1821,12 +1973,12 @@ impl PreparedSynthetic {
         let mut pass = compiled
             .begin_render(
                 encoder,
-                Some(GraphColorAttachment {
+                [Some(GraphColorAttachment {
                     resource: &target.ids.output,
                     range: 0..1,
                     view: &target.view,
                     clear: wgpu::Color::BLACK,
-                }),
+                })],
                 None,
                 generation,
                 timings,
@@ -1999,6 +2151,7 @@ fn storage_buffer(
 struct TargetResources {
     depth: ResourceId,
     scene: ResourceId,
+    motion: ResourceId,
     output: ResourceId,
     shadow: Option<ResourceId>,
 }
@@ -2014,6 +2167,7 @@ pub struct OffscreenTarget {
     ids: TargetResources,
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
+    motion_view: wgpu::TextureView,
     display: wgpu::BindGroup,
     view_bind_group: wgpu::BindGroup,
     display_gain: f32,
@@ -2072,6 +2226,10 @@ impl OffscreenTarget {
             .create_view(&wgpu::TextureViewDescriptor::default());
         let scene_view = textures
             .texture(&ids.scene)
+            .ok_or(RenderError::GraphPassMismatch)?
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let motion_view = textures
+            .texture(&ids.motion)
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
         let display = prepare_display_group(
@@ -2137,6 +2295,7 @@ impl OffscreenTarget {
             ids,
             view,
             scene_view,
+            motion_view,
             display,
             view_bind_group,
             display_gain: prepared.display_gain,

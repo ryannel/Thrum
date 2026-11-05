@@ -132,6 +132,16 @@ pub enum ResourceScope {
         /// Whether all units contain valid data for this epoch.
         initialized: bool,
     },
+    /// One side of a retained history pair. The executor binds the last
+    /// submitted side for reads and the alternate side for publication.
+    History {
+        /// Stable owner identity for the pair.
+        owner: u64,
+        /// Invalidation epoch shared by both sides.
+        epoch: u64,
+        /// Whether the physical side has defined contents on entry.
+        initialized: bool,
+    },
 }
 
 /// Declared GPU usage. Attachment load both reads and writes its subresource.
@@ -204,7 +214,8 @@ pub struct Access {
     pub range: Range<u64>,
     /// Usage.
     pub kind: AccessKind,
-    /// Non-attachment write retention; attachment store is derived from consumers.
+    /// Retain a published attachment on an external pass; otherwise attachment
+    /// store is derived from later readers and persistent/history scope.
     pub store: bool,
 }
 
@@ -498,35 +509,43 @@ impl CompiledPass {
 
     /// Open the declared render attachments without allocating on the frame path.
     /// Recorders receive a pass and cannot substitute load/store operations.
-    pub(crate) fn begin_render<'a>(
+    pub(crate) fn begin_render<'a, const N: usize>(
         &self,
         encoder: &'a mut wgpu::CommandEncoder,
-        color: Option<GraphColorAttachment<'_>>,
+        color: [Option<GraphColorAttachment<'_>>; N],
         depth: Option<GraphDepthAttachment<'_>>,
         generation: u64,
         timings: Option<&mut GpuTimings>,
     ) -> Result<Option<wgpu::RenderPass<'a>>, TimingError> {
-        if color.is_none() && depth.is_none()
-            || self.attachments.len() != usize::from(color.is_some()) + usize::from(depth.is_some())
+        let color_count = color
+            .iter()
+            .filter(|attachment| attachment.is_some())
+            .count();
+        if color_count == 0 && depth.is_none()
+            || self.attachments.len() != color_count + usize::from(depth.is_some())
         {
             return Ok(None);
         }
-        let color = match color {
-            Some(attachment) => {
-                let Some(ops) =
-                    self.attachment_ops(attachment.resource, attachment.range, attachment.clear)
-                else {
-                    return Ok(None);
-                };
+        let colors = color.map(|attachment| {
+            attachment.and_then(|attachment| {
+                let ops =
+                    self.attachment_ops(attachment.resource, attachment.range, attachment.clear)?;
                 Some(wgpu::RenderPassColorAttachment {
                     view: attachment.view,
                     depth_slice: None,
                     resolve_target: None,
                     ops,
                 })
-            }
-            None => None,
-        };
+            })
+        });
+        if colors
+            .iter()
+            .filter(|attachment| attachment.is_some())
+            .count()
+            != color_count
+        {
+            return Ok(None);
+        }
         let depth = match depth {
             Some(attachment) => {
                 let Some(ops) =
@@ -542,12 +561,7 @@ impl CompiledPass {
             }
             None => None,
         };
-        let colors = [color];
-        let color_attachments = if colors[0].is_some() {
-            &colors[..]
-        } else {
-            &[]
-        };
+        let color_attachments = &colors[..];
         let timestamp_writes = timings
             .map(|timings| timings.pass_writes(generation, &self.name))
             .transpose()?
@@ -642,10 +656,10 @@ impl CompiledGraph {
 
 impl FrameGraph {
     fn attachment_store(&self, order: &[usize], position: usize, access: &Access) -> bool {
-        if self.passes[order[position]].external_side_effect
+        if (self.passes[order[position]].external_side_effect && access.store)
             || matches!(
                 self.resources[access.resource.index].scope,
-                ResourceScope::Persistent { .. }
+                ResourceScope::Persistent { .. } | ResourceScope::History { .. }
             )
         {
             return true;
@@ -739,6 +753,10 @@ impl FrameGraph {
             self.resources[resource].scope,
             ResourceScope::Imported { initialized: true }
                 | ResourceScope::Persistent {
+                    initialized: true,
+                    ..
+                }
+                | ResourceScope::History {
                     initialized: true,
                     ..
                 }
@@ -884,7 +902,7 @@ impl FrameGraph {
                         access.kind.writes()
                             && matches!(
                                 self.resources[access.resource.index].scope,
-                                ResourceScope::Persistent { .. }
+                                ResourceScope::Persistent { .. } | ResourceScope::History { .. }
                             )
                     })
             })
@@ -1014,6 +1032,9 @@ impl FrameGraph {
                 ResourceScope::Transient
                 | ResourceScope::Imported { initialized: false }
                 | ResourceScope::Persistent {
+                    initialized: false, ..
+                }
+                | ResourceScope::History {
                     initialized: false, ..
                 } => Vec::new(),
                 _ => std::iter::once(0..r.descriptor.units()).collect(),
@@ -1482,6 +1503,111 @@ mod tests {
             .attachment_ops(&history, 0..1, wgpu::Color::BLACK)
             .expect("history attachment");
         assert_eq!(ops.store, wgpu::StoreOp::Store);
+    }
+
+    #[test]
+    fn history_pair_reads_prior_side_and_publishes_alternate_without_aliasing() {
+        let mut graph = FrameGraph::default();
+        let descriptor = ResourceDescriptor::Buffer {
+            bytes: 80,
+            usage: wgpu::BufferUsages::STORAGE,
+        };
+        let scope = ResourceScope::History {
+            owner: 7,
+            epoch: 2,
+            initialized: true,
+        };
+        let prior = graph
+            .resource(descriptor.clone(), scope)
+            .expect("prior side");
+        let next = graph.resource(descriptor, scope).expect("next side");
+        let read = graph.pass(Pass {
+            name: "consume prior transform".into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![Access {
+                resource: prior.clone(),
+                range: 0..80,
+                kind: AccessKind::StorageRead,
+                store: true,
+            }],
+            external_side_effect: false,
+        });
+        let publish = graph.pass(Pass {
+            name: "publish next transform".into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![Access {
+                resource: next.clone(),
+                range: 0..80,
+                kind: AccessKind::StorageWrite,
+                store: true,
+            }],
+            external_side_effect: false,
+        });
+        graph.dependency(read, publish).expect("history order");
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("history closure");
+        assert_eq!(compiled.pass_order, [read, publish]);
+        assert_eq!(compiled.dependencies, [(read, publish)]);
+        assert!(
+            compiled
+                .lifetimes
+                .iter()
+                .all(|item| item.transient_slot.is_none())
+        );
+        assert_eq!(graph.scope(&prior), Some(scope));
+        assert_eq!(graph.scope(&next), Some(scope));
+    }
+
+    #[test]
+    fn published_motion_does_not_force_unused_depth_to_store() {
+        let mut graph = FrameGraph::default();
+        let texture = |graph: &mut FrameGraph, format| {
+            graph
+                .resource(
+                    ResourceDescriptor::Texture {
+                        width: 4,
+                        height: 4,
+                        layers: 1,
+                        mips: 1,
+                        samples: 1,
+                        format,
+                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                    },
+                    ResourceScope::Transient,
+                )
+                .expect("attachment")
+        };
+        let motion = texture(&mut graph, wgpu::TextureFormat::Rg16Float);
+        let depth = texture(&mut graph, wgpu::TextureFormat::Depth32Float);
+        graph.pass(Pass {
+            name: "published motion with local depth".into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: [(&motion, true), (&depth, false)]
+                .map(|(resource, store)| Access {
+                    resource: resource.clone(),
+                    range: 0..1,
+                    kind: AccessKind::AttachmentClear,
+                    store,
+                })
+                .into(),
+            external_side_effect: true,
+        });
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("frame output");
+        let pass = compiled.pass_bindings().next().expect("render pass").1;
+        assert_eq!(
+            pass.attachment_ops(&motion, 0..1, wgpu::Color::BLACK)
+                .expect("motion ops")
+                .store,
+            wgpu::StoreOp::Store
+        );
+        assert_eq!(
+            pass.attachment_ops(&depth, 0..1, 0.0)
+                .expect("depth ops")
+                .store,
+            wgpu::StoreOp::Discard
+        );
     }
 
     #[test]

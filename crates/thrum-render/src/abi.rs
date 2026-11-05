@@ -207,7 +207,8 @@ pub struct InstanceRecord {
     pub previous: [[f32; 4]; 4],
     /// Three padded inverse-transpose normal matrix columns.
     pub normal: [[f32; 4]; 3],
-    /// Stable instance index, material row, skin offset, source generation.
+    /// Logical GPU slot (never a StableId value), material row, skin offset,
+    /// source generation. The renderer validates the slot on packing.
     pub ids: [u32; 4],
 }
 impl InstanceRecord {

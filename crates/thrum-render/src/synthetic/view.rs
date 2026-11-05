@@ -20,13 +20,14 @@ pub(super) enum Projection {
     },
 }
 
-/// One checked, unjittered camera sample. A future V2 view packet owns its
-/// identity/history; this bounded fixture keeps only the spatial fields.
+/// One checked, unjittered camera sample with an explicit cut flag. A future
+/// V2 view packet owns the broader identity and history contract.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SyntheticView {
     projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
+    history_reset: bool,
 }
 
 impl Default for SyntheticView {
@@ -44,6 +45,7 @@ impl Default for SyntheticView {
             projection: Projection::OrthographicFixture,
             view_proj: reverse_z,
             camera: Vec3::new(0.0, 0.0, -3.0),
+            history_reset: false,
         }
     }
 }
@@ -122,7 +124,19 @@ impl SyntheticView {
             },
             view_proj,
             camera: eye,
+            history_reset: false,
         })
+    }
+
+    /// Mark a camera cut or another invalid correspondence for this sample.
+    #[must_use]
+    pub fn with_history_reset(mut self, reset: bool) -> Self {
+        self.history_reset = reset;
+        self
+    }
+
+    pub(super) fn history_reset(&self) -> bool {
+        self.history_reset
     }
 
     pub(super) fn projection(&self) -> Projection {

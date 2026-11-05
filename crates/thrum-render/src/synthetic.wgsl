@@ -63,12 +63,26 @@ struct InstanceRecord {
 @group(2) @binding(4) var emissive_textures: texture_2d_array<f32>;
 @group(2) @binding(5) var material_sampler: sampler;
 @group(3) @binding(0) var<storage, read> instances: array<InstanceRecord>;
+struct HistoryRecord {
+    current: mat4x4<f32>,
+    identity: vec4<u32>,
+}
+struct Serials {
+    previous_lo: u32,
+    previous_hi: u32,
+    current_lo: u32,
+    current_hi: u32,
+}
+@group(3) @binding(1) var<storage, read> history: array<HistoryRecord>;
+@group(3) @binding(2) var<uniform> serials: Serials;
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) uv: vec2<f32>,
     @location(1) @interpolate(flat) material: u32,
     @location(2) normal: vec3<f32>,
     @location(3) world_position: vec3<f32>,
+    @location(4) previous_clip: vec4<f32>,
+    @location(5) @interpolate(flat) history_valid: u32,
 }
 @vertex fn vertex(@builtin(vertex_index) vertex_index: u32, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     let positions = array<vec2<f32>,4>(vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(1.0,1.0));
@@ -88,6 +102,15 @@ struct VertexOutput {
     output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
     output.uv = p*0.5+vec2(0.5);
     output.material = instance.ids.y;
+    let prior = history[instance_index];
+    let valid = (serials.previous_lo != 0u || serials.previous_hi != 0u)
+        && prior.identity.x == instance.ids.x
+        && prior.identity.y == instance.ids.w
+        && prior.identity.z == serials.previous_lo
+        && prior.identity.w == serials.previous_hi;
+    output.history_valid = select(0u, 1u, valid);
+    output.previous_clip = select(output.position,
+        view.previous_view_proj * prior.current * vec4(local, 1.0), valid);
     return output;
 }
 fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>,
@@ -215,9 +238,24 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     let bounded = min(finite, vec3(3.402823e38));
     return vec4(clamp(bounded*view.pre_exposure_inv_exposure_jitter.x,vec3(0.0),vec3(65504.0)),1.0);
 }
-@fragment fn fragment(input:VertexOutput)->@location(0) vec4<f32> {
-    return shade(input,1.0);
+struct FragmentOutput {
+    @location(0) colour: vec4<f32>,
+    @location(1) motion: vec2<f32>,
 }
-@fragment fn shadowed_fragment(input:VertexOutput)->@location(0) vec4<f32> {
-    return shade(input,sun_visibility(input,normalize(input.normal)));
+fn motion_vector(input: VertexOutput) -> vec2<f32> {
+    if input.history_valid == 0u || input.previous_clip.w <= 0.0 {
+        return vec2(0.0);
+    }
+    let previous_ndc = input.previous_clip.xy / input.previous_clip.w;
+    let extent = view_aux.viewport_inv_viewport.xy;
+    let previous_pixel = vec2(
+        (previous_ndc.x * 0.5 + 0.5) * extent.x,
+        (0.5 - previous_ndc.y * 0.5) * extent.y);
+    return clamp(previous_pixel - input.position.xy, vec2(-65504.0), vec2(65504.0));
+}
+@fragment fn fragment(input:VertexOutput)->FragmentOutput {
+    return FragmentOutput(shade(input,1.0), motion_vector(input));
+}
+@fragment fn shadowed_fragment(input:VertexOutput)->FragmentOutput {
+    return FragmentOutput(shade(input,sun_visibility(input,normalize(input.normal))), motion_vector(input));
 }

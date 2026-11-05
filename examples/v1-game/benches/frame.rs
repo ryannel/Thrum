@@ -273,21 +273,31 @@ fn report_frame_cpu(
     );
     if gpu_timestamps && samples.iter().all(|sample| sample.gpu_pass_ns.is_some()) {
         let scene_gpu =
-            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5]).iter().sum::<f64>() / 1e6);
+            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6]).iter().sum::<f64>() / 1e6);
         eprintln!(
             "V1 scene GPU pass-sum p50/p95={:.3}/{:.3} ms",
             scene_gpu.0, scene_gpu.1
         );
         let shadow = percentile(|sample| {
-            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 5]);
+            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 6]);
             (passes[0] + passes[1]) / 1e6
         });
-        let cluster = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5])[2] / 1e6);
-        let forward = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5])[3] / 1e6);
-        let tone = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5])[4] / 1e6);
+        let cluster = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[2] / 1e6);
+        let forward = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[3] / 1e6);
+        let history = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[4] / 1e6);
+        let tone = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[5] / 1e6);
         eprintln!(
-            "V1 GPU p50/p95 ms shadow={:.3}/{:.3} cluster={:.3}/{:.3} forward={:.3}/{:.3} tone={:.3}/{:.3}",
-            shadow.0, shadow.1, cluster.0, cluster.1, forward.0, forward.1, tone.0, tone.1
+            "V1 GPU p50/p95 ms shadow={:.3}/{:.3} cluster={:.3}/{:.3} forward={:.3}/{:.3} history={:.3}/{:.3} tone={:.3}/{:.3}",
+            shadow.0,
+            shadow.1,
+            cluster.0,
+            cluster.1,
+            forward.0,
+            forward.1,
+            history.0,
+            history.1,
+            tone.0,
+            tone.1
         );
     } else if gpu_timestamps {
         eprintln!(

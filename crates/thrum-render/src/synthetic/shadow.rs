@@ -218,7 +218,7 @@ impl ShadowPrepared {
         let mut pass = compiled
             .begin_render(
                 encoder,
-                None,
+                [],
                 Some(GraphDepthAttachment {
                     resource,
                     range: u64::try_from(index).expect("two cascades")

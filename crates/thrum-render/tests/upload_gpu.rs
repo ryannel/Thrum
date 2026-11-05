@@ -100,6 +100,14 @@ fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
         let moved = pixels(&device, &queue, &prepared, &target);
         assert_ne!(after, moved);
 
+        scene.instances[1].ids[0] = 0;
+        let duplicate = prepared
+            .upload_instances(&queue, &scene.instances, &[1])
+            .expect("duplicate logical identity degrades");
+        assert_eq!((duplicate.changed_rows, duplicate.dropped_invalid), (0, 1));
+        assert_eq!(moved, pixels(&device, &queue, &prepared, &target));
+        scene.instances[1].ids[0] = 1;
+
         scene.instances[1].ids[3] = 0;
         prepared
             .upload_instances(&queue, &scene.instances, &[1])

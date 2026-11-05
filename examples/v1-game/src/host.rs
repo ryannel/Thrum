@@ -123,7 +123,7 @@ pub struct FrameSample {
     pub wall: Duration,
     /// Actual GPU pass durations: near/far Sun shadows, local clusters,
     /// forward and display. Disabled passes report zero in their slots.
-    pub gpu_pass_ns: Option<[f64; 5]>,
+    pub gpu_pass_ns: Option<[f64; 6]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
     /// This frame also wrote an acquired platform surface.
@@ -357,8 +357,6 @@ impl EncodedFrame<'_> {
         let encode_cpu = self.scene_encode_cpu + present_start.elapsed();
         let mut report = self.report.take().ok_or("encoded report consumed")?;
         let sample = self.sample.take().ok_or("encoded sample consumed")?;
-        #[cfg(not(target_arch = "wasm32"))]
-        let submitted_alpha = sample.presentation_alpha;
         self.host.finish_encoded(
             self.slot_index,
             &mut report,
@@ -368,11 +366,10 @@ impl EncodedFrame<'_> {
             encode_cpu,
             presented,
         )?;
-        self.host.prepared.commit_frame();
+        self.host.prepared.commit_frame(&self.host.queue);
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.host.last_view_source = Some(self.source);
-            self.host.last_view_alpha = submitted_alpha;
             self.host.last_render_slot = Some(self.slot_index);
         }
         Ok(report)
@@ -553,8 +550,6 @@ pub struct FrameHost {
     visual_generation: u64,
     #[cfg(not(target_arch = "wasm32"))]
     last_view_source: Option<SourceTick>,
-    #[cfg(not(target_arch = "wasm32"))]
-    last_view_alpha: f32,
     #[cfg(not(target_arch = "wasm32"))]
     last_render_slot: Option<usize>,
     scene: SyntheticScene,
@@ -748,7 +743,6 @@ impl FrameHost {
             #[cfg(not(target_arch = "wasm32"))]
             last_view_source: Some(initial_source),
             #[cfg(not(target_arch = "wasm32"))]
-            last_view_alpha: 1.0,
             #[cfg(not(target_arch = "wasm32"))]
             last_render_slot: None,
             scene,
@@ -884,7 +878,6 @@ impl FrameHost {
         self.visual_product = candidate.product.take();
         self.visual_generation = self.visual_generation.wrapping_add(1);
         self.last_view_source = None;
-        self.last_view_alpha = 1.0;
         self.last_render_slot = None;
         if let Some(extractor) = self.extractor.as_mut() {
             extractor.invalidate_history();
@@ -1316,13 +1309,10 @@ impl FrameHost {
         let Some(prepared) = self.prepare_extracted(slot_index, report, frame)? else {
             return Ok(());
         };
-        #[cfg(not(target_arch = "wasm32"))]
-        let submitted_alpha = prepared.sample.presentation_alpha;
         self.encode_prepared(slot_index, report, surface, prepared.sample, wall_start)?;
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.last_view_source = Some(prepared.source);
-            self.last_view_alpha = submitted_alpha;
             self.last_render_slot = Some(slot_index);
         }
         Ok(())
@@ -1375,6 +1365,8 @@ impl FrameHost {
             self.render_extent,
         )?;
         let lighting = self.frame_lighting(frame.frame_tick, frame.presentation_alpha);
+        self.prepared
+            .synchronize_history(&self.queue, self.sim.epoch().0, self.sim.timeline());
         let view_update_start = Instant::now();
         self.prepared
             .update_frame(
@@ -1488,7 +1480,7 @@ impl FrameHost {
             scene_encode_cpu + present_start.elapsed(),
             surface_presented,
         )?;
-        self.prepared.commit_frame();
+        self.prepared.commit_frame(&self.queue);
         Ok(())
     }
 
@@ -1847,18 +1839,8 @@ impl FrameHost {
         } else {
             ExtractReport::default()
         };
-        #[cfg(not(target_arch = "wasm32"))]
-        let capture_alpha = self.last_view_source.map_or(1.0, |source| {
-            if source.epoch == self.sim.epoch().0
-                && source.timeline == self.sim.timeline()
-                && source.tick == self.sim.tick()
-            {
-                self.last_view_alpha
-            } else {
-                1.0
-            }
-        });
-        #[cfg(target_arch = "wasm32")]
+        // A capture describes the current committed endpoint, regardless of
+        // the last display sample or a delayed native extraction worker.
         let capture_alpha = 1.0;
         let applied = scene::apply_frame_to_scene(
             &mut self.scene,
@@ -2016,22 +1998,23 @@ fn pass_durations(
     passes: &[thrum_render::timing::PassTiming],
     sample: &FrameSample,
     prepared: &PreparedSynthetic,
-) -> Option<([f64; 5], Option<f64>)> {
-    const ALL: [&str; 5] = [
+) -> Option<([f64; 6], Option<f64>)> {
+    const ALL: [&str; 6] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
         "synthetic cluster build",
         "synthetic forward opaque",
+        "synthetic transform history",
         "synthetic tone encode",
     ];
-    const SHADOW_ONLY: [&str; 4] = [ALL[0], ALL[1], ALL[3], ALL[4]];
-    const CLUSTER_ONLY: [&str; 3] = [ALL[2], ALL[3], ALL[4]];
+    const SHADOW_ONLY: [&str; 5] = [ALL[0], ALL[1], ALL[3], ALL[4], ALL[5]];
+    const CLUSTER_ONLY: [&str; 4] = [ALL[2], ALL[3], ALL[4], ALL[5]];
     let presented = sample.surface_presented;
     if sample.reused_visual {
         return (passes.len() == 1
             && presented
             && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
-            .then(|| ([0.0; 5], Some(passes[0].nanoseconds)));
+            .then(|| ([0.0; 6], Some(passes[0].nanoseconds)));
     }
     let shadows = prepared.shadowed();
     let clusters = prepared.gpu_clustered();
@@ -2048,14 +2031,15 @@ fn pass_durations(
             .all(|(pass, name)| pass.name.as_ref() == *name)
         && (!presented || passes[names.len()].name.as_ref() == thrum_render::present::PASS_NAME))
         .then(|| {
-            let mut scene = [0.0; 5];
+            let mut scene = [0.0; 6];
             for pass in passes.iter().take(names.len()) {
                 let slot = match pass.name.as_ref() {
                     "synthetic Sun shadow near" => 0,
                     "synthetic Sun shadow far" => 1,
                     "synthetic cluster build" => 2,
                     "synthetic forward opaque" => 3,
-                    _ => 4,
+                    "synthetic transform history" => 4,
+                    _ => 5,
                 };
                 scene[slot] = pass.nanoseconds;
             }
