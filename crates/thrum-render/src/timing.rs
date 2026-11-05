@@ -203,6 +203,37 @@ impl GpuTimings {
         generation: u64,
         name: impl AsRef<str>,
     ) -> Result<Option<wgpu::RenderPassTimestampWrites<'_>>, TimingError> {
+        Ok(self
+            .reserve_pass(generation, name)?
+            .map(|(query_set, index)| wgpu::RenderPassTimestampWrites {
+                query_set,
+                beginning_of_pass_write_index: Some(index * 2),
+                end_of_pass_write_index: Some(index * 2 + 1),
+            }))
+    }
+
+    /// Reserve automatic timing writes for one compute pass.
+    /// # Errors
+    /// Returns an error for a stale generation, busy batch or full capacity.
+    pub fn compute_writes(
+        &mut self,
+        generation: u64,
+        name: impl AsRef<str>,
+    ) -> Result<Option<wgpu::ComputePassTimestampWrites<'_>>, TimingError> {
+        Ok(self
+            .reserve_pass(generation, name)?
+            .map(|(query_set, index)| wgpu::ComputePassTimestampWrites {
+                query_set,
+                beginning_of_pass_write_index: Some(index * 2),
+                end_of_pass_write_index: Some(index * 2 + 1),
+            }))
+    }
+
+    fn reserve_pass(
+        &mut self,
+        generation: u64,
+        name: impl AsRef<str>,
+    ) -> Result<Option<(&wgpu::QuerySet, u32)>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
             return Ok(None);
@@ -215,11 +246,7 @@ impl GpuTimings {
             return Err(TimingError::Capacity);
         }
         enabled.names.push(name.as_ref());
-        Ok(Some(wgpu::RenderPassTimestampWrites {
-            query_set: &enabled.query,
-            beginning_of_pass_write_index: Some(index * 2),
-            end_of_pass_write_index: Some(index * 2 + 1),
-        }))
+        Ok(Some((&enabled.query, index)))
     }
     /// Finish recording timestamps on the render command buffer. The executor
     /// submits normally; completion notification is only a nonblocking message.

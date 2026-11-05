@@ -11,6 +11,7 @@ pub(super) const Y: usize = 18;
 pub(super) const Z: usize = 16;
 const COUNT: usize = X * Y * Z;
 const CAPACITY: usize = 32;
+pub(super) const GPU_MAX_SOURCES: usize = 4;
 
 /// One finite-radius local source in the synthetic fixture. Position is in
 /// the fixture's world coordinates and intensity is linear RGB candela.
@@ -103,7 +104,9 @@ pub(super) struct ClusterTable {
     pub(super) lights: Vec<u8>,
     pub(super) heads: Vec<u8>,
     pub(super) indices: Vec<u8>,
+    pub(super) bounds: Vec<u8>,
     pub(super) dropped_references: usize,
+    pub(super) dropped_sources: usize,
     pub(super) active: bool,
     slots: Vec<Slot>,
     max_lights: usize,
@@ -115,7 +118,9 @@ impl ClusterTable {
             lights: vec![0; 32],
             heads: vec![0; 8],
             indices: vec![0; 4],
+            bounds: Vec::new(),
             dropped_references: 0,
+            dropped_sources: 0,
             active: false,
             slots: Vec::new(),
             max_lights: 0,
@@ -143,6 +148,55 @@ impl ClusterTable {
         Ok(table)
     }
 
+    pub(super) fn build_gpu(
+        lights: &[SyntheticPointLight],
+        view: &SyntheticView,
+    ) -> Result<Self, RenderError> {
+        if lights.is_empty() || lights.len() > GPU_MAX_SOURCES {
+            return Err(RenderError::SceneCapacity);
+        }
+        let mut table = Self::empty();
+        table.max_lights = lights.len();
+        table.lights.reserve(table.max_lights * 32);
+        table.bounds.reserve(table.max_lights * 32);
+        table.repack_gpu(lights, view)?;
+        Ok(table)
+    }
+
+    /// Pack only moving source records and conservative projected cell bounds;
+    /// GPU work writes the full head/index grid before the forward pass.
+    pub(super) fn repack_gpu(
+        &mut self,
+        lights: &[SyntheticPointLight],
+        view: &SyntheticView,
+    ) -> Result<(), RenderError> {
+        let retained = &lights[..lights.len().min(self.max_lights)];
+        for light in retained.iter().copied() {
+            validate(light)?;
+        }
+        self.lights.clear();
+        self.bounds.clear();
+        for light in retained.iter().copied() {
+            pack_light(light, &mut self.lights);
+            let cell_bounds = if light.candela.iter().any(|value| *value > 0.0) {
+                bounds(light, view)
+            } else {
+                None
+            };
+            pack_bounds(cell_bounds, &mut self.bounds);
+        }
+        for _ in retained.len()..self.max_lights {
+            self.lights.extend_from_slice(&[0; 32]);
+            pack_bounds(None, &mut self.bounds);
+        }
+        self.active = retained
+            .iter()
+            .any(|light| light.candela.iter().any(|value| *value > 0.0));
+        self.dropped_sources = lights.len().saturating_sub(self.max_lights);
+        self.dropped_references = 0;
+        Ok(())
+    }
+
     pub(super) fn capacities(&self) -> [u64; 3] {
         if self.max_lights == 0 {
             return [32, 8, 4];
@@ -160,12 +214,12 @@ impl ClusterTable {
         lights: &[SyntheticPointLight],
         view: &SyntheticView,
     ) -> Result<(), RenderError> {
-        if lights.len() > 4096 || lights.len() > self.max_lights {
-            return Err(RenderError::SceneCapacity);
-        }
-        for light in lights.iter().copied() {
+        let retained = &lights[..lights.len().min(self.max_lights)];
+        for light in retained.iter().copied() {
             validate(light)?;
         }
+        self.dropped_sources = lights.len().saturating_sub(self.max_lights);
+        let lights = retained;
         if !lights.iter().any(|light| {
             light.candela.iter().any(|value| *value > 0.0) && bounds(*light, view).is_some()
         }) {
@@ -292,6 +346,22 @@ fn pack_light(light: SyntheticPointLight, out: &mut Vec<u8>) {
         out.extend_from_slice(&value.to_le_bytes());
     }
     for value in light.candela.into_iter().chain([0.0]) {
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+}
+
+fn pack_bounds(bounds: Option<([usize; 3], [usize; 3])>, out: &mut Vec<u8>) {
+    let (lo, hi) = bounds.unwrap_or(([usize::MAX; 3], [0; 3]));
+    for value in lo
+        .into_iter()
+        .map(|value| u32::try_from(value).unwrap_or(u32::MAX))
+        .chain([0])
+        .chain(
+            hi.into_iter()
+                .map(|value| u32::try_from(value).unwrap_or(u32::MAX)),
+        )
+        .chain([0])
+    {
         out.extend_from_slice(&value.to_le_bytes());
     }
 }
@@ -578,6 +648,29 @@ mod tests {
                 table.indices.capacity(),
             ]
         );
+    }
+
+    #[test]
+    fn gpu_bounds_repack_has_fixed_capacity_and_counts_excess_sources() {
+        let view = SyntheticView::default();
+        let mut light = SyntheticPointLight {
+            position: [0.0, 0.0, 0.5],
+            radius: 0.5,
+            candela: [0.0; 3],
+        };
+        let mut table = ClusterTable::build_gpu(&[light], &view).expect("GPU source");
+        assert!(table.slots.is_empty());
+        assert_eq!(table.bounds.len(), 32);
+        assert_eq!(table.heads.len(), 8);
+        light.candela = [2.0; 3];
+        table
+            .repack_gpu(&[light, light], &view)
+            .expect("bounded frame");
+        assert_eq!(table.dropped_sources, 1);
+        assert!(table.active);
+        assert_eq!(table.lights.len(), 32);
+        assert_eq!(table.bounds.len(), 32);
+        assert_ne!(table.bounds[..4], u32::MAX.to_le_bytes());
     }
 
     #[test]

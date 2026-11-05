@@ -520,6 +520,13 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
             radius: 1.2,
             candela: [3.0, 1.0, 0.3],
         });
+        scene.local_lights.extend(
+            [SyntheticPointLight {
+                position: [0.0; 3],
+                radius: 1.0,
+                candela: [0.0; 3],
+            }; 3],
+        );
         let light = SyntheticLight {
             direction_to_light: [0.4, -0.6, 1.0],
             irradiance: [0.0; 3],
@@ -552,6 +559,15 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
         ));
         let after = render_pixels_bound(&device, &queue, &prepared, &target);
         prepared.commit_frame();
+        // A full CPU clustered preparation is the image oracle. These dark
+        // extras force that path without changing scene illumination.
+        scene.local_lights.extend(
+            [SyntheticPointLight {
+                position: [0.0; 3],
+                radius: 1.0,
+                candela: [0.0; 3],
+            }; 1],
+        );
         let fresh =
             PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, changed_light)
                 .await

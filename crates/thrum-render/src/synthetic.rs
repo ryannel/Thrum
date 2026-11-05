@@ -2,7 +2,7 @@
 //! instance tables, four texture-class bindings, graph declaration and optional
 //! timestamps. One directional metallic-roughness closure and opaque depth are
 //! real, followed by a fixed authored SDR display transform. Fixed-view
-//! clustered local lights and two synthetic Sun cascades are prepared here;
+//! selective GPU local-light lists and two synthetic Sun cascades run here;
 //! a checked constant-light presentation handoff and the general render scene
 //! remain open.
 
@@ -22,18 +22,20 @@ use std::sync::{
 use wgpu::util::DeviceExt;
 
 mod cluster;
+mod cluster_gpu;
 mod shadow;
 mod upload;
 mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
+use cluster_gpu::ClusterCompute;
 use shadow::{ShadowPrepared, ShadowTarget};
 use upload::{InstanceUpload, pack_synthetic_instance};
 use view::AUX_BYTES;
 pub use view::SyntheticView;
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 6;
+pub const SYNTHETIC_REVISION: u64 = 7;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -375,6 +377,7 @@ pub struct PreparedSynthetic {
     cluster_head_buffer: wgpu::Buffer,
     cluster_index_buffer: wgpu::Buffer,
     clusters: ClusterTable,
+    cluster_compute: Option<ClusterCompute>,
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
     instances: wgpu::BindGroup,
@@ -484,7 +487,12 @@ impl PreparedSynthetic {
         // Prepare the declared shadow recipe even while the Sun is dark, so a
         // later live light change can use the same pipelines and target maps.
         let shadow_enabled = scene.sun_shadows;
-        let clusters = ClusterTable::build(&scene.local_lights, &scene.view)?;
+        let gpu_clusters = (1..=cluster::GPU_MAX_SOURCES).contains(&scene.local_lights.len());
+        let clusters = if gpu_clusters {
+            ClusterTable::build_gpu(&scene.local_lights, &scene.view)?
+        } else {
+            ClusterTable::build(&scene.local_lights, &scene.view)?
+        };
         let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
         let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
@@ -625,6 +633,16 @@ impl PreparedSynthetic {
             &clusters.indices,
             cluster_index_bytes,
         );
+        let cluster_compute = gpu_clusters.then(|| {
+            let bounds = storage_buffer(
+                device,
+                queue,
+                "synthetic cluster source bounds",
+                &clusters.bounds,
+                u64::try_from(clusters.bounds.len()).expect("32 sources fit u64"),
+            );
+            ClusterCompute::new(device, bounds, &cluster_heads, &cluster_indices)
+        });
         let light = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic clustered light lists"),
             layout: &light_layout,
@@ -856,6 +874,7 @@ impl PreparedSynthetic {
             cluster_head_buffer: cluster_heads,
             cluster_index_buffer: cluster_indices,
             clusters,
+            cluster_compute,
             light,
             materials,
             instances,
@@ -879,6 +898,11 @@ impl PreparedSynthetic {
     pub fn dropped_light_references(&self) -> usize {
         self.dropped_light_references
     }
+    /// Live sources beyond the prepared local-light capacity, omitted from
+    /// presentation until a larger scene is prepared.
+    pub fn dropped_light_sources(&self) -> usize {
+        self.clusters.dropped_sources
+    }
     /// Authored light/background channels clamped to the finite presentation
     /// envelope while preparing this generation.
     pub fn presentation_light_clamps(&self) -> usize {
@@ -886,7 +910,15 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        if self.shadow.is_some() { 4 } else { 2 }
+        2 + u32::from(self.shadow.is_some()) * 2 + u32::from(self.cluster_compute.is_some())
+    }
+    /// Whether this prepared scene builds selective local-light lists on GPU.
+    pub fn gpu_clustered(&self) -> bool {
+        self.cluster_compute.is_some()
+    }
+    /// Whether the prepared frame records two Sun cascade passes.
+    pub fn shadowed(&self) -> bool {
+        self.shadow.is_some()
     }
     /// Update one live view and its directional, local-light and cascade data.
     /// Pipelines, bind groups and target textures stay prepared. Call after the
@@ -909,7 +941,11 @@ impl PreparedSynthetic {
             return Err(RenderError::SceneCapacity);
         }
         let (mut light_data, background, clamps) = pack_frame_lighting(lighting)?;
-        self.clusters.rebuild(&scene.local_lights, &scene.view)?;
+        if self.cluster_compute.is_some() {
+            self.clusters.repack_gpu(&scene.local_lights, &scene.view)?;
+        } else {
+            self.clusters.rebuild(&scene.local_lights, &scene.view)?;
+        }
         if [
             (self.clusters.lights.len(), self.local_light_bytes),
             (self.clusters.heads.len(), self.cluster_head_bytes),
@@ -944,8 +980,12 @@ impl PreparedSynthetic {
         );
         queue.write_buffer(&self.directional_buffer, 0, &light_data);
         queue.write_buffer(&self.local_light_buffer, 0, &self.clusters.lights);
-        queue.write_buffer(&self.cluster_head_buffer, 0, &self.clusters.heads);
-        queue.write_buffer(&self.cluster_index_buffer, 0, &self.clusters.indices);
+        if let Some(compute) = self.cluster_compute.as_ref() {
+            queue.write_buffer(&compute.bounds, 0, &self.clusters.bounds);
+        } else {
+            queue.write_buffer(&self.cluster_head_buffer, 0, &self.clusters.heads);
+            queue.write_buffer(&self.cluster_index_buffer, 0, &self.clusters.indices);
+        }
         self.dropped_light_references = self.clusters.dropped_references;
         self.presentation_light_clamps = clamps;
         self.background = background;
@@ -994,6 +1034,12 @@ impl PreparedSynthetic {
     fn shadow_key(&self, index: u32) -> PipelineKey {
         PipelineKey {
             role: index + 2,
+            ..self.key
+        }
+    }
+    fn cluster_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 4,
             ..self.key
         }
     }
@@ -1082,7 +1128,7 @@ impl PreparedSynthetic {
                 store: true,
             });
         }
-        self.append_cluster_reads(&mut graph, &mut accesses)?;
+        self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         let depth = graph.resource(
             ResourceDescriptor::Texture {
                 width,
@@ -1325,24 +1371,70 @@ impl PreparedSynthetic {
         &self,
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
+        prepared_keys: &mut BTreeSet<PipelineKey>,
     ) -> Result<(), RenderError> {
-        for bytes in [
+        let mut resources = Vec::with_capacity(3);
+        for (index, bytes) in [
             self.local_light_bytes,
             self.cluster_head_bytes,
             self.cluster_index_bytes,
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let storage = graph.resource(
                 ResourceDescriptor::Buffer {
                     bytes,
                     usage: wgpu::BufferUsages::STORAGE,
                 },
-                ResourceScope::Imported { initialized: true },
+                ResourceScope::Imported {
+                    initialized: index == 0 || self.cluster_compute.is_none(),
+                },
             )?;
             accesses.push(Access {
-                resource: storage,
+                resource: storage.clone(),
                 range: 0..bytes,
                 kind: AccessKind::StorageRead,
                 store: true,
+            });
+            resources.push(storage);
+        }
+        if self.cluster_compute.is_some() {
+            let bounds = graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes: u64::try_from(self.clusters.bounds.len())
+                        .map_err(|_| RenderError::SceneCapacity)?,
+                    usage: wgpu::BufferUsages::STORAGE,
+                },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            prepared_keys.insert(self.cluster_key());
+            graph.pass(Pass {
+                name: "synthetic cluster build".into(),
+                scope: PassScope::View(1),
+                pipeline: Some(self.cluster_key()),
+                accesses: vec![
+                    Access {
+                        resource: bounds,
+                        range: 0..u64::try_from(self.clusters.bounds.len())
+                            .map_err(|_| RenderError::SceneCapacity)?,
+                        kind: AccessKind::StorageRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: resources[1].clone(),
+                        range: 0..self.cluster_head_bytes,
+                        kind: AccessKind::StorageWrite,
+                        store: true,
+                    },
+                    Access {
+                        resource: resources[2].clone(),
+                        range: 0..self.cluster_index_bytes,
+                        kind: AccessKind::StorageWrite,
+                        store: true,
+                    },
+                ],
+                external_side_effect: false,
             });
         }
         Ok(())
@@ -1399,6 +1491,11 @@ impl PreparedSynthetic {
             Some(key) if key == self.key => {
                 self.encode_opaque(encoder, generation, target, pass, timings.as_deref_mut())
             }
+            Some(key) if key == self.cluster_key() => self
+                .cluster_compute
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?
+                .encode(encoder, generation, pass, timings.as_deref_mut()),
             Some(key) if key == self.display_key() => {
                 self.encode_tone(encoder, generation, target, pass, timings.as_deref_mut())
             }
