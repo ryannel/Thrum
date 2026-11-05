@@ -177,39 +177,6 @@ impl WorldUndo {
             .push_component(slot, prior, tick);
     }
 
-    fn record_tentative<T: Send + Sync + 'static>(
-        &mut self,
-        component: usize,
-        slot: u32,
-        tick: u64,
-        prior: T,
-    ) {
-        self.columns[component]
-            .as_any_mut()
-            .downcast_mut::<TypedUndo<T>>()
-            .expect("registered undo column type")
-            .push_component(slot, Some(prior), tick);
-    }
-
-    fn finish_tentative<T: Send + Sync + 'static>(
-        &mut self,
-        component: usize,
-        slot: u32,
-        changed: bool,
-    ) {
-        if changed {
-            if let Some(words) = &mut self.changed_words {
-                words[slot as usize / 64] |= 1_u64 << (slot % 64);
-            }
-        } else {
-            self.columns[component]
-                .as_any_mut()
-                .downcast_mut::<TypedUndo<T>>()
-                .expect("registered undo column type")
-                .pop_tentative(slot);
-        }
-    }
-
     pub(super) fn record_structural(&mut self, world: &RegisteredWorld, slot: u32) {
         if let Some(words) = &mut self.changed_words {
             words[slot as usize / 64] |= 1_u64 << (slot % 64);
@@ -1354,6 +1321,11 @@ impl RegisteredWorld {
             .as_any()
             .downcast_ref::<TypedStore<U>>()
             .expect("prepared shared component type");
+        let undo_column = undo.columns[first]
+            .as_any_mut()
+            .downcast_mut::<TypedUndo<T>>()
+            .expect("registered undo column type");
+        let mut changed_words = undo.changed_words.as_deref_mut();
         let stride = self.registry.entries.len();
         for word in 0..write.presence().len() {
             let mut matching = write.presence()[word] & read.presence()[word];
@@ -1369,11 +1341,10 @@ impl RegisteredWorld {
                 let value = write.get_mut(index).expect("presence bit has value");
                 let first_write = dirty.mark_first(first, key);
                 if first_write {
-                    undo.record_tentative(
-                        first,
+                    undo_column.push_component(
                         key,
+                        Some(value.clone()),
                         self.change_ticks[index * stride + first],
-                        value.clone(),
                     );
                 }
                 let handle = Handle {
@@ -1388,8 +1359,12 @@ impl RegisteredWorld {
                     read.get(index).expect("presence bit has value"),
                 )?;
                 if first_write {
-                    undo.finish_tentative::<T>(first, key, changed);
-                    if !changed {
+                    if changed {
+                        if let Some(words) = changed_words.as_deref_mut() {
+                            words[key as usize / 64] |= 1_u64 << (key % 64);
+                        }
+                    } else {
+                        undo_column.pop_tentative(key);
                         dirty.unmark_last(first, key);
                     }
                 }

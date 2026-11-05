@@ -1475,6 +1475,54 @@ impl WorldRead<'_> {
         self.world.visit_changes_since(since, current, visit)
     }
 
+    /// Visit changed slots with a live row and three component stamps. Permit
+    /// checks happen once before the scan rather than once per changed row.
+    /// Returns false without visiting when the interval has expired.
+    ///
+    /// # Panics
+    ///
+    /// A permit belongs to another runtime or system callback.
+    pub fn visit_changes_with_ticks3<
+        A: Send + Sync + 'static,
+        B: Send + Sync + 'static,
+        C: Send + Sync + 'static,
+    >(
+        &self,
+        since: u64,
+        current: u64,
+        permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
+        mut visit: impl FnMut(u32, Option<(LiveSlot<'_>, [u64; 4])>),
+    ) -> bool {
+        for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
+            assert_eq!(
+                permit, self.nonce,
+                "change permit belongs to another runtime"
+            );
+        }
+        assert!(self.system.is_none_or(|system| {
+            system == permits.0.system && system == permits.1.system && system == permits.2.system
+        }));
+        let components = [
+            permits.0.component,
+            permits.1.component,
+            permits.2.component,
+        ];
+        self.world.visit_changes_since(since, current, |key| {
+            let live = self.world.live_at_slot(key).map(|(handle, id)| {
+                (
+                    LiveSlot {
+                        handle,
+                        id,
+                        nonce: self.nonce,
+                        guard: PhantomData,
+                    },
+                    self.world.change_ticks3_at(key, components),
+                )
+            });
+            visit(key, live);
+        })
+    }
+
     /// Visit slots with structural changes in a retained interval once each,
     /// in physical slot order. Returns false if the interval is not retained.
     pub fn visit_structural_since(&self, since: u64, current: u64, visit: impl FnMut(u32)) -> bool {
@@ -1552,46 +1600,6 @@ impl WorldRead<'_> {
             column: self.world.column_at(permit.component),
             nonce: self.nonce,
         })
-    }
-
-    /// Read structural and three registered component change ticks at a live slot.
-    ///
-    /// # Errors
-    ///
-    /// The slot belongs to another runtime.
-    ///
-    /// # Panics
-    ///
-    /// A permit belongs to another runtime or system callback.
-    pub fn change_ticks3<
-        A: Send + Sync + 'static,
-        B: Send + Sync + 'static,
-        C: Send + Sync + 'static,
-    >(
-        &self,
-        slot: LiveSlot<'_>,
-        permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
-    ) -> Result<[u64; 4], RegisteredWorldError> {
-        for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
-            assert_eq!(
-                permit, self.nonce,
-                "change permit belongs to another runtime"
-            );
-        }
-        assert!(self.system.is_none_or(|system| {
-            system == permits.0.system && system == permits.1.system && system == permits.2.system
-        }));
-        if slot.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        Ok(self.world.change_ticks3_at(
-            slot.handle.slot,
-            [
-                permits.0.component,
-                permits.1.component,
-                permits.2.component,
-            ],
-        ))
     }
 
     /// Resolve a stable identity at this committed endpoint.
