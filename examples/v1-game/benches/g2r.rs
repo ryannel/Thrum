@@ -455,6 +455,7 @@ fn s1_case(count: usize, extra: S1Extra) {
         &mut samples,
         allocations,
     );
+    assert_eq!(allocations, 0, "S1 must not allocate after warm-up");
 }
 
 fn measured_s1_step(
@@ -550,6 +551,11 @@ fn paired_s1_sensitivity_case(count: usize, extra: S1Extra) {
         &format!("G0,S1_paired,{count},base_vs_{extra:?},extra"),
         &mut changed_samples,
         changed_allocations,
+    );
+    assert_eq!(
+        base_allocations + changed_allocations,
+        0,
+        "paired S1 must not allocate"
     );
 }
 
@@ -767,6 +773,10 @@ fn s1_spawn_burst_case() {
         &mut samples,
         allocations,
     );
+    assert_eq!(
+        allocations, 0,
+        "spawn burst must not allocate after warm-up"
+    );
 }
 
 #[expect(
@@ -775,6 +785,22 @@ fn s1_spawn_burst_case() {
 )]
 fn main() {
     println!("case,p50_ns,p95_ns,p99_ns,allocations_all_threads");
+    if std::env::args().any(|argument| argument == "--g2s-qualify") {
+        for count in [10_000, 100_000] {
+            for extra in [S1Extra::None, S1Extra::Command, S1Extra::Damage] {
+                s1_case(count, extra);
+            }
+            for extra in [S1Extra::Command, S1Extra::Damage] {
+                paired_s1_sensitivity_case(count, extra);
+            }
+            for mode in [ExecutionMode::Serial, ExecutionMode::RayonForced] {
+                crossover_case(count, mode);
+            }
+        }
+        s2_retained_correction_case();
+        s1_spawn_burst_case();
+        return;
+    }
     if std::env::args().any(|argument| argument == "--profile-recorded-10k") {
         let mut sim = fixture(10_000, false, ExecutionMode::Serial);
         let mut history = sim

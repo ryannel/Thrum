@@ -139,12 +139,15 @@ fn bounded_native_handoff_reports_main_and_worker_allocation_cost() {
                     break;
                 }
                 assert!(Instant::now() < deadline, "GPU completion timed out");
-                device
-                    .poll(wgpu::PollType::Wait {
-                        submission_index: None,
-                        timeout: Some(Duration::from_millis(100)),
-                    })
-                    .expect("GPU wait");
+                if let Err(error) = device.poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_millis(100)),
+                }) {
+                    assert!(
+                        matches!(error, wgpu::PollError::Timeout),
+                        "GPU wait: {error}"
+                    );
+                }
             }
         }
         assert_eq!(dispatch_allocs.len(), MEASURED_FRAMES);
