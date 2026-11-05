@@ -19,6 +19,7 @@ pub(super) struct CompletedExtract {
     pub(super) report: ExtractReport,
     pub(super) generation: u64,
     pub(super) epoch: u128,
+    pub(super) timeline: u64,
     pub(super) tick: u64,
     pub(super) cpu: Duration,
     pub(super) publication_cpu: Duration,
@@ -81,6 +82,7 @@ impl NativeWorker {
         self.pool.spawn(move || {
             let queue_wait = dispatched_at.elapsed();
             let epoch = snapshot.id().epoch.0;
+            let timeline = snapshot.timeline();
             let tick = snapshot.id().tick;
             let mut extractor = extractor;
             let start = Instant::now();
@@ -93,6 +95,7 @@ impl NativeWorker {
                     report,
                     generation: request.generation,
                     epoch,
+                    timeline,
                     tick,
                     cpu,
                     publication_cpu: request.publication_cpu,
@@ -167,6 +170,7 @@ mod tests {
             .expect("bounded extraction completes");
         assert_eq!(complete.tick, 1);
         assert_eq!(complete.epoch, 1);
+        assert_eq!(complete.timeline, 0);
         assert_eq!(complete.generation, 7);
         assert_eq!(complete.report, serial_report);
         assert_eq!(complete.extractor.frame().ids(), serial.frame().ids());

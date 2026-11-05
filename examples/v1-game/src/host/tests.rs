@@ -248,3 +248,47 @@ fn worker_result_from_a_retired_visual_generation_resets_pose_history() {
         );
     });
 }
+
+#[test]
+#[ignore = "requires a real native GPU adapter for replayed worker extraction"]
+fn worker_result_from_an_old_timeline_is_replaced_after_restore() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+            .await
+            .expect("prepared scene");
+        let capture = host.sim.capture();
+        host.enable_native_worker(|| {}).expect("worker");
+        let now = Duration::from_nanos(16_666_667);
+        let dispatched = host.drive(now, None).expect("dispatch old timeline");
+        assert_eq!((dispatched.tick, dispatched.completed_ticks), (1, 1));
+        host.sim.restore(&capture).expect("restore tick zero");
+        assert_eq!(host.sim.tick(), 0);
+        assert_eq!(host.sim.timeline(), 1);
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        loop {
+            let report = host.drive(now, None).expect("replace stale worker result");
+            if report.submitted {
+                assert_eq!(report.tick, 0);
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "worker did not return"
+            );
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        assert_eq!(host.dropped_stale_views(), 1);
+        assert_eq!(host.last_view_source.map(|source| source.timeline), Some(1));
+        assert_eq!(host.last_view_source.map(|source| source.tick), Some(0));
+    });
+}
