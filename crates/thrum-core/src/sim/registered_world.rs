@@ -1596,7 +1596,7 @@ impl RegisteredWorld {
         first: usize,
         second: usize,
         indexed: bool,
-        supplemental_words: Option<&[u64]>,
+        excluded_words: Option<&[u64]>,
         undo: &mut WorldUndo,
         dirty: &mut impl TentativeDirty,
         context: &mut C,
@@ -1634,8 +1634,7 @@ impl RegisteredWorld {
         for word in 0..write.presence().len() {
             let mut matching = write.presence()[word] & read.presence()[word];
             if let Some(active) = active_words {
-                matching &=
-                    active[word] | supplemental_words.map_or(0, |supplemental| supplemental[word]);
+                matching &= active[word] & !excluded_words.map_or(0, |excluded| excluded[word]);
             }
             while matching != 0 {
                 let bit = matching.trailing_zeros() as usize;
