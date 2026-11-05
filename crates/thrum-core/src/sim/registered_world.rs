@@ -1472,6 +1472,31 @@ impl RegisteredWorld {
             .expect("prevalidated replacement component")
     }
 
+    pub(super) fn put_tentative<T: Clone + PartialEq + Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+        handle: Handle,
+        value: T,
+        undo: &mut WorldUndo,
+        dirty: &mut impl TentativeDirty,
+    ) -> Result<bool, RegisteredWorldError> {
+        self.entity(handle)?;
+        let slot = handle.slot;
+        let row = self.row_of_slot(slot);
+        let prior_tick = self.change_tick_at(component, slot);
+        let column = self.column_mut_index::<T>(component);
+        let prior = column.get(row);
+        if prior == Some(&value) {
+            return Ok(false);
+        }
+        let first_write = dirty.mark_first(component, slot);
+        if first_write {
+            undo.record_component(component, slot, prior_tick, prior.cloned());
+        }
+        column.insert(row, value);
+        Ok(true)
+    }
+
     pub(super) fn replace_batch_prevalidated<T: Clone + Send + Sync + 'static>(
         &mut self,
         component: usize,
@@ -1754,14 +1779,31 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
 mod tests {
     use crate::{StableId, WorldEpoch};
 
-    use super::{ComponentRegistry, IdIndex, RegisteredWorld, RegisteredWorldError};
+    use super::{
+        ComponentRegistry, IdIndex, RegisteredWorld, RegisteredWorldError, TentativeDirty,
+    };
     use crate::sim::ComponentSchemaId;
 
     #[derive(Clone, Copy, Debug, PartialEq)]
     struct Height(f64);
-    #[derive(Clone, Copy, PartialEq)]
+    #[derive(Clone, Copy, Debug, PartialEq)]
     struct Drift(f64);
     struct Unregistered;
+
+    struct TestDirty([bool; 4]);
+
+    impl TentativeDirty for TestDirty {
+        fn mark_first(&mut self, component: usize, slot: u32) -> bool {
+            let mark = &mut self.0[component * 2 + slot as usize];
+            let first = !*mark;
+            *mark = true;
+            first
+        }
+
+        fn unmark_last(&mut self, component: usize, slot: u32) {
+            self.0[component * 2 + slot as usize] = false;
+        }
+    }
 
     fn world() -> RegisteredWorld {
         let mut registry = ComponentRegistry::default();
@@ -1772,6 +1814,50 @@ mod tests {
             .register::<Drift>(ComponentSchemaId(2))
             .expect("velocity registers");
         RegisteredWorld::new(WorldEpoch(7), 2, registry).expect("capacity fits")
+    }
+
+    #[test]
+    fn tentative_upsert_restores_absence_and_first_value_after_repeated_writes() {
+        let mut world = world();
+        let handle = world
+            .spawn(StableId(1), |entity| {
+                entity.add(Height(2.0))?;
+                Ok(())
+            })
+            .expect("height-only entity");
+        let drift = world
+            .component_index(super::ComponentKey::of::<Drift>())
+            .expect("registered drift");
+        let mut undo = world.empty_undo();
+        let mut marks = TestDirty([false; 4]);
+        assert_eq!(
+            world.put_tentative(drift, handle, Drift(3.0), &mut undo, &mut marks),
+            Ok(true)
+        );
+        assert_eq!(
+            world.put_tentative(drift, handle, Drift(4.0), &mut undo, &mut marks),
+            Ok(true)
+        );
+        assert_eq!(
+            world.with::<Drift, _>(handle, |value| *value),
+            Ok(Drift(4.0))
+        );
+        undo.abort_tentative(&mut world);
+        assert_eq!(
+            world.with::<Drift, _>(handle, |value| *value),
+            Err(RegisteredWorldError::MissingComponent)
+        );
+        marks.0.fill(false);
+        assert_eq!(
+            world.put_tentative(drift, handle, Drift(5.0), &mut undo, &mut marks),
+            Ok(true)
+        );
+        undo.abort_tentative(&mut world);
+        world.despawn(handle).expect("retire checked handle");
+        assert_eq!(
+            world.put_tentative(drift, handle, Drift(6.0), &mut undo, &mut marks),
+            Err(RegisteredWorldError::InvalidHandle)
+        );
     }
 
     #[test]

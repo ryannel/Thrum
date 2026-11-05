@@ -12,7 +12,7 @@ use thrum_core::{
 };
 
 use super::{
-    INPUT, INPUT_HEALTH,
+    INPUT_HEALTH,
     page::Page,
     types::{
         Command, Health, Ownership, Position, SimAction, SimConfig, SimError, Velocity, Visual,
@@ -89,7 +89,6 @@ pub(super) struct Candidate {
 
 #[derive(Default)]
 pub(super) struct ParallelOutput {
-    velocities: Vec<(Handle, Velocity)>,
     health: Vec<(Handle, u16)>,
 }
 
@@ -169,14 +168,6 @@ impl Candidate {
         self.health[row] = Health(value);
         self.health_marks[row] = tick;
     }
-
-    fn velocity(&self, row: usize, base: Velocity, tick: u64) -> Velocity {
-        if self.velocity_marks[row] == tick {
-            self.velocities[row]
-        } else {
-            base
-        }
-    }
 }
 
 pub(super) struct Rules {
@@ -187,6 +178,7 @@ pub(super) struct Rules {
     pub(super) committed_inputs: Vec<Origin>,
     pub(super) changed_positions: usize,
     pub(super) position_write: WritePermit<Position>,
+    pub(super) input_velocity_write: WritePermit<Velocity>,
     pub(super) resolve_position_read: ReadPermit<Position>,
     pub(super) velocity_write: WritePermit<Velocity>,
     pub(super) health_write: WritePermit<Health>,
@@ -220,12 +212,11 @@ impl Rules {
 
     pub(super) fn input_velocity(
         &self,
-        _world: &WorldRead<'_>,
+        world: &mut WorldTxn<'_>,
         _executor: Executor,
         _tick: u64,
-        output: &mut ParallelOutput,
-    ) {
-        output.velocities.clear();
+        _candidate: &mut Candidate,
+    ) -> Result<(), SimError> {
         for peer in &self.peers {
             if !peer.active || (peer.pending.is_none() && !peer.recompute_velocity) {
                 continue;
@@ -235,11 +226,15 @@ impl Rules {
                 .pending
                 .as_ref()
                 .map_or(&[][..], |frame| frame.actions.as_slice());
-            output.velocities.push((
-                peer.handle,
-                resolve_velocity(axes, actions, self.config.movement_speed),
-            ));
+            world
+                .put(
+                    &self.input_velocity_write,
+                    peer.handle,
+                    resolve_velocity(axes, actions, self.config.movement_speed),
+                )
+                .map_err(|_| SimError::InvalidHandle)?;
         }
+        Ok(())
     }
 
     pub(super) fn input_health(
@@ -304,7 +299,7 @@ impl Rules {
                 let row = handle.slot as usize;
                 !candidate.despawn_marks[row]
                     && (candidate.position_marks[row] == tick
-                        || candidate.velocity(row, *base_velocity, tick) != Velocity::default())
+                        || *base_velocity != Velocity::default())
             },
             |candidate, handle, _, position, base_velocity| {
                 let row = handle.slot as usize;
@@ -318,11 +313,7 @@ impl Rules {
                     }
                     return Ok(false);
                 }
-                let effective = candidate.velocity(row, *base_velocity, tick);
-                if candidate.velocity_marks[row] == tick {
-                    candidate.base_velocity[row] = *base_velocity;
-                    candidate.velocity_present[row] = true;
-                }
+                let effective = *base_velocity;
                 if effective != Velocity::default() {
                     let next = integrate_position(*position, effective, dt);
                     if !finite(next.0) {
@@ -441,7 +432,6 @@ impl TickGame<Page> for Rules {
     }
 
     fn reset_parallel_output(&self, output: &mut ParallelOutput) {
-        output.velocities.clear();
         output.health.clear();
     }
 
@@ -453,11 +443,6 @@ impl TickGame<Page> for Rules {
         tick: u64,
     ) {
         match system {
-            INPUT => {
-                for (handle, velocity) in output.velocities.drain(..) {
-                    candidate.set_velocity(handle, velocity, tick);
-                }
-            }
             INPUT_HEALTH => {
                 for (handle, health) in output.health.drain(..) {
                     candidate.set_health(handle, health, tick);

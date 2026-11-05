@@ -1683,6 +1683,28 @@ impl<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> Clone for Write
 }
 
 impl WorldTxn<'_> {
+    /// Tentatively insert or replace one checked component under this system's
+    /// declared write permit. A refused tick restores its first preimage.
+    ///
+    /// # Errors
+    ///
+    /// The permit is foreign or the entity handle is stale.
+    pub fn put<T: Clone + PartialEq + Send + Sync + 'static>(
+        &mut self,
+        permit: &WritePermit<T>,
+        handle: Handle,
+        value: T,
+    ) -> Result<bool, RegisteredWorldError> {
+        if permit.nonce != self.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
+        if permit.system != self.system {
+            return Err(RegisteredWorldError::WrongSystem);
+        }
+        self.world
+            .put_tentative(permit.component, handle, value, self.undo, self.dirty)
+    }
+
     /// Visit matching rows in deterministic slot order. Return `true` for a
     /// changed value and `false` for an unchanged value. A callback refusal
     /// restores all tentative writes before returning.

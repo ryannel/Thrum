@@ -423,6 +423,12 @@ fn failed_game_tick_preserves_input_and_page_then_churn_reuses_checked_slot() {
     assert_eq!(sim.tick(), 0);
     assert_eq!(retained.id().tick, 0);
     assert_eq!(sim.get(player_handle).expect("player").health, 100);
+    assert_eq!(
+        sim.get(player_handle)
+            .expect("tentative input rolled back")
+            .velocity,
+        Velocity::default()
+    );
 
     let committed = sim
         .step(&[Command::Despawn(old), Command::Spawn(entity(3, 2.0))])
