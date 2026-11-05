@@ -81,11 +81,17 @@ retention; they do not pin arbitrary whole-world epochs forever. V2 extraction c
 staging/GPU resource leases. Release the world snapshot only when CPU extraction and required copies finish; GPU
 submission completion governs the packet/resources independently. Region retirement cannot free leased old data.
 
-V1 presentation and projections are optional. When every page is leased, commit the tick, count the omitted view,
-and seal a full baseline when a page frees. Never reuse leased pages or label stale pages current. Defer stale
-unsubmitted views and reset history outside its horizon. Required readers need explicit backpressure or overload;
-never lose a tick silently or retain pages without bound. Implementation byte budgets are measured and tuned against
-named workloads rather than imposed as a universal hard memory cap.
+V1 presentation pages are optional. When every page is leased, commit the tick, count the omitted view and retain
+engine-owned dirty unions. On release, refresh affected rows against that page's version, diff against the last published
+page and use final-tick preimages for an adjacent previous/current pair. Page lifecycle output is the net endpoint diff;
+slot reuse emits Despawn(old) before Spawn(new), while transient identities need a separate bounded event consumer.
+Never reuse leased pages, force a page baseline because of a gap or label
+stale pages current. Extraction receives both page poses and their identity; its last-submitted GPU pose is separate
+presentation history and resets on a branch or generation gap. Projections may signal overflow and resync one detached
+consumer from a full page; they
+cannot retain unbounded event history. Defer stale unsubmitted views and reset temporal history outside its horizon.
+Required readers need explicit backpressure or overload; never lose a tick silently or retain pages without bound.
+Implementation byte budgets are measured against named workloads, not a universal hard memory cap.
 In a selected bounded host profile that promises admitted-input progress under competing pool use, each accepted input protects its
 future rule-created immutable output bytes separately from snapshot and group storage. Rule callbacks in that profile spend only
 their own preadmitted output allowance; pre-existing charged owners may be shared without another byte charge.
@@ -95,8 +101,8 @@ The selected bounded structural-growth profile declares separate finite physical
 classifier supplies a maximum spawn count before sequencing; the authority checks prepared spawns against the stored
 bound at execution. A new input that raises the possible page/root high-water must atomically fund every older pending
 input's increased future credit before its own sequence advances. Due preflight uses that admitted absolute horizon;
-clean idle ticks do not dirty pages merely because a future spawn is pending. Stable-ID-keyed lifecycle changes retain
-distinct despawn/spawn records even when one physical slot is reused before publication. A required replica's object
+clean idle ticks do not dirty pages merely because a future spawn is pending. A required replica's bounded event stream
+retains distinct Stable-ID-keyed despawn/spawn records even when one physical slot is reused before its delivery. Its object
 headroom is part of admission, and local and multiplayer submissions use the same classifier and rule callbacks.
 An optional finite rule-scratch profile installs one authority-owned byte buffer before accepted work. Each action
 receives a fresh owner-checked generation and a cumulative range limit shared by its decision and preparation.
