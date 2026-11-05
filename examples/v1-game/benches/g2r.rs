@@ -619,6 +619,106 @@ fn s2_current_correction_case() {
     );
 }
 
+fn run_s2_retained_correction(
+    sim: &mut Simulation,
+    history: &mut SimulationHistory,
+    axes: [f32; 3],
+) -> [u64; 4] {
+    let started = Instant::now();
+    history.rewind(sim, 8).expect("rewind eight");
+    let rewound = Instant::now();
+    let tick = sim.tick() + 1;
+    let mut frame = InputFrame::new(
+        Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: tick,
+        },
+        ActorId(1),
+        tick,
+        axes,
+    );
+    frame.actions.push(SimAction::Damage(1));
+    history
+        .amend_input(sim, frame)
+        .expect("amend retained input");
+    let amended = Instant::now();
+    for _ in 0..8 {
+        black_box(history.replay_next(sim).expect("retained replay"));
+    }
+    let replayed = Instant::now();
+    black_box(sim.published_page().expect("corrected endpoint published"));
+    let published = Instant::now();
+    [
+        nanos(rewound.duration_since(started)),
+        nanos(amended.duration_since(rewound)),
+        nanos(replayed.duration_since(amended)),
+        nanos(published.duration_since(replayed)),
+    ]
+}
+
+fn nanos(duration: std::time::Duration) -> u64 {
+    u64::try_from(duration.as_nanos()).expect("sample fits u64")
+}
+
+fn s2_retained_correction_case() {
+    let mut sim = fixture(10_000, true, ExecutionMode::Serial);
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history endpoint");
+    let health = sim.handle(StableId(0)).expect("static health row");
+    for _ in 0..24 {
+        admit_four_peers(&mut sim, true, false, [0.25, 0.0, 0.0]);
+        let value = if sim.tick().is_multiple_of(2) {
+            99
+        } else {
+            100
+        };
+        history
+            .step(&mut sim, &[Command::SetHealth(health, value)])
+            .expect("warm retained tick");
+    }
+    let mut samples = Vec::with_capacity(SAMPLES);
+    let mut stage_samples: [Vec<u64>; 4] = std::array::from_fn(|_| Vec::with_capacity(SAMPLES));
+    let mut allocations = 0;
+    for index in 0..(SAMPLES + 80) {
+        let axes = if index % 2 == 0 {
+            [0.5, 0.0, 0.0]
+        } else {
+            [-0.5, 0.0, 0.0]
+        };
+        if index < 80 {
+            black_box(run_s2_retained_correction(&mut sim, &mut history, axes));
+        } else {
+            let mut stages = [0; 4];
+            let (ns, allocs) = measured(|| {
+                stages = run_s2_retained_correction(&mut sim, &mut history, axes);
+            });
+            samples.push(ns);
+            for (column, stage) in stage_samples.iter_mut().zip(stages) {
+                column.push(stage);
+            }
+            allocations += allocs;
+        }
+    }
+    report(
+        "G2S,S2,10000,Serial,shuffled,damage1,sethealth1,retained_amend_replay_publish",
+        &mut samples,
+        allocations,
+    );
+    for (stage, values) in [
+        "rewind",
+        "amend",
+        "replay8_including_final_publish",
+        "page_lease",
+    ]
+    .into_iter()
+    .zip(&mut stage_samples)
+    {
+        report(&format!("G2S_profile,{stage}"), values, 0);
+    }
+}
+
 fn s1_spawn_burst_case() {
     const LIVE: usize = 10_000;
     const BURST: usize = 200;
@@ -685,6 +785,28 @@ fn main() {
         }
         return;
     }
+    if std::env::args().any(|argument| argument == "--profile-g2s-s1") {
+        let mut sim = fixture(10_000, true, ExecutionMode::Serial);
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(16).expect("window"))
+            .expect("history endpoint");
+        let health = sim.handle(StableId(0)).expect("static health row");
+        for index in 0..100_000 {
+            admit_four_peers(&mut sim, true, false, [0.25, 0.0, 0.0]);
+            black_box(
+                history
+                    .step(
+                        &mut sim,
+                        &[Command::SetHealth(
+                            health,
+                            if index % 2 == 0 { 99 } else { 100 },
+                        )],
+                    )
+                    .expect("profile S1 tick"),
+            );
+        }
+        return;
+    }
     if std::env::args().any(|argument| argument == "--tick") {
         for count in [10_000, 100_000] {
             paired_tick_case(count, false);
@@ -719,6 +841,10 @@ fn main() {
     }
     if std::env::args().any(|argument| argument == "--g0-s2") {
         s2_current_correction_case();
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--g2s-s2") {
+        s2_retained_correction_case();
         return;
     }
     if std::env::args().any(|argument| argument == "--g0-burst") {

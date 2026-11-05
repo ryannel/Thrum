@@ -115,6 +115,8 @@ pub enum SimError {
     ConflictingCommands,
     /// Peer binding is absent, stale or mismatched.
     InvalidOwnership,
+    /// A replacement retained input fails V1 admission or identity checks.
+    InvalidInput,
     /// Initial seeding is closed.
     AlreadyStarted,
     /// The fixed tick cannot advance without wrapping.

@@ -222,6 +222,118 @@ fn rewind_after_partial_replay_retains_the_remaining_future() {
 }
 
 #[test]
+fn corrected_retained_peer_input_matches_the_straight_player_row() {
+    let mut predicted = simulation_with_count(4).expect("predicted game");
+    let mut straight = simulation_with_count(4).expect("straight game");
+    let mut history = predicted
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history");
+    let player = StableId(3);
+    for tick in 1..=8 {
+        let origin = Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: tick,
+        };
+        let predicted_frame = InputFrame::new(origin, ActorId(1), tick, [0.25, 0.0, 0.0]);
+        let straight_frame = InputFrame::new(
+            origin,
+            ActorId(1),
+            tick,
+            [if tick == 1 { 1.0 } else { 0.25 }, 0.0, 0.0],
+        );
+        predicted
+            .admit_frame(predicted_frame)
+            .expect("predicted input");
+        straight
+            .admit_frame(straight_frame)
+            .expect("corrected input");
+        history.step(&mut predicted, &[]).expect("recorded tick");
+        straight.step(&[]).expect("straight tick");
+    }
+    history
+        .rewind(&mut predicted, 8)
+        .expect("rewind to correction");
+    let corrected = InputFrame::new(
+        Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        ActorId(1),
+        1,
+        [1.0, 0.0, 0.0],
+    );
+    let mut invalid = corrected.clone();
+    invalid.actor = ActorId(2);
+    assert_eq!(
+        history.amend_input(&predicted, invalid),
+        Err(SimError::InvalidInput)
+    );
+    history
+        .amend_input(&predicted, corrected)
+        .expect("valid correction");
+    for _ in 0..8 {
+        assert!(
+            history
+                .replay_next(&mut predicted)
+                .expect("retained replay")
+        );
+    }
+    let predicted_row = predicted
+        .get(predicted.handle(player).expect("predicted player"))
+        .expect("predicted row");
+    let straight_row = straight
+        .get(straight.handle(player).expect("straight player"))
+        .expect("straight row");
+    assert_eq!(predicted_row, straight_row);
+    assert_eq!(predicted.tick(), 8);
+    assert_eq!(
+        predicted
+            .published_page()
+            .expect("corrected page")
+            .id()
+            .tick,
+        8
+    );
+}
+
+#[test]
+fn rejected_retained_correction_keeps_original_replay_record() {
+    let mut sim = simulation_with_count(4).expect("game");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(4).expect("window"))
+        .expect("history");
+    let original = InputFrame::new(
+        Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        ActorId(1),
+        1,
+        [0.25, 0.0, 0.0],
+    );
+    sim.admit_frame(original.clone()).expect("input");
+    history.step(&mut sim, &[]).expect("recorded tick");
+    let player = sim.handle(StableId(3)).expect("controlled player");
+    let expected = sim.get(player).expect("original endpoint");
+    history.rewind(&mut sim, 1).expect("rewind");
+    let mut invalid = original;
+    invalid.axes = [2.0, 0.0, 0.0];
+    assert_eq!(
+        history.amend_input(&sim, invalid),
+        Err(SimError::InvalidInput)
+    );
+    assert!(
+        history
+            .replay_next(&mut sim)
+            .expect("original retained input")
+    );
+    assert_eq!(sim.get(player).expect("replayed endpoint"), expected);
+}
+
+#[test]
 fn replay_publishes_only_the_final_reconstructed_tick() {
     let mut sim = simulation_with_count(32).expect("game");
     let mut history = sim
