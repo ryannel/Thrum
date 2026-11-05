@@ -20,6 +20,8 @@ The [water decision](E1-GPU-WATER.md) owns where water runs, body forces, replay
 
 This record selects weather-map volumetric clouds as the visible `E1.clouds` provider. ENVIRONMENT.md's projected optical-depth field stays as the portable and shadow-only representation.
 
+Cloud presentation combines procedural weather layers with placed voxel volumes under the same E1 provider and light-transmittance contract. G5 cooks baked 3D volumes as content-addressed products, including cloud density: KTX2 BC4 on desktop, R8 or EAC slices on iPhone, and R8 for the portable recipe. Placement, product identity and history invalidation are explicit inputs; the weather field remains the source for headless queries and precipitation.
+
 * **Authority.** The E1 cloud source is a deterministic weather field: a function of seed, preset, integrated wind travel and `t_sim`. Its outputs are coverage, genus, top height, age and column optical depth `τ`. A CPU evaluator answers point queries headless. A test asserts the GPU weather map matches it within tolerance. Wind travel is integrated per tick, never computed as mean wind × absolute time. Rain and precipitation derive from this field.
 * **Light.** One cloud transmittance product with `τ` semantics feeds V3 once, as `exp(-τ)`. A shadow-only mode runs without the view march, for the hidden-clouds scenario.
 * **Presentation.** The march, Beer shadow map, multi-scattering octaves and sky capture are presentation. Aerial perspective is applied once. Cloud and froxel-fog `(T,S)` intervals must be ordered and disjoint.
