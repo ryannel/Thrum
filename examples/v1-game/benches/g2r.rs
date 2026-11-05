@@ -18,7 +18,8 @@ use thrum_core::{
     sim::{ExecutionMode, InputFrame},
 };
 use v1_game::simulation::{
-    Command, ComponentEntity, Ownership, Position, SimAction, SimConfig, Simulation, Velocity,
+    Command, ComponentEntity, Ownership, Position, SimAction, SimConfig, Simulation,
+    SimulationHistory, Velocity,
 };
 
 static COUNTING: AtomicBool = AtomicBool::new(false);
@@ -132,7 +133,7 @@ fn report(label: &str, samples: &mut [u64], allocations: u64) {
         quantile(99),
         allocations
     );
-    if !label.starts_with("crossover,") {
+    if !label.starts_with("crossover,") && !label.starts_with("G0,") {
         assert_eq!(
             allocations, 0,
             "warmed {label} allocated on a process thread"
@@ -298,7 +299,7 @@ fn churn_case(count: usize, mode: ExecutionMode) {
     );
 }
 
-fn admit_four_peers(sim: &mut Simulation, damage: bool) {
+fn admit_four_peers(sim: &mut Simulation, damage: bool, extra_damage: bool, axes: [f32; 3]) {
     let tick = sim.tick() + 1;
     for peer in 1..=4_u64 {
         let mut frame = InputFrame::new(
@@ -309,9 +310,12 @@ fn admit_four_peers(sim: &mut Simulation, damage: bool) {
             },
             ActorId(peer),
             tick,
-            [0.25, 0.0, 0.0],
+            if peer == 1 { axes } else { [0.25, 0.0, 0.0] },
         );
         if damage && peer == 1 {
+            frame.actions.push(SimAction::Damage(1));
+        }
+        if extra_damage && peer == 2 {
             frame.actions.push(SimAction::Damage(1));
         }
         sim.admit_frame(frame).expect("four peer inputs");
@@ -326,7 +330,7 @@ fn four_peer_case(count: usize, mode: ExecutionMode, damage: bool) {
     let mut samples = Vec::with_capacity(SAMPLES);
     let mut allocations = 0;
     for index in 0..(SAMPLES + 80) {
-        admit_four_peers(&mut sim, damage);
+        admit_four_peers(&mut sim, damage, false, [0.25, 0.0, 0.0]);
         if index < 80 {
             history.step(&mut sim, &[]).expect("warm four peers");
         } else {
@@ -350,7 +354,7 @@ fn paired_four_peer_case(count: usize, damage: bool) {
         .begin_history(NonZeroUsize::new(16).expect("window"))
         .expect("history endpoint");
     for _ in 0..80 {
-        admit_four_peers(&mut sim, damage);
+        admit_four_peers(&mut sim, damage, false, [0.25, 0.0, 0.0]);
         history.step(&mut sim, &[]).expect("warm four peers");
     }
     let mut serial = Vec::with_capacity(SAMPLES);
@@ -365,7 +369,7 @@ fn paired_four_peer_case(count: usize, damage: bool) {
         };
         for mode in modes {
             sim.set_execution_mode(mode);
-            admit_four_peers(&mut sim, damage);
+            admit_four_peers(&mut sim, damage, false, [0.25, 0.0, 0.0]);
             let (ns, allocs) = measured(|| {
                 black_box(history.step(&mut sim, &[]).expect("four-peer tick"));
             });
@@ -387,6 +391,104 @@ fn paired_four_peer_case(count: usize, damage: bool) {
         &format!("four_peers,{count},Rayon,shuffled,damage{damage}"),
         &mut rayon,
         rayon_allocations,
+    );
+}
+
+#[derive(Clone, Copy, Debug)]
+enum S1Extra {
+    None,
+    Command,
+    Damage,
+}
+
+fn s1_case(count: usize, extra: S1Extra) {
+    let mut sim = fixture(count, true, ExecutionMode::Serial);
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history endpoint");
+    let primary = sim.handle(StableId(0)).expect("first static row");
+    let secondary = sim.handle(StableId(1)).expect("second static row");
+    let mut samples = Vec::with_capacity(SAMPLES);
+    let mut allocations = 0;
+    for index in 0..(SAMPLES + 80) {
+        admit_four_peers(
+            &mut sim,
+            true,
+            matches!(extra, S1Extra::Damage),
+            [0.25, 0.0, 0.0],
+        );
+        let value = if index % 2 == 0 { 99 } else { 100 };
+        let commands = [
+            Command::SetHealth(primary, value),
+            Command::SetHealth(secondary, value),
+        ];
+        let selected = if matches!(extra, S1Extra::Command) {
+            &commands[..2]
+        } else {
+            &commands[..1]
+        };
+        if index < 80 {
+            history.step(&mut sim, selected).expect("warm S1 row");
+        } else {
+            let (ns, allocs) = measured(|| {
+                black_box(
+                    history
+                        .step(&mut sim, selected)
+                        .expect("S1 tick and publish"),
+                );
+            });
+            samples.push(ns);
+            allocations += allocs;
+        }
+    }
+    report(
+        &format!("G0,S1,{count},Serial,shuffled,damage1,sethealth1,{extra:?}"),
+        &mut samples,
+        allocations,
+    );
+}
+
+fn run_s2_correction(sim: &mut Simulation, history: &mut SimulationHistory, axes: [f32; 3]) {
+    history.rewind(sim, 8).expect("rewind eight");
+    for replay in 0..8 {
+        let first_axes = if replay == 0 { axes } else { [0.25, 0.0, 0.0] };
+        admit_four_peers(sim, true, false, first_axes);
+        black_box(history.step(sim, &[]).expect("recreate corrected tick"));
+    }
+    black_box(sim.published_page().expect("corrected endpoint published"));
+}
+
+fn s2_current_correction_case() {
+    let mut sim = fixture(10_000, true, ExecutionMode::Serial);
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history endpoint");
+    for _ in 0..24 {
+        admit_four_peers(&mut sim, true, false, [0.25, 0.0, 0.0]);
+        history.step(&mut sim, &[]).expect("warm retained tick");
+    }
+    let mut samples = Vec::with_capacity(SAMPLES);
+    let mut allocations = 0;
+    for index in 0..(SAMPLES + 80) {
+        let corrected_axes = if index % 2 == 0 {
+            [0.5, 0.0, 0.0]
+        } else {
+            [-0.5, 0.0, 0.0]
+        };
+        if index < 80 {
+            run_s2_correction(&mut sim, &mut history, corrected_axes);
+            continue;
+        }
+        let (ns, allocs) = measured(|| {
+            run_s2_correction(&mut sim, &mut history, corrected_axes);
+        });
+        samples.push(ns);
+        allocations += allocs;
+    }
+    report(
+        "G0,S2,10000,Serial,shuffled,branch_recreate_without_record_amend",
+        &mut samples,
+        allocations,
     );
 }
 
@@ -420,6 +522,18 @@ fn main() {
                 four_peer_case(count, mode, true);
             }
         }
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--g0-s1") {
+        for count in [10_000, 100_000] {
+            for extra in [S1Extra::None, S1Extra::Command, S1Extra::Damage] {
+                s1_case(count, extra);
+            }
+        }
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--g0-s2") {
+        s2_current_correction_case();
         return;
     }
     if std::env::args().any(|argument| argument == "--crossover") {
