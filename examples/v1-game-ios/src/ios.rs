@@ -234,7 +234,7 @@ impl App {
             && !extent.contains(&0)
             && !self.reconfigure
             && extent == [config.width, config.height]
-            && host.pending_frames() < 3;
+            && host.pending_frames() < FrameHost::MAX_IN_FLIGHT;
         let frame = if can_acquire {
             match self
                 .surface

@@ -61,22 +61,23 @@ fn reused_source_ticks_do_not_hide_earlier_completed_submissions() {
 
 #[test]
 fn full_report_queue_drops_the_oldest_tick_even_when_it_finishes_late() {
+    assert_eq!(IN_FLIGHT, 2);
     let mut queue = VecDeque::with_capacity(IN_FLIGHT);
     let mut dropped = 0;
-    for tick in [2, 3, 4] {
+    for tick in [2, 3] {
         retain_sample(&mut queue, &mut dropped, sample(tick));
     }
     retain_sample(&mut queue, &mut dropped, sample(1));
     assert_eq!(dropped, 1);
     assert_eq!(
         queue.iter().map(|entry| entry.tick).collect::<Vec<_>>(),
-        [2, 3, 4]
+        [2, 3]
     );
-    retain_sample(&mut queue, &mut dropped, sample(5));
+    retain_sample(&mut queue, &mut dropped, sample(4));
     assert_eq!(dropped, 2);
     assert_eq!(
         queue.iter().map(|entry| entry.tick).collect::<Vec<_>>(),
-        [3, 4, 5]
+        [3, 4]
     );
 }
 

@@ -45,7 +45,7 @@ const GENERATION: u64 = 1;
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 360;
 const GPU_WAIT: Duration = Duration::from_secs(10);
-const IN_FLIGHT: usize = 3;
+const IN_FLIGHT: usize = 2;
 const GAME_SUN: SyntheticLight = SyntheticLight {
     direction_to_light: [0.4, -0.6, 1.0],
     irradiance: [4.0; 3],
@@ -275,7 +275,7 @@ impl VisualPrepareInputs {
 
 /// One fixed-clock simulation and prepared GPU scene. The device and queue
 /// belong to the caller's executor; this host creates no independent GPU owner.
-/// Three prepared targets bound in-flight work and defer GPU timing readback.
+/// The prepared target ring bounds in-flight work and defers GPU timing readback.
 /// A platform adapter may also supply an acquired surface view for the
 /// prepared presentation pass; the host never owns the surface lifecycle.
 pub struct FrameHost {
@@ -319,6 +319,9 @@ pub struct FrameHost {
 }
 
 impl FrameHost {
+    /// Maximum submitted scene frames awaiting GPU completion.
+    pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
+
     fn frame_lighting(&self, tick: u64) -> FrameLighting {
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(product) = &self.visual_product {
