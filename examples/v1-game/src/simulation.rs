@@ -477,6 +477,7 @@ impl Simulation {
                 last_sequence: None,
                 axes: [0.0; 3],
                 pending: None,
+                recompute_velocity: true,
             };
             self.resource_revision = next_revision;
             return Ok(());
@@ -491,6 +492,7 @@ impl Simulation {
             last_sequence: None,
             axes: [0.0; 3],
             pending: None,
+            recompute_velocity: true,
         });
         self.rules
             .peers

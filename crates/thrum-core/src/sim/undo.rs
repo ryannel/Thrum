@@ -7,7 +7,14 @@ use super::column_store::{StorageColumn, TypedStore};
 
 pub(super) trait UndoColumn: Send + Sync {
     fn as_any_mut(&mut self) -> &mut dyn Any;
-    fn restore_into(&mut self, storage: &mut dyn StorageColumn);
+    fn restore_into(
+        &mut self,
+        storage: &mut dyn StorageColumn,
+        change_ticks: &mut [u64],
+        component: usize,
+        stride: usize,
+    );
+    fn visit_changed_slots(&self, visit: &mut dyn FnMut(u32));
     fn clear(&mut self);
     fn reserve(&mut self, additional: usize);
     fn reserved_bytes(&self) -> usize;
@@ -15,15 +22,25 @@ pub(super) trait UndoColumn: Send + Sync {
 
 pub(super) struct TypedUndo<T> {
     rows: Vec<(u32, Option<T>)>,
+    prior_ticks: Vec<u64>,
 }
 
 impl<T> TypedUndo<T> {
     pub(super) fn new() -> Self {
-        Self { rows: Vec::new() }
+        Self {
+            rows: Vec::new(),
+            prior_ticks: Vec::new(),
+        }
     }
 
-    pub(super) fn push(&mut self, slot: u32, prior: Option<T>) {
+    pub(super) fn push_component(&mut self, slot: u32, prior: Option<T>, tick: u64) {
         self.rows.push((slot, prior));
+        self.prior_ticks.push(tick);
+    }
+
+    pub(super) fn push_structural(&mut self, slot: u32, prior: Option<T>) {
+        self.rows.push((slot, prior));
+        self.prior_ticks.push(u64::MAX);
     }
 }
 
@@ -32,32 +49,58 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         self
     }
 
-    fn restore_into(&mut self, storage: &mut dyn StorageColumn) {
+    fn restore_into(
+        &mut self,
+        storage: &mut dyn StorageColumn,
+        change_ticks: &mut [u64],
+        component: usize,
+        stride: usize,
+    ) {
         let storage = storage
             .as_any_mut()
             .downcast_mut::<TypedStore<T>>()
             .expect("registered undo column type");
-        for (slot, prior) in self.rows.drain(..).rev() {
-            match prior {
+        for ((slot, prior), &tick) in self
+            .rows
+            .iter_mut()
+            .rev()
+            .zip(self.prior_ticks.iter().rev())
+        {
+            match prior.take() {
                 Some(value) => {
-                    storage.insert(slot as usize, value);
+                    storage.insert(*slot as usize, value);
                 }
                 None => {
-                    storage.remove(slot as usize);
+                    storage.remove(*slot as usize);
                 }
+            }
+            if tick != u64::MAX {
+                change_ticks[*slot as usize * stride + component] = tick;
+            }
+        }
+    }
+
+    fn visit_changed_slots(&self, visit: &mut dyn FnMut(u32)) {
+        for (&(slot, _), &tick) in self.rows.iter().zip(&self.prior_ticks) {
+            if tick != u64::MAX {
+                visit(slot);
             }
         }
     }
 
     fn clear(&mut self) {
         self.rows.clear();
+        self.prior_ticks.clear();
     }
 
     fn reserve(&mut self, additional: usize) {
         self.rows.reserve(additional);
+        self.prior_ticks.reserve(additional);
     }
 
     fn reserved_bytes(&self) -> usize {
-        size_of::<Self>() + self.rows.capacity() * size_of::<(u32, Option<T>)>()
+        size_of::<Self>()
+            + self.rows.capacity() * size_of::<(u32, Option<T>)>()
+            + self.prior_ticks.capacity() * size_of::<u64>()
     }
 }

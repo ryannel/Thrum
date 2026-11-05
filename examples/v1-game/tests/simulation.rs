@@ -167,6 +167,41 @@ fn warmed_spawn_churn_reuses_tick_storage() {
 }
 
 #[test]
+fn ten_thousand_recorded_churn_ticks_reuse_undo_and_page_storage() {
+    let mut sim = simulation_with_count(10_000).expect("running fixture");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history");
+    let mut id = StableId(9_995);
+    let mut handle = sim.handle(id).expect("static churn target");
+    for iteration in 0..200_u128 {
+        let replacement = ComponentEntity {
+            id: StableId(10_001 + iteration),
+            position: Position::default(),
+            velocity: Velocity::default(),
+            health: 100,
+            ownership: None,
+            visual: Some(1),
+        };
+        if iteration == 100 {
+            ALLOCATIONS.with(|count| count.set(0));
+            COUNTING.with(|active| active.set(true));
+        }
+        history
+            .step(
+                &mut sim,
+                &[Command::Despawn(handle), Command::Spawn(replacement)],
+            )
+            .expect("recorded churn tick");
+        id = replacement.id;
+        handle = sim.handle(id).expect("replacement handle");
+    }
+    COUNTING.with(|active| active.set(false));
+    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    assert_eq!(sim.published_page().expect("latest page").len(), 10_000);
+}
+
+#[test]
 fn capture_after_churn_replays_input_and_structure_to_the_same_endpoint() {
     let mut sim = Simulation::new(WorldEpoch(12), config(3)).expect("game");
     let owned = Ownership {
@@ -537,6 +572,92 @@ fn four_tick_page_catch_up_keeps_old_lease_and_current_dirty_flags() {
     assert_eq!(current.dirty().structural(), []);
     assert_eq!(held.stable_id(old.slot), Some(StableId(1)));
     assert_eq!(held.position(old), Some(held_position));
+}
+
+#[test]
+fn reused_page_recovers_an_older_position_edit_without_republishing_it() {
+    let mut sim = Simulation::new(WorldEpoch(33), config(2)).expect("game");
+    let stationary = sim.seed(entity(1, 0.0)).expect("stationary body");
+    let moving = sim.seed(entity(2, 1.0)).expect("moving body");
+    drop(sim.published_page().expect("tick-zero page"));
+    sim.step(&[Command::SetPosition(stationary, Position([5.0, 0.0, 0.0]))])
+        .expect("older position edit");
+    for _ in 0..3 {
+        sim.step(&[]).expect("advance to page reuse");
+    }
+    let page = sim.published_page().expect("reused page");
+    assert_eq!(page.position(stationary), Some(Position([5.0, 0.0, 0.0])));
+    assert_eq!(
+        page.position(moving),
+        Some(sim.get(moving).expect("live").position)
+    );
+    assert_eq!(page.dirty().position(), &[moving.slot]);
+}
+
+#[test]
+fn one_tick_impulse_reverts_to_held_axes_on_the_following_tick() {
+    let mut sim = Simulation::new(WorldEpoch(34), config(1)).expect("game");
+    let owned = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(owned);
+    let handle = sim.seed(player).expect("player");
+    sim.register_peer(owned, handle).expect("binding");
+    let mut frame = InputFrame::new(
+        Origin {
+            peer: owned.peer,
+            connection_epoch: owned.connection_epoch,
+            sequence: 1,
+        },
+        owned.actor,
+        1,
+        [1.0, 0.0, 0.0],
+    );
+    frame.actions.push(SimAction::Impulse([2.0, 0.0, 0.0]));
+    sim.admit_frame(frame).expect("impulse input");
+    sim.step(&[]).expect("impulse tick");
+    assert_eq!(
+        sim.get(handle).expect("player").velocity,
+        Velocity([8.0, 0.0, 0.0])
+    );
+    sim.step(&[]).expect("held axes tick");
+    assert_eq!(
+        sim.get(handle).expect("player").velocity,
+        Velocity([6.0, 0.0, 0.0])
+    );
+    sim.step(&[]).expect("steady held axes tick");
+    assert_eq!(
+        sim.get(handle).expect("player").velocity,
+        Velocity([6.0, 0.0, 0.0])
+    );
+}
+
+#[test]
+fn held_control_reasserts_after_a_game_velocity_command() {
+    let mut sim = Simulation::new(WorldEpoch(35), config(1)).expect("game");
+    let owned = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(owned);
+    let handle = sim.seed(player).expect("player");
+    sim.register_peer(owned, handle).expect("binding");
+    sim.step(&[Command::SetVelocity(handle, Velocity([3.0, 0.0, 0.0]))])
+        .expect("game velocity command");
+    assert_eq!(
+        sim.get(handle).expect("player").velocity,
+        Velocity([3.0, 0.0, 0.0])
+    );
+    sim.step(&[]).expect("held zero axes reasserted");
+    assert_eq!(
+        sim.get(handle).expect("player").velocity,
+        Velocity::default()
+    );
 }
 
 #[test]

@@ -4,9 +4,13 @@
 
 use std::{num::NonZeroUsize, time::Duration};
 
-use thrum_core::sim::ExecutionMode;
+use thrum_core::{StableId, sim::ExecutionMode};
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
-use v1_game::{FrameHost, SurfaceOutput, simulation_with_count};
+use v1_game::{
+    FrameHost, SurfaceOutput,
+    simulation::{Command, ComponentEntity, Position, Velocity},
+    simulation_with_count,
+};
 
 #[global_allocator]
 static ALLOC: divan::AllocProfiler = divan::AllocProfiler::system();
@@ -55,6 +59,41 @@ fn game_tick_with_rolling_capture(bencher: divan::Bencher<'_, '_>, entity_count:
         history.step(&mut sim, &[]).expect("one recorded tick");
         divan::black_box(history.latest_tick());
     });
+}
+
+#[divan::bench(args = [10_000, 100_000])]
+fn game_tick_with_rolling_capture_and_churn(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+    let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("committed endpoint");
+    let mut id = StableId((entity_count - 5) as u128);
+    let mut next = StableId(entity_count as u128 + 1);
+    let mut handle = sim.handle(id).expect("static churn target");
+    let mut advance = || {
+        let replacement = ComponentEntity {
+            id: next,
+            position: Position::default(),
+            velocity: Velocity::default(),
+            health: 100,
+            ownership: None,
+            visual: Some(1),
+        };
+        history
+            .step(
+                &mut sim,
+                &[Command::Despawn(handle), Command::Spawn(replacement)],
+            )
+            .expect("recorded churn tick");
+        id = next;
+        next = StableId(next.0 + 1);
+        handle = sim.handle(id).expect("replacement handle");
+        history.latest_tick()
+    };
+    for _ in 0..100 {
+        advance();
+    }
+    bencher.bench_local(move || divan::black_box(advance()));
 }
 
 #[divan::bench(args = [10_000, 100_000])]

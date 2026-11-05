@@ -1,27 +1,23 @@
-# G2R decision: owned archetype columns, provisionally selected
+# G2R decision: owned slot columns and sparse history
 
-5 November 2026. **Owned SoA is provisionally selected for G2R, not yet qualified in the game.** The earlier hecs choice got the generic game running but misses new budgets. C01/C02 still require game-owned types, checked handles, one authority, atomic ticks and immutable pages.
+5 November 2026. Use owned columns behind checked handles and prepared queries. Keep mover and static rows separate in the game workload; do not add archetype migration before a measured consumer needs it. C01/C02 keep game-owned types, one authority, atomic ticks and immutable pages.
 
-## Evidence and cost
+## Comparison and qualification
 
-M3 Max full-game tick p50/p95: 129/135 µs at 10k, 1.31/1.35 ms at 100k. Eight-tick rewind: 3.22/3.63 ms at 10k with allocations. At 10k, publication costs roughly 60 µs, erased edit validation/application 51 µs, and motion 2.5 µs. A kernel-only swap cannot meet 25 µs.
+An earlier paired M3 Max prototype measured owned SoA versus hecs prepared queries at 10k/100k: tick plus page p95 17.12/143.21 versus 26.67/245.54 µs; 10k eight-tick rewind p95 61.08 versus 181.00 µs. That prototype omitted the scheduler, validated edits, peers, checked handles and full pages, so it selected a direction but did not qualify the game.
 
-A paired release prototype in `tmp/g2r-soa-spike` uses separate mover/static columns, 15% movers, sparse static edits, 1%/s churn, four changed-slot pages and in-place undo:
+The integrated game now uses the same columns for serial and Rayon execution. Release measurements on M3 Max, 10k with 1.5k movers and 100k with 15k movers, warmed history and page ring:
 
-| Path | Owned SoA p50/p95 | hecs prepared-query p50/p95 |
-| --- | ---: | ---: |
-| 10k tick plus page | 13.75/17.12 µs | 21.25/26.67 µs |
-| 100k tick plus page | 134.00/143.21 µs | 213.54/245.54 µs |
-| 10k eight-tick rewind plus page | 49.83/61.08 µs | 167.92/181.00 µs |
+| Path | Before p95, 10k/100k | After p95, 10k/100k | Budget |
+| --- | ---: | ---: | ---: |
+| Recorded tick plus page | 61/514 µs | 21/213 µs | 25/300 µs |
+| Recorded tick plus page, one static despawn/spawn each tick | 35/257 µs before final undo packing | 24.9/216 µs | 25/300 µs |
+| Eight-tick rewind plus eligible page | 81/696 µs | 73/703 µs | 100/1000 µs |
 
-All prototype samples allocated zero bytes and passed paired state/page/replay checks. It omits scheduler, validated edits, peers, checked handles, leases and full pages; hecs rewind uses sparse writes. SoA leaves about 8 µs at 10k for that omitted work. These numbers do **not** pass G2R.
+The churn run sampled 10,000/2,500 ticks at 10k/100k. One shorter 10k run measured 27.2 µs p95; the other four measured 21.8–22.7 µs. The probe counted zero allocations in every warmed sample. A committed Divan churn bench and a 10k recorded-churn allocation test retain the workload. These are CPU measurements, not device frame or visual qualification.
 
-## Selected operating model
+## Representation and invariants
 
-Keep registration, schedule, permits, rules and slots. Integrated slot columns use presence bitmaps and checked handles; page fallback scans all slots and edits remain per-item erased. Split movers/statics and resolve columns once per typed batch; measure row moves if archetypes replace slot indexing. Preflight all edits before commit.
+Typed batches bind a column and undo writer once. Undo rows retain moved old values and prior change ticks together; structural inverses retain slot generation, identity, free order and component ticks. Rewind spends each record once. Four page journals hold changed-slot bitsets and sorted structural slots. A reused page applies the current validated position batch when it covers earlier nonstructural changes; structural slots refresh separately. Otherwise the bounded union or full fallback refreshes the page. Published dirty slots stay sorted; unchanged components are not republished. An unavailable page defers the view, never the tick.
 
-Refresh four immutable pages from bounded changed-slot journals; an old page gets a full refresh, while skipped publication or a replay branch starts a baseline. Record preimages and structural inverses in a preallocated caller-selected undo window; benchmark eight ticks while retaining longer windows. Reverse undo restores rows, generations, IDs, free-list order, components and peer resources. Branches invalidate visual history, never held leases. Cold save capture may still copy.
-
-## Qualification and reversal
-
-M3 Max game p50/p95: owned 68/69–75 µs at 10k, 700/708–719 µs at 100k; batch+page 48/49–51 and 477–486/500–519 µs; hecs 123/127 and 1240/1254–1274 µs. Sampled allocations peak at zero; churn, refusal, serial/Rayon and page tests pass. Both tick budgets remain open. Compare the same game and exact replay after in-place undo; targets remain 25/300 µs tick and 100 µs/1 ms eight-tick rewind. Profile misses before final layout selection.
+The game owns schema, input, rules and page layout. The engine owns generic columns, validation, schedule and history. Serial and Rayon produce equal state after four-peer input, refusal, churn and replay. The next performance gate is the executing render graph, not another storage rewrite.

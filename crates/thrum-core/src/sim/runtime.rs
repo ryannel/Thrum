@@ -505,7 +505,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.timeline = following_timeline;
         self.revision = capture.revision;
         self.delta_ready = false;
-        self.world.begin_tick();
+        self.world.begin_tick(None);
         self.structural_journal.clear();
         self.pages.reset_timeline();
         self.initial_published = false;
@@ -1200,10 +1200,57 @@ impl WorldRead<'_> {
         self.world.has_changes_since(since, current)
     }
 
-    /// Visit changed slots in tick order. A slot may appear in several ticks.
+    /// Visit the union of changed slots once each, in physical slot order.
     /// Returns false and visits nothing if the interval is no longer retained.
     pub fn visit_changes_since(&self, since: u64, current: u64, visit: impl FnMut(u32)) -> bool {
         self.world.visit_changes_since(since, current, visit)
+    }
+
+    /// Visit slots with structural changes in a retained interval once each,
+    /// in physical slot order. Returns false if the interval is not retained.
+    pub fn visit_structural_since(&self, since: u64, current: u64, visit: impl FnMut(u32)) -> bool {
+        self.world.visit_structural_since(since, current, visit)
+    }
+
+    /// Whether every earlier changed slot in a retained interval also changed
+    /// in its last tick. This lets a game refresh a leased page from its
+    /// current validated edit batch when that batch covers the whole interval.
+    /// Structural slots may be omitted if the caller refreshes them separately.
+    pub fn prior_changes_covered_by_current(
+        &self,
+        since: u64,
+        current: u64,
+        ignore_structural: bool,
+    ) -> bool {
+        self.world
+            .prior_changes_covered_by_current(since, current, ignore_structural)
+    }
+
+    /// Whether a retained interval contains only writes to one declared
+    /// component, optionally including structural edits.
+    ///
+    /// # Errors
+    ///
+    /// The read permit belongs to another runtime or callback.
+    pub fn only_component_changes_since<T: Send + Sync + 'static>(
+        &self,
+        permit: &ReadPermit<T>,
+        since: u64,
+        current: u64,
+        include_structural: bool,
+    ) -> Result<bool, RegisteredWorldError> {
+        if permit.nonce != self.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
+        if self.system.is_some_and(|system| system != permit.system) {
+            return Err(RegisteredWorldError::WrongSystem);
+        }
+        Ok(self.world.only_component_changes_since(
+            since,
+            current,
+            permit.component,
+            include_structural,
+        ))
     }
 
     /// Resolve one live physical slot without exposing its storage row.

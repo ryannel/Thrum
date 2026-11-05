@@ -41,24 +41,43 @@ pub(super) struct WorldDelta {
 pub(super) struct WorldUndo {
     slots: Vec<(u32, Slot)>,
     structural_ticks: Vec<u64>,
-    component_ticks: Vec<(usize, u32, u64)>,
     columns: Vec<Box<dyn UndoColumn>>,
 }
 
+pub(super) struct BatchUndoWriter<'a, T> {
+    column: &'a mut TypedUndo<T>,
+}
+
+impl<T> BatchUndoWriter<'_, T> {
+    pub(super) fn push(&mut self, slot: u32, prior: T, tick: u64) {
+        self.column.push_component(slot, Some(prior), tick);
+    }
+}
+
 impl WorldUndo {
+    pub(super) fn batch_writer<T: Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+    ) -> BatchUndoWriter<'_, T> {
+        BatchUndoWriter {
+            column: self.columns[component]
+                .as_any_mut()
+                .downcast_mut::<TypedUndo<T>>()
+                .expect("registered undo column type"),
+        }
+    }
     pub(super) fn reserve_for(&mut self, counts: &[usize], structural: usize, despawns: usize) {
         self.slots.reserve(structural);
         self.structural_ticks
             .reserve(structural * self.columns.len());
-        self.component_ticks.reserve(counts.iter().sum());
         for (column, &count) in self.columns.iter_mut().zip(counts) {
             column.reserve(count + despawns);
         }
     }
 
     pub(super) fn visit_changed_slots(&self, mut visit: impl FnMut(u32)) {
-        for &(_, slot, _) in &self.component_ticks {
-            visit(slot);
+        for column in &self.columns {
+            column.visit_changed_slots(&mut visit);
         }
         for &(slot, _) in &self.slots {
             visit(slot);
@@ -68,7 +87,6 @@ impl WorldUndo {
     pub(super) fn clear(&mut self) {
         self.slots.clear();
         self.structural_ticks.clear();
-        self.component_ticks.clear();
         for column in &mut self.columns {
             column.clear();
         }
@@ -78,7 +96,6 @@ impl WorldUndo {
         size_of::<Self>()
             + self.slots.capacity() * size_of::<(u32, Slot)>()
             + self.structural_ticks.capacity() * size_of::<u64>()
-            + self.component_ticks.capacity() * size_of::<(usize, u32, u64)>()
             + self
                 .columns
                 .iter()
@@ -93,12 +110,11 @@ impl WorldUndo {
         tick: u64,
         prior: Option<T>,
     ) {
-        self.component_ticks.push((component, slot, tick));
         self.columns[component]
             .as_any_mut()
             .downcast_mut::<TypedUndo<T>>()
             .expect("registered undo column type")
-            .push(slot, prior);
+            .push_component(slot, prior, tick);
     }
 
     pub(super) fn record_structural(&mut self, world: &RegisteredWorld, slot: u32) {
@@ -151,16 +167,19 @@ impl WorldUndo {
                 [recorded_slot as usize * count..(recorded_slot as usize + 1) * count]
                 .copy_from_slice(&self.structural_ticks[index * count..(index + 1) * count]);
         }
-        for (column, storage) in self.columns.iter_mut().zip(&mut world.columns) {
-            column.restore_into(storage.as_mut());
+        for (component, (column, storage)) in
+            self.columns.iter_mut().zip(&mut world.columns).enumerate()
+        {
+            column.restore_into(storage.as_mut(), &mut world.change_ticks, component, count);
         }
-        for &(component, slot, tick) in self.component_ticks.iter().rev() {
-            world.change_ticks[slot as usize * count + component] = tick;
-        }
-        world.begin_tick();
+        world.begin_tick(None);
         for frame in &mut world.change_frames {
             frame.tick = 0;
-            frame.slots.clear();
+            frame.words.fill(0);
+            frame.structural_words.fill(0);
+            frame.structural_slots.clear();
+            frame.components.fill(0);
+            frame.structural = false;
         }
     }
 }
@@ -272,7 +291,11 @@ fn change_frame_index(tick: u64) -> usize {
 
 struct ChangeFrame {
     tick: u64,
-    slots: Vec<u32>,
+    words: Vec<u64>,
+    structural_words: Vec<u64>,
+    structural_slots: Vec<u32>,
+    components: Vec<u64>,
+    structural: bool,
 }
 
 struct IdIndex {
@@ -411,6 +434,7 @@ pub(super) struct RegisteredWorld {
     change_frames: [ChangeFrame; CHANGE_FRAME_COUNT],
     pending_slots: Vec<u32>,
     pending_marks: Vec<bool>,
+    active_change_frame: Option<usize>,
     live: usize,
 }
 
@@ -419,7 +443,6 @@ impl RegisteredWorld {
         WorldUndo {
             slots: Vec::new(),
             structural_ticks: Vec::new(),
-            component_ticks: Vec::new(),
             columns: self
                 .registry
                 .entries
@@ -569,7 +592,11 @@ impl RegisteredWorld {
         self.change_ticks.clone_from(&capture.change_ticks);
         for frame in &mut self.change_frames {
             frame.tick = 0;
-            frame.slots.clear();
+            frame.words.fill(0);
+            frame.structural_words.fill(0);
+            frame.structural_slots.clear();
+            frame.components.fill(0);
+            frame.structural = false;
         }
         for slot in self.pending_slots.drain(..) {
             self.pending_marks[slot as usize] = false;
@@ -630,10 +657,15 @@ impl RegisteredWorld {
             changed: (0..component_count).map(|_| Vec::new()).collect(),
             change_frames: std::array::from_fn(|_| ChangeFrame {
                 tick: 0,
-                slots: Vec::with_capacity(capacity),
+                words: vec![0; capacity.div_ceil(64)],
+                structural_words: vec![0; capacity.div_ceil(64)],
+                structural_slots: Vec::with_capacity(16),
+                components: vec![0; component_count.div_ceil(64)],
+                structural: false,
             }),
             pending_slots: Vec::with_capacity(capacity),
             pending_marks: vec![false; capacity],
+            active_change_frame: None,
             live: 0,
         })
     }
@@ -696,6 +728,9 @@ impl RegisteredWorld {
     pub(super) fn mark_changed(&mut self, component: usize, handle: Handle, tick: u64) {
         self.change_ticks[handle.slot as usize * self.registry.entries.len() + component] = tick;
         self.changed[component].push(handle.slot);
+        if let Some(index) = self.active_change_frame {
+            self.change_frames[index].components[component / 64] |= 1_u64 << (component % 64);
+        }
         self.mark_pending(handle.slot);
     }
 
@@ -703,16 +738,34 @@ impl RegisteredWorld {
         self.change_ticks[slot as usize * self.registry.entries.len() + component]
     }
 
-    pub(super) fn begin_tick(&mut self) {
+    pub(super) fn begin_tick(&mut self, next: Option<u64>) {
         for slot in self.pending_slots.drain(..) {
             self.pending_marks[slot as usize] = false;
         }
         for changed in &mut self.changed {
             changed.clear();
         }
+        self.active_change_frame = next.map(change_frame_index);
+        if let Some(index) = self.active_change_frame {
+            self.change_frames[index].words.fill(0);
+            self.change_frames[index].structural_words.fill(0);
+            self.change_frames[index].structural_slots.clear();
+            self.change_frames[index].components.fill(0);
+            self.change_frames[index].structural = false;
+        }
     }
 
     pub(super) fn mark_structural(&mut self, slot: u32) {
+        if let Some(index) = self.active_change_frame {
+            self.change_frames[index].structural = true;
+            let slot_index = slot as usize;
+            self.change_frames[index].structural_words[slot_index / 64] |=
+                1_u64 << (slot_index % 64);
+            let slots = &mut self.change_frames[index].structural_slots;
+            if let Err(at) = slots.binary_search(&slot) {
+                slots.insert(at, slot);
+            }
+        }
         for changed in &mut self.changed {
             changed.push(slot);
         }
@@ -723,14 +776,17 @@ impl RegisteredWorld {
         if !self.pending_marks[slot as usize] {
             self.pending_marks[slot as usize] = true;
             self.pending_slots.push(slot);
+            if let Some(index) = self.active_change_frame {
+                let slot = slot as usize;
+                self.change_frames[index].words[slot / 64] |= 1_u64 << (slot % 64);
+            }
         }
     }
 
     pub(super) fn finish_tick(&mut self, tick: u64) {
         let frame = &mut self.change_frames[change_frame_index(tick)];
         frame.tick = tick;
-        frame.slots.clear();
-        frame.slots.extend_from_slice(&self.pending_slots);
+        self.active_change_frame = None;
     }
 
     pub(super) fn has_changes_since(&self, since: u64, current: u64) -> bool {
@@ -743,6 +799,62 @@ impl RegisteredWorld {
         (since + 1..=current).all(|tick| self.change_frames[change_frame_index(tick)].tick == tick)
     }
 
+    pub(super) fn only_component_changes_since(
+        &self,
+        since: u64,
+        current: u64,
+        component: usize,
+        include_structural: bool,
+    ) -> bool {
+        if !self.has_changes_since(since, current) {
+            return false;
+        }
+        for tick in since + 1..=current {
+            let frame = &self.change_frames[change_frame_index(tick)];
+            if frame.structural && !include_structural {
+                return false;
+            }
+            for (word, &bits) in frame.components.iter().enumerate() {
+                let allowed = if word == component / 64 {
+                    1_u64 << (component % 64)
+                } else {
+                    0
+                };
+                if bits & !allowed != 0 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    pub(super) fn prior_changes_covered_by_current(
+        &self,
+        since: u64,
+        current: u64,
+        ignore_structural: bool,
+    ) -> bool {
+        if !self.has_changes_since(since, current) {
+            return false;
+        }
+        let latest = &self.change_frames[change_frame_index(current)].words;
+        for (word, &current_bits) in latest.iter().enumerate() {
+            let mut prior = 0;
+            for tick in since + 1..current {
+                let frame = &self.change_frames[change_frame_index(tick)];
+                prior |= if ignore_structural {
+                    frame.words[word] & !frame.structural_words[word]
+                } else {
+                    frame.words[word]
+                };
+            }
+            if prior & !current_bits != 0 {
+                return false;
+            }
+        }
+        true
+    }
+
     pub(super) fn visit_changes_since(
         &self,
         since: u64,
@@ -752,13 +864,58 @@ impl RegisteredWorld {
         if !self.has_changes_since(since, current) {
             return false;
         }
-        if since == current {
-            return true;
-        }
-        for tick in since + 1..=current {
-            for &slot in &self.change_frames[change_frame_index(tick)].slots {
-                visit(slot);
+        for word in 0..self.change_frames[0].words.len() {
+            let mut changed = 0;
+            for tick in since + 1..=current {
+                changed |= self.change_frames[change_frame_index(tick)].words[word];
             }
+            while changed != 0 {
+                let bit = changed.trailing_zeros() as usize;
+                changed &= changed - 1;
+                visit(u32::try_from(word * 64 + bit).expect("validated slot capacity"));
+            }
+        }
+        true
+    }
+
+    pub(super) fn visit_structural_since(
+        &self,
+        since: u64,
+        current: u64,
+        mut visit: impl FnMut(u32),
+    ) -> bool {
+        if !self.has_changes_since(since, current) {
+            return false;
+        }
+        let mut selected = [0; CHANGE_FRAME_COUNT];
+        let mut count = 0;
+        for tick in since + 1..=current {
+            selected[count] = change_frame_index(tick);
+            count += 1;
+        }
+        let mut offsets = [0; CHANGE_FRAME_COUNT];
+        loop {
+            let next = selected[..count]
+                .iter()
+                .enumerate()
+                .filter_map(|(index, &frame)| {
+                    self.change_frames[frame]
+                        .structural_slots
+                        .get(offsets[index])
+                })
+                .copied()
+                .min();
+            let Some(slot) = next else { break };
+            for (index, &frame) in selected[..count].iter().enumerate() {
+                if self.change_frames[frame]
+                    .structural_slots
+                    .get(offsets[index])
+                    == Some(&slot)
+                {
+                    offsets[index] += 1;
+                }
+            }
+            visit(slot);
         }
         true
     }
@@ -984,6 +1141,11 @@ impl RegisteredWorld {
             .downcast_mut::<TypedStore<T>>()
             .expect("registered storage column type");
         let changed = &mut self.changed[component];
+        if !rows.is_empty()
+            && let Some(index) = self.active_change_frame
+        {
+            self.change_frames[index].components[component / 64] |= 1_u64 << (component % 64);
+        }
         for (handle, value) in rows {
             let slot = handle.slot as usize;
             let prior = std::mem::replace(
@@ -999,6 +1161,9 @@ impl RegisteredWorld {
             if !self.pending_marks[slot] {
                 self.pending_marks[slot] = true;
                 self.pending_slots.push(handle.slot);
+                if let Some(index) = self.active_change_frame {
+                    self.change_frames[index].words[slot / 64] |= 1_u64 << (slot % 64);
+                }
             }
         }
     }
