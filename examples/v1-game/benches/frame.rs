@@ -45,31 +45,35 @@ fn game_tick_and_publication_rayon(bencher: divan::Bencher<'_, '_>, entity_count
 #[divan::bench(args = [10_000, 100_000])]
 fn game_tick_with_rolling_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
     let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
-    let mut history = sim.begin_history(NonZeroUsize::new(64).expect("window"));
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(64).expect("window"))
+        .expect("committed endpoint");
     for _ in 0..65 {
-        sim.step(&[]).expect("warmup tick");
-        history.record(&sim).expect("warmup delta");
+        history.step(&mut sim, &[]).expect("warmup tick");
     }
     bencher.bench_local(move || {
-        sim.step(&[]).expect("one game tick commits");
-        history.record(&sim).expect("one rolling delta commits");
+        history.step(&mut sim, &[]).expect("one recorded tick");
         divan::black_box(history.latest_tick());
     });
 }
 
 #[divan::bench(args = [10_000, 100_000])]
-fn game_restore_rolling_window(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
+fn game_rewind_and_replay_rolling_window(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
     let mut sim = simulation_with_count(entity_count).expect("V1 game fixture seeds");
-    let mut history = sim.begin_history(NonZeroUsize::new(64).expect("window"));
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(64).expect("window"))
+        .expect("committed endpoint");
     for _ in 0..64 {
-        sim.step(&[]).expect("committed tick");
-        history.record(&sim).expect("recorded delta");
+        history.step(&mut sim, &[]).expect("recorded tick");
     }
-    let target = history.latest_tick();
     bencher.bench_local(move || {
+        let target = history.latest_tick() - 8;
         history
             .restore_to(&mut sim, target)
-            .expect("same committed endpoint");
+            .expect("eight retained ticks");
+        for _ in 0..8 {
+            history.step(&mut sim, &[]).expect("replay tick");
+        }
         divan::black_box(sim.tick());
     });
 }

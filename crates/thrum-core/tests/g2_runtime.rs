@@ -401,6 +401,62 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         "a numerically adjacent tick from another branch is not contiguous"
     );
     assert_optional_component_history(&mut runtime, &mut game, &mut candidate);
+    assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
+        &mut runtime,
+        &mut game,
+        &mut candidate,
+    );
+}
+
+fn assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
+    runtime: &mut GameRuntime<Page, Rules>,
+    game: &mut Rules,
+    candidate: &mut Candidate,
+) {
+    runtime.publish_initial(game, candidate);
+    let mut undo = runtime.new_undo();
+    runtime
+        .step_recording(game, candidate, &mut undo)
+        .expect("record one committed revision");
+    let future = runtime.capture();
+    let future_height = runtime
+        .read()
+        .with(
+            &game.height_read,
+            runtime.handle(StableId(2)).expect("entity"),
+            |h| *h,
+        )
+        .expect("future height");
+    runtime
+        .rewind_many(std::slice::from_mut(&mut undo))
+        .expect("first inverse application");
+    runtime
+        .restore(&future, Page::default)
+        .expect("same numeric revision restored cold");
+    assert_eq!(
+        runtime.rewind_many(std::slice::from_mut(&mut undo)),
+        Err(RuntimeError::WrongCapture),
+        "a drained preimage must never reverse a second time"
+    );
+    assert_eq!(
+        runtime.read().with(
+            &game.height_read,
+            runtime.handle(StableId(2)).expect("entity"),
+            |h| *h
+        ),
+        Ok(future_height)
+    );
+    runtime.publish_initial(game, candidate);
+    let mut held = vec![runtime.latest().expect("published baseline")];
+    while runtime.can_publish_next() {
+        runtime.step(game, candidate).expect("lease tick");
+        held.push(runtime.latest().expect("published tick"));
+    }
+    runtime.step(game, candidate).expect("busy tick commits");
+    assert!(!runtime.has_current_publication());
+    assert!(!runtime.patch_rewound_page(&[], |_| Some(0), |_, _, _, _, _, _| {}));
+    assert!(!runtime.has_current_publication());
+    drop(held);
 }
 
 fn assert_duplicate_batch_refuses(

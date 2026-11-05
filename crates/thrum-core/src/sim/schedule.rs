@@ -87,6 +87,7 @@ impl ComponentRegistry {
             capture: Box::new(move |world| capture_component(world, snapshot, nested_bytes)),
             storage: Box::new(|capacity| Box::new(TypedStore::<T>::new(capacity))),
             pending: Box::new(|| Box::new(Pending::<T> { value: None })),
+            undo: Box::new(|| Box::new(super::undo::TypedUndo::<T>::new())),
             empty: Box::new(move || {
                 Box::new(TypedColumn::<T> {
                     rows: Vec::new(),
@@ -437,6 +438,7 @@ pub(super) struct ComponentEntry {
     pub(super) capture: CaptureColumn,
     pub(super) storage: Box<dyn Fn(usize) -> Box<dyn StorageColumn> + Send + Sync>,
     pub(super) pending: Box<dyn Fn() -> Box<dyn PendingValue> + Send + Sync>,
+    pub(super) undo: Box<dyn Fn() -> Box<dyn super::undo::UndoColumn> + Send + Sync>,
     pub(super) empty: Box<dyn Fn() -> Box<dyn SnapshotColumn> + Send + Sync>,
 }
 

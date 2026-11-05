@@ -226,12 +226,14 @@ pub struct Simulation {
     runtime: GameRuntime<Page, Rules>,
     rules: Rules,
     candidate: Candidate,
+    resource_revision: u64,
 }
 
 /// Game-owned resource state paired with the engine's opaque registered capture.
 pub struct SimulationCapture {
     runtime: RuntimeCapture,
     peers: Vec<PeerControl>,
+    resource_revision: u64,
 }
 
 impl SimulationCapture {
@@ -257,6 +259,7 @@ impl Simulation {
         SimulationCapture {
             runtime: self.runtime.capture(),
             peers: self.rules.peers.clone(),
+            resource_revision: self.resource_revision,
         }
     }
 
@@ -273,6 +276,7 @@ impl Simulation {
             .restore(&capture.runtime, || Page::new(epoch, capacity))
             .map_err(map_runtime)?;
         self.rules.peers.clone_from(&capture.peers);
+        self.resource_revision = capture.resource_revision;
         self.rules.commands.clear();
         self.rules.committed_inputs.clear();
         self.rules.changed_positions = 0;
@@ -298,6 +302,7 @@ impl Simulation {
             runtime,
             rules,
             candidate,
+            resource_revision: 0,
         })
     }
 
@@ -308,6 +313,10 @@ impl Simulation {
     /// Last complete world tick.
     pub fn tick(&self) -> u64 {
         self.runtime.tick()
+    }
+    /// Presentation branch generation of the latest committed endpoint.
+    pub fn timeline(&self) -> u64 {
+        self.runtime.timeline()
     }
     /// Select the engine's serial or native Rayon candidate executor.
     pub fn set_execution_mode(&mut self, mode: ExecutionMode) {
@@ -434,6 +443,10 @@ impl Simulation {
     ///
     /// Binding, epoch, actor, handle or peer capacity is invalid.
     pub fn register_peer(&mut self, binding: Ownership, handle: Handle) -> Result<(), SimError> {
+        let next_revision = self
+            .resource_revision
+            .checked_add(1)
+            .ok_or(SimError::TickExhausted)?;
         let owned = self
             .runtime
             .read()
@@ -465,6 +478,7 @@ impl Simulation {
                 axes: [0.0; 3],
                 pending: None,
             };
+            self.resource_revision = next_revision;
             return Ok(());
         }
         if self.rules.peers.len() == self.rules.config.peer_capacity {
@@ -481,6 +495,7 @@ impl Simulation {
         self.rules
             .peers
             .sort_unstable_by_key(|peer| peer.binding.peer);
+        self.resource_revision = next_revision;
         Ok(())
     }
 
@@ -509,12 +524,25 @@ impl Simulation {
     ///
     /// Input identity, timing, sequence, axes, actions or control binding fails.
     pub fn admit_frame(&mut self, frame: InputFrame<SimAction>) -> Result<(), FrameError> {
-        frame.validate_axes()?;
-        self.validate_frame_actions(&frame)?;
+        self.validate_frame(&frame)?;
         let peer = self
             .rules
             .peers
             .iter_mut()
+            .find(|peer| peer.binding.peer == frame.origin.peer)
+            .ok_or(FrameError::UnknownPeer)?;
+        peer.last_sequence = Some(frame.origin.sequence);
+        peer.pending = Some(frame);
+        Ok(())
+    }
+
+    fn validate_frame(&self, frame: &InputFrame<SimAction>) -> Result<(), FrameError> {
+        frame.validate_axes()?;
+        self.validate_frame_actions(frame)?;
+        let peer = self
+            .rules
+            .peers
+            .iter()
             .find(|peer| peer.binding.peer == frame.origin.peer)
             .ok_or(FrameError::UnknownPeer)?;
         if peer.binding.connection_epoch != frame.origin.connection_epoch {
@@ -547,8 +575,6 @@ impl Simulation {
         {
             return Err(FrameError::InvalidControl);
         }
-        peer.last_sequence = Some(frame.origin.sequence);
-        peer.pending = Some(frame);
         Ok(())
     }
 
@@ -563,21 +589,40 @@ impl Simulation {
     ///
     /// Panics only if a game callback violates its validated commit invariant.
     pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome<'_>, SimError> {
+        self.step_internal(commands, None)
+    }
+
+    fn step_recording(
+        &mut self,
+        commands: &[Command],
+        undo: &mut thrum_core::sim::RuntimeUndo,
+    ) -> Result<TickOutcome<'_>, SimError> {
+        self.step_internal(commands, Some(undo))
+    }
+
+    fn step_internal(
+        &mut self,
+        commands: &[Command],
+        undo: Option<&mut thrum_core::sim::RuntimeUndo>,
+    ) -> Result<TickOutcome<'_>, SimError> {
         self.validate_commands(commands)?;
         self.runtime
             .publish_initial(&mut self.rules, &mut self.candidate);
         let simulated_entities = self.runtime.len();
         self.rules.commands.clear();
         self.rules.commands.extend_from_slice(commands);
-        let tick = self
-            .runtime
-            .step(&mut self.rules, &mut self.candidate)
-            .map_err(|error| match error {
-                TickError::TickExhausted | TickError::RevisionExhausted => SimError::TickExhausted,
-                TickError::BaselineRequired => SimError::PublicationBusy,
-                TickError::Game(error) => error,
-                TickError::Edit(_) => SimError::InvalidEdit,
-            })?;
+        let outcome = if let Some(undo) = undo {
+            self.runtime
+                .step_recording(&mut self.rules, &mut self.candidate, undo)
+        } else {
+            self.runtime.step(&mut self.rules, &mut self.candidate)
+        };
+        let tick = outcome.map_err(|error| match error {
+            TickError::TickExhausted | TickError::RevisionExhausted => SimError::TickExhausted,
+            TickError::BaselineRequired => SimError::PublicationBusy,
+            TickError::Game(error) => error,
+            TickError::Edit(_) => SimError::InvalidEdit,
+        })?;
         Ok(TickOutcome {
             tick,
             simulated_entities,

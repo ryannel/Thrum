@@ -24,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G2R remains open: owned columns miss 25/300 us and rewind still copies. Parked tracks remain inactive."
+    "interpretation": "G2R open: sparse rewind passes 100 us/1 ms; tick+page misses 25/300 us. Parked tracks inactive."
   },
   "v1_slices": {
     "G0_boundary": {
@@ -61,7 +61,7 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "owned_columns_changed_pages_batch_edits_and_page_reuse_complete_G2R_open",
+      "implementation": "owned_columns_changed_pages_batch_edits_sparse_undo_patch_G2R_open",
       "functional_validation": "full_dev_check_running_game_10k_four_peer_serial_rayon_equal_after_refusal_churn_and_restore_zero_warmed_serial_tick_churn_and_10k_100k_history_allocations_noncopy_column_overlay_divergent_branch_and_render_timeline_tests_independent_review_no_blocker",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
@@ -71,8 +71,8 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "M3 Max paired full-game tick+page p50/p95: batched 48/49-51 us at 10k, 477-486/500-519 us at 100k; prior 68/69-75 and 700/708-719 us. All sampled ticks: zero allocations. 8-tick rewind p95 0.82 ms/0 allocs at 10k (was 0.95 ms/102). V1 budgets open.",
-      "scope": "V1 game owns schema, rules, input and pages; engine owns slot columns, changed-slot journal and copying history. G2R needs tick/rollback budgets. FrameHost waits for G3b; no iPhone claim.",
+      "diagnostic_measurement": "M3 Max release diagnostic: recorded tick+page p50/p95 53/61 us at 10k, 480/514 us at 100k; earlier tick+page 68/69-75 and 700/708-719 us. Eight-tick rewind+eligible page p95 81/696 us at 10k/100k, zero warmed allocations; before sparse undo 0.82/9.4 ms. Tick budget open.",
+      "scope": "V1 game owns schema, rules, input and pages; engine owns slot columns, sparse undo and page ring. G2R still needs tick budgets. FrameHost waits for G3b; no iPhone claim.",
       "evidence": [
         "../evidence/v1-workload/G2-STORAGE-COMPARISON-2026-11-04.md",
         "../evidence/v1-workload/G2-SPLIT-QUERY-2026-11-04.md",

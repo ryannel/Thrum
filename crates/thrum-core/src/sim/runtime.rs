@@ -4,6 +4,7 @@
 use std::{
     collections::HashMap,
     marker::PhantomData,
+    mem::size_of,
     sync::{
         Arc,
         atomic::{AtomicU64, Ordering},
@@ -23,7 +24,7 @@ use super::{
     column_store::TypedStore,
     registered_world::{
         EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, WorldCapture,
-        WorldDelta,
+        WorldDelta, WorldUndo,
     },
     transaction::{Edit, EditError, EditScratch},
 };
@@ -45,6 +46,46 @@ pub struct RuntimeDelta {
     nonce: u64,
     from_revision: u64,
     to_revision: u64,
+}
+
+/// Reusable sparse preimages for reversing one committed tick on this runtime.
+pub struct RuntimeUndo {
+    world: WorldUndo,
+    events: Vec<StructuralChange>,
+    from: u64,
+    to: u64,
+    nonce: u64,
+    from_revision: u64,
+    to_revision: u64,
+    spent: bool,
+}
+
+/// Opaque identity of one committed runtime revision. Equal numeric ticks on
+/// different replay branches have distinct endpoints.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RuntimeEndpoint {
+    nonce: u64,
+    tick: u64,
+    revision: u64,
+    timeline: u64,
+}
+
+impl RuntimeUndo {
+    /// Committed tick reversed by this record.
+    pub fn tick(&self) -> u64 {
+        self.to
+    }
+
+    /// Visit physical slots edited by this tick, including structural edits.
+    /// A slot may appear more than once; consumers deduplicate as needed.
+    pub fn visit_changed_slots(&self, visit: impl FnMut(u32)) {
+        self.world.visit_changed_slots(visit);
+    }
+
+    /// Reserved sparse storage retained for reuse.
+    pub fn reserved_bytes(&self) -> usize {
+        self.world.reserved_bytes() + self.events.capacity() * size_of::<StructuralChange>()
+    }
 }
 
 /// Worker selection for one deterministic fixed-tick candidate. Platform
@@ -322,7 +363,9 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     schedule: Schedule,
     waves: Vec<Vec<BoundSystem<P, G>>>,
     pages: SnapshotRing<P>,
+    initial_published: bool,
     publication_skipped: bool,
+    rewind_patch_target: Option<u64>,
     tick: u64,
     timeline: u64,
     revision: u64,
@@ -336,6 +379,30 @@ pub struct GameRuntime<P, G: TickGame<P>> {
 }
 
 impl<P, G: TickGame<P>> GameRuntime<P, G> {
+    /// Identity of the current committed authority endpoint.
+    pub fn endpoint(&self) -> RuntimeEndpoint {
+        RuntimeEndpoint {
+            nonce: self.nonce,
+            tick: self.tick,
+            revision: self.revision,
+            timeline: self.timeline,
+        }
+    }
+
+    /// Allocate one reusable sparse undo record for this registered schema.
+    pub fn new_undo(&self) -> RuntimeUndo {
+        RuntimeUndo {
+            world: self.world.empty_undo(),
+            events: Vec::new(),
+            from: 0,
+            to: 0,
+            nonce: self.nonce,
+            from_revision: 0,
+            to_revision: 0,
+            spent: false,
+        }
+    }
+
     /// Whether a retained capture belongs to this exact runtime generation.
     pub fn matches_capture(&self, capture: &RuntimeCapture) -> bool {
         capture.nonce == self.nonce
@@ -441,11 +508,100 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.world.begin_tick();
         self.structural_journal.clear();
         self.pages.reset_timeline();
+        self.initial_published = false;
         if !self.pages.can_capture() {
             self.pages = SnapshotRing::new(make_page);
         }
         self.publication_skipped = false;
+        self.rewind_patch_target = None;
         Ok(())
+    }
+
+    /// Reverse contiguous committed ticks without copying unaffected rows or
+    /// allocating a new page ring. Publication remains invalid until a later
+    /// page capture; held old pages are never changed.
+    ///
+    /// # Errors
+    ///
+    /// The records are foreign, out of order or the timeline is exhausted.
+    ///
+    /// # Panics
+    ///
+    /// Only if an engine-produced undo contradicts its committed free order.
+    pub fn rewind_many(&mut self, steps: &mut [RuntimeUndo]) -> Result<(), RuntimeError> {
+        if steps.is_empty() {
+            return Ok(());
+        }
+        let timeline = self
+            .timeline
+            .checked_add(1)
+            .ok_or(RuntimeError::RuntimeExhausted)?;
+        let mut tick = self.tick;
+        let mut revision = self.revision;
+        for step in steps.iter().rev() {
+            if step.nonce != self.nonce
+                || step.spent
+                || step.to != tick
+                || step.to_revision != revision
+                || step.from.checked_add(1) != Some(step.to)
+            {
+                return Err(RuntimeError::WrongCapture);
+            }
+            tick = step.from;
+            revision = step.from_revision;
+        }
+        for step in steps.iter_mut().rev() {
+            step.world.restore(&mut self.world, &step.events);
+            step.spent = true;
+        }
+        self.tick = tick;
+        self.revision = revision;
+        self.timeline = timeline;
+        self.delta_ready = false;
+        self.structural_journal.clear();
+        self.pages.reset_timeline();
+        self.publication_skipped = true;
+        self.rewind_patch_target = Some(tick);
+        Ok(())
+    }
+
+    /// Publish an inverse patch from an unleased endpoint of the retired
+    /// branch. The game names eligible source pages and updates only slots
+    /// touched between that source and the restored authority tick.
+    pub fn patch_rewound_page(
+        &mut self,
+        steps: &[RuntimeUndo],
+        source_tick: impl Fn(&P) -> Option<u64>,
+        patch: impl FnOnce(&WorldRead<'_>, &mut P, u64, u64, u64, &[RuntimeUndo]),
+    ) -> bool {
+        if !self.publication_skipped
+            || self.rewind_patch_target != Some(self.tick)
+            || steps.first().is_none_or(|first| first.from != self.tick)
+        {
+            return false;
+        }
+        let world = WorldRead {
+            world: &self.world,
+            nonce: self.nonce,
+            system: None,
+        };
+        if self
+            .pages
+            .patch_rewind(source_tick, |page, source| {
+                patch(&world, page, source, self.tick, self.timeline, steps);
+            })
+            .is_err()
+        {
+            return false;
+        }
+        self.publication_skipped = false;
+        self.rewind_patch_target = None;
+        true
+    }
+
+    /// Current presentation branch generation.
+    pub fn timeline(&self) -> u64 {
+        self.timeline
     }
 
     /// Compile declarations and allocate the world and four complete pages.
@@ -502,7 +658,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             schedule,
             waves,
             pages: SnapshotRing::new(make_page),
+            initial_published: false,
             publication_skipped: false,
+            rewind_patch_target: None,
             tick: 0,
             timeline: 0,
             revision: 0,
@@ -593,7 +751,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         id: StableId,
         fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
     ) -> Result<Handle, RuntimeError> {
-        if self.tick != 0 || self.pages.latest().is_some() {
+        if self.tick != 0 || self.initial_published {
             return Err(RuntimeError::AlreadyStarted);
         }
         self.world.spawn(id, fill).map_err(Into::into)
@@ -758,6 +916,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             return false;
         }
         self.publication_skipped = false;
+        self.rewind_patch_target = None;
         true
     }
 
@@ -773,7 +932,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// Panics only if an unpublished ring has lost all four private pages or
     /// the game capture callback panics.
     pub fn publish_initial(&mut self, game: &mut G, candidate: &mut G::Candidate) {
-        if self.pages.latest().is_none() {
+        if !self.initial_published {
             let world = WorldRead {
                 world: &self.world,
                 nonce: self.nonce,
@@ -792,6 +951,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                     );
                 })
                 .expect("unpublished ring has a free page");
+            self.initial_published = true;
         }
     }
 
@@ -815,12 +975,44 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     where
         G: Sync,
     {
+        self.step_inner(game, candidate, None)
+    }
+
+    /// Commit one tick and retain moved preimages for a prediction branch.
+    ///
+    /// # Errors
+    ///
+    /// The undo record is foreign or ordinary tick validation fails.
+    pub fn step_recording(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+        undo: &mut RuntimeUndo,
+    ) -> Result<u64, TickError<G::Error>>
+    where
+        G: Sync,
+    {
+        if undo.nonce != self.nonce {
+            return Err(TickError::Edit(EditError::WrongRuntime));
+        }
+        self.step_inner(game, candidate, Some(undo))
+    }
+
+    fn step_inner(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+        mut undo: Option<&mut RuntimeUndo>,
+    ) -> Result<u64, TickError<G::Error>>
+    where
+        G: Sync,
+    {
         let next = self.tick.checked_add(1).ok_or(TickError::TickExhausted)?;
         let following_revision = self
             .next_revision
             .checked_add(1)
             .ok_or(TickError::RevisionExhausted)?;
-        if self.pages.latest().is_none() {
+        if !self.initial_published {
             return Err(TickError::BaselineRequired);
         }
         game.reset_candidate(candidate);
@@ -892,12 +1084,16 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.edit_scratch
             .validate(&self.world, self.nonce, edits, candidate)
             .map_err(TickError::Edit)?;
+        if let Some(record) = undo.as_deref_mut() {
+            record.events.reserve(edits.len());
+        }
         self.edit_scratch.apply(
             &mut self.world,
             edits,
             candidate,
             next,
             &mut self.structural_journal,
+            undo.as_deref_mut().map(|record| &mut record.world),
         );
         game.apply(
             &WorldRead {
@@ -908,7 +1104,17 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             next,
             candidate,
         );
+        if let Some(record) = undo {
+            record.events.clear();
+            record.events.extend_from_slice(&self.structural_journal);
+            record.from = self.tick;
+            record.to = next;
+            record.from_revision = self.revision;
+            record.to_revision = self.next_revision;
+            record.spent = false;
+        }
         self.tick = next;
+        self.rewind_patch_target = None;
         self.delta_from_revision = self.revision;
         self.revision = self.next_revision;
         self.next_revision = following_revision;

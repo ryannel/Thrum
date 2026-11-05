@@ -7,16 +7,18 @@ use crate::{Handle, StableId};
 
 use super::{
     EntityWriter, RegisteredWorldError, StructuralChange, StructuralPermit, SystemId, WritePermit,
-    column_store::EntityBundle, registered_world::RegisteredWorld,
+    column_store::EntityBundle,
+    registered_world::{RegisteredWorld, WorldUndo},
 };
 
 type ValueAt<C> = fn(&C, usize) -> &dyn Any;
-type ApplyValue = fn(&mut RegisteredWorld, usize, Handle, &dyn Any);
+type ApplyValue = fn(&mut RegisteredWorld, usize, Handle, &dyn Any, Option<&mut WorldUndo>);
 type Presence = fn(&RegisteredWorld, usize, u32) -> bool;
 type Fill<C> = fn(&C, usize, &mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>;
 type BatchValidate =
     fn(&RegisteredWorld, usize, &dyn Any, &mut EditScratch) -> Result<(), EditError>;
-type BatchApply = fn(&mut RegisteredWorld, usize, &dyn Any, u64);
+type BatchApply = fn(&mut RegisteredWorld, usize, &dyn Any, u64, Option<&mut WorldUndo>);
+type BatchCount = fn(&dyn Any) -> usize;
 
 /// One reusable candidate operation. Values remain in game-owned candidate
 /// columns; the edit contains only checked identity and function pointers.
@@ -44,6 +46,7 @@ enum EditKind<C> {
         values: fn(&C) -> &dyn Any,
         validate: BatchValidate,
         apply: BatchApply,
+        count: BatchCount,
     },
     Despawn {
         handle: Handle,
@@ -100,8 +103,12 @@ fn replace<T: Clone + Send + Sync + 'static>(
     component: usize,
     handle: Handle,
     value: &dyn Any,
+    undo: Option<&mut WorldUndo>,
 ) {
-    world.replace_prevalidated(
+    let old_tick = undo
+        .as_ref()
+        .map(|_| world.change_tick_at(component, handle.slot));
+    let prior = world.replace_prevalidated(
         component,
         handle.slot,
         value
@@ -109,6 +116,9 @@ fn replace<T: Clone + Send + Sync + 'static>(
             .expect("prevalidated value type")
             .clone(),
     );
+    if let (Some(undo), Some(old_tick)) = (undo, old_tick) {
+        undo.record_component(component, handle.slot, old_tick, Some(prior));
+    }
 }
 
 fn insert<T: Clone + Send + Sync + 'static>(
@@ -116,7 +126,11 @@ fn insert<T: Clone + Send + Sync + 'static>(
     component: usize,
     handle: Handle,
     value: &dyn Any,
+    undo: Option<&mut WorldUndo>,
 ) {
+    let old_tick = undo
+        .as_ref()
+        .map(|_| world.change_tick_at(component, handle.slot));
     world.insert_prevalidated(
         component,
         handle.slot,
@@ -125,6 +139,9 @@ fn insert<T: Clone + Send + Sync + 'static>(
             .expect("prevalidated value type")
             .clone(),
     );
+    if let (Some(undo), Some(old_tick)) = (undo, old_tick) {
+        undo.record_component::<T>(component, handle.slot, old_tick, None);
+    }
 }
 
 fn remove<T: Send + Sync + 'static>(
@@ -132,8 +149,15 @@ fn remove<T: Send + Sync + 'static>(
     component: usize,
     handle: Handle,
     _value: &dyn Any,
+    undo: Option<&mut WorldUndo>,
 ) {
-    world.remove_prevalidated::<T>(component, handle.slot);
+    let old_tick = undo
+        .as_ref()
+        .map(|_| world.change_tick_at(component, handle.slot));
+    let prior = world.remove_prevalidated::<T>(component, handle.slot);
+    if let (Some(undo), Some(old_tick)) = (undo, old_tick) {
+        undo.record_component(component, handle.slot, old_tick, Some(prior));
+    }
 }
 
 fn validate_batch_replace<T: Clone + Send + Sync + 'static>(
@@ -163,11 +187,25 @@ fn apply_batch_replace<T: Clone + Send + Sync + 'static>(
     component: usize,
     values: &dyn Any,
     tick: u64,
+    undo: Option<&mut WorldUndo>,
 ) {
     let rows = values
         .downcast_ref::<Vec<(Handle, T)>>()
         .expect("prevalidated batch value type");
-    world.replace_batch_prevalidated(component, rows, tick);
+    if let Some(undo) = undo {
+        world.replace_batch_prevalidated(component, rows, tick, |slot, prior, old_tick| {
+            undo.record_component(component, slot, old_tick, Some(prior));
+        });
+    } else {
+        world.replace_batch_prevalidated(component, rows, tick, |_, _, _| {});
+    }
+}
+
+fn batch_count<T: 'static>(values: &dyn Any) -> usize {
+    values
+        .downcast_ref::<Vec<(Handle, T)>>()
+        .expect("prevalidated batch value type")
+        .len()
 }
 
 impl<C> Edit<C> {
@@ -216,6 +254,7 @@ impl<C> Edit<C> {
                 values,
                 validate: validate_batch_replace::<T>,
                 apply: apply_batch_replace::<T>,
+                count: batch_count::<T>,
             },
         }
     }
@@ -294,6 +333,7 @@ pub(super) struct EditScratch {
     builders: Vec<EntityBundle>,
     builders_used: usize,
     spawn_ids: HashSet<StableId>,
+    undo_counts: Vec<usize>,
 }
 
 impl EditScratch {
@@ -306,6 +346,7 @@ impl EditScratch {
             builders: Vec::new(),
             builders_used: 0,
             spawn_ids: HashSet::new(),
+            undo_counts: vec![0; components],
         }
     }
 
@@ -451,7 +492,33 @@ impl EditScratch {
         candidate: &C,
         tick: u64,
         journal: &mut Vec<StructuralChange>,
+        mut undo: Option<&mut WorldUndo>,
     ) {
+        if let Some(undo) = undo.as_deref_mut() {
+            undo.clear();
+            self.undo_counts.fill(0);
+            let mut structural = 0;
+            let mut despawns = 0;
+            for edit in edits {
+                match &edit.inner {
+                    EditKind::Component { component, .. } => self.undo_counts[*component] += 1,
+                    EditKind::BatchReplace {
+                        component,
+                        values,
+                        count,
+                        ..
+                    } => {
+                        self.undo_counts[*component] += count(values(candidate));
+                    }
+                    EditKind::Despawn { .. } => {
+                        structural += 1;
+                        despawns += 1;
+                    }
+                    EditKind::Spawn { .. } => structural += 1,
+                }
+            }
+            undo.reserve_for(&self.undo_counts, structural, despawns);
+        }
         journal.clear();
         world.begin_tick();
         for edit in edits {
@@ -466,7 +533,7 @@ impl EditScratch {
                 } => {
                     let empty: &dyn Any = &();
                     let value = value.map_or(empty, |get| get(candidate, *index));
-                    apply(world, *component, *handle, value);
+                    apply(world, *component, *handle, value, undo.as_deref_mut());
                     world.mark_changed(*component, *handle, tick);
                 }
                 EditKind::BatchReplace {
@@ -474,13 +541,25 @@ impl EditScratch {
                     values,
                     apply,
                     ..
-                } => apply(world, *component, values(candidate), tick),
+                } => apply(
+                    world,
+                    *component,
+                    values(candidate),
+                    tick,
+                    undo.as_deref_mut(),
+                ),
                 EditKind::Despawn { .. } | EditKind::Spawn { .. } => {}
             }
         }
         for edit in edits {
             if let EditKind::Despawn { handle, .. } = &edit.inner {
-                world.despawn(*handle).expect("whole batch prevalidated");
+                if let Some(undo) = undo.as_deref_mut() {
+                    world
+                        .despawn_into_undo(*handle, undo)
+                        .expect("whole batch prevalidated");
+                } else {
+                    world.despawn(*handle).expect("whole batch prevalidated");
+                }
                 world.mark_structural(handle.slot);
                 journal.push(StructuralChange::Despawn(*handle));
             }
@@ -488,6 +567,9 @@ impl EditScratch {
         let mut spawn = 0;
         for edit in edits {
             if let EditKind::Spawn { id, .. } = &edit.inner {
+                if let Some(undo) = undo.as_deref_mut() {
+                    undo.record_structural(world, world.next_free_slot());
+                }
                 let handle = world
                     .spawn_prepared(*id, &mut self.builders[spawn], tick)
                     .expect("whole batch prevalidated");
