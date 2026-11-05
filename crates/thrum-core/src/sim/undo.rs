@@ -15,6 +15,7 @@ pub(super) trait UndoColumn: Send + Sync {
         stride: usize,
     );
     fn visit_changed_slots(&self, visit: &mut dyn FnMut(u32));
+    fn has_rows(&self) -> bool;
     fn clear(&mut self);
     fn reserve(&mut self, additional: usize);
     fn reserved_bytes(&self) -> usize;
@@ -86,6 +87,10 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
                 visit(slot);
             }
         }
+    }
+
+    fn has_rows(&self) -> bool {
+        !self.rows.is_empty()
     }
 
     fn clear(&mut self) {

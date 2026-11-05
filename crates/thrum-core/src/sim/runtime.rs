@@ -82,6 +82,28 @@ impl RuntimeUndo {
         self.world.visit_changed_slots(visit);
     }
 
+    /// Physical slots changed by this tick, in a fixed-capacity bitset when
+    /// one is beneficial at this world size. The words survive rewind.
+    pub fn changed_words(&self) -> Option<&[u64]> {
+        self.world.changed_words()
+    }
+
+    /// Whether this tick changed only one permitted component and no entity
+    /// membership. Consumers may skip unrelated page columns in that case.
+    ///
+    /// # Errors
+    ///
+    /// The permit belongs to another runtime.
+    pub fn changes_only<T: Send + Sync + 'static>(
+        &self,
+        permit: &ReadPermit<T>,
+    ) -> Result<bool, RegisteredWorldError> {
+        if self.nonce != permit.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
+        Ok(self.world.changes_only(permit.component))
+    }
+
     /// Reserved sparse storage retained for reuse.
     pub fn reserved_bytes(&self) -> usize {
         self.world.reserved_bytes() + self.events.capacity() * size_of::<StructuralChange>()

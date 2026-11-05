@@ -523,23 +523,63 @@ impl Page {
         target: u64,
         timeline: u64,
     ) {
+        let position_only = steps
+            .iter()
+            .take_while(|step| step.tick() <= source)
+            .all(|step| {
+                step.changes_only(position_read)
+                    .expect("same runtime position permit")
+            });
         let positions = world.column(position_read).expect("declared position read");
+        let old_id = self.id;
+        let old_timeline = self.timeline;
+        self.dirty.clear();
+        self.events.clear();
+        for step in steps.iter().take_while(|step| step.tick() <= source) {
+            if let Some(words) = step.changed_words() {
+                assert_eq!(self.dirty_words.len(), words.len());
+                for (target_word, changed_word) in self.dirty_words.iter_mut().zip(words) {
+                    *target_word |= *changed_word;
+                }
+            } else {
+                step.visit_changed_slots(|slot| {
+                    let slot = slot as usize;
+                    self.dirty_words[slot / 64] |= 1_u64 << (slot % 64);
+                });
+            }
+        }
+        if position_only {
+            for (word, value) in self.dirty_words.iter_mut().enumerate() {
+                let mut marked = std::mem::take(value);
+                while marked != 0 {
+                    let bit = marked.trailing_zeros() as usize;
+                    marked &= marked - 1;
+                    let slot = word * 64 + bit;
+                    self.dirty_flags[slot] = 0;
+                    let key = u32::try_from(slot).expect("validated slot capacity");
+                    let row = world.live_at_slot(key).expect("unchanged membership");
+                    let position = *positions
+                        .get(row)
+                        .expect("same runtime slot")
+                        .expect("V1 position");
+                    if self.positions[slot] != position {
+                        self.positions[slot] = position;
+                        self.dirty.position.push(key);
+                    }
+                }
+            }
+            self.id.tick = target;
+            self.timeline = timeline;
+            self.baseline = false;
+            self.patch_source = Some((old_id, old_timeline));
+            return;
+        }
         let velocities = world.column(velocity_read).expect("declared velocity read");
         let healths = world.column(health_read).expect("declared health read");
         let owners = world
             .column(ownership_read)
             .expect("declared ownership read");
         let visuals = world.column(visual_read).expect("declared visual read");
-        let old_id = self.id;
-        let old_timeline = self.timeline;
-        self.dirty.clear();
-        self.events.clear();
-        for step in steps.iter().take_while(|step| step.tick() <= source) {
-            step.visit_changed_slots(|slot| {
-                let slot = slot as usize;
-                self.dirty_words[slot / 64] |= 1_u64 << (slot % 64);
-            });
-        }
         for (word, value) in self.dirty_words.iter_mut().enumerate() {
             let mut marked = std::mem::take(value);
             while marked != 0 {
