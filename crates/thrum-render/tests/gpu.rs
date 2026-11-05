@@ -630,6 +630,107 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
 }
 
 #[test]
+#[ignore = "requires a real native GPU adapter for two submitted frames and independent readbacks"]
+fn two_submitted_views_keep_their_own_camera_pixels() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let view = |eye| {
+            SyntheticView::perspective(eye, [0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
+                .expect("finite camera")
+        };
+        let mut scene = SyntheticScene::grid(2).expect("two boxes");
+        scene.view = view([0.0, 0.0, 3.0]);
+        let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
+            .await
+            .expect("prepared scene");
+        let first_target =
+            OffscreenTarget::new(&device, &prepared, 129, 129).expect("first target");
+        let mut second_target =
+            OffscreenTarget::new(&device, &prepared, 129, 129).expect("second target");
+        let first_reference = render_pixels_bound(&device, &queue, &prepared, &first_target);
+
+        let mut first_pixels = first_target.readback(&device);
+        let mut first_encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        prepared
+            .encode_with_readback(
+                &mut first_encoder,
+                41,
+                &first_target,
+                None,
+                &mut first_pixels,
+            )
+            .expect("first frame");
+        queue.submit([first_encoder.finish()]);
+        prepared.commit_frame(&queue);
+
+        scene.view = view([0.8, 0.2, 2.7]);
+        prepared
+            .update_frame(
+                &queue,
+                &mut second_target,
+                &scene,
+                FrameLighting::Diagnostic(SyntheticLight::default()),
+            )
+            .expect("second camera update");
+        let mut second_pixels = second_target.readback(&device);
+        let mut second_encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        prepared
+            .encode_with_readback(
+                &mut second_encoder,
+                41,
+                &second_target,
+                None,
+                &mut second_pixels,
+            )
+            .expect("second frame");
+        let second_submission = queue.submit([second_encoder.finish()]);
+        prepared.commit_frame(&queue);
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(second_submission),
+                timeout: Some(std::time::Duration::from_secs(10)),
+            })
+            .expect("both frames submitted and completed");
+
+        let first = first_pixels
+            .try_collect(41)
+            .expect("first readback")
+            .expect("first pixels available");
+        let second = second_pixels
+            .try_collect(41)
+            .expect("second readback")
+            .expect("second pixels available");
+        let fresh = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
+            .await
+            .expect("fresh second-camera reference");
+        let fresh_target = OffscreenTarget::new(&device, &fresh, 129, 129).expect("fresh target");
+        let second_reference = render_pixels_bound(&device, &queue, &fresh, &fresh_target);
+        assert_ne!(
+            first_reference, second_reference,
+            "camera must alter pixels"
+        );
+        assert_eq!(
+            first, first_reference,
+            "first submission used the wrong view"
+        );
+        assert_eq!(
+            second, second_reference,
+            "second submission used the wrong view"
+        );
+    });
+}
+
+#[test]
 #[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn clustered_local_light_changes_only_its_receiver_region() {
     pollster::block_on(async {
