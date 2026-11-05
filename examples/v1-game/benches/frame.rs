@@ -2,7 +2,7 @@
 //! Deliberately serial and unpaced; the CLI separately exercises 60 Hz pacing.
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::{num::NonZeroUsize, time::Duration};
+use std::{num::NonZeroUsize, sync::mpsc, time::Duration};
 
 use thrum_core::{StableId, sim::ExecutionMode};
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
@@ -308,6 +308,102 @@ fn report_frame_cpu(
                 .count(),
             samples.len()
         );
+    }
+}
+
+/// One native extraction feeds two display samples at 60 Hz and 120 Hz.
+/// The measured repeated sample has no new authoritative tick or extraction.
+#[expect(
+    clippy::print_stderr,
+    reason = "the opt-in benchmark labels the two independently measured display samples"
+)]
+#[divan::bench]
+fn native_worker_interpolated_half_tick(bencher: divan::Bencher<'_, '_>) {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter =
+        pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
+            .expect("native adapter");
+    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        required_features: DeviceCapabilities::requested_timing_features(&adapter),
+        ..Default::default()
+    }))
+    .expect("device");
+    let extent = [640, 360];
+    let surface = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("repeated display benchmark surface"),
+        size: wgpu::Extent3d {
+            width: extent[0],
+            height: extent[1],
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Bgra8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+    let view = surface.create_view(&wgpu::TextureViewDescriptor::default());
+    let output = SurfaceOutput {
+        view: &view,
+        extent,
+    };
+    let mut host = pollster::block_on(FrameHost::new(
+        &device,
+        &queue,
+        FrameConfig {
+            render_extent: extent,
+            surface: Some(SurfaceProfile {
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                extent,
+            }),
+        },
+    ))
+    .expect("prepared game");
+    let (send, receive) = mpsc::channel();
+    host.enable_native_worker(move || {
+        let _ = send.send(());
+    })
+    .expect("native extractor");
+    let mut now = Duration::ZERO;
+    let mut first_samples = Vec::with_capacity(600);
+    let mut repeated_samples = Vec::with_capacity(600);
+    bencher.bench_local(|| {
+        now += Duration::from_nanos(16_666_667);
+        let dispatched = host.drive(now, None).expect("tick and extraction dispatch");
+        assert_eq!(dispatched.completed_ticks, 1);
+        receive
+            .recv_timeout(Duration::from_secs(2))
+            .expect("worker extraction");
+        assert!(
+            host.drive(now, Some(&output))
+                .expect("first view")
+                .submitted
+        );
+        first_samples.push(await_completed_frame(&mut host, &device));
+        let half_tick = now + Duration::from_nanos(8_333_333);
+        let repeated = host.drive(half_tick, Some(&output)).expect("repeated view");
+        assert_eq!(repeated.completed_ticks, 0);
+        assert!(repeated.submitted);
+        repeated_samples.push(await_completed_frame(&mut host, &device));
+    });
+    eprintln!("native first display sample");
+    report_frame_cpu(&first_samples, true, extent, Some(extent));
+    eprintln!("native interpolated half-tick sample");
+    report_frame_cpu(&repeated_samples, true, extent, Some(extent));
+}
+
+fn await_completed_frame(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+    loop {
+        if let Some(sample) = host.poll_completed().expect("GPU progress") {
+            return sample;
+        }
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(10)),
+            })
+            .expect("GPU completion");
     }
 }
 
