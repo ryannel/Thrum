@@ -3,8 +3,8 @@
 
 use thrum_render::abi::{InstanceRecord, MaterialRecord};
 use thrum_render::synthetic::{
-    DEPTH_FORMAT, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight,
-    SyntheticScene, SyntheticView,
+    DEPTH_FORMAT, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight,
+    SyntheticPointLight, SyntheticScene, SyntheticView,
 };
 use thrum_render::timing::GpuTimings;
 
@@ -496,6 +496,78 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
 }
 
 #[test]
+#[ignore = "requires a real native GPU adapter for live view, light and shadow pixels"]
+fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let view = |eye| {
+            SyntheticView::perspective(eye, [0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
+                .expect("finite camera")
+        };
+        let mut scene = SyntheticScene::grid(2).expect("two boxes");
+        scene.view = view([0.0, 0.0, 3.0]);
+        scene.sun_shadows = true;
+        scene.local_lights.push(SyntheticPointLight {
+            position: [-0.4, 0.1, 1.0],
+            radius: 1.2,
+            candela: [3.0, 1.0, 0.3],
+        });
+        let light = SyntheticLight {
+            direction_to_light: [0.4, -0.6, 1.0],
+            irradiance: [0.0; 3],
+        };
+        let mut prepared =
+            PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, light)
+                .await
+                .expect("prepared scene");
+        let mut target = OffscreenTarget::new(&device, &prepared, 129, 129).expect("target");
+        let stale = OffscreenTarget::new(&device, &prepared, 129, 129).expect("held old target");
+        let before = render_pixels_bound(&device, &queue, &prepared, &target);
+        scene.view = view([0.35, 0.1, 2.7]);
+        scene.local_lights[0].position = [0.4, -0.2, 1.1];
+        let changed_light = SyntheticLight {
+            direction_to_light: [-0.4, -0.6, 1.0],
+            irradiance: [4.0; 3],
+        };
+        prepared
+            .update_frame(
+                &queue,
+                &mut target,
+                &scene,
+                FrameLighting::Diagnostic(changed_light),
+            )
+            .expect("live update");
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        assert!(matches!(
+            prepared.encode(&mut encoder, 41, &stale, None),
+            Err(thrum_render::synthetic::RenderError::StaleTarget)
+        ));
+        let after = render_pixels_bound(&device, &queue, &prepared, &target);
+        prepared.commit_frame();
+        let fresh =
+            PreparedSynthetic::prepare_with_light(&device, &queue, 41, &scene, changed_light)
+                .await
+                .expect("fresh reference");
+        let fresh_target =
+            OffscreenTarget::new(&device, &fresh, 129, 129).expect("reference target");
+        let reference = render_pixels_bound(&device, &queue, &fresh, &fresh_target);
+        assert!(before != after, "the live scene must visibly change");
+        assert!(
+            after == reference,
+            "live and freshly prepared pixels differ"
+        );
+    });
+}
+
+#[test]
 #[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn clustered_local_light_changes_only_its_receiver_region() {
     pollster::block_on(async {
@@ -840,8 +912,8 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 .graph(&off_target, false)
                 .expect("off-state graph")
                 .dependencies,
-            [(0, 1)],
-            "disabled Sun has no shadow passes or map readers"
+            [(0, 2), (1, 2), (2, 3)],
+            "configured shadow maps remain ready for a live Sun activation"
         );
     });
 }
@@ -926,13 +998,22 @@ fn render_pixels(
     let extent = target.extent();
     let target = OffscreenTarget::new(device, prepared, extent[0], extent[1])
         .expect("one target belongs to its preparation");
+    render_pixels_bound(device, queue, prepared, &target)
+}
+
+fn render_pixels_bound(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &PreparedSynthetic,
+    target: &OffscreenTarget,
+) -> Vec<u8> {
     let mut pixels = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
-        .encode(&mut encoder, 41, &target, None)
+        .encode(&mut encoder, 41, target, None)
         .expect("explicit GPU host operation must succeed");
     pixels
-        .encode(&mut encoder, &target)
+        .encode(&mut encoder, target)
         .expect("explicit GPU host operation must succeed");
     submit_wait(device, queue, encoder);
     pixels
