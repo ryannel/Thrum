@@ -169,14 +169,13 @@ fn validate_batch_replace<T: Clone + Send + Sync + 'static>(
     let rows = values
         .downcast_ref::<Vec<(Handle, T)>>()
         .ok_or(EditError::WrongValueType)?;
-    let column = world.column_at::<T>(component);
     for (handle, _) in rows {
         scratch.validate_component(
             world,
             *handle,
             component,
             ComponentEditKind::Replace,
-            || column.get(handle.slot as usize).is_some(),
+            || world.present_at::<T>(component, handle.slot),
         )?;
     }
     Ok(())

@@ -10,9 +10,10 @@ pub(super) trait StorageColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn active_presence(&self) -> Option<&[u64]>;
+    fn swap_rows(&mut self, first: usize, second: usize);
     fn clear_slot(&mut self, slot: usize);
     fn clear_all(&mut self);
-    fn take_into_undo(&mut self, slot: u32, undo: &mut dyn UndoColumn);
+    fn take_into_undo(&mut self, slot: u32, row: usize, undo: &mut dyn UndoColumn);
 }
 
 pub(super) struct TypedStore<T> {
@@ -67,6 +68,20 @@ impl<T> TypedStore<T> {
         }
     }
 
+    pub(super) fn swap_rows(&mut self, first: usize, second: usize) {
+        self.values.swap(first, second);
+        for row in [first, second] {
+            let bit = 1_u64 << (row % 64);
+            let presence = &mut self.presence[row / 64];
+            if self.values[row].is_some() {
+                *presence |= bit;
+            } else {
+                *presence &= !bit;
+            }
+            self.refresh_active(row);
+        }
+    }
+
     /// Present slots satisfying the registered predicate, when indexing was
     /// selected. Direct writes must call `refresh_active` before reading this.
     pub(super) fn active_presence(&self) -> Option<&[u64]> {
@@ -113,6 +128,10 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
         Self::active_presence(self)
     }
 
+    fn swap_rows(&mut self, first: usize, second: usize) {
+        Self::swap_rows(self, first, second);
+    }
+
     fn clear_slot(&mut self, slot: usize) {
         self.remove(slot);
     }
@@ -127,8 +146,8 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
         }
     }
 
-    fn take_into_undo(&mut self, slot: u32, undo: &mut dyn UndoColumn) {
-        let prior = self.remove(slot as usize);
+    fn take_into_undo(&mut self, slot: u32, row: usize, undo: &mut dyn UndoColumn) {
+        let prior = self.remove(row);
         undo.as_any_mut()
             .downcast_mut::<TypedUndo<T>>()
             .expect("registered undo column type")
@@ -244,19 +263,37 @@ mod tests {
     }
 
     #[test]
+    fn row_swap_carries_values_presence_and_activity_together() {
+        let mut store = TypedStore::new_indexed(65, |value: &u32| *value != 0);
+        store.insert(0, 7);
+        store.insert(64, 0);
+        store.swap_rows(0, 64);
+        assert_eq!(store.get(0), Some(&0));
+        assert_eq!(store.get(64), Some(&7));
+        assert_eq!(store.presence(), &[1, 1]);
+        assert_eq!(store.active_presence(), Some(&[0, 1][..]));
+        store.swap_rows(0, 1);
+        assert_eq!(store.get(0), None);
+        assert_eq!(store.get(1), Some(&0));
+        assert_eq!(store.presence(), &[2, 1]);
+        store.swap_rows(0, 0);
+        assert_eq!(store.active_presence(), Some(&[0, 1][..]));
+    }
+
+    #[test]
     fn undo_removal_and_restore_maintain_the_predicate_index() {
         let mut store = TypedStore::new_indexed(65, |value: &u32| *value >= 10);
         store.insert(64, 12);
         let mut undo = TypedUndo::<u32>::new(|value| *value);
-        store.take_into_undo(64, &mut undo);
+        store.take_into_undo(64, 64, &mut undo);
         assert_eq!(store.get(64), None);
         assert_eq!(store.active_presence(), Some(&[0, 0][..]));
-        undo.restore_into(&mut store, &mut [0; 65], 0, 1);
+        undo.restore_into(&mut store, &mut [0; 65], 0, 1, None);
         assert_eq!(store.get(64), Some(&12));
         assert_eq!(store.active_presence(), Some(&[0, 1][..]));
         undo.clear();
         undo.push_component(64, Some(2), 0);
-        undo.restore_into(&mut store, &mut [0; 65], 0, 1);
+        undo.restore_into(&mut store, &mut [0; 65], 0, 1, None);
         assert_eq!(store.get(64), Some(&2));
         assert_eq!(store.active_presence(), Some(&[0, 0][..]));
     }

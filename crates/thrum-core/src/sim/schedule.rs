@@ -36,6 +36,7 @@ pub struct ComponentSchemaId(pub u128);
 #[derive(Default)]
 pub struct ComponentRegistry {
     pub(super) entries: Vec<ComponentEntry>,
+    pub(super) activity_partition: Option<ComponentKey>,
 }
 
 /// Registration fails without changing the catalogue.
@@ -49,6 +50,10 @@ pub enum RegistrationError {
     UnregisteredType,
     /// This component already has a publication policy.
     DuplicatePublication,
+    /// This component is not backed by a maintained activity predicate.
+    NotIndexed,
+    /// A storage activity partition was already selected.
+    DuplicateActivityPartition,
 }
 
 impl ComponentRegistry {
@@ -80,6 +85,7 @@ impl ComponentRegistry {
             schema,
             |value: &T| *value,
             |_| 0,
+            true,
             Box::new(move |capacity| Box::new(TypedStore::<T>::new_indexed(capacity, predicate))),
         )
     }
@@ -102,6 +108,7 @@ impl ComponentRegistry {
             schema,
             snapshot,
             nested_bytes,
+            false,
             Box::new(|capacity| Box::new(TypedStore::<T>::new(capacity))),
         )
     }
@@ -111,6 +118,7 @@ impl ComponentRegistry {
         schema: ComponentSchemaId,
         snapshot: fn(&T) -> T,
         nested_bytes: fn(&T) -> usize,
+        indexed: bool,
         storage: CreateStorage,
     ) -> Result<ComponentKey, RegistrationError> {
         let key = ComponentKey::of::<T>();
@@ -123,6 +131,7 @@ impl ComponentRegistry {
         self.entries.push(ComponentEntry {
             key,
             schema,
+            indexed,
             publication_copy: Box::new(super::publication::PublicationCopy {
                 snapshot,
                 nested_bytes,
@@ -141,6 +150,31 @@ impl ComponentRegistry {
             }),
         });
         Ok(key)
+    }
+
+    /// Select the one indexed component that partitions hot rows by activity.
+    /// Logical handles and game component types remain unchanged.
+    ///
+    /// # Errors
+    ///
+    /// The type is absent, lacks an index, or a partition was already selected.
+    pub fn select_activity_partition<T: Send + Sync + 'static>(
+        &mut self,
+    ) -> Result<(), RegistrationError> {
+        if self.activity_partition.is_some() {
+            return Err(RegistrationError::DuplicateActivityPartition);
+        }
+        let key = ComponentKey::of::<T>();
+        let entry = self
+            .entries
+            .iter()
+            .find(|entry| entry.key == key)
+            .ok_or(RegistrationError::UnregisteredType)?;
+        if !entry.indexed {
+            return Err(RegistrationError::NotIndexed);
+        }
+        self.activity_partition = Some(key);
+        Ok(())
     }
 
     /// Select an engine-owned publication column for a registered game type.
@@ -406,11 +440,12 @@ use std::{
 
 use super::{
     column_store::{Pending, PendingValue, StorageColumn, TypedStore},
+    dense_directory::DenseDirectory,
     registered_world::RegisteredWorld,
 };
 
 pub(super) trait SnapshotColumn: Send + Sync {
-    fn restore_into(&self, column: &mut dyn StorageColumn);
+    fn restore_into(&self, column: &mut dyn StorageColumn, directory: Option<&DenseDirectory>);
     fn clone_box(&self) -> Box<dyn SnapshotColumn>;
     fn copy_from(&mut self, source: &dyn SnapshotColumn);
     fn clear(&mut self);
@@ -430,16 +465,16 @@ struct TypedColumn<T> {
 }
 
 impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
-    fn restore_into(&self, column: &mut dyn StorageColumn) {
+    fn restore_into(&self, column: &mut dyn StorageColumn, directory: Option<&DenseDirectory>) {
         let typed = column
             .as_any_mut()
             .downcast_mut::<TypedStore<T>>()
             .expect("registered capture column type");
         for (slot, value) in &self.rows {
+            let row =
+                directory.map_or(*slot as usize, |directory| directory.row_of(*slot as usize));
             assert!(
-                typed
-                    .insert(*slot as usize, (self.snapshot)(value))
-                    .is_none(),
+                typed.insert(row, (self.snapshot)(value)).is_none(),
                 "one captured value per slot"
             );
         }
@@ -521,6 +556,7 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
 pub(super) struct ComponentEntry {
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
+    indexed: bool,
     publication_copy: Box<dyn Any + Send + Sync>,
     pub(super) publication: Option<super::publication::PublicationFactory>,
     pub(super) capture: CaptureColumn,
@@ -535,20 +571,21 @@ fn capture_component<T: Send + Sync + 'static>(
     snapshot: fn(&T) -> T,
     nested_bytes: fn(&T) -> usize,
 ) -> Box<dyn SnapshotColumn> {
-    let rows = world
+    let mut rows = world
         .column::<T>()
         .values()
         .iter()
         .enumerate()
-        .filter_map(|(slot, value)| {
+        .filter_map(|(row, value)| {
             value.as_ref().map(|value| {
                 (
-                    u32::try_from(slot).expect("validated slot capacity"),
+                    u32::try_from(world.slot_at_row(row)).expect("validated slot capacity"),
                     snapshot(value),
                 )
             })
         })
-        .collect();
+        .collect::<Vec<_>>();
+    rows.sort_unstable_by_key(|(slot, _)| *slot);
     Box::new(TypedColumn {
         rows,
         snapshot,

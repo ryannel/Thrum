@@ -2,6 +2,7 @@
 //! tick and immutable endpoint leases. Concrete fields and rules belong to games.
 
 mod column_store;
+mod dense_directory;
 mod history;
 mod input;
 mod publication;
@@ -15,9 +16,7 @@ mod undo;
 
 pub use history::{HistoryError, HistoryGame, RuntimeHistory};
 pub use input::{ControlBinding, FrameError, InputFrame};
-pub use publication::{
-    PublicationChanges, PublicationColumn, PublicationColumns, PublicationDiff, PublicationPage,
-};
+pub use publication::{PublicationChanges, PublicationPage};
 pub use registered_world::{EntityWriter, RegisteredWorldError};
 pub use runtime::{
     ColumnRead, ExecutionMode, Executor, GameRuntime, LiveSlot, PublicationMode, Read2, ReadPermit,

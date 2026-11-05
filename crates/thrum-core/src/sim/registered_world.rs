@@ -13,6 +13,7 @@ use crate::{Handle, StableId, WorldEpoch};
 use super::{
     ComponentKey, ComponentRegistry, ComponentSchemaId,
     column_store::{EntityBundle, StorageColumn, TypedStore},
+    dense_directory::{DenseDirectory, RowSwap},
     schedule::SnapshotColumn,
     undo::{TypedUndo, UndoColumn},
 };
@@ -37,6 +38,7 @@ pub(super) struct WorldCapture {
     free: Vec<u32>,
     change_ticks: Vec<u64>,
     id_index_slots: Vec<Option<u32>>,
+    directory: Option<DenseDirectory>,
 }
 
 pub(super) struct WorldDelta {
@@ -44,6 +46,7 @@ pub(super) struct WorldDelta {
     events: Vec<super::StructuralChange>,
     changed: Vec<Vec<(u32, u64)>>,
     columns: Vec<Box<dyn SnapshotColumn>>,
+    layout_swaps: Vec<RowSwap>,
 }
 
 pub(super) struct WorldUndo {
@@ -51,6 +54,7 @@ pub(super) struct WorldUndo {
     structural_ticks: Vec<u64>,
     columns: Vec<Box<dyn UndoColumn>>,
     changed_words: Option<Vec<u64>>,
+    layout_swaps: Vec<RowSwap>,
 }
 
 pub(super) trait TentativeDirty {
@@ -76,6 +80,7 @@ impl WorldUndo {
     pub(super) fn copy_from(&mut self, source: &Self) {
         self.slots.clone_from(&source.slots);
         self.structural_ticks.clone_from(&source.structural_ticks);
+        self.layout_swaps.clone_from(&source.layout_swaps);
         if let (Some(target), Some(source)) = (&mut self.changed_words, &source.changed_words) {
             target.copy_from_slice(source);
         }
@@ -136,6 +141,10 @@ impl WorldUndo {
     pub(super) fn has_component_rows(&self, component: usize) -> bool {
         self.columns[component].has_rows()
     }
+
+    pub(super) fn has_layout_swaps(&self) -> bool {
+        !self.layout_swaps.is_empty()
+    }
     pub(super) fn reserve_for(&mut self, counts: &[usize], structural: usize, despawns: usize) {
         self.slots.reserve(structural);
         self.structural_ticks
@@ -143,6 +152,8 @@ impl WorldUndo {
         for (column, &count) in self.columns.iter_mut().zip(counts) {
             column.reserve(count + despawns);
         }
+        self.layout_swaps
+            .reserve(structural + counts.iter().sum::<usize>());
     }
 
     pub(super) fn visit_changed_slots(&self, mut visit: impl FnMut(u32)) {
@@ -157,6 +168,7 @@ impl WorldUndo {
     pub(super) fn clear(&mut self) {
         self.slots.clear();
         self.structural_ticks.clear();
+        self.layout_swaps.clear();
         if let Some(words) = &mut self.changed_words {
             words.fill(0);
         }
@@ -170,11 +182,21 @@ impl WorldUndo {
     /// call `begin_tick` or mark a committed change.
     pub(super) fn abort_tentative(&mut self, world: &mut RegisteredWorld) {
         assert!(self.slots.is_empty(), "structural edits are not tentative");
+        assert!(
+            self.layout_swaps.is_empty(),
+            "layout edits are not tentative"
+        );
         let count = self.columns.len();
         for (component, (column, storage)) in
             self.columns.iter_mut().zip(&mut world.columns).enumerate()
         {
-            column.restore_into(storage.as_mut(), &mut world.change_ticks, component, count);
+            column.restore_into(
+                storage.as_mut(),
+                &mut world.change_ticks,
+                component,
+                count,
+                world.directory.as_ref(),
+            );
         }
         self.clear();
     }
@@ -183,6 +205,7 @@ impl WorldUndo {
         size_of::<Self>()
             + self.slots.capacity() * size_of::<(u32, Slot)>()
             + self.structural_ticks.capacity() * size_of::<u64>()
+            + self.layout_swaps.capacity() * size_of::<RowSwap>()
             + self
                 .changed_words
                 .as_ref()
@@ -227,6 +250,14 @@ impl WorldUndo {
         world: &mut RegisteredWorld,
         events: &[super::StructuralChange],
     ) {
+        if let Some(directory) = &mut world.directory {
+            for &swap in self.layout_swaps.iter().rev() {
+                directory.undo(swap);
+                for column in &mut world.columns {
+                    column.swap_rows(swap.row, swap.boundary_row);
+                }
+            }
+        }
         assert_eq!(
             events.len(),
             self.slots.len(),
@@ -241,8 +272,9 @@ impl WorldUndo {
                     let slot = handle.slot as usize;
                     let id = world.slots[slot].stable.expect("committed spawned ID");
                     world.ids.remove(id);
+                    let row = world.row_of_slot(handle.slot);
                     for column in &mut world.columns {
-                        column.clear_slot(slot);
+                        column.clear_slot(row);
                     }
                     world.slots[slot].stable = None;
                     world.live -= 1;
@@ -267,7 +299,13 @@ impl WorldUndo {
         for (component, (column, storage)) in
             self.columns.iter_mut().zip(&mut world.columns).enumerate()
         {
-            column.restore_into(storage.as_mut(), &mut world.change_ticks, component, count);
+            column.restore_into(
+                storage.as_mut(),
+                &mut world.change_ticks,
+                component,
+                count,
+                world.directory.as_ref(),
+            );
         }
         world.begin_tick(None);
         world.invalidate_change_frames();
@@ -277,6 +315,7 @@ impl WorldUndo {
 impl WorldDelta {
     pub(super) fn reserved_bytes(&self) -> usize {
         size_of::<Self>()
+            + self.layout_swaps.capacity() * size_of::<RowSwap>()
             + self.slots.capacity() * size_of::<(u32, CapturedSlot)>()
             + self.events.capacity() * size_of::<super::StructuralChange>()
             + self.changed.capacity() * size_of::<Vec<(u32, u64)>>()
@@ -308,6 +347,9 @@ impl WorldCapture {
         self.free.hash(hash);
         self.change_ticks.hash(hash);
         self.id_index_slots.hash(hash);
+        if let Some(directory) = &self.directory {
+            directory.hash(hash);
+        }
     }
 
     pub(super) fn reserved_bytes(&self) -> usize {
@@ -318,6 +360,10 @@ impl WorldCapture {
             + self.free.capacity() * size_of::<u32>()
             + self.change_ticks.capacity() * size_of::<u64>()
             + self.id_index_slots.capacity() * size_of::<Option<u32>>()
+            + self
+                .directory
+                .as_ref()
+                .map_or(0, DenseDirectory::reserved_bytes)
             + self.columns.capacity() * size_of::<Box<dyn SnapshotColumn>>()
             + self
                 .columns
@@ -340,6 +386,7 @@ impl WorldCapture {
             free: self.free.clone(),
             change_ticks: self.change_ticks.clone(),
             id_index_slots: self.id_index_slots.clone(),
+            directory: self.directory.clone(),
         }
     }
 
@@ -353,6 +400,7 @@ impl WorldCapture {
         self.free.clone_from(&source.free);
         self.change_ticks.clone_from(&source.change_ticks);
         self.id_index_slots.clone_from(&source.id_index_slots);
+        self.directory.clone_from(&source.directory);
         for (target, source) in self.columns.iter_mut().zip(&source.columns) {
             target.copy_from(source.as_ref());
         }
@@ -374,6 +422,11 @@ impl WorldCapture {
         for &(slot, state) in &delta.slots {
             self.slots[slot as usize] = state;
             self.id_index_slots[slot as usize] = state.stable.map(|_| slot);
+        }
+        if let Some(directory) = &mut self.directory {
+            for &swap in &delta.layout_swaps {
+                directory.replay(swap);
+            }
         }
         let component_count = self.columns.len();
         for (index, (column, changed)) in self.columns.iter_mut().zip(&delta.changed).enumerate() {
@@ -533,6 +586,9 @@ impl EntityWriter<'_> {
 pub(super) struct RegisteredWorld {
     epoch: WorldEpoch,
     slots: Vec<Slot>,
+    directory: Option<DenseDirectory>,
+    activity_component: Option<usize>,
+    layout_swaps: Vec<RowSwap>,
     free: Vec<u32>,
     ids: IdIndex,
     columns: Vec<Box<dyn StorageColumn>>,
@@ -550,6 +606,37 @@ pub(super) struct RegisteredWorld {
 impl RegisteredWorld {
     pub(super) fn capacity(&self) -> usize {
         self.slots.len()
+    }
+
+    pub(super) fn row_of_slot(&self, slot: u32) -> usize {
+        self.directory
+            .as_ref()
+            .map_or(slot as usize, |directory| directory.row_of(slot as usize))
+    }
+
+    pub(super) fn directory(&self) -> Option<&DenseDirectory> {
+        self.directory.as_ref()
+    }
+
+    pub(super) fn activity_component(&self) -> Option<usize> {
+        self.activity_component
+    }
+
+    pub(super) fn active_at_slot(&self, slot: u32) -> bool {
+        let Some(component) = self.activity_component else {
+            return false;
+        };
+        let row = self.row_of_slot(slot);
+        let words = self.columns[component]
+            .active_presence()
+            .expect("selected activity component has an index");
+        words[row / 64] & (1_u64 << (row % 64)) != 0
+    }
+
+    pub(super) fn slot_at_row(&self, row: usize) -> usize {
+        self.directory
+            .as_ref()
+            .map_or(row, |directory| directory.slot_at(row))
     }
 
     pub(super) fn component_count(&self) -> usize {
@@ -571,6 +658,7 @@ impl RegisteredWorld {
             &mut self.change_ticks,
             component,
             stride,
+            self.directory.as_ref(),
             &mut self.pending_marks,
             &mut self.pending_slots,
         );
@@ -593,6 +681,7 @@ impl RegisteredWorld {
             structural_ticks: Vec::new(),
             changed_words: (self.slots.len() >= UNDO_BITSET_MIN_SLOTS)
                 .then(|| vec![0; self.slots.len().div_ceil(64)]),
+            layout_swaps: Vec::with_capacity(256),
             columns: self
                 .registry
                 .entries
@@ -606,6 +695,7 @@ impl RegisteredWorld {
         WorldDelta {
             slots: Vec::new(),
             events: Vec::new(),
+            layout_swaps: Vec::with_capacity(256),
             changed: (0..self.registry.entries.len())
                 .map(|_| Vec::new())
                 .collect(),
@@ -625,6 +715,8 @@ impl RegisteredWorld {
     ) {
         delta.events.clear();
         delta.events.extend_from_slice(events);
+        delta.layout_swaps.clear();
+        delta.layout_swaps.extend_from_slice(&self.layout_swaps);
         delta.slots.clear();
         for event in events {
             let slot = match event {
@@ -699,6 +791,7 @@ impl RegisteredWorld {
                 .iter()
                 .map(|slot| slot.stable.and_then(|id| self.ids.get(id)))
                 .collect(),
+            directory: self.directory.clone(),
         }
     }
 
@@ -710,6 +803,7 @@ impl RegisteredWorld {
             || capture.columns.len() != self.registry.entries.len()
             || capture.change_ticks.len() != self.change_ticks.len()
             || capture.id_index_slots.len() != self.slots.len()
+            || capture.directory.is_some() != self.directory.is_some()
             || capture
                 .slots
                 .iter()
@@ -734,11 +828,12 @@ impl RegisteredWorld {
         {
             return Err(RegisteredWorldError::SnapshotMismatch);
         }
+        self.directory.clone_from(&capture.directory);
         for column in &mut self.columns {
             column.clear_all();
         }
         for (snapshot, column) in capture.columns.iter().zip(&mut self.columns) {
-            snapshot.restore_into(column.as_mut());
+            snapshot.restore_into(column.as_mut(), self.directory.as_ref());
         }
         self.ids.clear();
         let mut live = 0;
@@ -800,6 +895,12 @@ impl RegisteredWorld {
             .checked_mul(component_count)
             .ok_or(RegisteredWorldError::Capacity)?;
         let builder = EntityBundle::new(&registry);
+        let directory = registry
+            .activity_partition
+            .map(|_| DenseDirectory::new(capacity));
+        let activity_component = registry
+            .activity_partition
+            .and_then(|key| registry.entries.iter().position(|entry| entry.key == key));
         let columns = registry
             .entries
             .iter()
@@ -815,6 +916,9 @@ impl RegisteredWorld {
                 };
                 capacity
             ],
+            directory,
+            activity_component,
+            layout_swaps: Vec::with_capacity(256),
             free: (0..slot_count).rev().collect(),
             ids: IdIndex::new(capacity),
             columns,
@@ -914,6 +1018,7 @@ impl RegisteredWorld {
     }
 
     pub(super) fn begin_tick(&mut self, next: Option<u64>) {
+        self.layout_swaps.clear();
         for slot in self.pending_slots.drain(..) {
             self.pending_marks[slot as usize] = false;
         }
@@ -1126,13 +1231,68 @@ impl RegisteredWorld {
             return Err(RegisteredWorldError::DuplicateId);
         }
         let slot = *self.free.last().ok_or(RegisteredWorldError::Capacity)?;
-        builder.commit(&mut self.columns, slot as usize);
+        let row = self.row_of_slot(slot);
+        builder.commit(&mut self.columns, row);
         self.free.pop();
         self.slots[slot as usize].stable = Some(id);
         self.slots[slot as usize].structural_tick = tick;
         self.ids.insert(id, slot);
         self.live += 1;
         Ok(self.handle_at(slot))
+    }
+
+    fn reconcile_activity(&mut self, slot: u32, mut undo: Option<&mut WorldUndo>) {
+        let Some(component) = self.activity_component else {
+            return;
+        };
+        let row = self.row_of_slot(slot);
+        let words = self.columns[component]
+            .active_presence()
+            .expect("selected activity component has an index");
+        let active = words[row / 64] & (1_u64 << (row % 64)) != 0;
+        let Some(swap) = self
+            .directory
+            .as_mut()
+            .expect("activity partition has a directory")
+            .transition(slot as usize, active)
+        else {
+            return;
+        };
+        for column in &mut self.columns {
+            column.swap_rows(swap.row, swap.boundary_row);
+        }
+        if let Some(record) = &mut undo {
+            record.layout_swaps.push(swap);
+            self.layout_swaps.push(swap);
+        }
+    }
+
+    pub(super) fn finalize_activity(
+        &mut self,
+        events: &[super::StructuralChange],
+        undo: &mut WorldUndo,
+    ) {
+        let Some(component) = self.activity_component else {
+            return;
+        };
+        let changed = std::mem::take(&mut self.changed[component]);
+        for &slot in &changed {
+            self.reconcile_activity(slot, Some(&mut *undo));
+        }
+        debug_assert!(
+            self.directory
+                .as_ref()
+                .is_none_or(|directory| directory.active_len() <= self.live),
+            "active rows must belong to live entities"
+        );
+        self.changed[component] = changed;
+        for event in events {
+            let slot = match event {
+                super::StructuralChange::Spawn(handle)
+                | super::StructuralChange::Despawn(handle) => handle.slot,
+            };
+            self.reconcile_activity(slot, Some(&mut *undo));
+        }
     }
 
     pub(super) fn reusable_after_despawn(&self, handle: Handle) -> bool {
@@ -1198,11 +1358,13 @@ impl RegisteredWorld {
             self.builder.clear();
             return Err(error);
         }
-        self.builder.commit(&mut self.columns, slot as usize);
+        let row = self.row_of_slot(slot);
+        self.builder.commit(&mut self.columns, row);
         self.free.pop();
         self.slots[slot as usize].stable = Some(id);
         self.ids.insert(id, slot);
         self.live += 1;
+        self.reconcile_activity(slot, None);
         Ok(self.handle_at(slot))
     }
 
@@ -1228,18 +1390,21 @@ impl RegisteredWorld {
         handle: Handle,
         undo: Option<&mut WorldUndo>,
     ) -> Result<(), RegisteredWorldError> {
+        let recorded = undo.is_some();
         self.entity(handle)?;
         let id = self.slots[handle.slot as usize]
             .stable
             .ok_or(RegisteredWorldError::InvalidHandle)?;
         if let Some(undo) = undo {
             undo.record_structural(self, handle.slot);
+            let row = self.row_of_slot(handle.slot);
             for (column, preimage) in self.columns.iter_mut().zip(&mut undo.columns) {
-                column.take_into_undo(handle.slot, preimage.as_mut());
+                column.take_into_undo(handle.slot, row, preimage.as_mut());
             }
         } else {
+            let row = self.row_of_slot(handle.slot);
             for column in &mut self.columns {
-                column.clear_slot(handle.slot as usize);
+                column.clear_slot(row);
             }
         }
         let slot = &mut self.slots[handle.slot as usize];
@@ -1249,6 +1414,9 @@ impl RegisteredWorld {
         if let Some(next) = slot.generation.checked_add(1) {
             slot.generation = next;
             self.free.push(handle.slot);
+        }
+        if !recorded {
+            self.reconcile_activity(handle.slot, None);
         }
         Ok(())
     }
@@ -1281,13 +1449,15 @@ impl RegisteredWorld {
             .as_any()
             .downcast_ref::<TypedStore<T>>()
             .expect("registered read permit type")
-            .get(handle.slot as usize)
+            .get(self.row_of_slot(handle.slot))
             .ok_or(RegisteredWorldError::MissingComponent)?;
         Ok(read(value))
     }
 
     pub(super) fn present_at<T: Send + Sync + 'static>(&self, component: usize, slot: u32) -> bool {
-        self.column_at::<T>(component).get(slot as usize).is_some()
+        self.column_at::<T>(component)
+            .get(self.row_of_slot(slot))
+            .is_some()
     }
 
     pub(super) fn replace_prevalidated<T: Send + Sync + 'static>(
@@ -1296,8 +1466,9 @@ impl RegisteredWorld {
         slot: u32,
         value: T,
     ) -> T {
+        let row = self.row_of_slot(slot);
         self.column_mut_index::<T>(component)
-            .insert(slot as usize, value)
+            .insert(row, value)
             .expect("prevalidated replacement component")
     }
 
@@ -1309,6 +1480,7 @@ impl RegisteredWorld {
         mut save_old: impl FnMut(u32, T, u64),
     ) {
         let component_count = self.registry.entries.len();
+        let directory = self.directory.as_ref();
         let column = self.columns[component]
             .as_any_mut()
             .downcast_mut::<TypedStore<T>>()
@@ -1321,8 +1493,9 @@ impl RegisteredWorld {
         }
         for (handle, value) in rows {
             let slot = handle.slot as usize;
+            let row = directory.map_or(slot, |directory| directory.row_of(slot));
             let prior = column
-                .insert(slot, value.clone())
+                .insert(row, value.clone())
                 .expect("prevalidated replacement component");
             let old_tick = self.change_ticks[slot * component_count + component];
             save_old(handle.slot, prior, old_tick);
@@ -1344,9 +1517,10 @@ impl RegisteredWorld {
         slot: u32,
         value: T,
     ) {
+        let row = self.row_of_slot(slot);
         assert!(
             self.column_mut_index::<T>(component)
-                .insert(slot as usize, value)
+                .insert(row, value)
                 .is_none(),
             "prevalidated insertion slot is empty"
         );
@@ -1357,8 +1531,9 @@ impl RegisteredWorld {
         component: usize,
         slot: u32,
     ) -> T {
+        let row = self.row_of_slot(slot);
         self.column_mut_index::<T>(component)
-            .remove(slot as usize)
+            .remove(row)
             .expect("prevalidated removal component")
     }
 
@@ -1404,6 +1579,7 @@ impl RegisteredWorld {
         mut visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
     ) -> Result<(), E> {
         assert_ne!(first, second, "mutable query components must be distinct");
+        let directory = self.directory.as_ref();
         let (write, read) = if first < second {
             let (left, right) = self.columns.split_at_mut(second);
             (&mut left[first], &right[0])
@@ -1440,8 +1616,9 @@ impl RegisteredWorld {
                 let bit = matching.trailing_zeros() as usize;
                 matching &= matching - 1;
                 let index = word * 64 + bit;
-                let key = u32::try_from(index).expect("validated slot capacity");
-                let slot = self.slots[index];
+                let logical = directory.map_or(index, |directory| directory.slot_at(index));
+                let key = u32::try_from(logical).expect("validated slot capacity");
+                let slot = self.slots[logical];
                 let id = slot
                     .stable
                     .expect("stored component belongs to a live slot");
@@ -1465,7 +1642,7 @@ impl RegisteredWorld {
                     undo_column.push_component(
                         key,
                         Some(value.clone()),
-                        self.change_ticks[index * stride + first],
+                        self.change_ticks[logical * stride + first],
                     );
                 }
                 let changed = visit(
@@ -1502,7 +1679,11 @@ impl RegisteredWorld {
         let second = self.column::<U>();
         for (index, slot) in self.slots.iter().enumerate() {
             let Some(id) = slot.stable else { continue };
-            let (Some(a), Some(b)) = (first.get(index), second.get(index)) else {
+            let row = self
+                .directory
+                .as_ref()
+                .map_or(index, |directory| directory.row_of(index));
+            let (Some(a), Some(b)) = (first.get(row), second.get(row)) else {
                 continue;
             };
             let key = u32::try_from(index).expect("validated slot capacity");
@@ -1552,8 +1733,9 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
                 let bit = matching.trailing_zeros() as usize;
                 matching &= matching - 1;
                 let index = word * 64 + bit;
-                let key = u32::try_from(index).expect("validated slot capacity");
-                let id = world.slots[index]
+                let logical = world.slot_at_row(index);
+                let key = u32::try_from(logical).expect("validated slot capacity");
+                let id = world.slots[logical]
                     .stable
                     .expect("stored component belongs to a live slot");
                 visit(
@@ -1577,7 +1759,7 @@ mod tests {
 
     #[derive(Clone, Copy, Debug, PartialEq)]
     struct Height(f64);
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq)]
     struct Drift(f64);
     struct Unregistered;
 
@@ -1703,5 +1885,98 @@ mod tests {
         assert_eq!(index.get(ids[1]), Some(1));
         assert_eq!(index.get(ids[3]), Some(3));
         assert_eq!(index.get(ids[4]), Some(4));
+    }
+
+    #[test]
+    fn dense_activity_keeps_handles_and_replays_layout_through_delta_and_undo() {
+        use std::{collections::hash_map::DefaultHasher, hash::Hasher};
+
+        let mut registry = ComponentRegistry::default();
+        registry
+            .register::<Height>(ComponentSchemaId(1))
+            .expect("height");
+        registry
+            .register_indexed::<Drift>(ComponentSchemaId(2), |value| value.0 != 0.0)
+            .expect("indexed drift");
+        registry
+            .select_activity_partition::<Drift>()
+            .expect("partition");
+        let mut world = RegisteredWorld::new(WorldEpoch(8), 6, registry).expect("world");
+        let mut handles = Vec::new();
+        for slot in 0..4_u128 {
+            let speed = if slot % 2 == 0 { 0.0 } else { 1.0 };
+            handles.push(
+                world
+                    .spawn(StableId(slot), |entity| {
+                        entity.add(Height(f64::from(u32::try_from(slot).expect("small slot"))))?;
+                        entity.add(Drift(speed))?;
+                        Ok(())
+                    })
+                    .expect("interleaved seed"),
+            );
+        }
+        assert_eq!(world.directory().expect("dense").active_len(), 2);
+        assert!(world.row_of_slot(handles[1].slot) < 2);
+        assert!(world.row_of_slot(handles[3].slot) < 2);
+        assert_eq!(
+            world.with::<Height, _>(handles[2], |height| height.0),
+            Ok(2.0)
+        );
+        let saved = world.capture();
+        let mut rolling = saved.clone_independent();
+        let mut undo = world.empty_undo();
+        let drift = world
+            .component_index(super::ComponentKey::of::<Drift>())
+            .expect("registered drift");
+        world.begin_tick(Some(1));
+        let prior = world.replace_prevalidated(drift, handles[0].slot, Drift(3.0));
+        undo.record_component(drift, handles[0].slot, 0, Some(prior));
+        world.mark_changed(drift, handles[0], 1);
+        world.finalize_activity(&[], &mut undo);
+        world.finish_tick(1);
+        let mut delta = world.empty_delta();
+        world.capture_delta_into(&[], &mut delta);
+        rolling.advance(&delta);
+        let future = world.capture();
+        let mut expected_hash = DefaultHasher::new();
+        future.hash_metadata(&mut expected_hash);
+        let mut actual_hash = DefaultHasher::new();
+        rolling.hash_metadata(&mut actual_hash);
+        assert_eq!(actual_hash.finish(), expected_hash.finish());
+        assert!(world.row_of_slot(handles[0].slot) < 3);
+        world
+            .restore(&rolling)
+            .expect("delta restores active layout");
+        assert_eq!(world.with::<Drift, _>(handles[0], |value| value.0), Ok(3.0));
+        undo.restore(&mut world, &[]);
+        assert_eq!(world.directory().expect("dense").active_len(), 2);
+        assert_eq!(world.with::<Drift, _>(handles[0], |value| value.0), Ok(0.0));
+        assert_eq!(
+            world.with::<Height, _>(handles[2], |value| value.0),
+            Ok(2.0)
+        );
+
+        let mut structural_undo = world.empty_undo();
+        world.begin_tick(Some(2));
+        world
+            .despawn_into_undo(handles[1], &mut structural_undo)
+            .expect("active boundary deletion");
+        world.mark_structural(handles[1].slot);
+        let events = [crate::sim::StructuralChange::Despawn(handles[1])];
+        world.finalize_activity(&events, &mut structural_undo);
+        world.finish_tick(2);
+        assert_eq!(world.directory().expect("dense").active_len(), 1);
+        assert_eq!(world.handle(StableId(1)), None);
+        assert_eq!(
+            world.with::<Height, _>(handles[3], |value| value.0),
+            Ok(3.0)
+        );
+        structural_undo.restore(&mut world, &events);
+        assert_eq!(world.directory().expect("dense").active_len(), 2);
+        assert_eq!(world.handle(StableId(1)), Some(handles[1]));
+        assert_eq!(
+            world.with::<Height, _>(handles[1], |value| value.0),
+            Ok(1.0)
+        );
     }
 }

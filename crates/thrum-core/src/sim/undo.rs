@@ -7,6 +7,7 @@ use std::{
 };
 
 use super::column_store::{StorageColumn, TypedStore};
+use super::dense_directory::DenseDirectory;
 
 pub(super) trait UndoColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
@@ -17,6 +18,7 @@ pub(super) trait UndoColumn: Send + Sync {
         change_ticks: &mut [u64],
         component: usize,
         stride: usize,
+        directory: Option<&DenseDirectory>,
     );
     fn restore_first_seen_into(
         &mut self,
@@ -24,6 +26,7 @@ pub(super) trait UndoColumn: Send + Sync {
         change_ticks: &mut [u64],
         component: usize,
         stride: usize,
+        directory: Option<&DenseDirectory>,
         seen: &mut [bool],
         visited: &mut Vec<u32>,
     );
@@ -104,6 +107,7 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         change_ticks: &mut [u64],
         component: usize,
         stride: usize,
+        directory: Option<&DenseDirectory>,
     ) {
         let storage = storage
             .as_any_mut()
@@ -115,12 +119,14 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
             .rev()
             .zip(self.prior_ticks.iter().rev())
         {
+            let row =
+                directory.map_or(*slot as usize, |directory| directory.row_of(*slot as usize));
             match prior.take() {
                 Some(value) => {
-                    storage.insert(*slot as usize, value);
+                    storage.insert(row, value);
                 }
                 None => {
-                    storage.remove(*slot as usize);
+                    storage.remove(row);
                 }
             }
             if tick != u64::MAX {
@@ -135,6 +141,7 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         change_ticks: &mut [u64],
         component: usize,
         stride: usize,
+        directory: Option<&DenseDirectory>,
         seen: &mut [bool],
         visited: &mut Vec<u32>,
     ) {
@@ -151,12 +158,13 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
             }
             seen[index] = true;
             visited.push(*slot);
+            let row = directory.map_or(index, |directory| directory.row_of(index));
             match prior.take() {
                 Some(value) => {
-                    storage.insert(index, value);
+                    storage.insert(row, value);
                 }
                 None => {
-                    storage.remove(index);
+                    storage.remove(row);
                 }
             }
             change_ticks[index * stride + component] = tick;
