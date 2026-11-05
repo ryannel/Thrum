@@ -10,9 +10,10 @@ use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses}
 use crate::capabilities::DeviceCapabilities;
 use crate::graph::{
     Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
-    GraphDepthAttachment, GraphError, GraphTextures, Pass, PassScope, PipelineKey,
+    GraphDepthAttachment, GraphError, GraphTextures, Pass, PassKind, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::graph_record::{ExecutableGraph, RecordBinding, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
 use glam::Vec3;
 use std::collections::BTreeSet;
@@ -403,6 +404,86 @@ pub struct PreparedSynthetic {
     background: wgpu::Color,
     shadow: Option<ShadowPrepared>,
 }
+
+struct SceneFamily;
+
+impl RecordFamily for SceneFamily {
+    type Frame<'a> = SceneContext<'a>;
+    type Error = RenderError;
+}
+
+struct SceneContext<'a> {
+    prepared: &'a PreparedSynthetic,
+    target: &'a OffscreenTarget,
+    encoder: &'a mut wgpu::CommandEncoder,
+    timings: Option<&'a mut GpuTimings>,
+    generation: u64,
+}
+
+impl SceneContext<'_> {
+    fn shadow(&mut self, index: usize, pass: &CompiledPass) -> Result<(), RenderError> {
+        let shadow = self
+            .prepared
+            .shadow
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let shadow_target = self
+            .target
+            .shadow
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        shadow.encode_cascade(
+            self.encoder,
+            shadow_target,
+            &self.prepared.instances,
+            &self.prepared.cube_indices,
+            self.prepared.instance_count,
+            self.generation,
+            index,
+            pass,
+            self.target
+                .ids
+                .shadow
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?,
+            self.timings.as_deref_mut(),
+        )
+    }
+
+    fn opaque(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared.encode_opaque(
+            self.encoder,
+            self.generation,
+            self.target,
+            pass,
+            self.timings.as_deref_mut(),
+        )
+    }
+
+    fn cluster(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared
+            .cluster_compute
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .encode(
+                self.encoder,
+                self.generation,
+                pass,
+                self.timings.as_deref_mut(),
+            )
+    }
+
+    fn tone(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared.encode_tone(
+            self.encoder,
+            self.generation,
+            self.target,
+            pass,
+            self.timings.as_deref_mut(),
+        )
+    }
+}
+
 impl PreparedSynthetic {
     /// Prepare on the V1 executor's existing device and upload queue. No private
     /// adapter, device, submission or cook authority is created here.
@@ -1515,6 +1596,43 @@ impl PreparedSynthetic {
         }
         Ok(())
     }
+
+    fn bind_scene_graph(
+        &self,
+        graph: CompiledGraph,
+    ) -> Result<ExecutableGraph<SceneFamily>, RenderError> {
+        let mut bindings = Vec::with_capacity(graph.pass_order.len());
+        for (id, pass) in graph.pass_bindings() {
+            let binding = match pass.pipeline {
+                Some(key) if key == self.shadow_key(0) || key == self.shadow_key(1) => {
+                    let index = usize::try_from(key.role - 2)
+                        .map_err(|_| RenderError::GraphPassMismatch)?;
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
+                        frame.shadow(index, pass)
+                    })
+                }
+                Some(key) if key == self.key => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
+                        frame.opaque(pass)
+                    })
+                }
+                Some(key) if key == self.cluster_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.cluster(pass)
+                    })
+                }
+                Some(key) if key == self.display_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
+                        frame.tone(pass)
+                    })
+                }
+                _ => return Err(RenderError::GraphPassMismatch),
+            };
+            bindings.push(binding);
+        }
+        graph.bind(bindings).map_err(RenderError::Graph)
+    }
+
     /// Encode an already prepared draw. The caller owns submission and device
     /// polling. Skipping or failing this method cannot advance view histories.
     /// # Errors
@@ -1531,52 +1649,20 @@ impl PreparedSynthetic {
             return Err(RenderError::StaleTarget);
         }
         let graph = &target.graph;
-        if graph.device_generation != generation {
+        if graph.plan().device_generation != generation {
             return Err(RenderError::StaleTarget);
         }
         if let Some(timings) = timings.as_deref_mut() {
-            let count = u32::try_from(graph.pipeline_pass_count())
+            let count = u32::try_from(graph.plan().pipeline_pass_count())
                 .map_err(|_| RenderError::GraphPassMismatch)?;
             timings.check_passes(generation, count)?;
         }
-        graph.record(|pass| match pass.pipeline {
-            Some(key) if key == self.shadow_key(0) || key == self.shadow_key(1) => {
-                let index =
-                    usize::try_from(key.role - 2).map_err(|_| RenderError::GraphPassMismatch)?;
-                let shadow = self.shadow.as_ref().ok_or(RenderError::GraphPassMismatch)?;
-                let shadow_target = target
-                    .shadow
-                    .as_ref()
-                    .ok_or(RenderError::GraphPassMismatch)?;
-                shadow.encode_cascade(
-                    encoder,
-                    shadow_target,
-                    &self.instances,
-                    &self.cube_indices,
-                    self.instance_count,
-                    generation,
-                    index,
-                    pass,
-                    target
-                        .ids
-                        .shadow
-                        .as_ref()
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                    timings.as_deref_mut(),
-                )
-            }
-            Some(key) if key == self.key => {
-                self.encode_opaque(encoder, generation, target, pass, timings.as_deref_mut())
-            }
-            Some(key) if key == self.cluster_key() => self
-                .cluster_compute
-                .as_ref()
-                .ok_or(RenderError::GraphPassMismatch)?
-                .encode(encoder, generation, pass, timings.as_deref_mut()),
-            Some(key) if key == self.display_key() => {
-                self.encode_tone(encoder, generation, target, pass, timings.as_deref_mut())
-            }
-            _ => Err(RenderError::GraphPassMismatch),
+        graph.execute(&mut SceneContext {
+            prepared: self,
+            target,
+            encoder,
+            timings,
+            generation,
         })
     }
 
@@ -1815,7 +1901,7 @@ struct TargetResources {
 pub struct OffscreenTarget {
     device: wgpu::Device,
     prepared_owner: Arc<()>,
-    graph: CompiledGraph,
+    graph: ExecutableGraph<SceneFamily>,
     textures: GraphTextures,
     ids: TargetResources,
     view: wgpu::TextureView,
@@ -1931,6 +2017,7 @@ impl OffscreenTarget {
             layout: &prepared.view_layout,
             entries: &view_entries,
         });
+        let graph = prepared.bind_scene_graph(graph)?;
         Ok(Self {
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),

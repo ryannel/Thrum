@@ -5,9 +5,10 @@ use std::{collections::BTreeSet, sync::Arc};
 
 use crate::{
     graph::{
-        Access, AccessKind, CompiledGraph, FrameGraph, GraphColorAttachment, GraphError, Pass,
-        PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+        Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphError, Pass,
+        PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
     },
+    graph_record::{ExecutableGraph, RecordBinding, RecordFamily},
     synthetic::{OUTPUT_FORMAT, OffscreenTarget},
     timing::{GpuTimings, TimingError},
 };
@@ -58,12 +59,68 @@ pub struct SurfacePresenter {
     device: wgpu::Device,
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
-    plan: CompiledGraph,
+    plan: ExecutableGraph<PresentFamily>,
     surface_resource: ResourceId,
     generation: u64,
     source_extent: [u32; 2],
     profile: SurfaceProfile,
     owner: Arc<()>,
+}
+
+struct PresentFamily;
+
+impl RecordFamily for PresentFamily {
+    type Frame<'a> = PresentContext<'a>;
+    type Error = PresentError;
+}
+
+struct PresentContext<'a> {
+    presenter: &'a SurfacePresenter,
+    binding: &'a PresentationBinding,
+    surface_view: &'a wgpu::TextureView,
+    surface_extent: [u32; 2],
+    encoder: &'a mut wgpu::CommandEncoder,
+    timings: Option<&'a mut GpuTimings>,
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "validated GPU texture dimensions fit exactly in f32 viewport coordinates on supported devices"
+)]
+fn record_present(
+    frame: &mut PresentContext<'_>,
+    compiled: &CompiledPass,
+) -> Result<(), PresentError> {
+    let presenter = frame.presenter;
+    let viewport = letterbox(presenter.source_extent, frame.surface_extent);
+    let mut pass = compiled
+        .begin_render(
+            frame.encoder,
+            Some(GraphColorAttachment {
+                resource: &presenter.surface_resource,
+                range: 0..1,
+                view: frame.surface_view,
+                clear: wgpu::Color::BLACK,
+            }),
+            None,
+            presenter.generation,
+            frame.timings.as_deref_mut(),
+        )
+        .map_err(PresentError::Timing)?
+        .ok_or(PresentError::GraphPassMismatch)?;
+    pass.set_pipeline(&presenter.pipeline);
+    pass.set_bind_group(0, &frame.binding.group, &[]);
+    pass.set_viewport(
+        viewport[0] as f32,
+        viewport[1] as f32,
+        viewport[2] as f32,
+        viewport[3] as f32,
+        0.0,
+        1.0,
+    );
+    pass.set_scissor_rect(viewport[0], viewport[1], viewport[2], viewport[3]);
+    pass.draw(0..3, 0..1);
+    Ok(())
 }
 
 impl SurfacePresenter {
@@ -216,19 +273,15 @@ impl SurfacePresenter {
     /// submits and presents on its own queue in the same frame transaction.
     /// # Errors
     /// Refuses a stale binding/extent or unavailable timestamp slot before a pass begins.
-    #[expect(
-        clippy::cast_precision_loss,
-        reason = "validated GPU texture dimensions fit exactly in f32 viewport coordinates on supported devices"
-    )]
     pub fn encode(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         binding: &PresentationBinding,
         surface_view: &wgpu::TextureView,
         surface_extent: [u32; 2],
-        mut timings: Option<&mut GpuTimings>,
+        timings: Option<&mut GpuTimings>,
     ) -> Result<(), PresentError> {
-        if self.plan.device_generation != self.generation
+        if self.plan.plan().device_generation != self.generation
             || !Arc::ptr_eq(&self.owner, &binding.owner)
         {
             return Err(PresentError::StaleTarget);
@@ -236,44 +289,13 @@ impl SurfacePresenter {
         if surface_extent != self.profile.extent {
             return Err(PresentError::Extent);
         }
-        let expected = PipelineKey {
-            device_generation: self.generation,
-            revision: REVISION,
-            role: ROLE,
-        };
-        self.plan.record(|compiled| {
-            if compiled.pipeline != Some(expected) {
-                return Err(PresentError::GraphPassMismatch);
-            }
-            let viewport = letterbox(self.source_extent, surface_extent);
-            let mut pass = compiled
-                .begin_render(
-                    encoder,
-                    Some(GraphColorAttachment {
-                        resource: &self.surface_resource,
-                        range: 0..1,
-                        view: surface_view,
-                        clear: wgpu::Color::BLACK,
-                    }),
-                    None,
-                    self.generation,
-                    timings.as_deref_mut(),
-                )
-                .map_err(PresentError::Timing)?
-                .ok_or(PresentError::GraphPassMismatch)?;
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &binding.group, &[]);
-            pass.set_viewport(
-                viewport[0] as f32,
-                viewport[1] as f32,
-                viewport[2] as f32,
-                viewport[3] as f32,
-                0.0,
-                1.0,
-            );
-            pass.set_scissor_rect(viewport[0], viewport[1], viewport[2], viewport[3]);
-            pass.draw(0..3, 0..1);
-            Ok(())
+        self.plan.execute(&mut PresentContext {
+            presenter: self,
+            binding,
+            surface_view,
+            surface_extent,
+            encoder,
+            timings,
         })
     }
 }
@@ -291,7 +313,7 @@ fn compile_plan(
     generation: u64,
     source_extent: [u32; 2],
     profile: SurfaceProfile,
-) -> Result<(CompiledGraph, ResourceId), PresentError> {
+) -> Result<(ExecutableGraph<PresentFamily>, ResourceId), PresentError> {
     let key = PipelineKey {
         device_generation: generation,
         revision: REVISION,
@@ -328,7 +350,7 @@ fn compile_plan(
             ResourceScope::Imported { initialized: false },
         )
         .map_err(PresentError::Graph)?;
-    graph.pass(Pass {
+    let present_pass = graph.pass(Pass {
         name: PASS_NAME.into(),
         scope: PassScope::View(1),
         pipeline: Some(key),
@@ -348,12 +370,17 @@ fn compile_plan(
         ],
         external_side_effect: true,
     });
-    Ok((
-        graph
-            .compile(generation, &BTreeSet::from([key]))
-            .map_err(PresentError::Graph)?,
-        surface,
-    ))
+    let plan = graph
+        .compile(generation, &BTreeSet::from([key]))
+        .map_err(PresentError::Graph)?;
+    let plan = plan
+        .bind(vec![RecordBinding::new(
+            present_pass,
+            PassKind::Render,
+            record_present,
+        )])
+        .map_err(PresentError::Graph)?;
+    Ok((plan, surface))
 }
 
 /// Integer viewport preserving the source aspect without a per-frame upload.

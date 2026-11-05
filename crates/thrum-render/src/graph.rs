@@ -228,6 +228,40 @@ pub enum PassScope {
     View(u64),
 }
 
+/// Encoder family selected from a closed pass's declared accesses.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PassKind {
+    Render,
+    Compute,
+    Copy,
+}
+
+fn pass_kind(pass: &Pass) -> Option<PassKind> {
+    let attachment = pass.accesses.iter().any(|access| {
+        matches!(
+            access.kind,
+            AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+        )
+    });
+    let copy = pass
+        .accesses
+        .iter()
+        .any(|access| matches!(access.kind, AccessKind::CopyRead | AccessKind::CopyWrite));
+    if attachment && !copy {
+        return Some(PassKind::Render);
+    }
+    if pass.pipeline.is_some() && !attachment && !copy {
+        return Some(PassKind::Compute);
+    }
+    (pass.pipeline.is_none()
+        && !pass.accesses.is_empty()
+        && pass
+            .accesses
+            .iter()
+            .all(|access| matches!(access.kind, AccessKind::CopyRead | AccessKind::CopyWrite)))
+    .then_some(PassKind::Copy)
+}
+
 /// A pass declaration. Insertion order breaks ties between independent work;
 /// `external_side_effect` retains presentation and readback outputs.
 #[derive(Clone, Debug)]
@@ -310,6 +344,26 @@ pub enum GraphError {
     },
     /// Live pass dependencies form a cycle.
     DependencyCycle,
+    /// A recorder names a pass that was removed or does not exist.
+    UnknownRecorder {
+        /// Offending declaration index.
+        pass: usize,
+    },
+    /// More than one recorder was bound to the same live pass.
+    DuplicateRecorder {
+        /// Offending declaration index.
+        pass: usize,
+    },
+    /// A live pass has no record closure.
+    MissingRecorder {
+        /// Offending declaration index.
+        pass: usize,
+    },
+    /// A recorder's encoder family disagrees with the declared accesses.
+    RecorderKindMismatch {
+        /// Offending declaration index.
+        pass: usize,
+    },
 }
 
 /// A dependency with an overlapping write. These are API-independent reasons
@@ -369,6 +423,7 @@ pub(crate) struct CompiledPass {
     pub(crate) name: String,
     /// Pipeline identity checked during closure; copy passes have none.
     pub(crate) pipeline: Option<PipelineKey>,
+    pub(crate) kind: Option<PassKind>,
     attachments: Vec<CompiledAttachment>,
 }
 
@@ -574,20 +629,9 @@ impl GraphTextures {
 }
 
 impl CompiledGraph {
-    /// Execute each prepared recorder in graph order without graph analysis or
-    /// allocation on the frame path. The callback owns concrete GPU commands.
-    ///
-    /// # Errors
-    ///
-    /// Returns the first callback error and stops before later passes.
-    pub(crate) fn record<E>(
-        &self,
-        mut recorder: impl FnMut(&CompiledPass) -> Result<(), E>,
-    ) -> Result<(), E> {
-        for pass in &self.passes {
-            recorder(pass)?;
-        }
-        Ok(())
+    /// Visit live passes and their stable declaration identities in execution order.
+    pub(crate) fn pass_bindings(&self) -> impl Iterator<Item = (usize, &CompiledPass)> {
+        self.pass_order.iter().copied().zip(&self.passes)
     }
 
     /// Number of render or compute pipelines requiring timestamp slots.
@@ -1084,6 +1128,7 @@ impl FrameGraph {
                 .map(|(position, &index)| CompiledPass {
                     name: self.passes[index].name.clone(),
                     pipeline: self.passes[index].pipeline,
+                    kind: pass_kind(&self.passes[index]),
                     attachments: self.passes[index]
                         .accesses
                         .iter()
@@ -1193,21 +1238,18 @@ mod tests {
         let compiled = graph.compile(1, &BTreeSet::new()).expect("valid graph");
         assert_eq!(compiled.pass_order, [1, 2]);
         let mut stores = Vec::new();
-        compiled
-            .record(|pass| {
-                if let Some(ops) = pass.attachment_ops(&texture, 0..1, wgpu::Color::BLACK) {
-                    stores.push(ops.store);
-                    assert!(matches!(ops.load, wgpu::LoadOp::Clear(_)));
-                }
-                Ok::<_, ()>(())
-            })
-            .expect("recording succeeds");
+        for (_, pass) in compiled.pass_bindings() {
+            if let Some(ops) = pass.attachment_ops(&texture, 0..1, wgpu::Color::BLACK) {
+                stores.push(ops.store);
+                assert!(matches!(ops.load, wgpu::LoadOp::Clear(_)));
+            }
+        }
         assert_eq!(compiled.culled_passes, 1);
         assert_eq!(stores, [wgpu::StoreOp::Store]);
     }
 
     #[test]
-    fn compiled_recording_stops_at_the_failed_pass_before_its_consumer() {
+    fn compiled_order_keeps_the_producer_before_its_consumer() {
         let mut graph = FrameGraph::default();
         let buffer = graph
             .resource(
@@ -1238,17 +1280,13 @@ mod tests {
         }
         let compiled = graph.compile(1, &BTreeSet::new()).expect("valid closure");
         assert_eq!(compiled.dependencies, vec![(0, 1), (0, 2)]);
-        let mut visited = Vec::new();
-        let result = compiled.record(|pass| {
-            visited.push(pass.name.clone());
-            if pass.name == "consumer" {
-                Err("encoder refused")
-            } else {
-                Ok(())
-            }
-        });
-        assert_eq!(result, Err("encoder refused"));
-        assert_eq!(visited, ["producer", "consumer"]);
+        assert_eq!(
+            compiled
+                .pass_bindings()
+                .map(|(_, pass)| pass.name.as_str())
+                .collect::<Vec<_>>(),
+            ["producer", "consumer", "present"]
+        );
     }
 
     #[test]
@@ -1287,13 +1325,10 @@ mod tests {
             (compiled.lifetimes[0].first, compiled.lifetimes[0].last),
             (0, 1)
         );
-        let mut visited = Vec::new();
-        compiled
-            .record(|pass| {
-                visited.push(pass.name.clone());
-                Ok::<_, ()>(())
-            })
-            .expect("record");
+        let visited = compiled
+            .pass_bindings()
+            .map(|(_, pass)| pass.name.as_str())
+            .collect::<Vec<_>>();
         assert_eq!(visited, ["producer", "consumer"]);
     }
 
@@ -1439,15 +1474,14 @@ mod tests {
         let compiled = graph.compile(1, &BTreeSet::new()).expect("history root");
         assert_eq!(compiled.pass_order, [0]);
         assert_eq!(compiled.culled_passes, 0);
-        compiled
-            .record(|pass| {
-                let ops = pass
-                    .attachment_ops(&history, 0..1, wgpu::Color::BLACK)
-                    .expect("history attachment");
-                assert_eq!(ops.store, wgpu::StoreOp::Store);
-                Ok::<_, ()>(())
-            })
-            .expect("record");
+        let ops = compiled
+            .pass_bindings()
+            .next()
+            .expect("history pass")
+            .1
+            .attachment_ops(&history, 0..1, wgpu::Color::BLACK)
+            .expect("history attachment");
+        assert_eq!(ops.store, wgpu::StoreOp::Store);
     }
 
     #[test]
@@ -1472,13 +1506,10 @@ mod tests {
         assert_eq!(compiled.pass_order, [prerequisite, output]);
         assert_eq!(compiled.culled_passes, 1);
         assert_eq!(compiled.dependencies, [(prerequisite, output)]);
-        let mut recorded = Vec::new();
-        compiled
-            .record(|pass| {
-                recorded.push(pass.name.clone());
-                Ok::<_, ()>(())
-            })
-            .expect("record");
+        let recorded = compiled
+            .pass_bindings()
+            .map(|(_, pass)| pass.name.as_str())
+            .collect::<Vec<_>>();
         assert_eq!(recorded, ["prerequisite", "output"]);
     }
 
