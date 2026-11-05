@@ -136,6 +136,45 @@ impl SimulationHistory {
             .reserved_bytes(peer_storage_bytes, record_storage_bytes)
     }
 
+    /// Amend one peer's retained input after rewind, preserving its origin,
+    /// actor, sequence and tick. A rejected replacement leaves replay intact.
+    ///
+    /// # Errors
+    ///
+    /// The branch diverged, the tick or peer was not retained, or the new
+    /// controls fail V1 admission.
+    pub fn amend_input(
+        &mut self,
+        sim: &Simulation,
+        frame: InputFrame<SimAction>,
+    ) -> Result<(), SimError> {
+        frame.validate_axes().map_err(|_| SimError::InvalidInput)?;
+        super::validate_frame_actions(&sim.rules.config, &frame)
+            .map_err(|_| SimError::InvalidInput)?;
+        let origin = frame.origin;
+        let actor = frame.actor;
+        let tick = frame.tick;
+        self.inner
+            .amend_future(
+                &sim.runtime,
+                &sim.rules,
+                tick,
+                |record| {
+                    record
+                        .inputs
+                        .iter()
+                        .position(|old| old.origin.peer == origin.peer)
+                        .filter(|&index| {
+                            let old = &record.inputs[index];
+                            old.origin == origin && old.actor == actor && old.tick == tick
+                        })
+                        .ok_or(SimError::InvalidInput)
+                },
+                |record, index| record.inputs[index] = frame,
+            )
+            .map_err(map_history)
+    }
+
     /// Record and commit one complete game tick.
     ///
     /// # Errors

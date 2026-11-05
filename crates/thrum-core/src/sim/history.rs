@@ -273,6 +273,37 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
         }
     }
 
+    /// Replace validated data in one retained future record without moving its
+    /// tick or consuming it. `validate` sees the old record first; `apply` runs
+    /// only after validation succeeds and must be infallible.
+    ///
+    /// # Errors
+    ///
+    /// The branch diverged, the tick is not queued for replay, or validation
+    /// rejected the proposed replacement. Every error leaves history unchanged.
+    pub fn amend_future<P, G, V>(
+        &mut self,
+        runtime: &GameRuntime<P, G>,
+        game: &G,
+        tick: u64,
+        validate: impl FnOnce(&R) -> Result<V, G::Error>,
+        apply: impl FnOnce(&mut R, V),
+    ) -> Result<(), HistoryError<G::Error>>
+    where
+        G: HistoryGame<P, HistoryState = S, HistoryRecord = R>,
+    {
+        self.check(runtime, game)?;
+        let entry = self
+            .future
+            .iter_mut()
+            .find(|entry| entry.tick == tick)
+            .ok_or(HistoryError::OutsideWindow)?;
+        let checked =
+            validate(&entry.record).map_err(|error| HistoryError::Tick(TickError::Game(error)))?;
+        apply(&mut entry.record, checked);
+        Ok(())
+    }
+
     /// Re-admit and commit the next retained tick, consuming it only on success.
     ///
     /// # Errors
