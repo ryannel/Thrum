@@ -602,7 +602,12 @@ impl ApplicationHandler<UserEvent> for App {
             let delay = due.saturating_sub(since_call);
             if (host.has_ready_view() || (delay.is_zero() && host.has_reusable_view()))
                 && !self.acquiring
-                && host.pending_frames() < if reconfigure { 1 } else { 3 }
+                && host.pending_frames()
+                    < if reconfigure {
+                        1
+                    } else {
+                        FrameHost::MAX_IN_FLIGHT
+                    }
             {
                 match surface.request.try_send(AcquireRequest {
                     extent,
