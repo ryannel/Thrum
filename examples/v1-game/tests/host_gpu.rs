@@ -26,6 +26,70 @@ fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 }
 
 #[test]
+fn autonomous_world_page_drives_the_existing_gpu_scene() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real native adapter required");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
+            .await
+            .expect("prepared scene");
+        let origin = Instant::now();
+        let (mut render, controls) = host
+            .into_threaded(origin, || {})
+            .expect("one autonomous world");
+        controls
+            .set_controls([1.0, 0.0, 0.0])
+            .expect("validated input");
+        std::thread::sleep(Duration::from_millis(85));
+        let world_deadline = Instant::now() + Duration::from_secs(2);
+        let report = loop {
+            let report = render
+                .drive(origin.elapsed(), None)
+                .expect("render latest world page");
+            if report.submitted {
+                break report;
+            }
+            assert!(
+                Instant::now() < world_deadline,
+                "world page did not reach GPU"
+            );
+            std::thread::sleep(Duration::from_millis(5));
+        };
+        assert!(report.tick >= 1, "world advanced while GPU host was idle");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let sample = loop {
+            if let Some(sample) = render.poll_completed().expect("GPU progress") {
+                break sample;
+            }
+            assert!(Instant::now() < deadline, "GPU completion timed out");
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("GPU wait");
+        };
+        assert_eq!(sample.tick, report.tick);
+        assert_eq!(sample.uploaded_rows, 1_501);
+        let next = render
+            .drive(origin.elapsed(), None)
+            .expect("next independent world observation");
+        assert_eq!(
+            u64::from(next.completed_ticks),
+            next.tick - report.tick,
+            "each autonomous world tick is reported once across render callbacks"
+        );
+    });
+}
+
+#[test]
 fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

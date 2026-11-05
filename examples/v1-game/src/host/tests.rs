@@ -18,6 +18,7 @@ fn sample(tick: u64) -> FrameSample {
         view_update_ns: 0,
         encode_cpu: Duration::ZERO,
         wall: Duration::ZERO,
+        render_cpu: Duration::ZERO,
         gpu_pass_ns: None,
         gpu_present_ns: None,
         surface_presented: false,
@@ -99,7 +100,11 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
             .expect("prepared scene");
         let before = host.capture_pixels().expect("initial capture");
         for _ in 0..100 {
-            host.world.sim.step(&[]).expect("committed world update");
+            host.world
+                .inline_mut()
+                .sim
+                .step(&[])
+                .expect("committed world update");
         }
         assert_ne!(
             host.extractor
@@ -174,13 +179,45 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
-        let zero = host.world.sim.published_page().expect("baseline lease");
-        host.world.sim.step(&[]).expect("first held tick");
-        let one = host.world.sim.published_page().expect("first lease");
-        host.world.sim.step(&[]).expect("second held tick");
-        let two = host.world.sim.published_page().expect("second lease");
-        host.world.sim.step(&[]).expect("third held tick");
-        let three = host.world.sim.published_page().expect("third lease");
+        let zero = host
+            .world
+            .inline_mut()
+            .sim
+            .published_page()
+            .expect("baseline lease");
+        host.world
+            .inline_mut()
+            .sim
+            .step(&[])
+            .expect("first held tick");
+        let one = host
+            .world
+            .inline_mut()
+            .sim
+            .published_page()
+            .expect("first lease");
+        host.world
+            .inline_mut()
+            .sim
+            .step(&[])
+            .expect("second held tick");
+        let two = host
+            .world
+            .inline_mut()
+            .sim
+            .published_page()
+            .expect("second lease");
+        host.world
+            .inline_mut()
+            .sim
+            .step(&[])
+            .expect("third held tick");
+        let three = host
+            .world
+            .inline_mut()
+            .sim
+            .published_page()
+            .expect("third lease");
 
         let now = Duration::from_nanos(16_666_667);
         let busy = host.drive(now, None).expect("busy page is optional");
@@ -195,6 +232,7 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         assert!(recovered.submitted);
         assert_eq!(
             host.world
+                .inline_mut()
                 .sim
                 .published_page()
                 .expect("current page")
@@ -266,14 +304,18 @@ fn worker_result_from_an_old_timeline_is_replaced_after_restore() {
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
-        let capture = host.world.sim.capture();
+        let capture = host.world.inline_mut().sim.capture();
         host.enable_native_worker(|| {}).expect("worker");
         let now = Duration::from_nanos(16_666_667);
         let dispatched = host.drive(now, None).expect("dispatch old timeline");
         assert_eq!((dispatched.tick, dispatched.completed_ticks), (1, 1));
-        host.world.sim.restore(&capture).expect("restore tick zero");
-        assert_eq!(host.world.sim.tick(), 0);
-        assert_eq!(host.world.sim.timeline(), 1);
+        host.world
+            .inline_mut()
+            .sim
+            .restore(&capture)
+            .expect("restore tick zero");
+        assert_eq!(host.world.inline_mut().sim.tick(), 0);
+        assert_eq!(host.world.inline_mut().sim.timeline(), 1);
 
         let deadline = std::time::Instant::now() + Duration::from_secs(2);
         loop {
@@ -310,9 +352,17 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
             .await
             .expect("prepared scene");
         let original = host.scene.instances[0].current;
-        let capture = host.world.sim.capture();
-        host.world.sim.step(&[]).expect("advance world");
-        host.world.sim.restore(&capture).expect("replay same tick");
+        let capture = host.world.inline_mut().sim.capture();
+        host.world
+            .inline_mut()
+            .sim
+            .step(&[])
+            .expect("advance world");
+        host.world
+            .inline_mut()
+            .sim
+            .restore(&capture)
+            .expect("replay same tick");
         let mut report = super::DriveReport {
             tick: 0,
             overload: None,

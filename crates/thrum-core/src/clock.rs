@@ -82,6 +82,46 @@ pub struct TickClock {
     queued: u32,
 }
 
+/// Read-only clock phase for a render lane sampling an absolute display target.
+/// Sampling never admits a world update or changes the clock's authority.
+#[derive(Clone, Copy, Debug)]
+pub struct ClockSample {
+    last_time: Duration,
+    fractional_tick: u128,
+    tick_hz: u32,
+    interpolate: bool,
+}
+
+impl ClockSample {
+    /// Fraction between the last two committed endpoints at an absolute
+    /// monotonic target in the same time origin as the authoritative clock.
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "the clamped numerator is below one billion and f32 precision is enough for display interpolation"
+    )]
+    pub fn alpha_at(self, target: Duration) -> f32 {
+        if !self.interpolate {
+            return 1.0;
+        }
+        let fraction = if target >= self.last_time {
+            self.fractional_tick.saturating_add(
+                target
+                    .saturating_sub(self.last_time)
+                    .as_nanos()
+                    .saturating_mul(u128::from(self.tick_hz)),
+            )
+        } else {
+            self.fractional_tick.saturating_sub(
+                self.last_time
+                    .saturating_sub(target)
+                    .as_nanos()
+                    .saturating_mul(u128::from(self.tick_hz)),
+            )
+        };
+        fraction.min(NANOS_PER_SECOND) as f32 / NANOS_PER_SECOND as f32
+    }
+}
+
 impl TickClock {
     /// Begin at a host-supplied monotonic timestamp.
     ///
@@ -136,6 +176,19 @@ impl TickClock {
                 .saturating_mul(u128::from(self.config.tick_hz.get())),
         );
         target_fraction.min(NANOS_PER_SECOND) as f32 / NANOS_PER_SECOND as f32
+    }
+
+    /// Transfer the current phase to a renderer without transferring tick
+    /// authority. The renderer uses the same monotonic origin as `advance`.
+    pub fn presentation_sample(&self) -> ClockSample {
+        ClockSample {
+            last_time: self.last_time,
+            fractional_tick: self.fractional_tick,
+            tick_hz: self.config.tick_hz.get(),
+            interpolate: self.state == ClockState::Active
+                && self.queued == 0
+                && !self.presentation_hold,
+        }
     }
 
     /// Delay from the last host callback until the next world update is due.

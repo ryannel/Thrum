@@ -63,6 +63,32 @@ fn presentation_fraction_advances_between_world_ticks_without_extra_steps() {
 }
 
 #[test]
+fn transferred_phase_samples_future_display_without_advancing_authority() {
+    let mut clock = TickClock::new(ClockConfig::default(), Duration::ZERO).expect("clock");
+    let now = Duration::from_nanos(16_666_667);
+    let first = clock
+        .advance(now, 4, || Ok::<_, ()>(()))
+        .expect("first tick");
+    assert_eq!(first.completed, 1);
+    let sample = clock.presentation_sample();
+    let target = now + Duration::from_nanos(8_333_333);
+    assert_eq!(sample.alpha_at(Duration::ZERO), 0.0);
+    assert!((sample.alpha_at(target) - 0.5).abs() < 1e-6);
+    assert_eq!(clock.queued_ticks(), 0);
+    assert_eq!(sample.alpha_at(now + Duration::from_millis(20)), 1.0);
+    clock
+        .advance(target, 4, || Ok::<_, ()>(()))
+        .expect("fractional world sample");
+    let later = clock.presentation_sample();
+    assert!(later.alpha_at(now).abs() < 1e-6);
+    let past_target = now + Duration::from_nanos(3_333_333);
+    assert!((later.alpha_at(past_target) - 0.2).abs() < 1e-6);
+    clock.pause();
+    assert_eq!(clock.presentation_sample().alpha_at(target), 1.0);
+    assert!((sample.alpha_at(target) - 0.5).abs() < 1e-6);
+}
+
+#[test]
 fn display_target_lead_changes_only_interpolation_not_world_time() {
     let mut clock = TickClock::new(ClockConfig::default(), Duration::ZERO).expect("clock");
     clock

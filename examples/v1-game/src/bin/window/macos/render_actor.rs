@@ -6,7 +6,7 @@ use std::{
 };
 
 use thrum_render::frame::FrameWorker;
-use v1_game::{DriveReport, FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{DriveReport, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost};
 use wgpu::{SurfaceTexture, TextureViewDescriptor};
 use winit::event_loop::EventLoopProxy;
 
@@ -17,7 +17,6 @@ pub(super) enum RenderJob {
         sequence: u64,
         now: Duration,
         lead: Duration,
-        axes: [f32; 3],
         frame: Option<(SurfaceTexture, [u32; 2])>,
     },
     Finish,
@@ -39,9 +38,9 @@ pub(super) struct ReadyState {
 }
 
 impl ReadyState {
-    pub(super) fn read(host: &FrameHost) -> Self {
+    pub(super) fn read(host: &ThreadedFrameHost) -> Self {
         Self {
-            ready_view: host.has_ready_view(),
+            ready_view: host.has_ready_view() || host.has_serial_view(),
             current_scene: host.has_current_scene_for_display(),
             reusable_view: host.has_reusable_view(),
             pending_frames: host.pending_frames(),
@@ -74,7 +73,7 @@ pub(super) struct RenderReply {
 }
 
 pub(super) fn start(
-    mut host: FrameHost,
+    mut host: ThreadedFrameHost,
     device: wgpu::Device,
     queue: wgpu::Queue,
     surface_owner: Arc<wgpu::Surface<'static>>,
@@ -83,7 +82,6 @@ pub(super) fn start(
 ) -> Result<FrameWorker<RenderJob, RenderReply>, String> {
     let signal = wake.clone();
     let mut current_extent = initial_extent;
-    let mut admitted_axes = [0.0_f32; 3];
     FrameWorker::start(
         "thrum-v1-render",
         move |job| {
@@ -96,18 +94,9 @@ pub(super) fn start(
                     sequence,
                     now,
                     lead,
-                    axes,
                     frame,
                 } => {
                     let report = (|| {
-                        if axes
-                            .iter()
-                            .zip(admitted_axes)
-                            .any(|(new, old)| new.to_bits() != old.to_bits())
-                        {
-                            host.set_controls(axes)?;
-                            admitted_axes = axes;
-                        }
                         host.set_presentation_lead(lead);
                         let view = frame.as_ref().map(|(frame, _)| {
                             frame.texture.create_view(&TextureViewDescriptor::default())
