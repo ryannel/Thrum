@@ -180,8 +180,6 @@ pub enum TickError<E> {
     RevisionExhausted,
     /// Tick-zero seed membership must be published before ticking.
     BaselineRequired,
-    /// All preallocated publication pages are leased.
-    PublicationBusy,
     /// Game-owned validation refused the candidate before any commit.
     Game(E),
     /// Engine preflight rejected a typed candidate edit batch.
@@ -308,6 +306,7 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     schedule: Schedule,
     waves: Vec<Vec<BoundSystem<P, G>>>,
     pages: SnapshotRing<P>,
+    publication_skipped: bool,
     tick: u64,
     timeline: u64,
     revision: u64,
@@ -426,6 +425,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.world.begin_tick();
         self.structural_journal.clear();
         self.pages = SnapshotRing::new(make_page);
+        self.publication_skipped = false;
         Ok(())
     }
 
@@ -483,6 +483,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             schedule,
             waves,
             pages: SnapshotRing::new(make_page),
+            publication_skipped: false,
             tick: 0,
             timeline: 0,
             revision: 0,
@@ -691,6 +692,51 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.pages.can_capture()
     }
 
+    /// Whether the latest immutable page represents the current authority tick.
+    pub fn has_current_publication(&self) -> bool {
+        !self.publication_skipped && self.pages.has_latest()
+    }
+
+    /// Seal a full current baseline after optional publication was skipped.
+    /// Returns false while all reusable pages remain leased. This never runs
+    /// game systems or advances the committed tick.
+    pub fn publish_current_if_available(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+    ) -> bool {
+        if !self.publication_skipped {
+            return self.pages.has_latest();
+        }
+        if !self.pages.can_capture() {
+            return false;
+        }
+        let world = WorldRead {
+            world: &self.world,
+            nonce: self.nonce,
+            system: None,
+        };
+        if self
+            .pages
+            .capture(true, |page, first| {
+                game.capture(
+                    &world,
+                    candidate,
+                    &self.structural_journal,
+                    page,
+                    first,
+                    self.tick,
+                    self.timeline,
+                );
+            })
+            .is_err()
+        {
+            return false;
+        }
+        self.publication_skipped = false;
+        true
+    }
+
     /// Reserved page-ring bytes including game-owned nested page columns.
     pub fn publication_reserved_bytes(&self, page_bytes: impl Fn(&P) -> usize) -> usize {
         self.pages.reserved_bytes(page_bytes)
@@ -710,7 +756,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                 system: None,
             };
             self.pages
-                .capture(|page, first| {
+                .capture(false, |page, first| {
                     game.capture(
                         &world,
                         candidate,
@@ -725,13 +771,13 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         }
     }
 
-    /// Prepare, validate and commit exactly one due tick, then seal one page.
+    /// Prepare, validate and commit exactly one due tick. Publish a page when
+    /// one is free; otherwise the next publication becomes a full baseline.
     /// Game rejection leaves world, tick and published endpoints unchanged.
     ///
     /// # Errors
     ///
-    /// Missing tick-zero baseline, tick overflow, publication pressure or game
-    /// validation refusal.
+    /// Missing tick-zero baseline, tick overflow or game validation refusal.
     ///
     /// # Panics
     ///
@@ -752,9 +798,6 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             .ok_or(TickError::RevisionExhausted)?;
         if self.pages.latest().is_none() {
             return Err(TickError::BaselineRequired);
-        }
-        if !self.pages.can_capture() {
-            return Err(TickError::PublicationBusy);
         }
         game.reset_candidate(candidate);
         for wave in &mut self.waves {
@@ -851,8 +894,12 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             nonce: self.nonce,
             system: None,
         };
+        if !self.pages.can_capture() {
+            self.publication_skipped = true;
+            return Ok(next);
+        }
         self.pages
-            .capture(|page, first| {
+            .capture(self.publication_skipped, |page, first| {
                 game.capture(
                     &world,
                     candidate,
@@ -863,7 +910,8 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                     self.timeline,
                 );
             })
-            .expect("capture reserved before candidate commit");
+            .expect("unleased page remained available during exclusive tick");
+        self.publication_skipped = false;
         Ok(next)
     }
 }

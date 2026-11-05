@@ -78,8 +78,6 @@ pub enum FrameError {
     StaleSequence,
     /// This peer already has a complete admitted frame for the next tick.
     PendingFrame,
-    /// Every publication page is leased, so another due tick cannot commit.
-    PublicationBusy,
     /// The configured per-frame action count was exceeded.
     TooManyActions,
     /// The registered controlled entity is stale or its ownership changed.

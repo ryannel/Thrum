@@ -333,6 +333,10 @@ impl Simulation {
     pub fn can_publish_next(&self) -> bool {
         self.runtime.can_publish_next()
     }
+    /// Whether the latest immutable page covers the current committed tick.
+    pub fn has_current_page(&self) -> bool {
+        self.runtime.has_current_publication()
+    }
     /// Reserved game page and engine lease storage, including nested columns.
     pub fn publication_reserved_bytes(&self) -> usize {
         self.runtime
@@ -412,6 +416,12 @@ impl Simulation {
     pub fn published_page(&mut self) -> Result<PublishedPage, SimError> {
         self.runtime
             .publish_initial(&mut self.rules, &mut self.candidate);
+        if !self
+            .runtime
+            .publish_current_if_available(&mut self.rules, &mut self.candidate)
+        {
+            return Err(SimError::PublicationBusy);
+        }
         self.runtime
             .latest()
             .map(PublishedPage)
@@ -528,9 +538,6 @@ impl Simulation {
         if peer.pending.is_some() {
             return Err(FrameError::PendingFrame);
         }
-        if !self.runtime.can_publish_next() {
-            return Err(FrameError::PublicationBusy);
-        }
         if self
             .runtime
             .read()
@@ -549,7 +556,8 @@ impl Simulation {
     ///
     /// # Errors
     ///
-    /// Invalid commands, candidate numbers, publication pressure or tick overflow.
+    /// Invalid commands, candidate numbers or tick overflow. Optional page
+    /// pressure never rejects an authoritative tick.
     ///
     /// # Panics
     ///
@@ -566,9 +574,7 @@ impl Simulation {
             .step(&mut self.rules, &mut self.candidate)
             .map_err(|error| match error {
                 TickError::TickExhausted | TickError::RevisionExhausted => SimError::TickExhausted,
-                TickError::BaselineRequired | TickError::PublicationBusy => {
-                    SimError::PublicationBusy
-                }
+                TickError::BaselineRequired => SimError::PublicationBusy,
                 TickError::Game(error) => error,
                 TickError::Edit(_) => SimError::InvalidEdit,
             })?;

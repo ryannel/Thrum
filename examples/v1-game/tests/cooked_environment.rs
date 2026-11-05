@@ -178,7 +178,7 @@ fn accepted_a_b_visuals_publish_without_restarting_the_world() {
             .expect("fixture or GPU operation");
         let mut candidate_a = host
             .visual_prepare_inputs()
-            .prepare(product_a)
+            .prepare(product_a.runtime_product())
             .await
             .expect("fixture or GPU operation");
         assert!(
@@ -204,7 +204,7 @@ fn accepted_a_b_visuals_publish_without_restarting_the_world() {
         let expected_revision = *product_b.revision().as_bytes();
         let mut candidate_b = host
             .visual_prepare_inputs()
-            .prepare(product_b)
+            .prepare(product_b.runtime_product())
             .await
             .expect("fixture or GPU operation");
         let mut published = false;
@@ -264,7 +264,7 @@ fn accepted_a_b_visuals_publish_without_restarting_the_world() {
         pin.close().expect("zero-Sun pin close");
         let mut candidate_c = host
             .visual_prepare_inputs()
-            .prepare(product_c)
+            .prepare(product_c.runtime_product())
             .await
             .expect("zero-Sun GPU preparation");
         let mut published = false;

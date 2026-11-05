@@ -1,6 +1,9 @@
 //! Constant-light presentation product from one accepted source pin.
 
 use sha2::{Digest, Sha256};
+use thrum_content_runtime::{
+    EnvironmentProduct as RuntimeEnvironmentProduct, EnvironmentProductRevision, EnvironmentValues,
+};
 use thrum_source::{
     AcceptedSourceRoot, PinnedSource, SourcePath, SourceStoreError, parse_authored_environment,
     parse_environment_light_identity, parse_environment_scene, project_v2_json::parse_project_v2,
@@ -11,67 +14,6 @@ use crate::{RecordReadError, input_hash, read_record};
 const FORMAT: &[u8] = b"thrum.environment-product.v1\0";
 const VALUE_COUNT: usize = 14;
 const ARTIFACT_BYTES: usize = FORMAT.len() + 32 + 4 * 32 + VALUE_COUNT * 8;
-
-/// Checked photometric source quantities retained without display exposure.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct EnvironmentValues {
-    numbers: [f64; VALUE_COUNT],
-}
-
-impl EnvironmentValues {
-    /// Geometric world direction from receiver toward the Sun.
-    pub fn toward_sun(&self) -> [f64; 3] {
-        [self.numbers[0], self.numbers[1], self.numbers[2]]
-    }
-
-    /// Raw perpendicular Sun illuminance in lux.
-    pub fn sun_lux(&self) -> f64 {
-        self.numbers[3]
-    }
-
-    /// Linear Rec.709 colour normalized to unit photometric luminance.
-    pub fn sun_colour(&self) -> [f64; 3] {
-        [self.numbers[4], self.numbers[5], self.numbers[6]]
-    }
-
-    /// Geometric Sun angular radius in radians.
-    pub fn sun_angular_radius(&self) -> f64 {
-        self.numbers[7]
-    }
-
-    /// Isotropic hemispherical ambient irradiance in lux.
-    pub fn ambient_lux(&self) -> [f64; 3] {
-        [self.numbers[8], self.numbers[9], self.numbers[10]]
-    }
-
-    /// Independent linear Rec.709 background radiance in cd/m².
-    pub fn background_radiance(&self) -> [f64; 3] {
-        [self.numbers[11], self.numbers[12], self.numbers[13]]
-    }
-
-    fn valid(self) -> bool {
-        let n = self.numbers;
-        // Match F3's accepted numeric predicate exactly. A different
-        // association or fused operation can reject an accepted boundary.
-        let length = n[0].hypot(n[1]).hypot(n[2]);
-        let luminance = 0.2126 * n[4] + 0.7152 * n[5] + 0.0722 * n[6];
-        n.iter().all(|x| x.is_finite())
-            && (length - 1.0).abs() <= 1e-9
-            && (luminance - 1.0).abs() <= 1e-9
-            && n[3..].iter().all(|x| *x >= 0.0)
-    }
-}
-
-/// Direct-input product identity; unrelated accepted files do not change it.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct EnvironmentProductRevision([u8; 32]);
-
-impl EnvironmentProductRevision {
-    /// Raw digest for a future trusted product manifest.
-    pub fn as_bytes(&self) -> &[u8; 32] {
-        &self.0
-    }
-}
 
 /// Immutable source-bound constant-light product.
 pub struct EnvironmentProduct {
@@ -97,6 +39,11 @@ impl EnvironmentProduct {
         self.values
     }
 
+    /// Drop source-store provenance when handing checked values to a running game.
+    pub fn runtime_product(&self) -> RuntimeEnvironmentProduct {
+        RuntimeEnvironmentProduct::new(self.revision, self.values)
+    }
+
     /// Encode deterministic bytes for a separately authenticated manifest.
     pub fn artifact(&self) -> EnvironmentArtifact {
         let mut bytes = Vec::with_capacity(ARTIFACT_BYTES);
@@ -105,7 +52,7 @@ impl EnvironmentProduct {
         for hash in self.inputs {
             bytes.extend_from_slice(&hash);
         }
-        for number in self.values.numbers {
+        for number in self.values.numbers() {
             bytes.extend_from_slice(&number.to_le_bytes());
         }
         EnvironmentArtifact {
@@ -213,25 +160,23 @@ pub fn cook_render_environment(
     let colour = sun.unit_luminance_linear_rec709();
     let ambient = environment.ambient_irradiance_lux();
     let background = environment.background_radiance_cd_m2();
-    let values = EnvironmentValues {
-        numbers: [
-            direction[0],
-            direction[1],
-            direction[2],
-            sun.perpendicular_illuminance_lux(),
-            colour[0],
-            colour[1],
-            colour[2],
-            sun.angular_radius_rad(),
-            ambient[0],
-            ambient[1],
-            ambient[2],
-            background[0],
-            background[1],
-            background[2],
-        ],
-    };
-    debug_assert!(values.valid());
+    let values = EnvironmentValues::from_numbers([
+        direction[0],
+        direction[1],
+        direction[2],
+        sun.perpendicular_illuminance_lux(),
+        colour[0],
+        colour[1],
+        colour[2],
+        sun.angular_radius_rad(),
+        ambient[0],
+        ambient[1],
+        ambient[2],
+        background[0],
+        background[1],
+        background[2],
+    ])
+    .ok_or(EnvironmentCookError::Value)?;
     let inputs = [
         input_hash(pin, &project_path)?,
         input_hash(pin, &scene_path)?,
@@ -273,7 +218,7 @@ fn derive_revision(inputs: [[u8; 32]; 4]) -> EnvironmentProductRevision {
     for hash in inputs {
         digest.update(hash);
     }
-    EnvironmentProductRevision(digest.finalize().into())
+    EnvironmentProductRevision::from_bytes(digest.finalize().into())
 }
 
 /// Serialized bytes disagree with the trusted manifest or product format.
@@ -319,10 +264,10 @@ pub fn load_environment_artifact(
     for number in &mut numbers {
         *number = f64::from_le_bytes(take::<8>(&mut cursor)?);
     }
-    let values = EnvironmentValues { numbers };
-    if !cursor.is_empty() || !values.valid() {
+    if !cursor.is_empty() {
         return Err(EnvironmentLoadError::Format);
     }
+    let values = EnvironmentValues::from_numbers(numbers).ok_or(EnvironmentLoadError::Format)?;
     Ok(EnvironmentProduct {
         root: expected_root,
         revision: expected_revision,
@@ -361,25 +306,24 @@ mod tests {
 
     #[test]
     fn artifact_numeric_gate_accepts_f3_tolerance_boundary() {
-        let values = EnvironmentValues {
-            numbers: [
-                0.0,
-                1.0,
-                0.0,
-                100_000.0,
-                0.088_462_886_047_803_61,
-                0.060_368_322_438_510_39,
-                12.991_930_293_881_085,
-                0.004_65,
-                1000.0,
-                1000.0,
-                1000.0,
-                0.0,
-                0.0,
-                0.0,
-            ],
-        };
-        assert!(values.valid());
+        let values = EnvironmentValues::from_numbers([
+            0.0,
+            1.0,
+            0.0,
+            100_000.0,
+            0.088_462_886_047_803_61,
+            0.060_368_322_438_510_39,
+            12.991_930_293_881_085,
+            0.004_65,
+            1000.0,
+            1000.0,
+            1000.0,
+            0.0,
+            0.0,
+            0.0,
+        ])
+        .expect("F3 tolerance boundary");
+        assert_eq!(values.toward_sun(), [0.0, 1.0, 0.0]);
     }
 
     struct Fixture(PathBuf);
@@ -535,6 +479,9 @@ mod tests {
         let product_a = cook_render_environment(&mut a_pin).unwrap();
         assert_eq!(product_a.source_root(), a);
         assert_eq!(product_a.values().sun_lux(), 100_000.0);
+        let runtime = product_a.runtime_product();
+        assert_eq!(runtime.revision(), product_a.revision());
+        assert_eq!(runtime.values(), product_a.values());
         let artifact = product_a.artifact();
         let loaded = load_environment_artifact(
             artifact.bytes(),

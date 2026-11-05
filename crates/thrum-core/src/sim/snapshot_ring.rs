@@ -45,17 +45,26 @@ impl<T> SnapshotRing<T> {
     ///
     /// # Errors
     ///
-    /// Every page is leased, so the due tick must be retried after a lease drops.
-    pub fn capture(&mut self, fill: impl FnOnce(&mut T, bool)) -> Result<(), PublicationBusy> {
+    /// Every page is leased, so optional publication must wait for a lease to drop.
+    pub fn capture(
+        &mut self,
+        force_baseline: bool,
+        fill: impl FnOnce(&mut T, bool),
+    ) -> Result<(), PublicationBusy> {
         let index = (0..self.pages.len())
             .map(|offset| (self.cursor + offset) % self.pages.len())
             .find(|&index| reusable(&self.pages[index]))
             .ok_or(PublicationBusy)?;
-        let first = self.latest.is_none();
+        let first = force_baseline || self.latest.is_none();
         let page = Arc::get_mut(&mut self.pages[index]).ok_or(PublicationBusy)?;
         fill(page, first);
         self.cursor = (index + 1) % self.pages.len();
-        self.previous = self.latest.take();
+        if first {
+            self.previous = None;
+            self.latest = None;
+        } else {
+            self.previous = self.latest.take();
+        }
         self.latest = Some(Arc::clone(&self.pages[index]));
         Ok(())
     }
@@ -63,6 +72,11 @@ impl<T> SnapshotRing<T> {
     /// Lease the latest complete endpoint, if one has been published.
     pub fn latest(&self) -> Option<Arc<T>> {
         self.latest.clone()
+    }
+
+    /// Whether this ring has sealed at least one complete endpoint.
+    pub fn has_latest(&self) -> bool {
+        self.latest.is_some()
     }
 
     /// Lease the endpoint immediately before latest, if available.
@@ -92,28 +106,30 @@ mod tests {
     #[test]
     fn held_pages_refuse_without_calling_fill_and_resume_after_release() {
         let mut ring = SnapshotRing::new(|| 0u64);
-        ring.capture(|page, first| {
+        ring.capture(false, |page, first| {
             assert!(first);
             *page = 1;
         })
         .expect("first page");
         let first = ring.latest().expect("first lease");
-        ring.capture(|page, first| {
+        ring.capture(false, |page, first| {
             assert!(!first);
             *page = 2;
         })
         .expect("second page");
         let second = ring.latest().expect("second lease");
-        ring.capture(|page, _| *page = 3).expect("third page");
-        ring.capture(|page, _| *page = 4).expect("fourth page");
+        ring.capture(false, |page, _| *page = 3)
+            .expect("third page");
+        ring.capture(false, |page, _| *page = 4)
+            .expect("fourth page");
         assert_eq!(*first, 1);
         assert_eq!(*second, 2);
         assert_eq!(
-            ring.capture(|_, _| panic!("must not fill")),
+            ring.capture(false, |_, _| panic!("must not fill")),
             Err(PublicationBusy)
         );
         drop(first);
-        ring.capture(|page, _| *page = 5)
+        ring.capture(false, |page, _| *page = 5)
             .expect("released page reusable");
         assert_eq!(*second, 2);
         assert_eq!(*ring.latest().expect("latest"), 5);
@@ -122,21 +138,47 @@ mod tests {
     #[test]
     fn weak_lease_does_not_block_later_reusable_page_or_claim_false_readiness() {
         let mut ring = SnapshotRing::new(|| 0u64);
-        ring.capture(|page, _| *page = 1).expect("first page");
+        ring.capture(false, |page, _| *page = 1)
+            .expect("first page");
         let weak = Arc::downgrade(&ring.latest().expect("first lease"));
-        ring.capture(|page, _| *page = 2).expect("second page");
+        ring.capture(false, |page, _| *page = 2)
+            .expect("second page");
         let second = ring.latest().expect("second lease");
-        ring.capture(|page, _| *page = 3).expect("third page");
-        ring.capture(|page, _| *page = 4).expect("fourth page");
+        ring.capture(false, |page, _| *page = 3)
+            .expect("third page");
+        ring.capture(false, |page, _| *page = 4)
+            .expect("fourth page");
         assert!(!ring.can_capture(), "weak first page must not be selected");
         assert_eq!(
-            ring.capture(|_, _| panic!("must not fill")),
+            ring.capture(false, |_, _| panic!("must not fill")),
             Err(PublicationBusy)
         );
         drop(weak);
         assert!(ring.can_capture());
-        ring.capture(|page, _| *page = 5)
+        ring.capture(false, |page, _| *page = 5)
             .expect("first page is now reusable");
         assert_eq!(*second, 2);
+    }
+
+    #[test]
+    fn forced_baseline_discards_nonadjacent_previous_endpoint() {
+        let mut ring = SnapshotRing::new(|| 0_u64);
+        ring.capture(false, |page, _| *page = 1)
+            .expect("first page");
+        ring.capture(false, |page, _| *page = 2)
+            .expect("second page");
+        assert_eq!(*ring.previous().expect("adjacent previous"), 1);
+        ring.capture(true, |page, baseline| {
+            assert!(baseline);
+            *page = 5;
+        })
+        .expect("gap baseline");
+        assert!(ring.previous().is_none());
+        ring.capture(false, |page, baseline| {
+            assert!(!baseline);
+            *page = 6;
+        })
+        .expect("adjacent continuation");
+        assert_eq!(*ring.previous().expect("new adjacent previous"), 5);
     }
 }

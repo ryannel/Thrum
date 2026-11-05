@@ -16,9 +16,9 @@ pub use native_worktree::{
 };
 pub use render_environment::{
     EnvironmentArtifact, EnvironmentCookError, EnvironmentLoadError, EnvironmentProduct,
-    EnvironmentProductRevision, EnvironmentValues, cook_render_environment,
-    load_environment_artifact,
+    cook_render_environment, load_environment_artifact,
 };
+pub use thrum_content_runtime::{EnvironmentProductRevision, EnvironmentValues};
 use thrum_source::{
     AcceptedSourceRoot, MAX_RECORD_BYTES, PinnedSource, SourcePath, SourceStoreError, parse_scene,
     project_v2_json::parse_project_v2,

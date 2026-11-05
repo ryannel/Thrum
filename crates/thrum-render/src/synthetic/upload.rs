@@ -17,10 +17,13 @@ pub(super) struct InstanceUpload {
     buffer: wgpu::Buffer,
     packed: Vec<u8>,
     staged: Vec<u8>,
+    staged_shadow: Vec<bool>,
     actual: Vec<u32>,
     runs: Vec<UploadRun>,
     material_count: u32,
     instance_count: u32,
+    shadow_clamped: Vec<bool>,
+    active_shadow_clamps: usize,
 }
 
 impl InstanceUpload {
@@ -34,11 +37,26 @@ impl InstanceUpload {
         Self {
             buffer,
             staged: Vec::with_capacity(packed.len()),
+            staged_shadow: Vec::with_capacity(count),
             packed,
             actual: Vec::with_capacity(count),
             runs: Vec::with_capacity(MAX_PARTIAL_WRITES),
             material_count,
             instance_count,
+            shadow_clamped: vec![false; count],
+            active_shadow_clamps: 0,
+        }
+    }
+
+    pub(super) fn seed_shadow_clamps(
+        &mut self,
+        instances: &[InstanceRecord],
+        clamped: impl Fn(&InstanceRecord) -> bool,
+    ) {
+        self.active_shadow_clamps = 0;
+        for (flag, instance) in self.shadow_clamped.iter_mut().zip(instances) {
+            *flag = clamped(instance);
+            self.active_shadow_clamps += usize::from(*flag);
         }
     }
 
@@ -51,16 +69,16 @@ impl InstanceUpload {
         queue: &wgpu::Queue,
         instances: &[InstanceRecord],
         changed_slots: &[u32],
-        in_prepared_envelope: impl Fn(&InstanceRecord) -> bool,
+        shadow_depth_clamped: impl Fn(&InstanceRecord) -> bool,
     ) -> Result<InstanceUploadReport, RenderError> {
         if instances.len() != self.instance_count as usize {
             return Err(RenderError::SceneCapacity);
         }
         self.staged.clear();
+        self.staged_shadow.clear();
         self.actual.clear();
         let mut previous_slot = None;
         let mut dropped_invalid = 0;
-        let mut dropped_shadow_envelope = 0;
         for &slot in changed_slots {
             if slot >= self.instance_count || previous_slot.is_some_and(|old| slot <= old) {
                 return Err(RenderError::InvalidInstanceUpdate);
@@ -71,13 +89,11 @@ impl InstanceUpload {
                 dropped_invalid += 1;
                 continue;
             };
-            if !in_prepared_envelope(&instances[index]) {
-                dropped_shadow_envelope += 1;
-                continue;
-            }
             let start = index * abi::INSTANCE_BYTES;
             if self.packed[start..start + abi::INSTANCE_BYTES] != bytes {
+                let clamped = shadow_depth_clamped(&instances[index]);
                 self.staged.extend_from_slice(&bytes);
+                self.staged_shadow.push(clamped);
                 self.actual.push(slot);
             }
         }
@@ -86,7 +102,7 @@ impl InstanceUpload {
             return Ok(InstanceUploadReport {
                 changed_rows,
                 dropped_invalid,
-                dropped_shadow_envelope,
+                clamped_shadow_casters: self.active_shadow_clamps,
                 writes: 0,
                 bytes: 0,
             });
@@ -110,10 +126,16 @@ impl InstanceUpload {
             }
             apply_to_baseline(&mut self.packed, &self.staged, &self.actual);
         }
+        for (&slot, &clamped) in self.actual.iter().zip(&self.staged_shadow) {
+            let index = slot as usize;
+            self.active_shadow_clamps -= usize::from(self.shadow_clamped[index]);
+            self.active_shadow_clamps += usize::from(clamped);
+            self.shadow_clamped[index] = clamped;
+        }
         Ok(InstanceUploadReport {
             changed_rows,
             dropped_invalid,
-            dropped_shadow_envelope,
+            clamped_shadow_casters: self.active_shadow_clamps,
             writes: if full { 1 } else { self.runs.len() },
             bytes: if full {
                 self.packed.len()

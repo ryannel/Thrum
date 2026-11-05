@@ -8,6 +8,10 @@ game_manifest = "examples/v1-game/Cargo.toml"
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-content-runtime]
+manifest = "crates/thrum-content-runtime/Cargo.toml"
+allowed_workspace_dependencies = []
+
 [packages.thrum-render]
 manifest = "crates/thrum-render/Cargo.toml"
 allowed_workspace_dependencies = []
@@ -27,7 +31,7 @@ allowed_workspace_dependencies = []
 
 [packages.thrum-cook]
 manifest = "crates/thrum-cook/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-source"]
+allowed_workspace_dependencies = ["thrum-content-runtime", "thrum-source"]
 
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
@@ -35,7 +39,7 @@ allowed_workspace_dependencies = []
 
 [packages.v1-game]
 manifest = "examples/v1-game/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-core", "thrum-cook", "thrum-render", "thrum-source"]
+allowed_workspace_dependencies = ["thrum-content-runtime", "thrum-core", "thrum-cook", "thrum-render", "thrum-source"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
 [packages.v1-game-ios]

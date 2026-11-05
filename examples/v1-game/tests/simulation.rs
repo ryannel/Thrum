@@ -9,7 +9,7 @@ use std::{
 
 use thrum_core::{
     ActorId, Origin, PeerId, StableId, WorldEpoch,
-    sim::{ExecutionMode, FrameError, InputFrame},
+    sim::{ExecutionMode, InputFrame},
 };
 use v1_game::simulation::{
     Command, ComponentEntity, Ownership, Position, SimAction, SimConfig, SimError, Simulation,
@@ -328,8 +328,8 @@ fn rolling_history_refuses_a_divergent_same_tick_future() {
 }
 
 #[test]
-fn leased_pages_refuse_tick_and_new_input_until_a_reader_releases_one() {
-    let mut sim = Simulation::new(WorldEpoch(15), config(1)).expect("game");
+fn leased_pages_drop_publication_but_never_block_authority_or_lose_recovery_baseline() {
+    let mut sim = Simulation::new(WorldEpoch(15), config(2)).expect("game");
     let owned = Ownership {
         peer: PeerId(3),
         connection_epoch: 1,
@@ -338,6 +338,7 @@ fn leased_pages_refuse_tick_and_new_input_until_a_reader_releases_one() {
     let mut body = entity(1, 0.0);
     body.ownership = Some(owned);
     let handle = sim.seed(body).expect("body");
+    sim.seed(entity(2, 0.0)).expect("second body");
     sim.register_peer(owned, handle).expect("peer");
     let zero = sim.published_page().expect("baseline");
     sim.step(&[]).expect("tick one");
@@ -346,7 +347,6 @@ fn leased_pages_refuse_tick_and_new_input_until_a_reader_releases_one() {
     let two = sim.published_page().expect("tick two page");
     sim.step(&[]).expect("tick three");
     let three = sim.published_page().expect("tick three page");
-    assert_eq!(sim.step(&[]), Err(SimError::PublicationBusy));
     let input = InputFrame::<SimAction>::new(
         Origin {
             peer: owned.peer,
@@ -357,16 +357,41 @@ fn leased_pages_refuse_tick_and_new_input_until_a_reader_releases_one() {
         4,
         [1.0, 0.0, 0.0],
     );
-    assert_eq!(
-        sim.admit_frame(input.clone()),
-        Err(FrameError::PublicationBusy)
-    );
-    assert_eq!(sim.tick(), 3);
-    drop(zero);
-    sim.admit_frame(input).expect("released page permits input");
-    sim.step(&[]).expect("exact retry");
+    sim.admit_frame(input)
+        .expect("publication pressure does not block input");
+    sim.step(&[])
+        .expect("tick four commits without a free page");
     assert_eq!(sim.tick(), 4);
+    assert!(!sim.has_current_page());
+    assert!(matches!(
+        sim.published_page(),
+        Err(SimError::PublicationBusy)
+    ));
+    let second = sim.handle(StableId(2)).expect("second handle");
+    sim.step(&[Command::Despawn(second)])
+        .expect("churn commits while pages are held");
+    sim.step(&[Command::Spawn(entity(3, 0.0))])
+        .expect("replacement commits while pages are held");
+    assert_eq!(sim.tick(), 6);
+    assert_eq!(zero.id().tick, 0);
     assert_eq!(one.id().tick, 1);
+    assert_eq!(two.id().tick, 2);
+    assert_eq!(three.id().tick, 3);
+    drop(zero);
+    let recovered = sim.published_page().expect("zero-tick recovery page");
+    assert_eq!(sim.tick(), 6, "recovery cannot apply the tick twice");
+    assert_eq!(recovered.id().tick, 6);
+    assert!(recovered.is_baseline());
+    assert_eq!(recovered.len(), 2);
+    assert!(recovered.position(handle).expect("moving body").0[0] > 0.0);
+    assert!(recovered.stable_id(second.slot).is_some());
+    assert_eq!(recovered.stable_id(second.slot), Some(StableId(3)));
+    assert_eq!(recovered.dirty().position().len(), 2);
+    assert_eq!(recovered.structural_events().len(), 2);
+    drop(one);
+    sim.step(&[]).expect("authority continues after release");
+    assert_eq!(sim.tick(), 7);
+    assert!(!sim.published_page().expect("adjacent page").is_baseline());
     assert_eq!(two.id().tick, 2);
     assert_eq!(three.id().tick, 3);
 }

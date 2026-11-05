@@ -24,5 +24,9 @@ struct InstanceRecord {
     let local = n + t*p.x + cross(n,t)*p.y;
     let instance = instances[instance_index];
     if instance.ids.w == 0u { return vec4(2.0, 2.0, 2.0, 1.0); }
-    return shadow_view.light_view_proj * instance.current * vec4(local, 1.0);
+    var clip = shadow_view.light_view_proj * instance.current * vec4(local, 1.0);
+    // Keep the current transform even when a caster leaves the prepared depth range.
+    // Flatten its excess depth onto the nearest cascade plane.
+    clip.z = clamp(clip.z, 0.0, clip.w);
+    return clip;
 }
