@@ -349,3 +349,63 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
         assert_eq!(host.pending_frames(), 0);
     });
 }
+
+#[test]
+#[ignore = "requires a real native GPU adapter for abandoned frame admission"]
+fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+            .await
+            .expect("prepared scene");
+        let advanced = host
+            .advance(Duration::from_nanos(16_666_667))
+            .expect("admit tick before presentation");
+        drop(advanced);
+        assert_eq!(host.tick(), 1);
+        assert_eq!(host.dropped_views(), 1);
+        assert_eq!(host.pending_frames(), 0);
+        let next = host
+            .drive(Duration::from_nanos(33_333_334), None)
+            .expect("next tick still advances and presents");
+        assert_eq!((next.tick, next.completed_ticks), (2, 1));
+        assert!(next.submitted);
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter for queued overload admission"]
+fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+            .await
+            .expect("prepared scene");
+        drop(
+            host.advance(Duration::from_nanos(133_333_334))
+                .expect("eight due, four completed"),
+        );
+        assert_eq!((host.tick(), host.dropped_views()), (4, 1));
+        drop(
+            host.advance(Duration::from_nanos(233_333_334))
+                .expect("new work refused but queued ticks complete"),
+        );
+        assert_eq!((host.tick(), host.dropped_views()), (8, 2));
+    });
+}

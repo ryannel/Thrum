@@ -83,6 +83,10 @@ async fn render_surface(
     )
     .await
     .expect("five prepared passes");
+    let advanced = host
+        .advance(Duration::from_nanos(16_666_667))
+        .expect("world advances before surface acquisition");
+    assert!(advanced.can_acquire_serial());
     let surface = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("surface-format test target"),
         size: wgpu::Extent3d {
@@ -98,14 +102,11 @@ async fn render_surface(
         view_formats: &[],
     });
     let view = surface.create_view(&wgpu::TextureViewDescriptor::default());
-    let report = host
-        .drive(
-            Duration::from_nanos(16_666_667),
-            Some(&SurfaceOutput {
-                view: &view,
-                extent: [SIZE, SIZE],
-            }),
-        )
+    let report = advanced
+        .submit(Some(&SurfaceOutput {
+            view: &view,
+            extent: [SIZE, SIZE],
+        }))
         .expect("one committed presented frame");
     assert!(report.submitted && report.surface_presented);
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
