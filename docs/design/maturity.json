@@ -3,14 +3,14 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-05",
   "contract_revision": "C4",
-  "scope_note": "Historical entries preserve measurements, not current priority. G2R CPU budgets and G3a portable graph pass. G3b is next. No general runtime, real transport, cooked game loop or V1 device budget is qualified.",
+  "scope_note": "Historical entries preserve measurements, not current priority. G2R and G3a speed gates reopened on real-game rows as G2S and G3b. G0 integrity is active. No general runtime, real transport, cooked game loop or iPhone result is qualified.",
   "execution_plan": {
-    "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering and budgets on macOS and physical iPhone; Chrome WebGPU reduced-tier smoke only; then four rendered peers over conditioned native QUIC",
+    "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering, Mac budgets and labelled iPhone proxy rows; Chrome WebGPU smoke; then four rendered peers over conditioned native QUIC. Physical iPhone remains device pending",
     "active": [
-      "G3b display-link frame loop and engine host"
+      "G0 integrity, dead-crate removal and fixed budget baselines"
     ],
     "next_parallel": [
-      "G3c GPU-driven culling after G3b"
+      "G2S realistic simulation rows, then G3b engine frame runtime, G3t tile dataflow and G3c GPU culling"
     ],
     "parked": [
       "A5 in-memory ACK/rebase/retry/reconnect/lane work until G6 real transport",
@@ -24,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G2R CPU budgets and zero warmed allocations pass. G3a graph, live scene data, Metal pixel regressions and CPU encode budget pass; visible surface and V1 device budgets remain open. Parked tracks inactive."
+    "interpretation": "G2R friendly rows are historical. G2S four-peer command and correction rows are open. G3a graph functionality stands, but its complete-frame CPU budget moved to G3b. Mac display and iPhone proxy qualification remain open; parked tracks inactive."
   },
   "v1_slices": {
     "G0_boundary": {
@@ -61,18 +61,18 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "complete_owned_columns_changed_pages_typed_batch_sparse_undo_and_engine_owned_bounded_history_cpu_budget_pass",
+      "implementation": "partial_owned_columns_changed_pages_sparse_undo_and_history; G2S_real_game_budgets_open",
       "functional_validation": "full_dev_check_three_metal_regressions_world_1000_tick_randomized_serial_and_forced_rayon_replay_four_peer_refusal_churn_held_page_zero_warmed_allocations_and_independent_review_no_findings",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
-        "mac": "Apple_M3_Max_G2R_recorded_tick_and_rewind_p95_pass_not_V1_frame_qualified",
+        "mac": "Apple_M3_Max_G2R_easy_rows_only_G2S_real_game_rows_open",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
       "diagnostic_measurement": "See G2R consolidated evidence page for complete-command p50/p95/p99, process-wide allocation counts and paired before/after rewind medians.",
-      "scope": "V1 game owns schema, rules, input and pages; engine owns slot columns, sparse undo, bounded history and page ring. FrameHost waits for G3b; no iPhone claim.",
+      "scope": "V1 game still owns schema, rules, input and page layout; G2S moves publication into the engine. FrameHost waits for G3b; no iPhone result.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md"
       ]
@@ -4344,7 +4344,7 @@
   },
   "platform_tiers": {
     "goal": "full use of each device's hardware; portable is the floor and fallback, never the design target",
-    "apple_tile": "Metal on iPhone, iPad and Apple Silicon Mac; memoryless attachments, merged passes, MetalFX reconstruction and EDR; V1 budget target on macOS and physical iPhone",
+    "apple_tile": "Metal on iPhone, iPad and Apple Silicon Mac; memoryless attachments, merged passes, MetalFX reconstruction and EDR; Mac measured target and labelled iPhone proxy until a physical device exists",
     "android_tile": "Vulkan on Adreno and Mali with transient attachments and ADPF; after V1, unqualified",
     "desktop_high": "Vulkan/D3D12 on NVIDIA, AMD and Intel; visibility buffer, mesh shaders, async compute, ray query, vendor reconstruction and latency APIs; after V1, unqualified",
     "portable": "WebGPU and every native device as reference and fallback; Chrome WebGPU reduced-tier smoke without a V1 frame budget; never limits a native recipe",
