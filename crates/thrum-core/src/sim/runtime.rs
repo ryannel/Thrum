@@ -21,13 +21,15 @@ use rayon::prelude::*;
 use crate::{Handle, StableId, WorldEpoch};
 
 use super::{
-    AccessMode, ComponentKey, ComponentRegistry, Schedule, ScheduleError, SnapshotRing,
+    AccessMode, ComponentKey, ComponentRegistry, DirtyPage, Schedule, ScheduleError, SnapshotRing,
     StructuralChange, SystemId, SystemSpec,
     column_store::TypedStore,
+    publication::{PublicationCapture, PublicationPage},
     registered_world::{
         EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, TentativeDirty,
         WorldCapture, WorldDelta, WorldUndo,
     },
+    snapshot_ring::PAGE_COUNT,
     transaction::{Edit, EditError, EditScratch},
 };
 
@@ -331,14 +333,18 @@ pub trait TickGame<P> {
     /// Copy one complete committed endpoint into an unleased reusable page.
     fn capture(
         &mut self,
-        world: &WorldRead<'_>,
-        candidate: &mut Self::Candidate,
-        events: &[StructuralChange],
-        page: &mut P,
-        first: bool,
-        tick: u64,
-        timeline: u64,
-    );
+        _world: &WorldRead<'_>,
+        _candidate: &mut Self::Candidate,
+        _events: &[StructuralChange],
+        _page: &mut P,
+        _cold: bool,
+        _page_dirty: DirtyPage<'_>,
+        _outbound_dirty: DirtyPage<'_>,
+        _source: Option<&P>,
+        _tick: u64,
+        _timeline: u64,
+    ) {
+    }
 }
 
 /// One game callback bound to its access declaration before schedule compile.
@@ -444,6 +450,36 @@ impl DirectDirty {
     }
 }
 
+struct QueryExtra {
+    words: Vec<u64>,
+    slots: Vec<u32>,
+}
+
+impl QueryExtra {
+    fn new(capacity: usize) -> Self {
+        Self {
+            words: vec![0; capacity.div_ceil(64)],
+            slots: Vec::with_capacity(capacity),
+        }
+    }
+
+    fn mark(&mut self, slot: usize) {
+        let word = &mut self.words[slot / 64];
+        let bit = 1_u64 << (slot % 64);
+        if *word & bit == 0 {
+            *word |= bit;
+            self.slots
+                .push(u32::try_from(slot).expect("validated slot address"));
+        }
+    }
+
+    fn clear(&mut self) {
+        for slot in self.slots.drain(..) {
+            self.words[slot as usize / 64] &= !(1_u64 << (slot % 64));
+        }
+    }
+}
+
 impl TentativeDirty for DirectDirty {
     fn mark_first(&mut self, component: usize, slot: u32) -> bool {
         let word = &mut self.words[component][slot as usize / 64];
@@ -462,6 +498,26 @@ impl TentativeDirty for DirectDirty {
     }
 }
 
+type EnginePageCapture<P> = fn(
+    &mut P,
+    &RegisteredWorld,
+    bool,
+    DirtyPage<'_>,
+    DirtyPage<'_>,
+    Option<&P>,
+    u64,
+    u64,
+    Option<&WorldUndo>,
+    &[StructuralChange],
+);
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum PublicationState {
+    Current,
+    Skipped,
+    SkippedWithUndo,
+}
+
 /// One engine-owned registered world, compiled schedule and leased page ring.
 /// The concrete game supplies no engine-side component or action type.
 pub struct GameRuntime<P, G: TickGame<P>> {
@@ -469,8 +525,9 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     schedule: Schedule,
     waves: Vec<Vec<BoundSystem<P, G>>>,
     pages: SnapshotRing<P>,
+    engine_capture: Option<EnginePageCapture<P>>,
     initial_published: bool,
-    publication_skipped: bool,
+    publication_state: PublicationState,
     rewind_patch_target: Option<u64>,
     tick: u64,
     timeline: u64,
@@ -482,6 +539,7 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     nonce: u64,
     edit_scratch: EditScratch,
     direct_dirty: DirectDirty,
+    query_extra: QueryExtra,
     abort_undo: WorldUndo,
     structural_journal: Vec<StructuralChange>,
 }
@@ -615,12 +673,13 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.delta_ready = false;
         self.world.begin_tick(None);
         self.structural_journal.clear();
-        self.pages.reset_timeline();
         self.initial_published = false;
-        if !self.pages.can_capture() {
-            self.pages = SnapshotRing::new(make_page);
-        }
-        self.publication_skipped = false;
+        self.pages = SnapshotRing::new(
+            self.world.capacity(),
+            self.world.component_count(),
+            make_page,
+        );
+        self.publication_state = PublicationState::Current;
         self.rewind_patch_target = None;
         Ok(())
     }
@@ -658,24 +717,41 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             tick = step.from;
             revision = step.from_revision;
         }
-        let coalesced_component = (steps.len() > 1
-            && steps.iter().all(|step| step.events.is_empty()))
-        .then(|| {
-            steps
-                .iter()
-                .find_map(|step| step.world.first_changed_component())
-        })
-        .flatten()
-        .filter(|&component| {
-            steps.iter().all(|step| {
-                step.world.changes_only(component)
-                    && step.world.can_coalesce_without_drop_order(component)
-            })
-        });
-        if let Some(component) = coalesced_component {
-            self.world.begin_tick(None);
+        let coalesced = steps.len() > 1
+            && steps.iter().all(|step| step.events.is_empty())
+            && (0..self.world.component_count()).all(|component| {
+                steps.iter().all(|step| {
+                    !step.world.has_component_rows(component)
+                        || step.world.can_coalesce_without_drop_order(component)
+                })
+            });
+        for step in steps.iter() {
+            step.world.visit_changed_components(|component, slot| {
+                self.pages.accumulate_component(component, slot);
+            });
+            for event in &step.events {
+                let slot = match event {
+                    StructuralChange::Despawn(handle) | StructuralChange::Spawn(handle) => {
+                        handle.slot
+                    }
+                };
+                self.pages.accumulate_structural(slot);
+            }
+        }
+        self.pages.merge_changes();
+        if coalesced {
+            for component in 0..self.world.component_count() {
+                if steps
+                    .iter()
+                    .any(|step| step.world.has_component_rows(component))
+                {
+                    self.world.begin_tick(None);
+                    for step in steps.iter_mut() {
+                        self.world.restore_first_seen(&mut step.world, component);
+                    }
+                }
+            }
             for step in steps.iter_mut() {
-                self.world.restore_first_seen(&mut step.world, component);
                 step.spent = true;
             }
             self.world.begin_tick(None);
@@ -692,7 +768,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.delta_ready = false;
         self.structural_journal.clear();
         self.pages.reset_timeline();
-        self.publication_skipped = true;
+        self.publication_state = PublicationState::Skipped;
         self.rewind_patch_target = Some(tick);
         Ok(())
     }
@@ -706,7 +782,13 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         source_tick: impl Fn(&P) -> Option<u64>,
         patch: impl FnOnce(&WorldRead<'_>, &mut P, u64, u64, u64, &[RuntimeUndo]),
     ) -> bool {
-        if !self.publication_skipped
+        // Engine pages always diff from the last published endpoint. A spare
+        // old-branch page may be older than that source, so wait until a page
+        // is actually requested or the replay's final tick publishes it.
+        if self.engine_capture.is_some() {
+            return false;
+        }
+        if self.publication_state == PublicationState::Current
             || self.rewind_patch_target != Some(self.tick)
             || steps.first().is_none_or(|first| first.from != self.tick)
         {
@@ -726,7 +808,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         {
             return false;
         }
-        self.publication_skipped = false;
+        self.publication_state = PublicationState::Current;
         self.rewind_patch_target = None;
         true
     }
@@ -790,9 +872,10 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             world,
             schedule,
             waves,
-            pages: SnapshotRing::new(make_page),
+            pages: SnapshotRing::new(capacity, component_count, make_page),
+            engine_capture: None,
             initial_published: false,
-            publication_skipped: false,
+            publication_state: PublicationState::Current,
             rewind_patch_target: None,
             tick: 0,
             timeline: 0,
@@ -806,6 +889,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             nonce,
             edit_scratch: EditScratch::new(capacity, component_count),
             direct_dirty: DirectDirty::new(component_count, capacity),
+            query_extra: QueryExtra::new(capacity),
             abort_undo,
             structural_journal: Vec::with_capacity(128),
         })
@@ -948,10 +1032,30 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         Ok(WriteRead2 {
             first,
             second,
+            indexed: false,
             nonce: self.nonce,
             system,
             marker: PhantomData,
         })
+    }
+
+    /// Prepare a mutable query whose shared component has a registered active
+    /// index. Supplemental rows can still be supplied at visit time for
+    /// candidate-local input or one-shot edits.
+    ///
+    /// # Errors
+    ///
+    /// Access is undeclared, a type is absent, or `U` has no active index.
+    pub fn write_read2_indexed<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static>(
+        &self,
+        system: SystemId,
+    ) -> Result<WriteRead2<T, U>, RuntimeError> {
+        let mut query = self.write_read2::<T, U>(system)?;
+        if !self.world.has_active_index(query.second) {
+            return Err(RuntimeError::UndeclaredAccess);
+        }
+        query.indexed = true;
+        Ok(query)
     }
 
     /// Grant a typed sparse read only when declared in the compiled schedule.
@@ -1048,7 +1152,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
 
     /// Whether the latest immutable page represents the current authority tick.
     pub fn has_current_publication(&self) -> bool {
-        !self.publication_skipped && self.pages.has_latest()
+        self.publication_state == PublicationState::Current && self.pages.has_latest()
     }
 
     /// Seal a full current baseline after optional publication was skipped.
@@ -1059,7 +1163,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         game: &mut G,
         candidate: &mut G::Candidate,
     ) -> bool {
-        if !self.publication_skipped {
+        if self.publication_state == PublicationState::Current {
             return self.pages.has_latest();
         }
         if !self.pages.can_capture() {
@@ -1072,22 +1176,41 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         };
         if self
             .pages
-            .capture(true, |page, first| {
-                game.capture(
-                    &world,
-                    candidate,
-                    &self.structural_journal,
-                    page,
-                    first,
-                    self.tick,
-                    self.timeline,
-                );
+            .capture(|page, cold, page_dirty, outbound_dirty, source| {
+                if let Some(capture) = self.engine_capture {
+                    capture(
+                        page,
+                        &self.world,
+                        cold,
+                        page_dirty,
+                        outbound_dirty,
+                        source,
+                        self.tick,
+                        self.timeline,
+                        (self.publication_state == PublicationState::SkippedWithUndo)
+                            .then_some(&self.abort_undo),
+                        &self.structural_journal,
+                    );
+                } else {
+                    game.capture(
+                        &world,
+                        candidate,
+                        &self.structural_journal,
+                        page,
+                        cold,
+                        page_dirty,
+                        outbound_dirty,
+                        source,
+                        self.tick,
+                        self.timeline,
+                    );
+                }
             })
             .is_err()
         {
             return false;
         }
-        self.publication_skipped = false;
+        self.publication_state = PublicationState::Current;
         self.rewind_patch_target = None;
         true
     }
@@ -1111,16 +1234,34 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                 system: None,
             };
             self.pages
-                .capture(false, |page, first| {
-                    game.capture(
-                        &world,
-                        candidate,
-                        &[],
-                        page,
-                        first,
-                        self.tick,
-                        self.timeline,
-                    );
+                .capture(|page, cold, page_dirty, outbound_dirty, source| {
+                    if let Some(capture) = self.engine_capture {
+                        capture(
+                            page,
+                            &self.world,
+                            cold,
+                            page_dirty,
+                            outbound_dirty,
+                            source,
+                            self.tick,
+                            self.timeline,
+                            None,
+                            &[],
+                        );
+                    } else {
+                        game.capture(
+                            &world,
+                            candidate,
+                            &[],
+                            page,
+                            cold,
+                            page_dirty,
+                            outbound_dirty,
+                            source,
+                            self.tick,
+                            self.timeline,
+                        );
+                    }
                 })
                 .expect("unpublished ring has a free page");
             self.initial_published = true;
@@ -1171,6 +1312,76 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.step_inner(game, candidate, Some(undo), publication)
     }
 
+    fn mark_publication_changes(&mut self) {
+        self.world.visit_changed_components(|component, slot| {
+            self.pages.accumulate_component(component, slot);
+        });
+        for event in &self.structural_journal {
+            let slot = match event {
+                StructuralChange::Despawn(handle) | StructuralChange::Spawn(handle) => handle.slot,
+            };
+            self.pages.accumulate_structural(slot);
+        }
+        self.pages.merge_changes();
+    }
+
+    fn capture_committed(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+        undo: Option<&RuntimeUndo>,
+        publication: PublicationMode,
+    ) {
+        if publication == PublicationMode::Defer || !self.pages.can_capture() {
+            self.publication_state = PublicationState::Skipped;
+            if self.engine_capture.is_some() {
+                if let Some(record) = undo {
+                    self.abort_undo.copy_from(&record.world);
+                }
+                self.publication_state = PublicationState::SkippedWithUndo;
+            }
+            return;
+        }
+        let world = WorldRead {
+            world: &self.world,
+            nonce: self.nonce,
+            system: None,
+        };
+        self.pages
+            .capture(|page, cold, page_dirty, outbound_dirty, source| {
+                if let Some(capture) = self.engine_capture {
+                    let final_undo = undo.map_or(&self.abort_undo, |record| &record.world);
+                    capture(
+                        page,
+                        &self.world,
+                        cold,
+                        page_dirty,
+                        outbound_dirty,
+                        source,
+                        self.tick,
+                        self.timeline,
+                        Some(final_undo),
+                        &self.structural_journal,
+                    );
+                } else {
+                    game.capture(
+                        &world,
+                        candidate,
+                        &self.structural_journal,
+                        page,
+                        cold,
+                        page_dirty,
+                        outbound_dirty,
+                        source,
+                        self.tick,
+                        self.timeline,
+                    );
+                }
+            })
+            .expect("unleased page remained available during exclusive tick");
+        self.publication_state = PublicationState::Current;
+    }
+
     fn step_inner(
         &mut self,
         game: &mut G,
@@ -1190,9 +1401,10 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             return Err(TickError::BaselineRequired);
         }
         self.direct_dirty.clear();
-        let txn_undo = match undo.as_deref_mut() {
-            Some(record) => &mut record.world,
-            None => &mut self.abort_undo,
+        self.query_extra.clear();
+        let (txn_undo, mut undo_events) = match undo.as_deref_mut() {
+            Some(record) => (&mut record.world, Some(&mut record.events)),
+            None => (&mut self.abort_undo, None),
         };
         txn_undo.clear();
         game.reset_candidate(candidate);
@@ -1273,6 +1485,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                                 world: &mut self.world,
                                 undo: txn_undo,
                                 dirty: &mut self.direct_dirty,
+                                query_extra: &mut self.query_extra,
                                 nonce: self.nonce,
                                 system: bound.id,
                             },
@@ -1299,17 +1512,19 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             Ok(Err(error)) => {
                 txn_undo.abort_tentative(&mut self.world);
                 self.direct_dirty.clear();
+                self.query_extra.clear();
                 return Err(error);
             }
             Err(payload) => {
                 txn_undo.abort_tentative(&mut self.world);
                 self.direct_dirty.clear();
+                self.query_extra.clear();
                 resume_unwind(payload);
             }
         }
         let edits = game.edits(candidate);
-        if let Some(record) = undo.as_deref_mut() {
-            record.events.reserve(edits.len());
+        if let Some(events) = undo_events.as_deref_mut() {
+            events.reserve(edits.len());
         }
         self.edit_scratch.apply(
             &mut self.world,
@@ -1318,9 +1533,10 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             next,
             &mut self.structural_journal,
             &self.direct_dirty.slots,
-            undo.as_deref_mut().map(|record| &mut record.world),
+            Some(txn_undo),
         );
         self.direct_dirty.clear();
+        self.mark_publication_changes();
         game.apply(
             &WorldRead {
                 world: &self.world,
@@ -1330,9 +1546,11 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             next,
             candidate,
         );
-        if let Some(record) = undo {
-            record.events.clear();
-            record.events.extend_from_slice(&self.structural_journal);
+        if let Some(events) = undo_events {
+            events.clear();
+            events.extend_from_slice(&self.structural_journal);
+        }
+        if let Some(record) = undo.as_deref_mut() {
             record.from = self.tick;
             record.to = next;
             record.from_revision = self.revision;
@@ -1345,36 +1563,94 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.revision = self.next_revision;
         self.next_revision = following_revision;
         self.delta_ready = true;
-        let world = WorldRead {
-            world: &self.world,
-            nonce: self.nonce,
-            system: None,
-        };
-        if publication == PublicationMode::Defer || !self.pages.can_capture() {
-            self.publication_skipped = true;
-            return Ok(next);
-        }
-        self.pages
-            .capture(self.publication_skipped, |page, first| {
-                game.capture(
-                    &world,
-                    candidate,
-                    &self.structural_journal,
-                    page,
-                    first,
-                    next,
-                    self.timeline,
-                );
-            })
-            .expect("unleased page remained available during exclusive tick");
-        self.publication_skipped = false;
+        self.capture_committed(game, candidate, undo.as_deref(), publication);
         Ok(next)
+    }
+}
+
+fn capture_publication_page(
+    page: &mut PublicationPage,
+    world: &RegisteredWorld,
+    cold: bool,
+    page_dirty: DirtyPage<'_>,
+    outbound_dirty: DirtyPage<'_>,
+    source: Option<&PublicationPage>,
+    tick: u64,
+    timeline: u64,
+    final_undo: Option<&WorldUndo>,
+    final_events: &[StructuralChange],
+) {
+    page.capture(
+        world,
+        PublicationCapture {
+            cold,
+            page_dirty,
+            outbound_dirty,
+            source,
+            tick,
+            timeline,
+            final_undo,
+            final_events,
+        },
+    );
+}
+
+impl<G: TickGame<PublicationPage>> GameRuntime<PublicationPage, G> {
+    /// Construct a registry-selected engine publication ring before the
+    /// registry moves into authority storage. Games supply only their schema
+    /// and rule callbacks; page capture stays inside the engine.
+    ///
+    /// # Errors
+    ///
+    /// Capacity, registration or schedule validation failed.
+    ///
+    /// # Panics
+    ///
+    /// Only if the fixed ring requests more than its prepared page count.
+    pub fn new_published(
+        epoch: WorldEpoch,
+        capacity: usize,
+        registry: ComponentRegistry,
+        systems: Vec<RegisteredSystem<PublicationPage, G>>,
+    ) -> Result<Self, RuntimeError> {
+        let mut prepared = (0..PAGE_COUNT)
+            .map(|_| PublicationPage::new(&registry, epoch, capacity))
+            .collect::<Vec<_>>();
+        let mut runtime = Self::new(epoch, capacity, registry, systems, || {
+            prepared
+                .pop()
+                .expect("one prepared publication per ring page")
+        })?;
+        runtime.engine_capture = Some(capture_publication_page);
+        Ok(runtime)
+    }
+
+    /// Restore a cold authority capture and rebuild engine publication pages.
+    ///
+    /// # Errors
+    ///
+    /// The capture belongs to another runtime or is incompatible.
+    ///
+    /// # Panics
+    ///
+    /// Only if the fixed ring requests more than its prepared page count.
+    pub fn restore_published(&mut self, capture: &RuntimeCapture) -> Result<(), RuntimeError> {
+        let epoch = self.world.epoch();
+        let capacity = self.world.capacity();
+        let mut prepared = (0..PAGE_COUNT)
+            .map(|_| PublicationPage::new(self.world.registry(), epoch, capacity))
+            .collect::<Vec<_>>();
+        self.restore(capture, || {
+            prepared
+                .pop()
+                .expect("replacement publication ring was prepared")
+        })
     }
 }
 
 /// Checked immutable access to committed game components.
 pub struct WorldRead<'a> {
-    world: &'a RegisteredWorld,
+    pub(super) world: &'a RegisteredWorld,
     nonce: u64,
     system: Option<SystemId>,
 }
@@ -1385,6 +1661,7 @@ pub struct WorldTxn<'a> {
     world: &'a mut RegisteredWorld,
     undo: &'a mut WorldUndo,
     dirty: &'a mut DirectDirty,
+    query_extra: &'a mut QueryExtra,
     nonce: u64,
     system: SystemId,
 }
@@ -1393,6 +1670,7 @@ pub struct WorldTxn<'a> {
 pub struct WriteRead2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> {
     first: usize,
     second: usize,
+    indexed: bool,
     nonce: u64,
     system: SystemId,
     marker: PhantomData<(T, U)>,
@@ -1425,8 +1703,92 @@ impl WorldTxn<'_> {
     ) -> Result<(), E> {
         assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
         assert_eq!(query.system, self.system, "query belongs to another system");
-        self.world
-            .visit_mut2(query.first, query.second, self.undo, self.dirty, visit)
+        let mut visit = visit;
+        self.world.visit_mut2_if(
+            query.first,
+            query.second,
+            query.indexed,
+            None,
+            self.undo,
+            self.dirty,
+            &mut (),
+            |(), _, _, _, _| true,
+            |(), handle, id, value, read| visit(handle, id, value, read),
+        )
+    }
+
+    /// Visit selected matching rows in deterministic slot order. Selection
+    /// sees immutable values before any preimage copy; unselected rows never
+    /// enter the undo log. Both callbacks share mutable game scratch in order,
+    /// while the selection callback receives it immutably.
+    ///
+    /// # Errors
+    ///
+    /// The game callback refuses one selected row.
+    ///
+    /// # Panics
+    ///
+    /// The query belongs to a different runtime or system callback.
+    pub fn visit_if<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, C, E>(
+        &mut self,
+        query: &WriteRead2<T, U>,
+        context: &mut C,
+        select: impl FnMut(&C, Handle, StableId, &T, &U) -> bool,
+        visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
+    ) -> Result<(), E> {
+        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
+        assert_eq!(query.system, self.system, "query belongs to another system");
+        self.world.visit_mut2_if(
+            query.first,
+            query.second,
+            query.indexed,
+            None,
+            self.undo,
+            self.dirty,
+            context,
+            select,
+            visit,
+        )
+    }
+
+    /// Visit an indexed shared column plus candidate-supplied physical slots.
+    /// Supplemental slots are copied into preallocated engine scratch before
+    /// the mutable callback begins, so its game context remains unrestricted.
+    /// The selected union is visited once in ascending storage order.
+    ///
+    /// # Errors
+    ///
+    /// The game callback refuses one selected row.
+    ///
+    /// # Panics
+    ///
+    /// The query is foreign, not indexed, or a supplied slot is out of range.
+    pub fn visit_if_indexed<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, C, E>(
+        &mut self,
+        query: &WriteRead2<T, U>,
+        context: &mut C,
+        supplemental: impl FnOnce(&C, &mut dyn FnMut(usize)),
+        select: impl FnMut(&C, Handle, StableId, &T, &U) -> bool,
+        visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
+    ) -> Result<(), E> {
+        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
+        assert_eq!(query.system, self.system, "query belongs to another system");
+        assert!(query.indexed, "query has no active index");
+        self.query_extra.clear();
+        supplemental(context, &mut |slot| self.query_extra.mark(slot));
+        let result = self.world.visit_mut2_if(
+            query.first,
+            query.second,
+            true,
+            Some(&self.query_extra.words),
+            self.undo,
+            self.dirty,
+            context,
+            select,
+            visit,
+        );
+        self.query_extra.clear();
+        result
     }
 }
 
@@ -1468,6 +1830,12 @@ impl<T: Send + Sync + 'static> ColumnRead<'_, T> {
             return Err(RegisteredWorldError::WrongRuntime);
         }
         Ok(self.column.get(slot.handle.slot as usize))
+    }
+
+    /// Read a physical slot in a page capture after the column's permit has
+    /// been checked at binding. Absence also covers a despawned slot.
+    pub fn at_slot(&self, slot: u32) -> Option<&T> {
+        self.column.values().get(slot as usize)?.as_ref()
     }
 }
 
@@ -1651,6 +2019,14 @@ pub struct ReadPermit<T: Send + Sync + 'static> {
     nonce: u64,
     system: SystemId,
     component: usize,
+}
+
+impl<T: Send + Sync + 'static> ReadPermit<T> {
+    /// Component and structural slots accumulated for this bound publication
+    /// read. The dirty view must come from the same runtime callback.
+    pub fn changed_slots<'a>(&self, dirty: DirtyPage<'a>) -> impl Iterator<Item = u32> + 'a {
+        dirty.component_slots(self.component)
+    }
 }
 
 /// Reusable storage-order read of two registered components.

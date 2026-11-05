@@ -31,7 +31,6 @@ const INPUT: SystemId = SystemId(0);
 const INPUT_HEALTH: SystemId = SystemId(4);
 const SIMULATE: SystemId = SystemId(1);
 const RESOLVE: SystemId = SystemId(2);
-const PUBLISH: SystemId = SystemId(3);
 const STRUCTURE: u64 = 7;
 // V1 game policy: bound one axis of admitted player motion in metres/second.
 const MAX_CONTROL_SPEED: f64 = 1_000.0;
@@ -53,7 +52,7 @@ fn setup(
         .register::<Ownership>(ComponentSchemaId(1))
         .map_err(|_| SimError::InvalidConfig)?;
     let velocity = registry
-        .register::<Velocity>(ComponentSchemaId(2))
+        .register_indexed::<Velocity>(ComponentSchemaId(2), |value| *value != Velocity::default())
         .map_err(|_| SimError::InvalidConfig)?;
     let health = registry
         .register::<Health>(ComponentSchemaId(3))
@@ -61,8 +60,23 @@ fn setup(
     let position = registry
         .register::<Position>(ComponentSchemaId(4))
         .map_err(|_| SimError::InvalidConfig)?;
-    let visual = registry
+    registry
         .register::<Visual>(ComponentSchemaId(5))
+        .map_err(|_| SimError::InvalidConfig)?;
+    registry
+        .select_publication::<Position>(true)
+        .map_err(|_| SimError::InvalidConfig)?;
+    registry
+        .select_publication::<Velocity>(false)
+        .map_err(|_| SimError::InvalidConfig)?;
+    registry
+        .select_publication::<Health>(false)
+        .map_err(|_| SimError::InvalidConfig)?;
+    registry
+        .select_publication::<Ownership>(false)
+        .map_err(|_| SimError::InvalidConfig)?;
+    registry
+        .select_publication::<Visual>(false)
         .map_err(|_| SimError::InvalidConfig)?;
     let systems = vec![
         SystemSpec {
@@ -103,6 +117,7 @@ fn setup(
                 component(velocity, Write),
                 component(health, Write),
                 component(ownership, Read),
+                component(ComponentKey::of::<Visual>(), Read),
                 Access {
                     key: AccessKey::External(1),
                     mode: Read,
@@ -114,20 +129,8 @@ fn setup(
             ],
             after: vec![],
         },
-        SystemSpec {
-            id: PUBLISH,
-            stage: Stage::Publish,
-            accesses: vec![
-                component(position, Write),
-                component(velocity, Write),
-                component(health, Write),
-                component(ownership, Read),
-                component(visual, Read),
-            ],
-            after: vec![],
-        },
     ];
-    let [input, input_health, simulate, resolve, publish]: [SystemSpec; 5] =
+    let [input, input_health, simulate, resolve]: [SystemSpec; 4] =
         systems.try_into().map_err(|_| SimError::InvalidConfig)?;
     let systems = vec![
         RegisteredSystem::parallel(input, |game: &Rules, world, executor, tick, output| {
@@ -137,19 +140,13 @@ fn setup(
         RegisteredSystem::parallel(input_health, Rules::input_health),
         RegisteredSystem::direct(simulate, Rules::simulate),
         RegisteredSystem::new(resolve, Rules::resolve),
-        RegisteredSystem::new(publish, |_, _, _, _, _| Ok(())),
     ];
-    let runtime = GameRuntime::new(epoch, config.entity_capacity, registry, systems, || {
-        Page::new(epoch, config.entity_capacity)
-    })
-    .map_err(map_runtime)?;
+    let runtime = GameRuntime::new_published(epoch, config.entity_capacity, registry, systems)
+        .map_err(map_runtime)?;
     let candidate = Candidate::new(
         config.entity_capacity,
         runtime
-            .write_read2::<Position, Velocity>(SIMULATE)
-            .map_err(map_runtime)?,
-        runtime
-            .read2::<Position, Health>(PUBLISH)
+            .write_read2_indexed::<Position, Velocity>(SIMULATE)
             .map_err(map_runtime)?,
     );
     let rules = Rules {
@@ -174,15 +171,6 @@ fn setup(
         structure: runtime
             .structural_permit(RESOLVE, STRUCTURE)
             .map_err(map_runtime)?,
-        position_read: runtime
-            .read_permit::<Position>(PUBLISH)
-            .map_err(map_runtime)?,
-        velocity_read: runtime
-            .read_permit::<Velocity>(PUBLISH)
-            .map_err(map_runtime)?,
-        health_read: runtime
-            .read_permit::<Health>(PUBLISH)
-            .map_err(map_runtime)?,
         input_health_read: runtime
             .read_permit::<Health>(INPUT_HEALTH)
             .map_err(map_runtime)?,
@@ -195,11 +183,8 @@ fn setup(
         resolve_ownership_read: runtime
             .read_permit::<Ownership>(RESOLVE)
             .map_err(map_runtime)?,
-        ownership_read: runtime
-            .read_permit::<Ownership>(PUBLISH)
-            .map_err(map_runtime)?,
         visual_read: runtime
-            .read_permit::<Visual>(PUBLISH)
+            .read_permit::<Visual>(RESOLVE)
             .map_err(map_runtime)?,
     };
     Ok((runtime, rules, candidate))
@@ -311,10 +296,8 @@ impl Simulation {
     ///
     /// The capture belongs to another world epoch, capacity or schema.
     pub fn restore(&mut self, capture: &SimulationCapture) -> Result<(), SimError> {
-        let epoch = self.runtime.epoch();
-        let capacity = self.rules.config.entity_capacity;
         self.runtime
-            .restore(&capture.runtime, || Page::new(epoch, capacity))
+            .restore_published(&capture.runtime)
             .map_err(map_runtime)?;
         self.rules.peers.clone_from(&capture.peers);
         self.rules.resource_revision = capture.resource_revision;
@@ -442,10 +425,10 @@ impl Simulation {
             .stable_id(handle)
             .map_err(|_| SimError::InvalidHandle)?;
         let position = world
-            .with(&self.rules.position_read, handle, |value| *value)
+            .with(&self.rules.resolve_position_read, handle, |value| *value)
             .map_err(|_| SimError::InvalidHandle)?;
         let health = world
-            .with(&self.rules.health_read, handle, |value| value.0)
+            .with(&self.rules.resolve_health_read, handle, |value| value.0)
             .map_err(|_| SimError::InvalidHandle)?;
         Ok(ComponentView {
             handle,
@@ -453,10 +436,10 @@ impl Simulation {
             position,
             health,
             velocity: world
-                .with(&self.rules.velocity_read, handle, |value| *value)
+                .with(&self.rules.resolve_velocity_read, handle, |value| *value)
                 .unwrap_or_default(),
             ownership: world
-                .with(&self.rules.ownership_read, handle, |value| *value)
+                .with(&self.rules.resolve_ownership_read, handle, |value| *value)
                 .ok(),
             visual: world
                 .with(&self.rules.visual_read, handle, |value| value.0)
@@ -498,7 +481,7 @@ impl Simulation {
         let owned = self
             .runtime
             .read()
-            .with(&self.rules.ownership_read, handle, |value| *value)
+            .with(&self.rules.resolve_ownership_read, handle, |value| *value)
             .map_err(|_| SimError::InvalidHandle)?;
         if owned != binding
             || self
@@ -669,7 +652,7 @@ fn validate_frame(
     }
     if runtime
         .read()
-        .with(&rules.ownership_read, peer.handle, |value| *value)
+        .with(&rules.resolve_ownership_read, peer.handle, |value| *value)
         .ok()
         != Some(peer.binding)
     {

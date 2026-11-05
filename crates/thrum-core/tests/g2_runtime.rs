@@ -171,7 +171,10 @@ impl TickGame<Page> for Rules {
         candidate: &mut Candidate,
         _events: &[thrum_core::sim::StructuralChange],
         page: &mut Page,
-        _first: bool,
+        _cold: bool,
+        _page_dirty: thrum_core::sim::DirtyPage<'_>,
+        _outbound_dirty: thrum_core::sim::DirtyPage<'_>,
+        _source: Option<&Page>,
         tick: u64,
         _timeline: u64,
     ) {

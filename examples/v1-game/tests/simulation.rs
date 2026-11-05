@@ -629,10 +629,9 @@ fn rolling_history_reuses_deltas_and_replays_after_churn() {
             usize::try_from(history.latest_tick() - target).expect("retained count"),
         )
         .expect("retained endpoint");
-    let patched = sim.published_page().expect("inverse page patch");
+    let patched = sim.published_page().expect("rewound endpoint");
     assert!(!patched.is_baseline());
     assert_eq!(patched.id().tick, target);
-    assert!(patched.patch_source().is_some());
     let mut original_rows = Vec::new();
     at_target.visit(|handle, id, position, visual| {
         original_rows.push((handle, id, position, visual));
@@ -683,9 +682,9 @@ fn rewind_with_every_page_leased_keeps_authority_live_and_defers_view() {
     history.step(&mut sim, &[]).expect("authority advances");
     assert_eq!(sim.tick(), 2);
     drop(held);
-    let first = sim.published_page().expect("released page baseline");
+    let first = sim.published_page().expect("released page catch-up");
     assert_eq!(first.id().tick, 2);
-    assert!(first.is_baseline());
+    assert!(!first.is_baseline());
 }
 
 #[test]
@@ -807,7 +806,7 @@ fn leased_pages_drop_publication_but_never_block_authority_or_lose_recovery_base
     let recovered = sim.published_page().expect("zero-tick recovery page");
     assert_eq!(sim.tick(), 6, "recovery cannot apply the tick twice");
     assert_eq!(recovered.id().tick, 6);
-    assert!(recovered.is_baseline());
+    assert!(!recovered.is_baseline());
     assert_eq!(recovered.len(), 2);
     assert!(recovered.position(handle).expect("moving body").0[0] > 0.0);
     assert!(recovered.stable_id(second.slot).is_some());
@@ -848,6 +847,99 @@ fn restore_with_every_old_page_leased_keeps_old_views_and_publishes_a_new_baseli
         assert_eq!(page.id().tick, tick as u64);
         assert_eq!(page.position(handle).expect("old body").0[0], tick as f64);
     }
+}
+
+#[test]
+fn restore_rebuilds_warm_unleased_pages_from_cold_authority() {
+    let mut sim = Simulation::new(WorldEpoch(160), config(1)).expect("game");
+    let handle = sim.seed(entity(1, 0.0)).expect("body");
+    sim.published_page().expect("initial page");
+    sim.step(&[Command::SetPosition(handle, Position([1.0, 0.0, 0.0]))])
+        .expect("saved tick");
+    let saved = sim.capture();
+    sim.step(&[Command::SetPosition(handle, Position([9.0, 0.0, 0.0]))])
+        .expect("future tick");
+    sim.restore(&saved).expect("cold restore");
+    let restored = sim.published_page().expect("restored baseline");
+    assert_eq!(restored.position(handle), Some(Position([1.0, 0.0, 0.0])));
+    assert!(restored.is_baseline());
+}
+
+#[test]
+fn delayed_publication_retains_adjacent_previous_transform() {
+    let mut sim = Simulation::new(WorldEpoch(161), config(1)).expect("game");
+    let handle = sim.seed(entity(1, 1.0)).expect("mover");
+    let held = std::array::from_fn::<_, 4, _>(|index| {
+        if index != 0 {
+            sim.step(&[]).expect("published tick");
+        }
+        sim.published_page().expect("held page")
+    });
+    let previous = sim.get(handle).expect("live body").position;
+    sim.step(&[]).expect("authority tick while pages are held");
+    assert!(!sim.has_current_page());
+    drop(held);
+    let recovered = sim.published_page().expect("delayed publication");
+    assert_eq!(recovered.id().tick, 4);
+    assert_eq!(recovered.previous_position(handle), Some(previous));
+}
+
+#[test]
+fn recorded_delayed_publication_retains_adjacent_previous_transform() {
+    let mut sim = Simulation::new(WorldEpoch(162), config(1)).expect("game");
+    let handle = sim.seed(entity(1, 1.0)).expect("mover");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(8).expect("window"))
+        .expect("history");
+    let held = std::array::from_fn::<_, 4, _>(|index| {
+        if index != 0 {
+            history.step(&mut sim, &[]).expect("published history tick");
+        }
+        sim.published_page().expect("held page")
+    });
+    let previous = sim.get(handle).expect("live body").position;
+    history.step(&mut sim, &[]).expect("recorded delayed tick");
+    drop(held);
+    let recovered = sim.published_page().expect("delayed recorded page");
+    assert_eq!(recovered.previous_position(handle), Some(previous));
+}
+
+#[test]
+fn mover_index_tracks_velocity_replacement_and_history_replay() {
+    let mut sim = Simulation::new(WorldEpoch(163), config(1)).expect("game");
+    let handle = sim.seed(entity(1, 0.0)).expect("static body");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(8).expect("window"))
+        .expect("history");
+    history
+        .step(
+            &mut sim,
+            &[Command::SetVelocity(handle, Velocity([3.0, 0.0, 0.0]))],
+        )
+        .expect("start moving");
+    let started = sim.get(handle).expect("mover").position;
+    history.step(&mut sim, &[]).expect("moving tick");
+    let moved = sim.get(handle).expect("mover").position;
+    assert!(moved.0[0] > started.0[0]);
+    history
+        .step(
+            &mut sim,
+            &[Command::SetVelocity(handle, Velocity::default())],
+        )
+        .expect("stop moving");
+    let stopped = sim.get(handle).expect("stopped body").position;
+    history.step(&mut sim, &[]).expect("stationary tick");
+    assert_eq!(sim.get(handle).expect("stationary body").position, stopped);
+    history
+        .rewind(&mut sim, 3)
+        .expect("rewind to moving branch");
+    for _ in 0..3 {
+        assert!(history.replay_next(&mut sim).expect("replay"));
+    }
+    assert_eq!(
+        sim.get(handle).expect("replayed static body").position,
+        stopped
+    );
 }
 
 #[test]
