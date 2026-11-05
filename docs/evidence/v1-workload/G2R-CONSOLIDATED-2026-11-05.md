@@ -4,6 +4,8 @@ Apple M3 Max, release profile, 10,000/100,000 entities with 15% movers. Reproduc
 
 **Qualification:** The complete command after the direct dirty-page path and coalesced, no-drop single-component rewind passed every G2R CPU p95 gate at both history windows, with zero warmed allocations. The preceding full run under shared host load missed the 10k rewind gate at 105 µs p95; the repeat's 10k unrecorded tick p95 of 16.2 µs versus 41.7 µs in that run documents the load change. Both runs and their tails are retained under `tmp/g2r-`. The earlier 27.2 µs churn excursion was a **p99 tail**, not a one-in-five p95 result.
 
+A further complete rerun while the competing benchmark was paused also passed: recorded tick p95 was 23.8/225.6 µs at 10k/100k; rewind-8 p95 was 47.0/656.6 µs at window 16 and 45.6/655.3 µs at window 64. All budgeted cases had zero warmed allocations. The full p50/p95/p99 output, including churn and forced Rayon tails, is `tmp/g2r-quiet-rerun-2026-11-05.log`; this run does not replace the table below.
+
 | Case (count, mode, options) | p50 µs | p95 µs | p99 µs | Allocations |
 | --- | ---: | ---: | ---: | ---: |
 | `tick,10000,Serial,false,false` | 15.2 | 16.2 | 19.3 | 0 |
