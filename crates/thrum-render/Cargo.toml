@@ -33,3 +33,7 @@ harness = false
 [[bench]]
 name = "clustered"
 harness = false
+
+[[bench]]
+name = "visibility"
+harness = false

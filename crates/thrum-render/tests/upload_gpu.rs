@@ -111,3 +111,52 @@ fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
         assert_eq!(moved, pixels(&device, &queue, &prepared, &target));
     });
 }
+
+#[test]
+#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter required for explicit GPU test");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device request succeeds");
+        let mut scene = SyntheticScene::grid(4).unwrap();
+        let mut prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
+            .await
+            .unwrap();
+        let target = OffscreenTarget::new(&device, &prepared, 128, 128).unwrap();
+        let original = pixels(&device, &queue, &prepared, &target);
+        assert_eq!(prepared.active_instance_count(), 4);
+
+        for slot in [0, 2] {
+            scene.instances[slot].ids[3] = 0;
+        }
+        prepared
+            .upload_instances(&queue, &scene.instances, &[0, 2])
+            .unwrap();
+        assert_eq!(prepared.active_instance_count(), 2);
+        let compacted = pixels(&device, &queue, &prepared, &target);
+        let reference = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
+            .await
+            .unwrap();
+        let reference_target = OffscreenTarget::new(&device, &reference, 128, 128).unwrap();
+        assert_eq!(
+            compacted,
+            pixels(&device, &queue, &reference, &reference_target)
+        );
+
+        for slot in [0, 2] {
+            scene.instances[slot].ids[3] = 1;
+        }
+        prepared
+            .upload_instances(&queue, &scene.instances, &[0, 2])
+            .unwrap();
+        assert_eq!(prepared.active_instance_count(), 4);
+        assert_eq!(original, pixels(&device, &queue, &prepared, &target));
+    });
+}

@@ -32,7 +32,7 @@ use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
 use shadow::{ShadowPrepared, ShadowTarget};
-use upload::{InstanceUpload, pack_synthetic_instance};
+use upload::{InstanceUpload, PackedInstances};
 use view::AUX_BYTES;
 pub use view::SyntheticView;
 
@@ -70,7 +70,7 @@ pub struct SyntheticScene {
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
-    /// renders all cubes. The default view uses the historical orthographic
+    /// renders the active prefix. The default view uses the historical orthographic
     /// diagnostic coordinates; callers may supply a checked perspective view.
     /// # Errors
     /// Refuses zero instances or more than one million diagnostic instances.
@@ -438,7 +438,7 @@ impl SceneContext<'_> {
             shadow_target,
             &self.prepared.instances,
             &self.prepared.cube_indices,
-            self.prepared.instance_count,
+            self.prepared.instance_upload.active_count(),
             self.generation,
             index,
             pass,
@@ -635,12 +635,7 @@ impl PreparedSynthetic {
             }
             packed_materials.extend_from_slice(&material.pack(&classes)?);
         }
-        let mut packed_instances = Vec::with_capacity(
-            usize::try_from(instance_bytes).map_err(|_| RenderError::SceneCapacity)?,
-        );
-        for instance in &scene.instances {
-            packed_instances.extend_from_slice(&pack_synthetic_instance(instance, material_count)?);
-        }
+        let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let material_buffer = storage_buffer(
             device,
@@ -653,7 +648,7 @@ impl PreparedSynthetic {
             device,
             queue,
             "synthetic forward opaque",
-            &packed_instances,
+            &packed_instances.bytes,
             instance_bytes,
         );
         let mut instance_upload = InstanceUpload::new(
@@ -1042,6 +1037,10 @@ impl PreparedSynthetic {
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
         self.cluster_compute.is_some()
+    }
+    /// Number of active instance rows submitted by each opaque and shadow draw.
+    pub fn active_instance_count(&self) -> u32 {
+        self.instance_upload.active_count()
     }
     /// Whether the prepared frame records two Sun cascade passes.
     pub fn shadowed(&self) -> bool {
@@ -1753,7 +1752,7 @@ impl PreparedSynthetic {
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, &self.instances, &[]);
         pass.set_index_buffer(self.cube_indices.slice(..), wgpu::IndexFormat::Uint16);
-        pass.draw_indexed(0..36, 0, 0..self.instance_count);
+        pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
         Ok(())
     }
 
