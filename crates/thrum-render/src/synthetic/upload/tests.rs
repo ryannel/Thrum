@@ -1,4 +1,4 @@
-use super::{MAX_PARTIAL_WRITES, apply_to_baseline, build_runs, pack_synthetic_instance};
+use super::{MAX_PARTIAL_WRITES, PackedInstances, build_runs, pack_synthetic_instance};
 use crate::{abi, synthetic::RenderError};
 
 #[test]
@@ -20,19 +20,22 @@ fn changed_slots_form_bounded_contiguous_writes() {
 }
 
 #[test]
-fn packed_rows_update_only_named_baseline_slots() {
-    let mut baseline = vec![0; 4 * abi::INSTANCE_BYTES];
-    let staged = vec![7; 2 * abi::INSTANCE_BYTES];
-    apply_to_baseline(&mut baseline, &staged, &[1, 3]);
-    for (slot, row) in baseline
-        .as_chunks::<{ abi::INSTANCE_BYTES }>()
-        .0
-        .iter()
-        .enumerate()
-    {
-        assert!(
-            row.iter()
-                .all(|byte| *byte == if slot % 2 == 0 { 0 } else { 7 })
+fn packed_rows_put_active_slots_first_without_changing_logical_identity() {
+    let mut instances: Vec<_> = (0..4)
+        .map(|slot| abi::InstanceRecord::identity(slot, 0))
+        .collect();
+    instances[1].ids[3] = 0;
+    instances[3].ids[3] = 0;
+    let packed = PackedInstances::new(&instances, 1).unwrap();
+    assert_eq!(packed.active_count, 2);
+    assert_eq!(packed.physical_to_slot, [0, 2, 1, 3]);
+    assert_eq!(packed.slot_to_physical, [0, 2, 1, 3]);
+    let (rows, remainder) = packed.bytes.as_chunks::<{ abi::INSTANCE_BYTES }>();
+    assert_eq!(remainder, []);
+    for (row, &logical) in rows.iter().zip(&packed.physical_to_slot) {
+        assert_eq!(
+            *row,
+            pack_synthetic_instance(&instances[logical as usize], 1).unwrap()
         );
     }
 }

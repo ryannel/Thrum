@@ -13,15 +13,69 @@ struct UploadRun {
     destination: u32,
 }
 
+pub(super) struct PackedInstances {
+    pub(super) bytes: Vec<u8>,
+    physical_to_slot: Vec<u32>,
+    slot_to_physical: Vec<u32>,
+    active_count: u32,
+}
+
+impl PackedInstances {
+    pub(super) fn new(
+        instances: &[InstanceRecord],
+        material_count: u32,
+    ) -> Result<Self, RenderError> {
+        let count = u32::try_from(instances.len()).map_err(|_| RenderError::SceneCapacity)?;
+        let mut physical_to_slot = Vec::with_capacity(instances.len());
+        for active in [true, false] {
+            for (slot, instance) in instances.iter().enumerate() {
+                if (instance.ids[3] != 0) == active {
+                    physical_to_slot
+                        .push(u32::try_from(slot).map_err(|_| RenderError::SceneCapacity)?);
+                }
+            }
+        }
+        let active_count = u32::try_from(
+            instances
+                .iter()
+                .filter(|instance| instance.ids[3] != 0)
+                .count(),
+        )
+        .map_err(|_| RenderError::SceneCapacity)?;
+        let mut slot_to_physical = vec![0; instances.len()];
+        let mut bytes = Vec::with_capacity(instances.len() * abi::INSTANCE_BYTES);
+        for (physical, &slot) in physical_to_slot.iter().enumerate() {
+            slot_to_physical[slot as usize] =
+                u32::try_from(physical).map_err(|_| RenderError::SceneCapacity)?;
+            bytes.extend_from_slice(&pack_synthetic_instance(
+                &instances[slot as usize],
+                material_count,
+            )?);
+        }
+        debug_assert_eq!(physical_to_slot.len(), count as usize);
+        Ok(Self {
+            bytes,
+            physical_to_slot,
+            slot_to_physical,
+            active_count,
+        })
+    }
+}
+
 pub(super) struct InstanceUpload {
     buffer: wgpu::Buffer,
     packed: Vec<u8>,
     staged: Vec<u8>,
     staged_shadow: Vec<bool>,
-    actual: Vec<u32>,
+    valid_slots: Vec<u32>,
+    dirty_physical: Vec<u32>,
     runs: Vec<UploadRun>,
     material_count: u32,
     instance_count: u32,
+    physical_to_slot: Vec<u32>,
+    slot_to_physical: Vec<u32>,
+    active_slots: Vec<bool>,
+    active_count: u32,
     shadow_clamped: Vec<bool>,
     active_shadow_clamps: usize,
 }
@@ -29,20 +83,29 @@ pub(super) struct InstanceUpload {
 impl InstanceUpload {
     pub(super) fn new(
         buffer: wgpu::Buffer,
-        packed: Vec<u8>,
+        initial: PackedInstances,
         material_count: u32,
         instance_count: u32,
     ) -> Self {
         let count = instance_count as usize;
+        let mut active_slots = vec![false; count];
+        for &slot in &initial.physical_to_slot[..initial.active_count as usize] {
+            active_slots[slot as usize] = true;
+        }
         Self {
             buffer,
-            staged: Vec::with_capacity(packed.len()),
+            staged: Vec::with_capacity(initial.bytes.len()),
             staged_shadow: Vec::with_capacity(count),
-            packed,
-            actual: Vec::with_capacity(count),
+            packed: initial.bytes,
+            valid_slots: Vec::with_capacity(count),
+            dirty_physical: Vec::with_capacity(count * 3),
             runs: Vec::with_capacity(MAX_PARTIAL_WRITES),
             material_count,
             instance_count,
+            physical_to_slot: initial.physical_to_slot,
+            slot_to_physical: initial.slot_to_physical,
+            active_slots,
+            active_count: initial.active_count,
             shadow_clamped: vec![false; count],
             active_shadow_clamps: 0,
         }
@@ -64,6 +127,10 @@ impl InstanceUpload {
         &self.buffer
     }
 
+    pub(super) fn active_count(&self) -> u32 {
+        self.active_count
+    }
+
     pub(super) fn replace(
         &mut self,
         queue: &wgpu::Queue,
@@ -76,7 +143,8 @@ impl InstanceUpload {
         }
         self.staged.clear();
         self.staged_shadow.clear();
-        self.actual.clear();
+        self.valid_slots.clear();
+        self.dirty_physical.clear();
         let mut previous_slot = None;
         let mut dropped_invalid = 0;
         for &slot in changed_slots {
@@ -89,15 +157,15 @@ impl InstanceUpload {
                 dropped_invalid += 1;
                 continue;
             };
-            let start = index * abi::INSTANCE_BYTES;
+            let start = self.slot_to_physical[index] as usize * abi::INSTANCE_BYTES;
             if self.packed[start..start + abi::INSTANCE_BYTES] != bytes {
                 let clamped = shadow_depth_clamped(&instances[index]);
                 self.staged.extend_from_slice(&bytes);
                 self.staged_shadow.push(clamped);
-                self.actual.push(slot);
+                self.valid_slots.push(slot);
             }
         }
-        let changed_rows = self.actual.len();
+        let changed_rows = self.valid_slots.len();
         if changed_rows == 0 {
             return Ok(InstanceUploadReport {
                 changed_rows,
@@ -107,26 +175,62 @@ impl InstanceUpload {
                 bytes: 0,
             });
         }
-        let too_many_runs = build_runs(&self.actual, &mut self.runs);
-        let full = too_many_runs || changed_rows > instances.len() / 2;
-        // Slot ordering is valid and malformed presentation rows were dropped.
-        // No GPU write or baseline mutation occurs on a rejected update.
+        let (rows, remainder) = self.staged.as_chunks::<{ abi::INSTANCE_BYTES }>();
+        debug_assert_eq!(remainder, []);
+        for (&slot, row) in self.valid_slots.iter().zip(rows) {
+            let logical = slot as usize;
+            let new_active = instances[logical].ids[3] != 0;
+            let old_physical = self.slot_to_physical[logical];
+            if new_active != self.active_slots[logical] {
+                let boundary = if new_active {
+                    let boundary = self.active_count;
+                    self.active_count += 1;
+                    boundary
+                } else {
+                    self.active_count -= 1;
+                    self.active_count
+                };
+                swap_physical(
+                    &mut self.packed,
+                    &mut self.physical_to_slot,
+                    &mut self.slot_to_physical,
+                    &mut self.dirty_physical,
+                    old_physical,
+                    boundary,
+                );
+            }
+            let physical = self.slot_to_physical[logical];
+            let start = physical as usize * abi::INSTANCE_BYTES;
+            self.packed[start..start + abi::INSTANCE_BYTES].copy_from_slice(row);
+            self.active_slots[logical] = new_active;
+            self.dirty_physical.push(physical);
+        }
+        // Stable all-active scenes preserve logical order. Avoid sorting the
+        // common sparse-motion path; churn can disorder physical rows.
+        if self
+            .dirty_physical
+            .windows(2)
+            .any(|pair| pair[0] >= pair[1])
+        {
+            self.dirty_physical.sort_unstable();
+            self.dirty_physical.dedup();
+        }
+        let too_many_runs = build_runs(&self.dirty_physical, &mut self.runs);
+        let full = too_many_runs || self.dirty_physical.len() > instances.len() / 2;
         if full {
-            apply_to_baseline(&mut self.packed, &self.staged, &self.actual);
             queue.write_buffer(&self.buffer, 0, &self.packed);
         } else {
             for run in &self.runs {
-                let start = run.source.start * abi::INSTANCE_BYTES;
-                let end = run.source.end * abi::INSTANCE_BYTES;
+                let start = run.destination as usize * abi::INSTANCE_BYTES;
+                let end = start + (run.source.end - run.source.start) * abi::INSTANCE_BYTES;
                 queue.write_buffer(
                     &self.buffer,
                     u64::from(run.destination) * abi::INSTANCE_BYTES as u64,
-                    &self.staged[start..end],
+                    &self.packed[start..end],
                 );
             }
-            apply_to_baseline(&mut self.packed, &self.staged, &self.actual);
         }
-        for (&slot, &clamped) in self.actual.iter().zip(&self.staged_shadow) {
+        for (&slot, &clamped) in self.valid_slots.iter().zip(&self.staged_shadow) {
             let index = slot as usize;
             self.active_shadow_clamps -= usize::from(self.shadow_clamped[index]);
             self.active_shadow_clamps += usize::from(clamped);
@@ -140,10 +244,36 @@ impl InstanceUpload {
             bytes: if full {
                 self.packed.len()
             } else {
-                self.staged.len()
+                self.dirty_physical.len() * abi::INSTANCE_BYTES
             },
         })
     }
+}
+
+fn swap_physical(
+    packed: &mut [u8],
+    physical_to_slot: &mut [u32],
+    slot_to_physical: &mut [u32],
+    dirty_physical: &mut Vec<u32>,
+    first: u32,
+    second: u32,
+) {
+    if first == second {
+        return;
+    }
+    let a = first as usize;
+    let b = second as usize;
+    let slot_a = physical_to_slot[a];
+    let slot_b = physical_to_slot[b];
+    physical_to_slot.swap(a, b);
+    slot_to_physical[slot_a as usize] = second;
+    slot_to_physical[slot_b as usize] = first;
+    let start_a = a * abi::INSTANCE_BYTES;
+    let start_b = b * abi::INSTANCE_BYTES;
+    for byte in 0..abi::INSTANCE_BYTES {
+        packed.swap(start_a + byte, start_b + byte);
+    }
+    dirty_physical.extend([first, second]);
 }
 
 fn build_runs(actual: &[u32], runs: &mut Vec<UploadRun>) -> bool {
@@ -164,15 +294,6 @@ fn build_runs(actual: &[u32], runs: &mut Vec<UploadRun>) -> bool {
         }
     }
     too_many
-}
-
-fn apply_to_baseline(packed: &mut [u8], staged: &[u8], actual: &[u32]) {
-    let (rows, remainder) = staged.as_chunks::<{ abi::INSTANCE_BYTES }>();
-    debug_assert_eq!(remainder, []);
-    for (&slot, row) in actual.iter().zip(rows) {
-        let start = slot as usize * abi::INSTANCE_BYTES;
-        packed[start..start + abi::INSTANCE_BYTES].copy_from_slice(row);
-    }
 }
 
 pub(super) fn pack_synthetic_instance(
