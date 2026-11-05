@@ -9,7 +9,7 @@ use std::{
 };
 
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
-use v1_game::{FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
     application::ApplicationHandler,
@@ -232,7 +232,7 @@ impl App {
                 .create_window(
                     Window::default_attributes()
                         .with_title("Thrum V1 — 10k world / clustered forward+")
-                        .with_inner_size(winit::dpi::PhysicalSize::new(1280, 720)),
+                        .with_inner_size(winit::dpi::PhysicalSize::new(1920, 1080)),
                 )
                 .map_err(|error| format!("window: {error}"))?,
         );
@@ -272,10 +272,13 @@ impl App {
         let mut host = pollster::block_on(FrameHost::new(
             &device,
             &queue,
-            Some(SurfaceProfile {
-                format: config.format,
-                extent: [config.width, config.height],
-            }),
+            FrameConfig {
+                render_extent: [1920, 1080],
+                surface: Some(SurfaceProfile {
+                    format: config.format,
+                    extent: [config.width, config.height],
+                }),
+            },
         ))?;
         let extract_wake = wake.clone();
         host.enable_native_worker(move || {

@@ -16,7 +16,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use v1_game::{FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
 const FRAMES: usize = 600;
 const REPORT_NAME: &str = "thrum-v1-ios-report.txt";
@@ -164,10 +164,13 @@ impl App {
             self.host = Some(pollster::block_on(FrameHost::new(
                 device,
                 queue,
-                Some(SurfaceProfile {
-                    format: config.format,
-                    extent: [config.width, config.height],
-                }),
+                FrameConfig {
+                    render_extent: [640, 360],
+                    surface: Some(SurfaceProfile {
+                        format: config.format,
+                        extent: [config.width, config.height],
+                    }),
+                },
             ))?);
             self.origin = Instant::now();
             self.last_call = Duration::ZERO;

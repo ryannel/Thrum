@@ -41,7 +41,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             })
             .await
             .expect("device request succeeds");
-        let mut host = FrameHost::new(&device, &queue, None)
+        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("prepared 10k scene");
         host.enable_projection()
@@ -129,9 +129,10 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device without timestamp queries");
-        let mut plain = FrameHost::new(&plain_device, &plain_queue, None)
-            .await
-            .expect("same prepared scene without timestamps");
+        let mut plain =
+            FrameHost::new(&plain_device, &plain_queue, v1_game::FrameConfig::default())
+                .await
+                .expect("same prepared scene without timestamps");
         assert!(
             plain
                 .drive(Duration::from_nanos(16_666_667), None)
@@ -171,7 +172,7 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("native device");
-        let mut host = FrameHost::new(&device, &queue, None)
+        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("prepared game host");
         let initial = host.controlled_position().expect("seeded player");
@@ -217,7 +218,7 @@ fn ready_worker_view_does_not_skip_the_next_committed_tick() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("native device");
-        let mut host = FrameHost::new(&device, &queue, None)
+        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("prepared game");
         let (wake, woke) = mpsc::sync_channel(2);
@@ -264,7 +265,7 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, None)
+        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("prepared scene");
         let (wake, awakened) = mpsc::sync_channel::<()>(0);
@@ -329,7 +330,7 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
         awakened
             .recv_timeout(Duration::from_secs(2))
             .expect("release the latest worker wake before teardown");
-        let mut serial = FrameHost::new(&device, &queue, None)
+        let mut serial = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("same serial fixture");
         serial
@@ -374,9 +375,16 @@ fn native_view_beyond_two_ticks_refreshes_from_the_latest_committed_world() {
             view_formats: &[],
         });
         let view = target.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut host = FrameHost::new(&device, &queue, Some(SurfaceProfile { format, extent }))
-            .await
-            .expect("prepared scene and presenter");
+        let mut host = FrameHost::new(
+            &device,
+            &queue,
+            v1_game::FrameConfig {
+                surface: Some(SurfaceProfile { format, extent }),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("prepared scene and presenter");
         host.enable_native_worker(|| {}).expect("worker");
         let first_time = Duration::from_nanos(16_666_667);
         host.drive(first_time, None).expect("dispatch first view");
@@ -455,9 +463,16 @@ fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
             view: &view,
             extent,
         };
-        let mut host = FrameHost::new(&device, &queue, Some(SurfaceProfile { format, extent }))
-            .await
-            .expect("prepared scene and presenter");
+        let mut host = FrameHost::new(
+            &device,
+            &queue,
+            v1_game::FrameConfig {
+                surface: Some(SurfaceProfile { format, extent }),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("prepared scene and presenter");
         let (wake, awakened) = mpsc::sync_channel::<()>(0);
         host.enable_native_worker(move || {
             let _ = wake.send(());

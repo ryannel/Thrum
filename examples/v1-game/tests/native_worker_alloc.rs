@@ -78,7 +78,7 @@ fn bounded_native_handoff_reports_main_and_worker_allocation_cost() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, None)
+        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("prepared V1 scene");
         let wakes = Arc::new(AtomicU64::new(0));

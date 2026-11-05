@@ -94,7 +94,7 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, None)
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
         let before = host.capture_pixels().expect("initial capture");
@@ -141,7 +141,7 @@ fn capture_applies_a_reclaimed_worker_view_even_when_its_tick_is_current() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, None)
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
         let before = host.scene.instances[0].current[3][0];
@@ -173,7 +173,7 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, None)
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
         let zero = host.sim.published_page().expect("baseline lease");
@@ -216,7 +216,7 @@ fn worker_result_from_a_retired_visual_generation_resets_pose_history() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, None)
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
         host.enable_native_worker(|| {}).expect("worker");

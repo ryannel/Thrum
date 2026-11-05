@@ -7,7 +7,7 @@ use std::{num::NonZeroUsize, time::Duration};
 use thrum_core::{StableId, sim::ExecutionMode};
 use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
 use v1_game::{
-    FrameHost, FrameSample, SurfaceOutput,
+    FrameConfig, FrameHost, FrameSample, SurfaceOutput,
     simulation::{Command, ComponentEntity, Position, Velocity},
     simulation_with_count,
 };
@@ -137,7 +137,12 @@ fn game_restore_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
     });
 }
 
-fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surface: bool) {
+fn measure(
+    bencher: divan::Bencher<'_, '_>,
+    gpu_timestamps: bool,
+    render_extent: [u32; 2],
+    surface_extent: Option<[u32; 2]>,
+) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter =
         pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
@@ -151,12 +156,12 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surfac
         ..Default::default()
     }))
     .expect("device request succeeds");
-    let surface = present_surface.then(|| {
+    let surface = surface_extent.map(|extent| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("V1 benchmark presentation target"),
             size: wgpu::Extent3d {
-                width: 1280,
-                height: 720,
+                width: extent[0],
+                height: extent[1],
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -170,26 +175,33 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surfac
     let surface_view = surface
         .as_ref()
         .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
-    let profile = present_surface.then_some(SurfaceProfile {
+    let profile = surface_extent.map(|extent| SurfaceProfile {
         format: wgpu::TextureFormat::Bgra8Unorm,
-        extent: [1280, 720],
+        extent,
     });
-    let mut host = pollster::block_on(FrameHost::new(&device, &queue, profile))
-        .expect("the prepared V1 workload must fit the adapter");
+    let mut host = pollster::block_on(FrameHost::new(
+        &device,
+        &queue,
+        FrameConfig {
+            render_extent,
+            surface: profile,
+        },
+    ))
+    .expect("the prepared V1 workload must fit the adapter");
     let device_ref = &device;
     let mut now = Duration::ZERO;
     let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
     bencher.bench_local(|| {
         now += Duration::from_nanos(16_666_667);
-        let output = surface_view.as_ref().map(|view| SurfaceOutput {
-            view,
-            extent: [1280, 720],
-        });
+        let output = surface_view
+            .as_ref()
+            .zip(surface_extent)
+            .map(|(view, extent)| SurfaceOutput { view, extent });
         let frame = host
             .drive(now, output.as_ref())
             .expect("the measured fixed-clock host must keep progressing");
         assert!(frame.submitted, "one update gets a free view slot");
-        assert_eq!(frame.surface_presented, present_surface);
+        assert_eq!(frame.surface_presented, surface_extent.is_some());
         let complete = loop {
             if let Some(sample) = host.poll_completed().expect("GPU progress") {
                 break sample;
@@ -204,14 +216,19 @@ fn measure(bencher: divan::Bencher<'_, '_>, gpu_timestamps: bool, present_surfac
         samples.push(complete);
         divan::black_box(complete);
     });
-    report_frame_cpu(&samples, gpu_timestamps, present_surface);
+    report_frame_cpu(&samples, gpu_timestamps, render_extent, surface_extent);
 }
 
 #[expect(
     clippy::print_stderr,
     reason = "the explicit integrated frame benchmark reports its measured CPU stages"
 )]
-fn report_frame_cpu(samples: &[FrameSample], gpu_timestamps: bool, present_surface: bool) {
+fn report_frame_cpu(
+    samples: &[FrameSample],
+    gpu_timestamps: bool,
+    render_extent: [u32; 2],
+    surface_extent: Option<[u32; 2]>,
+) {
     if samples.is_empty() {
         return;
     }
@@ -225,10 +242,12 @@ fn report_frame_cpu(samples: &[FrameSample], gpu_timestamps: bool, present_surfa
     let encode = percentile(|sample| sample.encode_cpu.as_secs_f64() * 1e6);
     let combined = percentile(|sample| (sample.upload_cpu + sample.encode_cpu).as_secs_f64() * 1e6);
     eprintln!(
-        "V1 frame CPU n={} timestamps={} surface={} live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us",
+        "V1 frame CPU n={} render={}x{} timestamps={} surface={:?} live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us",
         samples.len(),
+        render_extent[0],
+        render_extent[1],
         gpu_timestamps,
-        present_surface,
+        surface_extent,
         view.0,
         view.1,
         upload.0,
@@ -270,15 +289,20 @@ fn report_frame_cpu(samples: &[FrameSample], gpu_timestamps: bool, present_surfa
 
 #[divan::bench]
 fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, true, false);
+    measure(bencher, true, [640, 360], None);
 }
 
 #[divan::bench]
 fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, false, false);
+    measure(bencher, false, [640, 360], None);
 }
 
 #[divan::bench]
 fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, true, true);
+    measure(bencher, true, [640, 360], Some([1280, 720]));
+}
+
+#[divan::bench]
+fn assembled_frame_1080p_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
+    measure(bencher, true, [1920, 1080], Some([1920, 1080]));
 }

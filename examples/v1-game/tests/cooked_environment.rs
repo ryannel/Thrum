@@ -173,7 +173,7 @@ fn accepted_a_b_visuals_publish_without_restarting_the_world() {
             })
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, None)
+        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
             .await
             .expect("fixture or GPU operation");
         let mut candidate_a = host
