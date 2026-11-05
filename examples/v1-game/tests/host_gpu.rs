@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
 use v1_game::{FrameHost, FrameSample, SurfaceOutput};
 
 fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
@@ -36,7 +36,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             .expect("native adapter required for explicit GPU test");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features: DeviceCapabilities::requested_timing_features(&adapter),
                 ..Default::default()
             })
             .await
@@ -453,7 +453,7 @@ fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
             .expect("native adapter");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features: DeviceCapabilities::requested_timing_features(&adapter),
                 ..Default::default()
             })
             .await

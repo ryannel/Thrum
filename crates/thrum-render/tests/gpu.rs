@@ -30,7 +30,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             .await
             .expect("native adapter required for explicit GPU test");
         let info = adapter.get_info();
-        let features = GpuTimings::requested_features(&adapter);
+        let features = DeviceCapabilities::requested_timing_features(&adapter);
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 required_features: features,
@@ -93,10 +93,10 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             [(0, 1)]
         );
         let mut pixels = target.readback(&device);
-        let mut timings = GpuTimings::new(&device, &queue, 41, 2).unwrap();
+        let mut timings = GpuTimings::new(&capabilities, &queue, 2).unwrap();
         let enabled = timings.is_enabled();
         if enabled {
-            let mut one_pass = GpuTimings::new(&device, &queue, 41, 1).unwrap();
+            let mut one_pass = GpuTimings::new(&capabilities, &queue, 1).unwrap();
             let mut encoder =
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             assert!(matches!(
@@ -516,7 +516,8 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .unwrap();
-        let mut disabled = GpuTimings::new(&plain_device, &plain_queue, 42, 1).unwrap();
+        let plain_capabilities = DeviceCapabilities::capture(&adapter, &plain_device, 42);
+        let mut disabled = GpuTimings::new(&plain_capabilities, &plain_queue, 1).unwrap();
         assert!(!disabled.is_enabled());
         assert!(disabled.pass_writes(42, "unsupported").unwrap().is_none());
         disabled.discard_unsubmitted(42).unwrap();

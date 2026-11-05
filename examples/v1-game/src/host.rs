@@ -512,9 +512,8 @@ impl VisualPrepareInputs {
                 .map_err(|error| format!("cooked target: {error:?}"))?,
                 presentation: None,
                 timings: GpuTimings::new(
-                    &self.device,
+                    &self.capabilities,
                     &self.queue,
-                    GENERATION,
                     prepared.scene_pass_count() + u32::from(self.surface),
                 )
                 .map_err(|error| format!("cooked timings: {error:?}"))?,
@@ -585,6 +584,13 @@ impl FrameHost {
     /// Device generation shared by this provisional V1 host and its pipelines.
     pub const DEVICE_GENERATION: u64 = GENERATION;
 
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::unused_self,
+            reason = "the browser has no cooked visual product; native frames select it through self"
+        )
+    )]
     fn frame_lighting(&self, tick: u64, alpha: f32) -> FrameLighting {
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(product) = &self.visual_product {
@@ -632,6 +638,12 @@ impl FrameHost {
         capabilities: Option<&DeviceCapabilities>,
         config: FrameConfig,
     ) -> Result<Self, String> {
+        let fallback_capabilities = capabilities
+            .is_none()
+            .then(|| DeviceCapabilities::capture_device(device, GENERATION));
+        let capabilities = capabilities
+            .or(fallback_capabilities.as_ref())
+            .expect("the caller supplies or constructs one capability record");
         let [width, height] = config.render_extent;
         if width == 0 || height == 0 {
             return Err("render extent must be nonzero".to_owned());
@@ -671,26 +683,18 @@ impl FrameHost {
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
         scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots, 1.0);
-        let prepared = match capabilities {
-            Some(capabilities) => {
-                PreparedSynthetic::prepare_with_capabilities(
-                    capabilities,
-                    queue,
-                    &scene,
-                    FrameLighting::Diagnostic(GAME_SUN),
-                    1.0,
-                )
-                .await
-            }
-            None => {
-                PreparedSynthetic::prepare_with_light(device, queue, GENERATION, &scene, GAME_SUN)
-                    .await
-            }
-        }
+        let prepared = PreparedSynthetic::prepare_with_capabilities(
+            capabilities,
+            queue,
+            &scene,
+            FrameLighting::Diagnostic(GAME_SUN),
+            1.0,
+        )
+        .await
         .map_err(|error| format!("prepare: {error:?}"))?;
         let presenter = match config.surface {
             Some(profile) => Some(
-                SurfacePresenter::prepare(device, GENERATION, config.render_extent, profile)
+                SurfacePresenter::prepare(capabilities, config.render_extent, profile)
                     .await
                     .map_err(|error| format!("surface prepare: {error:?}"))?,
             ),
@@ -708,9 +712,8 @@ impl FrameHost {
                     .map_err(|error| format!("surface binding: {error:?}"))?,
                 target,
                 timings: GpuTimings::new(
-                    device,
+                    capabilities,
                     queue,
-                    GENERATION,
                     prepared.scene_pass_count() + u32::from(presenter.is_some()),
                 )
                 .map_err(|error| format!("GPU timings: {error:?}"))?,
@@ -1437,9 +1440,12 @@ impl FrameHost {
         }))
     }
 
-    #[expect(
-        clippy::large_types_passed_by_value,
-        reason = "ownership transfers the sample into an in-flight GPU slot; borrowing would require the same copy"
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        expect(
+            clippy::large_types_passed_by_value,
+            reason = "ownership transfers the sample into an in-flight GPU slot; borrowing would require the same copy"
+        )
     )]
     fn encode_prepared(
         &mut self,
@@ -1965,7 +1971,8 @@ impl FrameHost {
                         Ok(false) => slot.state = SlotState::Rendering(sample),
                         Err(_) => {
                             sample.timing_fault = true;
-                            slot.timings = new_timings(&self.device, &self.queue, max_passes)?;
+                            slot.timings =
+                                new_timings(self.prepared.capabilities(), &self.queue, max_passes)?;
                             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
                     }
@@ -1985,7 +1992,8 @@ impl FrameHost {
                     Ok(None) => slot.state = SlotState::Resolving(sample),
                     Err(_) => {
                         sample.timing_fault = true;
-                        slot.timings = new_timings(&self.device, &self.queue, max_passes)?;
+                        slot.timings =
+                            new_timings(self.prepared.capabilities(), &self.queue, max_passes)?;
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                     }
                 },
@@ -1996,11 +2004,11 @@ impl FrameHost {
 }
 
 fn new_timings(
-    device: &wgpu::Device,
+    capabilities: &DeviceCapabilities,
     queue: &wgpu::Queue,
     max_passes: u32,
 ) -> Result<GpuTimings, String> {
-    GpuTimings::new(device, queue, GENERATION, max_passes)
+    GpuTimings::new(capabilities, queue, max_passes)
         .map_err(|error| format!("GPU timing recovery: {error:?}"))
 }
 
@@ -2059,9 +2067,12 @@ fn duration_ns_u32(value: Duration) -> u32 {
     u32::try_from(value.as_nanos()).unwrap_or(u32::MAX)
 }
 
-#[expect(
-    clippy::large_types_passed_by_value,
-    reason = "ownership transfers the completed sample into the report queue without a clone"
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    expect(
+        clippy::large_types_passed_by_value,
+        reason = "ownership transfers the completed sample into the report queue without a clone"
+    )
 )]
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {
     if queue.len() == IN_FLIGHT {

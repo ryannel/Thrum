@@ -124,7 +124,10 @@ fn main() {
         let adapter_name = adapter.get_info().name;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
                 ..Default::default()
             })
             .await
@@ -183,7 +186,9 @@ fn main() {
             "adapter={adapter_name}; 640x360 10k static cubes; ABBA {BLOCKS} blocks, 400 samples/variant after 50 warmup submissions/variant; no GPU timestamps; encode+submit+GPU-wait wall p50/p95/max ms: zero local={:.3}/{:.3}/{:.3}, four local={:.3}/{:.3}/{:.3}; within-block four-minus-zero delta p05/p50/p95={:.3}/{:.3}/{:.3} ms",
             dark.0, dark.1, dark.2, lit.0, lit.1, lit.2, wall_delta.0, wall_delta.1, wall_delta.2
         );
-        let mut timings = GpuTimings::new(&device, &queue, GENERATION, max_scene_passes)
+        let capabilities =
+            thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, GENERATION);
+        let mut timings = GpuTimings::new(&capabilities, &queue, max_scene_passes)
             .expect("optional GPU timestamp batch");
         if timings.is_enabled() {
             let mut dark_gpu = Vec::with_capacity(GPU_BLOCKS * 2);

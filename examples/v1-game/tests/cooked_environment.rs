@@ -8,7 +8,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use thrum_cook::cook_render_environment;
-use thrum_render::timing::GpuTimings;
 use thrum_source::{
     NativeSourceStore, SourcePath, SourceSpacePlan, registry_stage::validate_staged_candidate,
     stage_declared_tree_with_plan,
@@ -168,7 +167,10 @@ fn accepted_a_b_visuals_publish_without_restarting_the_world() {
         let timestamps = adapter.features().contains(wgpu::Features::TIMESTAMP_QUERY);
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
                 ..Default::default()
             })
             .await

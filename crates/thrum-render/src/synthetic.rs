@@ -531,7 +531,7 @@ impl PreparedSynthetic {
         light: SyntheticLight,
         exposure: f32,
     ) -> Result<Self, RenderError> {
-        let capabilities = DeviceCapabilities::legacy_from_device(device, generation);
+        let capabilities = DeviceCapabilities::capture_device(device, generation);
         Self::prepare_with_lighting(
             &capabilities,
             queue,
@@ -555,7 +555,7 @@ impl PreparedSynthetic {
         environment: PhotometricEnvironment,
         exposure: f32,
     ) -> Result<Self, RenderError> {
-        let capabilities = DeviceCapabilities::legacy_from_device(device, generation);
+        let capabilities = DeviceCapabilities::capture_device(device, generation);
         Self::prepare_with_capabilities(
             &capabilities,
             queue,

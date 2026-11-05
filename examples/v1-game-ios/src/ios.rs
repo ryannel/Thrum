@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::present::SurfaceProfile;
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
     application::ApplicationHandler,
@@ -124,7 +124,10 @@ impl App {
         if self.device.is_none() {
             let (device, queue) =
                 pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-                    required_features: GpuTimings::requested_features(adapter),
+                    required_features:
+                        thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                            adapter,
+                        ),
                     required_limits:
                         wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
                     ..Default::default()

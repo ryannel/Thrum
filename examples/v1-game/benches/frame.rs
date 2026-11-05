@@ -5,7 +5,7 @@
 use std::{num::NonZeroUsize, time::Duration};
 
 use thrum_core::{StableId, sim::ExecutionMode};
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
 use v1_game::{
     FrameConfig, FrameHost, FrameSample, SurfaceOutput,
     simulation::{Command, ComponentEntity, Position, Velocity},
@@ -153,7 +153,7 @@ fn measure(
             .expect("real native adapter required for this explicit benchmark");
     let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
         required_features: if gpu_timestamps {
-            GpuTimings::requested_features(&adapter)
+            DeviceCapabilities::requested_timing_features(&adapter)
         } else {
             wgpu::Features::empty()
         },

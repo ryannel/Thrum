@@ -4,7 +4,7 @@
 
 use std::{sync::mpsc, time::Duration};
 
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::present::SurfaceProfile;
 use v1_game::{FrameHost, SurfaceOutput};
 
 const SIZE: u32 = 640;
@@ -21,7 +21,10 @@ fn surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats() {
             .expect("native GPU adapter");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
                 ..Default::default()
             })
             .await

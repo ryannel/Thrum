@@ -4,6 +4,7 @@
 use std::{collections::BTreeSet, sync::Arc};
 
 use crate::{
+    capabilities::DeviceCapabilities,
     graph::{
         Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphError, Pass,
         PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
@@ -62,6 +63,7 @@ pub struct SurfacePresenter {
     plan: ExecutableGraph<PresentFamily>,
     surface_resource: ResourceId,
     generation: u64,
+    extent_limit: u32,
     source_extent: [u32; 2],
     profile: SurfaceProfile,
     owner: Arc<()>,
@@ -128,11 +130,12 @@ impl SurfacePresenter {
     /// # Errors
     /// Refuses unsupported formats/extents, invalid graph closure or GPU validation.
     pub async fn prepare(
-        device: &wgpu::Device,
-        generation: u64,
+        capabilities: &DeviceCapabilities,
         source_extent: [u32; 2],
         profile: SurfaceProfile,
     ) -> Result<Self, PresentError> {
+        let device = capabilities.device();
+        let generation = capabilities.generation();
         if !matches!(
             profile.format,
             wgpu::TextureFormat::Rgba8Unorm
@@ -142,8 +145,9 @@ impl SurfacePresenter {
         ) {
             return Err(PresentError::UnsupportedFormat);
         }
-        check_extent(device, source_extent)?;
-        check_extent(device, profile.extent)?;
+        let extent_limit = capabilities.limits().max_texture_dimension_2d;
+        check_extent(extent_limit, source_extent)?;
+        check_extent(extent_limit, profile.extent)?;
         let (plan, surface_resource) = compile_plan(generation, source_extent, profile)?;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -207,6 +211,7 @@ impl SurfacePresenter {
             plan,
             surface_resource,
             generation,
+            extent_limit,
             source_extent,
             profile,
             owner: Arc::new(()),
@@ -249,7 +254,7 @@ impl SurfacePresenter {
         if self.device != *device {
             return Err(PresentError::StaleTarget);
         }
-        check_extent(device, extent)?;
+        check_extent(self.extent_limit, extent)?;
         if self.profile.extent == extent {
             return Ok(());
         }
@@ -300,8 +305,7 @@ impl SurfacePresenter {
     }
 }
 
-fn check_extent(device: &wgpu::Device, extent: [u32; 2]) -> Result<(), PresentError> {
-    let limit = device.limits().max_texture_dimension_2d;
+fn check_extent(limit: u32, extent: [u32; 2]) -> Result<(), PresentError> {
     if extent.iter().any(|&value| value == 0 || value > limit) {
         Err(PresentError::Extent)
     } else {

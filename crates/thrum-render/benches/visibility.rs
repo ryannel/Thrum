@@ -78,7 +78,10 @@ fn main() {
         let adapter_name = adapter.get_info().name;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: GpuTimings::requested_features(&adapter),
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
                 ..Default::default()
             })
             .await
@@ -114,7 +117,9 @@ fn main() {
         let sparse_target =
             OffscreenTarget::new(&device, &sparse, 640, 360).expect("sparse render target");
         let variants = [(&full, &full_target), (&sparse, &sparse_target)];
-        let mut timings = GpuTimings::new(&device, &queue, GENERATION, full.scene_pass_count())
+        let capabilities =
+            thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, GENERATION);
+        let mut timings = GpuTimings::new(&capabilities, &queue, full.scene_pass_count())
             .expect("timestamp batch");
         assert!(timings.is_enabled(), "device timestamps required");
         for _ in 0..WARMUP_BLOCKS {
