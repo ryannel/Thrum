@@ -66,6 +66,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             Err(thrum_render::synthetic::RenderError::StaleTarget)
         ));
         let graph = prepared.graph(&target, true).unwrap();
+        assert_eq!(graph.transient_slots, 3);
         assert_eq!(graph.dependencies, [(0, 1), (1, 2)]);
         assert_eq!(
             prepared.graph(&target, false).unwrap().dependencies,
@@ -175,9 +176,15 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             PreparedSynthetic::prepare(&device, &queue, 41, &SyntheticScene::grid(2).unwrap())
                 .await
                 .unwrap();
+        let indexed_target = OffscreenTarget::new(&device, &indexed, 65, 33).unwrap();
+        let mut indexed_pixels = indexed_target.readback(&device);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        indexed.encode(&mut encoder, 41, &target, None).unwrap();
-        pixels.encode(&mut encoder, &target).unwrap();
+        indexed
+            .encode(&mut encoder, 41, &indexed_target, None)
+            .unwrap();
+        indexed_pixels
+            .encode(&mut encoder, &indexed_target)
+            .unwrap();
         let submission = queue.submit([encoder.finish()]);
         device
             .poll(wgpu::PollType::Wait {
@@ -185,7 +192,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 timeout: Some(std::time::Duration::from_secs(10)),
             })
             .unwrap();
-        let rgba = pixels.try_collect(41).unwrap().unwrap();
+        let rgba = indexed_pixels.try_collect(41).unwrap().unwrap();
         let grid = SyntheticScene::grid(2).unwrap();
         let normal = grid.instances[0].normal[2][..3]
             .iter()
@@ -916,13 +923,16 @@ fn render_pixels(
     prepared: &PreparedSynthetic,
     target: &OffscreenTarget,
 ) -> Vec<u8> {
+    let extent = target.extent();
+    let target = OffscreenTarget::new(device, prepared, extent[0], extent[1])
+        .expect("one target belongs to its preparation");
     let mut pixels = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
-        .encode(&mut encoder, 41, target, None)
+        .encode(&mut encoder, 41, &target, None)
         .expect("explicit GPU host operation must succeed");
     pixels
-        .encode(&mut encoder, target)
+        .encode(&mut encoder, &target)
         .expect("explicit GPU host operation must succeed");
     submit_wait(device, queue, encoder);
     pixels

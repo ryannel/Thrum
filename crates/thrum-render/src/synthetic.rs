@@ -8,8 +8,8 @@
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::graph::{
-    Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
-    ResourceDescriptor, ResourceScope,
+    Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphError, GraphTextures, Pass,
+    PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::timing::{GpuTimings, TimingError};
 use glam::Vec3;
@@ -907,6 +907,7 @@ impl PreparedSynthetic {
     ) -> Result<CompiledGraph, RenderError> {
         self.check_target(target)?;
         self.compile_graph(target.width, target.height, target.row_bytes, readback)
+            .map(|(graph, _)| graph)
     }
 
     fn compile_graph(
@@ -915,7 +916,7 @@ impl PreparedSynthetic {
         height: u32,
         row_bytes: u32,
         readback: bool,
-    ) -> Result<CompiledGraph, RenderError> {
+    ) -> Result<(CompiledGraph, TargetResources), RenderError> {
         let mut graph = FrameGraph::default();
         let material = graph.resource(
             ResourceDescriptor::Buffer {
@@ -946,7 +947,8 @@ impl PreparedSynthetic {
             },
         ];
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key()]);
-        self.append_shadow_passes(&mut graph, &instance, &mut accesses, &mut prepared_keys)?;
+        let shadow =
+            self.append_shadow_passes(&mut graph, &instance, &mut accesses, &mut prepared_keys)?;
         for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64, LIGHT_BYTES as u64] {
             let uniform = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -973,10 +975,10 @@ impl PreparedSynthetic {
                 format: DEPTH_FORMAT,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             },
-            ResourceScope::Imported { initialized: false },
+            ResourceScope::Transient,
         )?;
         accesses.push(Access {
-            resource: depth,
+            resource: depth.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
             store: false,
@@ -1012,7 +1014,7 @@ impl PreparedSynthetic {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT
                     | wgpu::TextureUsages::TEXTURE_BINDING,
             },
-            ResourceScope::Imported { initialized: false },
+            ResourceScope::Transient,
         )?;
         accesses.push(Access {
             resource: scene.clone(),
@@ -1039,7 +1041,7 @@ impl PreparedSynthetic {
                     | wgpu::TextureUsages::COPY_SRC
                     | wgpu::TextureUsages::TEXTURE_BINDING,
             },
-            ResourceScope::Imported { initialized: false },
+            ResourceScope::Transient,
         )?;
         let display = graph.resource(
             ResourceDescriptor::Buffer {
@@ -1054,7 +1056,7 @@ impl PreparedSynthetic {
             pipeline: Some(self.display_key()),
             accesses: vec![
                 Access {
-                    resource: scene,
+                    resource: scene.clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
@@ -1089,7 +1091,7 @@ impl PreparedSynthetic {
                 pipeline: None,
                 accesses: vec![
                     Access {
-                        resource: output,
+                        resource: output.clone(),
                         range: 0..1,
                         kind: AccessKind::CopyRead,
                         store: true,
@@ -1104,17 +1106,25 @@ impl PreparedSynthetic {
                 external_side_effect: true,
             });
         }
-        Ok(graph.compile(self.key.device_generation, &prepared_keys)?)
+        Ok((
+            graph.compile(self.key.device_generation, &prepared_keys)?,
+            TargetResources {
+                depth,
+                scene,
+                output,
+                shadow,
+            },
+        ))
     }
     fn append_shadow_passes(
         &self,
         graph: &mut FrameGraph,
-        instance: &crate::graph::ResourceId,
+        instance: &ResourceId,
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<Option<ResourceId>, RenderError> {
         if self.shadow.is_none() {
-            return Ok(());
+            return Ok(None);
         }
 
         let maps = graph.resource(
@@ -1128,7 +1138,7 @@ impl PreparedSynthetic {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT
                     | wgpu::TextureUsages::TEXTURE_BINDING,
             },
-            ResourceScope::Imported { initialized: false },
+            ResourceScope::Transient,
         )?;
         for index in 0..2_u32 {
             let matrix = graph.resource(
@@ -1186,12 +1196,12 @@ impl PreparedSynthetic {
             store: true,
         });
         accesses.push(Access {
-            resource: maps,
+            resource: maps.clone(),
             range: 0..2,
             kind: AccessKind::SampledRead,
             store: true,
         });
-        Ok(())
+        Ok(Some(maps))
     }
     fn append_cluster_reads(
         &self,
@@ -1259,24 +1269,21 @@ impl PreparedSynthetic {
                     self.instance_count,
                     generation,
                     index,
-                    &pass.name,
+                    pass,
+                    target
+                        .ids
+                        .shadow
+                        .as_ref()
+                        .ok_or(RenderError::GraphPassMismatch)?,
                     timings.as_deref_mut(),
                 )
             }
-            Some(key) if key == self.key => self.encode_opaque(
-                encoder,
-                generation,
-                target,
-                &pass.name,
-                timings.as_deref_mut(),
-            ),
-            Some(key) if key == self.display_key() => self.encode_tone(
-                encoder,
-                generation,
-                target,
-                &pass.name,
-                timings.as_deref_mut(),
-            ),
+            Some(key) if key == self.key => {
+                self.encode_opaque(encoder, generation, target, pass, timings.as_deref_mut())
+            }
+            Some(key) if key == self.display_key() => {
+                self.encode_tone(encoder, generation, target, pass, timings.as_deref_mut())
+            }
             _ => Err(RenderError::GraphPassMismatch),
         })
     }
@@ -1286,30 +1293,30 @@ impl PreparedSynthetic {
         encoder: &mut wgpu::CommandEncoder,
         generation: u64,
         target: &OffscreenTarget,
-        name: &str,
+        compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
         let timestamps = match timings {
-            Some(timings) => timings.pass_writes(generation, name)?,
+            Some(timings) => timings.pass_writes(generation, &compiled.name)?,
             None => None,
         };
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(name),
+            label: Some(&compiled.name),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &target.scene_view,
                 depth_slice: None,
                 resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(self.background),
-                    store: wgpu::StoreOp::Store,
-                },
+                ops: compiled
+                    .attachment_ops(&target.ids.scene, 0..1, self.background)
+                    .ok_or(RenderError::GraphPassMismatch)?,
             })],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: &target.depth,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(0.0),
-                    store: wgpu::StoreOp::Discard,
-                }),
+                depth_ops: Some(
+                    compiled
+                        .attachment_ops(&target.ids.depth, 0..1, 0.0)
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                ),
                 stencil_ops: None,
             }),
             timestamp_writes: timestamps,
@@ -1329,23 +1336,22 @@ impl PreparedSynthetic {
         encoder: &mut wgpu::CommandEncoder,
         generation: u64,
         target: &OffscreenTarget,
-        name: &str,
+        compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
         let timestamps = match timings {
-            Some(timings) => timings.pass_writes(generation, name)?,
+            Some(timings) => timings.pass_writes(generation, &compiled.name)?,
             None => None,
         };
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(name),
+            label: Some(&compiled.name),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &target.view,
                 depth_slice: None,
                 resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                    store: wgpu::StoreOp::Store,
-                },
+                ops: compiled
+                    .attachment_ops(&target.ids.output, 0..1, wgpu::Color::BLACK)
+                    .ok_or(RenderError::GraphPassMismatch)?,
             })],
             timestamp_writes: timestamps,
             ..Default::default()
@@ -1513,13 +1519,21 @@ fn storage_buffer(
     buffer
 }
 
+struct TargetResources {
+    depth: ResourceId,
+    scene: ResourceId,
+    output: ResourceId,
+    shadow: Option<ResourceId>,
+}
+
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
     device: wgpu::Device,
     prepared_owner: Arc<()>,
     graph: CompiledGraph,
-    texture: wgpu::Texture,
+    textures: GraphTextures,
+    ids: TargetResources,
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
     display: wgpu::BindGroup,
@@ -1566,56 +1580,19 @@ impl OffscreenTarget {
         if u64::from(row_bytes) * u64::from(height) > limits.max_buffer_size {
             return Err(RenderError::TargetExtent);
         }
-        let graph = prepared.compile_graph(width, height, row_bytes, false)?;
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("synthetic offscreen target"),
-            size: wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: OUTPUT_FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | wgpu::TextureUsages::COPY_SRC
-                | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let depth = device
-            .create_texture(&wgpu::TextureDescriptor {
-                label: Some("synthetic opaque depth"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: DEPTH_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
-            })
+        let (graph, ids) = prepared.compile_graph(width, height, row_bytes, false)?;
+        let textures = GraphTextures::new(device, &graph);
+        let view = textures
+            .texture(&ids.output)
+            .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let scene_view = device
-            .create_texture(&wgpu::TextureDescriptor {
-                label: Some("synthetic pre-exposed scene HDR"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: SCENE_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            })
+        let depth = textures
+            .texture(&ids.depth)
+            .ok_or(RenderError::GraphPassMismatch)?
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let scene_view = textures
+            .texture(&ids.scene)
+            .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
         let display = prepare_display_group(
             device,
@@ -1628,10 +1605,14 @@ impl OffscreenTarget {
             contents: &prepared.view_sample.pack_aux(width, height),
             usage: wgpu::BufferUsages::UNIFORM,
         });
-        let shadow = prepared
-            .shadow
-            .as_ref()
-            .map(|shadow| ShadowTarget::new(device, shadow));
+        let shadow = match (&prepared.shadow, &ids.shadow) {
+            (Some(prepared_shadow), Some(id)) => Some(ShadowTarget::new(
+                textures.texture(id).ok_or(RenderError::GraphPassMismatch)?,
+                prepared_shadow,
+            )),
+            (None, None) => None,
+            _ => return Err(RenderError::GraphPassMismatch),
+        };
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -1667,7 +1648,8 @@ impl OffscreenTarget {
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             graph,
-            texture,
+            textures,
+            ids,
             view,
             scene_view,
             display,
@@ -1742,7 +1724,10 @@ impl PixelReadback {
         }
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
-                texture: &target.texture,
+                texture: target
+                    .textures
+                    .texture(&target.ids.output)
+                    .ok_or(RenderError::GraphPassMismatch)?,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,

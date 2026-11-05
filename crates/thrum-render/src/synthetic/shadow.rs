@@ -7,12 +7,12 @@ use wgpu::util::DeviceExt;
 
 use super::view::{Projection, SyntheticView};
 use super::{InstanceRecord, RenderError};
+use crate::graph::{CompiledPass, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 pub(super) const SAMPLE_BYTES: usize = 160;
 const MAPS: usize = 2;
-const LAYERS: u32 = 2;
 const BIAS_BASE_WORLD: f32 = 0.006;
 const BIAS_SLOPE_WORLD: f32 = 0.06;
 
@@ -51,7 +51,6 @@ pub(super) struct ShadowPrepared {
 }
 
 pub(super) struct ShadowTarget {
-    _texture: wgpu::Texture,
     views: [wgpu::TextureView; MAPS],
     pub(super) array_view: wgpu::TextureView,
     pub(super) sample_data: [u8; SAMPLE_BYTES],
@@ -211,7 +210,8 @@ impl ShadowPrepared {
         count: u32,
         generation: u64,
         index: usize,
-        name: &str,
+        compiled: &CompiledPass,
+        resource: &ResourceId,
         timings: Option<&mut crate::timing::GpuTimings>,
     ) -> Result<(), RenderError> {
         let (cascade, view) = self
@@ -220,18 +220,24 @@ impl ShadowPrepared {
             .zip(target.views.get(index))
             .ok_or(RenderError::StaleTarget)?;
         let writes = match timings {
-            Some(timings) => timings.pass_writes(generation, name)?,
+            Some(timings) => timings.pass_writes(generation, &compiled.name)?,
             None => None,
         };
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(name),
+            label: Some(&compiled.name),
             color_attachments: &[],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(0.0),
-                    store: wgpu::StoreOp::Store,
-                }),
+                depth_ops: Some(
+                    compiled
+                        .attachment_ops(
+                            resource,
+                            u64::try_from(index).expect("two cascades")
+                                ..u64::try_from(index + 1).expect("two cascades"),
+                            0.0,
+                        )
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                ),
                 stencil_ops: None,
             }),
             timestamp_writes: writes,
@@ -246,21 +252,7 @@ impl ShadowPrepared {
 }
 
 impl ShadowTarget {
-    pub(super) fn new(device: &wgpu::Device, prepared: &ShadowPrepared) -> Self {
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("synthetic Sun cascades"),
-            size: wgpu::Extent3d {
-                width: SIZE,
-                height: SIZE,
-                depth_or_array_layers: LAYERS,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
+    pub(super) fn new(texture: &wgpu::Texture, prepared: &ShadowPrepared) -> Self {
         let views = std::array::from_fn(|index| {
             texture.create_view(&wgpu::TextureViewDescriptor {
                 label: Some("synthetic Sun cascade layer"),
@@ -276,7 +268,6 @@ impl ShadowTarget {
             ..Default::default()
         });
         Self {
-            _texture: texture,
             views,
             array_view,
             sample_data: prepared.sample_data,

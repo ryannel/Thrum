@@ -1,8 +1,9 @@
-//! Typed, ordered GPU pass declarations and preparation-time lifetime analysis.
+//! Typed GPU pass declarations and preparation-time lifetime analysis.
 //!
 //! The graph preserves declared order. Overlapping accesses involving a write
 //! become hazard edges; wgpu applies concrete API transitions while encoding.
-//! Aliases are a logical plan only, never an assertion of physical residency.
+//! Exact-compatible, nonoverlapping transient texture lifetimes share a
+//! physical allocation retained by the target until its GPU work completes.
 
 use std::collections::BTreeSet;
 use std::ops::Range;
@@ -200,7 +201,7 @@ pub struct Access {
     pub range: Range<u64>,
     /// Usage.
     pub kind: AccessKind,
-    /// False models an attachment discard; later reads require another writer.
+    /// Non-attachment write retention; attachment store is derived from consumers.
     pub store: bool,
 }
 
@@ -333,6 +334,8 @@ pub struct CompiledGraph {
     pub transient_slots: usize,
     pipeline_pass_count: usize,
     passes: Vec<CompiledPass>,
+    resources: Vec<Resource>,
+    owner: Arc<()>,
 }
 
 /// One closed pass handed to an encoder callback in compiled order.
@@ -342,6 +345,105 @@ pub(crate) struct CompiledPass {
     pub(crate) name: String,
     /// Pipeline identity checked during closure; copy passes have none.
     pub(crate) pipeline: Option<PipelineKey>,
+    attachments: Vec<CompiledAttachment>,
+}
+
+#[derive(Clone, Debug)]
+struct CompiledAttachment {
+    resource: ResourceId,
+    range: Range<u64>,
+    load: bool,
+    store: bool,
+}
+
+impl CompiledPass {
+    /// The executor, not a recorder, owns attachment load and store decisions.
+    pub(crate) fn attachment_ops<T>(
+        &self,
+        resource: &ResourceId,
+        range: Range<u64>,
+        clear: T,
+    ) -> Option<wgpu::Operations<T>> {
+        self.attachments
+            .iter()
+            .find(|attachment| attachment.resource == *resource && attachment.range == range)
+            .map(|attachment| wgpu::Operations {
+                load: if attachment.load {
+                    wgpu::LoadOp::Load
+                } else {
+                    wgpu::LoadOp::Clear(clear)
+                },
+                store: if attachment.store {
+                    wgpu::StoreOp::Store
+                } else {
+                    wgpu::StoreOp::Discard
+                },
+            })
+    }
+}
+
+/// Textures allocated once for the compiled graph's exact transient slots.
+/// The target retains this lease across its frames and GPU submissions.
+pub(crate) struct GraphTextures {
+    owner: Arc<()>,
+    slots: Vec<Option<wgpu::Texture>>,
+    resource_slots: Vec<Option<usize>>,
+}
+
+impl GraphTextures {
+    pub(crate) fn new(device: &wgpu::Device, graph: &CompiledGraph) -> Self {
+        let mut slots: Vec<Option<wgpu::Texture>> =
+            (0..graph.transient_slots).map(|_| None).collect();
+        let mut resource_slots = vec![None; graph.resources.len()];
+        for lifetime in &graph.lifetimes {
+            let Some(slot) = lifetime.transient_slot else {
+                continue;
+            };
+            let ResourceDescriptor::Texture {
+                width,
+                height,
+                layers,
+                mips,
+                samples,
+                format,
+                usage,
+            } = graph.resources[lifetime.resource.index].descriptor
+            else {
+                continue;
+            };
+            resource_slots[lifetime.resource.index] = Some(slot);
+            if slots[slot].is_none() {
+                slots[slot] = Some(device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some("thrum graph transient"),
+                    size: wgpu::Extent3d {
+                        width,
+                        height,
+                        depth_or_array_layers: layers,
+                    },
+                    mip_level_count: mips,
+                    sample_count: samples,
+                    dimension: wgpu::TextureDimension::D2,
+                    format,
+                    usage,
+                    view_formats: &[],
+                }));
+            }
+        }
+        Self {
+            owner: Arc::clone(&graph.owner),
+            slots,
+            resource_slots,
+        }
+    }
+
+    pub(crate) fn texture(&self, resource: &ResourceId) -> Option<&wgpu::Texture> {
+        if !Arc::ptr_eq(&self.owner, &resource.owner) {
+            return None;
+        }
+        self.resource_slots
+            .get(resource.index)
+            .and_then(|slot| slot.and_then(|index| self.slots[index].as_ref()))
+    }
 }
 
 impl CompiledGraph {
@@ -368,6 +470,30 @@ impl CompiledGraph {
 }
 
 impl FrameGraph {
+    fn attachment_store(&self, index: usize, access: &Access) -> bool {
+        if self.passes[index].external_side_effect {
+            return true;
+        }
+        let mut live = vec![access.range.clone()];
+        for pass in &self.passes[index + 1..] {
+            for next in &pass.accesses {
+                if next.resource != access.resource {
+                    continue;
+                }
+                if next.kind.reads() && live.iter().any(|range| overlap(range, &next.range)) {
+                    return true;
+                }
+                if next.kind.writes() {
+                    remove_range(&mut live, &next.range);
+                    if live.is_empty() {
+                        return false;
+                    }
+                }
+            }
+        }
+        false
+    }
+
     /// Add a resource; its identity is local to this graph.
     ///
     /// # Errors
@@ -499,7 +625,15 @@ impl FrameGraph {
                 }
                 if access.kind.writes() {
                     remove_range(&mut initialized[access.resource.index], &access.range);
-                    if access.store {
+                    let store = if matches!(
+                        access.kind,
+                        AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+                    ) {
+                        self.attachment_store(index, access)
+                    } else {
+                        access.store
+                    };
+                    if store {
                         initialized[access.resource.index].push(access.range.clone());
                     }
                 }
@@ -558,11 +692,30 @@ impl FrameGraph {
             passes: self
                 .passes
                 .iter()
-                .map(|pass| CompiledPass {
+                .enumerate()
+                .map(|(index, pass)| CompiledPass {
                     name: pass.name.clone(),
                     pipeline: pass.pipeline,
+                    attachments: pass
+                        .accesses
+                        .iter()
+                        .filter(|access| {
+                            matches!(
+                                access.kind,
+                                AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+                            )
+                        })
+                        .map(|access| CompiledAttachment {
+                            resource: access.resource.clone(),
+                            range: access.range.clone(),
+                            load: access.kind == AccessKind::AttachmentLoad,
+                            store: self.attachment_store(index, access),
+                        })
+                        .collect(),
                 })
                 .collect(),
+            resources: self.resources.clone(),
+            owner: Arc::clone(&self.owner),
         })
     }
 }
@@ -607,6 +760,56 @@ mod tests {
         Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope,
     };
     use std::collections::BTreeSet;
+
+    #[test]
+    fn attachment_store_follows_the_first_live_consumer_and_overwrite() {
+        let mut graph = FrameGraph::default();
+        let texture = graph
+            .resource(
+                ResourceDescriptor::Texture {
+                    width: 4,
+                    height: 4,
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                        | wgpu::TextureUsages::TEXTURE_BINDING,
+                },
+                ResourceScope::Transient,
+            )
+            .expect("valid target");
+        for (name, kind) in [
+            ("discarded clear", AccessKind::AttachmentClear),
+            ("sampled clear", AccessKind::AttachmentClear),
+            ("sample", AccessKind::SampledRead),
+        ] {
+            graph.pass(Pass {
+                name: name.into(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: vec![Access {
+                    resource: texture.clone(),
+                    range: 0..1,
+                    kind,
+                    store: false,
+                }],
+                external_side_effect: name == "sample",
+            });
+        }
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("valid graph");
+        let mut stores = Vec::new();
+        compiled
+            .record(|pass| {
+                if let Some(ops) = pass.attachment_ops(&texture, 0..1, wgpu::Color::BLACK) {
+                    stores.push(ops.store);
+                    assert!(matches!(ops.load, wgpu::LoadOp::Clear(_)));
+                }
+                Ok::<_, ()>(())
+            })
+            .expect("recording succeeds");
+        assert_eq!(stores, [wgpu::StoreOp::Discard, wgpu::StoreOp::Store]);
+    }
 
     #[test]
     fn compiled_recording_stops_at_the_failed_pass_before_its_consumer() {

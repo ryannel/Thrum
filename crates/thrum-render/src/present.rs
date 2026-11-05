@@ -6,7 +6,7 @@ use std::{collections::BTreeSet, sync::Arc};
 use crate::{
     graph::{
         Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
-        ResourceDescriptor, ResourceScope,
+        ResourceDescriptor, ResourceId, ResourceScope,
     },
     synthetic::{OUTPUT_FORMAT, OffscreenTarget},
     timing::{GpuTimings, TimingError},
@@ -59,6 +59,7 @@ pub struct SurfacePresenter {
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
     plan: CompiledGraph,
+    surface_resource: ResourceId,
     generation: u64,
     source_extent: [u32; 2],
     profile: SurfaceProfile,
@@ -86,7 +87,7 @@ impl SurfacePresenter {
         }
         check_extent(device, source_extent)?;
         check_extent(device, profile.extent)?;
-        let plan = compile_plan(generation, source_extent, profile)?;
+        let (plan, surface_resource) = compile_plan(generation, source_extent, profile)?;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("V1 surface source"),
@@ -147,6 +148,7 @@ impl SurfacePresenter {
             pipeline,
             layout,
             plan,
+            surface_resource,
             generation,
             source_extent,
             profile,
@@ -198,8 +200,9 @@ impl SurfacePresenter {
             format: self.profile.format,
             extent,
         };
-        let plan = compile_plan(self.generation, self.source_extent, profile)?;
+        let (plan, surface_resource) = compile_plan(self.generation, self.source_extent, profile)?;
         self.plan = plan;
+        self.surface_resource = surface_resource;
         self.profile = profile;
         Ok(())
     }
@@ -255,10 +258,9 @@ impl SurfacePresenter {
                     view: surface_view,
                     depth_slice: None,
                     resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: wgpu::StoreOp::Store,
-                    },
+                    ops: compiled
+                        .attachment_ops(&self.surface_resource, 0..1, wgpu::Color::BLACK)
+                        .ok_or(PresentError::GraphPassMismatch)?,
                 })],
                 timestamp_writes: writes,
                 ..Default::default()
@@ -293,7 +295,7 @@ fn compile_plan(
     generation: u64,
     source_extent: [u32; 2],
     profile: SurfaceProfile,
-) -> Result<CompiledGraph, PresentError> {
+) -> Result<(CompiledGraph, ResourceId), PresentError> {
     let key = PipelineKey {
         device_generation: generation,
         revision: REVISION,
@@ -342,7 +344,7 @@ fn compile_plan(
                 store: true,
             },
             Access {
-                resource: surface,
+                resource: surface.clone(),
                 range: 0..1,
                 kind: AccessKind::AttachmentClear,
                 store: true,
@@ -350,9 +352,12 @@ fn compile_plan(
         ],
         external_side_effect: true,
     });
-    graph
-        .compile(generation, &BTreeSet::from([key]))
-        .map_err(PresentError::Graph)
+    Ok((
+        graph
+            .compile(generation, &BTreeSet::from([key]))
+            .map_err(PresentError::Graph)?,
+        surface,
+    ))
 }
 
 /// Integer viewport preserving the source aspect without a per-frame upload.
