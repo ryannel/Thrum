@@ -23,12 +23,27 @@ fn submitted_motion_x(
     changed: &[u32],
     x: u32,
 ) -> f32 {
+    submitted_motion_x_at_alpha(device, queue, prepared, target, scene, changed, x, 1.0)
+}
+
+#[cfg(target_os = "macos")]
+fn submitted_motion_x_at_alpha(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &mut PreparedSynthetic,
+    target: &mut OffscreenTarget,
+    scene: &SyntheticScene,
+    changed: &[u32],
+    x: u32,
+    alpha: f32,
+) -> f32 {
     prepared
         .update_frame(
             queue,
             target,
             scene,
             FrameLighting::Diagnostic(SyntheticLight::default()),
+            alpha,
         )
         .expect("live view");
     prepared
@@ -73,7 +88,7 @@ fn submitted_motion_x(
         send.send(result).expect("readback receiver");
     });
     let submission = queue.submit([encoder.finish()]);
-    prepared.commit_frame(queue);
+    prepared.commit_frame();
     device
         .poll(wgpu::PollType::Wait {
             submission_index: Some(submission),
@@ -92,6 +107,56 @@ fn submitted_motion_x(
     drop(mapped);
     buffer.unmap();
     value
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn metal_motion_history_uses_interpolated_display_samples() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("Metal adapter required for interpolation regression");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("Metal device");
+        let mut scene = SyntheticScene::grid(1).expect("one instance");
+        let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
+            .await
+            .expect("scene pipeline");
+        let mut target = OffscreenTarget::new(&device, &prepared, 64, 64).expect("target");
+        prepared.synchronize_history(&queue, 1, 0);
+        submitted_motion_x(&device, &queue, &mut prepared, &mut target, &scene, &[], 32);
+        scene.instances[0].previous[3][0] = 0.0;
+        scene.instances[0].current[3][0] = 0.2;
+        let half = submitted_motion_x_at_alpha(
+            &device,
+            &queue,
+            &mut prepared,
+            &mut target,
+            &scene,
+            &[0],
+            35,
+            0.5,
+        );
+        assert!((half + 3.2).abs() < 0.5, "half-step motion: {half}");
+        let three_quarters = submitted_motion_x_at_alpha(
+            &device,
+            &queue,
+            &mut prepared,
+            &mut target,
+            &scene,
+            &[],
+            37,
+            0.75,
+        );
+        assert!(
+            (three_quarters + 1.6).abs() < 0.5,
+            "motion must follow the last submitted display sample: {three_quarters}"
+        );
+    });
 }
 
 #[cfg(target_os = "macos")]
@@ -138,6 +203,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
                 &mut target,
                 &scene,
                 FrameLighting::Diagnostic(SyntheticLight::default()),
+                1.0,
             )
             .expect("abandoned view update");
         prepared

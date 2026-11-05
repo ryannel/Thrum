@@ -854,7 +854,7 @@ impl PreparedSynthetic {
             entries: &[
                 storage_layout(0, wgpu::ShaderStages::VERTEX, abi::INSTANCE_BYTES as u64),
                 storage_layout(1, wgpu::ShaderStages::VERTEX, history_gpu::ENTRY_BYTES),
-                uniform_layout(2, 16, wgpu::ShaderStages::VERTEX),
+                uniform_layout(2, history_gpu::SERIAL_BYTES, wgpu::ShaderStages::VERTEX),
             ],
         });
         let history = TransformHistory::new(
@@ -1142,6 +1142,7 @@ impl PreparedSynthetic {
         target: &mut OffscreenTarget,
         scene: &SyntheticScene,
         lighting: FrameLighting,
+        presentation_alpha: f32,
     ) -> Result<(), RenderError> {
         self.check_owner(target)?;
         if scene.instances.len()
@@ -1179,6 +1180,8 @@ impl PreparedSynthetic {
         if scene.view.history_reset() {
             self.history.reset(queue);
         }
+        self.history
+            .set_presentation_alpha(queue, presentation_alpha);
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         queue.write_buffer(
@@ -1211,10 +1214,10 @@ impl PreparedSynthetic {
     }
 
     /// Advance previous-view history after the host submits the encoded frame.
-    pub fn commit_frame(&mut self, queue: &wgpu::Queue) {
+    pub fn commit_frame(&mut self) {
         if let Some(view) = self.pending_view.take() {
             self.view_sample = view;
-            self.history.submitted(queue);
+            self.history.submitted();
         }
     }
     /// Reset temporal correspondence when the authoritative world or replay

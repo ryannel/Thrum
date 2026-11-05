@@ -36,15 +36,18 @@ struct FittedShadow {
 impl Cascade {
     fn contains_caster(&self, instance: &InstanceRecord) -> bool {
         let [x, y, z, offset] = self.depth_row;
-        let center = instance.current[3];
-        let depth = x * center[0] + y * center[1] + z * center[2] + offset;
         let extent = (0..3)
             .map(|axis| {
                 let column = instance.current[axis];
                 (x * column[0] + y * column[1] + z * column[2]).abs()
             })
             .sum::<f32>();
-        depth - extent >= -1e-4 && depth + extent <= 1.0 + 1e-4
+        [instance.previous[3], instance.current[3]]
+            .iter()
+            .all(|center| {
+                let depth = x * center[0] + y * center[1] + z * center[2] + offset;
+                depth - extent >= -1e-4 && depth + extent <= 1.0 + 1e-4
+            })
     }
 }
 
@@ -404,12 +407,6 @@ fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(
     let mut minimum = f32::INFINITY;
     let mut maximum = f32::NEG_INFINITY;
     for instance in instances {
-        let center = Vec3::new(
-            instance.current[3][0],
-            instance.current[3][1],
-            instance.current[3][2],
-        );
-        let depth = depth_axis.dot(center) + offset;
         let extent = instance.current[..3]
             .iter()
             .map(|column| {
@@ -418,8 +415,11 @@ fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(
                     .abs()
             })
             .sum::<f32>();
-        minimum = minimum.min(depth - extent);
-        maximum = maximum.max(depth + extent);
+        for center in [instance.previous[3], instance.current[3]] {
+            let depth = depth_axis.dot(Vec3::new(center[0], center[1], center[2])) + offset;
+            minimum = minimum.min(depth - extent);
+            maximum = maximum.max(depth + extent);
+        }
     }
     Some((minimum, maximum))
 }
@@ -497,6 +497,31 @@ mod tests {
                 .transform_point3(transform.transform_point3(local))
                 .z;
             assert!(depth >= low - 1e-5 && depth <= high + 1e-5);
+        }
+    }
+
+    #[test]
+    fn caster_bounds_use_rendered_basis_at_both_translation_endpoints() {
+        let mut instance = InstanceRecord::identity(0, 0);
+        instance.current[0][0] = 2.0;
+        instance.previous[0][0] = 0.1;
+        instance.previous[3][0] = 8.0;
+        let rotation = light_rotation(Vec3::new(0.3, -0.8, 0.6).normalize());
+        let (low, high) = caster_depth_bounds(rotation, &[instance.clone()]).expect("one caster");
+        for center in [instance.previous[3], instance.current[3]] {
+            let mut model = instance.current;
+            model[3] = center;
+            let transform = Mat4::from_cols_array_2d(&model);
+            for x in [-1.0, 1.0] {
+                for y in [-1.0, 1.0] {
+                    for z in [-1.0, 1.0] {
+                        let depth = -rotation
+                            .transform_point3(transform.transform_point3(Vec3::new(x, y, z)))
+                            .z;
+                        assert!(depth >= low - 1e-5 && depth <= high + 1e-5);
+                    }
+                }
+            }
         }
     }
 }

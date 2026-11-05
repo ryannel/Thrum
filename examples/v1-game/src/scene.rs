@@ -131,7 +131,6 @@ pub(crate) fn apply_frame_to_scene(
     scene: &mut SyntheticScene,
     frame: &RenderColumns,
     changed_slots: &mut Vec<u32>,
-    alpha: f32,
 ) -> ApplyReport {
     changed_slots.clear();
     let mut report = ApplyReport::default();
@@ -173,19 +172,17 @@ pub(crate) fn apply_frame_to_scene(
         };
         let source_generation = u32::try_from((generation - 1) % u64::from(u32::MAX) + 1)
             .expect("nonzero wrapped generation fits u32");
-        let current = if frame.history_valid()[row] {
-            std::array::from_fn(|axis| {
-                previous[axis] + (world_current[axis] - previous[axis]) * alpha
-            })
+        let previous = if frame.history_valid()[row] {
+            previous
         } else {
             world_current
         };
-        if instance.current[3][..3] != current
+        if instance.current[3][..3] != world_current
             || instance.previous[3][..3] != previous
             || instance.ids[1] != material
             || instance.ids[3] != source_generation
         {
-            instance.current[3][..3].copy_from_slice(&current);
+            instance.current[3][..3].copy_from_slice(&world_current);
             instance.previous[3][..3].copy_from_slice(&previous);
             instance.ids[1] = material;
             instance.ids[3] = source_generation;
@@ -250,7 +247,7 @@ mod tests {
             },
         );
         let mut changed = Vec::new();
-        let report = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        let report = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(report.dropped_invalid, 0);
         assert_eq!(changed, [0, 1]);
         assert_eq!(scene.instances[0].current[3][0], 0.75);
@@ -278,7 +275,7 @@ mod tests {
                 assert!(sink.push(0, 1, ids[0].0, [0.9, 0.0, 0.0], 1));
             },
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(scene.instances[1].ids[3], 0, "retired slot is hidden");
         extractor.extract(
             SourceTick {
@@ -291,7 +288,7 @@ mod tests {
                 assert!(sink.push(1, 2, 11, [0.3, 0.0, 0.0], 0));
             },
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(
             scene.instances[1].ids[3], 2,
             "reused slot has a new GPU history token"
@@ -312,7 +309,7 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, u64::from(u32::MAX), 7, [0.0; 3], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(scene.instances[0].ids[3], u32::MAX);
         extractor.extract(
             SourceTick {
@@ -324,7 +321,7 @@ mod tests {
             |sink| assert!(sink.push(0, u64::from(u32::MAX) + 1, 8, [0.0; 3], 0)),
         );
         assert!(!extractor.frame().history_valid()[0]);
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(changed, [0]);
         assert_eq!(scene.instances[0].ids[3], 1);
         extractor.extract(
@@ -336,13 +333,13 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, u64::from(u32::MAX) + 2, 9, [0.0; 3], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
         assert_eq!(changed, [0], "next wrapped generation must retag the slot");
         assert_eq!(scene.instances[0].ids[3], 2);
     }
 
     #[test]
-    fn repeated_display_samples_interpolate_without_committing_another_world_tick() {
+    fn repeated_display_samples_keep_simulation_endpoints_without_extra_upload() {
         let mut scene = SyntheticScene::grid(2).expect("scene");
         let mut extractor = RenderExtractor::new(2, 2);
         let mut changed = Vec::new();
@@ -364,8 +361,9 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 0.5);
-        assert_eq!(scene.instances[0].current[3][0], 0.5);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        assert_eq!(scene.instances[0].current[3][0], 1.0);
+        assert_eq!(scene.instances[0].previous[3][0], 0.0);
         assert_eq!(changed, [0, 1]);
         extractor.extract(
             SourceTick {
@@ -376,9 +374,9 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 0.75);
-        assert_eq!(scene.instances[0].current[3][0], 0.75);
-        assert_eq!(changed, [0]);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        assert_eq!(scene.instances[0].current[3][0], 1.0);
+        assert_eq!(changed, []);
     }
 
     #[test]

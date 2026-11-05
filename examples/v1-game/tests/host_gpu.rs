@@ -105,12 +105,9 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
                     .expect("GPU wait");
             };
             assert_eq!(sample.tick, expected_tick);
-            // Alpha zero uses the prepared pose; the later catch-up image
-            // uploads only the movers whose visible pose changed.
-            assert_eq!(
-                sample.uploaded_rows,
-                if expected_tick == 1 { 0 } else { 1_500 }
-            );
+            // Each new world tick uploads mover endpoints once; alpha zero
+            // selects the previous endpoint on the GPU without another upload.
+            assert_eq!(sample.uploaded_rows, 1_500);
             assert_eq!(sample.dropped_presentation, 0);
             assert!(!sample.timing_fault);
             assert!(sample.gpu_pass_ns.is_some());

@@ -279,6 +279,7 @@ fn measure(
     late_surface: bool,
     callback_period: Duration,
     allow_unsent_callback: bool,
+    callbacks_per_sample: usize,
 ) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
@@ -338,41 +339,43 @@ fn measure(
     let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
     let mut callbacks = 0_usize;
     bencher.bench_local(|| {
-        callbacks += 1;
-        now += callback_period;
-        let output = surface_view
-            .as_ref()
-            .zip(surface_extent)
-            .map(|(view, extent)| SurfaceOutput { view, extent });
-        let frame = if late_surface {
-            host.advance(now)
-                .expect("the measured world step must keep progressing")
-                .encode_scene()
-                .expect("the serial scene must encode before acquisition")
-                .submit(output.as_ref())
-                .expect("the encoded scene and surface must submit once")
-        } else {
-            host.drive(now, output.as_ref())
-                .expect("the measured fixed-clock host must keep progressing")
-        };
-        if !frame.submitted {
-            assert!(allow_unsent_callback, "one update gets a free view slot");
-            return;
-        }
-        assert_eq!(frame.surface_presented, surface_extent.is_some());
-        let complete = loop {
-            if let Some(sample) = host.poll_completed().expect("GPU progress") {
-                break sample;
+        for _ in 0..callbacks_per_sample {
+            callbacks += 1;
+            now += callback_period;
+            let output = surface_view
+                .as_ref()
+                .zip(surface_extent)
+                .map(|(view, extent)| SurfaceOutput { view, extent });
+            let frame = if late_surface {
+                host.advance(now)
+                    .expect("the measured world step must keep progressing")
+                    .encode_scene()
+                    .expect("the serial scene must encode before acquisition")
+                    .submit(output.as_ref())
+                    .expect("the encoded scene and surface must submit once")
+            } else {
+                host.drive(now, output.as_ref())
+                    .expect("the measured fixed-clock host must keep progressing")
+            };
+            if !frame.submitted {
+                assert!(allow_unsent_callback, "one update gets a free view slot");
+                continue;
             }
-            device_ref
-                .poll(wgpu::PollType::Wait {
-                    submission_index: None,
-                    timeout: Some(Duration::from_secs(10)),
-                })
-                .expect("GPU completion");
-        };
-        samples.push(complete);
-        divan::black_box(complete);
+            assert_eq!(frame.surface_presented, surface_extent.is_some());
+            let complete = loop {
+                if let Some(sample) = host.poll_completed().expect("GPU progress") {
+                    break sample;
+                }
+                device_ref
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(10)),
+                    })
+                    .expect("GPU completion");
+            };
+            samples.push(complete);
+            divan::black_box(complete);
+        }
     });
     assert!(
         !samples.is_empty() && samples.len() >= callbacks / 2,
@@ -460,6 +463,18 @@ fn report_frame_cpu(
         host_wall.1,
         host_wall.2,
     );
+    let uploaded_rows: u64 = samples
+        .iter()
+        .map(|sample| u64::from(sample.uploaded_rows))
+        .sum();
+    let uploaded_bytes: usize = samples.iter().map(|sample| sample.uploaded_bytes).sum();
+    let zero_upload_frames = samples
+        .iter()
+        .filter(|sample| sample.uploaded_rows == 0)
+        .count();
+    eprintln!(
+        "V1 frame uploads rows={uploaded_rows} bytes={uploaded_bytes} zero-upload-frames={zero_upload_frames}"
+    );
     if gpu_timestamps {
         let scene_gpu =
             percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6]).iter().sum::<f64>() / 1e6);
@@ -501,6 +516,7 @@ fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
         false,
         Duration::from_nanos(16_666_667),
         false,
+        1,
     );
 }
 
@@ -514,6 +530,7 @@ fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
         false,
         Duration::from_nanos(16_666_667),
         false,
+        1,
     );
 }
 
@@ -527,6 +544,7 @@ fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
         false,
         Duration::from_nanos(16_666_667),
         false,
+        1,
     );
 }
 
@@ -540,6 +558,7 @@ fn assembled_frame_1080p_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
         false,
         Duration::from_nanos(16_666_667),
         false,
+        1,
     );
 }
 
@@ -553,6 +572,7 @@ fn assembled_frame_1080p_late_surface(bencher: divan::Bencher<'_, '_>) {
         true,
         Duration::from_nanos(16_666_667),
         false,
+        1,
     );
 }
 
@@ -566,5 +586,6 @@ fn g0_120hz_callbacks_at_1080p(bencher: divan::Bencher<'_, '_>) {
         false,
         Duration::from_nanos(8_333_333),
         true,
+        100,
     );
 }
