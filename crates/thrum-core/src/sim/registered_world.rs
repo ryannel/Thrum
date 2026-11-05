@@ -515,10 +515,7 @@ impl RegisteredWorld {
             .expect("registered storage column type")
     }
 
-    fn column_mut<T: Send + Sync + 'static>(&mut self) -> &mut TypedStore<T> {
-        let index = self
-            .component_index(ComponentKey::of::<T>())
-            .expect("registered component type");
+    fn column_mut_index<T: Send + Sync + 'static>(&mut self, index: usize) -> &mut TypedStore<T> {
         self.columns[index]
             .as_any_mut()
             .downcast_mut::<TypedStore<T>>()
@@ -535,8 +532,7 @@ impl RegisteredWorld {
         ]
     }
 
-    pub(super) fn mark_changed(&mut self, key: ComponentKey, handle: Handle, tick: u64) {
-        let component = self.component_index(key).expect("prevalidated component");
+    pub(super) fn mark_changed(&mut self, component: usize, handle: Handle, tick: u64) {
         self.change_ticks[handle.slot as usize * self.registry.entries.len() + component] = tick;
         self.changed[component].push(handle.slot);
         self.mark_pending(handle.slot);
@@ -772,15 +768,13 @@ impl RegisteredWorld {
 
     pub(super) fn replace<T: Send + Sync + 'static>(
         &mut self,
+        component: usize,
         handle: Handle,
         value: T,
     ) -> Result<T, RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
-            return Err(RegisteredWorldError::UnregisteredComponent);
-        }
         self.entity(handle)?;
         let current = self
-            .column_mut::<T>()
+            .column_mut_index::<T>(component)
             .get_mut(handle.slot as usize)
             .ok_or(RegisteredWorldError::MissingComponent)?;
         Ok(std::mem::replace(current, value))
@@ -788,14 +782,12 @@ impl RegisteredWorld {
 
     pub(super) fn insert<T: Send + Sync + 'static>(
         &mut self,
+        component: usize,
         handle: Handle,
         value: T,
     ) -> Result<(), RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
-            return Err(RegisteredWorldError::UnregisteredComponent);
-        }
         self.entity(handle)?;
-        let column = self.column_mut::<T>();
+        let column = self.column_mut_index::<T>(component);
         if column.get(handle.slot as usize).is_some() {
             return Err(RegisteredWorldError::DuplicateComponent);
         }
@@ -805,13 +797,11 @@ impl RegisteredWorld {
 
     pub(super) fn remove<T: Send + Sync + 'static>(
         &mut self,
+        component: usize,
         handle: Handle,
     ) -> Result<T, RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
-            return Err(RegisteredWorldError::UnregisteredComponent);
-        }
         self.entity(handle)?;
-        self.column_mut::<T>()
+        self.column_mut_index::<T>(component)
             .remove(handle.slot as usize)
             .ok_or(RegisteredWorldError::MissingComponent)
     }
@@ -971,7 +961,12 @@ mod tests {
             visited.push((handle, id, position.0, velocity.0));
         });
         assert_eq!(visited, [(first, StableId(1), 2.0, 3.0)]);
-        world.replace(first, Height(6.0)).expect("registered value");
+        let height = world
+            .component_index(super::ComponentKey::of::<Height>())
+            .expect("registered height");
+        world
+            .replace(height, first, Height(6.0))
+            .expect("registered value");
         assert_eq!(world.with::<Height, _>(first, |value| value.0), Ok(6.0));
         world.despawn(first).expect("first entity live");
         assert_eq!(

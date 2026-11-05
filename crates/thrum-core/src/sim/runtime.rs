@@ -647,10 +647,15 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         {
             return Err(RuntimeError::UndeclaredAccess);
         }
+        let component = self
+            .world
+            .component_index(ComponentKey::of::<T>())
+            .ok_or(RuntimeError::UndeclaredAccess)?;
         Ok(WritePermit {
             marker: PhantomData,
             nonce: self.nonce,
             system,
+            component,
         })
     }
 
@@ -1101,6 +1106,7 @@ pub struct WritePermit<T: Send + Sync + 'static> {
     marker: PhantomData<T>,
     pub(super) nonce: u64,
     pub(super) system: SystemId,
+    pub(super) component: usize,
 }
 
 /// Compile-checked permission to spawn or despawn under one external resource.
