@@ -3,9 +3,11 @@
 
 use thrum_render::abi::{InstanceRecord, MaterialRecord};
 use thrum_render::capabilities::DeviceCapabilities;
+#[cfg(target_os = "macos")]
+use thrum_render::synthetic::DEPTH_FORMAT;
 use thrum_render::synthetic::{
-    DEPTH_FORMAT, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight,
-    SyntheticPointLight, SyntheticScene, SyntheticView,
+    FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight,
+    SyntheticScene, SyntheticView,
 };
 use thrum_render::timing::{GpuTimings, TimingError};
 

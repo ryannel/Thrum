@@ -54,12 +54,13 @@ the F3 scan lower bound includes other `.engine` charges and allowances.
 
 The source is [T2-SAME-VOLUME-MATERIALIZATION-PROBE.rs](T2-SAME-VOLUME-MATERIALIZATION-PROBE.rs),
 with its [manifest](T2-SAME-VOLUME-MATERIALIZATION-PROBE.toml) and
-[lockfile](T2-SAME-VOLUME-MATERIALIZATION-PROBE.lock). Copy those to
-`tmp/f3-f4-space-composition/src/main.rs`, `Cargo.toml` and `Cargo.lock`
+[lockfile](T2-SAME-VOLUME-MATERIALIZATION-PROBE.lock). These are historical:
+the two source crates were removed at G0. To reproduce, use a separate checkout
+of `db06365d12de`, copy the three files to its
+`tmp/f3-f4-space-composition/src/main.rs`, `Cargo.toml` and `Cargo.lock`,
 respectively, then run `RUSTC_WRAPPER= cargo run --locked --offline --release`
-there. The manifest's path dependencies are relative to that temporary
-directory. The harness removes its project fixture on success; its generated
-Cargo target is disposable.
+there. The manifest's path dependencies resolve in that checkout. The harness
+removes its project fixture on success; its generated Cargo target is disposable.
 
 ## Disposition
 

@@ -57,11 +57,20 @@ unsafe impl GlobalAlloc for CountingAllocator {
 const SAMPLES: usize = 1_000;
 
 fn fixture(count: usize, shuffled: bool, mode: ExecutionMode) -> Simulation {
+    fixture_with_capacity(count, count, shuffled, mode)
+}
+
+fn fixture_with_capacity(
+    count: usize,
+    capacity: usize,
+    shuffled: bool,
+    mode: ExecutionMode,
+) -> Simulation {
     let mut sim = Simulation::new(
         WorldEpoch(1),
         SimConfig {
             tick_hz: NonZeroU32::new(60).expect("tick rate"),
-            entity_capacity: count,
+            entity_capacity: capacity,
             peer_capacity: 4,
             actions_per_frame: 8,
             movement_speed: 6.0,
@@ -448,12 +457,122 @@ fn s1_case(count: usize, extra: S1Extra) {
     );
 }
 
-fn run_s2_correction(sim: &mut Simulation, history: &mut SimulationHistory, axes: [f32; 3]) {
+fn measured_s1_step(
+    sim: &mut Simulation,
+    history: &mut SimulationHistory,
+    extra: S1Extra,
+    value: u16,
+    primary: thrum_core::Handle,
+    secondary: thrum_core::Handle,
+) -> (u64, u64) {
+    admit_four_peers(
+        sim,
+        true,
+        matches!(extra, S1Extra::Damage),
+        [0.25, 0.0, 0.0],
+    );
+    let commands = [
+        Command::SetHealth(primary, value),
+        Command::SetHealth(secondary, value),
+    ];
+    let selected = if matches!(extra, S1Extra::Command) {
+        &commands[..2]
+    } else {
+        &commands[..1]
+    };
+    measured(|| {
+        black_box(history.step(sim, selected).expect("paired S1 tick"));
+    })
+}
+
+fn paired_s1_sensitivity_case(count: usize, extra: S1Extra) {
+    let mut base = fixture(count, true, ExecutionMode::Serial);
+    let mut changed = fixture(count, true, ExecutionMode::Serial);
+    let mut base_history = base
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("base history");
+    let mut changed_history = changed
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("changed history");
+    let base_handles = [
+        base.handle(StableId(0)).expect("base primary"),
+        base.handle(StableId(1)).expect("base secondary"),
+    ];
+    let changed_handles = [
+        changed.handle(StableId(0)).expect("changed primary"),
+        changed.handle(StableId(1)).expect("changed secondary"),
+    ];
+    let mut base_samples = Vec::with_capacity(SAMPLES);
+    let mut changed_samples = Vec::with_capacity(SAMPLES);
+    let mut base_allocations = 0;
+    let mut changed_allocations = 0;
+    for index in 0..(SAMPLES + 80) {
+        let value = if index % 2 == 0 { 99 } else { 100 };
+        let mut base_step = || {
+            measured_s1_step(
+                &mut base,
+                &mut base_history,
+                S1Extra::None,
+                value,
+                base_handles[0],
+                base_handles[1],
+            )
+        };
+        let mut changed_step = || {
+            measured_s1_step(
+                &mut changed,
+                &mut changed_history,
+                extra,
+                value,
+                changed_handles[0],
+                changed_handles[1],
+            )
+        };
+        let (base_result, changed_result) = if index % 2 == 0 {
+            (base_step(), changed_step())
+        } else {
+            let changed_result = changed_step();
+            (base_step(), changed_result)
+        };
+        if index >= 80 {
+            base_samples.push(base_result.0);
+            changed_samples.push(changed_result.0);
+            base_allocations += base_result.1;
+            changed_allocations += changed_result.1;
+        }
+    }
+    report(
+        &format!("G0,S1_paired,{count},base_vs_{extra:?},base"),
+        &mut base_samples,
+        base_allocations,
+    );
+    report(
+        &format!("G0,S1_paired,{count},base_vs_{extra:?},extra"),
+        &mut changed_samples,
+        changed_allocations,
+    );
+}
+
+fn run_s2_correction(
+    sim: &mut Simulation,
+    history: &mut SimulationHistory,
+    axes: [f32; 3],
+    health: thrum_core::Handle,
+) {
     history.rewind(sim, 8).expect("rewind eight");
     for replay in 0..8 {
         let first_axes = if replay == 0 { axes } else { [0.25, 0.0, 0.0] };
         admit_four_peers(sim, true, false, first_axes);
-        black_box(history.step(sim, &[]).expect("recreate corrected tick"));
+        let value = if sim.tick().is_multiple_of(2) {
+            99
+        } else {
+            100
+        };
+        black_box(
+            history
+                .step(sim, &[Command::SetHealth(health, value)])
+                .expect("recreate corrected tick"),
+        );
     }
     black_box(sim.published_page().expect("corrected endpoint published"));
 }
@@ -463,9 +582,17 @@ fn s2_current_correction_case() {
     let mut history = sim
         .begin_history(NonZeroUsize::new(16).expect("window"))
         .expect("history endpoint");
+    let health = sim.handle(StableId(0)).expect("static health row");
     for _ in 0..24 {
         admit_four_peers(&mut sim, true, false, [0.25, 0.0, 0.0]);
-        history.step(&mut sim, &[]).expect("warm retained tick");
+        let value = if sim.tick().is_multiple_of(2) {
+            99
+        } else {
+            100
+        };
+        history
+            .step(&mut sim, &[Command::SetHealth(health, value)])
+            .expect("warm retained tick");
     }
     let mut samples = Vec::with_capacity(SAMPLES);
     let mut allocations = 0;
@@ -476,17 +603,67 @@ fn s2_current_correction_case() {
             [-0.5, 0.0, 0.0]
         };
         if index < 80 {
-            run_s2_correction(&mut sim, &mut history, corrected_axes);
+            run_s2_correction(&mut sim, &mut history, corrected_axes, health);
             continue;
         }
         let (ns, allocs) = measured(|| {
-            run_s2_correction(&mut sim, &mut history, corrected_axes);
+            run_s2_correction(&mut sim, &mut history, corrected_axes, health);
         });
         samples.push(ns);
         allocations += allocs;
     }
     report(
-        "G0,S2,10000,Serial,shuffled,branch_recreate_without_record_amend",
+        "G0,S2,10000,Serial,shuffled,damage1,sethealth1,branch_recreate_without_record_amend",
+        &mut samples,
+        allocations,
+    );
+}
+
+fn s1_spawn_burst_case() {
+    const LIVE: usize = 10_000;
+    const BURST: usize = 200;
+    let mut sim = fixture_with_capacity(LIVE, LIVE + BURST, true, ExecutionMode::Serial);
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history endpoint");
+    let health = sim.handle(StableId(0)).expect("static health row");
+    let mut spawn = Vec::with_capacity(BURST + 1);
+    spawn.push(Command::SetHealth(health, 99));
+    for index in 0..BURST {
+        spawn.push(Command::Spawn(ComponentEntity {
+            id: StableId((LIVE + index) as u128),
+            position: Position([index as f64 * 0.001, 0.0, 0.0]),
+            velocity: Velocity::default(),
+            health: 100,
+            ownership: None,
+            visual: Some(1),
+        }));
+    }
+    let mut despawn = Vec::with_capacity(BURST);
+    let mut samples = Vec::with_capacity(SAMPLES);
+    let mut allocations = 0;
+    for index in 0..(SAMPLES + 80) {
+        spawn[0] = Command::SetHealth(health, if index % 2 == 0 { 99 } else { 100 });
+        admit_four_peers(&mut sim, true, false, [0.25, 0.0, 0.0]);
+        if index < 80 {
+            history.step(&mut sim, &spawn).expect("warm burst spawn");
+        } else {
+            let (ns, allocs) = measured(|| {
+                black_box(history.step(&mut sim, &spawn).expect("S1 burst tick"));
+            });
+            samples.push(ns);
+            allocations += allocs;
+        }
+        despawn.clear();
+        for id in LIVE..(LIVE + BURST) {
+            despawn.push(Command::Despawn(
+                sim.handle(StableId(id as u128)).expect("spawned burst row"),
+            ));
+        }
+        history.step(&mut sim, &despawn).expect("retire burst rows");
+    }
+    report(
+        "G0,S1,10000,Serial,shuffled,damage1,sethealth1,spawn200",
         &mut samples,
         allocations,
     );
@@ -532,8 +709,20 @@ fn main() {
         }
         return;
     }
+    if std::env::args().any(|argument| argument == "--g0-s1-paired") {
+        for count in [10_000, 100_000] {
+            for extra in [S1Extra::Command, S1Extra::Damage] {
+                paired_s1_sensitivity_case(count, extra);
+            }
+        }
+        return;
+    }
     if std::env::args().any(|argument| argument == "--g0-s2") {
         s2_current_correction_case();
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--g0-burst") {
+        s1_spawn_burst_case();
         return;
     }
     if std::env::args().any(|argument| argument == "--crossover") {
