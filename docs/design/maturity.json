@@ -3,14 +3,14 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-05",
   "contract_revision": "C4",
-  "scope_note": "Historical entries preserve measurements, not current priority. G2R correctness and CPU budgets pass. G3a is next. No general runtime, real transport, cooked game loop or V1 device budget is qualified.",
+  "scope_note": "Historical entries preserve measurements, not current priority. G2R CPU budgets and G3a portable graph pass. G3b is next. No general runtime, real transport, cooked game loop or V1 device budget is qualified.",
   "execution_plan": {
     "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering and budgets on macOS and physical iPhone; Chrome WebGPU reduced-tier smoke only; then four rendered peers over conditioned native QUIC",
     "active": [
-      "G3a executing portable graph and live scene"
+      "G3b display-link frame loop and engine host"
     ],
     "next_parallel": [
-      "G3b display-link frame loop after G3a"
+      "G3c GPU-driven culling after G3b"
     ],
     "parked": [
       "A5 in-memory ACK/rebase/retry/reconnect/lane work until G6 real transport",
@@ -24,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G2R correctness, all CPU p95 budgets and zero warmed allocations pass. Device frame budgets remain open. Parked tracks inactive."
+    "interpretation": "G2R CPU budgets and zero warmed allocations pass. G3a graph, live scene data, Metal pixel regressions and CPU encode budget pass; visible surface and V1 device budgets remain open. Parked tracks inactive."
   },
   "v1_slices": {
     "G0_boundary": {
