@@ -807,6 +807,28 @@ fn main() {
         }
         return;
     }
+    if std::env::args().any(|argument| argument == "--profile-g2s-s2") {
+        let mut sim = fixture(10_000, true, ExecutionMode::Serial);
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(16).expect("window"))
+            .expect("history endpoint");
+        let health = sim.handle(StableId(0)).expect("static health row");
+        for _ in 0..24 {
+            admit_four_peers(&mut sim, true, false, [0.25, 0.0, 0.0]);
+            history
+                .step(&mut sim, &[Command::SetHealth(health, 99)])
+                .expect("warm retained tick");
+        }
+        for index in 0..20_000 {
+            let axes = if index % 2 == 0 {
+                [0.5, 0.0, 0.0]
+            } else {
+                [-0.5, 0.0, 0.0]
+            };
+            black_box(run_s2_retained_correction(&mut sim, &mut history, axes));
+        }
+        return;
+    }
     if std::env::args().any(|argument| argument == "--tick") {
         for count in [10_000, 100_000] {
             paired_tick_case(count, false);
