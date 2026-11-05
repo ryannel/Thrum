@@ -193,8 +193,9 @@ fn apply_batch_replace<T: Clone + Send + Sync + 'static>(
         .downcast_ref::<Vec<(Handle, T)>>()
         .expect("prevalidated batch value type");
     if let Some(undo) = undo {
+        let mut writer = undo.batch_writer::<T>(component);
         world.replace_batch_prevalidated(component, rows, tick, |slot, prior, old_tick| {
-            undo.record_component(component, slot, old_tick, Some(prior));
+            writer.push(slot, prior, old_tick);
         });
     } else {
         world.replace_batch_prevalidated(component, rows, tick, |_, _, _| {});
@@ -520,7 +521,7 @@ impl EditScratch {
             undo.reserve_for(&self.undo_counts, structural, despawns);
         }
         journal.clear();
-        world.begin_tick();
+        world.begin_tick(Some(tick));
         for edit in edits {
             match &edit.inner {
                 EditKind::Component {

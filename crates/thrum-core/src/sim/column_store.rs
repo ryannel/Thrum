@@ -83,7 +83,7 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
         undo.as_any_mut()
             .downcast_mut::<TypedUndo<T>>()
             .expect("registered undo column type")
-            .push(slot, prior);
+            .push_structural(slot, prior);
     }
 }
 
