@@ -24,7 +24,7 @@ system per subsystem. A rebase changes representations, not physical positions, 
 Authored SourceRevision, target BuildRevision, local SessionId/WorldEpoch and shared network MatchId are distinct.
 A build pins an immutable admitted source tree and product closure. A play run pins authoritative code/schema/gameplay content and an admitted visual transition set; compatible
 presentation generations may advance under C04/C06. It gets fresh local epochs; peers share a
-match identity, never local runtime slots. Public W1 handles do not expose the selected private hecs storage backend.
+match identity, never local runtime slots. Public W1 handles do not expose the selected private storage backend.
 Authored local transforms are TRS. Preserve-world reparenting must reject unrepresentable shear, singular/ill-conditioned
 parents and excessive recomposition error. [FOUNDATION-SPEC](FOUNDATION-SPEC.md) bounds linear and absolute spatial error over the
 selected extent; no silently lossy decomposition. Derived world matrices may have shear, with explicit consumer support.
