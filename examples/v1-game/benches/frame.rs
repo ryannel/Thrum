@@ -1,8 +1,11 @@
 //! Integrated 10k simulation, extraction, upload, encode and GPU completion.
-//! Deliberately serial and unpaced; the CLI separately exercises 60 Hz pacing.
+//! Divan rows are serial and unpaced; the explicit threaded batch follows 120 Hz.
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::{num::NonZeroUsize, time::Duration};
+use std::{
+    num::NonZeroUsize,
+    time::{Duration, Instant},
+};
 
 use thrum_core::{StableId, sim::ExecutionMode};
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
@@ -14,6 +17,12 @@ use v1_game::{
 
 #[global_allocator]
 static ALLOC: divan::AllocProfiler = divan::AllocProfiler::system();
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FrameMode {
+    Inline,
+    Threaded,
+}
 
 fn main() {
     if std::env::args().any(|argument| argument == "--g0-inventory") {
@@ -30,6 +39,21 @@ fn main() {
             Duration::from_nanos(16_666_667),
             false,
             200,
+            FrameMode::Inline,
+        );
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--g3b-threaded-batch") {
+        measure(
+            None,
+            true,
+            [1920, 1080],
+            Some([1920, 1080]),
+            false,
+            Duration::from_nanos(8_333_333),
+            true,
+            200,
+            FrameMode::Threaded,
         );
         return;
     }
@@ -78,7 +102,7 @@ fn print_g0_inventory() {
         ),
         (
             "G3b per-thread zero allocation",
-            "unsupported:separate render thread and per-thread counters absent",
+            "unsupported:threaded runtime present but per-thread counters absent",
         ),
         (
             "G3b surface/background/device-loss recovery",
@@ -293,6 +317,7 @@ fn measure(
     callback_period: Duration,
     allow_unsent_callback: bool,
     callbacks_per_sample: usize,
+    mode: FrameMode,
 ) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
@@ -337,7 +362,7 @@ fn measure(
         format: wgpu::TextureFormat::Bgra8Unorm,
         extent,
     });
-    let mut host = pollster::block_on(FrameHost::new_with_capabilities(
+    let host = pollster::block_on(FrameHost::new_with_capabilities(
         &device,
         &queue,
         &capabilities,
@@ -347,6 +372,15 @@ fn measure(
         },
     ))
     .expect("the prepared V1 workload must fit the adapter");
+    let origin = Instant::now();
+    let (mut host, mut threaded_host) = if mode == FrameMode::Threaded {
+        let (threaded_host, controls) = host
+            .into_threaded(origin, || {})
+            .expect("resident world starts before frame sampling");
+        (None, Some((threaded_host, controls)))
+    } else {
+        (Some(host), None)
+    };
     let device_ref = &device;
     let mut now = Duration::ZERO;
     let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
@@ -354,20 +388,38 @@ fn measure(
     let mut run = || {
         for _ in 0..callbacks_per_sample {
             callbacks += 1;
-            now += callback_period;
+            if mode == FrameMode::Threaded {
+                let target = origin
+                    + callback_period
+                        .saturating_mul(u32::try_from(callbacks).expect("bounded frame batch"));
+                if let Some(delay) = target.checked_duration_since(Instant::now()) {
+                    std::thread::sleep(delay);
+                }
+                now = origin.elapsed();
+            } else {
+                now += callback_period;
+            }
             let output = surface_view
                 .as_ref()
                 .zip(surface_extent)
                 .map(|(view, extent)| SurfaceOutput { view, extent });
-            let frame = if late_surface {
-                host.advance(now)
+            let frame = if let Some((threaded_host, _controls)) = &mut threaded_host {
+                threaded_host
+                    .drive(now, output.as_ref())
+                    .expect("threaded frame progresses")
+            } else if late_surface {
+                host.as_mut()
+                    .expect("inline host")
+                    .advance(now)
                     .expect("the measured world step must keep progressing")
                     .encode_scene()
                     .expect("the serial scene must encode before acquisition")
                     .submit(output.as_ref())
                     .expect("the encoded scene and surface must submit once")
             } else {
-                host.drive(now, output.as_ref())
+                host.as_mut()
+                    .expect("inline host")
+                    .drive(now, output.as_ref())
                     .expect("the measured fixed-clock host must keep progressing")
             };
             if !frame.submitted {
@@ -376,7 +428,12 @@ fn measure(
             }
             assert_eq!(frame.surface_presented, surface_extent.is_some());
             let complete = loop {
-                if let Some(sample) = host.poll_completed().expect("GPU progress") {
+                let next = if let Some((threaded_host, _controls)) = &mut threaded_host {
+                    threaded_host.poll_completed()
+                } else {
+                    host.as_mut().expect("inline host").poll_completed()
+                };
+                if let Some(sample) = next.expect("GPU progress") {
                     break sample;
                 }
                 device_ref
@@ -537,6 +594,7 @@ fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
         Duration::from_nanos(16_666_667),
         false,
         1,
+        FrameMode::Inline,
     );
 }
 
@@ -551,6 +609,7 @@ fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
         Duration::from_nanos(16_666_667),
         false,
         1,
+        FrameMode::Inline,
     );
 }
 
@@ -565,6 +624,7 @@ fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
         Duration::from_nanos(16_666_667),
         false,
         1,
+        FrameMode::Inline,
     );
 }
 
@@ -579,6 +639,7 @@ fn assembled_frame_1080p_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
         Duration::from_nanos(16_666_667),
         false,
         1,
+        FrameMode::Inline,
     );
 }
 
@@ -593,6 +654,7 @@ fn assembled_frame_1080p_late_surface(bencher: divan::Bencher<'_, '_>) {
         Duration::from_nanos(16_666_667),
         false,
         1,
+        FrameMode::Inline,
     );
 }
 
@@ -607,5 +669,6 @@ fn g0_120hz_callbacks_at_1080p(bencher: divan::Bencher<'_, '_>) {
         Duration::from_nanos(8_333_333),
         true,
         100,
+        FrameMode::Inline,
     );
 }

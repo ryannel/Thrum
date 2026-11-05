@@ -7,7 +7,7 @@ use std::{
 };
 
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
-use v1_game::{FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
 fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(10);
@@ -26,6 +26,73 @@ fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 }
 
 #[test]
+fn repeated_display_target_reuses_world_columns_but_advances_interpolation() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real Metal adapter required");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let extent = [320, 180];
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("repeat display target"),
+            size: wgpu::Extent3d {
+                width: extent[0],
+                height: extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let output = SurfaceOutput {
+            view: &view,
+            extent,
+        };
+        let capabilities =
+            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig {
+                render_extent: extent,
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent,
+                }),
+            },
+        )
+        .await
+        .expect("prepared V1 scene");
+        let first = host
+            .drive(Duration::from_nanos(16_666_667), Some(&output))
+            .expect("first tick and display target");
+        assert!(first.submitted);
+        let first = await_sample(&mut host, &device);
+        let second = host
+            .drive(Duration::from_millis(25), Some(&output))
+            .expect("same world tick at later display target");
+        assert!(second.submitted);
+        let second = await_sample(&mut host, &device);
+        assert_eq!((first.tick, second.tick), (1, 1));
+        assert_eq!(second.completed_ticks, 0);
+        assert_eq!(second.uploaded_rows, 0);
+        assert_eq!(second.moving, first.moving);
+        assert!((second.presentation_alpha - 0.5).abs() < 1e-4);
+        assert!(second.surface_presented);
+    });
+}
+
+#[test]
 fn autonomous_world_page_drives_the_existing_gpu_scene() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -37,7 +104,7 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
+        let host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("prepared scene");
         let origin = Instant::now();
@@ -104,7 +171,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             })
             .await
             .expect("device request succeeds");
-        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("prepared 10k scene");
         host.enable_projection()
@@ -194,10 +261,9 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device without timestamp queries");
-        let mut plain =
-            FrameHost::new(&plain_device, &plain_queue, v1_game::FrameConfig::default())
-                .await
-                .expect("same prepared scene without timestamps");
+        let mut plain = FrameHost::new(&plain_device, &plain_queue, FrameConfig::default())
+            .await
+            .expect("same prepared scene without timestamps");
         assert!(
             plain
                 .drive(Duration::from_nanos(16_666_667), None)
@@ -236,7 +302,7 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("native device");
-        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("prepared game host");
         let initial = host.controlled_position().expect("seeded player");
@@ -291,7 +357,7 @@ fn ready_worker_view_does_not_skip_the_next_committed_tick() {
             &device,
             &queue,
             &capabilities,
-            v1_game::FrameConfig::default(),
+            FrameConfig::default(),
         )
         .await
         .expect("prepared game");
@@ -343,7 +409,7 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("prepared scene");
         let (wake, awakened) = mpsc::sync_channel::<()>(0);
@@ -408,7 +474,7 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
         awakened
             .recv_timeout(Duration::from_secs(2))
             .expect("release the latest worker wake before teardown");
-        let mut serial = FrameHost::new(&device, &queue, v1_game::FrameConfig::default())
+        let mut serial = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("same serial fixture");
         serial
@@ -459,7 +525,7 @@ fn native_view_beyond_two_ticks_refreshes_from_the_latest_committed_world() {
         let mut host = FrameHost::new(
             &device,
             &queue,
-            v1_game::FrameConfig {
+            FrameConfig {
                 surface: Some(SurfaceProfile { format, extent }),
                 ..Default::default()
             },
@@ -546,7 +612,7 @@ fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
         let mut host = FrameHost::new(
             &device,
             &queue,
-            v1_game::FrameConfig {
+            FrameConfig {
                 surface: Some(SurfaceProfile { format, extent }),
                 ..Default::default()
             },
