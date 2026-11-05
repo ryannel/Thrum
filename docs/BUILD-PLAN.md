@@ -15,7 +15,7 @@ Make one frame fast end to end, then widen. One reusable engine powers `examples
 - [x] A busy publication page drops a presentation frame; it does not end or stall authority.
 - [x] Remove the SQLite authoring link from the iOS game by moving product types into a small runtime content crate.
 - [x] Use reversed-Z `Depth32Float` throughout the scene and shadows.
-- [ ] Preserve canonical iteration and byte-identical replay across restore; publish sorted dirty slots.
+- [x] Preserve canonical published order and byte-identical published game state across restore; publish sorted dirty slots.
 
 ## Active gate order and budgets
 

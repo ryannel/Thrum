@@ -212,6 +212,8 @@ fn capture_after_churn_replays_input_and_structure_to_the_same_endpoint() {
             page.id(),
             rows,
             page.dirty().position().to_vec(),
+            page.dirty().velocity().to_vec(),
+            page.dirty().health().to_vec(),
             page.dirty().structural().to_vec(),
             page.structural_events().to_vec(),
         )
@@ -427,16 +429,34 @@ fn four_peer_ten_thousand_entity_serial_and_rayon_replay_match() {
         sim.step(&[]).expect("held controls tick");
         let page = sim.published_page().expect("complete endpoint");
         let mut rows = Vec::with_capacity(10_000);
-        page.visit(|handle, id, position, _| {
-            rows.push((id, handle, position, page.health(handle)));
+        page.visit(|handle, id, position, visual| {
+            rows.push((
+                id,
+                handle,
+                position.0.map(f64::to_bits),
+                page.velocity(handle)
+                    .map(|velocity| velocity.0.map(f64::to_bits)),
+                page.health(handle),
+                page.ownership(handle),
+                visual,
+            ));
         });
-        let mut positions = page.dirty().position().to_vec();
-        positions.sort_unstable();
+        let positions = page.dirty().position().to_vec();
+        assert!(positions.windows(2).all(|slots| slots[0] < slots[1]));
+        let velocities = page.dirty().velocity().to_vec();
+        assert!(velocities.windows(2).all(|slots| slots[0] < slots[1]));
+        let health = page.dirty().health().to_vec();
+        assert!(health.windows(2).all(|slots| slots[0] < slots[1]));
+        let structural = page.dirty().structural().to_vec();
+        assert!(structural.windows(2).all(|slots| slots[0] < slots[1]));
         (
             page.id(),
             origins,
             rows,
             positions,
+            velocities,
+            health,
+            structural,
             page.structural_events().to_vec(),
         )
     };
