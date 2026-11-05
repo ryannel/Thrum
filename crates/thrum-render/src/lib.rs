@@ -10,6 +10,7 @@
 pub mod abi;
 pub mod capabilities;
 pub mod extract;
+pub mod frame;
 pub mod graph;
 mod graph_record;
 pub mod history;
