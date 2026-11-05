@@ -288,40 +288,23 @@ impl Rules {
         world.visit_if_indexed(
             &motion,
             candidate,
-            |candidate, mark| {
-                for &row in &candidate.touched {
-                    mark(row);
+            |_, mark| {
+                for command in &self.commands {
+                    if let Command::Despawn(handle) | Command::SetPosition(handle, _) = command {
+                        mark(handle.slot as usize);
+                    }
                 }
             },
-            |candidate, handle, _, _, base_velocity| {
-                let row = handle.slot as usize;
-                !candidate.despawn_marks[row]
-                    && (candidate.position_marks[row] == tick
-                        || *base_velocity != Velocity::default())
-            },
-            |candidate, handle, _, position, base_velocity| {
-                let row = handle.slot as usize;
-                if candidate.position_marks[row] == tick {
-                    candidate.position_marks[row] = 0;
-                    let next = candidate.positions[row];
-                    if next != *position {
-                        *position = next;
-                        candidate.direct_positions += 1;
-                        return Ok(true);
-                    }
-                    return Ok(false);
+            |_, _, _, _, _| true,
+            |candidate, _, _, position, velocity| {
+                let next = integrate_position(*position, *velocity, dt);
+                if !finite(next.0) {
+                    return Err(SimError::NonFinite);
                 }
-                let effective = *base_velocity;
-                if effective != Velocity::default() {
-                    let next = integrate_position(*position, effective, dt);
-                    if !finite(next.0) {
-                        return Err(SimError::NonFinite);
-                    }
-                    if next != *position {
-                        *position = next;
-                        candidate.direct_positions += 1;
-                        return Ok(true);
-                    }
+                if next != *position {
+                    *position = next;
+                    candidate.direct_positions += 1;
+                    return Ok(true);
                 }
                 Ok(false)
             },

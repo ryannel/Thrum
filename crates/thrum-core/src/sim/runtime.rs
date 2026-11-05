@@ -447,12 +447,12 @@ impl DirectDirty {
     }
 }
 
-struct QueryExtra {
+struct QueryExclusions {
     words: Vec<u64>,
     slots: Vec<u32>,
 }
 
-impl QueryExtra {
+impl QueryExclusions {
     fn new(capacity: usize) -> Self {
         Self {
             words: vec![0; capacity.div_ceil(64)],
@@ -534,7 +534,7 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     nonce: u64,
     edit_scratch: EditScratch,
     direct_dirty: DirectDirty,
-    query_extra: QueryExtra,
+    query_exclusions: QueryExclusions,
     abort_undo: WorldUndo,
     structural_journal: Vec<StructuralChange>,
 }
@@ -886,7 +886,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             nonce,
             edit_scratch: EditScratch::new(capacity, component_count),
             direct_dirty: DirectDirty::new(component_count, capacity),
-            query_extra: QueryExtra::new(capacity),
+            query_exclusions: QueryExclusions::new(capacity),
             abort_undo,
             structural_journal: Vec::with_capacity(128),
         })
@@ -1398,7 +1398,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             return Err(TickError::BaselineRequired);
         }
         self.direct_dirty.clear();
-        self.query_extra.clear();
+        self.query_exclusions.clear();
         let (txn_undo, mut undo_events) = match undo.as_deref_mut() {
             Some(record) => (&mut record.world, Some(&mut record.events)),
             None => (&mut self.abort_undo, None),
@@ -1482,7 +1482,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                                 world: &mut self.world,
                                 undo: txn_undo,
                                 dirty: &mut self.direct_dirty,
-                                query_extra: &mut self.query_extra,
+                                query_exclusions: &mut self.query_exclusions,
                                 nonce: self.nonce,
                                 system: bound.id,
                             },
@@ -1509,13 +1509,13 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             Ok(Err(error)) => {
                 txn_undo.abort_tentative(&mut self.world);
                 self.direct_dirty.clear();
-                self.query_extra.clear();
+                self.query_exclusions.clear();
                 return Err(error);
             }
             Err(payload) => {
                 txn_undo.abort_tentative(&mut self.world);
                 self.direct_dirty.clear();
-                self.query_extra.clear();
+                self.query_exclusions.clear();
                 resume_unwind(payload);
             }
         }
@@ -1659,7 +1659,7 @@ pub struct WorldTxn<'a> {
     world: &'a mut RegisteredWorld,
     undo: &'a mut WorldUndo,
     dirty: &'a mut DirectDirty,
-    query_extra: &'a mut QueryExtra,
+    query_exclusions: &'a mut QueryExclusions,
     nonce: u64,
     system: SystemId,
 }
@@ -1791,10 +1791,9 @@ impl WorldTxn<'_> {
         )
     }
 
-    /// Visit an indexed shared column plus candidate-supplied physical slots.
-    /// Supplemental slots are copied into preallocated engine scratch before
-    /// the mutable callback begins, so its game context remains unrestricted.
-    /// The selected union is visited once in ascending storage order.
+    /// Visit indexed rows except for selected logical slots. Exclusions are
+    /// mapped into preallocated engine scratch before mutable callbacks begin;
+    /// selected rows retain ascending storage order.
     ///
     /// # Errors
     ///
@@ -1802,37 +1801,37 @@ impl WorldTxn<'_> {
     ///
     /// # Panics
     ///
-    /// The query is foreign, not indexed, or a supplied slot is out of range.
+    /// The query is foreign, not indexed, or an excluded slot is out of range.
     pub fn visit_if_indexed<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, C, E>(
         &mut self,
         query: &WriteRead2<T, U>,
         context: &mut C,
-        supplemental: impl FnOnce(&C, &mut dyn FnMut(usize)),
+        exclude: impl FnOnce(&C, &mut dyn FnMut(usize)),
         select: impl FnMut(&C, Handle, StableId, &T, &U) -> bool,
         visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
     ) -> Result<(), E> {
         assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
         assert_eq!(query.system, self.system, "query belongs to another system");
         assert!(query.indexed, "query has no active index");
-        self.query_extra.clear();
-        supplemental(context, &mut |slot| {
+        self.query_exclusions.clear();
+        exclude(context, &mut |slot| {
             let row = self
                 .world
                 .row_of_slot(u32::try_from(slot).expect("validated slot"));
-            self.query_extra.mark(row);
+            self.query_exclusions.mark(row);
         });
         let result = self.world.visit_mut2_if(
             query.first,
             query.second,
             true,
-            Some(&self.query_extra.words),
+            Some(&self.query_exclusions.words),
             self.undo,
             self.dirty,
             context,
             select,
             visit,
         );
-        self.query_extra.clear();
+        self.query_exclusions.clear();
         result
     }
 }
