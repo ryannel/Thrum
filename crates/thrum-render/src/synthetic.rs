@@ -33,11 +33,11 @@ pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
 use shadow::{ShadowPrepared, ShadowTarget};
 use upload::{InstanceUpload, PackedInstances};
-use view::AUX_BYTES;
 pub use view::SyntheticView;
+use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 8;
+pub const SYNTHETIC_REVISION: u64 = 9;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -373,7 +373,9 @@ pub struct PreparedSynthetic {
     owner: Arc<()>,
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
+    pipeline_two_sided: wgpu::RenderPipeline,
     cube_indices: wgpu::Buffer,
+    cube_reversed_indices: wgpu::Buffer,
     display_pipeline: wgpu::RenderPipeline,
     display_layout: wgpu::BindGroupLayout,
     view_layout: wgpu::BindGroupLayout,
@@ -439,6 +441,7 @@ impl SceneContext<'_> {
             &self.prepared.instances,
             &self.prepared.cube_indices,
             self.prepared.instance_upload.active_count(),
+            self.prepared.instance_upload.two_sided_count() != 0,
             self.generation,
             index,
             pass,
@@ -654,6 +657,7 @@ impl PreparedSynthetic {
         let mut instance_upload = InstanceUpload::new(
             instance_buffer,
             packed_instances,
+            &scene.instances,
             material_count,
             instance_count,
         );
@@ -923,46 +927,67 @@ impl PreparedSynthetic {
             label: Some("prepared synthetic shader ABI2"),
             source: wgpu::ShaderSource::Wgsl(include_str!("synthetic.wgsl").into()),
         });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("prepared opaque synthetic role"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vertex"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: DEPTH_FORMAT,
-                depth_write_enabled: Some(true),
-                depth_compare: Some(wgpu::CompareFunction::Greater),
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some(if shadow.is_some() {
-                    "shadowed_fragment"
-                } else {
-                    "fragment"
+        let create_pipeline = |cull_mode| {
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("prepared opaque synthetic role"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: Some("vertex"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    buffers: &[],
+                },
+                primitive: wgpu::PrimitiveState {
+                    cull_mode,
+                    ..Default::default()
+                },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: DEPTH_FORMAT,
+                    depth_write_enabled: Some(true),
+                    depth_compare: Some(wgpu::CompareFunction::Greater),
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
                 }),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: SCENE_FORMAT,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: Some(if shadow.is_some() {
+                        "shadowed_fragment"
+                    } else {
+                        "fragment"
+                    }),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: SCENE_FORMAT,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                multiview_mask: None,
+                cache: None,
+            })
+        };
+        let pipeline = create_pipeline(Some(wgpu::Face::Back));
+        let pipeline_two_sided = create_pipeline(None);
         let index_bytes: [u8; 72] =
             std::array::from_fn(|byte| CUBE_INDICES[byte / 2].to_le_bytes()[byte % 2]);
         let cube_indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic shared cube indices"),
             contents: &index_bytes,
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        // The old orthographic diagnostic keeps world XY as clip XY while its
+        // camera looks from -Z. Reverse only its index winding; perspective
+        // cameras use the normal outward-facing cube triangles.
+        let reversed_bytes: [u8; 72] = std::array::from_fn(|byte| {
+            let index = byte / 2;
+            let triangle = index / 3;
+            let reversed = [0, 2, 1][index % 3];
+            CUBE_INDICES[triangle * 3 + reversed].to_le_bytes()[byte % 2]
+        });
+        let cube_reversed_indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("synthetic orthographic cube winding"),
+            contents: &reversed_bytes,
             usage: wgpu::BufferUsages::INDEX,
         });
         let (display_pipeline, display_layout) = prepare_display_pipeline(device);
@@ -979,7 +1004,9 @@ impl PreparedSynthetic {
                 role: 0,
             },
             pipeline,
+            pipeline_two_sided,
             cube_indices,
+            cube_reversed_indices,
             display_pipeline,
             display_layout,
             view_layout,
@@ -1041,6 +1068,10 @@ impl PreparedSynthetic {
     /// Number of active instance rows submitted by each opaque and shadow draw.
     pub fn active_instance_count(&self) -> u32 {
         self.instance_upload.active_count()
+    }
+    /// Active rows that require the prepared two-sided fallback for mixed winding.
+    pub fn two_sided_instance_count(&self) -> usize {
+        self.instance_upload.two_sided_count()
     }
     /// Whether the prepared frame records two Sun cascade passes.
     pub fn shadowed(&self) -> bool {
@@ -1230,6 +1261,13 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
+        let cube_reversed_indices = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: CUBE_INDEX_BYTES,
+                usage: wgpu::BufferUsages::INDEX,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
         let mut accesses = vec![
             Access {
                 resource: material,
@@ -1245,6 +1283,12 @@ impl PreparedSynthetic {
             },
             Access {
                 resource: cube_indices.clone(),
+                range: 0..CUBE_INDEX_BYTES,
+                kind: AccessKind::IndexRead,
+                store: true,
+            },
+            Access {
+                resource: cube_reversed_indices,
                 range: 0..CUBE_INDEX_BYTES,
                 kind: AccessKind::IndexRead,
                 store: true,
@@ -1746,12 +1790,22 @@ impl PreparedSynthetic {
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(&self.pipeline);
+        pass.set_pipeline(if self.instance_upload.two_sided_count() == 0 {
+            &self.pipeline
+        } else {
+            &self.pipeline_two_sided
+        });
         pass.set_bind_group(0, &target.view_bind_group, &[]);
         pass.set_bind_group(1, &self.light, &[]);
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, &self.instances, &[]);
-        pass.set_index_buffer(self.cube_indices.slice(..), wgpu::IndexFormat::Uint16);
+        let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
+        let indices = if matches!(view.projection(), Projection::OrthographicFixture) {
+            &self.cube_reversed_indices
+        } else {
+            &self.cube_indices
+        };
+        pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
         pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
         Ok(())
     }

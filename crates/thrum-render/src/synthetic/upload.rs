@@ -67,6 +67,7 @@ pub(super) struct InstanceUpload {
     packed: Vec<u8>,
     staged: Vec<u8>,
     staged_shadow: Vec<bool>,
+    staged_two_sided: Vec<bool>,
     valid_slots: Vec<u32>,
     dirty_physical: Vec<u32>,
     runs: Vec<UploadRun>,
@@ -78,12 +79,15 @@ pub(super) struct InstanceUpload {
     active_count: u32,
     shadow_clamped: Vec<bool>,
     active_shadow_clamps: usize,
+    two_sided: Vec<bool>,
+    active_two_sided: usize,
 }
 
 impl InstanceUpload {
     pub(super) fn new(
         buffer: wgpu::Buffer,
         initial: PackedInstances,
+        instances: &[InstanceRecord],
         material_count: u32,
         instance_count: u32,
     ) -> Self {
@@ -92,10 +96,16 @@ impl InstanceUpload {
         for &slot in &initial.physical_to_slot[..initial.active_count as usize] {
             active_slots[slot as usize] = true;
         }
+        let two_sided: Vec<bool> = instances
+            .iter()
+            .map(|instance| instance.ids[3] != 0 && needs_two_sided(instance))
+            .collect();
+        let active_two_sided = two_sided.iter().filter(|&&value| value).count();
         Self {
             buffer,
             staged: Vec::with_capacity(initial.bytes.len()),
             staged_shadow: Vec::with_capacity(count),
+            staged_two_sided: Vec::with_capacity(count),
             packed: initial.bytes,
             valid_slots: Vec::with_capacity(count),
             dirty_physical: Vec::with_capacity(count * 3),
@@ -108,6 +118,8 @@ impl InstanceUpload {
             active_count: initial.active_count,
             shadow_clamped: vec![false; count],
             active_shadow_clamps: 0,
+            two_sided,
+            active_two_sided,
         }
     }
 
@@ -131,6 +143,10 @@ impl InstanceUpload {
         self.active_count
     }
 
+    pub(super) fn two_sided_count(&self) -> usize {
+        self.active_two_sided
+    }
+
     pub(super) fn replace(
         &mut self,
         queue: &wgpu::Queue,
@@ -143,6 +159,7 @@ impl InstanceUpload {
         }
         self.staged.clear();
         self.staged_shadow.clear();
+        self.staged_two_sided.clear();
         self.valid_slots.clear();
         self.dirty_physical.clear();
         let mut previous_slot = None;
@@ -162,6 +179,8 @@ impl InstanceUpload {
                 let clamped = shadow_depth_clamped(&instances[index]);
                 self.staged.extend_from_slice(&bytes);
                 self.staged_shadow.push(clamped);
+                self.staged_two_sided
+                    .push(instances[index].ids[3] != 0 && needs_two_sided(&instances[index]));
                 self.valid_slots.push(slot);
             }
         }
@@ -236,6 +255,12 @@ impl InstanceUpload {
             self.active_shadow_clamps += usize::from(clamped);
             self.shadow_clamped[index] = clamped;
         }
+        for (&slot, &two_sided) in self.valid_slots.iter().zip(&self.staged_two_sided) {
+            let index = slot as usize;
+            self.active_two_sided -= usize::from(self.two_sided[index]);
+            self.active_two_sided += usize::from(two_sided);
+            self.two_sided[index] = two_sided;
+        }
         Ok(InstanceUploadReport {
             changed_rows,
             dropped_invalid,
@@ -248,6 +273,18 @@ impl InstanceUpload {
             },
         })
     }
+}
+
+fn needs_two_sided(instance: &InstanceRecord) -> bool {
+    let m = &instance.current;
+    let (a, b, c) = (
+        [f64::from(m[0][0]), f64::from(m[0][1]), f64::from(m[0][2])],
+        [f64::from(m[1][0]), f64::from(m[1][1]), f64::from(m[1][2])],
+        [f64::from(m[2][0]), f64::from(m[2][1]), f64::from(m[2][2])],
+    );
+    let determinant = a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
+        + a[2] * (b[0] * c[1] - b[1] * c[0]);
+    determinant <= 1e-12
 }
 
 fn swap_physical(

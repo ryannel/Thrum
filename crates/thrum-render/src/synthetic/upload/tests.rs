@@ -1,4 +1,6 @@
-use super::{MAX_PARTIAL_WRITES, PackedInstances, build_runs, pack_synthetic_instance};
+use super::{
+    MAX_PARTIAL_WRITES, PackedInstances, build_runs, needs_two_sided, pack_synthetic_instance,
+};
 use crate::{abi, synthetic::RenderError};
 
 #[test]
@@ -38,6 +40,16 @@ fn packed_rows_put_active_slots_first_without_changing_logical_identity() {
             pack_synthetic_instance(&instances[logical as usize], 1).unwrap()
         );
     }
+}
+
+#[test]
+fn reflected_or_degenerate_rows_need_the_two_sided_fallback() {
+    let mut instance = abi::InstanceRecord::identity(0, 0);
+    assert!(!needs_two_sided(&instance));
+    instance.current[0][0] = -1.0;
+    assert!(needs_two_sided(&instance));
+    instance.current[0][0] = 0.0;
+    assert!(needs_two_sided(&instance));
 }
 
 #[test]
