@@ -5,7 +5,7 @@
 use std::{num::NonZeroUsize, time::Duration};
 
 use thrum_core::{StableId, sim::ExecutionMode};
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
 use v1_game::{
     FrameConfig, FrameHost, FrameSample, SurfaceOutput,
     simulation::{Command, ComponentEntity, Position, Velocity},
@@ -160,6 +160,7 @@ fn measure(
         ..Default::default()
     }))
     .expect("device request succeeds");
+    let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
     let surface = surface_extent.map(|extent| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("V1 benchmark presentation target"),
@@ -183,9 +184,10 @@ fn measure(
         format: wgpu::TextureFormat::Bgra8Unorm,
         extent,
     });
-    let mut host = pollster::block_on(FrameHost::new(
+    let mut host = pollster::block_on(FrameHost::new_with_capabilities(
         &device,
         &queue,
+        &capabilities,
         FrameConfig {
             render_extent,
             surface: profile,

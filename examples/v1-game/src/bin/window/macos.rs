@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
 use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
@@ -254,6 +254,8 @@ impl App {
             ..Default::default()
         }))
         .map_err(|error| format!("device: {error:?}"))?;
+        let capabilities =
+            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         let size = window.inner_size();
         let mut config = surface
             .get_default_config(&adapter, size.width.max(1), size.height.max(1))
@@ -269,9 +271,10 @@ impl App {
         .find(|format| formats.contains(format))
         .ok_or("no supported 8-bit SDR surface format")?;
         surface.configure(&device, &config);
-        let mut host = pollster::block_on(FrameHost::new(
+        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
             &device,
             &queue,
+            &capabilities,
             FrameConfig {
                 render_extent: [1920, 1080],
                 surface: Some(SurfaceProfile {

@@ -7,6 +7,7 @@
 //! remain open.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
+use crate::capabilities::DeviceCapabilities;
 use crate::graph::{
     Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
     GraphDepthAttachment, GraphError, GraphTextures, Pass, PassScope, PipelineKey,
@@ -366,7 +367,8 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
-    device: wgpu::Device,
+    capabilities: DeviceCapabilities,
+    classes: TextureClasses,
     owner: Arc<()>,
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
@@ -440,10 +442,10 @@ impl PreparedSynthetic {
         light: SyntheticLight,
         exposure: f32,
     ) -> Result<Self, RenderError> {
+        let capabilities = DeviceCapabilities::legacy_from_device(device, generation);
         Self::prepare_with_lighting(
-            device,
+            &capabilities,
             queue,
-            generation,
             scene,
             FrameLighting::Diagnostic(light),
             exposure,
@@ -464,10 +466,10 @@ impl PreparedSynthetic {
         environment: PhotometricEnvironment,
         exposure: f32,
     ) -> Result<Self, RenderError> {
-        Self::prepare_with_lighting(
-            device,
+        let capabilities = DeviceCapabilities::legacy_from_device(device, generation);
+        Self::prepare_with_capabilities(
+            &capabilities,
             queue,
-            generation,
             scene,
             FrameLighting::Photometric(environment),
             exposure,
@@ -475,18 +477,35 @@ impl PreparedSynthetic {
         .await
     }
 
+    /// Prepare the live scene using one adapter-generation record captured by
+    /// the platform before pipeline closure.
+    ///
+    /// # Errors
+    ///
+    /// Refuses invalid authored quantities, view or GPU preparation.
+    pub async fn prepare_with_capabilities(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+        exposure: f32,
+    ) -> Result<Self, RenderError> {
+        Self::prepare_with_lighting(capabilities, queue, scene, lighting, exposure).await
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
     )]
     async fn prepare_with_lighting(
-        device: &wgpu::Device,
+        capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
-        generation: u64,
         scene: &SyntheticScene,
         lighting: FrameLighting,
         exposure: f32,
     ) -> Result<Self, RenderError> {
+        let device = capabilities.device();
+        let generation = capabilities.generation();
         let display_gain = checked_display_gain(exposure)?;
         let (mut light_data, background, presentation_light_clamps) =
             pack_frame_lighting(lighting)?;
@@ -503,16 +522,16 @@ impl PreparedSynthetic {
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
         let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
         let dropped_light_references = clusters.dropped_references;
-        let limits = device.limits();
+        let limits = capabilities.limits();
         if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
             .into_iter()
             .any(|bytes| bytes > limits.max_storage_buffer_binding_size)
         {
             return Err(RenderError::SceneCapacity);
         }
-        let classes = TextureClasses::defaults(&limits)?;
+        let classes = TextureClasses::defaults(limits)?;
         let (material_bytes, instance_bytes) =
-            abi::table_bytes(scene.materials.len(), scene.instances.len(), &limits)?;
+            abi::table_bytes(scene.materials.len(), scene.instances.len(), limits)?;
         let material_count =
             u32::try_from(scene.materials.len()).map_err(|_| RenderError::SceneCapacity)?;
         let instance_count =
@@ -867,7 +886,8 @@ impl PreparedSynthetic {
             return Err(RenderError::Validation(error.to_string()));
         }
         Ok(Self {
-            device: device.clone(),
+            capabilities: capabilities.clone(),
+            classes,
             owner: Arc::new(()),
             key: PipelineKey {
                 device_generation: generation,
@@ -906,6 +926,10 @@ impl PreparedSynthetic {
             background,
             shadow,
         })
+    }
+    /// Immutable facts shared by every preparation on this adapter generation.
+    pub fn capabilities(&self) -> &DeviceCapabilities {
+        &self.capabilities
     }
     /// Local-light references dropped when a cluster exceeds its declared
     /// capacity. This is presentation telemetry, not a gameplay light count.
@@ -1179,7 +1203,7 @@ impl PreparedSynthetic {
             kind: AccessKind::AttachmentClear,
             store: false,
         });
-        for class in TextureClasses::defaults(&wgpu::Limits::default())?.arrays() {
+        for class in self.classes.arrays() {
             let texture = graph.resource(
                 ResourceDescriptor::Texture {
                     width: 1,
@@ -1821,10 +1845,10 @@ impl OffscreenTarget {
         width: u32,
         height: u32,
     ) -> Result<Self, RenderError> {
-        if prepared.device != *device {
+        if !prepared.capabilities.matches(device) {
             return Err(RenderError::StaleTarget);
         }
-        let limits = device.limits();
+        let limits = prepared.capabilities.limits();
         if width == 0
             || height == 0
             || width > limits.max_texture_dimension_2d

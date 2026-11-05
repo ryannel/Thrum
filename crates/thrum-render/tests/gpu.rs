@@ -2,6 +2,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use thrum_render::abi::{InstanceRecord, MaterialRecord};
+use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::synthetic::{
     DEPTH_FORMAT, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight,
     SyntheticPointLight, SyntheticScene, SyntheticView,
@@ -37,6 +38,14 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             })
             .await
             .unwrap();
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
+        assert_eq!(capabilities.adapter().name, info.name);
+        assert_eq!(capabilities.features(), device.features());
+        assert_eq!(
+            capabilities.limits().max_texture_dimension_2d,
+            device.limits().max_texture_dimension_2d
+        );
+        assert!(capabilities.matches(&device));
         let mut scene = SyntheticScene::grid(1).unwrap();
         // Axis-aligned front face gives an independent, constant-normal oracle.
         scene.instances[0].current = [
@@ -52,9 +61,15 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             [0.0, 0.0, 10.0, 0.0],
         ];
         let prepare_start = std::time::Instant::now();
-        let prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
-            .await
-            .unwrap();
+        let prepared = PreparedSynthetic::prepare_with_capabilities(
+            &capabilities,
+            &queue,
+            &scene,
+            FrameLighting::Diagnostic(SyntheticLight::default()),
+            1.0,
+        )
+        .await
+        .unwrap();
         eprintln!(
             "cold prepare forward+display pipelines: {} ns",
             prepare_start.elapsed().as_nanos()

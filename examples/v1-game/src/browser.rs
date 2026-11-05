@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
+use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile, timing::GpuTimings};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
@@ -63,6 +63,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         })
         .await
         .map_err(js_error)?;
+    let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
     let mut config = surface
         .get_default_config(&adapter, canvas.width().max(1), canvas.height().max(1))
         .ok_or_else(|| js_error("no compatible canvas surface configuration"))?;
@@ -77,9 +78,10 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
     .find(|format| formats.contains(format))
     .ok_or_else(|| js_error("no compatible 8-bit SDR canvas format"))?;
     surface.configure(&device, &config);
-    let host = FrameHost::new(
+    let host = FrameHost::new_with_capabilities(
         &device,
         &queue,
+        &capabilities,
         FrameConfig {
             render_extent: [config.width, config.height],
             surface: Some(SurfaceProfile {
