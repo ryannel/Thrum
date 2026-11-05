@@ -16,7 +16,138 @@ use v1_game::{
 static ALLOC: divan::AllocProfiler = divan::AllocProfiler::system();
 
 fn main() {
+    if std::env::args().any(|argument| argument == "--g0-inventory") {
+        print_g0_inventory();
+        return;
+    }
     divan::main();
+}
+
+#[expect(
+    clippy::print_stdout,
+    reason = "the explicit benchmark inventory reports fixed rows and missing consumers"
+)]
+fn print_g0_inventory() {
+    const ROWS: &[(&str, &str)] = &[
+        ("S1 tick+publication 10k/100k", "measured:g2r --g0-s1"),
+        (
+            "S1 added command/damage sensitivity",
+            "measured:g2r --g0-s1-paired",
+        ),
+        ("S1 warmed 200-spawn burst", "measured:g2r --g0-burst"),
+        (
+            "S2 correction timing and allocations",
+            "measured_old_path:g2r --g0-s2",
+        ),
+        (
+            "S2 retained-record amendment and complete-state equality",
+            "unsupported:amendment and complete-state oracle absent",
+        ),
+        (
+            "G3b 10k/1080p frame CPU",
+            "measured_offscreen:frame assembled_frame_1080p_late_surface",
+        ),
+        (
+            "G3b 120 Hz callback requests",
+            "measured_offscreen:frame g0_120hz_callbacks_at_1080p",
+        ),
+        (
+            "G3b real 120 Hz present interval over ten minutes",
+            "unsupported:display link and presentation timestamps absent",
+        ),
+        (
+            "G3b iPhone 18 Pro simulator display-link function",
+            "unsupported:simulator launch and configuration script absent",
+        ),
+        (
+            "G3b input-to-photon latency",
+            "unsupported:presentation timestamp and input correlation absent",
+        ),
+        (
+            "G3b per-thread zero allocation",
+            "unsupported:separate render thread and per-thread counters absent",
+        ),
+        (
+            "G3b surface/background/device-loss recovery",
+            "unsupported:unified lifecycle consumer absent",
+        ),
+        (
+            "G3t 1080p GPU pass sum",
+            "measured_offscreen:frame assembled_frame_1080p_late_surface",
+        ),
+        (
+            "G3t screen attachment traffic with Metal counters",
+            "unsupported:Metal counter capture absent",
+        ),
+        (
+            "G3t present-inclusive GPU frame",
+            "unsupported:real drawable presentation absent",
+        ),
+        (
+            "G3t steady write_buffer count",
+            "unsupported:upload instrumentation absent",
+        ),
+        (
+            "G3t frame CPU 4-to-64 lights",
+            "unsupported:game frame has one diagnostic sun",
+        ),
+        (
+            "G3t mirrored-row GPU sensitivity",
+            "unsupported:game frame has no mirrored-row control",
+        ),
+        (
+            "G3c GPU time versus visibility",
+            "unsupported:GPU culling pass absent",
+        ),
+        (
+            "G3c encode CPU 10k-to-100k",
+            "unsupported:game frame fixes 10k instances",
+        ),
+        (
+            "G4 Apple recipe versus portable and image tolerance",
+            "unsupported:Apple recipe absent",
+        ),
+        (
+            "G4 iPhone GPU proxy at native resolution times five",
+            "unsupported:Apple recipe and native-resolution capture absent",
+        ),
+        (
+            "G4 cold-play pipeline compilation",
+            "unsupported:pipeline archive consumer absent",
+        ),
+        (
+            "G5 no-change scan and texture-edit latency",
+            "unsupported:replacement content cache absent",
+        ),
+        (
+            "G0 iOS runtime dependency tree",
+            "measured_guard:repo_check iOS cargo tree",
+        ),
+        (
+            "G5 shipping dependency closure",
+            "unsupported:Mac browser Android and final-link guards absent",
+        ),
+        (
+            "G6 1.5k-mover conditioned bandwidth",
+            "unsupported:real transport and game network consumer absent",
+        ),
+        (
+            "G6 reconciliation iPhone proxy",
+            "unsupported:owned prediction and correction consumer absent",
+        ),
+        (
+            "G7 four rendered peers and V1 exit",
+            "unsupported:four-window game consumer absent",
+        ),
+        (
+            "G7 remaining iPhone CPU/GPU proxy rows",
+            "unsupported:four-peer game and named device profile absent",
+        ),
+    ];
+    println!("fixed_row,baseline_state");
+    for &(row, state) in ROWS {
+        println!("{row},{state}");
+    }
 }
 
 #[divan::bench(args = [10_000, 100_000])]
@@ -149,10 +280,16 @@ fn measure(
     callback_period: Duration,
     allow_unsent_callback: bool,
 ) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
     let adapter =
         pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
-            .expect("real native adapter required for this explicit benchmark");
+            .expect("real Metal adapter required for this explicit benchmark");
+    let adapter_info = adapter.get_info();
+    assert_eq!(adapter_info.backend, wgpu::Backend::Metal);
+    report_metal_adapter(&adapter_info);
     let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
         required_features: if gpu_timestamps {
             DeviceCapabilities::requested_timing_features(&adapter)
@@ -237,6 +374,11 @@ fn measure(
         samples.push(complete);
         divan::black_box(complete);
     });
+    assert!(
+        !samples.is_empty() && samples.len() >= callbacks / 2,
+        "baseline needs frames from at least half its callbacks: {} of {callbacks}",
+        samples.len()
+    );
     report_frame_cpu(
         &samples,
         callbacks,
@@ -244,6 +386,14 @@ fn measure(
         render_extent,
         surface_extent,
     );
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "record the selected Metal adapter in raw benchmark evidence"
+)]
+fn report_metal_adapter(info: &wgpu::AdapterInfo) {
+    eprintln!("G0 Metal adapter: {} ({:?})", info.name, info.backend);
 }
 
 #[expect(
@@ -257,13 +407,19 @@ fn report_frame_cpu(
     render_extent: [u32; 2],
     surface_extent: Option<[u32; 2]>,
 ) {
-    if samples.is_empty() {
-        return;
-    }
+    assert!(!samples.is_empty(), "frame CPU needs submitted samples");
+    assert!(
+        !gpu_timestamps || samples.iter().all(|sample| sample.gpu_pass_ns.is_some()),
+        "GPU baseline requires timestamps for every submitted frame"
+    );
     let percentile = |value: fn(&FrameSample) -> f64| {
         let mut values: Vec<f64> = samples.iter().map(value).collect();
         values.sort_by(f64::total_cmp);
-        (values[values.len() / 2], values[values.len() * 95 / 100])
+        (
+            values[values.len() / 2],
+            values[values.len() * 95 / 100],
+            values[values.len() * 99 / 100],
+        )
     };
     let upload = percentile(|sample| sample.upload_cpu.as_secs_f64() * 1e6);
     let extract = percentile(|sample| sample.extract_cpu.as_secs_f64() * 1e6);
@@ -277,7 +433,7 @@ fn report_frame_cpu(
         percentile(|sample| sample.wall.saturating_sub(sample.tick_cpu).as_secs_f64() * 1e6);
     let host_wall = percentile(|sample| sample.wall.as_secs_f64() * 1e6);
     eprintln!(
-        "V1 offscreen frame CPU submitted={} callbacks={} render={}x{} timestamps={} surface={:?} extract p50/p95={:.1}/{:.1} us live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us stages p50/p95={:.1}/{:.1} us host-minus-tick p50/p95={:.1}/{:.1} us host-wall p50/p95={:.1}/{:.1} us",
+        "V1 offscreen frame CPU submitted={} callbacks={} render={}x{} timestamps={} surface={:?} extract p50/p95={:.1}/{:.1} us live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us stages p50/p95/p99={:.1}/{:.1}/{:.1} us host-minus-tick p50/p95/p99={:.1}/{:.1}/{:.1} us host-wall p50/p95/p99={:.1}/{:.1}/{:.1} us",
         samples.len(),
         callbacks,
         render_extent[0],
@@ -296,17 +452,20 @@ fn report_frame_cpu(
         combined.1,
         stages.0,
         stages.1,
+        stages.2,
         host_non_tick.0,
         host_non_tick.1,
+        host_non_tick.2,
         host_wall.0,
         host_wall.1,
+        host_wall.2,
     );
-    if gpu_timestamps && samples.iter().all(|sample| sample.gpu_pass_ns.is_some()) {
+    if gpu_timestamps {
         let scene_gpu =
             percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6]).iter().sum::<f64>() / 1e6);
         eprintln!(
-            "V1 scene GPU pass-sum p50/p95={:.3}/{:.3} ms",
-            scene_gpu.0, scene_gpu.1
+            "V1 scene GPU pass-sum p50/p95/p99={:.3}/{:.3}/{:.3} ms",
+            scene_gpu.0, scene_gpu.1, scene_gpu.2
         );
         let shadow = percentile(|sample| {
             let passes = sample.gpu_pass_ns.unwrap_or([0.0; 6]);
@@ -328,15 +487,6 @@ fn report_frame_cpu(
             history.1,
             tone.0,
             tone.1
-        );
-    } else if gpu_timestamps {
-        eprintln!(
-            "V1 scene GPU timings missing in {} of {} samples",
-            samples
-                .iter()
-                .filter(|sample| sample.gpu_pass_ns.is_none())
-                .count(),
-            samples.len()
         );
     }
 }

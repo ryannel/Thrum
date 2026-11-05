@@ -32,7 +32,6 @@ fn pixels(
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -123,7 +122,6 @@ fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -172,7 +170,6 @@ fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn mirrored_row_uses_two_sided_fallback_and_keeps_near_surface() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

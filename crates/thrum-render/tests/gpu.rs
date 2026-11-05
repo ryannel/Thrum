@@ -113,7 +113,6 @@ fn scene_depth_uses_32_bit_float() {
 
 /// Opt-in integration test: a real adapter is required, never replaced by a mock.
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 #[expect(
     clippy::too_many_lines,
     reason = "one explicitly opted-in adapter/device lifecycle proves the coupled render, readback and timing paths"
@@ -638,7 +637,6 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for live view, light and shadow pixels"]
 fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -726,7 +724,6 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for two submitted frames and independent readbacks"]
 fn two_submitted_views_keep_their_own_camera_pixels() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -827,7 +824,6 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn clustered_local_light_changes_only_its_receiver_region() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -903,7 +899,6 @@ fn clustered_local_light_changes_only_its_receiver_region() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn perspective_cluster_and_target_aux_light_visible_pixels() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -1181,7 +1176,6 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn cascade_overlap_keeps_caster_occlusion_across_split() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

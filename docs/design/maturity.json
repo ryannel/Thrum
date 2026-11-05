@@ -3,14 +3,14 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-05",
   "contract_revision": "C4",
-  "scope_note": "Historical rows remain; G2R/G3a speed reopens as G2S/G3b. G0 active. No runtime, transport or iPhone result is qualified.",
+  "scope_note": "Historical rows remain; G2R/G3a speed reopens as G2S/G3b. G0 checks complete; no runtime, transport or iPhone result is qualified.",
   "execution_plan": {
     "milestone": "V1: one 10k game on Mac, labelled iPhone proxies, Chrome WebGPU smoke and four rendered peers over conditioned QUIC; physical iPhone pending",
     "active": [
-      "G0 integrity, dead-crate removal and fixed budget baselines"
+      "G2S real-game simulation"
     ],
     "next_parallel": [
-      "G2S realistic simulation rows, then G3b engine frame runtime, G3t tile dataflow and G3c GPU culling"
+      "G3b after G2S"
     ],
     "parked": [
       "A5 in-memory ACK/rebase/retry/reconnect/lane work until G6 real transport",
@@ -24,23 +24,24 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G2S real-game rows and G3b full-frame budget open; G3a graph functionality stands. Mac display and iPhone proxies open; parked tracks inactive."
+    "interpretation": "G0 measured or marked absent every row. G2S/G3b budgets and Mac display remain open; no iPhone result."
   },
   "v1_slices": {
     "G0_boundary": {
-      "implementation": "complete_active_tree_cleanup_and_external_consumer_layout",
-      "functional_validation": "full_dev_check_game_wasm_build_ios_sim_compile_and_explicit_macos_metal_integration_test_passed",
+      "implementation": "complete_boundary_and_integrity_cleanup",
+      "functional_validation": "Mac_dev_check_no_SKIP_negative_Metal_and_verified_baseline_inventory_passed",
       "experienced_quality": "not_applicable_cleanup_no_visual_acceptance",
       "platform_performance": {
-        "mac": "not_measured",
+        "mac": "G0_baselines_only_no_later_gate_speed_claim",
         "windows": "not_run",
         "browser": "not_measured_wasm_compile_only",
-        "ios": "not_measured_simulator_compile_only",
+        "ios": "normal_dependency_tree_clean_simulator_function_pending",
         "android": "not_run"
       },
-      "scope": "Legacy I1/R4 and disconnected conditioned binaries retired from active tree; shared IDs, one-time stable-ID-to-GPU-slot lookup, v1-game layout, dependency guard and compact plan. Seven game schema/rule declarations remain in core until G2; FrameHost remains in game until G3.",
+      "scope": "Legacy I1/R4 retired; inactive source/cook/mobile crates removed. Fixed baselines or explicit absent consumers run in one command. Game page machinery and FrameHost remain until G2S/G3b.",
       "evidence": [
-        "../evidence/integration/G0-BOUNDARY-2026-11-04.md"
+        "../evidence/integration/G0-BOUNDARY-2026-11-04.md",
+        "../evidence/v1-workload/G0-INTEGRITY-2026-11-05.md"
       ]
     },
     "G1_publication": {
