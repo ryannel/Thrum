@@ -20,6 +20,7 @@ use crate::{Handle, StableId, WorldEpoch};
 use super::{
     AccessMode, ComponentKey, ComponentRegistry, Schedule, ScheduleError, SnapshotRing,
     StructuralChange, SystemId, SystemSpec,
+    column_store::TypedStore,
     registered_world::{
         EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, WorldCapture,
         WorldDelta,
@@ -928,6 +929,47 @@ pub struct WorldRead<'a> {
     system: Option<SystemId>,
 }
 
+/// Checked live slot borrowed from one immutable authority view.
+#[derive(Clone, Copy)]
+pub struct LiveSlot<'a> {
+    handle: Handle,
+    id: StableId,
+    nonce: u64,
+    guard: PhantomData<&'a RegisteredWorld>,
+}
+
+impl LiveSlot<'_> {
+    /// Current checked handle.
+    pub fn handle(self) -> Handle {
+        self.handle
+    }
+
+    /// Stable identity at this live slot.
+    pub fn stable_id(self) -> StableId {
+        self.id
+    }
+}
+
+/// Read-only registered column bound once to a checked authority view.
+pub struct ColumnRead<'a, T: Send + Sync + 'static> {
+    column: &'a TypedStore<T>,
+    nonce: u64,
+}
+
+impl<T: Send + Sync + 'static> ColumnRead<'_, T> {
+    /// Read a component at a live slot from the same runtime.
+    ///
+    /// # Errors
+    ///
+    /// The slot belongs to another runtime.
+    pub fn get(&self, slot: LiveSlot<'_>) -> Result<Option<&T>, RegisteredWorldError> {
+        if slot.nonce != self.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
+        Ok(self.column.get(slot.handle.slot as usize))
+    }
+}
+
 impl WorldRead<'_> {
     /// Whether a page's changed-slot interval is still in the bounded journal.
     pub fn has_changes_since(&self, since: u64, current: u64) -> bool {
@@ -941,15 +983,42 @@ impl WorldRead<'_> {
     }
 
     /// Resolve one live physical slot without exposing its storage row.
-    pub fn live_at_slot(&self, slot: u32) -> Option<(Handle, StableId)> {
-        self.world.live_at_slot(slot)
+    pub fn live_at_slot(&self, slot: u32) -> Option<LiveSlot<'_>> {
+        let (handle, id) = self.world.live_at_slot(slot)?;
+        Some(LiveSlot {
+            handle,
+            id,
+            nonce: self.nonce,
+            guard: PhantomData,
+        })
     }
 
-    /// Read structural and three registered component change ticks at a checked handle.
+    /// Bind one declared component column for repeated checked reads.
     ///
     /// # Errors
     ///
-    /// The handle is stale or foreign.
+    /// The permit belongs to another runtime or callback.
+    pub fn column<T: Send + Sync + 'static>(
+        &self,
+        permit: &ReadPermit<T>,
+    ) -> Result<ColumnRead<'_, T>, RegisteredWorldError> {
+        if permit.nonce != self.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
+        if self.system.is_some_and(|system| system != permit.system) {
+            return Err(RegisteredWorldError::WrongSystem);
+        }
+        Ok(ColumnRead {
+            column: self.world.column_at(permit.component),
+            nonce: self.nonce,
+        })
+    }
+
+    /// Read structural and three registered component change ticks at a live slot.
+    ///
+    /// # Errors
+    ///
+    /// The slot belongs to another runtime.
     ///
     /// # Panics
     ///
@@ -960,7 +1029,7 @@ impl WorldRead<'_> {
         C: Send + Sync + 'static,
     >(
         &self,
-        handle: Handle,
+        slot: LiveSlot<'_>,
         permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
     ) -> Result<[u64; 4], RegisteredWorldError> {
         for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
@@ -972,9 +1041,11 @@ impl WorldRead<'_> {
         assert!(self.system.is_none_or(|system| {
             system == permits.0.system && system == permits.1.system && system == permits.2.system
         }));
-        self.world.entity(handle)?;
+        if slot.nonce != self.nonce {
+            return Err(RegisteredWorldError::WrongRuntime);
+        }
         Ok(self.world.change_ticks3_at(
-            handle.slot,
+            slot.handle.slot,
             [
                 permits.0.component,
                 permits.1.component,

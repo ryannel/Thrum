@@ -272,7 +272,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     let mut candidate = test_candidate(&runtime);
     let mut game = test_rules(&runtime);
     let first = seed_test_world(&mut runtime);
-    assert_invalid_journal_access(&runtime, &game, first);
+    assert_invalid_journal_access(&runtime);
     assert_eq!(
         runtime.step(&mut game, &mut candidate),
         Err(TickError::BaselineRequired)
@@ -526,17 +526,7 @@ fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
     }
 }
 
-fn assert_invalid_journal_access(runtime: &GameRuntime<Page, Rules>, game: &Rules, first: Handle) {
-    assert_eq!(
-        runtime.read().change_ticks3(
-            Handle {
-                epoch: first.epoch,
-                slot: u32::MAX,
-                generation: first.generation,
-            },
-            (&game.height_read, &game.height_read, &game.height_read),
-        ),
-        Err(RegisteredWorldError::InvalidHandle)
-    );
+fn assert_invalid_journal_access(runtime: &GameRuntime<Page, Rules>) {
+    assert!(runtime.read().live_at_slot(u32::MAX).is_none());
     assert!(!runtime.read().visit_changes_since(0, 99, |_| {}));
 }

@@ -194,6 +194,13 @@ impl Page {
                 },
             );
         } else if let Some(old) = since {
+            let positions = world.column(position_read).expect("declared position read");
+            let healths = world.column(health_read).expect("declared health read");
+            let velocities = world.column(velocity_read).expect("declared velocity read");
+            let owners = world
+                .column(ownership_read)
+                .expect("declared ownership read");
+            let visuals = world.column(visual_read).expect("declared visual read");
             self.refresh_generation = self.refresh_generation.wrapping_add(1);
             if self.refresh_generation == 0 {
                 self.refresh_marks.fill(0);
@@ -206,16 +213,16 @@ impl Page {
                 }
                 self.refresh_marks[slot] = self.refresh_generation;
                 let old_present = self.ids[slot].is_some();
-                let Some((handle, id)) = world.live_at_slot(key) else {
+                let Some(live) = world.live_at_slot(key) else {
                     if old_present {
                         self.ids[slot] = None;
                         self.live -= 1;
                     }
                     return;
                 };
-                let (Ok(position), Ok(health)) = (
-                    world.with(position_read, handle, |value| *value),
-                    world.with(health_read, handle, |value| value.0),
+                let (Some(position), Some(health)) = (
+                    positions.get(live).expect("same runtime live slot"),
+                    healths.get(live).expect("same runtime live slot"),
                 ) else {
                     if old_present {
                         self.ids[slot] = None;
@@ -227,27 +234,33 @@ impl Page {
                     self.live += 1;
                 }
                 let [structural_tick, position_tick, velocity_tick, health_tick] = world
-                    .change_ticks3(handle, (position_read, velocity_read, health_read))
-                    .expect("live journal slot has a checked handle");
+                    .change_ticks3(live, (position_read, velocity_read, health_read))
+                    .expect("same runtime live slot");
                 let structural = structural_tick > old
-                    || self.ids[slot] != Some(id)
-                    || self.generations[slot] != handle.generation;
+                    || self.ids[slot] != Some(live.stable_id())
+                    || self.generations[slot] != live.handle().generation;
                 if structural {
-                    self.ids[slot] = Some(id);
-                    self.generations[slot] = handle.generation;
-                    self.ownership[slot] = world.with(ownership_read, handle, |value| *value).ok();
-                    self.visuals[slot] = world.with(visual_read, handle, |value| value.0).ok();
+                    self.ids[slot] = Some(live.stable_id());
+                    self.generations[slot] = live.handle().generation;
+                    self.ownership[slot] =
+                        owners.get(live).expect("same runtime live slot").copied();
+                    self.visuals[slot] = visuals
+                        .get(live)
+                        .expect("same runtime live slot")
+                        .map(|value| value.0);
                 }
                 if structural || position_tick > old {
-                    self.positions[slot] = position;
+                    self.positions[slot] = *position;
                 }
                 if structural || velocity_tick > old {
-                    self.velocities[slot] = world
-                        .with(velocity_read, handle, |value| *value)
+                    self.velocities[slot] = velocities
+                        .get(live)
+                        .expect("same runtime live slot")
+                        .copied()
                         .unwrap_or_default();
                 }
                 if structural || health_tick > old {
-                    self.health[slot] = health;
+                    self.health[slot] = health.0;
                 }
                 if structural_tick == tick || position_tick == tick {
                     self.mark_dirty(slot, POSITION_DIRTY);
