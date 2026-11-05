@@ -6,7 +6,7 @@ use thrum_render::{present::SurfaceProfile, timing::GpuTimings};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
-use crate::{FrameHost, FrameSample, SurfaceOutput};
+use crate::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
 const FRAMES: usize = 600;
 
@@ -80,10 +80,13 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
     let host = FrameHost::new(
         &device,
         &queue,
-        Some(SurfaceProfile {
-            format: config.format,
-            extent: [config.width, config.height],
-        }),
+        FrameConfig {
+            render_extent: [config.width, config.height],
+            surface: Some(SurfaceProfile {
+                format: config.format,
+                extent: [config.width, config.height],
+            }),
+        },
     )
     .await
     .map_err(js_error)?;

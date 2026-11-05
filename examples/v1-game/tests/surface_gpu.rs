@@ -73,10 +73,13 @@ async fn render_surface(
     let mut host = FrameHost::new(
         device,
         queue,
-        Some(SurfaceProfile {
-            format,
-            extent: [SIZE, SIZE],
-        }),
+        v1_game::FrameConfig {
+            surface: Some(SurfaceProfile {
+                format,
+                extent: [SIZE, SIZE],
+            }),
+            ..Default::default()
+        },
     )
     .await
     .expect("five prepared passes");
@@ -193,10 +196,13 @@ fn unavailable_surface_drops_only_views_and_resize_reuses_preparation() {
         let mut host = FrameHost::new(
             &device,
             &queue,
-            Some(SurfaceProfile {
-                format: wgpu::TextureFormat::Bgra8Unorm,
-                extent: [SIZE, SIZE],
-            }),
+            v1_game::FrameConfig {
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent: [SIZE, SIZE],
+                }),
+                ..Default::default()
+            },
         )
         .await
         .expect("prepared host");

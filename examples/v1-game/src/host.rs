@@ -42,8 +42,7 @@ mod native_worker;
 use native_worker::{CompletedExtract, ExtractRequest, NativeWorker};
 
 const GENERATION: u64 = 1;
-const WIDTH: u32 = 640;
-const HEIGHT: u32 = 360;
+const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
 const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
 const GAME_SUN: SyntheticLight = SyntheticLight {
@@ -68,14 +67,14 @@ fn frame_phase(tick: u64) -> f32 {
     f32::from(cycle) * (std::f32::consts::TAU / 360.0)
 }
 
-fn frame_view(tick: u64) -> Result<SyntheticView, String> {
+fn frame_view(tick: u64, extent: [u32; 2]) -> Result<SyntheticView, String> {
     let phase = frame_phase(tick);
     SyntheticView::perspective(
         [phase.sin() * 0.08, (phase.cos() - 1.0) * 0.04, 2.0],
         [0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0],
         1.0,
-        WIDTH as f32 / HEIGHT as f32,
+        extent[0] as f32 / extent[1] as f32,
         0.1,
         20.0,
     )
@@ -181,6 +180,24 @@ pub struct SurfaceOutput<'a> {
     pub extent: [u32; 2],
 }
 
+/// Internal scene resolution and optional surface selected by the platform.
+#[derive(Clone, Copy, Debug)]
+pub struct FrameConfig {
+    /// Scene/shadow-independent render extent; output may have another size.
+    pub render_extent: [u32; 2],
+    /// Current presentation target, absent for headless frames.
+    pub surface: Option<SurfaceProfile>,
+}
+
+impl Default for FrameConfig {
+    fn default() -> Self {
+        Self {
+            render_extent: DEFAULT_RENDER_EXTENT,
+            surface: None,
+        }
+    }
+}
+
 enum SlotState {
     Free,
     Rendering(FrameSample),
@@ -215,6 +232,7 @@ pub struct VisualPrepareInputs {
     queue: wgpu::Queue,
     scene: SyntheticScene,
     surface: bool,
+    render_extent: [u32; 2],
     owner: Arc<()>,
 }
 
@@ -250,8 +268,13 @@ impl VisualPrepareInputs {
         let mut slots = Vec::with_capacity(IN_FLIGHT);
         for _ in 0..IN_FLIGHT {
             slots.push(FrameSlot {
-                target: OffscreenTarget::new(&self.device, &prepared, WIDTH, HEIGHT)
-                    .map_err(|error| format!("cooked target: {error:?}"))?,
+                target: OffscreenTarget::new(
+                    &self.device,
+                    &prepared,
+                    self.render_extent[0],
+                    self.render_extent[1],
+                )
+                .map_err(|error| format!("cooked target: {error:?}"))?,
                 presentation: None,
                 timings: GpuTimings::new(
                     &self.device,
@@ -299,6 +322,7 @@ pub struct FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     last_render_slot: Option<usize>,
     scene: SyntheticScene,
+    render_extent: [u32; 2],
     changed_slots: Vec<u32>,
     prepared: PreparedSynthetic,
     presenter: Option<SurfacePresenter>,
@@ -342,8 +366,12 @@ impl FrameHost {
     pub async fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        surface: Option<SurfaceProfile>,
+        config: FrameConfig,
     ) -> Result<Self, String> {
+        let [width, height] = config.render_extent;
+        if width == 0 || height == 0 {
+            return Err("render extent must be nonzero".to_owned());
+        }
         let mut sim = scene::simulation()?;
         let mut extractor = RenderExtractor::new(ENTITY_COUNT, ENTITY_COUNT);
         let initial = sim
@@ -359,7 +387,7 @@ impl FrameHost {
             [0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],
             1.0,
-            WIDTH as f32 / HEIGHT as f32,
+            width as f32 / height as f32,
             0.1,
             20.0,
         )
@@ -383,9 +411,9 @@ impl FrameHost {
             PreparedSynthetic::prepare_with_light(device, queue, GENERATION, &scene, GAME_SUN)
                 .await
                 .map_err(|error| format!("prepare: {error:?}"))?;
-        let presenter = match surface {
+        let presenter = match config.surface {
             Some(profile) => Some(
-                SurfacePresenter::prepare(device, GENERATION, [WIDTH, HEIGHT], profile)
+                SurfacePresenter::prepare(device, GENERATION, config.render_extent, profile)
                     .await
                     .map_err(|error| format!("surface prepare: {error:?}"))?,
             ),
@@ -393,7 +421,7 @@ impl FrameHost {
         };
         let mut slots = Vec::with_capacity(IN_FLIGHT);
         for _ in 0..IN_FLIGHT {
-            let target = OffscreenTarget::new(device, &prepared, WIDTH, HEIGHT)
+            let target = OffscreenTarget::new(device, &prepared, width, height)
                 .map_err(|error| format!("target: {error:?}"))?;
             slots.push(FrameSlot {
                 presentation: presenter
@@ -442,6 +470,7 @@ impl FrameHost {
             #[cfg(not(target_arch = "wasm32"))]
             last_render_slot: None,
             scene,
+            render_extent: config.render_extent,
             changed_slots,
             prepared,
             presenter,
@@ -471,6 +500,7 @@ impl FrameHost {
             queue: self.queue.clone(),
             scene: self.scene.clone(),
             surface: self.presenter.is_some(),
+            render_extent: self.render_extent,
             owner: Arc::clone(&self.visual_owner),
         }
     }
@@ -975,7 +1005,7 @@ impl FrameHost {
                 .frame(),
             &mut self.changed_slots,
         );
-        self.scene.view = frame_view(frame.frame_tick)?;
+        self.scene.view = frame_view(frame.frame_tick, self.render_extent)?;
         let lighting = self.frame_lighting(frame.frame_tick);
         let view_update_start = Instant::now();
         self.prepared
@@ -1440,10 +1470,15 @@ impl FrameHost {
             .unwrap_or(u64::MAX);
             self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
         }
-        self.scene.view = frame_view(self.sim.tick())?;
+        self.scene.view = frame_view(self.sim.tick(), self.render_extent)?;
         let lighting = self.frame_lighting(self.sim.tick());
-        let mut target = OffscreenTarget::new(&self.device, &self.prepared, WIDTH, HEIGHT)
-            .map_err(|error| format!("capture target: {error:?}"))?;
+        let mut target = OffscreenTarget::new(
+            &self.device,
+            &self.prepared,
+            self.render_extent[0],
+            self.render_extent[1],
+        )
+        .map_err(|error| format!("capture target: {error:?}"))?;
         self.prepared
             .update_frame(&self.queue, &mut target, &self.scene, lighting)
             .map_err(|error| format!("capture view update: {error:?}"))?;
