@@ -316,10 +316,10 @@ use std::{
     mem::size_of,
 };
 
-use super::registered_world::{RegisteredWorld, SlotKey};
+use super::registered_world::{EntityWriter, RegisteredWorld, SlotKey};
 
 pub(super) trait SnapshotColumn: Send + Sync {
-    fn build_at(&self, slot: u32, cursor: &mut usize, builder: &mut hecs::EntityBuilder);
+    fn build_at(&self, slot: u32, cursor: &mut usize, writer: &mut EntityWriter<'_>);
     fn clone_box(&self) -> Box<dyn SnapshotColumn>;
     fn clear(&mut self);
     fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32);
@@ -328,7 +328,7 @@ pub(super) trait SnapshotColumn: Send + Sync {
     fn reserved_bytes(&self) -> usize;
 }
 
-type CaptureColumn = Box<dyn Fn(&hecs::World) -> Box<dyn SnapshotColumn> + Send + Sync>;
+type CaptureColumn = Box<dyn Fn(&RegisteredWorld) -> Box<dyn SnapshotColumn> + Send + Sync>;
 
 struct TypedColumn<T> {
     rows: Vec<(u32, T)>,
@@ -337,11 +337,13 @@ struct TypedColumn<T> {
 }
 
 impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
-    fn build_at(&self, slot: u32, cursor: &mut usize, builder: &mut hecs::EntityBuilder) {
+    fn build_at(&self, slot: u32, cursor: &mut usize, writer: &mut EntityWriter<'_>) {
         if let Some((found, value)) = self.rows.get(*cursor)
             && *found == slot
         {
-            builder.add((self.snapshot)(value));
+            writer
+                .add((self.snapshot)(value))
+                .expect("captured component belongs to the registered schema");
             *cursor += 1;
         }
     }
@@ -413,11 +415,12 @@ pub(super) struct ComponentEntry {
 }
 
 fn capture_component<T: Send + Sync + 'static>(
-    world: &hecs::World,
+    world: &RegisteredWorld,
     snapshot: fn(&T) -> T,
     nested_bytes: fn(&T) -> usize,
 ) -> Box<dyn SnapshotColumn> {
     let mut rows: Vec<_> = world
+        .world
         .query::<(&SlotKey, &T)>()
         .iter()
         .map(|(slot, value)| (slot.0, snapshot(value)))

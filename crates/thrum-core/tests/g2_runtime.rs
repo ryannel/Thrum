@@ -59,6 +59,7 @@ enum GameError {
 struct Rules {
     write: WritePermit<Height>,
     height_read: ReadPermit<Height>,
+    bytes_read: ReadPermit<Vec<u8>>,
     structure: StructuralPermit,
     reject: bool,
     bad_edit: Option<Handle>,
@@ -201,7 +202,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     let drift = registry
         .register::<Drift>(ComponentSchemaId(0xA2))
         .expect("drift schema");
-    registry
+    let payload = registry
         .register_with_snapshot::<Vec<u8>>(ComponentSchemaId(0xA3), Vec::clone, Vec::capacity)
         .expect("independent heap component schema");
     let mut runtime = GameRuntime::new(
@@ -222,7 +223,11 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
                 system(
                     2,
                     Stage::Publish,
-                    &[(height, AccessMode::Write), (drift, AccessMode::Read)],
+                    &[
+                        (height, AccessMode::Write),
+                        (drift, AccessMode::Read),
+                        (payload, AccessMode::Read),
+                    ],
                     false,
                 ),
                 |_, _, _, _, _| Ok(()),
@@ -239,22 +244,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         runtime.write_permit::<Drift>(SystemId(2)),
         Err(RuntimeError::UndeclaredAccess)
     ));
-    let mut candidate = Candidate {
-        motion: runtime
-            .read2::<Height, Drift>(SystemId(1))
-            .expect("declared motion read"),
-        order_query: runtime
-            .read2::<Height, Drift>(SystemId(1))
-            .expect("declared canonical read"),
-        order: Vec::new(),
-        capture: runtime
-            .read2::<Height, Drift>(SystemId(2))
-            .expect("declared capture read"),
-        positions: vec![None; 2],
-        handles: vec![None; 2],
-        edits: Vec::new(),
-        spawns: Vec::new(),
-    };
+    let mut candidate = test_candidate(&runtime);
     let mut game = Rules {
         write: runtime
             .write_permit::<Height>(SystemId(1))
@@ -262,6 +252,9 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         height_read: runtime
             .read_permit::<Height>(SystemId(1))
             .expect("declared sparse read"),
+        bytes_read: runtime
+            .read_permit::<Vec<u8>>(SystemId(2))
+            .expect("declared payload read"),
         structure: runtime
             .structural_permit(SystemId(1), 7)
             .expect("declared structure"),
@@ -370,6 +363,13 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     runtime
         .restore(&branch_point, Page::default)
         .expect("restore branch point");
+    let restored_bytes = runtime
+        .read()
+        .with(&game.bytes_read, first, |bytes| {
+            (bytes.len(), bytes.first().copied(), bytes.last().copied())
+        })
+        .expect("restored non-Copy component");
+    assert_eq!(restored_bytes, (1_048_576, Some(7), Some(7)));
     runtime.publish_initial(&mut game, &mut candidate);
     game.churn = Some((first, StableId(4)));
     runtime
@@ -412,4 +412,23 @@ fn seed_test_world(runtime: &mut GameRuntime<Page, Rules>) -> Handle {
         })
         .expect("second bundle");
     first
+}
+
+fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
+    Candidate {
+        motion: runtime
+            .read2::<Height, Drift>(SystemId(1))
+            .expect("declared motion read"),
+        order_query: runtime
+            .read2::<Height, Drift>(SystemId(1))
+            .expect("declared canonical read"),
+        order: Vec::new(),
+        capture: runtime
+            .read2::<Height, Drift>(SystemId(2))
+            .expect("declared capture read"),
+        positions: vec![None; 2],
+        handles: vec![None; 2],
+        edits: Vec::new(),
+        spawns: Vec::new(),
+    }
 }
