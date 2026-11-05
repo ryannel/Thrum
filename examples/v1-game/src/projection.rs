@@ -430,7 +430,12 @@ mod tests {
         outbox.reset_full(&sim.published_page().expect("baseline"));
         history.step(&mut sim, &[]).expect("future tick");
         outbox.capture(&sim.published_page().expect("future page"));
-        history.restore_to(&mut sim, 0).expect("rewind");
+        history
+            .rewind(
+                &mut sim,
+                usize::try_from(history.latest_tick()).expect("retained count"),
+            )
+            .expect("rewind");
         assert!(
             outbox
                 .poll(sim.timeline(), |_| panic!("old branch must not escape"))

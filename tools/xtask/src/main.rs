@@ -25,6 +25,52 @@ fn python(args: &[&str]) -> TaskResult {
 
 #[expect(
     clippy::print_stdout,
+    reason = "the contributor CLI reports device regression execution or a platform skip"
+)]
+fn check_metal_regressions() -> TaskResult {
+    if !cfg!(target_os = "macos") {
+        println!(
+            "SKIP Metal GPU regressions: ./dev check runs them on macOS (host: {})",
+            env::consts::OS
+        );
+        return Ok(());
+    }
+    println!(
+        "Metal GPU regressions: ready-view tick dispatch, moving shadow casters and Depth32Float"
+    );
+    for (package, test, regression) in [
+        (
+            "v1-game",
+            "host_gpu",
+            "ready_worker_view_does_not_skip_the_next_committed_tick",
+        ),
+        (
+            "thrum-render",
+            "gpu",
+            "two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters",
+        ),
+        ("thrum-render", "gpu", "scene_depth_uses_32_bit_float"),
+    ] {
+        cargo(&[
+            "test",
+            "--locked",
+            "--offline",
+            "--package",
+            package,
+            "--test",
+            test,
+            regression,
+            "--",
+            "--ignored",
+            "--exact",
+            "--nocapture",
+        ])?;
+    }
+    Ok(())
+}
+
+#[expect(
+    clippy::print_stdout,
     reason = "the contributor CLI's help command intentionally writes to stdout"
 )]
 fn main() -> TaskResult {
@@ -43,7 +89,7 @@ fn main() -> TaskResult {
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests, game Wasm compile\n  check-docs             Links, metadata, design hashes and crate policy\n  check-web              Compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests, game Wasm compile, Metal regressions on macOS\n  check-docs             Links, metadata, design hashes and crate policy\n  check-web              Compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
@@ -108,6 +154,7 @@ fn main() -> TaskResult {
                 "wasm32-unknown-unknown",
             ])?;
             cargo(&["test", "--locked", "--offline", "--workspace"])?;
+            check_metal_regressions()?;
         }
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),
     }

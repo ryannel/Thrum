@@ -3,14 +3,14 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-05",
   "contract_revision": "C4",
-  "scope_note": "Historical entries preserve measurements, not current priority. G2R Mac CPU budgets pass; G3a is active. No general runtime, real transport, cooked game loop or V1 device budget is qualified.",
+  "scope_note": "Historical entries preserve measurements, not current priority. G2R correctness passes but its Mac CPU budget awaits a controlled full-command run; G3a is next. No general runtime, real transport, cooked game loop or V1 device budget is qualified.",
   "execution_plan": {
     "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering and budgets on macOS and physical iPhone; Chrome WebGPU reduced-tier smoke only; then four rendered peers over conditioned native QUIC",
     "active": [
-      "G3a executing portable graph and live scene"
+      "G2R controlled CPU qualification"
     ],
     "next_parallel": [
-      "G3b display-link frame loop after G3a"
+      "G3a executing portable graph and live scene after G2R"
     ],
     "parked": [
       "A5 in-memory ACK/rebase/retry/reconnect/lane work until G6 real transport",
@@ -24,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G2R M3 Max CPU tick and rewind budgets pass with zero warmed allocations; device frame budgets remain open. Parked tracks inactive."
+    "interpretation": "G2R correctness and zero warmed allocations pass; the Mac CPU p95 gate awaits a controlled full-command run. Device frame budgets remain open. Parked tracks inactive."
   },
   "v1_slices": {
     "G0_boundary": {
@@ -61,23 +61,20 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "complete_owned_columns_changed_pages_typed_batch_sparse_undo_and_G2R_cpu_budget",
-      "functional_validation": "full_dev_check_four_peer_serial_rayon_equal_after_refusal_churn_and_replay_stale_page_and_held_input_tests_zero_warmed_10k_recorded_churn_allocations_independent_review_no_blocker",
+      "implementation": "complete_owned_columns_changed_pages_typed_batch_sparse_undo_and_engine_owned_bounded_history_cpu_budget_open",
+      "functional_validation": "full_dev_check_three_metal_regressions_world_1000_tick_randomized_serial_and_forced_rayon_replay_four_peer_refusal_churn_held_page_zero_warmed_allocations_and_independent_review_no_findings",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
-        "mac": "Apple_M3_Max_G2R_cpu_tick_and_rewind_budgets_pass_not_V1_frame_qualified",
+        "mac": "Apple_M3_Max_G2R_cpu_budget_open_under_shared_host_load_not_V1_frame_qualified",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "M3 Max release p95 10k/100k before\u2192after: recorded tick+page 61/514\u219221/213 us; static churn tick 35/257\u219224.9/216 us over 10000/2500 samples; eight-tick rewind+eligible page 81/696\u219273/703 us. One short 10k churn run reached 27.2 us; four passed. Zero warmed allocations. CPU budgets pass; no device frame claim.",
-      "scope": "V1 game owns schema, rules, input and pages; engine owns slot columns, sparse undo and page ring. FrameHost waits for G3b; no iPhone claim.",
+      "diagnostic_measurement": "See G2R consolidated evidence page for all p50/p95/p99 and process-wide allocation counts; shared host activity invalidated the latest CPU budget run.",
+      "scope": "V1 game owns schema, rules, input and pages; engine owns slot columns, sparse undo, bounded history and page ring. FrameHost waits for G3b; no iPhone claim.",
       "evidence": [
-        "../evidence/v1-workload/G2-STORAGE-COMPARISON-2026-11-04.md",
-        "../evidence/v1-workload/G2-SPLIT-QUERY-2026-11-04.md",
-        "../evidence/v1-workload/G2-REGISTERED-WORLD-2026-11-04.md",
-        "../evidence/v1-workload/G2-GAME-RUNTIME-2026-11-04.md"
+        "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md"
       ]
     },
     "A1_simulation": {

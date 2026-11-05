@@ -4,6 +4,7 @@
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     cell::Cell,
+    hash::{Hash, Hasher},
     num::{NonZeroU32, NonZeroUsize},
 };
 
@@ -74,6 +75,176 @@ fn entity(id: u128, speed: f64) -> ComponentEntity {
         ownership: None,
         visual: Some(2),
     }
+}
+
+fn whole_world_hash(sim: &Simulation, ids: &[StableId]) -> u64 {
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    sim.len().hash(&mut hash);
+    sim.tick().hash(&mut hash);
+    for id in ids {
+        let handle = sim.handle(*id).expect("tracked world identity");
+        let row = sim.get(handle).expect("committed world row");
+        id.0.hash(&mut hash);
+        handle.slot.hash(&mut hash);
+        handle.generation.hash(&mut hash);
+        row.position.0.map(f64::to_bits).hash(&mut hash);
+        row.velocity.0.map(f64::to_bits).hash(&mut hash);
+        row.health.hash(&mut hash);
+        row.ownership
+            .map(|owner| (owner.peer.0, owner.connection_epoch, owner.actor.0))
+            .hash(&mut hash);
+        row.visual.hash(&mut hash);
+    }
+    hash.finish()
+}
+
+fn randomized_replay_hashes(mode: ExecutionMode) -> Vec<u64> {
+    let mut sim = simulation_with_count(256).expect("four-peer game");
+    sim.set_execution_mode(mode);
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("committed endpoint");
+    let mut ids = (0..256_u128).map(StableId).collect::<Vec<_>>();
+    let mut random = 0x9e37_79b9_7f4a_7c15_u64;
+    let mut hashes = Vec::with_capacity(125);
+    for (next_id, tick) in (256_u128..).zip(1..=1_000_u64) {
+        random = random
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1);
+        let churn_index = 8 + usize::try_from(random % 244).expect("small index");
+        let old = sim.handle(ids[churn_index]).expect("churned row");
+        let replacement = ComponentEntity {
+            id: StableId(next_id),
+            position: Position([f64::from((random & 127) as u8), 0.0, 0.0]),
+            velocity: Velocity([if tick % 3 == 0 { 0.05 } else { 0.0 }, 0.0, 0.0]),
+            health: 100,
+            ownership: None,
+            visual: Some(random & 3),
+        };
+        let health = sim.handle(ids[4]).expect("health target");
+        let commands = [
+            Command::Despawn(old),
+            Command::Spawn(replacement),
+            Command::SetHealth(health, u16::try_from(random & 127).expect("health")),
+        ];
+        for peer in 1..=4_u64 {
+            let mut frame = InputFrame::new(
+                Origin {
+                    peer: PeerId(peer),
+                    connection_epoch: 1,
+                    sequence: tick,
+                },
+                ActorId(peer),
+                tick,
+                [
+                    f32::from(u8::try_from((random >> peer) & 0xff).expect("byte")) / 255.0,
+                    0.0,
+                    0.0,
+                ],
+            );
+            if peer == 1 && tick % 7 == 0 {
+                frame.actions.push(SimAction::Damage(1));
+            }
+            sim.admit_frame(frame).expect("fresh randomized peer input");
+        }
+        history.step(&mut sim, &commands).expect("randomized tick");
+        ids[churn_index] = StableId(next_id);
+        if tick % 8 == 0 {
+            let expected = whole_world_hash(&sim, &ids);
+            history.rewind(&mut sim, 8).expect("retained eight ticks");
+            for _ in 0..8 {
+                assert!(history.replay_next(&mut sim).expect("valid retained input"));
+            }
+            assert_eq!(
+                whole_world_hash(&sim, &ids),
+                expected,
+                "mode {mode:?} tick {tick}"
+            );
+            hashes.push(expected);
+        }
+    }
+    hashes
+}
+
+#[test]
+fn thousand_randomized_world_ticks_replay_identically_in_serial_and_rayon() {
+    assert_eq!(
+        randomized_replay_hashes(ExecutionMode::Serial),
+        randomized_replay_hashes(ExecutionMode::RayonForced),
+    );
+}
+
+#[test]
+fn rewind_after_partial_replay_retains_the_remaining_future() {
+    let mut sim = simulation_with_count(32).expect("game");
+    let ids = (0..32_u128).map(StableId).collect::<Vec<_>>();
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(16).expect("window"))
+        .expect("history");
+    for _ in 0..8 {
+        history.step(&mut sim, &[]).expect("record");
+    }
+    let expected = whole_world_hash(&sim, &ids);
+    history.rewind(&mut sim, 4).expect("first rewind");
+    for _ in 0..2 {
+        assert!(history.replay_next(&mut sim).expect("first replay"));
+    }
+    history.rewind(&mut sim, 2).expect("second rewind");
+    for _ in 0..4 {
+        assert!(history.replay_next(&mut sim).expect("retained replay"));
+    }
+    assert!(!history.replay_next(&mut sim).expect("future exhausted"));
+    assert_eq!(whole_world_hash(&sim, &ids), expected);
+}
+
+#[test]
+fn replay_publishes_only_the_final_reconstructed_tick() {
+    let mut sim = simulation_with_count(32).expect("game");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(8).expect("window"))
+        .expect("history");
+    for _ in 0..4 {
+        history.step(&mut sim, &[]).expect("record");
+    }
+    history.rewind(&mut sim, 4).expect("branch point");
+    for tick in 1..=4 {
+        assert!(history.replay_next(&mut sim).expect("replay"));
+        assert_eq!(sim.has_current_page(), tick == 4);
+    }
+    assert_eq!(sim.published_page().expect("final page").id().tick, 4);
+}
+
+#[test]
+fn rewind_patch_restores_changed_peer_health_and_velocity() {
+    let mut sim = simulation_with_count(4).expect("four-peer game");
+    let player = sim.handle(StableId(3)).expect("controlled row");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(4).expect("window"))
+        .expect("history");
+    let mut frame = InputFrame::new(
+        Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        ActorId(1),
+        1,
+        [1.0, 0.0, 0.0],
+    );
+    frame.actions.push(SimAction::Damage(7));
+    sim.admit_frame(frame).expect("input");
+    history.step(&mut sim, &[]).expect("changed tick");
+    history.step(&mut sim, &[]).expect("later tick");
+    assert_eq!(
+        sim.published_page().expect("future").health(player),
+        Some(93)
+    );
+    history.rewind(&mut sim, 2).expect("rewind");
+    let patched = sim.published_page().expect("inverse page");
+    assert_eq!(patched.health(player), Some(100));
+    assert_eq!(patched.velocity(player), Some(Velocity::default()));
+    assert!(patched.dirty().health().contains(&player.slot));
+    assert!(patched.dirty().velocity().contains(&player.slot));
 }
 
 #[test]
@@ -255,7 +426,7 @@ fn capture_after_churn_replays_input_and_structure_to_the_same_endpoint() {
     };
     let expected = replay(&mut sim);
     sim.restore(&capture).expect("compatible committed capture");
-    sim.set_execution_mode(ExecutionMode::Rayon);
+    sim.set_execution_mode(ExecutionMode::RayonForced);
     assert_eq!(sim.tick(), 1);
     assert_eq!(sim.handle(StableId(3)), Some(replacement));
     assert_eq!(sim.get(old), Err(SimError::InvalidHandle));
@@ -310,7 +481,10 @@ fn rolling_history_reuses_deltas_and_replays_after_churn() {
     history.step(&mut sim, &[]).expect("advance window");
     assert_eq!((history.oldest_tick(), history.latest_tick()), (2, 6));
     history
-        .restore_to(&mut sim, target)
+        .rewind(
+            &mut sim,
+            usize::try_from(history.latest_tick() - target).expect("retained count"),
+        )
         .expect("retained endpoint");
     let patched = sim.published_page().expect("inverse page patch");
     assert!(!patched.is_baseline());
@@ -350,7 +524,12 @@ fn rewind_with_every_page_leased_keeps_authority_live_and_defers_view() {
     }
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
-    history.restore_to(&mut sim, 1).expect("authority rewind");
+    history
+        .rewind(
+            &mut sim,
+            usize::try_from(history.latest_tick() - 1).expect("retained count"),
+        )
+        .expect("authority rewind");
     COUNTING.with(|active| active.set(false));
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
     assert!(!sim.has_current_page());
@@ -390,7 +569,10 @@ fn rolling_history_has_bounded_reused_storage_at_game_scales() {
         ALLOCATIONS.with(|count| count.set(0));
         COUNTING.with(|active| active.set(true));
         history
-            .restore_to(&mut sim, target)
+            .rewind(
+                &mut sim,
+                usize::try_from(history.latest_tick() - target).expect("retained count"),
+            )
             .expect("eight retained ticks restore");
         COUNTING.with(|active| active.set(false));
         assert_eq!(ALLOCATIONS.with(Cell::get), 0);
@@ -419,7 +601,10 @@ fn rolling_history_refuses_a_divergent_same_tick_future() {
     assert_eq!(sim.tick(), history.latest_tick());
     assert_eq!(history.step(&mut sim, &[]), Err(SimError::InvalidSnapshot));
     assert_eq!(
-        history.restore_to(&mut sim, 1),
+        history.rewind(
+            &mut sim,
+            usize::try_from(history.latest_tick() - 1).expect("retained count")
+        ),
         Err(SimError::InvalidSnapshot)
     );
     assert_eq!(history.latest_tick(), 2);
@@ -724,7 +909,7 @@ fn four_peer_ten_thousand_entity_serial_and_rayon_replay_match() {
     };
     let serial = run(&mut sim);
     sim.restore(&capture).expect("tick-zero capture");
-    sim.set_execution_mode(ExecutionMode::Rayon);
+    sim.set_execution_mode(ExecutionMode::RayonForced);
     assert_eq!(run(&mut sim), serial);
 }
 
@@ -769,7 +954,12 @@ fn sparse_history_readmits_four_peer_inputs_once_after_churn() {
             expected.health(handle),
         ));
     });
-    history.restore_to(&mut sim, 0).expect("rewind branch");
+    history
+        .rewind(
+            &mut sim,
+            usize::try_from(history.latest_tick()).expect("retained count"),
+        )
+        .expect("rewind branch");
     for _ in 0..3 {
         assert!(history.replay_next(&mut sim).expect("retained tick"));
     }
@@ -808,7 +998,12 @@ fn retained_replay_refuses_fourth_peer_conflict_without_partial_admission() {
         .expect("original input");
     }
     history.step(&mut sim, &[]).expect("original tick");
-    history.restore_to(&mut sim, 0).expect("branch point");
+    history
+        .rewind(
+            &mut sim,
+            usize::try_from(history.latest_tick()).expect("retained count"),
+        )
+        .expect("branch point");
     sim.admit_frame(InputFrame::new(
         Origin {
             peer: PeerId(4),

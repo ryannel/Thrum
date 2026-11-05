@@ -535,7 +535,10 @@ impl Page {
         self.dirty.clear();
         self.events.clear();
         for step in steps.iter().take_while(|step| step.tick() <= source) {
-            step.visit_changed_slots(|slot| self.mark_dirty(slot as usize, POSITION_DIRTY));
+            step.visit_changed_slots(|slot| {
+                let slot = slot as usize;
+                self.dirty_words[slot / 64] |= 1_u64 << (slot % 64);
+            });
         }
         for (word, value) in self.dirty_words.iter_mut().enumerate() {
             let mut marked = std::mem::take(value);

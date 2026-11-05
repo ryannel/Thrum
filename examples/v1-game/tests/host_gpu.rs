@@ -1,4 +1,4 @@
-//! Opt-in real-device coverage for the fixed-clock simulation-to-GPU host.
+//! Fixed-clock simulation-to-GPU coverage, including an automatic Metal regression.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::{
@@ -206,14 +206,23 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
 }
 
 #[test]
-#[ignore = "requires a native GPU for the ready-view N to N+1 worker handoff"]
+#[ignore = "requires Metal; ./dev check runs this regression on macOS"]
 fn ready_worker_view_does_not_skip_the_next_committed_tick() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::METAL,
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
+        });
+        let adapter = match instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .expect("native adapter");
+        {
+            Ok(adapter) => adapter,
+            Err(error) => {
+                eprintln!("SKIP ready-view tick regression: no Metal adapter ({error})");
+                return;
+            }
+        };
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await

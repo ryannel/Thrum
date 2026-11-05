@@ -108,7 +108,10 @@ fn game_rewind_and_replay_rolling_window(bencher: divan::Bencher<'_, '_>, entity
     bencher.bench_local(move || {
         let target = history.latest_tick() - 8;
         history
-            .restore_to(&mut sim, target)
+            .rewind(
+                &mut sim,
+                usize::try_from(history.latest_tick() - target).expect("retained count"),
+            )
             .expect("eight retained ticks");
         for _ in 0..8 {
             history.step(&mut sim, &[]).expect("replay tick");
