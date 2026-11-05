@@ -3,7 +3,9 @@
 
 use std::time::Duration;
 
-use thrum_render::synthetic::{OffscreenTarget, PreparedSynthetic, RenderError, SyntheticScene};
+use thrum_render::synthetic::{
+    OffscreenTarget, PreparedSynthetic, RenderError, SyntheticLight, SyntheticScene, SyntheticView,
+};
 
 fn pixels(
     device: &wgpu::Device,
@@ -157,6 +159,67 @@ fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
             .upload_instances(&queue, &scene.instances, &[0, 2])
             .unwrap();
         assert_eq!(prepared.active_instance_count(), 4);
+        assert_eq!(original, pixels(&device, &queue, &prepared, &target));
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+fn mirrored_row_uses_two_sided_fallback_and_keeps_near_surface() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter required");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device request succeeds");
+        let mut scene = SyntheticScene::grid(1).unwrap();
+        scene.view = SyntheticView::perspective(
+            [0.0, 0.0, 2.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            20.0,
+        )
+        .unwrap();
+        let mut prepared = PreparedSynthetic::prepare_with_light(
+            &device,
+            &queue,
+            1,
+            &scene,
+            SyntheticLight {
+                direction_to_light: [0.0, 0.0, 1.0],
+                irradiance: [4.0; 3],
+            },
+        )
+        .await
+        .unwrap();
+        let target = OffscreenTarget::new(&device, &prepared, 65, 65).unwrap();
+        let original = pixels(&device, &queue, &prepared, &target);
+        assert_eq!(prepared.two_sided_instance_count(), 0);
+        scene.instances[0].current[0][0] *= -1.0;
+        scene.instances[0].normal[0][0] *= -1.0;
+        scene.instances[0].previous = scene.instances[0].current;
+        prepared
+            .upload_instances(&queue, &scene.instances, &[0])
+            .unwrap();
+        assert_eq!(prepared.two_sided_instance_count(), 1);
+        let mirrored = pixels(&device, &queue, &prepared, &target);
+        let center = (32 * 65 + 32) * 4;
+        assert!(original[center] > 30, "near cube surface must be lit");
+        assert_eq!(original[center..center + 4], mirrored[center..center + 4]);
+        scene.instances[0].current[0][0] *= -1.0;
+        scene.instances[0].normal[0][0] *= -1.0;
+        scene.instances[0].previous = scene.instances[0].current;
+        prepared
+            .upload_instances(&queue, &scene.instances, &[0])
+            .unwrap();
+        assert_eq!(prepared.two_sided_instance_count(), 0);
         assert_eq!(original, pixels(&device, &queue, &prepared, &target));
     });
 }

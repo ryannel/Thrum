@@ -50,6 +50,7 @@ impl Cascade {
 
 pub(super) struct ShadowPrepared {
     pipeline: wgpu::RenderPipeline,
+    pipeline_two_sided: wgpu::RenderPipeline,
     cascades: [Cascade; MAPS],
     pub(super) sample_buffer: wgpu::Buffer,
     pub(super) sampler: wgpu::Sampler,
@@ -124,28 +125,35 @@ impl ShadowPrepared {
             label: Some("synthetic Sun caster"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
         });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("synthetic Sun caster"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vertex"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: FORMAT,
-                depth_write_enabled: Some(true),
-                depth_compare: Some(wgpu::CompareFunction::Greater),
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: None,
-            multiview_mask: None,
-            cache: None,
-        });
+        let create_pipeline = |cull_mode| {
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("synthetic Sun caster"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: Some("vertex"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    buffers: &[],
+                },
+                primitive: wgpu::PrimitiveState {
+                    cull_mode,
+                    ..Default::default()
+                },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: FORMAT,
+                    depth_write_enabled: Some(true),
+                    depth_compare: Some(wgpu::CompareFunction::Greater),
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState::default(),
+                fragment: None,
+                multiview_mask: None,
+                cache: None,
+            })
+        };
+        let pipeline = create_pipeline(Some(wgpu::Face::Back));
+        let pipeline_two_sided = create_pipeline(None);
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),
             contents: &fitted.samples,
@@ -158,6 +166,7 @@ impl ShadowPrepared {
         });
         Ok(Self {
             pipeline,
+            pipeline_two_sided,
             cascades,
             sample_buffer,
             sampler,
@@ -194,6 +203,7 @@ impl ShadowPrepared {
         instances: &wgpu::BindGroup,
         cube_indices: &wgpu::Buffer,
         count: u32,
+        two_sided: bool,
         generation: u64,
         index: usize,
         compiled: &CompiledPass,
@@ -220,7 +230,11 @@ impl ShadowPrepared {
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(&self.pipeline);
+        pass.set_pipeline(if two_sided {
+            &self.pipeline_two_sided
+        } else {
+            &self.pipeline
+        });
         pass.set_bind_group(0, &cascade.view_group, &[]);
         pass.set_bind_group(1, instances, &[]);
         pass.set_index_buffer(cube_indices.slice(..), wgpu::IndexFormat::Uint16);
