@@ -37,6 +37,8 @@ pub enum PresentError {
     StaleTarget,
     /// The one-pass graph fails its source/target closure.
     Graph(GraphError),
+    /// The closed graph contains no prepared presentation recorder.
+    GraphPassMismatch,
     /// Optional timestamp batch lacks this pass or belongs to another generation.
     Timing(TimingError),
     /// The GPU rejected the prepared shader or pipeline.
@@ -53,6 +55,7 @@ pub struct PresentationBinding {
 /// One prepared surface pipeline and compiled imported-resource pass plan.
 /// Resize recompiles only the small graph; device loss prepares a new owner.
 pub struct SurfacePresenter {
+    device: wgpu::Device,
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
     plan: CompiledGraph,
@@ -140,6 +143,7 @@ impl SurfacePresenter {
             return Err(PresentError::Validation(error.to_string()));
         }
         Ok(Self {
+            device: device.clone(),
             pipeline,
             layout,
             plan,
@@ -158,7 +162,11 @@ impl SurfacePresenter {
         device: &wgpu::Device,
         target: &OffscreenTarget,
     ) -> Result<PresentationBinding, PresentError> {
-        if target.device_generation() != self.generation || target.extent() != self.source_extent {
+        if self.device != *device
+            || !target.belongs_to_device(device)
+            || target.device_generation() != self.generation
+            || target.extent() != self.source_extent
+        {
             return Err(PresentError::StaleTarget);
         }
         Ok(PresentationBinding {
@@ -179,6 +187,9 @@ impl SurfacePresenter {
     /// # Errors
     /// Refuses an invalid extent or graph closure without changing this presenter.
     pub fn resize(&mut self, device: &wgpu::Device, extent: [u32; 2]) -> Result<(), PresentError> {
+        if self.device != *device {
+            return Err(PresentError::StaleTarget);
+        }
         check_extent(device, extent)?;
         if self.profile.extent == extent {
             return Ok(());
@@ -212,7 +223,7 @@ impl SurfacePresenter {
         binding: &PresentationBinding,
         surface_view: &wgpu::TextureView,
         surface_extent: [u32; 2],
-        timings: Option<&mut GpuTimings>,
+        mut timings: Option<&mut GpuTimings>,
     ) -> Result<(), PresentError> {
         if self.plan.device_generation != self.generation
             || !Arc::ptr_eq(&self.owner, &binding.owner)
@@ -222,40 +233,50 @@ impl SurfacePresenter {
         if surface_extent != self.profile.extent {
             return Err(PresentError::Extent);
         }
-        let viewport = letterbox(self.source_extent, surface_extent);
-        let writes = match timings {
-            Some(timings) => timings
-                .pass_writes(self.generation, PASS_NAME)
-                .map_err(PresentError::Timing)?,
-            None => None,
+        let expected = PipelineKey {
+            device_generation: self.generation,
+            revision: REVISION,
+            role: ROLE,
         };
-        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(PASS_NAME),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: surface_view,
-                depth_slice: None,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            timestamp_writes: writes,
-            ..Default::default()
-        });
-        pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, &binding.group, &[]);
-        pass.set_viewport(
-            viewport[0] as f32,
-            viewport[1] as f32,
-            viewport[2] as f32,
-            viewport[3] as f32,
-            0.0,
-            1.0,
-        );
-        pass.set_scissor_rect(viewport[0], viewport[1], viewport[2], viewport[3]);
-        pass.draw(0..3, 0..1);
-        Ok(())
+        self.plan.record(|compiled| {
+            if compiled.pipeline != Some(expected) {
+                return Err(PresentError::GraphPassMismatch);
+            }
+            let viewport = letterbox(self.source_extent, surface_extent);
+            let writes = match timings.as_deref_mut() {
+                Some(timings) => timings
+                    .pass_writes(self.generation, &compiled.name)
+                    .map_err(PresentError::Timing)?,
+                None => None,
+            };
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some(&compiled.name),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: surface_view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                timestamp_writes: writes,
+                ..Default::default()
+            });
+            pass.set_pipeline(&self.pipeline);
+            pass.set_bind_group(0, &binding.group, &[]);
+            pass.set_viewport(
+                viewport[0] as f32,
+                viewport[1] as f32,
+                viewport[2] as f32,
+                viewport[3] as f32,
+                0.0,
+                1.0,
+            );
+            pass.set_scissor_rect(viewport[0], viewport[1], viewport[2], viewport[3]);
+            pass.draw(0..3, 0..1);
+            Ok(())
+        })
     }
 }
 

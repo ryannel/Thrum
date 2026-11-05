@@ -14,7 +14,10 @@ use crate::graph::{
 use crate::timing::{GpuTimings, TimingError};
 use glam::Vec3;
 use std::collections::BTreeSet;
-use std::sync::mpsc::{self, Receiver, TryRecvError};
+use std::sync::{
+    Arc,
+    mpsc::{self, Receiver, TryRecvError},
+};
 use wgpu::util::DeviceExt;
 
 mod cluster;
@@ -293,6 +296,8 @@ pub enum RenderError {
     StaleTarget,
     /// Target dimensions exceed device limits or overflow readback arithmetic.
     TargetExtent,
+    /// A compiled pass has no recorder for this prepared scene.
+    GraphPassMismatch,
     /// Readback is already pending or failed.
     Readback,
 }
@@ -331,6 +336,8 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
+    device: wgpu::Device,
+    owner: Arc<()>,
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
     display_pipeline: wgpu::RenderPipeline,
@@ -794,6 +801,8 @@ impl PreparedSynthetic {
             return Err(RenderError::Validation(error.to_string()));
         }
         Ok(Self {
+            device: device.clone(),
+            owner: Arc::new(()),
             key: PipelineKey {
                 device_generation: generation,
                 revision: SYNTHETIC_REVISION,
@@ -875,7 +884,8 @@ impl PreparedSynthetic {
         }
     }
     fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
-        if target.generation != self.key.device_generation
+        if !Arc::ptr_eq(&self.owner, &target.prepared_owner)
+            || target.generation != self.key.device_generation
             || target.display_gain.to_bits() != self.display_gain.to_bits()
             || target.exposure_bits != self.exposure_bits
             || target.view_sample != self.view_sample
@@ -896,6 +906,16 @@ impl PreparedSynthetic {
         readback: bool,
     ) -> Result<CompiledGraph, RenderError> {
         self.check_target(target)?;
+        self.compile_graph(target.width, target.height, target.row_bytes, readback)
+    }
+
+    fn compile_graph(
+        &self,
+        width: u32,
+        height: u32,
+        row_bytes: u32,
+        readback: bool,
+    ) -> Result<CompiledGraph, RenderError> {
         let mut graph = FrameGraph::default();
         let material = graph.resource(
             ResourceDescriptor::Buffer {
@@ -945,8 +965,8 @@ impl PreparedSynthetic {
         self.append_cluster_reads(&mut graph, &mut accesses)?;
         let depth = graph.resource(
             ResourceDescriptor::Texture {
-                width: target.width,
-                height: target.height,
+                width,
+                height,
                 layers: 1,
                 mips: 1,
                 samples: 1,
@@ -983,8 +1003,8 @@ impl PreparedSynthetic {
         }
         let scene = graph.resource(
             ResourceDescriptor::Texture {
-                width: target.width,
-                height: target.height,
+                width,
+                height,
                 layers: 1,
                 mips: 1,
                 samples: 1,
@@ -1009,8 +1029,8 @@ impl PreparedSynthetic {
         });
         let output = graph.resource(
             ResourceDescriptor::Texture {
-                width: target.width,
-                height: target.height,
+                width,
+                height,
                 layers: 1,
                 mips: 1,
                 samples: 1,
@@ -1055,7 +1075,7 @@ impl PreparedSynthetic {
             external_side_effect: !readback,
         });
         if readback {
-            let bytes = target.readback_bytes();
+            let bytes = u64::from(row_bytes) * u64::from(height);
             let destination = graph.resource(
                 ResourceDescriptor::Buffer {
                     bytes,
@@ -1214,25 +1234,67 @@ impl PreparedSynthetic {
         if generation != self.key.device_generation {
             return Err(RenderError::StaleTarget);
         }
+        let graph = &target.graph;
+        if graph.device_generation != generation {
+            return Err(RenderError::StaleTarget);
+        }
         if let Some(timings) = timings.as_deref_mut() {
-            timings.check_passes(generation, if self.shadow.is_some() { 4 } else { 2 })?;
+            let count = u32::try_from(graph.pipeline_pass_count())
+                .map_err(|_| RenderError::GraphPassMismatch)?;
+            timings.check_passes(generation, count)?;
         }
-        if let (Some(shadow), Some(shadow_target)) = (&self.shadow, &target.shadow) {
-            shadow.encode(
+        graph.record(|pass| match pass.pipeline {
+            Some(key) if key == self.shadow_key(0) || key == self.shadow_key(1) => {
+                let index =
+                    usize::try_from(key.role - 2).map_err(|_| RenderError::GraphPassMismatch)?;
+                let shadow = self.shadow.as_ref().ok_or(RenderError::GraphPassMismatch)?;
+                let shadow_target = target
+                    .shadow
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                shadow.encode_cascade(
+                    encoder,
+                    shadow_target,
+                    &self.instances,
+                    self.instance_count,
+                    generation,
+                    index,
+                    &pass.name,
+                    timings.as_deref_mut(),
+                )
+            }
+            Some(key) if key == self.key => self.encode_opaque(
                 encoder,
-                shadow_target,
-                &self.instances,
-                self.instance_count,
                 generation,
+                target,
+                &pass.name,
                 timings.as_deref_mut(),
-            )?;
-        }
-        let timestamps = match timings.as_deref_mut() {
-            Some(timings) => timings.pass_writes(generation, "synthetic forward opaque")?,
+            ),
+            Some(key) if key == self.display_key() => self.encode_tone(
+                encoder,
+                generation,
+                target,
+                &pass.name,
+                timings.as_deref_mut(),
+            ),
+            _ => Err(RenderError::GraphPassMismatch),
+        })
+    }
+
+    fn encode_opaque(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        generation: u64,
+        target: &OffscreenTarget,
+        name: &str,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<(), RenderError> {
+        let timestamps = match timings {
+            Some(timings) => timings.pass_writes(generation, name)?,
             None => None,
         };
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("synthetic forward opaque"),
+            label: Some(name),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &target.scene_view,
                 depth_slice: None,
@@ -1259,13 +1321,23 @@ impl PreparedSynthetic {
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, &self.instances, &[]);
         pass.draw(0..36, 0..self.instance_count);
-        drop(pass);
+        Ok(())
+    }
+
+    fn encode_tone(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        generation: u64,
+        target: &OffscreenTarget,
+        name: &str,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<(), RenderError> {
         let timestamps = match timings {
-            Some(timings) => timings.pass_writes(generation, "synthetic tone encode")?,
+            Some(timings) => timings.pass_writes(generation, name)?,
             None => None,
         };
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("synthetic tone encode"),
+            label: Some(name),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &target.view,
                 depth_slice: None,
@@ -1444,6 +1516,9 @@ fn storage_buffer(
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
+    device: wgpu::Device,
+    prepared_owner: Arc<()>,
+    graph: CompiledGraph,
     texture: wgpu::Texture,
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
@@ -1471,6 +1546,9 @@ impl OffscreenTarget {
         width: u32,
         height: u32,
     ) -> Result<Self, RenderError> {
+        if prepared.device != *device {
+            return Err(RenderError::StaleTarget);
+        }
         let limits = device.limits();
         if width == 0
             || height == 0
@@ -1488,6 +1566,7 @@ impl OffscreenTarget {
         if u64::from(row_bytes) * u64::from(height) > limits.max_buffer_size {
             return Err(RenderError::TargetExtent);
         }
+        let graph = prepared.compile_graph(width, height, row_bytes, false)?;
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("synthetic offscreen target"),
             size: wgpu::Extent3d {
@@ -1585,6 +1664,9 @@ impl OffscreenTarget {
             entries: &view_entries,
         });
         Ok(Self {
+            device: device.clone(),
+            prepared_owner: Arc::clone(&prepared.owner),
+            graph,
             texture,
             view,
             scene_view,
@@ -1610,6 +1692,9 @@ impl OffscreenTarget {
     }
     pub(crate) fn device_generation(&self) -> u64 {
         self.generation
+    }
+    pub(crate) fn belongs_to_device(&self, device: &wgpu::Device) -> bool {
+        self.device == *device
     }
     fn readback_bytes(&self) -> u64 {
         u64::from(self.row_bytes) * u64::from(self.height)
