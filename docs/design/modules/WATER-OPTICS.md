@@ -1,6 +1,6 @@
 # Water surface and optical transport
 
-**V1 reset (3 November 2026): R3 regional optics and exact alpha are parked until M9. The selection below is retained research, not an active implementation gate.**
+**V1 reset (3 November 2026): R3 regional optics and exact alpha are parked until after V1. The selection below is retained research, not an active implementation gate.**
 
 1 November 2026, revised 2 November. **Bounded regional optics selected in design;
 actual-interface focused surface-plus-volume light remains open. Unimplemented and

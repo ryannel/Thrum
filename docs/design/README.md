@@ -1,9 +1,11 @@
 # Thrum engine design
 
-The design programme for a flexible, modern 3D engine on Mac, PC, browser and mobile app stores that makes full use
-of each device's hardware; see the [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md). Existing implementations are candidates for later reconciliation, not the target.
+The design programme for a native-first, production-grade 3D engine on Mac, PC, browser and mobile app stores that makes full use
+of each device's hardware; see the [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md). Purpose, V1 exit and
+gate order live in [the build plan](../BUILD-PLAN.md#purpose); where an older design here disagrees, the build plan wins. Existing implementations are candidates for later reconciliation, not the target.
 
 - **Start here: [building a game](ENGINE-EXPERIENCE.md)** — project, world, target and run.
+- [Visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering): agents review images; the owner steers asynchronously.
 - [Brief and conversation coverage](ARCHITECTURE-BRIEF.md): E01–E21 requirements, scope and retained ambitions.
 - [Integrated design](SYSTEM-DESIGN.md), [composition](COMPOSITION.md) and [selected decisions](ARCHITECTURE-DECISIONS.md): core and 30 owners.
 - [C4 contracts](CONTRACTS.md): shared invariants; modules link consequences rather than duplicate protocols.

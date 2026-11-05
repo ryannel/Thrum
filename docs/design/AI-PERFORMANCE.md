@@ -65,8 +65,22 @@ not a permanent ranking of fashionable features. Candidate techniques below requ
 
 Cross-platform scaling applies to every row. Compare each recipe against portable on the same device (Apple,
 Android, NVIDIA, AMD, Intel), browser startup and memory, and sustained mobile energy/thermal behavior where
-supported; no desktop score certifies another profile. Preserve
+supported; no desktop score certifies another profile. V1 proves on this M3 Max, Chrome and the iPhone simulator
+(function only); other families follow on rented hardware after V1. Preserve
 feature-off savings and game semantics. Don't add every candidate backend or technique simply because AI can write it.
+
+### Technique register
+
+Thrum's showcase claim rests on named techniques, not on comparisons with other engines, which depend on too many
+uncontrolled factors. The register is the maturity ledger's `technique_register` list, not a new document. Each entry gives:
+* the technique and its paper or production source;
+* the owner and the recipe or device family;
+* the measured win against portable on the same device, or the reproduced reference result within tolerance;
+* why it would not scale with human authors, for example per-family kernels, exhaustive variant search or
+  autotuned parameters kept current by agents.
+
+A paper reproduction compares against the paper's reference views and an independent ground-truth oracle. A
+technique whose win disappears leaves the register, together with its path.
 
 ### The cost account in each owning design
 
@@ -198,9 +212,11 @@ and candidate share a bug. A slower reference can remain test-only without dupli
 
 **Image and motion quality.** Test temporal behavior, coverage, disocclusion, thin geometry, silhouettes, lighting,
 material response and history reset, as relevant to the change. Scalar image similarity alone cannot certify beauty
-or correct motion. Use matched views/exposure/history and selected cue checks plus human review for affected appearance.
-Agents may autonomously reject failures and shortlist candidates; visual changes remain unaccepted until the required
-review. Purely internal changes may reuse applicable acceptance only with recorded evidence that its scope survives.
+or correct motion. Use matched views/exposure/history, selected cue checks and
+[agent visual review](AI-DEVELOPMENT.md#visual-review-and-human-steering) of stills and sequences, including an
+independent reviewer agent, for affected appearance. Agents reject failures, shortlist and promote candidates on that
+evidence; owner feedback steers later work and never gates promotion. Purely internal changes may reuse applicable
+review only with recorded evidence that its scope survives.
 
 **Independent evaluation.** Candidate edits do not alter the evaluator, its measurement clocks/protocol, references, acceptance thresholds,
 fixtures or results used to judge that candidate. Keep evaluator execution and result collection outside the candidate's
@@ -307,6 +323,8 @@ whole protocol in every agent's mandatory context. Mechanical rules cannot prove
 
 ## Delivery order and evidence
 
+The [build plan](../BUILD-PLAN.md) owns current sequencing; these stages describe how campaign tooling grows.
+
 - **D0:** select first representative workload/device and the cost-versus-quality objective; identify honest budgets.
 - **D1/I1:** specify campaign/result records and trusted evaluation boundary; implement one local CPU/headless path,
   source identity, isolated builds and reference checks where an authorized implementation exists.
@@ -321,7 +339,7 @@ Start with optimization-friendly construction and evaluation hooks. Ambitious ca
 baseline and meaningful workload; no need to wait for the entire engine, and no basis yet to promise a speedup.
 This future-engine proposal does not change Broadsides' current test charter or add benchmark gates to its fast suite.
 The existing maturity ledger records the design; later evidence will distinguish local candidate, integrated result,
-visual acceptance and per-target performance. More trials do not themselves increase maturity.
+agent visual review and per-target performance. More trials do not themselves increase maturity.
 
 ## Research basis and limits
 

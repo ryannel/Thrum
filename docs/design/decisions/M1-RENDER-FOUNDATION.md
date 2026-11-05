@@ -1,6 +1,6 @@
 # M1 renderer foundation
 
-3 November 2026. Selected bounded implementation under the active
+3 November 2026. Selected bounded implementation under the earlier
 [V1 order](../../BUILD-PLAN.md#parked-retained-in-git-history),
 [C06–C08](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) and the
 [render specification](../RENDER-SPEC.md). This is a renderer foundation with

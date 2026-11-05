@@ -25,7 +25,7 @@ A recipe is a graph configuration chosen per GPU family: pass organisation, atta
 | Desktop high | Vulkan/D3D12 on NVIDIA, AMD, Intel | GPU-driven visibility buffer, mesh shaders where available, async compute, ray query, vendor reconstruction and latency APIs |
 | Portable | WebGPU and every native device | Forward+ with GPU culling and indirect draws within WebGPU limits; own temporal reconstruction |
 
-The portable recipe builds and runs on every native device. It is the reference for image comparison and the fallback when a dedicated path fails pipeline closure. A dedicated recipe or path is promoted only with a measured win on its own hardware. The win is either at least 10% lower GPU frame time or bandwidth, a lower p99 or latency, or a capability portable cannot express. Its image must also stay within the declared tolerance against portable. A path whose win disappears is removed. The web tier runs portable and never limits a native recipe.
+The portable recipe builds and runs on every native device. It is the reference for image comparison and the fallback when a dedicated path fails pipeline closure. A dedicated recipe or path is promoted only with a measured win on its own hardware. The win is either at least 10% lower GPU frame time or bandwidth, a lower p99 or latency, or a capability portable cannot express. Its image must also stay within the declared tolerance against portable. A path whose win disappears is removed. The browser runs portable at showcase quality, because website demos run there, and never limits a native recipe.
 
 ## Frame contract
 
@@ -73,7 +73,7 @@ A closed loop holds the frame within budget. Its inputs are GPU pass time, CPU t
   * zero-copy memory-mapped cooked products;
   * KTX2 with ASTC or BC7 by registry;
   * MTLIO and DirectStorage readers after V1, behind the same reader trait.
-* **Network:** Quinn with GSO/GRO segmentation offload, plus schema-driven residual coding.
+* **Network, after V1:** Quinn with GSO/GRO segmentation offload, plus schema-driven residual coding.
 * **Tooling:**
   * Tracy capture of CPU and GPU zones;
   * hot patching of game code in development;
@@ -90,8 +90,8 @@ The bindless material table must be readable from compute and hit shaders, and t
 ## Verification
 
 Each recipe has named devices:
-* **V1:** Apple tile on a physical iPhone and an Apple Silicon Mac; portable on both, plus Chrome as a smoke run.
-* **After V1:** Android tile on Adreno and Mali, and desktop high on NVIDIA, AMD and Intel, as devices are acquired.
+* **V1:** Apple tile and portable on this M3 Max; the iPhone 18 Pro simulator for function only; portable in Chrome WebGPU on this Mac at showcase quality.
+* **After V1:** Apple tile on a physical iPhone, Android tile on Adreno and Mali, and desktop high on NVIDIA, AMD and Intel, on rented machines and devices.
 
 Evidence records frame time per recipe against portable on the same device, image difference, pipeline-closure hitches, and memory and thermal state after ten minutes. An unmeasured recipe is implemented, not qualified. Repository checks prove none of these.
 
@@ -99,8 +99,7 @@ Evidence records frame time per recipe against portable on the same device, imag
 
 | Gate | Hardware work |
 |---|---|
-| G3 | The registry, the portable and Apple tile recipes, the frame contract fields, executor-derived attachments, pipeline caches, timestamps and indirect GPU culling. The ray-tracing readiness constraints. The shading-library decision. |
-| G4 | Display-link pacing, EDR/HDR output, dynamic resolution with MetalFX and own TAAU, the governor, and input-to-photon latency measurement. |
+| G3b–G3c | Display-link pacing, QoS-classed simulation and render threads, input-to-photon measurement (G3b); the registry, the portable and Apple tile recipes, the frame contract fields, executor-derived attachments, mapped rings, pipeline caches and timestamps (G3t); indirect GPU culling (G3c). The ray-tracing readiness constraints. The shading-library decision. |
+| G4 | EDR/HDR output, dynamic resolution with MetalFX and own TAAU, and the governor. |
 | G5 | Meshlets, KTX2 ASTC/BC7, BLAKE3, memory-mapped products and dev-server cache sharing. |
-| G6 | Quinn GSO/GRO, residual coding, and QoS-classed network and simulation threads. |
-| After G7 | Android tile, desktop high, vendor providers, ray tracing, GI, frame generation and ML inference, each promoted by measurement. |
+| After V1 | Android tile, desktop high and physical iPhone on rented hardware; Quinn GSO/GRO and residual coding with the network track; vendor providers, ray tracing, GI, frame generation and ML inference, each promoted by measurement. |

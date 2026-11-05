@@ -62,7 +62,8 @@ resource scope, invalidation and fallbacks. Component-only reviews can miss cohe
 cross-cutting duplication is a concern, independent complete reads are useful; for larger systems map review coverage
 and retain a whole-system reader alongside targeted reviews. Do not claim a full read of an uninspected scope.
 
-Review ordinary output, motion and transitions separately from source. State whether reviewers watched motion or only
+Review ordinary output, motion and transitions separately from source. Reviewer agents inspect captured images and
+sequences directly; that inspection is visual evidence. State whether reviewers watched motion or only
 sampled stills, inspected native crops or downscaled sheets, and verified the actual loaded build/inputs. Neither
 nonzero response nor a plausible still proves the commissioned experience. Diagnose the responsible layer using
 [system diagnosis](system-diagnosis.md), rather than prescribing a cosmetic correction to the reported symptom.
@@ -99,5 +100,5 @@ compositions and optimizations need their affected correctness, appearance and c
 within-scope actionable defects can change the outcome; unavailable evidence and unrun qualification remain explicit.
 
 Deliver the current recommendation/result, material changes, finding dispositions and remaining consequences. State
-review limitations, disagreements and unavailable independent verification. Review agreement does not establish
-implementation validation, runtime viability or user acceptance.
+review limitations, disagreements and unavailable independent verification. Design review agreement does not establish
+implementation validation, runtime viability or visual quality; those need running checks and agent visual review.

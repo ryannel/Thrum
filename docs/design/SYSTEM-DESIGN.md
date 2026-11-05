@@ -4,7 +4,7 @@
 Custom host and the platform ambition are user decisions. Mechanisms below are reasoned design recommendations;
 detailed commissions and empirical qualification remain explicitly tracked in [maturity](MATURITY.md).
 The [shared contracts](CONTRACTS.md) own cross-module semantics and override a contradictory local description until
-both documents are reconciled. This is an architecture for a family of games, not a water or forest engine.
+both documents are reconciled. The engine serves interactive teaching demos first and games later ([purpose](../BUILD-PLAN.md#purpose)), not a water or forest engine.
 
 **Selected revision, 1 November:** [architecture decisions](ARCHITECTURE-DECISIONS.md) resolve the five audit boundaries
 and whole-plan findings at architectural scope. C4 retains first-class networking and reconciles file-first source, restart-first play and explicit action/state publication.
@@ -123,12 +123,12 @@ query semantics. [Environment operating model](modules/ENVIRONMENT.md).
 Use a finite, validated set of profile recipes. Camera, capability, provider and budget are separate axes. A top-down
 profile may omit sky/cloud pixels while retaining attenuation, environment reflections and indirect light. A first-person
 interior may exclude weather while retaining window light. Mobile may use simpler shadow/cloud/indirect representations
-and fewer resident assets without changing game authority. Browser demos have explicit download/startup limits and can
-present a bounded part of a game. A showcase can select advanced providers without making them universal dependencies.
+and fewer resident assets without changing game authority. Browser demos run the portable recipe at showcase quality
+with explicit download/startup limits and never cap native. A showcase can select advanced providers without making them universal dependencies.
 
-Planning targets are 60 fps native desktop, a 30 fps sustained mobile/browser floor with qualified 60 fps tiers; these
-are proposals until minimum devices and workloads are selected. The [runtime budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
-is the sole numeric envelope source. It covers the whole scene, not each module independently. For CPU work, the
+V1 targets the [build plan](../BUILD-PLAN.md#goal-and-exit-rule)'s 120 Hz M3 Max and 60 Hz Chrome rows; other
+profiles set targets after V1. The [runtime budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
+is the post-V1 numeric envelope source. It covers the whole scene, not each module independently. For CPU work, the
 critical path and work/parallel-capacity lower bounds both matter. GPU time is bounded below by dependent work and
 traffic/effective-bandwidth; concurrent features compete for the same bandwidth and memory. Reference content fixes
 object/light/volume/animation counts, screen coverage and resolution before assigning module shares.
@@ -169,7 +169,7 @@ without maintaining competing definitions. Do not wrap every utility or build an
 The same operations serve editor, CLI and agents. Queries expose schema, dependency closure, working files, selected snapshot, running build and saved checkpoint
 identity, provider plan and pending failures. Edits produce reviewable file changes, admit an immutable snapshot and cook its products; substantive changes start
 a new run. Qualified visual preview uses its own publication boundary. Captures/traces bind to exact build/content/profile identity. Headless scenarios exercise
-semantics without a GPU; visual review still uses rendered motion and human judgment. No runtime LLM is required.
+semantics without a GPU; visual review uses rendered motion, automated image checks and [agent review](AI-DEVELOPMENT.md#visual-review-and-human-steering). No runtime LLM is required.
 
 ## Integration and next stage
 

@@ -1,10 +1,12 @@
 # Network sessions and replication — N1
 
-**V1 direction:** [the A0 transport/codec decision](../decisions/A0-N1-TRANSPORT-CODEC.md)
-selects QUIC/WebTransport and acknowledged state deltas; [the A5 timing decision](../decisions/A5-INPUT-TIMING-RECONCILIATION.md)
+**Sequencing (5 November 2026):** V1 proves multiplayer fitness headless in [G2S](../../BUILD-PLAN.md#active-gate-order-and-budgets)
+(authority, admission validation, rollback and replay); all transport work is parked until the post-V1 network track.
+For that track, [the A0 transport/codec decision](../decisions/A0-N1-TRANSPORT-CODEC.md)
+selects QUIC/WebTransport and acknowledged state deltas, and [the A5 timing decision](../decisions/A5-INPUT-TIMING-RECONCILIATION.md)
 selects the first conditioned input fixture. [NETWORK-SPEC.md](../NETWORK-SPEC.md) is retained as
 the historical I2n authority/result analysis; its WebSocket and full-record recipe is superseded.
-The [V1 input packet](../decisions/A5-INPUT-WIRE.md) and
+The [input packet](../decisions/A5-INPUT-WIRE.md) and
 [state-delta/session model](../decisions/A5-STATE-DELTA-SESSION.md) are selected;
 state codec, session runtime and device qualification remain open.
 
@@ -138,7 +140,7 @@ groups. Dependent fields in a group are from one committed revision; partial upd
 attachment or gameplay transaction. Independent entities may update at different rates only when their consumers accept
 that sample age. Authoritative game rules never run on an arbitrary partially received replica state.
 
-The V1 recipe uses acknowledged-baseline deltas; the historical I2n recipe used bounded full
+The selected recipe uses acknowledged-baseline deltas; the historical I2n recipe used bounded full
 StateGroups without delta history. Each admitted group atomically carries
 spawn/re-entry with required first pose, ownership and dependent state, or detach/despawn with relationship changes.
 An oversized dependency closure fails profile admission. Re-entering interest establishes a full state and a new
@@ -189,7 +191,7 @@ the game chooses which transient cues tolerate that risk. Save, achievement and 
 
 N1 depends on message capabilities, not platform sockets in gameplay code: reliable ordered control, bounded command
 submission with semantic acknowledgement, and replaceable timestamped state. Adapters expose actual capabilities,
-message limits and backpressure. V1 selects native QUIC and browser WebTransport where qualified,
+message limits and backpressure. The post-V1 track selects native QUIC and browser WebTransport where qualified,
 with an ordered WebSocket fallback. Browser availability and interoperability are device gates;
 the world API assumes neither raw browser UDP nor a universally available WebTransport service.
 

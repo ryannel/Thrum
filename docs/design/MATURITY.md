@@ -1,6 +1,6 @@
 # Engine maturity and evidence
 
-Thrum repository setup is tracked separately in the ledger’s `repository_setup` record. Current design digests are checked by `./dev check-docs`; imported review hashes refer to original source bytes, as explained in [provenance](../provenance/IMPORT.md). A compilable scaffold is not an implemented engine module.
+Thrum repository setup is tracked separately in the ledger’s `repository_setup` record. Current design digests are checked by `./dev check-docs`; imported review hashes refer to original source bytes, as explained in [provenance](../provenance/IMPORT.md). A compilable scaffold is not an implemented engine module. The [build plan](../BUILD-PLAN.md) owns current sequencing; the dated sections below are history.
 
 The machine-readable [maturity ledger](maturity.json) tracks the **new target architecture**. It is not a claim that
 the repository has no existing implementations. Prior code and demonstrations are unassessed reuse candidates until
@@ -16,7 +16,7 @@ one inspected branch boundary; do not infer the rest of that branch's correctnes
 | Integration review | pending, reviewed_with_gaps, reconciled | Producer/consumer agreement, full scenario trace and finding dispositions against exact document revisions. Does not certify runtime integration. |
 | Implementation | not_started_for_target, partial, feature_complete | Artifact revision and requirement coverage; compiling alone is partial evidence. Existing candidate code has a separate reconciliation field. |
 | Functional validation | not_run, failing, partial, passed | Reproducible checks against independently stated requirements, including coupled behaviour and relevant failure transitions. |
-| Experienced quality | not_reviewed, changes_requested, accepted, not_applicable | Reviewed build/content/camera/profile and actual human acceptance. A generated still or author self-review cannot substitute for user acceptance. |
+| Experienced quality | not_reviewed, changes_requested, agent_reviewed, accepted, not_applicable | Reviewed build, content, camera and profile on the named target. `agent_reviewed` records automated image checks plus agent and independent-reviewer inspection; it is the evidence a gate needs. `accepted` records the owner's asynchronous steer and is never a gate condition. See [visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering). |
 | Platform/performance | not_run, failing, qualified, out_of_scope for each configuration | Named device/OS/backend/build/content, representative duration, resolution/settings, frame distributions, memory/startup and lifecycle results. |
 
 There is no engine-wide completion percentage. A profile is qualified only when its required dependency closure is
@@ -59,11 +59,11 @@ retain durable selected results according to repository storage rules. No missin
 - Qualification is configuration-specific. A Mac run does not qualify Android; a spatial-AA run does not qualify a
   temporal provider; a CPU-only correctness check does not qualify GPU simulation or perceptual quality.
 
-## Historical review sequence (current C4 disposition below)
+## Historical review sequence (C4 disposition below)
 
 The [scenario walkthroughs](SCENARIO-WALKTHROUGHS.md) record paper task traces and a simplified recommended developer
 surface. The ledger's `scenario_review` identifies that scope and artifact hashes separately from implementation,
-function, visual acceptance and platform evidence. They refine decisions; they do not pass runtime tests or close the
+function, visual review and platform evidence. They refine decisions; they do not pass runtime tests or close the
 five audit findings by telling a plausible story. Current versus formerly reviewed design hashes remain distinct.
 
 The subsequent [first-use pass](FIRST-USE-WALKTHROUGHS.md) has a separate `first_use_review` record: nine analytical
@@ -88,7 +88,7 @@ platform or usability evidence and closes none of A01–A05.
 
 The `ai_performance_design` records research and design for bounded optimization campaigns, evaluator ownership and
 whole-engine promotion. No campaign, benchmark harness or speedup is implemented or measured by this record. Future
-results must distinguish a local candidate from its integrated, visually accepted and target-qualified revision.
+results must distinguish a local candidate from its integrated, visually reviewed and target-qualified revision.
 
 The `performance_walkthrough_review` records four paper campaigns and coordinated review of the agent handoffs,
 end-to-end completion, shared resource conflicts, outstanding work and combined-candidate claims. Numerical targets
@@ -170,7 +170,7 @@ initial authoring, a smaller first game and optional delta/prediction/water reci
 substituted across canonical protocols. `simplification_review` retains reviewed file/report hashes and dispositions;
 `architecture_resolution` points to the current open design work. All runtime/quality/platform evidence is unchanged.
 
-## Current reconciled selection — C4, 1 November 2026
+## Reconciled selection — C4, 1 November 2026
 
 The user selected the reductions and required all affected contracts/modules to agree before construction. Three
 Sol High owners reconciled source, multiplayer and delivery, then cross-challenged the integrated protocols. C4 keeps
@@ -183,12 +183,13 @@ compatibility, bounded full-group replication and explicit reconnect/suspend beh
 recipe including result-rich resync and concrete portable boot/transition estimates. These are analytical admission
 and failure mechanisms, not measured performance. G01/G02 now select file-first native admission, restart-first edits
 and checkpoint/drain/retire/load recovery for bounded initial worlds; full browser authoring and live whole-world
-replacement are not baseline prerequisites. I2n remains alongside the small game, before broad I3b.
+replacement are not baseline prerequisites. C4 placed I2n alongside the small game; since 5 November 2026 the
+[build plan](../BUILD-PLAN.md) parks transport until after V1 and G2S proves multiplayer fitness headless.
 
 The `reconciliation` ledger record retains the prior C3 evidence and exact C4 hashes, affected owners, requirements,
 selected finding dispositions and validation scope. N1's initial design is detailed and reconciled; broader family
 rows retain their scoped detailed-design obligations (for example advanced camera, effects, audio/UI, environmental
-providers and seamless streaming). No row is promoted to implemented, tested, visually accepted or device-qualified.
+providers and seamless streaming). No row is promoted to implemented, tested, visually reviewed or device-qualified.
 Implement only the admitted subset after its dependency/API/toolchain checks; additional claims require their own
 complete mechanism before construction. Paper closure does not certify the full future engine.
 

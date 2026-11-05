@@ -69,6 +69,7 @@ These are engineering/research hypotheses, not claims of novelty:
 - Quality allocation that respects view, interaction relevance, temporal stability and whole-scene budgets together.
 - Small, independently usable modules delivered with authoring adapters, reproducible scenes and meaningful comparisons.
 
-Before claiming an advance, search the specific prior art, identify the gap, define a competing baseline and measure
-the complete result. Public presentation and upstream suitability should be proved through portable integration and
+Before claiming an advance, search the specific prior art, identify the gap, define a competing baseline (the portable
+recipe on the same device or the paper's reference result) and measure the complete result. Comparisons with other
+engines are context, not proof; the [technique register](AI-PERFORMANCE.md#technique-register) records wins. Public presentation and upstream suitability should be proved through portable integration and
 clear provenance rather than a large feature inventory.

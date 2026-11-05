@@ -1,6 +1,6 @@
 # A5 decision: V1 input batch bytes
 
-4 November 2026. **Selected for the V1 conditioned input path; the first encoded no-socket run passes, while session and device proof remain open.** This specializes [A0 N1](A0-N1-TRANSPORT-CODEC.md), [A5 timing](A5-INPUT-TIMING-RECONCILIATION.md) and [C13](../CONTRACTS.md). The old fixed-record InputBatch in [NETWORK-SPEC](../NETWORK-SPEC.md) is historical. The protocol schema/version and game action table are pinned by the session handshake; a datagram receipt is never a gameplay result. W1 remains the sole authority.
+4 November 2026. **Selected for the conditioned input path; the first encoded no-socket run passes, while session and device proof remain open. Parked with the network track until after V1.** This specializes [A0 N1](A0-N1-TRANSPORT-CODEC.md), [A5 timing](A5-INPUT-TIMING-RECONCILIATION.md) and [C13](../CONTRACTS.md). The old fixed-record InputBatch in [NETWORK-SPEC](../NETWORK-SPEC.md) is historical. The protocol schema/version and game action table are pinned by the session handshake; a datagram receipt is never a gameplay result. W1 remains the sole authority.
 
 ## Packet and admission
 

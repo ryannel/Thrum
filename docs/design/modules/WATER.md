@@ -162,8 +162,8 @@ physical profile and compatibility decision, not a graphics optimization. No spe
 | First implementation, when commissioned | Small complete interaction chosen from B's least-established consequential coupling; unit/reference checks and instrumentation alongside it | Preserve the defining interaction, inspect ordinary motion, reject plausible cosmetic substitutes; no need to build a whole lake first |
 | Integration and target qualification | Relevant I1/I2a/D1/D2 dependencies, I3 presentation where needed, R3 baseline separately, then wider I3b/I4 workloads | Save/headless/two-view/source-off and whole-scene performance on named targets; no inheritance from historical demos |
 
-[The central build plan](../../BUILD-PLAN.md) retains I1 → source/save → the small rendered game and near-term
-network path. Water planning may proceed alongside it; R0 does not acquire a water dependency. Do not create an
+[The central build plan](../../BUILD-PLAN.md) puts water after V1, where a water sandbox is a candidate website
+demo. Water planning may proceed alongside V1; R0 does not acquire a water dependency. Do not create an
 empty water crate, port the old TypeScript lab, add Rapier/wgpu dependencies early or promote experimental operators into C4.
 The Broadsides Rust sea ports after G7 under the port decision's module-by-module policy.
 

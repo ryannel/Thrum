@@ -1,6 +1,6 @@
 # G2 design: one registered simulation for the running game
 
-5 November 2026. The original G2 correctness path ran in the game; **G2R speed and rewind are open**. C01/C02 still require checked identity, one atomic fixed tick and immutable leased endpoints. [Storage selection](G2-STORAGE-SELECTION.md) provisionally chooses owned columns; only integrated game measurements can qualify them.
+5 November 2026. The original G2 correctness path ran in the game; **speed, rewind and multiplayer fitness are open under G2S**, which supersedes G2R. C01/C02 still require checked identity, one atomic fixed tick and immutable leased endpoints. [Storage selection](G2-STORAGE-SELECTION.md) provisionally chooses owned columns; only integrated game measurements can qualify them.
 
 ## Ownership and public composition
 
@@ -18,4 +18,4 @@ Prediction retains inputs and a caller-selected sparse undo window. Preflight va
 
 M3 Max release recorded tick+page p95 is 61/514 µs at 10k/100k (before sparse undo: 49–51/500–519 µs); eight-tick rewind+eligible page is 81/696 µs with zero warmed allocations (before: 0.82/9.4 ms). The [paired dense SoA spike](G2-STORAGE-SELECTION.md) is faster but omits generic costs. Avoid per-entity erasure, static scans, tick allocations and cold workers. Setup allocates; typed buffers reuse capacity. Measure tick, rewind, allocations, page bytes and serial/parallel crossover at 10k/100k. Engage parallel work only where measured faster.
 
-V1 window, iOS, browser and projection consume one page contract. Next split dense mover/static rows; sparse undo and inverse page patch run in-game. G2R requires 25/300 µs tick+page and 100 µs/1 ms eight-tick rewind+eligible page p95 at 10k/100k, zero warmed allocations, serial/Rayon equality and byte-identical replay. Held/no-eligible cases must retain authority ticks and report deferred-frame latency. `./dev check` must pass. G3 then executes the graph; `FrameHost` moves after the display-link loop.
+V1 window, iOS, browser and projection consume one page contract. Next split dense mover/static rows; sparse undo and inverse page patch run in-game. G2R required 25/300 µs tick+page and 100 µs/1 ms eight-tick rewind+eligible page p95 at 10k/100k, zero warmed allocations, serial/Rayon equality and byte-identical replay. Held/no-eligible cases must retain authority ticks and report deferred-frame latency. `./dev check` must pass. G3 then executes the graph; `FrameHost` moves after the display-link loop.

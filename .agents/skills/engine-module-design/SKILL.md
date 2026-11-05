@@ -71,7 +71,8 @@ experiments qualify only what they exercise; they do not automatically promote t
 When evidence contradicts a structural assumption or a new requirement changes representation needs, revise the
 governing design and affected engine contracts before extending dependent code. Do not preserve a failing foundation
 through successive local patches. Use independent capability discovery and design challenge when available and
-authorized; [review](references/review.md) describes the scope. Preserve user acceptance as distinct from engineering proof.
+authorized; [review](references/review.md) describes the scope. Visible output needs agent visual review; owner
+acceptance is asynchronous steering, recorded separately and never a gate ([steering](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering)).
 
 Keep research support, implementation correctness, experienced quality and runtime viability distinct. An honestly
 labelled failure remains unfinished. Scale investigation to decisions it can change. Correct the responsible model

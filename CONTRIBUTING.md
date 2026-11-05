@@ -6,8 +6,9 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 | Command | What it does |
 | --- | --- |
 | `./dev help` | List implemented contributor commands |
-| `./dev check` | Repository checks and their tests, rustfmt, Clippy, workspace tests and V1 game Wasm compile |
+| `./dev check` | Repository checks and their tests, rustfmt, Clippy, workspace tests (including Mac Metal) and V1 game Wasm compile |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
+| `./dev baseline-inventory` | Run the G0 fixed budget baselines on the M-series Mac and list absent consumers |
 | `./dev check-web` | Compile the V1 game for `wasm32-unknown-unknown` |
 | `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
 | `./dev fmt` | Apply rustfmt |
@@ -77,7 +78,8 @@ integrated workload and unchanged quality/correctness constraints in [AI perform
 ## Review and evidence
 
 Explain the result, rationale, tests actually run and remaining limits. Update the owning specification
-and maturity entry when behavior or evidence changes. Current document hashes can be refreshed after
+and maturity entry when behavior or evidence changes. Visible output passes the agent visual review loop in the
+[engine contributor skill](.agents/skills/engine-contributor/SKILL.md#verify); owner feedback is asynchronous and never blocks work. Current document hashes can be refreshed after
 reviewing the diff; this does not update historical review hashes or promote any maturity status.
 Documentation-only changes need `./dev check-docs`, not an unrelated engine test campaign.
 

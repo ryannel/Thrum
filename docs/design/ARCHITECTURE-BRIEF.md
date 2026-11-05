@@ -7,9 +7,12 @@ This is the canonical brief for the new whole-engine design discussion. Product 
 
 ## Purpose and confirmed requirements
 
-Build a flexible engine suitable for a variety of games. Features can be selected to fit each game. The engine should
-reach a quality worth demonstrating on the user's personal website and potentially contributing to open-source game
-engines. It should use modern, cutting-edge work where useful and leave room for original advances supported by evidence.
+Build a native-first, production-grade engine suitable for a variety of games, with features selected to fit each
+game. It is a learning and craft project and a showcase of how far AI-driven engineering can push performance
+and visual quality. Its first outlet is interactive teaching demos with public source on the owner's website, such as
+physically simulated cloud formation or a water sandbox. A game is a later project. Results should not look homemade.
+Use cutting-edge research where it is useful, record techniques by name and leave room for original advances supported
+by evidence. [The build plan](../BUILD-PLAN.md#purpose) owns the purpose and current exit.
 
 **Goal:** a modern, exceptionally fast engine that makes full use of the hardware each device provides: GPU family
 features, tile and unified memory, reconstruction and ray-tracing hardware, CPU core classes and vector units, display,
@@ -22,16 +25,16 @@ contract and quality governor that deliver this.
 | E01 | Serve a variety of games rather than only the current game | Derive capabilities from contrasting usage profiles; separate reusable services from game policy and authored content |
 | E02 | Turn features on or off to fit the game | Explicit dependencies, supported combinations, resource ownership and configuration lifecycle |
 | E03 | A top-down game may need beautiful light and cloud shadows without visible clouds or sunsets | Separate visible sky presentation from lighting/occlusion services; retain useful providers without requiring the visible renderer |
-| E04 | Quality suitable for public demos and possible open-source engine contributions | Demonstrable integrated quality, reproducible workloads, maintainable interfaces and contribution-ready provenance |
+| E04 | Quality suitable for public website demos with public source and possible open-source contributions | Butter-smooth high-end visuals, named techniques with measured wins and paper reproductions, reproducible workloads, maintainable interfaces and contribution-ready provenance |
 | E05 | Modern methods and possible forward advances | Research established and emerging alternatives; distinguish proven production paths from experimental hypotheses |
 | E06 | Start with the whole engine, independently of existing water implementation | Select responsibilities and contracts before reconciling old code; water is one consumer and contributor among others |
 | E07 | Focus on 3D across top-down, isometric, third-person and first-person cameras and different game styles | One world can support different view/control profiles; perspective and orthographic requirements need explicit support |
 | E08 | Pure 2D games and massive multiplayer are outside current scope | Retain UI/text for 3D games; future ordinary multiplayer is first-class under E13, without MMO scope |
-| E09 | Target modern desktops (Mac, NVIDIA, AMD, Intel), scalable quality, and a supported browser profile | Native recipes lead; browser delivery shares world/content semantics on the portable recipe with its own budgets and cooked assets, and never limits native |
+| E09 | Target modern desktops (Mac, NVIDIA, AMD, Intel), scalable quality, and a supported browser profile | Native recipes lead; browser delivery shares world/content semantics on the portable recipe at showcase quality, because website demos run there, with its own budgets and cooked assets, and never limits native |
 | E10 | Build our own engine, learning from open-source engine design | Own composition/runtime integration; retain source provenance for any adapted code. Reuse other suitable libraries deliberately rather than rebuilding every commodity |
-| E11 | Include mobile app stores in the initial platform ambition | Design native mobile lifecycle, touch, thermal/memory limits and packaging from the start; iOS and Android get tile-GPU recipes, not a scaled-down desktop path |
-| E12 | Build for AI development, with deliberate architecture and explicit maturity tracking | Machine-readable contracts/status, inspectable and replayable operations, bounded agent commissions, reproducible evidence and human visual acceptance |
-| E13 | Future multiplayer must be a first-class citizen to avoid rebuilding later | Design actor intents, world authority, scoped IDs, replication, content compatibility and correction now; optional runtime networking and local-first construction |
+| E11 | Include mobile app stores in the platform ambition; V1 proves iOS function on the simulator, and device timing follows on rented devices | Design native mobile lifecycle, touch, thermal/memory limits and packaging from the start; iOS and Android get tile-GPU recipes, not a scaled-down desktop path |
+| E12 | Build for AI development, with deliberate architecture and explicit maturity tracking | Machine-readable contracts/status, inspectable and replayable operations, bounded agent commissions, reproducible evidence and agent visual review with asynchronous owner steer (E23) |
+| E13 | Future multiplayer must be a first-class citizen to avoid rebuilding later; V1 proves fitness headless and transport follows V1 | Design actor intents, world authority, scoped IDs, replication, content compatibility and correction now; optional runtime networking and local-first construction |
 | E14 | Derive complete designs from research, mathematics and underlying systems before building | Investigate academic/production sources; derive operators and coupling, use later measurements to test stated predictions rather than discover architecture through feature layering |
 | E15 | Coordinate recursive agent research actively so modules do not duplicate or contradict one another | One contract owner, bounded decisions/commissions, shared context and budgets, cross-review and sequential integration; detailed decomposition stops when the commissioned decision is resolved |
 | E16 | Simple first-use and expert workflows across game styles, imported assets and custom modules | Empty-project and starter paths, ordinary typed code/files, same human/AI tools, meaningful edit/play/export and art/reimport acceptance |
@@ -40,6 +43,8 @@ contract and quality governor that deliver this.
 | E19 | Keep the engine elegant and understand its real maturity | Small public model, one owner per mechanism, deterministic convention checks, separate selected/design/implementation/quality/platform evidence and no speculative universal frameworks |
 | E20 | Allow different water, atmosphere and other feature implementations where their use warrants it | Capability/provider separation, explicit validity and compatibility, shared causes/state ownership, mathematically defined heterogeneous boundaries; no automatic physical seam blending |
 | E21 | Make full use of the hardware each device provides | One capability registry selects per-GPU-family frame recipes, accelerated CPU/IO paths and optional providers through one frame contract; each dedicated path keeps a portable fallback and is promoted only by a measured win on its hardware |
+| E22 | Host interactive teaching demos: visitors change parameters such as weather and see the mechanism | Engine UI for text, sliders, toggles and overlays of internal fields bound to typed parameters, native and browser; each demo is tailored when chosen |
+| E23 | Agents keep building; the owner steers without becoming a checkpoint | Automated image checks plus agent and independent visual review gate visible work; owner digests are asynchronous; stop only for direction, spending, publishing or irreversible actions ([steering](AI-DEVELOPMENT.md#visual-review-and-human-steering)) |
 
 E03 is a user-provided example of composability, not a selected cloud algorithm or mandatory first demonstration.
 Desktop, browser and mobile-store profiles are selected. [BASELINE-SPEC](BASELINE-SPEC.md) now chooses reference
@@ -58,7 +63,8 @@ engine to one game, one camera, one art style, a water demo or a browser-only pr
 | E01/E06/E07: reusable 3D, whole engine first, contrasting cameras and games | This brief's responsibility map; [system design](SYSTEM-DESIGN.md); [scenario walkthroughs](SCENARIO-WALKTHROUGHS.md) |
 | E02/E03/E20: modular features, bring a provider, no visible sky with retained light/shadows, multiple physical models | [Composition](COMPOSITION.md), C04/C08/C09, [environment](modules/ENVIRONMENT.md); static selection and qualified replacements, no arbitrary universal renderer/live-swap promise |
 | E04/E05/E10/E14/E21: modern research, visual ambition, full hardware use, selective open-source ideas/reuse, custom host | [Engine research](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decisions](ARCHITECTURE-DECISIONS.md), [programme](DESIGN-PROGRAMME.md); primary papers/production sources and math before construction, explicit novelty/provenance limits |
-| E08/E13: ordinary multiplayer first-class, no initial MMO or pure-2D engine | C13 and [NETWORK-SPEC](NETWORK-SPEC.md); same local/server rules, real early I2n, semantic-compatible heterogeneous clients, explicit result/reconnect/replica behavior |
+| E08/E13: ordinary multiplayer first-class, no initial MMO or pure-2D engine | C13 and [NETWORK-SPEC](NETWORK-SPEC.md); same local/server rules, headless rollback/replay fitness in V1 with transport after V1, semantic-compatible heterogeneous clients, explicit result/reconnect/replica behavior |
+| E22/E23: teaching demos with controls; continuous agent work with asynchronous owner steer | [Build plan](../BUILD-PLAN.md) G3s/G6/G7, U1 UI, [visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering) |
 | E09/E11: Mac/PC, scalable browser demos, native mobile stores | [Baseline](BASELINE-SPEC.md), [runtime](modules/PLATFORM-RUNTIME.md), [construction](CONSTRUCTION-PLAN.md); native authoring first is independent of player-platform support, device/store evidence still required |
 | E12/E15/E19: AI engine and game contribution, clear skills, deterministic checks, active coordination | [AI development](AI-DEVELOPMENT.md), [skill rationale](SKILL-WORKFLOW.md), [programme](DESIGN-PROGRAMME.md), [maturity](MATURITY.md); focused Astra-aligned guidance, scoped checks, public commands and reviewed combined revisions |
 | E16/E19: teachable core, newcomer/veteran, from scratch/custom code/art styles and artists | [Creator guide](ENGINE-EXPERIENCE.md), [first use](FIRST-USE-WALKTHROUGHS.md), [empty-project journeys](FROM-SCRATCH-WALKTHROUGHS.md); project/world/target/run, ordinary files, source admission, restart, import/reimport and recipient export |
@@ -102,8 +108,8 @@ This selects a development strategy, not a measured advantage, specific algorith
 
 The broad 3D camera/platform range and future multiplayer requirement are selected. [The baseline register](BASELINE-SPEC.md)
 now records G01–G10 decisions for source/recovery, world/transforms, shaders/light/media, play/water, networking and
-reference targets. [The construction plan](CONSTRUCTION-PLAN.md) includes the I2n multiplayer vertical path alongside
-I3a's small rendered game. Larger worlds, richer fluids/media and additional device families retain their explicit
+reference targets. [The build plan](../BUILD-PLAN.md) now orders construction: a single-player showcase scene first, with multiplayer
+fitness proven headless and transport after V1. Larger worlds, richer fluids/media and additional device families retain their explicit
 extension/qualification obligations; no architecture decision or numerical target is a running support claim.
 
 ## Research basis
@@ -127,10 +133,11 @@ recursive research, integration and qualification without inheriting the current
   the reference and fallback; a dedicated recipe or path is promoted by a measured win on its own hardware.
 - Ray-tracing, mesh-shading, variable-rate, reconstruction, frame-interpolation and ML providers plug in through one
   frame contract. They are selected per device, not deferred because some target lacks them.
-- Select Apple silicon (iPhone and M-series Mac) for V1 qualification; Android, NVIDIA, AMD and Intel recipes follow
-  with named devices.
-- Treat the browser as the portable recipe on WebGPU with its own startup, memory, download and scene budgets. It is
-  supported and never limits a native recipe. WebGL2 fallback is an additional scope decision, not an automatic promise.
+- Qualify V1 on this M3 Max, with the iPhone simulator for function and Chrome for the portable tier. Emulate and
+  simulate first. Physical iPhone, Android, NVIDIA, AMD and Intel follow V1 on rented machines or devices; the owner
+  does no manual device testing.
+- Treat the browser as the portable recipe on WebGPU at showcase quality, with its own startup, memory, download and
+  scene budgets. Website demos run there. It never limits a native recipe. WebGL2 fallback is an additional scope decision, not an automatic promise.
 - Native mobile profiles must account for suspend/resume, interrupted audio/input, thermal pressure, memory limits,
   touch/UI, store packaging and mobile GPU bandwidth. They share content sources and contracts, not identical budgets.
 - Keep authoritative game state and required interactions consistent across quality settings. Simplify appearance and
@@ -272,5 +279,5 @@ and repository rules, so this is a fresh requirements exercise, not a claim of b
 
 Current stage: 3D and desktop/Mac/browser/mobile scope recorded; custom host selected; coordinated research/design
 produced an integrated high-level recommendation and independently challenged contracts. Full hardware use is a
-selected goal (E21). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
+selected goal (E21). On 5 November the owner redirected V1 to a single-player showcase scene; see [the build plan](../BUILD-PLAN.md). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
 minimum devices/budgets, implementation, visual acceptance and platform qualification explicitly unfinished.

@@ -33,7 +33,7 @@ Discover dependencies through inputs → evolving state → representations → 
 stable references and a compact coverage account: requirement basis and observable success, selected mechanism/owner,
 important dependencies or coupled consumers, and planned proof plus actual status. A table is useful; use the smallest
 format that keeps omissions visible. Keep undecided mechanisms explicit during discovery, then close required design
-gaps before substantial construction. Research support, implementation and demonstrated acceptance are separate states.
+gaps before substantial construction. Research support, implementation and demonstrated quality are separate states.
 Scale detail to the commissioned stage: a preliminary inventory may leave mechanisms provisional and research pending;
 that does not satisfy the later build-ready design criterion. Do not turn capability discovery into a compulsory
 literature survey or implementation exercise.

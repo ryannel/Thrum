@@ -158,8 +158,9 @@ Qualify a from-empty path independently of the starter path. Record every author
 helper, registered behavior, product prerequisite and undocumented intervention. Use the same small game for a newcomer
 and veteran to expose guidance versus control problems, then exercise the art and headless paths separately.
 
-I1 can establish the headless rule path, I2 the draft/import/operation path, and I3 the rendered first interaction. A
-development export needs the relevant I4 packaging slice, not completion of every target or visual acceptance gate.
+G6's fresh agent, building a new small scene from public docs and the starter, is the first running from-empty check.
+Headless, import and export paths follow as their tools ship. A development export needs its packaging slice, not
+completion of every target or visual review gate.
 Such an export reports its unqualified claims. Release qualification adds its actual content/device/lifecycle/quality
 evidence. Test a clean development checkout separately from a nondeveloper recipient's packaged game; missing caches,
 source masters and prerequisites must be visible. No elapsed-time or ease-of-use result is assigned by this paper pass.

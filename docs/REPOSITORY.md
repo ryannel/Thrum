@@ -2,7 +2,8 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `crates/` | Engine libraries with explicit ownership; currently provisional simulation, render, network, source and cook modules |
+| `crates/` | Engine libraries with explicit ownership; currently provisional simulation, content runtime, render and network modules |
+| `examples/` | `v1-game`, the V1 test game, and its iOS shell `v1-game-ios` |
 | `tools/xtask/` | Host-only contributor command runner, never an engine runtime dependency |
 | `scripts/` | Small repository/document validation tools |
 | `.config/architecture.toml` | Registered workspace packages and allowed dependency edges |
@@ -13,7 +14,7 @@
 | `tmp/<task>/` | Ignored, owned disposable work with a bounded lifetime |
 | `target/` | Ignored reproducible Cargo output |
 
-Add `examples/<name>/` when an actual complete public-API game exists. Add selected authored assets with
+Add another `examples/<name>/` only when an actual complete public-API game or demo exists. Add selected authored assets with
 that game's own package and exact pins when needed. Do not create empty directories/crates for every
 planned capability. Engine code must not depend on contributor tools, scratch work or example internals.
 
