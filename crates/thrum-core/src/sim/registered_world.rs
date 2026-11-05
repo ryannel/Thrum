@@ -509,6 +509,10 @@ impl RegisteredWorld {
         let index = self
             .component_index(ComponentKey::of::<T>())
             .expect("registered component type");
+        self.column_at(index)
+    }
+
+    pub(super) fn column_at<T: Send + Sync + 'static>(&self, index: usize) -> &TypedStore<T> {
         self.columns[index]
             .as_any()
             .downcast_ref::<TypedStore<T>>()
