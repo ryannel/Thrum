@@ -245,6 +245,17 @@ fn report_frame_cpu(samples: &[FrameSample], gpu_timestamps: bool, present_surfa
             "V1 scene GPU pass-sum p50/p95={:.3}/{:.3} ms",
             scene_gpu.0, scene_gpu.1
         );
+        let shadow = percentile(|sample| {
+            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 5]);
+            (passes[0] + passes[1]) / 1e6
+        });
+        let cluster = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5])[2] / 1e6);
+        let forward = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5])[3] / 1e6);
+        let tone = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5])[4] / 1e6);
+        eprintln!(
+            "V1 GPU p50/p95 ms shadow={:.3}/{:.3} cluster={:.3}/{:.3} forward={:.3}/{:.3} tone={:.3}/{:.3}",
+            shadow.0, shadow.1, cluster.0, cluster.1, forward.0, forward.1, tone.0, tone.1
+        );
     } else if gpu_timestamps {
         eprintln!(
             "V1 scene GPU timings missing in {} of {} samples",
