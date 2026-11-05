@@ -6,13 +6,180 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
+#[cfg(not(target_arch = "wasm32"))]
+use thrum_core::ClockSample;
 use thrum_core::{ClockConfig, ClockState, TickClock};
 
 use crate::{
     projection::{GameProjection, ProjectionGap, ProjectionOutbox},
     scene::{self, ENTITY_COUNT},
-    simulation::{SimError, Simulation},
+    simulation::{PublishedPage, SimError, Simulation},
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use super::world_thread::WorldClient;
+
+pub(super) enum WorldPort {
+    Inline(Box<WorldDriver>),
+    #[cfg(not(target_arch = "wasm32"))]
+    Threaded(Box<WorldClient>),
+    #[cfg(not(target_arch = "wasm32"))]
+    Starting,
+}
+
+impl WorldPort {
+    pub(super) fn is_threaded(&self) -> bool {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            matches!(self, Self::Threaded(_))
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            false
+        }
+    }
+
+    fn inline(&self) -> &WorldDriver {
+        match self {
+            Self::Inline(driver) => driver,
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(_) | Self::Starting => {
+                unreachable!("the threaded host does not expose inline world methods")
+            }
+        }
+    }
+
+    pub(super) fn inline_mut(&mut self) -> &mut WorldDriver {
+        match self {
+            Self::Inline(driver) => driver,
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(_) | Self::Starting => {
+                unreachable!("the threaded host does not expose inline world methods")
+            }
+        }
+    }
+
+    pub(super) fn tick(&self) -> u64 {
+        match self {
+            Self::Inline(driver) => driver.tick(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.tick(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn epoch(&self) -> u128 {
+        match self {
+            Self::Inline(driver) => driver.epoch(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.epoch(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn timeline(&self) -> u64 {
+        match self {
+            Self::Inline(driver) => driver.timeline(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.timeline(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn has_current_page(&self) -> bool {
+        match self {
+            Self::Inline(driver) => driver.has_current_page(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.has_current_page(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn published_page(&mut self) -> Result<PublishedPage, SimError> {
+        match self {
+            Self::Inline(driver) => driver.published_page(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.published_page(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+        match self {
+            Self::Inline(driver) => driver.advance(now),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.poll(now),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn presentation_alpha_at(&self, lead: Duration) -> f32 {
+        match self {
+            Self::Inline(driver) => driver.presentation_alpha_at(lead),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.presentation_alpha_at(lead),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn next_due_in(&self) -> Option<Duration> {
+        match self {
+            Self::Inline(driver) => driver.next_due_in(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(_) => None,
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn pause(&mut self) {
+        self.inline_mut().pause();
+    }
+
+    pub(super) fn resume(&mut self, now: Duration) -> Result<(), String> {
+        self.inline_mut().resume(now)
+    }
+
+    pub(super) fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
+        match self {
+            Self::Inline(driver) => driver.set_controls(axes),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.set_controls(axes),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+
+    pub(super) fn controlled_position(&self) -> Option<[f64; 3]> {
+        self.inline().controlled_position()
+    }
+
+    pub(super) fn enable_projection(&mut self) -> Result<(), String> {
+        self.inline_mut().enable_projection()
+    }
+
+    pub(super) fn poll_projection(
+        &mut self,
+        consume: impl FnOnce(&GameProjection),
+    ) -> Result<Option<bool>, ProjectionGap> {
+        self.inline_mut().poll_projection(consume)
+    }
+
+    pub(super) fn projection_reserved_bytes(&self) -> usize {
+        self.inline().projection_reserved_bytes()
+    }
+
+    pub(super) fn reset_projection_baseline(&mut self) -> Result<(), String> {
+        self.inline_mut().reset_projection_baseline()
+    }
+}
 
 pub(super) struct WorldDriver {
     pub(super) clock: TickClock,
@@ -23,6 +190,7 @@ pub(super) struct WorldDriver {
     input_sequence: u64,
 }
 
+#[derive(Clone, Copy)]
 pub(super) struct WorldAdvance {
     pub(super) tick: u64,
     pub(super) overload: Option<u64>,
@@ -50,6 +218,36 @@ impl WorldDriver {
 
     pub(super) fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         self.clock.presentation_alpha_at(lead)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn clock_sample(&self) -> ClockSample {
+        self.clock.presentation_sample()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn held_controls(&self) -> [f32; 3] {
+        self.desired_axes
+    }
+
+    pub(super) fn tick(&self) -> u64 {
+        self.sim.tick()
+    }
+
+    pub(super) fn epoch(&self) -> u128 {
+        self.sim.epoch().0
+    }
+
+    pub(super) fn timeline(&self) -> u64 {
+        self.sim.timeline()
+    }
+
+    pub(super) fn has_current_page(&self) -> bool {
+        self.sim.has_current_page()
+    }
+
+    pub(super) fn published_page(&mut self) -> Result<PublishedPage, SimError> {
+        self.sim.published_page()
     }
 
     pub(super) fn next_due_in(&self) -> Option<Duration> {

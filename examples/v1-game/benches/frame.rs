@@ -451,11 +451,10 @@ fn report_frame_cpu(
     let stages = percentile(|sample| {
         (sample.extract_cpu + sample.upload_cpu + sample.encode_cpu).as_secs_f64() * 1e6
     });
-    let host_non_tick =
-        percentile(|sample| sample.wall.saturating_sub(sample.tick_cpu).as_secs_f64() * 1e6);
+    let host_non_tick = percentile(|sample| sample.render_cpu.as_secs_f64() * 1e6);
     let host_wall = percentile(|sample| sample.wall.as_secs_f64() * 1e6);
     eprintln!(
-        "V1 offscreen frame CPU submitted={} callbacks={} render={}x{} timestamps={} surface={:?} tick p50/p95={:.1}/{:.1} us extract p50/p95={:.1}/{:.1} us live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us stages p50/p95/p99={:.1}/{:.1}/{:.1} us host-minus-tick p50/p95/p99={:.1}/{:.1}/{:.1} us host-wall p50/p95/p99={:.1}/{:.1}/{:.1} us",
+        "V1 offscreen frame CPU submitted={} callbacks={} render={}x{} timestamps={} surface={:?} tick p50/p95={:.1}/{:.1} us extract p50/p95={:.1}/{:.1} us live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us stages p50/p95/p99={:.1}/{:.1}/{:.1} us render-thread p50/p95/p99={:.1}/{:.1}/{:.1} us host-wall p50/p95/p99={:.1}/{:.1}/{:.1} us",
         samples.len(),
         callbacks,
         render_extent[0],

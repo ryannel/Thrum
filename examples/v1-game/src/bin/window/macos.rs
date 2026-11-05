@@ -17,7 +17,7 @@ use display_link::ViewDisplayLink;
 use objc2_quartz_core::CACurrentMediaTime;
 use render_actor::{ReadyState, RenderJob, RenderOutcome, RenderReply};
 use thrum_render::{capabilities::DeviceCapabilities, frame::FrameWorker, present::SurfaceProfile};
-use v1_game::{FrameConfig, FrameHost, FrameSample};
+use v1_game::{FrameConfig, FrameHost, FrameSample, WorldControls};
 use wgpu::CurrentSurfaceTexture;
 use winit::{
     application::ApplicationHandler,
@@ -40,7 +40,7 @@ const KEY_DOWN: u8 = 128;
 
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
-    Extracted,
+    WorldAdvanced,
     SurfaceAcquired,
     DisplayTarget(f64),
     RenderDone,
@@ -181,6 +181,7 @@ struct App {
     worker_extent: [u32; 2],
     needs_reconfigure: bool,
     render: Option<FrameWorker<RenderJob, RenderReply>>,
+    world_controls: Option<WorldControls>,
     render_in_flight: Option<u64>,
     ready: ReadyState,
     held_keys: u8,
@@ -229,6 +230,7 @@ impl App {
             worker_extent: [0, 0],
             needs_reconfigure: false,
             render: None,
+            world_controls: None,
             render_in_flight: None,
             ready: ReadyState::default(),
             held_keys: 0,
@@ -265,14 +267,18 @@ impl App {
         [horizontal, vertical, 0.0]
     }
 
-    fn update_controls(&mut self) {
+    fn update_controls(&mut self) -> Result<(), String> {
+        if let Some(controls) = &self.world_controls {
+            controls.set_controls(self.controls())?;
+        }
         self.request_sequence = self.request_sequence.saturating_add(1);
         if let Some(window) = &self.window {
             window.request_redraw();
         }
+        Ok(())
     }
 
-    fn set_key(&mut self, code: KeyCode, pressed: bool) {
+    fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
         let mask = match code {
             KeyCode::KeyA => KEY_A,
             KeyCode::KeyD => KEY_D,
@@ -282,17 +288,17 @@ impl App {
             KeyCode::ArrowRight => KEY_RIGHT,
             KeyCode::ArrowUp => KEY_UP,
             KeyCode::ArrowDown => KEY_DOWN,
-            _ => return,
+            _ => return Ok(()),
         };
         if (self.held_keys & mask != 0) == pressed {
-            return;
+            return Ok(());
         }
         if pressed {
             self.held_keys |= mask;
         } else {
             self.held_keys &= !mask;
         }
-        self.update_controls();
+        self.update_controls()
     }
 
     fn prepare(
@@ -346,7 +352,7 @@ impl App {
         .find(|format| formats.contains(format))
         .ok_or("no supported 8-bit SDR surface format")?;
         surface.configure(&device, &config);
-        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
+        let host = pollster::block_on(FrameHost::new_with_capabilities(
             &device,
             &queue,
             &capabilities,
@@ -358,13 +364,14 @@ impl App {
                 }),
             },
         ))?;
-        let extract_wake = wake.clone();
-        host.enable_native_worker(move || {
-            let _ = extract_wake.send_event(UserEvent::Extracted);
-        })?;
-        self.ready = ReadyState::read(&host);
         self.origin = Instant::now();
         self.last_display_wake = self.origin;
+        let world_wake = wake.clone();
+        let (host, controls) = host.into_threaded(self.origin, move || {
+            let _ = world_wake.send_event(UserEvent::WorldAdvanced);
+        })?;
+        self.world_controls = Some(controls);
+        self.ready = ReadyState::read(&host);
         self.window = Some(window);
         self.display_link = Some(ViewDisplayLink::start(
             self.window.as_ref().ok_or("window missing")?,
@@ -509,7 +516,6 @@ impl App {
             sequence: self.target_sequence,
             now,
             lead,
-            axes: self.controls(),
             frame,
         };
         self.render
@@ -730,7 +736,7 @@ impl ApplicationHandler<UserEvent> for App {
                 self.pending_display_target = true;
                 self.request_sequence = self.request_sequence.saturating_add(1);
             }
-            UserEvent::Extracted | UserEvent::SurfaceAcquired => {
+            UserEvent::WorldAdvanced | UserEvent::SurfaceAcquired => {
                 self.request_sequence = self.request_sequence.saturating_add(1);
             }
             UserEvent::RenderDone => {}
@@ -758,14 +764,14 @@ impl ApplicationHandler<UserEvent> for App {
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(code) = event.physical_key {
-                    self.set_key(code, event.state == ElementState::Pressed);
+                    self.set_key(code, event.state == ElementState::Pressed)
+                } else {
+                    Ok(())
                 }
-                Ok(())
             }
             WindowEvent::Focused(false) => {
                 self.held_keys = 0;
-                self.update_controls();
-                Ok(())
+                self.update_controls()
             }
             _ => Ok(()),
         };
@@ -780,7 +786,8 @@ impl ApplicationHandler<UserEvent> for App {
             let size = window.inner_size();
             let extent = [size.width, size.height];
             let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
-            if self.ready.can_present()
+            if self.pending_display_target
+                && self.ready.can_present()
                 && !self.acquiring
                 && self.render_in_flight.is_none()
                 && self.ready.pending_frames
