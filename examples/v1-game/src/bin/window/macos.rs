@@ -3,6 +3,8 @@
 
 #[path = "macos/display_link.rs"]
 mod display_link;
+#[path = "macos/render_actor.rs"]
+mod render_actor;
 
 use std::{
     sync::Arc,
@@ -13,9 +15,10 @@ use std::{
 
 use display_link::ViewDisplayLink;
 use objc2_quartz_core::CACurrentMediaTime;
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
-use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
-use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
+use render_actor::{ReadyState, RenderJob, RenderOutcome, RenderReply};
+use thrum_render::{capabilities::DeviceCapabilities, frame::FrameWorker, present::SurfaceProfile};
+use v1_game::{FrameConfig, FrameHost, FrameSample};
+use wgpu::CurrentSurfaceTexture;
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -39,6 +42,7 @@ enum UserEvent {
     Extracted,
     SurfaceAcquired,
     DisplayTarget(f64),
+    RenderDone,
 }
 
 struct SurfaceState {
@@ -164,6 +168,9 @@ struct App {
     display_link: Option<ViewDisplayLink>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
+    target_sequence: u64,
+    request_sequence: u64,
+    submitted_sequence: u64,
     display_link_callbacks: usize,
     last_display_wake: Instant,
     pending_display_target: bool,
@@ -172,9 +179,9 @@ struct App {
     surface_extent: [u32; 2],
     worker_extent: [u32; 2],
     needs_reconfigure: bool,
-    device: Option<wgpu::Device>,
-    queue: Option<wgpu::Queue>,
-    host: Option<FrameHost>,
+    render: Option<FrameWorker<RenderJob, RenderReply>>,
+    render_in_flight: Option<u64>,
+    ready: ReadyState,
     held_keys: u8,
     origin: Instant,
     last_call: Duration,
@@ -187,6 +194,7 @@ struct App {
     stale_acquire: usize,
     surface_faults: usize,
     callback_walls: Vec<Duration>,
+    worker_walls: Vec<Duration>,
     samples: Vec<FrameSample>,
     profiler_title_at: Duration,
     adapter_name: String,
@@ -200,6 +208,9 @@ impl App {
             display_link: None,
             window: None,
             display_target: None,
+            target_sequence: 0,
+            request_sequence: 0,
+            submitted_sequence: 0,
             display_link_callbacks: 0,
             last_display_wake: Instant::now(),
             pending_display_target: false,
@@ -208,9 +219,9 @@ impl App {
             surface_extent: [0, 0],
             worker_extent: [0, 0],
             needs_reconfigure: false,
-            device: None,
-            queue: None,
-            host: None,
+            render: None,
+            render_in_flight: None,
+            ready: ReadyState::default(),
             held_keys: 0,
             origin: Instant::now(),
             last_call: Duration::ZERO,
@@ -222,15 +233,16 @@ impl App {
             acquiring: false,
             stale_acquire: 0,
             surface_faults: 0,
-            callback_walls: Vec::with_capacity(FRAMES + 32),
-            samples: Vec::with_capacity(FRAMES),
+            callback_walls: Vec::with_capacity(FRAMES * 8),
+            worker_walls: Vec::with_capacity(FRAMES * 4),
+            samples: Vec::with_capacity(FRAMES * 2),
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
         }
     }
 
-    fn update_controls(&mut self) -> Result<(), String> {
+    fn controls(&self) -> [f32; 3] {
         let horizontal = axis(
             self.held_keys & (KEY_A | KEY_LEFT) != 0,
             self.held_keys & (KEY_D | KEY_RIGHT) != 0,
@@ -239,13 +251,17 @@ impl App {
             self.held_keys & (KEY_S | KEY_DOWN) != 0,
             self.held_keys & (KEY_W | KEY_UP) != 0,
         );
-        if let Some(host) = &mut self.host {
-            host.set_controls([horizontal, vertical, 0.0])?;
-        }
-        Ok(())
+        [horizontal, vertical, 0.0]
     }
 
-    fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
+    fn update_controls(&mut self) {
+        self.request_sequence = self.request_sequence.saturating_add(1);
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
+    }
+
+    fn set_key(&mut self, code: KeyCode, pressed: bool) {
         let mask = match code {
             KeyCode::KeyA => KEY_A,
             KeyCode::KeyD => KEY_D,
@@ -255,17 +271,17 @@ impl App {
             KeyCode::ArrowRight => KEY_RIGHT,
             KeyCode::ArrowUp => KEY_UP,
             KeyCode::ArrowDown => KEY_DOWN,
-            _ => return Ok(()),
+            _ => return,
         };
         if (self.held_keys & mask != 0) == pressed {
-            return Ok(());
+            return;
         }
         if pressed {
             self.held_keys |= mask;
         } else {
             self.held_keys &= !mask;
         }
-        self.update_controls()
+        self.update_controls();
     }
 
     fn prepare(
@@ -335,6 +351,7 @@ impl App {
         host.enable_native_worker(move || {
             let _ = extract_wake.send_event(UserEvent::Extracted);
         })?;
+        self.ready = ReadyState::read(&host);
         self.origin = Instant::now();
         self.last_display_wake = self.origin;
         self.window = Some(window);
@@ -345,24 +362,83 @@ impl App {
         self.surface_format = Some(config.format);
         self.surface_extent = [config.width, config.height];
         self.worker_extent = self.surface_extent;
+        let render_surface_owner = Arc::clone(&surface);
+        let configured_extent = [config.width, config.height];
         self.surface = Some(SurfaceWorker::start(
             SurfaceState { surface, config },
             device.clone(),
             wake.clone(),
         )?);
-        self.device = Some(device);
-        self.queue = Some(queue);
-        self.host = Some(host);
+        self.render = Some(render_actor::start(
+            host,
+            device,
+            queue,
+            render_surface_owner,
+            configured_extent,
+            wake,
+        )?);
+        Ok(())
+    }
+
+    fn receive_render(&mut self, reply: RenderReply) -> Result<(), String> {
+        self.render_in_flight = None;
+        self.ready = reply.ready;
+        match reply.outcome {
+            RenderOutcome::Frame(report) => {
+                self.worker_walls.push(reply.worker_wall);
+                let report = report?;
+                if let Some(refused_ticks) = report.overload {
+                    return Err(format!(
+                        "fixed-clock overload: {} ticks refused, {} still queued",
+                        refused_ticks, report.queued_ticks
+                    ));
+                }
+                if report.surface_presented {
+                    self.presented += 1;
+                    if reply.sequence == self.target_sequence {
+                        self.pending_display_target = false;
+                    }
+                }
+                self.samples.extend(reply.samples.into_iter().flatten());
+                if self.last_call.saturating_sub(self.profiler_title_at)
+                    >= Duration::from_millis(500)
+                    && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
+                {
+                    window.set_title(&profiler_title(sample));
+                    self.profiler_title_at = self.last_call;
+                }
+            }
+            RenderOutcome::Finish(_) => return Err("unexpected final render reply".into()),
+        }
         Ok(())
     }
 
     fn draw(&mut self) -> Result<(), String> {
-        if !self.pending_display_target
-            && Instant::now() < self.last_display_wake + Duration::from_millis(25)
+        let callback_start = Instant::now();
+        let result = self.draw_inner();
+        self.callback_walls.push(callback_start.elapsed());
+        result
+    }
+
+    fn draw_inner(&mut self) -> Result<(), String> {
+        if self.render_in_flight.is_some() {
+            let completed = self
+                .render
+                .as_ref()
+                .ok_or("render worker missing")?
+                .try_recv();
+            if let Some(reply) = completed {
+                self.receive_render(reply)?;
+            } else {
+                return Ok(());
+            }
+        }
+        if self.request_sequence == self.submitted_sequence
+            || (!self.pending_display_target
+                && Instant::now() < self.last_display_wake + Duration::from_millis(25))
         {
             return Ok(());
         }
-        let callback_start = Instant::now();
         let now = self.origin.elapsed();
         let media_now = CACurrentMediaTime();
         self.last_call = now;
@@ -373,15 +449,9 @@ impl App {
             match state.result.try_recv() {
                 Ok(Acquired::Frame(frame, extent)) if extent == [size.width, size.height] => {
                     self.acquiring = false;
-                    if self.surface_extent != extent {
-                        self.host
-                            .as_mut()
-                            .ok_or("host missing")?
-                            .resize_surface(extent)?;
-                        self.surface_extent = extent;
-                    }
+                    self.surface_extent = extent;
                     self.needs_reconfigure = false;
-                    Some(frame)
+                    Some((frame, extent))
                 }
                 Ok(Acquired::Frame(_, _)) => {
                     self.acquiring = false;
@@ -416,13 +486,6 @@ impl App {
         } else {
             None
         };
-        let view = frame
-            .as_ref()
-            .map(|frame| frame.texture.create_view(&TextureViewDescriptor::default()));
-        let output = view.as_ref().map(|view| SurfaceOutput {
-            view,
-            extent: self.surface_extent,
-        });
         let lead = self.display_target.map_or(Duration::ZERO, |target| {
             let seconds = target - media_now;
             if seconds.is_finite() && seconds > 0.0 {
@@ -431,70 +494,73 @@ impl App {
                 Duration::ZERO
             }
         });
-        let host = self.host.as_mut().ok_or("host missing")?;
-        host.set_presentation_lead(lead);
-        let report = host.drive(now, output.as_ref())?;
-        if let Some(refused_ticks) = report.overload {
-            return Err(format!(
-                "fixed-clock overload: {} ticks refused, {} still queued",
-                refused_ticks, report.queued_ticks
-            ));
-        }
-        if report.surface_presented {
-            self.queue
-                .as_ref()
-                .ok_or("queue missing")?
-                .present(frame.ok_or("surface pass without acquired frame")?);
-            self.presented += 1;
-            self.pending_display_target = false;
-        }
-        while let Some(sample) = host.poll_completed()? {
-            self.samples.push(sample);
-        }
-        if now.saturating_sub(self.profiler_title_at) >= Duration::from_millis(500)
-            && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
-        {
-            window.set_title(&profiler_title(sample));
-            self.profiler_title_at = now;
-        }
-        self.callback_walls.push(callback_start.elapsed());
+        let job = RenderJob::Frame {
+            sequence: self.target_sequence,
+            now,
+            lead,
+            axes: self.controls(),
+            frame,
+        };
+        self.render
+            .as_ref()
+            .ok_or("render worker missing")?
+            .try_send(job)
+            .map_err(|_| "bounded render worker refused an idle request".to_owned())?;
+        self.submitted_sequence = self.request_sequence;
+        self.render_in_flight = Some(self.submitted_sequence);
         if now >= Duration::from_secs(30) {
             return Err(format!(
                 "600 presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
                 self.presented,
-                host.tick(),
+                self.ready.tick,
                 self.display_link_callbacks,
                 self.unavailable,
                 self.occluded,
                 self.waiting_acquire,
                 self.stale_acquire,
                 self.surface_faults,
-                host.dropped_views(),
-                host.dropped_stale_views(),
-                host.reused_views(),
-                host.dropped_surface()
+                self.ready.dropped_views,
+                self.ready.dropped_stale_views,
+                self.ready.reused_views,
+                self.ready.dropped_surface
             ));
         }
         Ok(())
     }
 
     fn finish(&mut self) -> Result<String, String> {
-        let host = self.host.as_mut().ok_or("host missing")?;
-        let device = self.device.as_ref().ok_or("device missing")?;
-        while host.pending_frames() > 0 {
-            device
-                .poll(wgpu::PollType::Wait {
-                    submission_index: None,
-                    timeout: Some(Duration::from_secs(10)),
-                })
-                .map_err(|error| format!("GPU drain: {error:?}"))?;
-            while let Some(sample) = host.poll_completed()? {
-                self.samples.push(sample);
+        let worker = self.render.as_ref().ok_or("render worker missing")?;
+        if self.render_in_flight.is_some() {
+            let reply = worker
+                .recv_timeout(Duration::from_secs(10))
+                .ok_or("render worker did not finish its last frame")?;
+            self.receive_render(reply)?;
+        }
+        self.render
+            .as_ref()
+            .ok_or("render worker missing")?
+            .try_send(RenderJob::Finish)
+            .map_err(|_| "render worker refused final drain".to_owned())?;
+        let final_reply = self
+            .render
+            .as_ref()
+            .ok_or("render worker missing")?
+            .recv_timeout(Duration::from_secs(15))
+            .ok_or("render worker did not finish GPU drain")?;
+        self.ready = final_reply.ready;
+        match final_reply.outcome {
+            RenderOutcome::Finish(result) => self.samples.extend(result?),
+            RenderOutcome::Frame(_) => {
+                return Err("frame reply arrived during final drain".into());
             }
+        }
+        if let Some(worker) = self.render.take() {
+            worker.shutdown();
         }
         let wall = percentile(&self.callback_walls, |duration| {
             duration.as_secs_f64() * 1e3
         });
+        let worker_wall = percentile(&self.worker_walls, |duration| duration.as_secs_f64() * 1e3);
         let presented: Vec<_> = self
             .samples
             .iter()
@@ -535,7 +601,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; render-worker CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -543,19 +609,21 @@ impl App {
             self.presented,
             self.callbacks,
             self.display_link_callbacks,
-            host.tick(),
+            self.ready.tick,
             self.unavailable,
             self.occluded,
             self.waiting_acquire,
             self.stale_acquire,
             self.surface_faults,
-            host.dropped_surface(),
-            host.dropped_views(),
-            host.dropped_stale_views(),
-            host.reused_views(),
-            host.dropped_reports(),
+            self.ready.dropped_surface,
+            self.ready.dropped_views,
+            self.ready.dropped_stale_views,
+            self.ready.reused_views,
+            self.ready.dropped_reports,
             wall.0,
             wall.1,
+            worker_wall.0,
+            worker_wall.1,
             tick.0,
             tick.1,
             view.0,
@@ -573,6 +641,9 @@ impl App {
 impl Drop for App {
     fn drop(&mut self) {
         drop(self.display_link.take());
+        if let Some(render) = self.render.take() {
+            render.shutdown();
+        }
         if let Some(surface) = self.surface.take() {
             surface.shutdown();
         }
@@ -638,15 +709,21 @@ impl ApplicationHandler<UserEvent> for App {
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: UserEvent) {
-        if let UserEvent::DisplayTarget(target) = event {
-            self.display_target = Some(target);
-            self.display_link_callbacks += 1;
-            self.last_display_wake = Instant::now();
-            self.pending_display_target = true;
+        match event {
+            UserEvent::DisplayTarget(target) => {
+                self.display_target = Some(target);
+                self.target_sequence = self.target_sequence.saturating_add(1);
+                self.display_link_callbacks += 1;
+                self.last_display_wake = Instant::now();
+                self.pending_display_target = true;
+                self.request_sequence = self.request_sequence.saturating_add(1);
+            }
+            UserEvent::Extracted | UserEvent::SurfaceAcquired => {
+                self.request_sequence = self.request_sequence.saturating_add(1);
+            }
+            UserEvent::RenderDone => {}
         }
-        if (self.pending_display_target || self.display_link_callbacks == 0)
-            && let Some(window) = &self.window
-        {
+        if let Some(window) = &self.window {
             window.request_redraw();
         }
     }
@@ -669,14 +746,14 @@ impl ApplicationHandler<UserEvent> for App {
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(code) = event.physical_key {
-                    self.set_key(code, event.state == ElementState::Pressed)
-                } else {
-                    Ok(())
+                    self.set_key(code, event.state == ElementState::Pressed);
                 }
+                Ok(())
             }
             WindowEvent::Focused(false) => {
                 self.held_keys = 0;
-                self.update_controls()
+                self.update_controls();
+                Ok(())
             }
             _ => Ok(()),
         };
@@ -687,16 +764,14 @@ impl ApplicationHandler<UserEvent> for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if let (Some(window), Some(host), Some(surface)) = (&self.window, &self.host, &self.surface)
-        {
+        if let (Some(window), Some(surface)) = (&self.window, &self.surface) {
             let size = window.inner_size();
             let extent = [size.width, size.height];
             let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
-            if (host.has_ready_view()
-                || host.has_current_scene_for_display()
-                || host.has_reusable_view())
+            if self.ready.can_present()
                 && !self.acquiring
-                && host.pending_frames()
+                && self.render_in_flight.is_none()
+                && self.ready.pending_frames
                     < if reconfigure {
                         1
                     } else {
@@ -724,14 +799,22 @@ impl ApplicationHandler<UserEvent> for App {
             let watchdog = self.last_display_wake + Duration::from_millis(25);
             if Instant::now() < watchdog {
                 event_loop.set_control_flow(ControlFlow::WaitUntil(watchdog));
-            } else if let Some(due) = host.next_due_in() {
+            } else if let Some(due) = self.ready.next_due {
                 // The view's link stops off-display. This existing clock wake
                 // services world ticks only until display callbacks resume;
                 // a later G3b slice moves the simulation to its own thread.
                 let since_call = self.origin.elapsed().saturating_sub(self.last_call);
                 let delay = due.saturating_sub(since_call);
                 if delay.is_zero() {
-                    window.request_redraw();
+                    self.request_sequence = self.request_sequence.saturating_add(1);
+                    // A hidden view may never receive RedrawRequested. Submit
+                    // the tick-service request directly; it only hands work
+                    // to the render worker and never performs GPU work here.
+                    if let Err(error) = self.draw() {
+                        self.error = Some(error);
+                        event_loop.exit();
+                        return;
+                    }
                     event_loop.set_control_flow(ControlFlow::Wait);
                 } else {
                     event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + delay));
