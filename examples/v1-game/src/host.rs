@@ -174,30 +174,32 @@ pub struct DriveReport {
 /// One admitted simulation callback awaiting optional presentation. Consuming
 /// it once keeps a delayed surface acquisition tied to the exact world step.
 pub struct AdvancedFrame<'a> {
-    host: &'a mut FrameHost,
+    host: Option<&'a mut FrameHost>,
     report: Option<DriveReport>,
     tick_cpu: Duration,
     wall_start: Instant,
     recovered_publication: bool,
 }
 
-impl AdvancedFrame<'_> {
+impl<'a> AdvancedFrame<'a> {
     /// Whether a serial frame can use a drawable after world admission.
     /// Native extraction may finish later and remains separately scheduled.
     pub fn can_acquire_serial(&self) -> bool {
+        let Some(host) = self.host.as_deref() else {
+            return false;
+        };
         #[cfg(not(target_arch = "wasm32"))]
-        if self.host.worker.is_some() {
+        if host.worker.is_some() {
             return false;
         }
         let Some(report) = self.report.as_ref() else {
             return false;
         };
         report.overload.is_none()
-            && self.host.sim.has_current_page()
+            && host.sim.has_current_page()
             && (report.completed_ticks > 0 || self.recovered_publication)
-            && self.host.presenter.is_some()
-            && self
-                .host
+            && host.presenter.is_some()
+            && host
                 .slots
                 .iter()
                 .any(|slot| matches!(slot.state, SlotState::Free))
@@ -212,29 +214,175 @@ impl AdvancedFrame<'_> {
             .report
             .take()
             .ok_or("advanced frame already consumed")?;
-        self.host.finish_advance(
-            report,
-            self.tick_cpu,
-            self.wall_start,
-            self.recovered_publication,
-            surface,
-        )
+        self.host
+            .take()
+            .ok_or("advanced host already consumed")?
+            .finish_advance(
+                report,
+                self.tick_cpu,
+                self.wall_start,
+                self.recovered_publication,
+                surface,
+            )
+    }
+
+    /// Encode the serial scene while the platform has not yet acquired its
+    /// drawable. The returned token owns the encoder and its frame slot.
+    /// # Errors
+    /// Returns an extraction or GPU encoding fault; a failed optional view
+    /// never rolls back an admitted world update.
+    pub fn encode_scene(mut self) -> Result<EncodedFrame<'a>, String> {
+        if !self.can_acquire_serial() {
+            return Err("serial scene is not ready for encoding".to_owned());
+        }
+        let host = self.host.as_deref_mut().ok_or("advanced host consumed")?;
+        let slot_index = host
+            .slots
+            .iter()
+            .position(|slot| matches!(slot.state, SlotState::Free))
+            .ok_or("no free scene slot")?;
+        let report = self.report.as_mut().ok_or("advanced report consumed")?;
+        let frame =
+            host.extract_serial(self.tick_cpu, report.completed_ticks, report.queued_ticks)?;
+        let prepared = match host.prepare_extracted(slot_index, report, frame) {
+            Ok(Some(prepared)) => prepared,
+            Ok(None) => return Err("serial extraction had no current source".to_owned()),
+            Err(error) => {
+                host.queue.submit([]);
+                return Err(error);
+            }
+        };
+        let (encoder, scene_encode_cpu) = host.encode_scene_only(slot_index)?;
+        Ok(EncodedFrame {
+            host: self.host.take().ok_or("advanced host consumed")?,
+            report: self.report.take(),
+            encoder: Some(encoder),
+            sample: Some(prepared.sample),
+            slot_index,
+            wall_start: self.wall_start,
+            scene_encode_cpu,
+            #[cfg(not(target_arch = "wasm32"))]
+            source: prepared.source,
+        })
     }
 }
 
 impl Drop for AdvancedFrame<'_> {
     fn drop(&mut self) {
-        let Some(report) = self.report.as_ref() else {
+        let Some((host, report)) = self.host.as_deref_mut().zip(self.report.as_ref()) else {
             return;
         };
         if report.overload.is_some() {
-            self.host.dropped_views = self
-                .host
+            host.dropped_views = host
                 .dropped_views
                 .saturating_add(u64::from(report.completed_ticks > 0));
-        } else if self.host.sim.has_current_page()
+        } else if host.sim.has_current_page()
             && (report.completed_ticks > 0 || self.recovered_publication)
         {
+            host.dropped_views = host.dropped_views.saturating_add(1);
+            if host.presenter.is_some() {
+                host.dropped_surface = host.dropped_surface.saturating_add(1);
+            }
+        }
+    }
+}
+
+/// One offscreen scene encoded before the platform acquires a drawable.
+/// Dropping it discards the unsubmitted encoder and its timestamp reservations.
+pub struct EncodedFrame<'a> {
+    host: &'a mut FrameHost,
+    report: Option<DriveReport>,
+    encoder: Option<wgpu::CommandEncoder>,
+    sample: Option<FrameSample>,
+    slot_index: usize,
+    wall_start: Instant,
+    scene_encode_cpu: Duration,
+    #[cfg(not(target_arch = "wasm32"))]
+    source: SourceTick,
+}
+
+impl EncodedFrame<'_> {
+    /// Discard an encoded scene when drawable acquisition failed. The world
+    /// update remains committed; queued uploads are flushed without a scene
+    /// pass or temporal-history publication.
+    /// # Panics
+    /// Panics only if the frame's privately owned report was taken without
+    /// consuming the frame, which no public operation permits.
+    pub fn skip(mut self) -> DriveReport {
+        let mut report = self.report.take().expect("encoded report belongs to frame");
+        report.dropped_view = true;
+        report.wall = self.wall_start.elapsed();
+        report
+    }
+
+    /// Append the presentation pass to the existing encoder and submit once.
+    /// A missing drawable submits only the scene and counts the missed surface.
+    /// # Errors
+    /// Returns a GPU submission fault; committed world ticks remain committed.
+    pub fn submit(mut self, surface: Option<&SurfaceOutput<'_>>) -> Result<DriveReport, String> {
+        if surface.is_some() && self.host.presenter.is_none() {
+            return Err("encoded host has no surface presenter".to_owned());
+        }
+        let mut encoder = self.encoder.take().ok_or("encoded scene consumed")?;
+        let present_start = Instant::now();
+        let slot = &mut self.host.slots[self.slot_index];
+        let presented = if let (Some(presenter), Some(binding), Some(surface)) = (
+            self.host.presenter.as_ref(),
+            slot.presentation.as_ref(),
+            surface,
+        ) {
+            presenter
+                .encode(
+                    &mut encoder,
+                    binding,
+                    surface.view,
+                    surface.extent,
+                    Some(&mut slot.timings),
+                )
+                .is_ok()
+        } else {
+            false
+        };
+        if self.host.presenter.is_some() && !presented {
+            self.host.dropped_surface = self.host.dropped_surface.saturating_add(1);
+            if let Some(report) = self.report.as_mut() {
+                report.dropped_view = true;
+            }
+        }
+        let encode_cpu = self.scene_encode_cpu + present_start.elapsed();
+        let mut report = self.report.take().ok_or("encoded report consumed")?;
+        let sample = self.sample.take().ok_or("encoded sample consumed")?;
+        self.host.finish_encoded(
+            self.slot_index,
+            &mut report,
+            encoder,
+            sample,
+            self.wall_start,
+            encode_cpu,
+            presented,
+        )?;
+        self.host.prepared.commit_frame();
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.host.last_view_source = Some(self.source);
+            self.host.last_render_slot = Some(self.slot_index);
+        }
+        Ok(report)
+    }
+}
+
+impl Drop for EncodedFrame<'_> {
+    fn drop(&mut self) {
+        if let Some(encoder) = self.encoder.take() {
+            drop(encoder);
+            let discarded = self.host.slots[self.slot_index]
+                .timings
+                .discard_unsubmitted(GENERATION);
+            debug_assert!(discarded.is_ok(), "unsubmitted scene timing state changed");
+            // Queue::write_buffer stages bytes until submit, even if the
+            // command encoder is dropped. Empty submit releases that staging
+            // after GPU completion without rendering the hidden scene.
+            self.host.queue.submit([]);
             self.host.dropped_views = self.host.dropped_views.saturating_add(1);
             if self.host.presenter.is_some() {
                 self.host.dropped_surface = self.host.dropped_surface.saturating_add(1);
@@ -294,6 +442,12 @@ struct SubmitFrame {
     completed_ticks: u32,
     queued_ticks: u32,
     frame_tick: u64,
+}
+
+struct PreparedSample {
+    sample: FrameSample,
+    #[cfg(not(target_arch = "wasm32"))]
+    source: SourceTick,
 }
 
 /// A detached copy of the scene and executor handles for preparing one cooked
@@ -989,7 +1143,7 @@ impl FrameHost {
         };
         self.dropped_views = self.dropped_views.saturating_add(skipped_publications);
         Ok(AdvancedFrame {
-            host: self,
+            host: Some(self),
             report: Some(report),
             tick_cpu,
             wall_start,
@@ -1054,6 +1208,20 @@ impl FrameHost {
             return Ok(report);
         };
 
+        let completed_ticks = report.completed_ticks;
+        let queued_ticks = report.queued_ticks;
+        let frame = self.extract_serial(tick_cpu, completed_ticks, queued_ticks)?;
+        self.submit_extracted(slot_index, &mut report, surface, frame, wall_start)?;
+        report.wall = wall_start.elapsed();
+        Ok(report)
+    }
+
+    fn extract_serial(
+        &mut self,
+        tick_cpu: Duration,
+        completed_ticks: u32,
+        queued_ticks: u32,
+    ) -> Result<SubmitFrame, String> {
         let extract_start = Instant::now();
         let snapshot = self
             .sim
@@ -1066,27 +1234,16 @@ impl FrameHost {
             &snapshot,
         );
         drop(snapshot);
-        let extract_cpu = extract_start.elapsed();
-        let completed_ticks = report.completed_ticks;
-        let queued_ticks = report.queued_ticks;
-        self.submit_extracted(
-            slot_index,
-            &mut report,
-            surface,
-            SubmitFrame {
-                extracted,
-                extract_cpu,
-                worker_queue_cpu: Duration::ZERO,
-                worker_ready_cpu: Duration::ZERO,
-                tick_cpu,
-                completed_ticks,
-                queued_ticks,
-                frame_tick: self.sim.tick(),
-            },
-            wall_start,
-        )?;
-        report.wall = wall_start.elapsed();
-        Ok(report)
+        Ok(SubmitFrame {
+            extracted,
+            extract_cpu: extract_start.elapsed(),
+            worker_queue_cpu: Duration::ZERO,
+            worker_ready_cpu: Duration::ZERO,
+            tick_cpu,
+            completed_ticks,
+            queued_ticks,
+            frame_tick: self.sim.tick(),
+        })
     }
 
     fn submit_extracted(
@@ -1097,20 +1254,45 @@ impl FrameHost {
         frame: SubmitFrame,
         wall_start: Instant,
     ) -> Result<(), String> {
+        let Some(prepared) = self.prepare_extracted(slot_index, report, frame)? else {
+            return Ok(());
+        };
+        self.encode_prepared(slot_index, report, surface, prepared.sample, wall_start)?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.last_view_source = Some(prepared.source);
+            self.last_render_slot = Some(slot_index);
+        }
+        Ok(())
+    }
+
+    fn prepare_extracted(
+        &mut self,
+        slot_index: usize,
+        report: &mut DriveReport,
+        frame: SubmitFrame,
+    ) -> Result<Option<PreparedSample>, String> {
+        #[cfg(target_arch = "wasm32")]
+        let _ = report;
         #[cfg(not(target_arch = "wasm32"))]
         let frame_source = self
             .extractor
             .as_ref()
             .and_then(|extractor| extractor.frame().source());
         #[cfg(not(target_arch = "wasm32"))]
-        if frame_source.is_none_or(|source| {
-            source.tick != frame.frame_tick
-                || source.epoch != self.sim.epoch().0
-                || source.timeline != self.sim.timeline()
-        }) {
+        let Some(frame_source) = frame_source else {
             self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
             report.dropped_view = true;
-            return Ok(());
+            return Ok(None);
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        if frame_source.tick != frame.frame_tick
+            || frame_source.epoch != self.sim.epoch().0
+            || frame_source.timeline != self.sim.timeline()
+        {
+            self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
+            report.dropped_view = true;
+            return Ok(None);
         }
         let upload_start = Instant::now();
         let ApplyReport {
@@ -1145,11 +1327,8 @@ impl FrameHost {
         let visual_revision = self.current_visual_revision();
         #[cfg(target_arch = "wasm32")]
         let visual_revision = None;
-        self.encode_prepared(
-            slot_index,
-            report,
-            surface,
-            FrameSample {
+        Ok(Some(PreparedSample {
+            sample: FrameSample {
                 tick: frame.frame_tick,
                 submission_order: 0,
                 completed_ticks: frame.completed_ticks,
@@ -1188,14 +1367,9 @@ impl FrameHost {
                     .unwrap_or(u32::MAX),
                 visual_revision,
             },
-            wall_start,
-        )?;
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            self.last_view_source = frame_source;
-            self.last_render_slot = Some(slot_index);
-        }
-        Ok(())
+            #[cfg(not(target_arch = "wasm32"))]
+            source: frame_source,
+        }))
     }
 
     fn encode_prepared(
@@ -1206,19 +1380,9 @@ impl FrameHost {
         sample: FrameSample,
         wall_start: Instant,
     ) -> Result<(), String> {
-        let encode_start = Instant::now();
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let (mut encoder, scene_encode_cpu) = self.encode_scene_only(slot_index)?;
+        let present_start = Instant::now();
         let slot = &mut self.slots[slot_index];
-        self.prepared
-            .encode(
-                &mut encoder,
-                GENERATION,
-                &slot.target,
-                Some(&mut slot.timings),
-            )
-            .map_err(|error| format!("render encode: {error:?}"))?;
         let surface_presented = if let (Some(presenter), Some(binding), Some(surface)) =
             (self.presenter.as_ref(), slot.presentation.as_ref(), surface)
         {
@@ -1246,11 +1410,35 @@ impl FrameHost {
             encoder,
             sample,
             wall_start,
-            encode_start,
+            scene_encode_cpu + present_start.elapsed(),
             surface_presented,
         )?;
         self.prepared.commit_frame();
         Ok(())
+    }
+
+    fn encode_scene_only(
+        &mut self,
+        slot_index: usize,
+    ) -> Result<(wgpu::CommandEncoder, Duration), String> {
+        let start = Instant::now();
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let slot = &mut self.slots[slot_index];
+        if let Err(error) = self.prepared.encode(
+            &mut encoder,
+            GENERATION,
+            &slot.target,
+            Some(&mut slot.timings),
+        ) {
+            drop(encoder);
+            let discarded = slot.timings.discard_unsubmitted(GENERATION);
+            self.queue.submit([]);
+            discarded.map_err(|timing| format!("render timing discard: {timing:?}"))?;
+            return Err(format!("render encode: {error:?}"));
+        }
+        Ok((encoder, start.elapsed()))
     }
 
     fn finish_encoded(
@@ -1260,19 +1448,25 @@ impl FrameHost {
         encoder: wgpu::CommandEncoder,
         mut sample: FrameSample,
         wall_start: Instant,
-        encode_start: Instant,
+        encode_cpu_so_far: Duration,
         surface_presented: bool,
     ) -> Result<(), String> {
+        let finish_start = Instant::now();
         let slot = &mut self.slots[slot_index];
-        slot.timings
-            .finish_render(GENERATION, &encoder)
-            .map_err(|error| format!("finish timestamps: {error:?}"))?;
+        if let Err(error) = slot.timings.finish_render(GENERATION, &encoder) {
+            drop(encoder);
+            let discarded = slot.timings.discard_unsubmitted(GENERATION);
+            self.queue.submit([]);
+            discarded
+                .map_err(|timing| format!("failed timing discard after {error:?}: {timing:?}"))?;
+            return Err(format!("finish timestamps: {error:?}"));
+        }
         slot.render_done.store(false, Ordering::Release);
         self.queue.submit([encoder.finish()]);
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
-        sample.encode_cpu = encode_start.elapsed();
+        sample.encode_cpu = encode_cpu_so_far + finish_start.elapsed();
         sample.wall = wall_start.elapsed();
         sample.surface_presented = surface_presented;
         sample.submission_order = self.next_submission_order;
@@ -1347,7 +1541,7 @@ impl FrameHost {
                 visual_revision: self.current_visual_revision(),
             },
             wall_start,
-            encode_start,
+            encode_start.elapsed(),
             true,
         )?;
         self.reused_views = self.reused_views.saturating_add(1);

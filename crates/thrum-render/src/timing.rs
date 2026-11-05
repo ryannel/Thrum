@@ -248,6 +248,26 @@ impl GpuTimings {
         enabled.names.push(name.as_ref());
         Ok(Some((&enabled.query, index)))
     }
+    /// Release pass reservations after dropping their unsubmitted encoder.
+    /// Call before `finish_render`; submitted work must complete and be collected
+    /// normally. Stored labels are retained for allocation-free reuse when the
+    /// next batch records the same pass names.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for a stale generation or pending render/readback batch,
+    /// leaving its reservations unchanged.
+    pub fn discard_unsubmitted(&mut self, generation: u64) -> Result<(), TimingError> {
+        self.check_generation(generation)?;
+        let Some(enabled) = &mut self.enabled else {
+            return Ok(());
+        };
+        if enabled.pending.is_some() || enabled.render_pending.is_some() {
+            return Err(TimingError::Busy);
+        }
+        enabled.names.clear();
+        Ok(())
+    }
     /// Finish recording timestamps on the render command buffer. The executor
     /// submits normally; completion notification is only a nonblocking message.
     /// This certifies counter readiness, never temporal-history acceptance.

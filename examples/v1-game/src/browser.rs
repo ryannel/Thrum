@@ -119,8 +119,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
 
 #[wasm_bindgen]
 impl BrowserGame {
-    /// Advance the fixed clock once per browser animation callback, then acquire
-    /// a drawable only if the admitted world has a frame to submit.
+    /// Advance the fixed clock and encode the scene before acquiring a drawable.
     ///
     /// # Errors
     /// Returns a JavaScript error for an authoritative tick or GPU host fault.
@@ -152,6 +151,7 @@ impl BrowserGame {
             && !resize
             && !self.needs_reconfigure;
         let report = if can_acquire {
+            let encoded = advanced.encode_scene().map_err(js_error)?;
             let frame = match self.surface.get_current_texture() {
                 wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
                 wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
@@ -175,7 +175,7 @@ impl BrowserGame {
                 let view = frame
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
-                let report = advanced
+                let report = encoded
                     .submit(Some(&SurfaceOutput {
                         view: &view,
                         extent: [self.config.width, self.config.height],
@@ -187,7 +187,7 @@ impl BrowserGame {
                 }
                 report
             } else {
-                advanced.submit(None).map_err(js_error)?
+                encoded.skip()
             }
         } else {
             advanced.submit(None).map_err(js_error)?
