@@ -173,7 +173,6 @@ struct App {
     request_sequence: u64,
     submitted_sequence: u64,
     display_link_callbacks: usize,
-    last_display_wake: Instant,
     pending_display_target: bool,
     surface: Option<SurfaceWorker>,
     surface_format: Option<wgpu::TextureFormat>,
@@ -182,6 +181,7 @@ struct App {
     needs_reconfigure: bool,
     render: Option<FrameWorker<RenderJob, RenderReply>>,
     world_controls: Option<WorldControls>,
+    world_tick: u64,
     render_in_flight: Option<u64>,
     ready: ReadyState,
     held_keys: u8,
@@ -222,7 +222,6 @@ impl App {
             request_sequence: 0,
             submitted_sequence: 0,
             display_link_callbacks: 0,
-            last_display_wake: Instant::now(),
             pending_display_target: false,
             surface: None,
             surface_format: None,
@@ -231,6 +230,7 @@ impl App {
             needs_reconfigure: false,
             render: None,
             world_controls: None,
+            world_tick: 0,
             render_in_flight: None,
             ready: ReadyState::default(),
             held_keys: 0,
@@ -365,7 +365,6 @@ impl App {
             },
         ))?;
         self.origin = Instant::now();
-        self.last_display_wake = self.origin;
         let world_wake = wake.clone();
         let (host, controls) = host.into_threaded(self.origin, move || {
             let _ = world_wake.send_event(UserEvent::WorldAdvanced);
@@ -438,6 +437,26 @@ impl App {
         result
     }
 
+    fn deadline_error(&self) -> String {
+        format!(
+            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
+            self.target_frames,
+            self.presented,
+            self.world_tick,
+            self.display_link_callbacks,
+            self.callbacks,
+            self.unavailable,
+            self.occluded,
+            self.waiting_acquire,
+            self.stale_acquire,
+            self.surface_faults,
+            self.ready.dropped_views,
+            self.ready.dropped_stale_views,
+            self.ready.reused_views,
+            self.ready.dropped_surface
+        )
+    }
+
     fn draw_inner(&mut self) -> Result<(), String> {
         if self.render_in_flight.is_some() {
             let completed = self
@@ -451,10 +470,7 @@ impl App {
                 return Ok(());
             }
         }
-        if self.request_sequence == self.submitted_sequence
-            || (!self.pending_display_target
-                && Instant::now() < self.last_display_wake + Duration::from_millis(25))
-        {
+        if self.request_sequence == self.submitted_sequence || !self.pending_display_target {
             return Ok(());
         }
         let now = self.origin.elapsed();
@@ -526,22 +542,7 @@ impl App {
         self.submitted_sequence = self.request_sequence;
         self.render_in_flight = Some(self.submitted_sequence);
         if now >= self.run_deadline {
-            return Err(format!(
-                "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
-                self.target_frames,
-                self.presented,
-                self.ready.tick,
-                self.display_link_callbacks,
-                self.unavailable,
-                self.occluded,
-                self.waiting_acquire,
-                self.stale_acquire,
-                self.surface_faults,
-                self.ready.dropped_views,
-                self.ready.dropped_stale_views,
-                self.ready.reused_views,
-                self.ready.dropped_surface
-            ));
+            return Err(self.deadline_error());
         }
         Ok(())
     }
@@ -627,7 +628,7 @@ impl App {
             self.presented,
             self.callbacks,
             self.display_link_callbacks,
-            self.ready.tick,
+            self.world_tick,
             self.unavailable,
             self.occluded,
             self.waiting_acquire,
@@ -726,17 +727,28 @@ impl ApplicationHandler<UserEvent> for App {
         }
     }
 
-    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: UserEvent) {
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: UserEvent) {
         match event {
             UserEvent::DisplayTarget(target) => {
                 self.display_target = Some(target);
                 self.target_sequence = self.target_sequence.saturating_add(1);
                 self.display_link_callbacks += 1;
-                self.last_display_wake = Instant::now();
                 self.pending_display_target = true;
                 self.request_sequence = self.request_sequence.saturating_add(1);
             }
-            UserEvent::WorldAdvanced | UserEvent::SurfaceAcquired => {
+            UserEvent::WorldAdvanced => {
+                if let Some(controls) = &self.world_controls {
+                    match controls.check_health() {
+                        Ok(tick) => self.world_tick = tick,
+                        Err(error) => {
+                            self.error = Some(error);
+                            event_loop.exit();
+                        }
+                    }
+                }
+                return;
+            }
+            UserEvent::SurfaceAcquired => {
                 self.request_sequence = self.request_sequence.saturating_add(1);
             }
             UserEvent::RenderDone => {}
@@ -815,31 +827,12 @@ impl ApplicationHandler<UserEvent> for App {
                     }
                 }
             }
-            let watchdog = self.last_display_wake + Duration::from_millis(25);
-            if Instant::now() < watchdog {
-                event_loop.set_control_flow(ControlFlow::WaitUntil(watchdog));
-            } else if let Some(due) = self.ready.next_due {
-                // The view's link stops off-display. This existing clock wake
-                // services world ticks only until display callbacks resume;
-                // a later G3b slice moves the simulation to its own thread.
-                let since_call = self.origin.elapsed().saturating_sub(self.last_call);
-                let delay = due.saturating_sub(since_call);
-                if delay.is_zero() {
-                    self.request_sequence = self.request_sequence.saturating_add(1);
-                    // A hidden view may never receive RedrawRequested. Submit
-                    // the tick-service request directly; it only hands work
-                    // to the render worker and never performs GPU work here.
-                    if let Err(error) = self.draw() {
-                        self.error = Some(error);
-                        event_loop.exit();
-                        return;
-                    }
-                    event_loop.set_control_flow(ControlFlow::Wait);
-                } else {
-                    event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + delay));
-                }
+            if self.origin.elapsed() >= self.run_deadline {
+                self.error = Some(self.deadline_error());
+                event_loop.exit();
             } else {
-                event_loop.set_control_flow(ControlFlow::Wait);
+                event_loop
+                    .set_control_flow(ControlFlow::WaitUntil(self.origin + self.run_deadline));
             }
         }
     }

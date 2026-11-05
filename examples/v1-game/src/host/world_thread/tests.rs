@@ -44,6 +44,12 @@ fn world_advances_and_accepts_controls_while_render_is_idle() {
         thread::sleep(Duration::from_millis(5));
     };
     assert!(advanced.completed_ticks >= 3);
+    assert!(
+        controls
+            .check_health()
+            .expect("world remains healthy without render callbacks")
+            >= 3
+    );
     assert_ne!(
         worker_wake.try_recv().expect("world wake thread"),
         render_thread,
@@ -91,7 +97,7 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
     let origin = Instant::now()
         .checked_sub(Duration::from_millis(200))
         .expect("monotonic clock has more than 200 ms of history");
-    let (mut client, _) =
+    let (mut client, controls) =
         WorldClient::start(WorldDriver::new().expect("fixture world"), origin, || {})
             .expect("resident world");
     let deadline = Instant::now() + Duration::from_secs(1);
@@ -107,6 +113,12 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
         thread::sleep(Duration::from_millis(5));
     };
     assert!(refused > 0);
+    assert!(
+        controls
+            .check_health()
+            .expect_err("world event exposes overload without a drawable")
+            .contains("fixed-clock overload")
+    );
     thread::sleep(Duration::from_millis(150));
     assert_eq!(
         client

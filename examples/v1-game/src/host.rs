@@ -630,16 +630,6 @@ impl ThreadedFrameHost {
         self.inner.has_reusable_view()
     }
 
-    /// Delay to the next world tick only in the synchronous host.
-    pub fn next_due_in(&self) -> Option<Duration> {
-        self.inner.next_due_in()
-    }
-
-    /// Last observed authoritative tick.
-    pub fn tick(&self) -> u64 {
-        self.inner.tick()
-    }
-
     /// Number of GPU frames still in flight.
     pub fn pending_frames(&self) -> usize {
         self.inner.pending_frames()
