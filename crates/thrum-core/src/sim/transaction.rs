@@ -7,7 +7,7 @@ use crate::{Handle, StableId};
 
 use super::{
     ComponentKey, EntityWriter, RegisteredWorldError, StructuralChange, StructuralPermit, SystemId,
-    WritePermit, registered_world::RegisteredWorld,
+    WritePermit, column_store::EntityBundle, registered_world::RegisteredWorld,
 };
 
 type ValueAt<C> = fn(&C, usize) -> &dyn Any;
@@ -231,7 +231,7 @@ pub(super) struct EditScratch {
     retired: Vec<u64>,
     generation: u64,
     components: usize,
-    builders: Vec<hecs::EntityBuilder>,
+    builders: Vec<EntityBundle>,
     builders_used: usize,
     spawn_ids: HashSet<StableId>,
 }
@@ -344,7 +344,7 @@ impl EditScratch {
                         return Err(EditError::World(RegisteredWorldError::DuplicateId));
                     }
                     if self.builders_used == self.builders.len() {
-                        self.builders.push(hecs::EntityBuilder::new());
+                        self.builders.push(world.new_bundle());
                     }
                     let builder = &mut self.builders[self.builders_used];
                     world
@@ -405,5 +405,6 @@ impl EditScratch {
                 spawn += 1;
             }
         }
+        world.finish_tick(tick);
     }
 }

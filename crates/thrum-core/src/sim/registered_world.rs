@@ -1,11 +1,17 @@
 //! Game-registered component storage with engine-owned identity. This is the
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
-use std::{collections::hash_map::RandomState, hash::BuildHasher, mem::size_of};
+use std::{
+    collections::hash_map::RandomState, hash::BuildHasher, marker::PhantomData, mem::size_of,
+};
 
 use crate::{Handle, StableId, WorldEpoch};
 
-use super::{ComponentKey, ComponentRegistry, ComponentSchemaId, schedule::SnapshotColumn};
+use super::{
+    ComponentKey, ComponentRegistry, ComponentSchemaId,
+    column_store::{EntityBundle, StorageColumn, TypedStore},
+    schedule::SnapshotColumn,
+};
 
 #[derive(Clone, Copy)]
 struct CapturedSlot {
@@ -112,13 +118,20 @@ impl WorldCapture {
 #[derive(Clone, Copy)]
 struct Slot {
     generation: u64,
-    entity: Option<hecs::Entity>,
     stable: Option<StableId>,
     structural_tick: u64,
 }
 
-#[derive(Clone, Copy)]
-pub(super) struct SlotKey(pub(super) u32);
+const CHANGE_FRAME_COUNT: usize = 4;
+
+fn change_frame_index(tick: u64) -> usize {
+    usize::try_from(tick % 4).expect("four frame indices fit usize")
+}
+
+struct ChangeFrame {
+    tick: u64,
+    slots: Vec<u32>,
+}
 
 struct IdIndex {
     buckets: Vec<Option<(StableId, u32)>>,
@@ -206,9 +219,9 @@ pub enum RegisteredWorldError {
     WrongSystem,
 }
 
-/// Reusable typed bundle writer. It never exposes hecs IDs or a mutable world.
+/// Reusable typed bundle writer. It never exposes storage rows or a mutable world.
 pub struct EntityWriter<'a> {
-    builder: &'a mut hecs::EntityBuilder,
+    builder: &'a mut EntityBundle,
     registry: &'a ComponentRegistry,
 }
 
@@ -222,29 +235,36 @@ impl EntityWriter<'_> {
         &mut self,
         value: T,
     ) -> Result<&mut Self, RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
+        let Some(index) = self
+            .registry
+            .entries
+            .iter()
+            .position(|entry| entry.key == ComponentKey::of::<T>())
+        else {
             return Err(RegisteredWorldError::UnregisteredComponent);
-        }
-        if self.builder.has::<T>() {
+        };
+        if !self.builder.add(index, value) {
             return Err(RegisteredWorldError::DuplicateComponent);
         }
-        self.builder.add(value);
         Ok(self)
     }
 }
 
-/// Generic component authority for one world epoch. Identity slots and hecs
-/// entities are private; the public handle is checked on every sparse access.
+/// Generic component authority for one world epoch. Identity slots and typed
+/// columns are private; the public handle is checked on every sparse access.
 pub(super) struct RegisteredWorld {
     epoch: WorldEpoch,
     slots: Vec<Slot>,
     free: Vec<u32>,
     ids: IdIndex,
-    pub(super) world: hecs::World,
-    builder: hecs::EntityBuilder,
+    columns: Vec<Box<dyn StorageColumn>>,
+    builder: EntityBundle,
     registry: ComponentRegistry,
     change_ticks: Vec<u64>,
     changed: Vec<Vec<u32>>,
+    change_frames: [ChangeFrame; CHANGE_FRAME_COUNT],
+    pending_slots: Vec<u32>,
+    pending_marks: Vec<bool>,
     live: usize,
 }
 
@@ -364,44 +384,43 @@ impl RegisteredWorld {
         {
             return Err(RegisteredWorldError::SnapshotMismatch);
         }
-        let mut world = hecs::World::new();
-        let mut builder = hecs::EntityBuilder::new();
+        let mut columns: Vec<_> = self
+            .registry
+            .entries
+            .iter()
+            .map(|entry| (entry.storage)(capture.slots.len()))
+            .collect();
+        for (snapshot, column) in capture.columns.iter().zip(&mut columns) {
+            snapshot.restore_into(column.as_mut());
+        }
         let mut slots = Vec::with_capacity(capture.slots.len());
         let mut ids = IdIndex::new(capture.slots.len());
         let mut live = 0;
-        let mut cursors = vec![0; capture.columns.len()];
         for (index, saved) in capture.slots.iter().enumerate() {
-            let entity = saved.stable.map(|id| {
+            if let Some(id) = saved.stable {
                 let key = u32::try_from(index).expect("validated slot capacity");
-                for (column, cursor) in capture.columns.iter().zip(&mut cursors) {
-                    column.build_at(
-                        key,
-                        cursor,
-                        &mut EntityWriter {
-                            builder: &mut builder,
-                            registry: &self.registry,
-                        },
-                    );
-                }
-                builder.add(SlotKey(key));
-                let entity = world.spawn(builder.build());
                 ids.insert(id, key);
                 live += 1;
-                entity
-            });
+            }
             slots.push(Slot {
                 generation: saved.generation,
-                entity,
                 stable: saved.stable,
                 structural_tick: saved.structural_tick,
             });
         }
-        self.world = world;
-        self.builder = builder;
+        self.columns = columns;
+        self.builder.clear();
         self.slots = slots;
         self.ids = ids;
         self.free.clone_from(&capture.free);
         self.change_ticks.clone_from(&capture.change_ticks);
+        for frame in &mut self.change_frames {
+            frame.tick = 0;
+            frame.slots.clear();
+        }
+        for slot in self.pending_slots.drain(..) {
+            self.pending_marks[slot as usize] = false;
+        }
         self.live = live;
         Ok(())
     }
@@ -433,12 +452,17 @@ impl RegisteredWorld {
         let change_count = capacity
             .checked_mul(component_count)
             .ok_or(RegisteredWorldError::Capacity)?;
+        let builder = EntityBundle::new(&registry);
+        let columns = registry
+            .entries
+            .iter()
+            .map(|entry| (entry.storage)(capacity))
+            .collect();
         Ok(Self {
             epoch,
             slots: vec![
                 Slot {
                     generation: 1,
-                    entity: None,
                     stable: None,
                     structural_tick: 0,
                 };
@@ -446,11 +470,17 @@ impl RegisteredWorld {
             ],
             free: (0..slot_count).rev().collect(),
             ids: IdIndex::new(capacity),
-            world: hecs::World::new(),
-            builder: hecs::EntityBuilder::new(),
+            columns,
+            builder,
             registry,
             change_ticks: vec![0; change_count],
             changed: (0..component_count).map(|_| Vec::new()).collect(),
+            change_frames: std::array::from_fn(|_| ChangeFrame {
+                tick: 0,
+                slots: Vec::with_capacity(capacity),
+            }),
+            pending_slots: Vec::with_capacity(capacity),
+            pending_marks: vec![false; capacity],
             live: 0,
         })
     }
@@ -471,6 +501,30 @@ impl RegisteredWorld {
             .position(|entry| entry.key == key)
     }
 
+    pub(super) fn new_bundle(&self) -> EntityBundle {
+        EntityBundle::new(&self.registry)
+    }
+
+    pub(super) fn column<T: Send + Sync + 'static>(&self) -> &TypedStore<T> {
+        let index = self
+            .component_index(ComponentKey::of::<T>())
+            .expect("registered component type");
+        self.columns[index]
+            .as_any()
+            .downcast_ref::<TypedStore<T>>()
+            .expect("registered storage column type")
+    }
+
+    fn column_mut<T: Send + Sync + 'static>(&mut self) -> &mut TypedStore<T> {
+        let index = self
+            .component_index(ComponentKey::of::<T>())
+            .expect("registered component type");
+        self.columns[index]
+            .as_any_mut()
+            .downcast_mut::<TypedStore<T>>()
+            .expect("registered storage column type")
+    }
+
     pub(super) fn change_ticks3_at(&self, slot: u32, components: [usize; 3]) -> [u64; 4] {
         let row = slot as usize * self.registry.entries.len();
         [
@@ -485,9 +539,13 @@ impl RegisteredWorld {
         let component = self.component_index(key).expect("prevalidated component");
         self.change_ticks[handle.slot as usize * self.registry.entries.len() + component] = tick;
         self.changed[component].push(handle.slot);
+        self.mark_pending(handle.slot);
     }
 
     pub(super) fn begin_tick(&mut self) {
+        for slot in self.pending_slots.drain(..) {
+            self.pending_marks[slot as usize] = false;
+        }
         for changed in &mut self.changed {
             changed.clear();
         }
@@ -497,11 +555,61 @@ impl RegisteredWorld {
         for changed in &mut self.changed {
             changed.push(slot);
         }
+        self.mark_pending(slot);
+    }
+
+    fn mark_pending(&mut self, slot: u32) {
+        if !self.pending_marks[slot as usize] {
+            self.pending_marks[slot as usize] = true;
+            self.pending_slots.push(slot);
+        }
+    }
+
+    pub(super) fn finish_tick(&mut self, tick: u64) {
+        let frame = &mut self.change_frames[change_frame_index(tick)];
+        frame.tick = tick;
+        frame.slots.clear();
+        frame.slots.extend_from_slice(&self.pending_slots);
+    }
+
+    pub(super) fn has_changes_since(&self, since: u64, current: u64) -> bool {
+        if since > current || current - since > CHANGE_FRAME_COUNT as u64 {
+            return false;
+        }
+        if since == current {
+            return true;
+        }
+        (since + 1..=current).all(|tick| self.change_frames[change_frame_index(tick)].tick == tick)
+    }
+
+    pub(super) fn visit_changes_since(
+        &self,
+        since: u64,
+        current: u64,
+        mut visit: impl FnMut(u32),
+    ) -> bool {
+        if !self.has_changes_since(since, current) {
+            return false;
+        }
+        if since == current {
+            return true;
+        }
+        for tick in since + 1..=current {
+            for &slot in &self.change_frames[change_frame_index(tick)].slots {
+                visit(slot);
+            }
+        }
+        true
+    }
+
+    pub(super) fn live_at_slot(&self, slot: u32) -> Option<(Handle, StableId)> {
+        let stable = self.slots.get(slot as usize)?.stable?;
+        Some((self.handle_at(slot), stable))
     }
 
     pub(super) fn prepare_bundle(
         &self,
-        builder: &mut hecs::EntityBuilder,
+        builder: &mut EntityBundle,
         fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
     ) -> Result<(), RegisteredWorldError> {
         builder.clear();
@@ -518,17 +626,15 @@ impl RegisteredWorld {
     pub(super) fn spawn_prepared(
         &mut self,
         id: StableId,
-        builder: &mut hecs::EntityBuilder,
+        builder: &mut EntityBundle,
         tick: u64,
     ) -> Result<Handle, RegisteredWorldError> {
         if self.ids.get(id).is_some() {
             return Err(RegisteredWorldError::DuplicateId);
         }
         let slot = *self.free.last().ok_or(RegisteredWorldError::Capacity)?;
-        builder.add(SlotKey(slot));
-        let entity = self.world.spawn(builder.build());
+        builder.commit(&mut self.columns, slot as usize);
         self.free.pop();
-        self.slots[slot as usize].entity = Some(entity);
         self.slots[slot as usize].stable = Some(id);
         self.slots[slot as usize].structural_tick = tick;
         self.ids.insert(id, slot);
@@ -553,7 +659,7 @@ impl RegisteredWorld {
         }
     }
 
-    pub(super) fn entity(&self, handle: Handle) -> Result<hecs::Entity, RegisteredWorldError> {
+    pub(super) fn entity(&self, handle: Handle) -> Result<(), RegisteredWorldError> {
         if handle.epoch != self.epoch {
             return Err(RegisteredWorldError::InvalidHandle);
         }
@@ -564,7 +670,9 @@ impl RegisteredWorld {
         if slot.generation != handle.generation {
             return Err(RegisteredWorldError::InvalidHandle);
         }
-        slot.entity.ok_or(RegisteredWorldError::InvalidHandle)
+        slot.stable
+            .map(|_| ())
+            .ok_or(RegisteredWorldError::InvalidHandle)
     }
 
     pub(super) fn stable_id(&self, handle: Handle) -> Result<StableId, RegisteredWorldError> {
@@ -597,10 +705,8 @@ impl RegisteredWorld {
             self.builder.clear();
             return Err(error);
         }
-        self.builder.add(SlotKey(slot));
-        let entity = self.world.spawn(self.builder.build());
+        self.builder.commit(&mut self.columns, slot as usize);
         self.free.pop();
-        self.slots[slot as usize].entity = Some(entity);
         self.slots[slot as usize].stable = Some(id);
         self.ids.insert(id, slot);
         self.live += 1;
@@ -613,16 +719,15 @@ impl RegisteredWorld {
     ///
     /// The handle is stale or from another world.
     pub(super) fn despawn(&mut self, handle: Handle) -> Result<(), RegisteredWorldError> {
-        let entity = self.entity(handle)?;
+        self.entity(handle)?;
         let id = self.slots[handle.slot as usize]
             .stable
             .ok_or(RegisteredWorldError::InvalidHandle)?;
-        self.world
-            .despawn(entity)
-            .map_err(|_| RegisteredWorldError::InvalidHandle)?;
+        for column in &mut self.columns {
+            column.clear_slot(handle.slot as usize);
+        }
         let slot = &mut self.slots[handle.slot as usize];
         self.ids.remove(id);
-        slot.entity = None;
         slot.stable = None;
         self.live -= 1;
         if let Some(next) = slot.generation.checked_add(1) {
@@ -643,15 +748,26 @@ impl RegisteredWorld {
         handle: Handle,
         read: impl FnOnce(&T) -> R,
     ) -> Result<R, RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none() {
-            return Err(RegisteredWorldError::UnregisteredComponent);
-        }
-        let entity = self.entity(handle)?;
-        let value = self
-            .world
-            .get::<&T>(entity)
-            .map_err(|_| RegisteredWorldError::MissingComponent)?;
-        Ok(read(&value))
+        let index = self
+            .component_index(ComponentKey::of::<T>())
+            .ok_or(RegisteredWorldError::UnregisteredComponent)?;
+        self.with_index(index, handle, read)
+    }
+
+    pub(super) fn with_index<T: Send + Sync + 'static, R>(
+        &self,
+        index: usize,
+        handle: Handle,
+        read: impl FnOnce(&T) -> R,
+    ) -> Result<R, RegisteredWorldError> {
+        self.entity(handle)?;
+        let value = self.columns[index]
+            .as_any()
+            .downcast_ref::<TypedStore<T>>()
+            .expect("registered read permit type")
+            .get(handle.slot as usize)
+            .ok_or(RegisteredWorldError::MissingComponent)?;
+        Ok(read(value))
     }
 
     pub(super) fn replace<T: Send + Sync + 'static>(
@@ -662,12 +778,12 @@ impl RegisteredWorld {
         if self.registry.schema(ComponentKey::of::<T>()).is_none() {
             return Err(RegisteredWorldError::UnregisteredComponent);
         }
-        let entity = self.entity(handle)?;
-        let mut current = self
-            .world
-            .get::<&mut T>(entity)
-            .map_err(|_| RegisteredWorldError::MissingComponent)?;
-        Ok(std::mem::replace(&mut current, value))
+        self.entity(handle)?;
+        let current = self
+            .column_mut::<T>()
+            .get_mut(handle.slot as usize)
+            .ok_or(RegisteredWorldError::MissingComponent)?;
+        Ok(std::mem::replace(current, value))
     }
 
     pub(super) fn insert<T: Send + Sync + 'static>(
@@ -678,13 +794,13 @@ impl RegisteredWorld {
         if self.registry.schema(ComponentKey::of::<T>()).is_none() {
             return Err(RegisteredWorldError::UnregisteredComponent);
         }
-        let entity = self.entity(handle)?;
-        if self.world.get::<&T>(entity).is_ok() {
+        self.entity(handle)?;
+        let column = self.column_mut::<T>();
+        if column.get(handle.slot as usize).is_some() {
             return Err(RegisteredWorldError::DuplicateComponent);
         }
-        self.world
-            .insert_one(entity, value)
-            .map_err(|_| RegisteredWorldError::InvalidHandle)
+        column.insert(handle.slot as usize, value);
+        Ok(())
     }
 
     pub(super) fn remove<T: Send + Sync + 'static>(
@@ -694,10 +810,10 @@ impl RegisteredWorld {
         if self.registry.schema(ComponentKey::of::<T>()).is_none() {
             return Err(RegisteredWorldError::UnregisteredComponent);
         }
-        let entity = self.entity(handle)?;
-        self.world
-            .remove_one::<T>(entity)
-            .map_err(|_| RegisteredWorldError::MissingComponent)
+        self.entity(handle)?;
+        self.column_mut::<T>()
+            .remove(handle.slot as usize)
+            .ok_or(RegisteredWorldError::MissingComponent)
     }
 
     /// Prepare one two-component storage-order query for repeated ticks.
@@ -708,13 +824,16 @@ impl RegisteredWorld {
     pub(super) fn read2<T: Send + Sync + 'static, U: Send + Sync + 'static>(
         &self,
     ) -> Result<PreparedRead2<T, U>, RegisteredWorldError> {
-        if self.registry.schema(ComponentKey::of::<T>()).is_none()
-            || self.registry.schema(ComponentKey::of::<U>()).is_none()
-        {
-            return Err(RegisteredWorldError::UnregisteredComponent);
-        }
+        let first = self
+            .component_index(ComponentKey::of::<T>())
+            .ok_or(RegisteredWorldError::UnregisteredComponent)?;
+        let second = self
+            .component_index(ComponentKey::of::<U>())
+            .ok_or(RegisteredWorldError::UnregisteredComponent)?;
         Ok(PreparedRead2 {
-            query: hecs::PreparedQuery::new(),
+            first,
+            second,
+            marker: PhantomData,
         })
     }
 
@@ -725,27 +844,25 @@ impl RegisteredWorld {
         &self,
         mut visit: impl FnMut(Handle, StableId, &T, &U),
     ) {
+        let first = self.column::<T>();
+        let second = self.column::<U>();
         for (index, slot) in self.slots.iter().enumerate() {
-            let Some(entity) = slot.entity else { continue };
-            let (Ok(a), Ok(b)) = (self.world.get::<&T>(entity), self.world.get::<&U>(entity))
-            else {
+            let Some(id) = slot.stable else { continue };
+            let (Some(a), Some(b)) = (first.get(index), second.get(index)) else {
                 continue;
             };
             let key = u32::try_from(index).expect("validated slot capacity");
-            visit(
-                self.handle_at(key),
-                slot.stable.expect("live slot has stable identity"),
-                &a,
-                &b,
-            );
+            visit(self.handle_at(key), id, a, b);
         }
     }
 }
 
-/// Prepared read of two game-owned component types in backend storage order.
-/// The callback receives checked physical and stable identity, never a hecs ID.
+/// Prepared read of two game-owned component types in canonical slot order.
+/// The callback receives checked physical and stable identity.
 pub(super) struct PreparedRead2<T: Send + Sync + 'static, U: Send + Sync + 'static> {
-    query: hecs::PreparedQuery<(&'static SlotKey, &'static T, &'static U)>,
+    first: usize,
+    second: usize,
+    marker: PhantomData<(T, U)>,
 }
 
 impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
@@ -767,16 +884,32 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> PreparedRead2<T, U> {
         world: &RegisteredWorld,
         mut visit: impl FnMut(Handle, StableId, &T, &U, u32),
     ) {
-        let mut query = self.query.query(&world.world);
-        for (key, a, b) in query.iter() {
-            let slot = &world.slots[key.0 as usize];
-            visit(
-                world.handle_at(key.0),
-                slot.stable.expect("queried entity remains live"),
-                a,
-                b,
-                key.0,
-            );
+        let first = world.columns[self.first]
+            .as_any()
+            .downcast_ref::<TypedStore<T>>()
+            .expect("prepared first component type");
+        let second = world.columns[self.second]
+            .as_any()
+            .downcast_ref::<TypedStore<U>>()
+            .expect("prepared second component type");
+        for (word, (&a, &b)) in first.presence().iter().zip(second.presence()).enumerate() {
+            let mut matching = a & b;
+            while matching != 0 {
+                let bit = matching.trailing_zeros() as usize;
+                matching &= matching - 1;
+                let index = word * 64 + bit;
+                let key = u32::try_from(index).expect("validated slot capacity");
+                let id = world.slots[index]
+                    .stable
+                    .expect("stored component belongs to a live slot");
+                visit(
+                    world.handle_at(key),
+                    id,
+                    first.get(index).expect("presence bit has value"),
+                    second.get(index).expect("presence bit has value"),
+                    key,
+                );
+            }
         }
     }
 }

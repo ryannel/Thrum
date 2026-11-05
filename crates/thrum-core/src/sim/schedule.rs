@@ -85,6 +85,8 @@ impl ComponentRegistry {
             key,
             schema,
             capture: Box::new(move |world| capture_component(world, snapshot, nested_bytes)),
+            storage: Box::new(|capacity| Box::new(TypedStore::<T>::new(capacity))),
+            pending: Box::new(|| Box::new(Pending::<T> { value: None })),
             empty: Box::new(move || {
                 Box::new(TypedColumn::<T> {
                     rows: Vec::new(),
@@ -316,10 +318,13 @@ use std::{
     mem::size_of,
 };
 
-use super::registered_world::{EntityWriter, RegisteredWorld, SlotKey};
+use super::{
+    column_store::{Pending, PendingValue, StorageColumn, TypedStore},
+    registered_world::RegisteredWorld,
+};
 
 pub(super) trait SnapshotColumn: Send + Sync {
-    fn build_at(&self, slot: u32, cursor: &mut usize, writer: &mut EntityWriter<'_>);
+    fn restore_into(&self, column: &mut dyn StorageColumn);
     fn clone_box(&self) -> Box<dyn SnapshotColumn>;
     fn clear(&mut self);
     fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32);
@@ -337,14 +342,18 @@ struct TypedColumn<T> {
 }
 
 impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
-    fn build_at(&self, slot: u32, cursor: &mut usize, writer: &mut EntityWriter<'_>) {
-        if let Some((found, value)) = self.rows.get(*cursor)
-            && *found == slot
-        {
-            writer
-                .add((self.snapshot)(value))
-                .expect("captured component belongs to the registered schema");
-            *cursor += 1;
+    fn restore_into(&self, column: &mut dyn StorageColumn) {
+        let typed = column
+            .as_any_mut()
+            .downcast_mut::<TypedStore<T>>()
+            .expect("registered capture column type");
+        for (slot, value) in &self.rows {
+            assert!(
+                typed
+                    .insert(*slot as usize, (self.snapshot)(value))
+                    .is_none(),
+                "one captured value per slot"
+            );
         }
     }
 
@@ -411,6 +420,8 @@ pub(super) struct ComponentEntry {
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
     pub(super) capture: CaptureColumn,
+    pub(super) storage: Box<dyn Fn(usize) -> Box<dyn StorageColumn> + Send + Sync>,
+    pub(super) pending: Box<dyn Fn() -> Box<dyn PendingValue> + Send + Sync>,
     pub(super) empty: Box<dyn Fn() -> Box<dyn SnapshotColumn> + Send + Sync>,
 }
 
@@ -419,13 +430,20 @@ fn capture_component<T: Send + Sync + 'static>(
     snapshot: fn(&T) -> T,
     nested_bytes: fn(&T) -> usize,
 ) -> Box<dyn SnapshotColumn> {
-    let mut rows: Vec<_> = world
-        .world
-        .query::<(&SlotKey, &T)>()
+    let rows = world
+        .column::<T>()
+        .values()
         .iter()
-        .map(|(slot, value)| (slot.0, snapshot(value)))
+        .enumerate()
+        .filter_map(|(slot, value)| {
+            value.as_ref().map(|value| {
+                (
+                    u32::try_from(slot).expect("validated slot capacity"),
+                    snapshot(value),
+                )
+            })
+        })
         .collect();
-    rows.sort_unstable_by_key(|(slot, _)| *slot);
     Box::new(TypedColumn {
         rows,
         snapshot,

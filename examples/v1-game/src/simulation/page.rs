@@ -64,7 +64,10 @@ pub(crate) struct Page {
     ids: Vec<Option<StableId>>,
     generations: Vec<u64>,
     present_marks: Vec<u64>,
+    refresh_marks: Vec<u64>,
+    refresh_generation: u64,
     dirty_flags: Vec<u8>,
+    dirty_words: Vec<u64>,
     positions: Vec<Position>,
     velocities: Vec<Velocity>,
     health: Vec<u16>,
@@ -78,6 +81,11 @@ pub(crate) struct Page {
 }
 
 impl Page {
+    fn mark_dirty(&mut self, slot: usize, flags: u8) {
+        self.dirty_flags[slot] |= flags;
+        self.dirty_words[slot / 64] |= 1_u64 << (slot % 64);
+    }
+
     pub(crate) fn new(epoch: WorldEpoch, capacity: usize) -> Self {
         Self {
             id: SnapshotId { epoch, tick: 0 },
@@ -85,7 +93,10 @@ impl Page {
             ids: vec![None; capacity],
             generations: vec![0; capacity],
             present_marks: vec![u64::MAX; capacity],
+            refresh_marks: vec![0; capacity],
+            refresh_generation: 0,
             dirty_flags: vec![0; capacity],
+            dirty_words: vec![0; capacity.div_ceil(64)],
             positions: vec![Position::default(); capacity],
             velocities: vec![Velocity::default(); capacity],
             health: vec![0; capacity],
@@ -117,13 +128,18 @@ impl Page {
         timeline: u64,
         first: bool,
     ) {
-        let since = (self.initialized && !first).then_some(self.id.tick);
+        let since =
+            (self.initialized && !first && self.timeline == timeline).then_some(self.id.tick);
+        let full_refresh = since.is_none_or(|old| !world.has_changes_since(old, tick));
         self.id.tick = tick;
         self.timeline = timeline;
         self.baseline = first;
         self.dirty.clear();
         self.events.clear();
-        self.live = 0;
+        if full_refresh {
+            self.live = 0;
+            self.present_marks.fill(u64::MAX);
+        }
         if !first {
             self.events.extend_from_slice(events);
             for event in events {
@@ -132,75 +148,156 @@ impl Page {
                         handle.slot
                     }
                 };
-                self.dirty_flags[slot as usize] |= STRUCTURAL_DIRTY;
+                self.mark_dirty(slot as usize, STRUCTURAL_DIRTY);
             }
         }
-        query.visit_with_changes(
-            world,
-            (position_read, velocity_read, health_read),
-            |handle, id, position, health, stamps| {
-                let slot = handle.slot as usize;
-                self.present_marks[slot] = tick;
-                self.live += 1;
-                let [structural_tick, position_tick, velocity_tick, health_tick] = stamps;
-                let structural = since.is_none_or(|old| structural_tick > old);
+        if full_refresh {
+            query.visit_with_changes(
+                world,
+                (position_read, velocity_read, health_read),
+                |handle, id, position, health, stamps| {
+                    let slot = handle.slot as usize;
+                    self.present_marks[slot] = tick;
+                    self.live += 1;
+                    let [structural_tick, position_tick, velocity_tick, health_tick] = stamps;
+                    let structural = since.is_none_or(|old| structural_tick > old);
+                    if structural {
+                        self.ids[slot] = Some(id);
+                        self.generations[slot] = handle.generation;
+                        self.ownership[slot] =
+                            world.with(ownership_read, handle, |value| *value).ok();
+                        self.visuals[slot] = world.with(visual_read, handle, |value| value.0).ok();
+                    }
+                    if structural || since.is_none_or(|old| position_tick > old) {
+                        self.positions[slot] = *position;
+                    }
+                    if structural || since.is_none_or(|old| velocity_tick > old) {
+                        self.velocities[slot] = world
+                            .with(velocity_read, handle, |value| *value)
+                            .unwrap_or_default();
+                    }
+                    if structural || since.is_none_or(|old| health_tick > old) {
+                        self.health[slot] = health.0;
+                    }
+                    if first || structural_tick == tick || position_tick == tick {
+                        self.mark_dirty(slot, POSITION_DIRTY);
+                    }
+                    if first || structural_tick == tick || velocity_tick == tick {
+                        self.mark_dirty(slot, VELOCITY_DIRTY);
+                    }
+                    if first || structural_tick == tick || health_tick == tick {
+                        self.mark_dirty(slot, HEALTH_DIRTY);
+                    }
+                    if first || structural_tick == tick {
+                        self.mark_dirty(slot, STRUCTURAL_DIRTY);
+                    }
+                },
+            );
+        } else if let Some(old) = since {
+            self.refresh_generation = self.refresh_generation.wrapping_add(1);
+            if self.refresh_generation == 0 {
+                self.refresh_marks.fill(0);
+                self.refresh_generation = 1;
+            }
+            let retained = world.visit_changes_since(old, tick, |key| {
+                let slot = key as usize;
+                if self.refresh_marks[slot] == self.refresh_generation {
+                    return;
+                }
+                self.refresh_marks[slot] = self.refresh_generation;
+                let old_present = self.ids[slot].is_some();
+                let Some((handle, id)) = world.live_at_slot(key) else {
+                    if old_present {
+                        self.ids[slot] = None;
+                        self.live -= 1;
+                    }
+                    return;
+                };
+                let (Ok(position), Ok(health)) = (
+                    world.with(position_read, handle, |value| *value),
+                    world.with(health_read, handle, |value| value.0),
+                ) else {
+                    if old_present {
+                        self.ids[slot] = None;
+                        self.live -= 1;
+                    }
+                    return;
+                };
+                if !old_present {
+                    self.live += 1;
+                }
+                let [structural_tick, position_tick, velocity_tick, health_tick] = world
+                    .change_ticks3(handle, (position_read, velocity_read, health_read))
+                    .expect("live journal slot has a checked handle");
+                let structural = structural_tick > old
+                    || self.ids[slot] != Some(id)
+                    || self.generations[slot] != handle.generation;
                 if structural {
                     self.ids[slot] = Some(id);
                     self.generations[slot] = handle.generation;
                     self.ownership[slot] = world.with(ownership_read, handle, |value| *value).ok();
                     self.visuals[slot] = world.with(visual_read, handle, |value| value.0).ok();
                 }
-                if structural || since.is_none_or(|old| position_tick > old) {
-                    self.positions[slot] = *position;
+                if structural || position_tick > old {
+                    self.positions[slot] = position;
                 }
-                if structural || since.is_none_or(|old| velocity_tick > old) {
+                if structural || velocity_tick > old {
                     self.velocities[slot] = world
                         .with(velocity_read, handle, |value| *value)
                         .unwrap_or_default();
                 }
-                if structural || since.is_none_or(|old| health_tick > old) {
-                    self.health[slot] = health.0;
+                if structural || health_tick > old {
+                    self.health[slot] = health;
                 }
-                if first || structural_tick == tick || position_tick == tick {
-                    self.dirty_flags[slot] |= POSITION_DIRTY;
+                if structural_tick == tick || position_tick == tick {
+                    self.mark_dirty(slot, POSITION_DIRTY);
                 }
-                if first || structural_tick == tick || velocity_tick == tick {
-                    self.dirty_flags[slot] |= VELOCITY_DIRTY;
+                if structural_tick == tick || velocity_tick == tick {
+                    self.mark_dirty(slot, VELOCITY_DIRTY);
                 }
-                if first || structural_tick == tick || health_tick == tick {
-                    self.dirty_flags[slot] |= HEALTH_DIRTY;
+                if structural_tick == tick || health_tick == tick {
+                    self.mark_dirty(slot, HEALTH_DIRTY);
                 }
-                if first || structural_tick == tick {
-                    self.dirty_flags[slot] |= STRUCTURAL_DIRTY;
+                if structural_tick == tick {
+                    self.mark_dirty(slot, STRUCTURAL_DIRTY);
                 }
-            },
-        );
-        for (slot, id) in self.ids.iter_mut().enumerate() {
-            if id.is_some() && self.present_marks[slot] != tick {
-                *id = None;
+            });
+            debug_assert!(retained, "availability was checked before page refresh");
+        }
+        if full_refresh {
+            for (slot, id) in self.ids.iter_mut().enumerate() {
+                if id.is_some() && self.present_marks[slot] != tick {
+                    *id = None;
+                }
+                if first && id.is_some() {
+                    self.events.push(StructuralChange::Spawn(Handle {
+                        epoch: self.id.epoch,
+                        slot: u32::try_from(slot).expect("validated slot capacity"),
+                        generation: self.generations[slot],
+                    }));
+                }
             }
-            let flags = std::mem::take(&mut self.dirty_flags[slot]);
-            if flags != 0 {
-                let slot = u32::try_from(slot).expect("validated slot capacity");
+        }
+        for (word, value) in self.dirty_words.iter_mut().enumerate() {
+            let mut marked = std::mem::take(value);
+            while marked != 0 {
+                let bit = marked.trailing_zeros() as usize;
+                marked &= marked - 1;
+                let slot = word * 64 + bit;
+                let flags = std::mem::take(&mut self.dirty_flags[slot]);
+                let key = u32::try_from(slot).expect("validated slot capacity");
                 if flags & POSITION_DIRTY != 0 {
-                    self.dirty.position.push(slot);
+                    self.dirty.position.push(key);
                 }
                 if flags & VELOCITY_DIRTY != 0 {
-                    self.dirty.velocity.push(slot);
+                    self.dirty.velocity.push(key);
                 }
                 if flags & HEALTH_DIRTY != 0 {
-                    self.dirty.health.push(slot);
+                    self.dirty.health.push(key);
                 }
                 if flags & STRUCTURAL_DIRTY != 0 {
-                    self.dirty.structural.push(slot);
+                    self.dirty.structural.push(key);
                 }
-            }
-            if first && id.is_some() {
-                self.events.push(StructuralChange::Spawn(Handle {
-                    epoch: self.id.epoch,
-                    slot: u32::try_from(slot).expect("validated slot capacity"),
-                    generation: self.generations[slot],
-                }));
             }
         }
         self.initialized = true;
@@ -214,7 +311,9 @@ impl Page {
             + bytes(&self.ids)
             + bytes(&self.generations)
             + bytes(&self.present_marks)
+            + bytes(&self.refresh_marks)
             + bytes(&self.dirty_flags)
+            + bytes(&self.dirty_words)
             + bytes(&self.positions)
             + bytes(&self.velocities)
             + bytes(&self.health)
